@@ -17,7 +17,7 @@ A memory pack contains at least one file: `metadata.json`. This file is a JSON o
 
 The packages in this repository are provinding an implementation of the memory file for javascript and some tooling to build and test memory files.
 
-## [@becomposable/memory]("./packages/core")
+## [@becomposable/memory](packages/core)
 
 This is the core library implementing the memory pack and providing an API to programatically create ans use memory packs.
 
