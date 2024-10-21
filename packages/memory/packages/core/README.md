@@ -1,51 +1,11 @@
 # Memory Pack
 
-A memory pack is an `indexed` TAR file that package the content to be used when creating LLM prompts. The file is a regular tar file but with a special `.index` file added as the last entry in the tar. The index file list the files inside the tar, one file by line with the byte offset indicating the start of the tar entry where the file is located and the size in bytes of te file content.
+This is the core of the Composable memory Pack library.
+It defines the memory pack commands and provide an API to build and read memory packs.
 
-**Example:**
+A memory pack is an indexed tar file containing a `metadata.json` and other random files (images, documents, text files etc.). The `metadata.json` file is defining the properties of a memory pack. The metadata is used to describe the memory and the other files in the tar can be used to hold the additional content you need in order to create a context for the interaction with a target LLM.
 
-```
-changes.diff:0,256
-metadata.json:1024,52
-```
-
-A memory pack contains at least one file: `metadata.json`. This file is a JSON object containing random  properties and is required even if the memory is not defininf any metadata properties. In that case an empty JSON object `{}` should be put in the metadata file.
-
-
-
-## Memory file implementation
-
-The packages in this repository are provinding an implementation of the memory file for javascript and some tooling to build and test memory files.
-
-## `@becomposable/memory`
-
-This is the core library implementing the memory pack and providing an API to programatically create ans use memory packs.
-
-### Installation:
-
-```
-npm install @becomposable/memory
-```
-
-## `@becomposable/memory-cli`
-
-This is a terminal CLI application useful to build and test memory packs.
-
-It builds a memory pack by running a recipe file. The recipe file is a typescript script which may add content to the tar and which must export a JSON object which will be stored in the `metadata.json` file.
-
-### Installation:
-
-```
-npm install -g @becomposable/memory-cli
-```
-
-The package install an application named `memo`.
-
-Use `memo help` to seee the list of commands.
-
-## `@becomposable/memory-commands`
-
-This package must only be imported from the recipe file. It provides a list of the commands to use to build the memory pack.
+To build a memory pack you must use the memory pack API or the `memo` application provided by `@becomposable/memory-cli` package. The tar contains a special file named `.index` which is used to index the tar content so that the tar entries can be quickly extracted from the tar without nneeding to untar the entire content.
 
 ## Memory Pack Recipe
 
@@ -459,9 +419,3 @@ export default {
     release_version: end,
 }
 ```
-
-## Memory pack exports
-
-When using a memory pack you will likely want to select the metadata object and some files inside the tar. At each run you may need to access different content files. The content you want to access will be exported as a JSON object by providing a `content mapping`.
-
-TODO

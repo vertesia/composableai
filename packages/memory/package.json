@@ -1,0 +1,21 @@
+{
+    "name": "@becomposable/memory-root",
+    "version": "0.40.0",
+    "private": true,
+    "license": "Apache-2.0",
+    "scripts": {
+        "bump": "pnpm exec wst bump minor -x llumiverse",
+        "release": "pnpm -r publish --access public",
+        "build": "pnpm -r build",
+        "test": "pnpm -r test",
+        "clean": "rimraf ./node_modules && pnpm -r clean"
+    },
+    "devDependencies": {
+        "@types/node": "^22.5.1",
+        "npm-ws-tools": "^0.3.0",
+        "rimraf": "^6.0.1",
+        "ts-dual-module": "^0.6.3",
+        "typescript": "^5.6.3"
+    },
+    "packageManager": "pnpm@9.7.1"
+}
