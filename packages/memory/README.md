@@ -27,7 +27,7 @@ This is the core library implementing the memory pack and providing an API to pr
 npm install @becomposable/memory
 ```
 
-## `@becomposable/memory-cli`
+## [@becomposable/memory-cli](packages/cli)
 
 This is a terminal CLI application useful to build and test memory packs.
 
@@ -43,7 +43,7 @@ The package install an application named `memo`.
 
 Use `memo help` to seee the list of commands.
 
-## `@becomposable/memory-commands`
+## [@becomposable/memory-commands](packages/commands)
 
 This package must only be imported from the recipe file. It provides a list of the commands to use to build the memory pack.
 
