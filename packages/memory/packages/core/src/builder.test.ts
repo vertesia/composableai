@@ -159,11 +159,15 @@ describe("Builder", () => {
         const memory = await loadMemoryPack(memoryFile);
         let obj = await memory.exportObject({
             "father": "@parent",
-            "instruction": "Use this runtime instruction"
+            "instruction": "Use this runtime instruction",
+            someNullValue: null,
+            someObject: { msg: "Hello" }
         });
         expect(obj).toStrictEqual({
             father: { child: 123 },
-            "instruction": "Use this runtime instruction"
+            "instruction": "Use this runtime instruction",
+            someNullValue: null,
+            someObject: { msg: "Hello" }
         })
     });
 

@@ -57,37 +57,41 @@ export abstract class MemoryPack {
         const result: Record<string, any> = {};
         for (const key of Object.keys(mapping)) {
             const value = mapping[key];
-            if (value === '@') {
-                if (!metadata) {
-                    metadata = await this.getMetadata();
-                }
-                if (key === '@') {
-                    Object.assign(result, metadata);
+            if (typeof value === 'string') {
+                if (value === '@') {
+                    if (!metadata) {
+                        metadata = await this.getMetadata();
+                    }
+                    if (key === '@') {
+                        Object.assign(result, metadata);
+                    } else {
+                        result[key] = metadata;
+                    }
+                } else if (value.startsWith(EXPORT_CONTENT_KEY)) {
+                    const selector = value.slice(EXPORT_CONTENT_KEY.length);
+                    if (selector.includes('*')) {
+                        result[key] = await this.getEntriesText([selector]);
+                    } else {
+                        result[key] = await this.getEntryText(selector);
+                    }
+                } else if (value.startsWith(EXPORT_ENTRY_KEY)) {
+                    const selector = value.slice(EXPORT_ENTRY_KEY.length);
+                    if (selector.includes('*')) {
+                        const entries = this.getEntries([selector]);
+                        result[key] = await Promise.all(entries.map(entry => entry.getText().then(content => ({ name: entry.name, content }))));
+                    } else {
+                        const entry = this.getEntry(selector);
+                        result[key] = entry ? { name: entry.name, content: await entry.getText() } : null;
+                    }
+                } else if (value.startsWith(EXPORT_PROPERTY_KEY)) {
+                    if (!metadata) {
+                        metadata = await this.getMetadata();
+                    }
+                    const accessor = value.substring(EXPORT_PROPERTY_KEY.length);
+                    result[key] = resolveProperty(metadata, accessor);
                 } else {
-                    result[key] = metadata;
+                    result[key] = value;
                 }
-            } else if (value.startsWith(EXPORT_CONTENT_KEY)) {
-                const selector = value.slice(EXPORT_CONTENT_KEY.length);
-                if (selector.includes('*')) {
-                    result[key] = await this.getEntriesText([selector]);
-                } else {
-                    result[key] = await this.getEntryText(selector);
-                }
-            } else if (value.startsWith(EXPORT_ENTRY_KEY)) {
-                const selector = value.slice(EXPORT_ENTRY_KEY.length);
-                if (selector.includes('*')) {
-                    const entries = this.getEntries([selector]);
-                    result[key] = await Promise.all(entries.map(entry => entry.getText().then(content => ({ name: entry.name, content }))));
-                } else {
-                    const entry = this.getEntry(selector);
-                    result[key] = entry ? { name: entry.name, content: await entry.getText() } : null;
-                }
-            } else if (value.startsWith(EXPORT_PROPERTY_KEY)) {
-                if (!metadata) {
-                    metadata = await this.getMetadata();
-                }
-                const accessor = value.substring(EXPORT_PROPERTY_KEY.length);
-                result[key] = resolveProperty(metadata, accessor);
             } else {
                 result[key] = value;
             }
