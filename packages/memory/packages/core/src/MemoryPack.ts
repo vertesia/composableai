@@ -43,6 +43,7 @@ function applyProjection(projection: ProjectionProperties, object: any) {
 
 
 export abstract class MemoryPack {
+    abstract readonly file: string;
     abstract getMetadata(projection?: ProjectionProperties): Promise<Record<string, any>>;
     abstract getEntry(path: string): MemoryEntry | null;
     abstract getEntryContent(path: string): Promise<Buffer | null>;
@@ -114,7 +115,7 @@ export class MemoryEntry extends AbstractContentSource {
 }
 
 export class TarMemoryPack extends MemoryPack {
-    constructor(public index: TarIndex) {
+    constructor(public file: string, public index: TarIndex) {
         super();
         if (!index.get(MEMORY_METADATA_ENTRY)) {
             throw new Error("Invalid memory tar file. Context entry not found");
@@ -196,7 +197,7 @@ export class TarMemoryPack extends MemoryPack {
         if (!index) {
             throw new Error("Invalid memory tar file. Cannot load index");
         }
-        return new TarMemoryPack(index);
+        return new TarMemoryPack(file, index);
     }
 
 }
