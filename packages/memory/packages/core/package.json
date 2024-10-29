@@ -1,7 +1,7 @@
 {
     "name": "@becomposable/memory",
     "description": "Manipulate memory images for LLMs",
-    "version": "0.42.0",
+    "version": "0.43.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
