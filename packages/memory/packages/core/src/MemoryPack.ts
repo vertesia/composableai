@@ -70,15 +70,17 @@ export abstract class MemoryPack {
                     }
                 } else if (value.startsWith(EXPORT_CONTENT_KEY)) {
                     const selector = value.slice(EXPORT_CONTENT_KEY.length);
-                    if (selector.includes('*')) {
-                        result[key] = await this.getEntriesText([selector]);
+                    const isMulti = selector.includes('*') || selector.includes(',');
+                    if (isMulti) {
+                        result[key] = await this.getEntriesText(selector.split(','));
                     } else {
                         result[key] = await this.getEntryText(selector);
                     }
                 } else if (value.startsWith(EXPORT_ENTRY_KEY)) {
                     const selector = value.slice(EXPORT_ENTRY_KEY.length);
-                    if (selector.includes('*')) {
-                        const entries = this.getEntries([selector]);
+                    const isMulti = selector.includes('*') || selector.includes(',');
+                    if (isMulti) {
+                        const entries = this.getEntries(selector.split(','));
                         result[key] = await Promise.all(entries.map(entry => entry.getText().then(content => ({ name: entry.name, content }))));
                     } else {
                         const entry = this.getEntry(selector);

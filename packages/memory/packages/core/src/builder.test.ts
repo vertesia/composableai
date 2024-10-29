@@ -133,6 +133,26 @@ describe("Builder", () => {
         })
 
         obj = await memory.exportObject({
+            "content": "@content:file2.txt,file3.txt",
+        });
+        expect(obj).toStrictEqual({
+            content: [
+                "file2 from new memory",
+                "file3 from base memory",
+            ]
+        })
+
+        obj = await memory.exportObject({
+            "content": "@content:file2.txt,*4.txt",
+        });
+        expect(obj).toStrictEqual({
+            content: [
+                "file2 from new memory",
+                "file4 from new memory"
+            ]
+        })
+
+        obj = await memory.exportObject({
             "files": "@file:*.txt",
         });
         expect(obj).toStrictEqual({
@@ -140,6 +160,26 @@ describe("Builder", () => {
                 { name: "file2.txt", content: "file2 from new memory" },
                 { name: "file3.txt", content: "file3 from base memory" },
                 { name: "file4.txt", content: "file4 from new memory" }
+            ]
+        })
+
+        obj = await memory.exportObject({
+            "files": "@file:file2.txt,file3.txt",
+        });
+        expect(obj).toStrictEqual({
+            files: [
+                { name: "file2.txt", content: "file2 from new memory" },
+                { name: "file3.txt", content: "file3 from base memory" },
+            ]
+        })
+
+        obj = await memory.exportObject({
+            "files": "@file:*2.txt,*4.txt",
+        });
+        expect(obj).toStrictEqual({
+            files: [
+                { name: "file2.txt", content: "file2 from new memory" },
+                { name: "file4.txt", content: "file4 from new memory" },
             ]
         })
 
