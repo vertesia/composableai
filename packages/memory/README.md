@@ -1,6 +1,8 @@
-# Memory Pack
+# Memory Pack: portable context for LLMs
 
-A memory pack is an `indexed` TAR file that package the content to be used when creating LLM prompts. The file is a regular tar file but with a special `.index` file added as the last entry in the tar. The index file list the files inside the tar, one file by line with the byte offset indicating the start of the tar entry where the file is located and the size in bytes of te file content.
+Memory Packs are portable, immutable contexts for Large Language Models. Too often, data need to be queried at the time of prompt expansion, creating issues od data access, security, and immutability. With Memory Packs, we want to solve this problem by easily creating immutable, portable, and reusable contexts for LLMs. You can think of it as Docker images for LLM's contexts. 
+
+A memory pack is an `indexed` TAR file that package the context to be used when expanding LLM prompts. The file is a regular tar file but with a special `.index` file added as the last entry in the tar. The index file list the files inside the tar, one file by line with the byte offset indicating the start of the tar entry where the file is located and the size in bytes of te file content.
 
 **Example:**
 
