@@ -1,4 +1,4 @@
-import { manyToMarkdown, pdfToText, pdfToTextBuffer, transformImage, transformImageToBuffer } from "@becomposable/converters";
+import { manyToMarkdown, pdfToText, pdfToTextBuffer, transformImage, transformImageToBuffer } from "@vertesia/converters";
 import fs from "fs";
 import { PassThrough, Readable } from "stream";
 import { Builder } from "./Builder.js";

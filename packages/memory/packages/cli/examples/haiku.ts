@@ -1,4 +1,4 @@
-import { copyText } from "@becomposable/memory-commands"
+import { copyText } from "@vertesia/memory-commands"
 
 
 copyText("space", "topic.txt")

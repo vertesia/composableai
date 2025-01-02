@@ -1,5 +1,5 @@
 {
-    "name": "@becomposable/memory",
+    "name": "@vertesia/memory",
     "description": "Manipulate memory images for LLMs",
     "version": "0.43.0",
     "type": "module",
@@ -23,8 +23,8 @@
         "vitest": "^1.4.0"
     },
     "dependencies": {
-        "@becomposable/converters": "^0.39.1",
-        "@becomposable/json": "^0.39.1",
+        "@vertesia/converters": "^0.42.2",
+        "@vertesia/json": "^0.42.2",
         "glob": "^11.0.0",
         "micromatch": "^4.0.8",
         "tar-stream": "^3.1.7"

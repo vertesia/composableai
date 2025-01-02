@@ -1,4 +1,4 @@
-import { copy, copyText, exec, tmpdir, vars } from "@becomposable/memory-commands";
+import { copy, copyText, exec, tmpdir, vars } from "@vertesia/memory-commands";
 
 const { start, end } = vars();
 if (!start || !end) {

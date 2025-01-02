@@ -1,6 +1,6 @@
 # Memory Pack: portable context for LLMs
 
-Memory Packs are portable, immutable contexts for Large Language Models. Too often, data need to be queried at the time of prompt expansion, creating issues od data access, security, and immutability. With Memory Packs, we want to solve this problem by easily creating immutable, portable, and reusable contexts for LLMs. You can think of it as Docker images for LLM's contexts. 
+Memory Packs are portable, immutable contexts for Large Language Models. Too often, data need to be queried at the time of prompt expansion, creating issues od data access, security, and immutability. With Memory Packs, we want to solve this problem by easily creating immutable, portable, and reusable contexts for LLMs. You can think of it as Docker images for LLM's contexts.
 
 Technically, a memory pack is an `indexed` TAR file that package the context to be used when expanding LLM prompts. The file is a regular tar file but with a special `.index` file added as the last entry in the tar. The index file list the files inside the tar, one file by line with the byte offset indicating the start of the tar entry where the file is located and the size in bytes of te file content.
 
@@ -19,17 +19,17 @@ A memory pack contains at least one file: `metadata.json`. This file is a JSON o
 
 The packages in this repository are provinding an implementation of the memory file for javascript and some tooling to build and test memory files.
 
-## [@becomposable/memory](packages/core)
+## [@vertesia/memory](packages/core)
 
 This is the core library implementing the memory pack and providing an API to programatically create ans use memory packs.
 
 ### Installation:
 
 ```
-npm install @becomposable/memory
+npm install @vertesia/memory
 ```
 
-## [@becomposable/memory-cli](packages/cli)
+## [@vertesia/memory-cli](packages/cli)
 
 This is a terminal CLI application useful to build and test memory packs.
 
@@ -38,14 +38,14 @@ It builds a memory pack by running a recipe file. The recipe file is a typescrip
 ### Installation:
 
 ```
-npm install -g @becomposable/memory-cli
+npm install -g @vertesia/memory-cli
 ```
 
 The package install an application named `memo`.
 
 Use `memo help` to seee the list of commands.
 
-## [@becomposable/memory-commands](packages/commands)
+## [@vertesia/memory-commands](packages/commands)
 
 This package must only be imported from the recipe file. It provides a list of the commands to use to build the memory pack.
 
@@ -57,7 +57,7 @@ The recipe can contain any javascript code but it must use the builtin commands 
 A memory tpack recipe has the following structure:
 
 ```js
-import { copy, ... other commands ... } from "@becomposable/memory-commands";
+import { copy, ... other commands ... } from "@vertesia/memory-commands";
 
 // You can optionally extend an existing memory pack
 await from("path/to/memory.tar")
@@ -108,13 +108,13 @@ These commands can be used to fetch content from files. The result is returned a
 **Signature:** `vars (): Record<string,any>`
 
 A command that returns the user variables which were specified when invoking the memory pack build.
-These variables can be used to parametrize the recipe. When using the `memo` cli application (i.e. `@becomposable/memory-cli`) you can pass vars to the recipe by using command line parameters which starts with a `--var-` prefix.
+These variables can be used to parametrize the recipe. When using the `memo` cli application (i.e. `@vertesia/memory-cli`) you can pass vars to the recipe by using command line parameters which starts with a `--var-` prefix.
 
 **Example:** `--var-language fr` will produce a property `language` whith a value of `'fr'`.
 
 **Usage:**
 ```js
-import { vars } from "@becomposable/memory-commands"
+import { vars } from "@vertesia/memory-commands"
 
 const { language } = vars();
 ```
@@ -130,7 +130,7 @@ If created, the temporary directory will be automatically removed at the end of 
 **Usage:**
 
 ```js
-import { tmpdir } from "@becomposable/memory-commands";
+import { tmpdir } from "@vertesia/memory-commands";
 
 const wd = tmpdir();
 
@@ -167,7 +167,7 @@ The `projection` is an object which map keys to a truthy or falsy value. You can
 *Example:*
 
 ```js
-import { vars, from } from "@becomposable/memory-commands"
+import { vars, from } from "@vertesia/memory-commands"
 await from("./memory-source.tar", {
     files: ["images/*.png"],
     projection: {
@@ -195,7 +195,7 @@ The `exec` command is asynchronous so you need to use await when incoking it. If
 **Example:**
 
 ```javascript
-import { tmpdir, exec } from "@becomposable/memory-commands"
+import { tmpdir, exec } from "@vertesia/memory-commands"
 const wd = tmpdir();
 const output = await exec("cat some/file | wc -l")
 await exec(`cat some/file | wc -l > ${wd}out.txt`)
@@ -229,7 +229,7 @@ You can convert images by specfying a max height or widtth and / or an output im
 **Example:**
 
 ```js
-import { exec, copy, tmpdir } from "@becomposable/memory-commands"
+import { exec, copy, tmpdir } from "@vertesia/memory-commands"
 const wd = tmpdir();
 await exec(`cat some/file > ${wd}/out.txt`)
 copy(`${wd}/out.txt`, 'out.txt');
@@ -273,7 +273,7 @@ In the last example for the mnatched files: `work/images/header/home.png` and `w
 This command will create a new entry in the target memory pack tar using the content you specified through the `text` argument. The tar entry path is specified by the `path` argument.
 
 ```js
-import { exec, copyText } from "@becomposable/memory-commands"
+import { exec, copyText } from "@vertesia/memory-commands"
 const content = await exec(`cat some/file`)
 copyText(content.trim(), 'content.txt')
 ```
@@ -322,7 +322,7 @@ export interface BuildOptions {
 **Usage:**
 
 ```js
-import { build, tmpdir } from "@becomposable/memory-commands";
+import { build, tmpdir } from "@vertesia/memory-commands";
 const wd = tmpdir();
 await build("./some/recipe.ts", { out: `${wd}}/child-memory`});
 ```
@@ -351,7 +351,7 @@ Load a PdfObject form a pdf file. When assigned as a metadata property the PdfOb
 **Example:**
 
 ```js
-import { pdf } from "@becomposable/memory-commands";
+import { pdf } from "@vertesia/memory-commands";
 
 const doc = pdf("./my-doc.pdf")
 
@@ -389,7 +389,7 @@ You can thus convert the image before using it.
 **Example:**
 
 ```js
-import { pdf } from "@becomposable/memory-commands";
+import { pdf } from "@vertesia/memory-commands";
 
 const images = media("./images/*.jpeg")
 
@@ -408,7 +408,7 @@ To create custom commands you have 2 options. Either you write the command in as
 Here is a template of custom command functions:
 
 ```js
-import { getBuilder } from "@becomposable/memory-commands";
+import { getBuilder } from "@vertesia/memory-commands";
 import fs from "node:fs";
 
 export myCommand(message:string) {
@@ -432,7 +432,7 @@ export myCommand(message:string) {
 This example builds a memory pack with the information on which issues were fixed between to commit SHA.
 
 ```js
-import { copy, copyText, exec, tmpdir, vars } from "@becomposable/memory-commands";
+import { copy, copyText, exec, tmpdir, vars } from "@vertesia/memory-commands";
 
 const { start, end } = vars();
 if (!start || !end) {

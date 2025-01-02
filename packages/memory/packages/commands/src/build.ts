@@ -1,4 +1,4 @@
-import { Builder, BuildOptions } from "@becomposable/memory";
+import { Builder, BuildOptions } from "@vertesia/memory";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { resolve } from "path";
 import { importTsFile } from "./ts-loader.js";

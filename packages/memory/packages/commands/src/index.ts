@@ -1,4 +1,4 @@
-import type { Commands } from "@becomposable/memory";
+import type { Commands } from "@vertesia/memory";
 import { build, getBuilder } from "./build.js";
 
 

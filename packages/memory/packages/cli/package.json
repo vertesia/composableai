@@ -1,5 +1,5 @@
 {
-    "name": "@becomposable/memory-cli",
+    "name": "@vertesia/memory-cli",
     "description": "becomposable memory builder CLI",
     "version": "0.43.0",
     "type": "module",
@@ -29,8 +29,8 @@
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "dependencies": {
-        "@becomposable/memory": "workspace:*",
-        "@becomposable/memory-commands": "workspace:*",
+        "@vertesia/memory": "workspace:*",
+        "@vertesia/memory-commands": "workspace:*",
         "commander": "^12.1.0"
     },
     "devDependencies": {

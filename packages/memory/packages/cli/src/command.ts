@@ -1,5 +1,5 @@
-import { BuildOptions, loadMemoryPack } from '@becomposable/memory';
-import { build } from '@becomposable/memory-commands';
+import { BuildOptions, loadMemoryPack } from '@vertesia/memory';
+import { build } from '@vertesia/memory-commands';
 import { Command } from 'commander';
 import { readFile } from 'fs/promises';
 import { dirname } from 'path';

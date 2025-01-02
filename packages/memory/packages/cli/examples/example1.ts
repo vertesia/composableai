@@ -1,5 +1,5 @@
 //@ts-ignore
-import { vars, exec, media, content, tmpdir, pdf } from "@becomposable/memory-commands";
+import { vars, exec, media, content, tmpdir, pdf } from "@vertesia/memory-commands";
 
 console.log('!!!!!!', vars);
 

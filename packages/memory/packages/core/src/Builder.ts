@@ -1,4 +1,4 @@
-import { AsyncObjectWalker } from "@becomposable/json";
+import { AsyncObjectWalker } from "@vertesia/json";
 import { mkdtempSync, rmSync } from "fs";
 import os from "os";
 import { join, resolve } from "path";
