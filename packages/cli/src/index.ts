@@ -1,5 +1,6 @@
 import { setupMemoCommand } from '@vertesia/memory-cli';
 import { Command } from 'commander';
+import { registerAgentCommand } from './agent/index.js';
 import runExport from './codegen/index.js';
 import { genTestData } from './datagen/index.js';
 import { listEnvirnments } from './envs/index.js';
@@ -121,6 +122,8 @@ program.command("runs [interactionId]")
 
 const memoCmd = program.command("memo");
 setupMemoCommand(memoCmd, getPublishMemoryAction(program));
+
+registerAgentCommand(program);
 
 const profilesRoot = program.command("profiles")
     .description("Manage configuration profiles")
