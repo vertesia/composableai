@@ -1,6 +1,6 @@
-import { spawnSync } from "node:child_process";
-import hasbin from "hasbin";
 import enquirer from "enquirer";
+import { spawnSync } from "node:child_process";
+import { hasBin } from "./hasBin.js";
 
 const { prompt } = enquirer;
 
@@ -12,15 +12,7 @@ export function registryAuth(cmd: string) {
 }
 
 export async function gcloudAuth() {
-    const hasGcloud = await new Promise((resolve, reject) => {
-        try {
-            hasbin("gcloud", (result: boolean) => {
-                resolve(result);
-            });
-        } catch (err: any) {
-            reject(err)
-        }
-    });
+    const hasGcloud = await hasBin("gcloud");
 
     if (!hasGcloud) {
         console.log("You must install the gcloud application to login with vertesia private npm repository.\nSee https://cloud.google.com/sdk/docs/install");

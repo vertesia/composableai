@@ -1,0 +1,42 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'github-agent/*'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: pnpm/action-setup@v4
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: pnpm
+    - name: Install dependencies
+      run: pnpm install
+    - name: Run build
+      run: pnpm -r build
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        token_format: access_token
+        project_id: dengenlabs
+        service_account: gar-pusher@dengenlabs.iam.gserviceaccount.com
+        workload_identity_provider: projects/265888598630/locations/global/workloadIdentityPools/composable-cloud/providers/github
+        access_token_lifetime: 300s
+        create_credentials_file: true
+    - name: Authenticate to Google Artifact Registry
+      run: pnpm run registry-login --repo-config=.npmrc
+    - name: Publish Package
+      run: |
+        # We modified the .npmrc file to use GAR, which put the Git repository in dirty state.
+        # So we need to disable the Git checks.
+        pnpm publish packages/github-agent --no-git-checks

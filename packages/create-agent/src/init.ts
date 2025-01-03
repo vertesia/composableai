@@ -7,10 +7,14 @@ import { installDeps, installPrivateDeps } from "./deps.js";
 import { gcloudAuth, registryAuth } from "./gcloud.js";
 import { Package } from "./Package.js";
 import { processAndRenameTemplateFile } from "./template.js";
+import { hasBin } from "./hasBin.js";
+import { mkdirSync } from "node:fs";
 
 const { prompt } = enquirer;
 
-export async function init(dirName?: string | undefined) {
+export async function init(pm: string, dirName?: string | undefined) {
+
+    const hasPnpm = pm === "pnpm" || await hasBin("pnpm");
 
     await gcloudAuth();
 
@@ -20,6 +24,7 @@ export async function init(dirName?: string | undefined) {
         dirName = basename(dir);
     } else {
         dir = resolve(dirName);
+        mkdirSync(dir, { recursive: true });
         chdir(dir);
     }
 
@@ -31,6 +36,7 @@ export async function init(dirName?: string | undefined) {
         name: 'pm',
         type: 'select',
         message: "Which package manager to use?",
+        initial: hasPnpm ? 1 : 0,
         choices: ["npm", "pnpm"],
     }, {
         name: 'name',
@@ -61,10 +67,9 @@ export async function init(dirName?: string | undefined) {
         types: 'lib/index.d.ts',
         scripts: {
             "build": "tsc --build && node ./bin/bundle-workflows.mjs lib/esm/workflows.js lib/workflows-bundle.js",
-            "clean": `${cmd} rimraf ./lib tsconfig.tsbuildinfo`,
+            "clean": `rimraf ./lib tsconfig.tsbuildinfo`,
             "dev": "node lib/main.js",
-            "registry-auth": `${cmd} exec artifactregistry-auth`,
-            "preinstall": `${cmd} run registry-auth`
+            "registry-auth": `artifactregistry-auth`
         },
     });
 
