@@ -1,4 +1,4 @@
-import { ImportSpec } from "@becomposable/common";
+import { ImportSpec } from "@vertesia/common";
 import { matchCondition } from "./conditions.js";
 import { ObjectKey, ObjectVisitor, ObjectWalker } from "./walk.js";
 

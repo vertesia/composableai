@@ -1,4 +1,4 @@
-import { ExecuteWorkflowPayload, WorkflowRuleInputType } from "@becomposable/common";
+import { ExecuteWorkflowPayload, WorkflowRuleInputType } from "@vertesia/common";
 import { Command } from "commander";
 import fs from 'fs';
 import { resolve, join, basename } from "path";

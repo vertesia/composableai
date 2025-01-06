@@ -1,5 +1,5 @@
-import { ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionExecutionPayload, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionUpdatePayload, InteractionsExportPayload, InteractionSearchPayload, InteractionSearchQuery } from "@becomposable/common";
-import { ApiTopic, ClientBase, ServerError } from "@becomposable/api-fetch-client";
+import { ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionExecutionPayload, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionUpdatePayload, InteractionsExportPayload, InteractionSearchPayload, InteractionSearchQuery } from "@vertesia/common";
+import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
 import { ComposableClient } from "./client.js";
 import { executeInteraction, executeInteractionByName } from "./execute.js";
 

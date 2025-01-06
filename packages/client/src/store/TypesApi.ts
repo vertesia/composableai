@@ -1,5 +1,5 @@
-import { ContentObjectType, ContentObjectTypeItem, ContentObjectTypeLayout, CreateContentObjectTypePayload, FindPayload, ObjectTypeSearchQuery, ObjectTypeSearchPayload } from "@becomposable/common";
-import { ApiTopic, ClientBase } from "@becomposable/api-fetch-client";
+import { ContentObjectType, ContentObjectTypeItem, ContentObjectTypeLayout, CreateContentObjectTypePayload, FindPayload, ObjectTypeSearchQuery, ObjectTypeSearchPayload } from "@vertesia/common";
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 
 export class TypesApi extends ApiTopic {

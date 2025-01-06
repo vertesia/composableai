@@ -1,4 +1,4 @@
-import { WorkflowExecutionPayload } from "@becomposable/common";
+import { WorkflowExecutionPayload } from "@vertesia/common";
 import { getClient } from "../../utils/client.js";
 import { buildAndPublishMemoryPack } from "../../utils/memory.js";
 import { IterativeGenerationPayload, OutputMemoryMeta, Toc, TocIndex } from "../types.js";

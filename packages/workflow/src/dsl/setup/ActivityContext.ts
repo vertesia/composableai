@@ -1,5 +1,5 @@
-import { ComposableClient } from "@becomposable/client";
-import { DSLActivityExecutionPayload, DSLWorkflowExecutionPayload, Project, WorkflowExecutionPayload } from "@becomposable/common";
+import { ComposableClient } from "@vertesia/client";
+import { DSLActivityExecutionPayload, DSLWorkflowExecutionPayload, Project, WorkflowExecutionPayload } from "@vertesia/common";
 import { log } from "@temporalio/activity";
 import { NoDocumentFound, WorkflowParamNotFound } from "../../errors.js";
 import { getClient } from "../../utils/client.js";

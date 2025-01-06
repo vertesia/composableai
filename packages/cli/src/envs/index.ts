@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { getClient } from "../client.js";
-import { ExecutionEnvironment } from "@becomposable/common";
+import { ExecutionEnvironment } from "@vertesia/common";
 import colors from "ansi-colors";
 
 

@@ -1,4 +1,4 @@
-import { AuthTokenPayload, ProjectRef } from '@becomposable/common';
+import { AuthTokenPayload, ProjectRef } from '@vertesia/common';
 import jwt from 'jsonwebtoken';
 
 export function decodeAuthToken(token: string): AuthTokenPayload {

@@ -1,5 +1,5 @@
-import { AbstractFetchClient, RequestError } from "@becomposable/api-fetch-client";
-import { BulkOperationPayload, BulkOperationResult } from "@becomposable/common";
+import { AbstractFetchClient, RequestError } from "@vertesia/api-fetch-client";
+import { BulkOperationPayload, BulkOperationResult } from "@vertesia/common";
 import { CommandsApi } from "./CommandsApi.js";
 import { ZenoClientNotFoundError } from "./errors.js";
 import { FilesApi } from "./FilesApi.js";

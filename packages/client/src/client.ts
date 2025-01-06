@@ -1,5 +1,5 @@
-import { AbstractFetchClient } from "@becomposable/api-fetch-client";
-import { AuthTokenResponse } from "@becomposable/common";
+import { AbstractFetchClient } from "@vertesia/api-fetch-client";
+import { AuthTokenResponse } from "@vertesia/common";
 import AccountApi from "./AccountApi.js";
 import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";

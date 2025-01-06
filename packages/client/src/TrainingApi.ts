@@ -1,6 +1,6 @@
 import { TrainingJob } from "@llumiverse/core";
-import { ExecutionRunRef, ListTrainingSessionsQuery, TrainingSession, TrainingSessionCreatePayload, TrainingSessionRef } from "@becomposable/common";
-import { ApiTopic, ClientBase } from "@becomposable/api-fetch-client";
+import { ExecutionRunRef, ListTrainingSessionsQuery, TrainingSession, TrainingSessionCreatePayload, TrainingSessionRef } from "@vertesia/common";
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 
 export default class TrainingApi extends ApiTopic {

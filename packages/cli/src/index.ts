@@ -1,4 +1,4 @@
-import { setupMemoCommand } from '@becomposable/memory-cli';
+import { setupMemoCommand } from '@vertesia/memory-cli';
 import { Command } from 'commander';
 import runExport from './codegen/index.js';
 import { genTestData } from './datagen/index.js';

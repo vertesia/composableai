@@ -1,5 +1,5 @@
-import { ComposableClient, StreamSource } from "@becomposable/client";
-import { ContentObject, ContentObjectTypeItem, CreateContentObjectPayload } from "@becomposable/common";
+import { ComposableClient, StreamSource } from "@vertesia/client";
+import { ContentObject, ContentObjectTypeItem, CreateContentObjectPayload } from "@vertesia/common";
 import { Command } from "commander";
 import enquirer from "enquirer";
 import { Dirent, Stats, createReadStream } from "fs";

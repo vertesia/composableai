@@ -1,5 +1,5 @@
-import { ComposableClient } from "@becomposable/client";
-import { ExecutionRun } from "@becomposable/common";
+import { ComposableClient } from "@vertesia/client";
+import { ExecutionRun } from "@vertesia/common";
 import { ApplicationFailure } from "@temporalio/workflow";
 import { OutputMemoryMeta, PartIndex, Toc, TocIndex, TocSection } from "./types.js";
 

@@ -1,4 +1,4 @@
-import { WorkflowExecutionPayload } from "@becomposable/common";
+import { WorkflowExecutionPayload } from "@vertesia/common";
 export { dslWorkflow } from "../dsl-workflow.js";
 
 export async function testChildWorkflow(payload: WorkflowExecutionPayload) {

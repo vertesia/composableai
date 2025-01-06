@@ -1,4 +1,4 @@
-import { WorkflowExecutionPayload } from "@becomposable/common";
+import { WorkflowExecutionPayload } from "@vertesia/common";
 import { log } from "@temporalio/activity";
 import { getClient } from "../../utils/client.js";
 import { expandVars } from "../../utils/expand-vars.js";

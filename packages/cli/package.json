@@ -1,6 +1,6 @@
 {
-    "name": "@becomposable/cli",
-    "version": "0.42.2",
+    "name": "@vertesia/cli",
+    "version": "0.43.0",
     "description": "Code generation for the interaction defined with Composable AI Studio",
     "type": "module",
     "bin": {
@@ -30,11 +30,11 @@
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "dependencies": {
-        "@becomposable/client": "workspace:*",
-        "@becomposable/common": "workspace:*",
-        "@becomposable/memory-cli": "^0.43.0",
-        "@becomposable/memory-commands": "^0.43.0",
-        "@becomposable/workflow": "workspace:*",
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*",
+        "@vertesia/memory-cli": "^0.43.0",
+        "@vertesia/memory-commands": "^0.43.0",
+        "@vertesia/workflow": "workspace:*",
         "ansi-colors": "^4.1.3",
         "ansi-escapes": "^6.2.0",
         "cli-spinners": "^2.9.1",

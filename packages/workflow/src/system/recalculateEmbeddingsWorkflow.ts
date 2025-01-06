@@ -1,6 +1,6 @@
 import { proxyActivities } from "@temporalio/workflow";
 
-import { DSLActivitySpec, DSLWorkflowExecutionPayload, SupportedEmbeddingTypes } from "@becomposable/common";
+import { DSLActivitySpec, DSLWorkflowExecutionPayload, SupportedEmbeddingTypes } from "@vertesia/common";
 import { GenerateEmbeddings } from "../activities/generateEmbeddings.js";
 import * as activities from "../activities/index.js";
 import { NoDocumentFound } from "../errors.js";

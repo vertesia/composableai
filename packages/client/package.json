@@ -1,6 +1,6 @@
 {
-    "name": "@becomposable/client",
-    "version": "0.42.2",
+    "name": "@vertesia/client",
+    "version": "0.43.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -20,8 +20,8 @@
         "vitest": "^2.1.6"
     },
     "dependencies": {
-        "@becomposable/api-fetch-client": "workspace:*",
-        "@becomposable/common": "workspace:*",
+        "@vertesia/api-fetch-client": "workspace:*",
+        "@vertesia/common": "workspace:*",
         "@llumiverse/core": "workspace:*",
         "eventsource": "^2.0.2"
     },

@@ -1,5 +1,5 @@
 
-import { DSLWorkflowExecutionPayload } from "@becomposable/common";
+import { DSLWorkflowExecutionPayload } from "@vertesia/common";
 import { log, proxyActivities } from "@temporalio/workflow";
 import { GetObject } from "../activities/getObjectFromStore.js";
 import * as activities from "../activities/index.js";
@@ -75,7 +75,7 @@ export async function generateObjectText(payload: DSLWorkflowExecutionPayload): 
     log.info("Generated text for object", {res, objectId});
     return res;
 
-} 
+}
 
 
 const ConverterActivity = [

@@ -1,4 +1,4 @@
-import { ExecutionRun } from "@becomposable/common";
+import { ExecutionRun } from "@vertesia/common";
 import { Command } from "commander";
 import { getClient } from "../client.js";
 import { Spinner } from "../utils/console.js";

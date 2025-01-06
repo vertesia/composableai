@@ -1,4 +1,4 @@
-import { DSLWorkflowSpec } from "@becomposable/common";
+import { DSLWorkflowSpec } from "@vertesia/common";
 import { readFileSync, rmSync, writeFileSync } from "fs";
 import { basename, resolve } from "path";
 import * as ts from "typescript";

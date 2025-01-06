@@ -1,4 +1,4 @@
-import { ContentObject, CreateContentObjectPayload, DSLActivityExecutionPayload, DSLActivitySpec } from '@becomposable/common';
+import { ContentObject, CreateContentObjectPayload, DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { log } from "@temporalio/activity";
 import { mutoolPdfToText } from '../conversion/mutool.js';
 import { manyToMarkdown } from '../conversion/pandoc.js';

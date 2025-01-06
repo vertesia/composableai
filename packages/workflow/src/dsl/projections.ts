@@ -1,4 +1,4 @@
-import { DSLActivityExecutionPayload } from "@becomposable/common";
+import { DSLActivityExecutionPayload } from "@vertesia/common";
 import { matchCondition } from "./conditions.js";
 import { Vars } from "./vars.js";
 

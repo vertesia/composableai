@@ -474,6 +474,7 @@ export class TextractProcessor {
         // Build final output
         let fulltext = '';
         let imgNumber = 1;
+        let tableNumber = 1;
         for (const page of pageContents) {
             fulltext += `<page number="${page.pageNumber}">\n`;
             for (const block of page.blocks) {
@@ -483,7 +484,7 @@ export class TextractProcessor {
                     const confidenceAttr = block.confidence !== undefined && this.includeConfidenceInTables
                         ? ` confidence="${block.confidence.toFixed(2)}"`
                         : '';
-                    fulltext += `<table type="csv"${confidenceAttr}>\n`;
+                    fulltext += `<table number=${tableNumber++} type="csv" ${confidenceAttr}>\n`;
                     fulltext += `${block.content}\n`;
                     fulltext += `</table>\n\n`;
                 } else if (block.type === 'image') {

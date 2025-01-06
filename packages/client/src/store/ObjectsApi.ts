@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from '@becomposable/api-fetch-client';
-import { ComplexSearchPayload, ComputeObjectFacetPayload, ContentObject, ContentObjectItem, ContentSource, CreateContentObjectPayload, Embedding, ExportPropertiesPayload, ExportPropertiesResponse, FindPayload, GetFileUrlPayload, GetFileUrlResponse, GetRenditionResponse, GetUploadUrlPayload, ListWorkflowRunsResponse, ObjectSearchPayload, ObjectSearchQuery, SupportedEmbeddingTypes } from '@becomposable/common';
+import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
+import { ComplexSearchPayload, ComputeObjectFacetPayload, ContentObject, ContentObjectItem, ContentSource, CreateContentObjectPayload, Embedding, ExportPropertiesPayload, ExportPropertiesResponse, FindPayload, GetFileUrlPayload, GetFileUrlResponse, GetRenditionResponse, GetUploadUrlPayload, ListWorkflowRunsResponse, ObjectSearchPayload, ObjectSearchQuery, SupportedEmbeddingTypes } from '@vertesia/common';
 
 import { StreamSource } from '../StreamSource.js';
 import { ZenoClient } from './client.js';

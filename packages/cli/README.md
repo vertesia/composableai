@@ -18,7 +18,7 @@ A TTY terminal and Node.js version 18 or higher is required.
 ## Installation
 
 ```bash
-npm -g install @becomposable/cli
+npm -g install @vertesia/cli
 ```
 
 ## Basic Usage

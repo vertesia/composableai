@@ -11,7 +11,7 @@
  */
 
 import { fromWebToken } from "@aws-sdk/credential-providers";
-import { AwsConfiguration, CreateContentObjectPayload, DSLActivityExecutionPayload, DSLActivitySpec, SupportedIntegrations } from "@becomposable/common";
+import { AwsConfiguration, CreateContentObjectPayload, DSLActivityExecutionPayload, DSLActivitySpec, SupportedIntegrations } from "@vertesia/common";
 import type { AwsCredentialIdentityProvider } from "@smithy/types";
 import { log } from "@temporalio/activity";
 import { TextractProcessor } from "../../conversion/TextractProcessor.js";
@@ -80,7 +80,7 @@ export async function convertPdfToStructuredText(payload: DSLActivityExecutionPa
             const buf = await fetchBlobAsBuffer(client, object.content.source);
             await processor.upload(buf);
         }
-        
+
         const jobId = await processor.startAnalysis(objectId);
 
         let jobStatus = await processor.checkJobStatus(jobId);

@@ -1,4 +1,4 @@
-import { DSLWorkflowSpec } from "@becomposable/common";
+import { DSLWorkflowSpec } from "@vertesia/common";
 import { readFile } from "fs/promises";
 import { ValidationError, validateWorkflow } from "./validation.js";
 

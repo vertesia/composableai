@@ -1,4 +1,4 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@becomposable/common";
+import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { log } from "@temporalio/activity";
 import fs from 'fs';
 import { pdfExtractPages } from "../conversion/mutool.js";

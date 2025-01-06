@@ -1,4 +1,4 @@
-import { WorkflowExecutionPayload } from "@becomposable/common";
+import { WorkflowExecutionPayload } from "@vertesia/common";
 import { parse as parseYaml } from "yaml";
 import { getClient } from "../../utils/client.js";
 import { buildAndPublishMemoryPack, loadMemoryPack } from "../../utils/memory.js";

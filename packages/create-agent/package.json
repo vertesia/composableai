@@ -1,0 +1,39 @@
+{
+    "name": "create-vertesia-agent",
+    "version": "0.43.0",
+    "description": "Initialize workflow agent package",
+    "type": "module",
+    "bin": {
+        "create-agent": "./bin/create-agent.mjs"
+    },
+    "main": "./lib/main.js",
+    "types": "./lib/main.d.ts",
+    "files": [
+        "lib",
+        "template",
+        "bin"
+    ],
+    "license": "MIT",
+    "homepage": "https://composableprompts.com/docs",
+    "keywords": [
+        "workflow",
+        "temporal",
+        "agent",
+        "llm",
+        "composable"
+    ],
+    "scripts": {
+        "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+    },
+    "dependencies": {
+        "enquirer": "^2.4.1",
+        "hasbin": "^1.2.3"
+    },
+    "devDependencies": {
+        "@types/hasbin": "^1.2.2",
+        "@types/node": "^22.5.0",
+        "typescript": "^5.7.2"
+    }
+}

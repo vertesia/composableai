@@ -1,5 +1,5 @@
 
-import { ContentEventName, DSLWorkflowExecutionPayload } from "@becomposable/common";
+import { ContentEventName, DSLWorkflowExecutionPayload } from "@vertesia/common";
 import { log, proxyActivities } from "@temporalio/workflow";
 import * as activities from "../activities/index.js";
 
@@ -31,7 +31,7 @@ export async function notifyWebhookWorkflow(payload: NotifyWebhookWorkflowParams
         log.info(`No webhooks to notify`);
         return { notifications: [], message: "No webhooks to notify" };
     }
-    
+
     for (const ep of endpoints) {
         const n = notifyWebhook({
             ...payload,
@@ -61,5 +61,4 @@ export async function notifyWebhookWorkflow(payload: NotifyWebhookWorkflowParams
 
     return { notifications: res, message: "Webhooks notified" };
 
-} 
- 
+}

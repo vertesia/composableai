@@ -1,5 +1,5 @@
-import { validateWorkflow as validate } from "@becomposable/workflow/vars";
-import { DSLWorkflowSpec } from "@becomposable/common";
+import { validateWorkflow as validate } from "@vertesia/workflow/vars";
+import { DSLWorkflowSpec } from "@vertesia/common";
 export class ValidationError extends Error {
     constructor(message: string) {
         super("Invalid workflow definition: " + message);

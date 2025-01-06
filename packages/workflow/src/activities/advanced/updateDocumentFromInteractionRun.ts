@@ -1,4 +1,4 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun } from "@becomposable/common";
+import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFound } from "../../errors.js";
 

@@ -1,4 +1,4 @@
-import { ExecutionRun, InteractionUpdatePayload, InteractionExecutionPayload } from "@becomposable/common";
+import { ExecutionRun, InteractionUpdatePayload, InteractionExecutionPayload } from "@vertesia/common";
 import { ComposableClient, ComposableClientProps } from "./client.js";
 import { executeInteraction } from "./execute.js";
 

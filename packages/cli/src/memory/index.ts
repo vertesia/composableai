@@ -1,4 +1,4 @@
-import { ComposableClient, StreamSource } from "@becomposable/client";
+import { ComposableClient, StreamSource } from "@vertesia/client";
 import { Command } from "commander";
 import { createReadStream } from "fs";
 import { readableToWebStream } from "node-web-stream-adapters";

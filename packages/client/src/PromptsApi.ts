@@ -1,5 +1,5 @@
-import { ComputePromptFacetPayload, PromptSearchPayload, PromptSearchQuery, PromptTemplate, PromptTemplateForkPayload, PromptTemplateCreatePayload, PromptTemplateRef, PromptTemplateUpdatePayload } from "@becomposable/common";
-import { ApiTopic, ClientBase } from "@becomposable/api-fetch-client";
+import { ComputePromptFacetPayload, PromptSearchPayload, PromptSearchQuery, PromptTemplate, PromptTemplateForkPayload, PromptTemplateCreatePayload, PromptTemplateRef, PromptTemplateUpdatePayload } from "@vertesia/common";
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 export interface ComputePromptFacetsResponse {
     role?: { _id: string, count: number }[];

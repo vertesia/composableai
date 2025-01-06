@@ -1,4 +1,4 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@becomposable/common";
+import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { log } from "@temporalio/activity";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { WorkflowParamNotFound } from "../errors.js";
@@ -46,6 +46,6 @@ export async function notifyWebhook(payload: DSLActivityExecutionPayload) {
         throw new Error(`Failed to notify webhook ${target_url}: ${res.statusText}`);
     }
 
-    return {status: res.status, message: res.statusText, url: res.url } 
+    return {status: res.status, message: res.statusText, url: res.url }
 
 }
