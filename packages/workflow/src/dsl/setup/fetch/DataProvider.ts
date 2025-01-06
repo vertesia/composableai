@@ -1,4 +1,4 @@
-import { FindPayload } from "@becomposable/common";
+import { FindPayload } from "@vertesia/common";
 
 function parseSelector(selector: string) {
     const parts = selector.split(/\s+/);

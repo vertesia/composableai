@@ -1,5 +1,5 @@
-import { InteractionBase } from "@becomposable/client";
-import { ExecutionRun, InteractionExecutionPayload } from "@becomposable/common";
+import { InteractionBase } from "@vertesia/client";
+import { ExecutionRun, InteractionExecutionPayload } from "@vertesia/common";
 import { useMemo, useState } from "react";
 
 export function useInteractionStreaming<TProps, TReturn>(interaction: InteractionBase<TProps, TReturn>) {
@@ -7,7 +7,7 @@ export function useInteractionStreaming<TProps, TReturn>(interaction: Interactio
     const [isRunning, setRunning] = useState(false);
     const [text, setText] = useState('');
 
-    const execute = useMemo(() => (payload?: InteractionExecutionPayload<TProps>): Promise<ExecutionRun<TProps, TReturn>> => {
+    const execute = useMemo(() => (payload?: InteractionExecutionPayload): Promise<ExecutionRun<TProps, TReturn>> => {
         if (isRunning) {
             return Promise.reject(new Error('Trying to run the interaction while it is already running.'));
         }

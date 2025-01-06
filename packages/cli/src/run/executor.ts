@@ -1,5 +1,5 @@
-import { ComposableClient } from "@becomposable/client";
-import { ConfigModes, ExecutionRun, RunDataStorageLevel } from "@becomposable/common";
+import { ComposableClient } from "@vertesia/client";
+import { ConfigModes, ExecutionRun, RunDataStorageLevel } from "@vertesia/common";
 
 export class ExecutionQueue {
     requests: ExecutionRequest[] = [];

@@ -1,4 +1,4 @@
-import { WorkflowExecutionPayload } from "@becomposable/common";
+import { WorkflowExecutionPayload } from "@vertesia/common";
 
 import { log, proxyActivities } from "@temporalio/workflow";
 import * as activities from "./activities/index.js";

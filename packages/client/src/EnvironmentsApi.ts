@@ -1,6 +1,6 @@
-import { ExecutionEnvironment, ExecutionEnvironmentCreatePayload, ExecutionEnvironmentRef, ExecutionEnvironmentUpdatePayload, LoadBalancingEnvConfig, MediatorEnvConfig } from "@becomposable/common";
+import { ExecutionEnvironment, ExecutionEnvironmentCreatePayload, ExecutionEnvironmentRef, ExecutionEnvironmentUpdatePayload, LoadBalancingEnvConfig, MediatorEnvConfig } from "@vertesia/common";
 import { AIModel, EmbeddingsOptions, EmbeddingsResult, ModelSearchPayload } from "@llumiverse/core";
-import { ApiTopic, ClientBase } from "@becomposable/api-fetch-client";
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 export default class EnvironmentsApi extends ApiTopic {
     constructor(parent: ClientBase) {

@@ -1,4 +1,4 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec, RenditionProperties } from "@becomposable/common";
+import { DSLActivityExecutionPayload, DSLActivitySpec, RenditionProperties } from "@vertesia/common";
 import { log } from "@temporalio/activity";
 import fs from 'fs';
 import sharp, { FormatEnum } from "sharp";

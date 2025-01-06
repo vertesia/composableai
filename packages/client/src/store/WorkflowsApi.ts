@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from '@becomposable/api-fetch-client';
-import { ActivityCatalog, CreateWorkflowRulePayload, DSLWorkflowDefinition, DSLWorkflowSpec, ExecuteWorkflowPayload, ListWorkflowRunsPayload, ListWorkflowRunsResponse, WorkflowDefinitionRef, WorkflowRule, WorkflowRuleItem, WorkflowRunWithDetails } from '@becomposable/common';
+import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
+import { ActivityCatalog, CreateWorkflowRulePayload, DSLWorkflowDefinition, DSLWorkflowSpec, ExecuteWorkflowPayload, ListWorkflowRunsPayload, ListWorkflowRunsResponse, WorkflowDefinitionRef, WorkflowRule, WorkflowRuleItem, WorkflowRunWithDetails } from '@vertesia/common';
 
 export class WorkflowsApi extends ApiTopic {
 

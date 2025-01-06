@@ -1,4 +1,4 @@
-import { CreateContentObjectTypePayload, DSLActivityExecutionPayload, DSLActivitySpec } from "@becomposable/common";
+import { CreateContentObjectTypePayload, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { log } from "@temporalio/activity";
 import { ActivityContext, setupActivity } from "../dsl/setup/ActivityContext.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
@@ -47,7 +47,7 @@ export async function generateOrAssignContentType(payload: DSLActivityExecutionP
         log.warn(`Object ${objectId} has already a type. Skipping type creation.`);
         return { status: "skipped", message: "Object already has a type: " + object.type.name };
     }
-    
+
     if (!object || (!object.text && !object.content?.type?.startsWith("image/") && !object.content?.type?.startsWith("application/pdf"))) {
         log.info(`Object ${objectId} not found or text is empty and not an image`, { object });
         return { status: "failed", error: "no-text" };

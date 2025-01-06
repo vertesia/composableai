@@ -1,4 +1,4 @@
-import { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec } from "@becomposable/common";
+import { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { projectResult } from "../dsl/projections.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 

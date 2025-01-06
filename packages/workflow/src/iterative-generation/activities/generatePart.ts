@@ -1,5 +1,5 @@
-import { WorkflowExecutionPayload } from "@becomposable/common";
-import { MemoryPack } from "@becomposable/memory";
+import { WorkflowExecutionPayload } from "@vertesia/common";
+import { MemoryPack } from "@vertesia/memory";
 import { ApplicationFailure } from "@temporalio/workflow";
 import { getClient } from "../../utils/client.js";
 import { buildAndPublishMemoryPack, loadMemoryPack } from "../../utils/memory.js";

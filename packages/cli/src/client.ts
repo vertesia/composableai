@@ -1,4 +1,4 @@
-import { ComposableClient } from "@becomposable/client";
+import { ComposableClient } from "@vertesia/client";
 import { Command } from "commander";
 import { config } from "./profiles/index.js";
 

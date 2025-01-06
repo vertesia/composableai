@@ -1,5 +1,5 @@
-import { FindPayload } from "@becomposable/common";
-import { ComposableClient } from "@becomposable/client";
+import { FindPayload } from "@vertesia/common";
+import { ComposableClient } from "@vertesia/client";
 import { DataProvider } from "./DataProvider.js";
 
 function useMongoId(query: Record<string, any>) {

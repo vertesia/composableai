@@ -1,4 +1,4 @@
-import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@becomposable/common";
+import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { log } from "@temporalio/activity";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFound, NoDocumentFound } from "../../errors.js";

@@ -1,5 +1,5 @@
-import { ComposableClient } from "@becomposable/client";
-import { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec, ProjectConfigurationEmbeddings, SupportedEmbeddingTypes } from "@becomposable/common";
+import { ComposableClient } from "@vertesia/client";
+import { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec, ProjectConfigurationEmbeddings, SupportedEmbeddingTypes } from "@vertesia/common";
 import { EmbeddingsResult } from "@llumiverse/core";
 import { log } from "@temporalio/activity";
 import * as tf from '@tensorflow/tfjs-node';

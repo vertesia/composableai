@@ -1,5 +1,5 @@
-import { ComposableClient } from '@becomposable/client';
-import { ContentEventName, DSLActivityExecutionPayload, DSLActivitySpec, DSLWorkflowExecutionPayload, FindPayload } from '@becomposable/common';
+import { ComposableClient } from '@vertesia/client';
+import { ContentEventName, DSLActivityExecutionPayload, DSLActivitySpec, DSLWorkflowExecutionPayload, FindPayload } from '@vertesia/common';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker } from '@temporalio/worker';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

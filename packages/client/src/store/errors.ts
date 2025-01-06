@@ -1,4 +1,4 @@
-import { RequestError } from "@becomposable/api-fetch-client";
+import { RequestError } from "@vertesia/api-fetch-client";
 
 export class ZenoClientNotFoundError extends RequestError {
     constructor(req: Request, error: RequestError) {

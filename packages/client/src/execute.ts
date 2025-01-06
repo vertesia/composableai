@@ -1,4 +1,4 @@
-import { ExecutionRun, ExecutionRunStatus, InteractionExecutionPayload, NamedInteractionExecutionPayload } from '@becomposable/common';
+import { ExecutionRun, ExecutionRunStatus, InteractionExecutionPayload, NamedInteractionExecutionPayload } from '@vertesia/common';
 import { ComposableClient } from './client.js';
 
 export function EventSourceProvider(): Promise<typeof EventSource> {

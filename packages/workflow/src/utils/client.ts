@@ -2,8 +2,8 @@
  * get a zeno client for a given token
  */
 
-import { ComposableClient } from "@becomposable/client";
-import { WorkflowExecutionPayload } from "@becomposable/common";
+import { ComposableClient } from "@vertesia/client";
+import { WorkflowExecutionPayload } from "@vertesia/common";
 
 
 export function getClient(payload: WorkflowExecutionPayload) {

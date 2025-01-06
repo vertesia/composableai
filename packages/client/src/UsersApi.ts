@@ -1,5 +1,5 @@
-import { User } from "@becomposable/common";
-import { ApiTopic, ClientBase } from "@becomposable/api-fetch-client";
+import { User } from "@vertesia/common";
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 
 

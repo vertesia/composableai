@@ -1,5 +1,5 @@
-import { ApiKey, ApiKeyWithValue, CreateOrUpdateApiKeyPayload, CreatePublicKeyPayload } from "@becomposable/common";
-import { ApiTopic, ClientBase } from "@becomposable/api-fetch-client";
+import { ApiKey, ApiKeyWithValue, CreateOrUpdateApiKeyPayload, CreatePublicKeyPayload } from "@vertesia/common";
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 export class ApiKeysApi extends ApiTopic {
 

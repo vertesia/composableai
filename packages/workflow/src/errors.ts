@@ -1,4 +1,4 @@
-import { DSLActivitySpec, DSLWorkflowSpec } from "@becomposable/common";
+import { DSLActivitySpec, DSLWorkflowSpec } from "@vertesia/common";
 
 
 export class NoDocumentFound extends Error {

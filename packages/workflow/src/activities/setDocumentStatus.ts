@@ -1,4 +1,4 @@
-import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@becomposable/common";
+import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 
 export interface SetDocumentStatusParams {

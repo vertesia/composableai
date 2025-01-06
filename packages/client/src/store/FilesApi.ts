@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@becomposable/api-fetch-client";
-import { GetFileUrlPayload, GetFileUrlResponse, GetUploadUrlPayload } from "@becomposable/common";
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { GetFileUrlPayload, GetFileUrlResponse, GetUploadUrlPayload } from "@vertesia/common";
 import { StreamSource } from "../StreamSource.js";
 
 export const MEMORIES_PREFIX = 'memories';

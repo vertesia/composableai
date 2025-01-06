@@ -1,4 +1,4 @@
-import { ComposableClient } from "@becomposable/client";
+import { ComposableClient } from "@vertesia/client";
 import crypto from "crypto";
 import { createWriteStream } from "fs";
 import tmp from "tmp";

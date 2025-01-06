@@ -1,4 +1,4 @@
-import { DSLActivitySpec, DSLWorkflowSpec, DSLWorkflowStep } from "@becomposable/common";
+import { DSLActivitySpec, DSLWorkflowSpec, DSLWorkflowStep } from "@vertesia/common";
 import { Vars, splitPath } from "./vars.js";
 
 export function validateWorkflow(workflow: DSLWorkflowSpec, vars: string[] = []) {

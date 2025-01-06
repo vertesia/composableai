@@ -1,6 +1,6 @@
 {
-    "name": "@becomposable/react",
-    "version": "0.42.2",
+    "name": "@vertesia/react",
+    "version": "0.43.0",
     "description": "React helpers for Composable AI",
     "type": "module",
     "types": "./lib/index.d.ts",
@@ -32,8 +32,8 @@
         "react": ">=16.8.0"
     },
     "dependencies": {
-        "@becomposable/client": "^0.30.1",
-        "@becomposable/common": "^0.30.1",
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*",
         "@types/json-schema": "^7.0.15",
         "json-schema": "^0.4.0"
     }

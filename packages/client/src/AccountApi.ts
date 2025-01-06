@@ -1,5 +1,5 @@
-import { Account, InviteUserRequestPayload, InviteUserResponsePayload, OnboardingProgress, ProjectRef, TransientToken, UpdateAccountPayload, User, UserInviteTokenData } from "@becomposable/common";
-import { ApiTopic, ClientBase } from "@becomposable/api-fetch-client";
+import { Account, InviteUserRequestPayload, InviteUserResponsePayload, OnboardingProgress, ProjectRef, TransientToken, UpdateAccountPayload, User, UserInviteTokenData } from "@vertesia/common";
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 export default class AccountApi extends ApiTopic {
 

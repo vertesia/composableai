@@ -5,7 +5,7 @@ import {
     DSLChildWorkflowStep,
     DSLWorkflowExecutionPayload,
     WorkflowExecutionPayload
-} from "@becomposable/common";
+} from "@vertesia/common";
 import { ActivityInterfaceFor, ActivityOptions, executeChild, log, proxyActivities, startChild, UntypedActivities } from "@temporalio/workflow";
 import ms, { StringValue } from 'ms';
 import { ActivityParamNotFound, NoDocumentFound, WorkflowParamNotFound } from "../errors.js";

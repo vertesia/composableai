@@ -1,6 +1,6 @@
 {
-    "name": "@becomposable/json",
-    "version": "0.42.2",
+    "name": "@vertesia/json",
+    "version": "0.43.0",
     "description": "JSON utlities",
     "type": "module",
     "types": "./lib/types/index.d.ts",

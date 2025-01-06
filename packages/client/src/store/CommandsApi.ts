@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@becomposable/api-fetch-client";
-import { EmbeddingsStatusResponse, GenericCommandResponse, ProjectConfigurationEmbeddings, SupportedEmbeddingTypes } from "@becomposable/common";
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { EmbeddingsStatusResponse, GenericCommandResponse, ProjectConfigurationEmbeddings, SupportedEmbeddingTypes } from "@vertesia/common";
 
 
 export class CommandsApi extends ApiTopic {

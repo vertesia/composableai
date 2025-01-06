@@ -1,4 +1,4 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@becomposable/common";
+import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { log } from "@temporalio/activity";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { TruncateSpec } from "../utils/tokens.js";

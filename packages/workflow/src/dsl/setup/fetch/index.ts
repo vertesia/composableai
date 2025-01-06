@@ -1,5 +1,5 @@
-import { ActivityFetchSpec } from "@becomposable/common";
-import { ComposableClient } from "@becomposable/client";
+import { ActivityFetchSpec } from "@vertesia/common";
+import { ComposableClient } from "@vertesia/client";
 import { DataProvider } from "./DataProvider.js";
 
 

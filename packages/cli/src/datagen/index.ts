@@ -3,7 +3,7 @@ import { resolve } from "path";
 import { getClient } from "../client.js";
 import { Spinner, restoreCursotOnExit } from "../utils/console.js";
 import { writeJsonFile } from "../utils/stdio.js";
-import { ConfigModes } from "@becomposable/common";
+import { ConfigModes } from "@vertesia/common";
 
 function convertConfigMode(raw_config_mode: any): ConfigModes | undefined {
     const configStr: string =  typeof raw_config_mode === 'string' ? raw_config_mode.toUpperCase() : "";

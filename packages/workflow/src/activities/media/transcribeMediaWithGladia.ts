@@ -1,4 +1,4 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations } from "@becomposable/common";
+import { DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations } from "@vertesia/common";
 import { activityInfo, CompleteAsyncError, log } from "@temporalio/activity";
 import { FetchClient } from "api-fetch-client";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";

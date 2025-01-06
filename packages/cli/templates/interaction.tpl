@@ -1,7 +1,7 @@
 //#export {{projectId}} {{id}} @{{date}}
 // This is a generated file. Do not edit.
 
-import { InteractionBase, StudioClient, StudioClientProps } from "@becomposable/client";
+import { InteractionBase, StudioClient, StudioClientProps } from "@vertesia/client";
 
 {{types}}
 /**

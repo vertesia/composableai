@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@becomposable/api-fetch-client";
-import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, Project, ProjectIntegrationListEntry, ProjectRef, SupportedIntegrations } from "@becomposable/common";
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, Project, ProjectIntegrationListEntry, ProjectRef, SupportedIntegrations } from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {

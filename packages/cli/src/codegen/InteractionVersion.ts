@@ -1,4 +1,4 @@
-import { InteractionRefWithSchema, InteractionStatus, mergePromptsSchema } from "@becomposable/common";
+import { InteractionRefWithSchema, InteractionStatus, mergePromptsSchema } from "@vertesia/common";
 import { compile as compileSchema } from 'json-schema-to-typescript';
 import { join } from 'path';
 import { writeFile } from "../utils/stdio.js";

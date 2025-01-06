@@ -1,5 +1,5 @@
-import { ComposableClient } from "@becomposable/client";
-import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun, ExecutionRunStatus, InteractionExecutionConfiguration, RunSearchPayload } from "@becomposable/common";
+import { ComposableClient } from "@vertesia/client";
+import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun, ExecutionRunStatus, InteractionExecutionConfiguration, RunSearchPayload } from "@vertesia/common";
 import { activityInfo, log } from "@temporalio/activity";
 import { projectResult } from "../dsl/projections.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
