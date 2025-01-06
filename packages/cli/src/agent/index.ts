@@ -1,31 +1,34 @@
 import { Command } from "commander";
-import { createOrUpdateNpmRegistry, getGooglePrincipal, getGoogleToken } from "./registry.js";
+import { connectToProject } from "./connect.js";
+import { getGooglePrincipal, getGoogleToken } from "./registry.js";
 
 export function registerAgentCommand(program: Command) {
     const agent = program.command("agent");
 
+    agent.command("connect [packageDir]")
+        .description("Connect a node package to a Vertesia project. If no packageDir is specified the current dir will be used.")
+        .action(async (pkgDir: string) => {
+            await connectToProject(program, pkgDir);
+        });
+
     agent.command("deploy <file>")
         .description("Deploy a custom workflow worker.")
         .action(async (_options: Record<string, any> = {}) => {
-            console.log("NOT IPLEMENTED");
+            console.log("TODO: NOT IPLEMENTED");
         });
 
     agent.command("gtoken")
         .description("Get a google cloud token for the current vertesia project.")
-        .action(async () => {
-            await getGoogleToken(program);
-        });
-    agent.command("gprincipal")
-        .description("Get the google cloud principal for the current project.")
-        .action(async () => {
-            await getGooglePrincipal(program);
+        .option("-p, --profile", "The profile name to use. If specified it will be used instead of the current profile.")
+        .action(async (options: Record<string, any> = {}) => {
+            await getGoogleToken(program, options.profile);
         });
 
-    agent.command("npm-registry")
-        .description("Create or update the given npmrc file with Vertesia registry entry.")
-        .option("-f <npmrc>", "The npmrc file to update. If not specified the generated npmrc content will be printed to stdout")
+    agent.command("gprincipal")
+        .description("Get the google cloud principal for the current project.")
+        .option("-p, --profile", "The profile name to use. If specified it will be used instead of the current profile.")
         .action(async (options: Record<string, any> = {}) => {
-            createOrUpdateNpmRegistry(program, options.f);
+            await getGooglePrincipal(program, options.profile);
         });
 
 }

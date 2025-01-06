@@ -22,7 +22,8 @@ program.version(getVersion());
 
 program.command("upgrade")
     .description("Upgrade to the latest version of the CLI")
-    .action(upgrade)
+    .option("-y, --yes", "Skip the confirmation prompt")
+    .action((options: Record<string, any> = {}) => upgrade(options.yes))
 
 program.command("projects")
     .description("List the projects you have access to")
@@ -180,6 +181,7 @@ program.parseAsync(process.argv).catch(err => {
 
 process.on("unhandledRejection", (err: any) => {
     if (err.status === 401) { // token expired?
+        console.error("ERROROR", err);
         tryRrefreshToken();
     }
 })

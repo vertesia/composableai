@@ -1,22 +1,20 @@
 import enquirer from "enquirer";
+import { mkdirSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { chdir } from "node:process";
 import { fileURLToPath } from "node:url";
+import { connectToVertesia, installOrUpdateCli, VERTESIA_CLI } from "./cli.js";
 import { copyTree } from "./copy.js";
-import { installDeps, installPrivateDeps } from "./deps.js";
-import { gcloudAuth, registryAuth } from "./gcloud.js";
+import { installDeps } from "./deps.js";
+import { hasBin } from "./hasBin.js";
 import { Package } from "./Package.js";
 import { processAndRenameTemplateFile } from "./template.js";
-import { hasBin } from "./hasBin.js";
-import { mkdirSync } from "node:fs";
 
 const { prompt } = enquirer;
 
 export async function init(pm: string, dirName?: string | undefined) {
 
     const hasPnpm = pm === "pnpm" || await hasBin("pnpm");
-
-    await gcloudAuth();
 
     let dir: string;
     if (!dirName) {
@@ -28,16 +26,13 @@ export async function init(pm: string, dirName?: string | undefined) {
         chdir(dir);
     }
 
-    // copy template to current directory
-    const templDir = resolve(fileURLToPath(import.meta.url), '../../template');
-    copyTree(templDir, dir);
-
+    const pms = ["npm", "pnpm"];
     const answer: any = await prompt([{
         name: 'pm',
         type: 'select',
         message: "Which package manager to use?",
         initial: hasPnpm ? 1 : 0,
-        choices: ["npm", "pnpm"],
+        choices: pms,
     }, {
         name: 'name',
         type: 'input',
@@ -56,7 +51,11 @@ export async function init(pm: string, dirName?: string | undefined) {
         message: "Description",
     }]);
 
-    const cmd = answer.pm || "npm";
+    const cmd = answer.pm;
+
+    // copy template to current directory
+    const templDir = resolve(fileURLToPath(import.meta.url), '../../template');
+    copyTree(templDir, dir);
 
     const pkg = new Package({
         name: answer.name,
@@ -69,7 +68,7 @@ export async function init(pm: string, dirName?: string | undefined) {
             "build": "tsc --build && node ./bin/bundle-workflows.mjs lib/esm/workflows.js lib/workflows-bundle.js",
             "clean": `rimraf ./lib tsconfig.tsbuildinfo`,
             "dev": "node lib/main.js",
-            "registry-auth": `artifactregistry-auth`
+            "connect": `${VERTESIA_CLI} agent connect`,
         },
     });
 
@@ -78,9 +77,10 @@ export async function init(pm: string, dirName?: string | undefined) {
     console.log("Generating .env file");
     processAndRenameTemplateFile(`${dir}/.env.template`, { name: pkg.name });
 
+    await installOrUpdateCli(cmd);
+
+    await connectToVertesia();
+
     installDeps(cmd);
 
-    registryAuth(cmd);
-
-    installPrivateDeps(cmd);
 }
