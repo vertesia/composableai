@@ -1,12 +1,11 @@
+import { Command } from "commander";
 import enquirer from "enquirer";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-//import { createProfile } from "../profiles/commands.js";
-import { Command } from "commander";
 import { join, resolve } from "node:path";
 import { createProfile, updateProfile } from "../profiles/commands.js";
 import { config, shouldRefreshProfileToken } from "../profiles/index.js";
-import { createOrUpdateNpmRegistry } from "./registry.js";
 import { ConfigResult } from "../profiles/server/index.js";
+import { createOrUpdateNpmRegistry } from "./registry.js";
 
 const { prompt } = enquirer;
 
@@ -32,9 +31,12 @@ export async function connectToProject(program: Command, pkgDir: string) {
         pkg.vertesia = {} as Record<string, any>;
     }
     let profileName: string | undefined = pkg.vertesia.profile;
-    const onAuthenticationDone = async (result: ConfigResult) => {
-        config.use(result.profile);
+    const updateNpmrc = async (profile: string) => {
+        config.use(profile);
         await createOrUpdateNpmRegistry(program, npmrcFile);
+    }
+    const onAuthenticationDone = async (result: ConfigResult) => {
+        await updateNpmrc(result.profile);
     }
     try {
         if (!profileName) {
@@ -52,6 +54,8 @@ export async function connectToProject(program: Command, pkgDir: string) {
         if (shouldRefreshProfileToken(profile, 10)) {
             console.log("Refreshing auth token for profile:", profileName);
             await updateProfile(profileName, onAuthenticationDone);
+        } else {
+            updateNpmrc(profileName);
         }
     } finally {
         if (pkg.vertesia.profile !== profileName) {

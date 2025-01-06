@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { connectToProject } from "./connect.js";
 import { getGooglePrincipal, getGoogleToken } from "./registry.js";
+import { deploy } from "./deploy.js";
 
 export function registerAgentCommand(program: Command) {
     const agent = program.command("agent");
@@ -11,10 +12,10 @@ export function registerAgentCommand(program: Command) {
             await connectToProject(program, pkgDir);
         });
 
-    agent.command("deploy <file>")
+    agent.command("deploy [packageDir]")
         .description("Deploy a custom workflow worker.")
-        .action(async (_options: Record<string, any> = {}) => {
-            console.log("TODO: NOT IPLEMENTED");
+        .action(async (pkgDir: string, _options: Record<string, any> = {}) => {
+            await deploy(program, pkgDir || process.cwd());
         });
 
     agent.command("gtoken")

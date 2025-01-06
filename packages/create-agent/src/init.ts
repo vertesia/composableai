@@ -55,7 +55,7 @@ export async function init(pm: string, dirName?: string | undefined) {
 
     // copy template to current directory
     const templDir = resolve(fileURLToPath(import.meta.url), '../../template');
-    copyTree(templDir, dir);
+    await copyTree(templDir, dir);
 
     const pkg = new Package({
         name: answer.name,
@@ -65,17 +65,21 @@ export async function init(pm: string, dirName?: string | undefined) {
         main: 'lib/index.js',
         types: 'lib/index.d.ts',
         scripts: {
-            "build": "tsc --build && node ./bin/bundle-workflows.mjs lib/esm/workflows.js lib/workflows-bundle.js",
+            "build": "tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
             "clean": `rimraf ./lib tsconfig.tsbuildinfo`,
             "dev": "node lib/main.js",
             "connect": `${VERTESIA_CLI} agent connect`,
+            "publish": `\${npm_package_vertesia_pm} run build && ${VERTESIA_CLI} agent deploy`,
         },
+        vertesia: {
+            pm: cmd
+        }
     });
 
     pkg.saveTo(`${dir}/package.json`);
 
     console.log("Generating .env file");
-    processAndRenameTemplateFile(`${dir}/.env.template`, { name: pkg.name });
+    processAndRenameTemplateFile(`${dir}/env.template`, { name: pkg.name });
 
     await installOrUpdateCli(cmd);
 
