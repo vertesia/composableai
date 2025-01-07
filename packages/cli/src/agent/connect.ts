@@ -55,7 +55,7 @@ export async function connectToProject(program: Command, pkgDir: string) {
             console.log("Refreshing auth token for profile:", profileName);
             await updateProfile(profileName, onAuthenticationDone);
         } else {
-            updateNpmrc(profileName);
+            await updateNpmrc(profileName);
         }
     } finally {
         if (pkg.vertesia.profile !== profileName) {

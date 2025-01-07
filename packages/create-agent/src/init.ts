@@ -79,7 +79,7 @@ export async function init(pm: string, dirName?: string | undefined) {
     pkg.saveTo(`${dir}/package.json`);
 
     console.log("Generating .env file");
-    processAndRenameTemplateFile(`${dir}/env.template`, { name: pkg.name });
+    processAndRenameTemplateFile(`${dir}/.env.template`, { name: pkg.name });
 
     await installOrUpdateCli(cmd);
 
