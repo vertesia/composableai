@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, renameSync } from "fs";
+import { readFileSync, renameSync, writeFileSync } from "fs";
 
 const VAR_RX = /\$\{([a-zA-Z_$][a-zA-Z_$0-9]*)\}/g;
 

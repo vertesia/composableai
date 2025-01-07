@@ -1,8 +1,12 @@
 import colors from 'ansi-colors';
 import enquirer from "enquirer";
 import jwt from 'jsonwebtoken';
-import { config } from "./index.js";
+import { config, shouldRefreshProfileToken } from "./index.js";
+import { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
+
+export type OnResultCallback = (result: ConfigResult) => void | Promise<void>;
+
 
 export async function listProfiles() {
     const selected = config.current?.name;
@@ -73,7 +77,7 @@ export function deleteProfile(name: string) {
     config.remove(name).save();
 }
 
-export async function createProfile(name?: string, target?: string) {
+export async function createProfile(name?: string, target?: string, onResult?: OnResultCallback) {
     const format = (value: string) => value.trim();
     const questions: any[] = [];
     if (!name) {
@@ -116,27 +120,29 @@ export async function createProfile(name?: string, target?: string) {
         }
     }
 
-    config.createProfile(name!, target!).start();
+    config.createProfile(name!, target!).start(onResult);
+
+    return name!;
 }
 
-export async function updateProfile(name?: string) {
+export async function updateProfile(name?: string, onResult?: OnResultCallback) {
     if (!name) {
         name = await selectProfile("Select the profile to update");
     }
     const profile = config.getProfile(name!);
     if (!profile) {
         console.error(`Profile ${name} not found`);
-        return;
+        process.exit(1);
     }
-    config.updateProfile(name).start();
+    config.updateProfile(name).start(onResult);
 }
 
-export function updateCurrentProfile() {
+export function updateCurrentProfile(onResult?: OnResultCallback) {
     if (!config.current) {
         console.log("No profile is selected. Run `cpcli config use <name>` to select a profile");
         process.exit(1);
     }
-    config.updateProfile(config.current.name).start();
+    config.updateProfile(config.current.name).start(onResult);
 }
 
 
@@ -151,18 +157,19 @@ async function selectProfile(message = "Select the profile") {
 }
 
 export async function tryRrefreshToken() {
-    if (config.current?.apikey) {
-        const token = jwt.decode(config.current.apikey, { json: true });
-        if (token?.exp && token.exp * 1000 < Date.now()) {
-            console.log();
-            console.log(colors.bold("Operation Failed:"), colors.red("Authentication token expired!"));
-            console.log();
-            _doRefreshToken(config.current.name);
-        }
+    if (!config.current) {
+        console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
+        process.exit(1);
+    }
+    if (shouldRefreshProfileToken(config.current)) {
+        console.log();
+        console.log(colors.bold("Operation Failed:"), colors.red("Authentication token expired!"));
+        console.log();
+        _doRefreshToken(config.current.name);
     }
 }
 
-async function _doRefreshToken(profileName: string) {
+async function _doRefreshToken(profileName: string, onResult?: OnResultCallback) {
     const r: any = await prompt({
         name: 'refresh',
         type: "confirm",
@@ -170,6 +177,6 @@ async function _doRefreshToken(profileName: string) {
         initial: true,
     })
     if (r.refresh) {
-        config.updateProfile(profileName).start();
+        config.updateProfile(profileName).start(onResult);
     }
 }

@@ -1,5 +1,5 @@
-import { Account, InviteUserRequestPayload, InviteUserResponsePayload, OnboardingProgress, ProjectRef, TransientToken, UpdateAccountPayload, User, UserInviteTokenData } from "@vertesia/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { Account, InviteUserRequestPayload, InviteUserResponsePayload, OnboardingProgress, ProjectRef, TransientToken, UpdateAccountPayload, User, UserInviteTokenData } from "@vertesia/common";
 
 export default class AccountApi extends ApiTopic {
 
@@ -70,6 +70,15 @@ export default class AccountApi extends ApiTopic {
      */
     onboardingProgress(): Promise<OnboardingProgress> {
         return this.get('/onboarding');
+    }
+
+    /**
+     * Get a google auth token for the current project.
+     * This token can be used to access exposed google cloud services
+     * @returns
+     */
+    getGoogleToken(): Promise<{ principal: string, token: string }> {
+        return this.get('/google-token');
     }
 
 }
