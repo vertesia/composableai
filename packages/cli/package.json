@@ -4,7 +4,8 @@
     "description": "Code generation for the interaction defined with Composable AI Studio",
     "type": "module",
     "bin": {
-        "composable": "./bin/app.js"
+        "composable": "./bin/app.js",
+        "docker-credential-vertesia": "./bin/docker-credential-vertesia.js"
     },
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",

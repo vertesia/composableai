@@ -1,39 +1,20 @@
 import { Command } from "commander";
 import enquirer from "enquirer";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
 import { createProfile, updateProfile } from "../profiles/commands.js";
 import { config, shouldRefreshProfileToken } from "../profiles/index.js";
 import { ConfigResult } from "../profiles/server/index.js";
+import { AgentProject } from "./project.js";
 import { createOrUpdateNpmRegistry } from "./registry.js";
 
 const { prompt } = enquirer;
 
-export async function connectToProject(program: Command, pkgDir: string) {
-    if (!pkgDir) {
-        pkgDir = process.cwd();
-    }
-    pkgDir = resolve(pkgDir);
-    if (!existsSync(pkgDir)) {
-        console.log('Directory not found:', pkgDir);
-        process.exit(1);
-    }
-    const pkgFile = join(pkgDir, 'package.json');
-    if (!existsSync(pkgFile)) {
-        console.log('package.json not found at', pkgFile);
-        process.exit(1);
-    }
-    const npmrcFile = join(pkgDir, '.npmrc');
-
-    const pkgContent = readFileSync(pkgFile, 'utf8');
-    const pkg = JSON.parse(pkgContent);
-    if (!pkg.vertesia) {
-        pkg.vertesia = {} as Record<string, any>;
-    }
+export async function connectToProject(program: Command) {
+    const project = new AgentProject();
+    const pkg = project.packageJson;
     let profileName: string | undefined = pkg.vertesia.profile;
     const updateNpmrc = async (profile: string) => {
         config.use(profile);
-        await createOrUpdateNpmRegistry(program, npmrcFile);
+        await createOrUpdateNpmRegistry(program, project.npmrcFile);
     }
     const onAuthenticationDone = async (result: ConfigResult) => {
         await updateNpmrc(result.profile);
@@ -61,7 +42,7 @@ export async function connectToProject(program: Command, pkgDir: string) {
         if (pkg.vertesia.profile !== profileName) {
             // save package.json
             pkg.vertesia.profile = profileName;
-            writeFileSync(pkgFile, JSON.stringify(pkg, null, 2), 'utf8');
+            pkg.save();
         }
     }
 }

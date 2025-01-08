@@ -13,8 +13,14 @@ interface PackageJson {
     scripts?: Record<string, string>;
     bin?: Record<string, string>,
     vertesia?: {
-        profile?: string;
         pm?: string;
+        profile?: string;
+        image?: {
+            repository?: string;
+            organization?: string;
+            name?: string;
+            version?: string;
+        }
     };
 }
 

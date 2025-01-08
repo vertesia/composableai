@@ -132,6 +132,7 @@ export class Config {
         this.current = this.profiles.find(p => p.name === name);
         if (!this.current) {
             console.error(`No configuration named ${name} found`);
+            process.exit(1);
         }
         return this;
     }

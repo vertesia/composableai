@@ -12,9 +12,23 @@ import { processAndRenameTemplateFile } from "./template.js";
 
 const { prompt } = enquirer;
 
-export async function init(pm: string, dirName?: string | undefined) {
+export async function init(dirName?: string | undefined) {
 
-    const hasPnpm = pm === "pnpm" || await hasBin("pnpm");
+    const isDockerInstalled = await hasBin("docker");
+    if (!isDockerInstalled) {
+        console.error("Docker is not installed. Please install Docker first.");
+        process.exit(1);
+    }
+
+    let initialPm = "npm";
+    const currentPmPath = process.env.npm_execpath;
+    if (!currentPmPath) {
+        initialPm = await hasBin("pnpm") ? "pnpm" : "npm";
+    } else if (currentPmPath.endsWith("pnpm")) {
+        initialPm = "pnpm";
+    } else if (currentPmPath.endsWith("yarn")) {
+        initialPm = "yarn";
+    }
 
     let dir: string;
     if (!dirName) {
@@ -26,18 +40,24 @@ export async function init(pm: string, dirName?: string | undefined) {
         chdir(dir);
     }
 
-    const pms = ["npm", "pnpm"];
+    const pms = ["npm", "pnpm", "yarn"];
     const answer: any = await prompt([{
         name: 'pm',
         type: 'select',
         message: "Which package manager to use?",
-        initial: hasPnpm ? 1 : 0,
+        initial: pms.indexOf(initialPm),
         choices: pms,
     }, {
-        name: 'name',
+        name: 'agent_org',
         type: 'input',
-        message: "Package name",
+        message: "Organization name (e.g. mycompany)",
+        validate: (input: string) => /[a-zA-Z_][a-zA-Z_0-9-]/g.test(input),
+    }, {
+        name: 'agent_name',
+        type: 'input',
+        message: "Agent name (e.g. myagent)",
         initial: dirName,
+        validate: (input: string) => /[a-zA-Z_][a-zA-Z_0-9-]/g.test(input),
     }, {
         name: 'version',
         type: 'input',
@@ -58,21 +78,25 @@ export async function init(pm: string, dirName?: string | undefined) {
     await copyTree(templDir, dir);
 
     const pkg = new Package({
-        name: answer.name,
+        name: '@' + answer.agent_org + '/' + answer.agent_name,
         version: answer.version || '1.0.0',
         description: answer.description || '',
         type: 'module',
         main: 'lib/index.js',
         types: 'lib/index.d.ts',
         scripts: {
-            "build": "tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
-            "clean": `rimraf ./lib tsconfig.tsbuildinfo`,
-            "dev": "node lib/main.js",
+            "clean": "rimraf ./lib tsconfig.tsbuildinfo",
+            "build": "${npm_package_vertesia_pm} run clean && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
+            "start": "node lib/main.js",
             "connect": `${VERTESIA_CLI} agent connect`,
-            "publish": `\${npm_package_vertesia_pm} run build && ${VERTESIA_CLI} agent deploy`,
         },
         vertesia: {
-            pm: cmd
+            pm: cmd,
+            image: {
+                repository: "us-docker.pkg.dev/dengenlabs/us.gcr.io",
+                organization: answer.agent_org,
+                name: answer.agent_name,
+            }
         }
     });
 
