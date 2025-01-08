@@ -6,7 +6,7 @@ import { config } from "../profiles/index.js";
 import { AgentProject } from "./project.js";
 
 
-const LOCAL_DOCKER_CONFIG = 'docker.json';
+const LOCAL_DOCKER_CONFIG_DIR = '.docker';
 
 export function genrateDockerConfig() {
     return JSON.stringify({
@@ -40,10 +40,15 @@ export async function getDockerCredentials(serverUrl: string) {
 }
 
 export function runDocker(args: string[]) {
-    const config = join(process.cwd(), LOCAL_DOCKER_CONFIG);
+    const config = join(process.cwd(), LOCAL_DOCKER_CONFIG_DIR);
     const baseArgs: string[] = [];
     if (existsSync(config)) {
         baseArgs.push("--config", config);
     }
-    return spawnSync('docker', baseArgs.concat(args), { stdio: 'inherit' });
+    return spawnSync('docker', baseArgs.concat(args), {
+        stdio: 'inherit',
+        env: {
+            DOCKER_BUILDKIT: "1"
+        }
+    });
 }

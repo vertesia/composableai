@@ -8,7 +8,7 @@ import { copyTree } from "./copy.js";
 import { installDeps } from "./deps.js";
 import { hasBin } from "./hasBin.js";
 import { Package } from "./Package.js";
-import { processAndRenameTemplateFile } from "./template.js";
+import { processAndRenameTemplateFile, processVarsInFile } from "./template.js";
 
 const { prompt } = enquirer;
 
@@ -77,6 +77,7 @@ export async function init(dirName?: string | undefined) {
     const templDir = resolve(fileURLToPath(import.meta.url), '../../template');
     await copyTree(templDir, dir);
 
+    console.log("Generating package.json");
     const pkg = new Package({
         name: '@' + answer.agent_org + '/' + answer.agent_name,
         version: answer.version || '1.0.0',
@@ -102,8 +103,15 @@ export async function init(dirName?: string | undefined) {
 
     pkg.saveTo(`${dir}/package.json`);
 
+    const service_name = answer.agent_org + '_' + answer.agent_name;
     console.log("Generating .env file");
-    processAndRenameTemplateFile(`${dir}/.env.template`, { name: pkg.name });
+    processAndRenameTemplateFile(`${dir}/.env.template`, {
+        service_name
+    });
+    console.log("Generating Dockerfile");
+    processVarsInFile(`${dir}/Dockerfile`, {
+        service_name
+    });
 
     await installOrUpdateCli(cmd);
 

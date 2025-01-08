@@ -1,32 +1,28 @@
 FROM node:23.5-slim AS base
-WORKDIR /app
-
-
-FROM base AS build
-
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-
 COPY . /app
+WORKDIR /app
 
-# Authenticate with Google Artifact Registry
-RUN --mount=type=secret,id=gcp,target=/tmp/credentials.json \
-    export GOOGLE_APPLICATION_CREDENTIALS=/tmp/credentials.json && \
-    pnpm add -g google-artifactregistry-auth && \
-    pnpm run registry-login && \
-    pnpm install --frozen-lockfile && \
-    pnpm run -r build
+FROM base AS prod-deps
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
 
+FROM base AS build
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm run build
 
-FROM base AS app
+FROM base
 RUN apt-get update -y && \
     apt-get install -y openssl ca-certificates
 
-COPY --from=datadog/serverless-init:1 /datadog-init /app/datadog-init
-COPY --from=build /app /app
+COPY --from=prod-deps /app/node_modules /app/node_modules
+COPY --from=build /app/lib /app/lib
+COPY --from=build /app/bin /app/bin
 
-ENV SERVICE_NAME=github-agent
+COPY --from=datadog/serverless-init:1 /datadog-init /app/datadog-init
+
+ENV SERVICE_NAME=${service_name}
 
 ENTRYPOINT ["/app/datadog-init"]
-CMD ["node", "/app/apps/github-agent/lib/main.js"]
+CMD [ "pnpm", "start" ]
