@@ -3,6 +3,7 @@ import { runCommand } from "./utils.js";
 const DEPS: string[] = [
     "@dglabs/agent-runner",
     "@temporalio/worker",
+    "@temporalio/workflow"
 ];
 const DEV_DEPS: string[] = [
     "typescript",

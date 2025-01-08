@@ -9,8 +9,6 @@ export interface BuildOptions {
 
 export async function build(options: BuildOptions) {
     const project = new AgentProject();
-    console.log("Building project sources");
-    project.buildSources();
     console.log("Building docker image version " + options.version);
     const tag = project.buildDockerImage(options.version);
     console.log("Docker image is:", tag);

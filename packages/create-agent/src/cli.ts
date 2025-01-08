@@ -5,7 +5,7 @@ import { runCommand } from "./utils.js";
 const { prompt } = enquirer;
 
 const VERTESIA_CLI_PKGNAME = "@vertesia/cli";
-const VERTESIA_CLI = "composable";
+const VERTESIA_CLI = "vertesia";
 
 export { VERTESIA_CLI };
 
