@@ -7,7 +7,7 @@ import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.
 import { OnResultCallback } from "./commands.js";
 
 export function getConfigFile(path?: string) {
-    const dir = join(os.homedir(), '.composable');
+    const dir = join(os.homedir(), '.vertesia');
     if (!path || path === '/') {
         return dir;
     } else {
