@@ -39,13 +39,17 @@ export async function getDockerCredentials(serverUrl: string) {
     };
 }
 
-export function runDocker(args: string[]) {
+export function runDockerWithAgentConfig(args: string[]) {
     const config = join(process.cwd(), LOCAL_DOCKER_CONFIG_DIR);
     const baseArgs: string[] = [];
     if (existsSync(config)) {
         baseArgs.push("--config", config);
     }
-    return spawnSync('docker', baseArgs.concat(args), {
+    return runDocker(baseArgs.concat(args));
+}
+
+export function runDocker(args: string[]) {
+    return spawnSync('docker', args, {
         stdio: 'inherit',
         env: {
             DOCKER_BUILDKIT: "1"

@@ -2,7 +2,7 @@ import { Command } from "commander";
 import enquirer from "enquirer";
 import { getClient } from "../client.js";
 import { Version } from "./Version.js";
-import { runDocker } from "./docker.js";
+import { runDocker, runDockerWithAgentConfig } from "./docker.js";
 import { AgentProject } from "./project.js";
 
 const { prompt } = enquirer;
@@ -19,9 +19,10 @@ export async function deploy(program: Command, options: DeployOptions) {
     const version = options.version ? options.version : options.latest ? 'latest' : undefined;
     let localTag: string;
     if (!version) { // build a new image
-        project.buildSources();
         localTag = project.buildDockerImage(); // use latest version
     } else {
+        //TDOO check if image exists locally?
+        //Ex: docker images --filter "reference=vertesia/test:latest" --format "{{.Repository}}:{{.Tag}}"
         localTag = pkg.getLocalDockerTag(version);
     }
 
@@ -53,7 +54,7 @@ export async function deploy(program: Command, options: DeployOptions) {
     console.log(`Tagging ${remoteTag}`);
     runDocker(['tag', localTag, remoteTag]);
     console.log(`Pushing ${remoteTag}`);
-    runDocker(['push', remoteTag]);
+    runDockerWithAgentConfig(['push', remoteTag]);
 
     const client = getClient(program);
     client; //TODO

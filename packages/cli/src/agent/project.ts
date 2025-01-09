@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { runDocker } from "./docker.js";
+import { runDocker, runDockerWithAgentConfig } from "./docker.js";
 
 export interface AgentConfig {
     profile?: string;
@@ -147,7 +147,7 @@ export class AgentProject {
 
     buildDockerImage(version: string = 'latest') {
         const tag = this.packageJson.getLocalDockerTag(version);
-        runDocker(['build', '-t', tag, '.']);
+        runDocker(['buildx', 'build', '-t', tag, '.']);
         return tag;
     }
 
@@ -160,7 +160,11 @@ export class AgentProject {
 
     buildAndPushDockerImage(version: string) {
         const tag = this.buildAndTagVertesiaImage(version);
-        runDocker(['push', tag]);
+        this.pushDockerImage(tag);
         return tag;
+    }
+
+    pushDockerImage(tag: string) {
+        runDockerWithAgentConfig(['push', tag]);
     }
 }
