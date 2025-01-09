@@ -1,6 +1,6 @@
 import { ComputeRunFacetPayload, ExecutionRun, ExecutionRunRef, FindPayload, RunCreatePayload, RunListingFilters, RunListingQueryOptions, RunSearchPayload } from "@vertesia/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { ComposableClient } from "./client.js";
+import { VertesiaClient } from "./client.js";
 
 export interface FilterOption {
     id: string,
@@ -68,7 +68,7 @@ export class RunsApi extends ApiTopic {
     }
 
     create(payload: RunCreatePayload): Promise<ExecutionRun> {
-        const sessionTags = (this.client as ComposableClient).sessionTags;
+        const sessionTags = (this.client as VertesiaClient).sessionTags;
         if (sessionTags) {
             let tags = Array.isArray(sessionTags) ? sessionTags : [sessionTags];
             if (Array.isArray(payload.tags)) {

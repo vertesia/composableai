@@ -1,4 +1,4 @@
-import { ComposableClient } from '@vertesia/client';
+import { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, DSLActivityExecutionPayload, DSLActivitySpec, DSLWorkflowExecutionPayload, FindPayload } from '@vertesia/common';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker } from '@temporalio/worker';
@@ -27,7 +27,7 @@ class DocumentTestProvider extends DataProvider {
         }
     }
 
-    static factory(_context: ComposableClient) {
+    static factory(_context: VertesiaClient) {
         return new DocumentTestProvider();
     }
 }

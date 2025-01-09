@@ -1,16 +1,16 @@
 import { ActivityFetchSpec } from "@vertesia/common";
-import { ComposableClient } from "@vertesia/client";
+import { VertesiaClient } from "@vertesia/client";
 import { DataProvider } from "./DataProvider.js";
 
 
-const factories: Record<string, ((client: ComposableClient, source?: string) => DataProvider)> = {};
+const factories: Record<string, ((client: VertesiaClient, source?: string) => DataProvider)> = {};
 
 
-export function registerFetchProviderFactory(name: string, factory: ((client: ComposableClient) => DataProvider)) {
+export function registerFetchProviderFactory(name: string, factory: ((client: VertesiaClient) => DataProvider)) {
     factories[name] = factory;
 }
 
-export function getFetchProvider(client: ComposableClient, fetchSpec: ActivityFetchSpec) {
+export function getFetchProvider(client: VertesiaClient, fetchSpec: ActivityFetchSpec) {
     const factory = factories[fetchSpec.type];
     if (!factory) {
         throw new Error("Unknown data provider: " + fetchSpec.source);

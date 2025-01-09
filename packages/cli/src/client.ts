@@ -1,9 +1,9 @@
-import { ComposableClient } from "@vertesia/client";
+import { VertesiaClient } from "@vertesia/client";
 import { Command } from "commander";
 import { config, Profile } from "./profiles/index.js";
 
 
-let _client: ComposableClient | undefined;
+let _client: VertesiaClient | undefined;
 //TODO remove program?
 export function getClient(_program?: Command) {
     //TODO use program -p ioption to get the profile?
@@ -22,6 +22,6 @@ function createClient(profile: Profile | undefined) {
         sessionTags: profile?.session_tags ? profile.session_tags.split(/\s*,\s*/) : 'cli',
     }
 
-    return new ComposableClient(env)
+    return new VertesiaClient(env)
 
 }

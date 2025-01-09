@@ -2,7 +2,7 @@
  * get a zeno client for a given token
  */
 
-import { ComposableClient } from "@vertesia/client";
+import { VertesiaClient } from "@vertesia/client";
 import { WorkflowExecutionPayload } from "@vertesia/common";
 
 
@@ -20,7 +20,7 @@ export function getClient(payload: WorkflowExecutionPayload) {
         throw new Error("Content Store URL is missing from WorkflowExecutionPayload.servers.storeUrl");
     }
 
-    const client = new ComposableClient({
+    const client = new VertesiaClient({
         serverUrl: payload.config.studio_url,
         storeUrl: payload.config.store_url,
         apikey: payload.auth_token

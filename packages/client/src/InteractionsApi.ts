@@ -1,6 +1,6 @@
 import { ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionExecutionPayload, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionUpdatePayload, InteractionsExportPayload, InteractionSearchPayload, InteractionSearchQuery } from "@vertesia/common";
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { ComposableClient } from "./client.js";
+import { VertesiaClient } from "./client.js";
 import { executeInteraction, executeInteractionByName } from "./execute.js";
 
 export interface ComputeInteractionFacetsResponse {
@@ -112,7 +112,7 @@ export default class InteractionsApi extends ApiTopic {
      **/
     execute<P = any, R = any>(id: string, payload: InteractionExecutionPayload = {},
         onChunk?: (chunk: string) => void): Promise<ExecutionRun<P, R>> {
-        return executeInteraction(this.client as ComposableClient, id, payload, onChunk).catch(err => {
+        return executeInteraction(this.client as VertesiaClient, id, payload, onChunk).catch(err => {
             if (err instanceof ServerError && err.payload?.id) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {
@@ -138,7 +138,7 @@ export default class InteractionsApi extends ApiTopic {
      */
     executeByName<P = any, R = any>(nameWithTag: string, payload: InteractionExecutionPayload = {},
         onChunk?: (chunk: string) => void): Promise<ExecutionRun<P, R>> {
-        return executeInteractionByName(this.client as ComposableClient, nameWithTag, payload, onChunk).catch(err => {
+        return executeInteractionByName(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
             if (err instanceof ServerError && err.payload?.id) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {

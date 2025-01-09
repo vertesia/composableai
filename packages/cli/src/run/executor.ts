@@ -1,4 +1,4 @@
-import { ComposableClient } from "@vertesia/client";
+import { VertesiaClient } from "@vertesia/client";
 import { ConfigModes, ExecutionRun, RunDataStorageLevel } from "@vertesia/common";
 
 export class ExecutionQueue {
@@ -27,12 +27,12 @@ export class ExecutionQueue {
 }
 
 function convertRunData(raw_run_data: any): RunDataStorageLevel | undefined {
-    const levelStr: string =  typeof raw_run_data === 'string' ? raw_run_data.toUpperCase() : "";
+    const levelStr: string = typeof raw_run_data === 'string' ? raw_run_data.toUpperCase() : "";
     return Object.values(RunDataStorageLevel).includes(levelStr as RunDataStorageLevel) ? levelStr as RunDataStorageLevel : undefined;
 }
 
 function convertConfigMode(raw_config_mode: any): ConfigModes | undefined {
-    const configStr: string =  typeof raw_config_mode === 'string' ? raw_config_mode.toUpperCase() : "";
+    const configStr: string = typeof raw_config_mode === 'string' ? raw_config_mode.toUpperCase() : "";
     return Object.values(ConfigModes).includes(configStr as ConfigModes) ? configStr as ConfigModes : undefined;
 }
 
@@ -41,7 +41,7 @@ export class ExecutionRequest {
     runNumber?: number;
 
     constructor(
-        public readonly client: ComposableClient,
+        public readonly client: VertesiaClient,
         public interactionSpec: string, // namespace:name@version
         public data: any,
         public options: Record<string, any>) {
