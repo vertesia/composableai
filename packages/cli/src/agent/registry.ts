@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { getClient } from "../client.js";
 import { config } from "../profiles/index.js";
+import { AgentProject } from "./project.js";
 
 
 const REGISTRY_URI_ABS_PATH = "//us-central1-npm.pkg.dev/dengenlabs/npm/";
@@ -29,8 +30,13 @@ export async function getGooglePrincipal(program: Command, profileName?: string)
     console.log((await client.account.getGoogleToken()).principal);
 }
 
-export async function createOrUpdateNpmRegistry(program: Command, npmrcFile: string) {
-    const client = getClient(program);
+export async function updateNpmrc(project: AgentProject, profile: string) {
+    config.use(profile);
+    await createOrUpdateNpmRegistry(project.npmrcFile);
+}
+
+export async function createOrUpdateNpmRegistry(npmrcFile: string) {
+    const client = getClient();
     const gtok = await client.account.getGoogleToken();
 
     npmrcFile = resolve(npmrcFile);

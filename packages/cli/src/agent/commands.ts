@@ -1,8 +1,13 @@
+import colors from "ansi-colors";
 import { Command } from "commander";
+import fs from "fs";
+import os from "os";
+import { join } from "path";
 import { getClient } from "../client.js";
 import { runDocker, runDockerWithAgentConfig, runDockerWithOutput } from "./docker.js";
 import { AgentProject } from './project.js';
 import { tryRrefreshProjectToken } from './refresh.js';
+import { updateNpmrc } from "./registry.js";
 import { validateVersion } from './version.js';
 
 const LATEST_VERSION = "latest";
@@ -31,12 +36,17 @@ export async function publish(program: Command, version: string) {
     console.log("TODO publish to studio")
     const client = getClient(program);
     client; //TODO
-    //TODO
     //client.store.agents.deploy();
 }
 
 export async function build() {
     const project = new AgentProject();
+
+    const refreshResult = await tryRrefreshProjectToken(project);
+    if (refreshResult) {
+        await updateNpmrc(project, refreshResult.profile);
+    }
+
     const tag = project.getLocalDockerTag(LATEST_VERSION);
     console.log(`Building docker image: ${tag}`);
     runDocker(['buildx', 'build', '-t', tag, '.']);
@@ -52,6 +62,27 @@ export async function release(version: string) {
     const versionTag = project.getLocalDockerTag(version);
 
     runDocker(['tag', latestTag, versionTag]);
+}
+
+export function run(version: string = LATEST_VERSION) {
+    if (version !== LATEST_VERSION && !validateVersion(version)) {
+        console.log("Invalid version format: " + version + ". Use major.minor.patch format.");
+        process.exit(1);
+    }
+    const project = new AgentProject();
+    const tag = project.getLocalDockerTag(version);
+    // we need to inject the .env file into the container
+    // and to get the google credentials needed by the worker
+    // TODO: the google credentials will only work with vertesia users ...
+    const args = ['run', '--env-file', '.env'];
+    const googleCreds = getDefaultGoogleCreddentials();
+    if (!googleCreds) {
+        console.warn("Warning: Google credentials not found!");
+    } else {
+        args.push('-e', `GOOGLE_APPLICATION_CREDENTIALS='${googleCreds}'`);
+    }
+    args.push(tag)
+    runDocker(args);
 }
 
 export async function listVersions() {
@@ -93,10 +124,28 @@ export async function listVersions() {
 
 function printVersion(version: string, local: TagInfo | undefined, remote: TagInfo | undefined) {
     if (!local && !remote) return;
-    console.log(`${version} - ${local?.name || 'N/A'} => ${remote?.name || 'N/A'}`);
+    const isLatest = version === LATEST_VERSION;
+    console.log(colors.bold(isLatest ? version : `v${version}`));
+    console.log(`\t${colors.green("Local tag:")} ${local ? local.name + ':' + version : 'N/A'}`);
+    if (remote) {
+        console.log(`\t${colors.green("published to:")} ${remote.name}:${version}`);
+    } else if (isLatest) {
+        console.log(colors.dim("\tcannot be published"));
+    } else {
+        console.log(colors.dim("\tnot published"));
+    }
 }
 
 interface TagInfo {
     version: string;
     name: string;
+}
+
+function getDefaultGoogleCreddentials() {
+    const file = join(os.homedir(), '.config/gcloud/application_default_credentials.json');
+    try {
+        return fs.readFileSync(file, 'utf8');
+    } catch (err: any) {
+        return null;
+    }
 }

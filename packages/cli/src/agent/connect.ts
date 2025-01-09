@@ -1,23 +1,18 @@
-import { Command } from "commander";
 import enquirer from "enquirer";
 import { createProfile, updateProfile } from "../profiles/commands.js";
 import { config, shouldRefreshProfileToken } from "../profiles/index.js";
 import { ConfigResult } from "../profiles/server/index.js";
 import { AgentProject } from "./project.js";
-import { createOrUpdateNpmRegistry } from "./registry.js";
+import { updateNpmrc } from "./registry.js";
 
 const { prompt } = enquirer;
 
-export async function connectToProject(program: Command) {
+export async function connectToProject() {
     const project = new AgentProject();
     const pkg = project.packageJson;
     let profileName: string | undefined = pkg.vertesia.profile;
-    const updateNpmrc = async (profile: string) => {
-        config.use(profile);
-        await createOrUpdateNpmRegistry(program, project.npmrcFile);
-    }
     const onAuthenticationDone = async (result: ConfigResult) => {
-        await updateNpmrc(result.profile);
+        await updateNpmrc(project, result.profile);
     }
     try {
         if (!profileName) {
@@ -36,7 +31,7 @@ export async function connectToProject(program: Command) {
             console.log("Refreshing auth token for profile:", profileName);
             await updateProfile(profileName, onAuthenticationDone);
         } else {
-            await updateNpmrc(profileName);
+            await updateNpmrc(project, profileName);
         }
     } finally {
         if (pkg.vertesia.profile !== profileName) {

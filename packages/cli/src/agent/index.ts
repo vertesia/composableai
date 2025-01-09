@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { build, listVersions, publish, release } from "./commands.js";
+import { build, listVersions, publish, release, run } from "./commands.js";
 import { connectToProject } from "./connect.js";
 import { getGooglePrincipal, getGoogleToken } from "./registry.js";
 
@@ -12,7 +12,7 @@ export function registerAgentCommand(program: Command) {
             if (pkgDir) {
                 process.chdir(pkgDir);
             }
-            await connectToProject(program);
+            await connectToProject();
         });
 
     agent.command("publish <version>")
@@ -35,6 +35,7 @@ export function registerAgentCommand(program: Command) {
             }
             await build();
         });
+
     agent.command("release [version]")
         .description("Promote the latest version to a named version (tag it).")
         .option("-d, --dir [project_dir]", "Use this as the current directory.")
@@ -44,6 +45,17 @@ export function registerAgentCommand(program: Command) {
             }
             await release(version);
         });
+
+    agent.command("run [version]")
+        .description("Run the docker image identified by the given version or the 'latest' version if no version is given.")
+        .option("-d, --dir [project_dir]", "Use this as the current directory.")
+        .action(async (version: string, options: Record<string, any>) => {
+            if (options.dir) {
+                process.chdir(options.dir);
+            }
+            await run(version);
+        });
+
     agent.command("versions")
         .description("List existing versions.")
         .action(async (_options: Record<string, any>) => {
