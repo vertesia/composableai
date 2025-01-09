@@ -1,7 +1,14 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { runDocker, runDockerWithAgentConfig } from "./docker.js";
+
+/**
+ * Manage docker images:
+ * - build the latest image: vertesia agent build => agent_org/agent_name:latest
+ * - promote the latest build to a version => vertesia agent release 1.0.0 => agent_org/agent_name:1.0.0
+ * - list available versions => vertesia agent versions --remote
+ * - publish a specific image version => vertesia agent publish 1.0.0
+ */
 
 export interface AgentConfig {
     profile?: string;
@@ -10,7 +17,6 @@ export interface AgentConfig {
         repository: string;
         organization: string;
         name: string;
-        version?: string;
     }
 }
 
@@ -55,7 +61,7 @@ export class PackageJson implements AgentPackageJson {
         this.data.vertesia.profile = value;
     }
 
-    getLocalDockerTag(version: string = "latest") {
+    getLocalDockerTag(version: string) {
         const image = this.vertesia.image;
         if (!image || !image.organization || !image.name) {
             console.log('Agent configuration not found or not valid in package.json');
@@ -64,7 +70,7 @@ export class PackageJson implements AgentPackageJson {
         return `${image.organization}/${image.name}:${version}`;
     }
 
-    getVertesiaDockerTag(version: string = "latest") {
+    getVertesiaDockerTag(version: string) {
         const image = this.vertesia.image;
         if (!image || !image.repository || !image.organization || !image.name) {
             console.log('Agent configuration not found or not valid in package.json');
@@ -134,6 +140,14 @@ export class AgentProject {
         return this._pkg;
     }
 
+    getVertesiaDockerTag(version: string) {
+        return this.packageJson.getVertesiaDockerTag(version);
+    }
+
+    getLocalDockerTag(version: string) {
+        return this.packageJson.getLocalDockerTag(version);
+    }
+
     /**
      * Build the project sources using the configured package manager.
      */
@@ -145,26 +159,4 @@ export class AgentProject {
         spawnSync(this.packageJson.pm, ['run', 'build'], { stdio: 'inherit' });
     }
 
-    buildDockerImage(version: string = 'latest') {
-        const tag = this.packageJson.getLocalDockerTag(version);
-        runDocker(['buildx', 'build', '-t', tag, '.']);
-        return tag;
-    }
-
-    buildAndTagVertesiaImage(version: string) {
-        const localTag = this.buildDockerImage(version);
-        const vertesiaTag = this.packageJson.getVertesiaDockerTag(version);
-        runDocker(['tag', localTag, vertesiaTag]);
-        return vertesiaTag;
-    }
-
-    buildAndPushDockerImage(version: string) {
-        const tag = this.buildAndTagVertesiaImage(version);
-        this.pushDockerImage(tag);
-        return tag;
-    }
-
-    pushDockerImage(tag: string) {
-        runDockerWithAgentConfig(['push', tag]);
-    }
 }

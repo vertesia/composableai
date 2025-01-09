@@ -21,8 +21,7 @@ async function getGoogleToken(pkgDir?: string) {
     const project = new AgentProject(pkgDir);
     const pkg = project.packageJson;
     if (!pkg.vertesia.profile) {
-        console.log('Profile not found in package.json');
-        process.exit(1);
+        throw new Error("Profile entry not found in package.json");
     }
     config.use(pkg.vertesia.profile); // will exit if profile not found
     const client = getClient();
@@ -34,7 +33,7 @@ export async function getDockerCredentials(serverUrl: string) {
     const token = await getGoogleToken();
     return {
         ServerURL: serverUrl,
-        Username: "_json_key",
+        Username: "oauth2accesstoken",
         Secret: token,
     };
 }
@@ -49,10 +48,47 @@ export function runDockerWithAgentConfig(args: string[]) {
 }
 
 export function runDocker(args: string[]) {
-    return spawnSync('docker', args, {
+    const r = spawnSync('docker', args, {
         stdio: 'inherit',
         env: {
+            ...process.env,
             DOCKER_BUILDKIT: "1"
         }
     });
+    // check for errors
+    if (r.error) {
+        console.error(`Failed to execute command "docker ${args.join(' ')}":`, r.error);
+        process.exit(2);
+    }
+    // Check for non-zero exit code
+    if (r.status !== 0) {
+        console.error(
+            `Command "docker ${args.join(' ')}" failed with exit code ${r.status}`
+        );
+        process.exit(r.status);
+    }
+    return r;
+}
+
+export function runDockerWithOutput(args: string[]) {
+    const r = spawnSync('docker', args, {
+        encoding: 'utf-8',
+        env: {
+            ...process.env,
+            DOCKER_BUILDKIT: "1"
+        }
+    });
+    // check for errors
+    if (r.error) {
+        console.error(`Failed to execute command "docker ${args.join(' ')}":`, r.error);
+        process.exit(2);
+    }
+    // Check for non-zero exit code
+    if (r.status !== 0) {
+        console.error(
+            `Command "docker ${args.join(' ')}" failed with exit code ${r.status}\n${r.stderr}`
+        );
+        process.exit(r.status);
+    }
+    return r.stdout.trim();
 }

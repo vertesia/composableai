@@ -19,7 +19,6 @@ interface PackageJson {
             repository?: string;
             organization?: string;
             name?: string;
-            version?: string;
         }
     };
 }

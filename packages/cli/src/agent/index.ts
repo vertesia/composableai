@@ -1,7 +1,6 @@
 import { Command } from "commander";
-import { build } from "./build.js";
+import { build, listVersions, publish, release } from "./commands.js";
 import { connectToProject } from "./connect.js";
-import { deploy } from "./deploy.js";
 import { getGooglePrincipal, getGoogleToken } from "./registry.js";
 
 export function registerAgentCommand(program: Command) {
@@ -16,26 +15,39 @@ export function registerAgentCommand(program: Command) {
             await connectToProject(program);
         });
 
-    agent.command("deploy [pkgDir]")
+    agent.command("publish <version>")
         .description("Deploy a custom workflow worker. The user will be asked for a target image version.")
-        .option("-p, --profile [profile]", "The profile name to use. If not specified the one from the package.json will be used.")
-        .option("--version [version]", "Deploy the given version of the local docker image. Do not build another image.")
-        .option("--latest", "Use the latest version of the local docker image. A shortcut to '--version latest'. If neither --latest nor --version is specified then a new image will be built.")
-        .action(async (pkgDir: string, options: Record<string, any> = {}) => {
-            if (pkgDir) {
-                process.chdir(pkgDir);
+        .option("-d, --dir [project_dir]", "Use this as the current directory.")
+        //.option("-p, --profile [profile]", "The profile name to use. If not specified the one from the package.json will be used.")
+        .action(async (version: string, options: Record<string, any> = {}) => {
+            if (options.dir) {
+                process.chdir(options.dir);
             }
-            await deploy(program, options);
+            await publish(program, version);
         });
 
-    agent.command("build [pkgDir]")
-        .description("Build a local docker image.")
-        .option("-v, --version [version]", "The version to use for the image. By default 'latest' is used.")
-        .action(async (pkgDir: string, options: Record<string, any> = {}) => {
-            if (pkgDir) {
-                process.chdir(pkgDir);
+    agent.command("build")
+        .description("Build a local docker image using 'latest' as version.")
+        .option("-d, --dir [project_dir]", "Use this as the current directory.")
+        .action(async (options: Record<string, any>) => {
+            if (options.dir) {
+                process.chdir(options.dir);
             }
-            await build(options);
+            await build();
+        });
+    agent.command("release [version]")
+        .description("Promote the latest version to a named version (tag it).")
+        .option("-d, --dir [project_dir]", "Use this as the current directory.")
+        .action(async (version: string, options: Record<string, any>) => {
+            if (options.dir) {
+                process.chdir(options.dir);
+            }
+            await release(version);
+        });
+    agent.command("versions")
+        .description("List existing versions.")
+        .action(async (_options: Record<string, any>) => {
+            await listVersions();
         });
 
     agent.command("gtoken")

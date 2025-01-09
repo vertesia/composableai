@@ -9,12 +9,18 @@ function handleNoOp() {
 
 // Function to handle the `get` command
 async function handleGet(serverUrl: string) {
-    console.log(">>>>>>>>> get token for push", serverUrl, process.cwd());
-    process.exit(1); //TODO
+    // we support us-docker.pkg.dev for now
+    if (!serverUrl.endsWith("-docker.pkg.dev")) {
+        process.exit(0); // ignore
+    }
     try {
         const credentials = await getDockerCredentials(serverUrl);
+        if (process.env.DEBUG_DOCKER_CREDS) {
+            fs.writeFileSync("./docker-creds-helper.log", "Get token for registry " + serverUrl + " => " + JSON.stringify(credentials, null, 2), "utf8");
+        }
         process.stdout.write(JSON.stringify(credentials));
     } catch (error: any) {
+        fs.writeFileSync("./docker-creds-helper-error.log", "Get token for registry " + serverUrl + " => " + JSON.stringify(error, null, 2), "utf8");
         console.error("Error fetching credentials:", error.message);
         process.exit(1);
     }
@@ -33,8 +39,7 @@ function main() {
     switch (command) {
         case "get":
             const stdin = fs.readFileSync(0, "utf-8");
-            const { ServerURL } = JSON.parse(stdin);
-            handleGet(ServerURL);
+            handleGet(stdin.trim());
             break;
 
         case "store":
