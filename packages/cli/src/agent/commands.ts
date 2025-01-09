@@ -75,11 +75,10 @@ export function run(version: string = LATEST_VERSION) {
     // and to get the google credentials needed by the worker
     // TODO: the google credentials will only work with vertesia users ...
     const args = ['run', '--env-file', '.env'];
-    const googleCreds = getDefaultGoogleCreddentials();
-    if (!googleCreds) {
-        console.warn("Warning: Google credentials not found!");
-    } else {
-        args.push('-e', `GOOGLE_APPLICATION_CREDENTIALS='${googleCreds}'`);
+    const googleCredsFile = getGoogleCreddentialsFile();
+    if (googleCredsFile) {
+        args.push('-v', `${googleCredsFile}:/tmp/google-credentials.json`);
+        args.push('-e', 'GOOGLE_APPLICATION_CREDENTIALS=/tmp/google-credentials.json');
     }
     args.push(tag)
     runDocker(args);
@@ -141,11 +140,11 @@ interface TagInfo {
     name: string;
 }
 
-function getDefaultGoogleCreddentials() {
+function getGoogleCreddentialsFile() {
     const file = join(os.homedir(), '.config/gcloud/application_default_credentials.json');
-    try {
-        return fs.readFileSync(file, 'utf8');
-    } catch (err: any) {
+    if (fs.existsSync(file)) {
+        return file;
+    } else {
         return null;
     }
 }
