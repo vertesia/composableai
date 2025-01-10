@@ -34,6 +34,19 @@ export function getConfigUrl(value: ConfigUrlRef) {
             }
     }
 }
+export function getCloudTypeFromConfigUrl(url: string) {
+    if (url.startsWith("https://localhost")) {
+        return "staging";
+    } else if (url.startsWith("https://staging.")) {
+        return "staging";
+    } else if (url.startsWith("https://preview.")) {
+        return "preview";
+    } else if (url.startsWith("https://cloud.")) {
+        return "production";
+    } else {
+        throw new Error("Unknown cloud env type");
+    }
+}
 
 export interface Profile {
     name: string;
