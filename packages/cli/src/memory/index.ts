@@ -1,4 +1,4 @@
-import { ComposableClient, StreamSource } from "@vertesia/client";
+import { VertesiaClient, StreamSource } from "@vertesia/client";
 import { Command } from "commander";
 import { createReadStream } from "fs";
 import { readableToWebStream } from "node-web-stream-adapters";
@@ -11,7 +11,7 @@ export function getPublishMemoryAction(program: Command) {
     }
 }
 
-async function publishMemory(client: ComposableClient, file: string, name: string) {
+async function publishMemory(client: VertesiaClient, file: string, name: string) {
     const stream = readableToWebStream(createReadStream(file));
     const path = await client.files.uploadMemoryPack(new StreamSource(stream,
         name,

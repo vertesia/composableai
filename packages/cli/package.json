@@ -1,10 +1,11 @@
 {
     "name": "@vertesia/cli",
-    "version": "0.43.0",
+    "version": "0.45.3",
     "description": "Code generation for the interaction defined with Composable AI Studio",
     "type": "module",
     "bin": {
-        "composable": "./bin/app.js"
+        "vertesia": "./bin/app.js",
+        "docker-credential-vertesia": "./bin/docker-credential-vertesia.js"
     },
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",

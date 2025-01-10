@@ -47,7 +47,7 @@ export async function startConfigSession(config_url: string, payload: ConfigPayl
         res.statusCode = 200;
         res.end();
 
-        callback(result);
+        await callback(result);
         server.close(); // close the server
     });
     const port = (server.address() as net.AddressInfo).port;
@@ -71,7 +71,7 @@ export async function startConfigSession(config_url: string, payload: ConfigPayl
         if (resultText) {
             try {
                 const result = JSON.parse(answer.result.trim());
-                callback(result);
+                await callback(result);
                 console.log('Authentication completed.');
             } catch (e) {
                 console.error("Invalid token");

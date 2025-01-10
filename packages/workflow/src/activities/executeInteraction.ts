@@ -1,4 +1,4 @@
-import { ComposableClient } from "@vertesia/client";
+import { VertesiaClient } from "@vertesia/client";
 import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun, ExecutionRunStatus, InteractionExecutionConfiguration, RunSearchPayload } from "@vertesia/common";
 import { activityInfo, log } from "@temporalio/activity";
 import { projectResult } from "../dsl/projections.js";
@@ -53,7 +53,7 @@ const JSON: DSLActivitySpec = {
     }
 }
 
-export interface InteractionExecutionParams extends ModelOptions{
+export interface InteractionExecutionParams extends ModelOptions {
     /**
      * The environment to use. If not specified the project default environment will be used.
      * If the latter is not specified an exeption will be thrown.
@@ -117,7 +117,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload) {
 
 }
 
-export async function executeInteractionFromActivity(client: ComposableClient, interactionName: string, params: InteractionExecutionParams, prompt_data: any, debug?: boolean) {
+export async function executeInteractionFromActivity(client: VertesiaClient, interactionName: string, params: InteractionExecutionParams, prompt_data: any, debug?: boolean) {
     const userTags = params.tags;
     const info = activityInfo();
     const runId = info.workflowExecution.runId;

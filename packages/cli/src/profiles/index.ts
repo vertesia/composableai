@@ -1,12 +1,13 @@
 import { existsSync, mkdirSync, statSync } from "fs";
-import os from "os";
+import jwt from 'jsonwebtoken';
+import os from "node:os";
 import { join } from "path";
 import { readJsonFile, writeJsonFile } from "../utils/stdio.js";
 import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.js";
-
+import { OnResultCallback } from "./commands.js";
 
 export function getConfigFile(path?: string) {
-    const dir = join(os.homedir(), '.composable');
+    const dir = join(os.homedir(), '.vertesia');
     if (!path || path === '/') {
         return dir;
     } else {
@@ -51,7 +52,19 @@ interface ProfilesData {
     profiles: Profile[];
 }
 
+export function shouldRefreshProfileToken(profile: Profile, thresholdInSeconds = 1) {
+    if (profile.apikey) {
+        const token = jwt.decode(profile.apikey, { json: true });
+        if (token && token.exp) {
+            return (token.exp - thresholdInSeconds) * 1000 < Date.now();
+        }
+    }
+    // if no token or no expiration set then refresh auth token
+    return true;
+}
+
 export class ConfigureProfile {
+    onResultCallback?: OnResultCallback;
     constructor(public config: Config, public data: Partial<Profile>, public isNew: boolean) {
         this.data = data;
         this.isNew = !data.name;
@@ -65,7 +78,7 @@ export class ConfigureProfile {
         }
     }
 
-    applyConfigResult(result: ConfigResult) {
+    async applyConfigResult(result: ConfigResult) {
         const oldName = this.data.name!;
         this.data.name = result.profile;
         this.data.account = result.account;
@@ -79,14 +92,19 @@ export class ConfigureProfile {
             this.config.use(this.data.name!);
         }
         this.config.save();
+        if (this.onResultCallback) {
+            await this.onResultCallback(result);
+            this.onResultCallback = undefined;
+        }
         // force exit to close last prompt
         console.log('\n');
         console.log('Authentication completed.');
         process.exit(0);
     }
 
-    start() {
-        startConfigSession(this.data.config_url!, this.getConfigPayload(), this.applyConfigResult.bind(this));
+    async start(onResult?: OnResultCallback) {
+        this.onResultCallback = onResult;
+        await startConfigSession(this.data.config_url!, this.getConfigPayload(), this.applyConfigResult.bind(this));
     }
 }
 
@@ -114,6 +132,7 @@ export class Config {
         this.current = this.profiles.find(p => p.name === name);
         if (!this.current) {
             console.error(`No configuration named ${name} found`);
+            process.exit(1);
         }
         return this;
     }

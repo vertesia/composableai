@@ -1,4 +1,4 @@
-import { ComposableClient } from "@vertesia/client";
+import { VertesiaClient } from "@vertesia/client";
 import { DSLActivityExecutionPayload, DSLWorkflowExecutionPayload, Project, WorkflowExecutionPayload } from "@vertesia/common";
 import { log } from "@temporalio/activity";
 import { NoDocumentFound, WorkflowParamNotFound } from "../../errors.js";
@@ -14,10 +14,10 @@ registerFetchProviderFactory(DocumentTypeProvider.ID, DocumentTypeProvider.facto
 registerFetchProviderFactory(InteractionRunProvider.ID, InteractionRunProvider.factory);
 
 export class ActivityContext<T extends Record<string, any> = Record<string, any>> {
-    client: ComposableClient;
+    client: VertesiaClient;
     _project?: Promise<Project | undefined>;
 
-    constructor(public payload: DSLActivityExecutionPayload, client: ComposableClient, public params: T) {
+    constructor(public payload: DSLActivityExecutionPayload, client: VertesiaClient, public params: T) {
         this.client = client;
         this.fetchProject = this.fetchProject.bind(this);
     }
@@ -100,7 +100,7 @@ export async function setupActivity<T extends Record<string, any> = Record<strin
 }
 
 
-async function _fetchProject(client: ComposableClient, payload: WorkflowExecutionPayload) {
+async function _fetchProject(client: VertesiaClient, payload: WorkflowExecutionPayload) {
     const project = await getProjectFromToken(payload.auth_token);
     return project ? await client.projects.retrieve(project.id) : undefined;
 }

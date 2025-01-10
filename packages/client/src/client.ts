@@ -21,7 +21,7 @@ import UsersApi from "./UsersApi.js";
  */
 const EXPIRATION_THRESHOLD = 60000;
 
-export interface ComposableClientProps {
+export interface VertesiaClientProps {
     serverUrl: string;
     storeUrl: string;
     apikey?: string;
@@ -31,7 +31,7 @@ export interface ComposableClientProps {
     onResponse?: (response: Response) => void;
 }
 
-export class ComposableClient extends AbstractFetchClient<ComposableClient> {
+export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
 
     /**
      * The JWT token linked to the API KEY (sk or pk)
@@ -49,14 +49,14 @@ export class ComposableClient extends AbstractFetchClient<ComposableClient> {
     sessionTags?: string | string[];
 
     constructor(
-        opts: ComposableClientProps = {} as any
+        opts: VertesiaClientProps = {} as any
     ) {
         super(opts.serverUrl);
         if (!opts.serverUrl) {
-            throw new Error("storeUrl is required for ComposableClient");
+            throw new Error("storeUrl is required for VertesiaClient");
         }
         if (!opts.storeUrl) {
-            throw new Error("storeUrl is required for ComposableClient");
+            throw new Error("storeUrl is required for VertesiaClient");
         }
         this.store = new ZenoClient({
             serverUrl: opts.storeUrl,

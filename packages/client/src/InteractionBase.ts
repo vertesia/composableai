@@ -1,15 +1,15 @@
 import { ExecutionRun, InteractionUpdatePayload, InteractionExecutionPayload } from "@vertesia/common";
-import { ComposableClient, ComposableClientProps } from "./client.js";
+import { VertesiaClient, VertesiaClientProps } from "./client.js";
 import { executeInteraction } from "./execute.js";
 
 export class InteractionBase<P = any, R = any> {
-    client: ComposableClient;
+    client: VertesiaClient;
 
-    constructor(public id: string, clientOrOpts: ComposableClient | ComposableClientProps) {
-        if (clientOrOpts instanceof ComposableClient) {
+    constructor(public id: string, clientOrOpts: VertesiaClient | VertesiaClientProps) {
+        if (clientOrOpts instanceof VertesiaClient) {
             this.client = clientOrOpts;
         } else {
-            this.client = new ComposableClient(clientOrOpts);
+            this.client = new VertesiaClient(clientOrOpts);
         }
     }
 

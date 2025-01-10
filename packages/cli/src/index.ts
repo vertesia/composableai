@@ -1,5 +1,6 @@
 import { setupMemoCommand } from '@vertesia/memory-cli';
 import { Command } from 'commander';
+import { registerAgentCommand } from './agent/index.js';
 import runExport from './codegen/index.js';
 import { genTestData } from './datagen/index.js';
 import { listEnvirnments } from './envs/index.js';
@@ -21,7 +22,8 @@ program.version(getVersion());
 
 program.command("upgrade")
     .description("Upgrade to the latest version of the CLI")
-    .action(upgrade)
+    .option("-y, --yes", "Skip the confirmation prompt")
+    .action((options: Record<string, any> = {}) => upgrade(options.yes))
 
 program.command("projects")
     .description("List the projects you have access to")
@@ -122,6 +124,8 @@ program.command("runs [interactionId]")
 const memoCmd = program.command("memo");
 setupMemoCommand(memoCmd, getPublishMemoryAction(program));
 
+registerAgentCommand(program);
+
 const profilesRoot = program.command("profiles")
     .description("Manage configuration profiles")
     .action(() => {
@@ -177,6 +181,7 @@ program.parseAsync(process.argv).catch(err => {
 
 process.on("unhandledRejection", (err: any) => {
     if (err.status === 401) { // token expired?
+        console.error("ERROROR", err);
         tryRrefreshToken();
     }
 })

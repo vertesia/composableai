@@ -1,5 +1,5 @@
 import { FindPayload } from "@vertesia/common";
-import { ComposableClient } from "@vertesia/client";
+import { VertesiaClient } from "@vertesia/client";
 import { DataProvider } from "./DataProvider.js";
 
 function useMongoId(query: Record<string, any>) {
@@ -13,7 +13,7 @@ function useMongoId(query: Record<string, any>) {
 
 export class DocumentProvider extends DataProvider {
     static ID = "document";
-    constructor(public client: ComposableClient) {
+    constructor(public client: VertesiaClient) {
         super(DocumentProvider.ID, true);
     }
 
@@ -24,14 +24,14 @@ export class DocumentProvider extends DataProvider {
         });
     }
 
-    static factory(client: ComposableClient) {
+    static factory(client: VertesiaClient) {
         return new DocumentProvider(client);
     }
 }
 
 export class DocumentTypeProvider extends DataProvider {
     static ID = "document_type";
-    constructor(public client: ComposableClient) {
+    constructor(public client: VertesiaClient) {
         super(DocumentTypeProvider.ID, true);
     }
 
@@ -42,14 +42,14 @@ export class DocumentTypeProvider extends DataProvider {
         });
     }
 
-    static factory(client: ComposableClient) {
+    static factory(client: VertesiaClient) {
         return new DocumentTypeProvider(client);
     }
 }
 
 export class InteractionRunProvider extends DataProvider {
     static ID = "interaction_run";
-    constructor(public client: ComposableClient) {
+    constructor(public client: VertesiaClient) {
         super(DocumentProvider.ID, true);
     }
 
@@ -60,7 +60,7 @@ export class InteractionRunProvider extends DataProvider {
         });
     }
 
-    static factory(client: ComposableClient) {
+    static factory(client: VertesiaClient) {
         return new InteractionRunProvider(client);
     }
 
