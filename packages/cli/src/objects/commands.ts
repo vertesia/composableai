@@ -1,4 +1,4 @@
-import { ComposableClient, StreamSource } from "@vertesia/client";
+import { VertesiaClient, StreamSource } from "@vertesia/client";
 import { ContentObject, ContentObjectTypeItem, CreateContentObjectPayload } from "@vertesia/common";
 import { Command } from "commander";
 import enquirer from "enquirer";
@@ -181,7 +181,7 @@ export async function createObjectFromFile(program: Command, file: string, optio
     return res;
 }
 
-export async function createObjectFromLocalFile(client: ComposableClient, file: string, options: Record<string, any>) {
+export async function createObjectFromLocalFile(client: VertesiaClient, file: string, options: Record<string, any>) {
     const fileName = basename(file);
     const stream = createReadStream(file);
 
@@ -201,7 +201,7 @@ export async function createObjectFromLocalFile(client: ComposableClient, file: 
     return res;
 }
 
-async function createObjectFromExternalSource(client: ComposableClient, uri: string, options: Record<string, any>) {
+async function createObjectFromExternalSource(client: VertesiaClient, uri: string, options: Record<string, any>) {
     return client.objects.createFromExternalSource(uri, {
         name: options.name,
         type: options.type,

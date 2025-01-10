@@ -28,18 +28,26 @@ async function getLatestVersion() {
     return version;
 }
 
-export async function upgrade() {
+export async function upgrade(yes: boolean) {
     const { version } = getPackage();
     const latestVersion = await getLatestVersion();
     if (latestVersion && version !== latestVersion) {
-        console.log('There is a new version available (v' + latestVersion + ').');
-        const answer: any = await prompt({
-            name: 'upgrade',
-            type: 'confirm',
-            message: "Would you like to upgrade?",
-            initial: true,
-        });
-        if (answer.upgrade) {
+        let doUpgrade = false;
+        if (!yes) {
+            console.log('There is a new version available (v' + latestVersion + ').');
+            const answer: any = await prompt({
+                name: 'upgrade',
+                type: 'confirm',
+                message: "Would you like to upgrade?",
+                initial: true,
+            });
+            if (answer.upgrade) {
+                doUpgrade = true;
+            }
+        } else {
+            doUpgrade = true;
+        }
+        if (doUpgrade) {
             spawn("npm", ["update", "-g", getPackage().name], {
                 stdio: 'inherit',
             });
@@ -58,4 +66,3 @@ async function warnIfNotLatest() {
 }
 
 export { getLatestVersion, getPackage, getVersion, packageDir, warnIfNotLatest };
-

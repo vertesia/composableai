@@ -1,0 +1,7 @@
+.env
+.DS_Store
+.git
+.gitignore
+*.md
+lib/
+node_modules/

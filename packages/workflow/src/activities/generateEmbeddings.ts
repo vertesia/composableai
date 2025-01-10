@@ -1,4 +1,4 @@
-import { ComposableClient } from "@vertesia/client";
+import { VertesiaClient } from "@vertesia/client";
 import { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec, ProjectConfigurationEmbeddings, SupportedEmbeddingTypes } from "@vertesia/common";
 import { EmbeddingsResult } from "@llumiverse/core";
 import { log } from "@temporalio/activity";
@@ -92,7 +92,7 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload) {
 
 interface ExecuteGenerateEmbeddingsParams {
     document: ContentObject;
-    client: ComposableClient;
+    client: VertesiaClient;
     type: SupportedEmbeddingTypes;
     config: ProjectConfigurationEmbeddings;
     property?: string;
@@ -291,7 +291,7 @@ async function generateImageEmbeddings({ document, client, type, config }: Execu
 
 }
 
-async function generateEmbeddingsFromStudio(text: string, env: string, client: ComposableClient, model?: string): Promise<EmbeddingsResult> {
+async function generateEmbeddingsFromStudio(text: string, env: string, client: VertesiaClient, model?: string): Promise<EmbeddingsResult> {
 
     log.info(`Generating embeddings for text of ${text.length} chars with environment ${env}`);
 

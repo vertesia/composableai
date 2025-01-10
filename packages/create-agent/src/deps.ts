@@ -1,15 +1,14 @@
-import { spawnSync } from "node:child_process";
+import { runCommand } from "./utils.js";
 
-const PRIVATE_DEPS = [
-    "@dglabs/agent-runner",
-]
 const DEPS: string[] = [
+    "@dglabs/agent-runner",
     "@temporalio/worker",
+    "@temporalio/workflow",
+    "@temporalio/activity"
 ];
 const DEV_DEPS: string[] = [
     "typescript",
     "@types/node",
-    "google-artifactregistry-auth",
     "vitest",
     "rimraf"
 ];
@@ -30,18 +29,11 @@ function _addDependencies(pm: "npm" | "pnpm", deps: string[], type: "dev" | "run
     for (const dep of deps) {
         args.push(dep)
     }
-    spawnSync(pm, args, {
-        stdio: 'inherit'
-    });
+    runCommand(pm, args);
 }
 
 export function installDeps(pm: "npm" | "pnpm") {
     console.log("Installing dependencies");
     addDevDependencies(pm, DEV_DEPS);
     addDependencies(pm, DEPS);
-}
-
-export function installPrivateDeps(pm: "npm" | "pnpm") {
-    console.log("Installing dglabs dependencies");
-    addDependencies(pm, PRIVATE_DEPS);
 }

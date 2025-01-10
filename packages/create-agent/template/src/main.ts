@@ -4,7 +4,7 @@
 import { resolveScriptFile, run } from "@dglabs/agent-runner";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
-import { resolve } from 'path';
+import { dirname, resolve } from 'path';
 
 const pkg = readPackageJson();
 
@@ -24,7 +24,7 @@ await run({
 
 function readPackageJson() {
     const scriptPath = fileURLToPath(import.meta.url);
-    const pkgFile = resolve(scriptPath, '../package.json')
+    const pkgFile = resolve(dirname(scriptPath), '../package.json')
     const content = readFileSync(pkgFile, "utf8");
     return JSON.parse(content);
 }
