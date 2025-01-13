@@ -8,13 +8,20 @@ import { dirname, resolve } from 'path';
 
 const pkg = readPackageJson();
 
+let domain = `agents/${pkg.name}`;
+if (pkg.vertesia?.image?.organization) {
+    if (pkg.vertesia.image.name) {
+        domain = `agents/${pkg.vertesia.image.organization}/${pkg.vertesia.image.name}`;
+    }
+}
+
 const workflowBundle = await resolveScriptFile("./workflows-bundle.js", import.meta.url);
 const activities = await import("./activities.js");
 
 await run({
     workflowBundle,
     activities,
-    domain: `org/${pkg.name}`
+    domain
 }).catch((err: any) => {
     console.error(err);
 }).finally(() => {
