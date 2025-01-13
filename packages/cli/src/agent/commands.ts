@@ -3,12 +3,12 @@ import fs from "fs";
 import os from "os";
 import { join } from "path";
 import { getClient } from "../client.js";
+import { config, getCloudTypeFromConfigUrl, Profile } from "../profiles/index.js";
 import { runDocker, runDockerWithAgentConfig, runDockerWithOutput } from "./docker.js";
 import { AgentProject } from './project.js';
 import { tryRrefreshProjectToken } from './refresh.js';
 import { updateNpmrc } from "./registry.js";
 import { validateVersion } from './version.js';
-import { config, getCloudTypeFromConfigUrl, Profile } from "../profiles/index.js";
 
 export enum PublishMode {
     Push = 1,
@@ -24,6 +24,8 @@ function shouldPush(mode: PublishMode) {
     return mode & PublishMode.Push;
 }
 
+// we need to build for the linux/amd64 platform (this is the platform used in Vertesia k8s)
+const TARGET_PLATFORM = "linux/amd64";
 const LATEST_VERSION = "latest";
 
 async function pushImage(project: AgentProject, version: string) {
@@ -83,7 +85,7 @@ export async function build() {
 
     const tag = project.getLocalDockerTag(LATEST_VERSION);
     console.log(`Building docker image: ${tag}`);
-    runDocker(['buildx', 'build', '-t', tag, '.']);
+    runDocker(['buildx', 'build', '--platform', TARGET_PLATFORM, '-t', tag, '.']);
 }
 
 export async function release(version: string) {
@@ -108,7 +110,8 @@ export function run(version: string = LATEST_VERSION) {
     // we need to inject the .env file into the container
     // and to get the google credentials needed by the worker
     // TODO: the google credentials will only work with vertesia users ...
-    const args = ['run', '--env-file', '.env'];
+    // we need to specify the target palftorm to force qemu emulation for user on other platforms
+    const args = ['run', '--platform', TARGET_PLATFORM, '--env-file', '.env'];
     const googleCredsFile = getGoogleCreddentialsFile();
     if (googleCredsFile) {
         args.push('-v', `${googleCredsFile}:/tmp/google-credentials.json`);
