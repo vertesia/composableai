@@ -15,13 +15,13 @@
         "bin"
     ],
     "license": "MIT",
-    "homepage": "https://composableprompts.com/docs",
+    "homepage": "https://docs.vertesiahq.com/cli",
     "keywords": [
         "llm",
         "code",
         "generation",
         "interaction",
-        "composable",
+        "vertesia",
         "prompt",
         "ai"
     ],
