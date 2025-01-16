@@ -1,4 +1,4 @@
-import { AIModel, ModelOptions } from "@llumiverse/core";
+import { AIModel, TextModalityModelOptions } from "@llumiverse/core";
 
 
 export enum SupportedProviders {
@@ -146,7 +146,7 @@ export interface LoadBalancingEnvEntryConfig extends VirtualEnvEntry {
     weight: number;
 }
 
-export interface MediatorEnvConfig extends ModelOptions{
+export interface MediatorEnvConfig extends TextModalityModelOptions {
     entries?: VirtualEnvEntry[];
     max_concurrent_requests?: number;
     // the model used to evaluate the responses. If not specified all entries will mediates the response
