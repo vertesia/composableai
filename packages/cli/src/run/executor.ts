@@ -50,25 +50,35 @@ export class ExecutionRequest {
     async run(onChunk?: ((chunk: any) => void)): Promise<ExecutionRun> {
         const options = this.options;
 
+        const config = {
+            environment: typeof options.env === 'string' ? options.env : undefined,
+            model: typeof options.model === 'string' ? options.model : undefined,
+            temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
+            max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens) : undefined,
+            top_p: typeof options.topP === 'string' ? parseFloat(options.topP) : undefined,
+            top_k: typeof options.topK === 'string' ? parseInt(options.topK) : undefined,
+            presence_penalty: typeof options.presencePenalty === 'string' ? parseFloat(options.presencePenalty) : undefined,
+            frequency_penalty: typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
+            stop_sequence: options.stopSequence ? options.stopSequence.trim().split(/\s*,\s*/) : undefined,
+            configMode: convertConfigMode(options.configMode),
+            run_data: convertRunData(options.runData),
+        };
+        const tags = options.tags ? options.tags.trim().split(/\s,*\s*/) : undefined;
 
-        const run = await this.client.interactions.executeByName(this.interactionSpec, {
-            data: this.data,
-            config: {
-                environment: typeof options.env === 'string' ? options.env : undefined,
-                model: typeof options.model === 'string' ? options.model : undefined,
-                temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
-                max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens) : undefined,
-                top_p: typeof options.topP === 'string' ? parseFloat(options.topP) : undefined,
-                top_k: typeof options.topK === 'string' ? parseInt(options.topK) : undefined,
-                presence_penalty: typeof options.presencePenalty === 'string' ? parseFloat(options.presencePenalty) : undefined,
-                frequency_penalty: typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
-                stop_sequence: options.stopSequence ? options.stopSequence.trim().split(/\s*,\s*/) : undefined,
-                configMode: convertConfigMode(options.configMode),
-                run_data: convertRunData(options.runData),
-            },
-            tags: options.tags ? options.tags.trim().split(/\s,*\s*/) : undefined
-        }, onChunk);
-
+        let run;
+        if (this.options.byId) {
+            run = await this.client.interactions.execute(this.interactionSpec, {
+                data: this.data,
+                config,
+                tags
+            }, onChunk);
+        } else {
+            run = await this.client.interactions.executeByName(this.interactionSpec, {
+                data: this.data,
+                config,
+                tags
+            }, onChunk);
+        }
         // add count number in the run
         if (this.runNumber != null) {
             (run as any).runNumber = this.runNumber;

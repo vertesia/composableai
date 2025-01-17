@@ -103,6 +103,7 @@ program.command("run <interaction>")
     .option('--jsonl', 'Write output in jsonl. The default is to write the json. Ignored when only one run is executed')
     .option('--data-only', 'Write down only the data returned by the LLM and not the entire execution run. This mode is forced when streaming', false)
     .option('-r, --run-data [level]', 'Override the level of storage for the run data. Possible values are: "standard", "restricted", or "debug". Optional. If not specified, it uses the level defined in Studio.')
+    .option('--by-id', 'When used, the interaction is selected by ID instead of by name')
     .action((interaction: string, options: Record<string, any>) => runInteraction(program, interaction, options));
 program.command("runs [interactionId]")
     .description('Search the run history for specific execution runs')
