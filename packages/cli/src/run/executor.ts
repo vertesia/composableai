@@ -1,5 +1,6 @@
 import { VertesiaClient } from "@vertesia/client";
 import { ConfigModes, ExecutionRun, RunDataStorageLevel } from "@vertesia/common";
+import { ModelOptions } from "../../../../llumiverse/core/src/types.js";
 
 export class ExecutionQueue {
     requests: ExecutionRequest[] = [];
@@ -50,19 +51,24 @@ export class ExecutionRequest {
     async run(onChunk?: ((chunk: any) => void)): Promise<ExecutionRun> {
         const options = this.options;
 
+        //TODO: Support for other modalities, like images
+        const model_options: ModelOptions = {
+            temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
+            max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens) : undefined,
+            top_p: typeof options.topP === 'string' ? parseFloat(options.topP) : undefined,
+            top_k: typeof options.topK === 'string' ? parseInt(options.topK) : undefined,
+            presence_penalty: typeof options.presencePenalty === 'string' ? parseFloat(options.presencePenalty) : undefined,
+            frequency_penalty: typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
+            stop_sequence: options.stopSequence ? options.stopSequence.trim().split(/\s*,\s*/) : undefined,
+        };
+
 
         const run = await this.client.interactions.executeByName(this.interactionSpec, {
             data: this.data,
             config: {
                 environment: typeof options.env === 'string' ? options.env : undefined,
                 model: typeof options.model === 'string' ? options.model : undefined,
-                temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
-                max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens) : undefined,
-                top_p: typeof options.topP === 'string' ? parseFloat(options.topP) : undefined,
-                top_k: typeof options.topK === 'string' ? parseInt(options.topK) : undefined,
-                presence_penalty: typeof options.presencePenalty === 'string' ? parseFloat(options.presencePenalty) : undefined,
-                frequency_penalty: typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
-                stop_sequence: options.stopSequence ? options.stopSequence.trim().split(/\s*,\s*/) : undefined,
+                model_options: model_options,
                 configMode: convertConfigMode(options.configMode),
                 run_data: convertRunData(options.runData),
             },

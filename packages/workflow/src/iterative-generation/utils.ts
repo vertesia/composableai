@@ -3,6 +3,7 @@ import { ExecutionRun } from "@vertesia/common";
 import { ApplicationFailure } from "@temporalio/workflow";
 import { OutputMemoryMeta, PartIndex, Toc, TocIndex, TocSection } from "./types.js";
 
+//TODO: For whole file, support for options beyond max_tokens and temperature and multiple modalities.
 export interface ExecuteOptions {
     interaction: string;
     memory: string;
@@ -24,8 +25,10 @@ export async function execute<T = any>(client: VertesiaClient, options: ExecuteO
         config: {
             environment: options.environment,
             model: options.model,
-            max_tokens: options.max_tokens,
-            temperature: options.temperature,
+            model_options: {
+                max_tokens: options.max_tokens,
+                temperature: options.temperature,
+            }
         }
     });
 }

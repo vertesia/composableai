@@ -1,4 +1,4 @@
-import type { ImageGenExecutionOptions, JSONObject, Modalities, TextModalityModelOptions } from "@llumiverse/core";
+import type { JSONObject, Modalities, ModelOptions } from "@llumiverse/core";
 import { JSONSchema4 } from 'json-schema';
 
 import { ExecutionTokenUsage } from '@llumiverse/core';
@@ -93,7 +93,7 @@ export interface CachePolicy {
     ttl: number;
 }
 export type InteractionVisibility = 'public' | 'private';
-export interface Interaction extends TextModalityModelOptions {
+export interface Interaction {
     readonly id: string;
     name: string;
     endpoint: string;
@@ -108,6 +108,7 @@ export interface Interaction extends TextModalityModelOptions {
     result_schema?: JSONSchema4 | SchemaRef;
     cache_policy?: CachePolicy;
     model: string;
+    model_options?: ModelOptions;
     prompts: PromptSegmentDef[];
     output_modality?: Modalities;
     environment: string | ExecutionEnvironmentRef;
@@ -174,7 +175,7 @@ export interface InteractionExecutionPayload {
      * and the other proerties of the data will contain the memory pack mapping.
      */
     data?: Record<string, any> | `memory:${string}`;
-    config?: InteractionExecutionConfiguration<TextModalityModelOptions | ImageGenExecutionOptions>;
+    config?: InteractionExecutionConfiguration;
     result_schema?: JSONSchema4;
     stream?: boolean;
     do_validate?: boolean;
@@ -243,7 +244,7 @@ export interface ExecutionRun<P = any, R = any> {
     updated_at: Date;
     account: AccountRef;
     project: ProjectRef;
-    config: InteractionExecutionConfiguration<TextModalityModelOptions | ImageGenExecutionOptions>;
+    config: InteractionExecutionConfiguration;
     error?: InteractionExecutionError;
     source: RunSource;
     output_modality: Modalities;
@@ -276,25 +277,26 @@ export const ConfigModesOptions: Record<ConfigModes, ConfigModesDescription> = {
     [ConfigModes.INTERACTION_CONFIG_ONLY]: ConfigModesDescription.INTERACTION_CONFIG_ONLY,
 }
 
-export type InteractionExecutionConfiguration<T> = T & {
+export interface InteractionExecutionConfiguration {
     environment?: string;
     model?: string;
     do_validate?: boolean;
     run_data?: RunDataStorageLevel;
     configMode?: ConfigModes;
+    model_options?: ModelOptions;
 }
 
 export interface GenerateInteractionPayload {
     description: string;
-    config: InteractionExecutionConfiguration<TextModalityModelOptions | ImageGenExecutionOptions>;
+    config: InteractionExecutionConfiguration;
 }
 
 export interface GenerateTestDataPayload {
     message?: string;
     count?: number;
-    config: InteractionExecutionConfiguration<TextModalityModelOptions | ImageGenExecutionOptions>;
+    config: InteractionExecutionConfiguration;
 }
 
 export interface ImprovePromptPayload {
-    config: InteractionExecutionConfiguration<TextModalityModelOptions | ImageGenExecutionOptions>;
+    config: InteractionExecutionConfiguration;
 }
