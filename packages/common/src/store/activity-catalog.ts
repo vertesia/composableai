@@ -30,6 +30,8 @@ export interface ActivityPropertyDefinition {
 
 export interface ActivityDefinition {
     name: string;
+    // generated from name
+    title: string;
     description?: string;
     // the JSDoc comment for the activity function
     doc?: string;
