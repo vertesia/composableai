@@ -1,11 +1,12 @@
 
-import { ContentEventName, DSLWorkflowExecutionPayload } from "@vertesia/common";
-import { log, proxyActivities } from "@temporalio/workflow";
-import * as activities from "../activities/index.js";
+import { log } from "@temporalio/workflow";
+import { ContentEventName, WorkflowExecutionPayload } from "@vertesia/common";
+import * as activities from "../activities/index-dsl.js";
+import { dslProxyActivities } from "../dsl/dslProxyActivities.js";
 
 const {
     notifyWebhook
-} = proxyActivities<typeof activities>({
+} = dslProxyActivities<typeof activities>("notifyWebhookWorkflow", {
     startToCloseTimeout: "5 minute",
     retry: {
         initialInterval: '5s',
@@ -17,10 +18,7 @@ const {
 });
 
 
-interface NotifyWebhookWorkflowParams extends DSLWorkflowExecutionPayload {
-}
-
-export async function notifyWebhookWorkflow(payload: NotifyWebhookWorkflowParams): Promise<any> {
+export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload): Promise<any> {
 
     const { objectIds, vars } = payload;
     const notifications = [];
@@ -33,23 +31,16 @@ export async function notifyWebhookWorkflow(payload: NotifyWebhookWorkflowParams
     }
 
     for (const ep of endpoints) {
-        const n = notifyWebhook({
-            ...payload,
-            activity: {
-                name: "notifyWebhook",
-            } ,
-            params: {
-                target_url: ep,
-                method: 'POST',
-                payload: {
-                    object_ids: objectIds,
-                    event: eventName,
-                    data: vars.webhook_data ?? undefined,
-                    vars
-                }
-            },
-            workflow_name: "Notify Webhook",
-        } ).then(res => {
+        const n = notifyWebhook(payload, {
+            target_url: ep,
+            method: 'POST',
+            payload: {
+                object_ids: objectIds,
+                event: eventName,
+                data: vars.webhook_data ?? undefined,
+                vars
+            }
+        }).then(res => {
             log.info(`Webhook notified at ${ep} with response code: ${res.status}`, { res });
             return res;
         });
