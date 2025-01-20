@@ -1,5 +1,5 @@
-import { CreateContentObjectTypePayload, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { log } from "@temporalio/activity";
+import { CreateContentObjectTypePayload, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { ActivityContext, setupActivity } from "../dsl/setup/ActivityContext.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
@@ -28,7 +28,7 @@ export interface GenerateOrAssignContentType extends DSLActivitySpec<GenerateOrA
     name: 'generateOrAssignContentType';
 }
 
-export async function generateOrAssignContentType(payload: DSLActivityExecutionPayload) {
+export async function generateOrAssignContentType(payload: DSLActivityExecutionPayload<GenerateOrAssignContentTypeParams>) {
     const context = await setupActivity<GenerateOrAssignContentTypeParams>(payload);
     const { params, client, objectId } = context;
 
@@ -119,7 +119,7 @@ export async function generateOrAssignContentType(payload: DSLActivityExecutionP
     };
 }
 
-async function generateNewType(context: ActivityContext, existing_types: string[], content?: string, fileRef?: string) {
+async function generateNewType(context: ActivityContext<GenerateOrAssignContentTypeParams>, existing_types: string[], content?: string, fileRef?: string) {
     const { client, params } = context;
 
     const project = await context.fetchProject();

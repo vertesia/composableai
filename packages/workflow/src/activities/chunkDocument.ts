@@ -32,7 +32,7 @@ export interface ChunkDocument extends DSLActivitySpec<ChunkDocumentParams> {
 }
 
 
-export async function chunkDocument(payload: DSLActivityExecutionPayload): Promise<ChunkDocumentResult> {
+export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDocumentParams>): Promise<ChunkDocumentResult> {
     const { params, client, objectId } = await setupActivity<ChunkDocumentParams>(payload);
 
     const { force } = params;

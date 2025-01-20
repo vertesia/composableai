@@ -21,7 +21,7 @@ export interface TranscriptMediaResult extends TextExtractionResult {
 
 const GLADIA_URL = "https://api.gladia.io/v2";
 
-export async function transcribeMedia(payload: DSLActivityExecutionPayload): Promise<TranscriptMediaResult> {
+export async function transcribeMedia(payload: DSLActivityExecutionPayload<TranscriptMediaParams>): Promise<TranscriptMediaResult> {
 
     const { params, client, objectId } = await setupActivity<TranscriptMediaParams>(payload);
 

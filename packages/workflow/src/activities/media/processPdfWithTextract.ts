@@ -37,7 +37,7 @@ export interface StructuredTextResult extends TextExtractionResult {
 
 
 
-export async function convertPdfToStructuredText(payload: DSLActivityExecutionPayload): Promise<StructuredTextResult> {
+export async function convertPdfToStructuredText(payload: DSLActivityExecutionPayload<ConvertPdfToStructuredTextParams>): Promise<StructuredTextResult> {
 
 
     const { params, client, objectId } = await setupActivity<ConvertPdfToStructuredTextParams>(payload);

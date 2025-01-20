@@ -20,7 +20,7 @@ export interface GenerateDocumentProperties extends DSLActivitySpec<GenerateDocu
     name: 'generateDocumentProperties';
 }
 
-export async function generateDocumentProperties(payload: DSLActivityExecutionPayload) {
+export async function generateDocumentProperties(payload: DSLActivityExecutionPayload<GenerateDocumentPropertiesParams>) {
     const context = await setupActivity<GenerateDocumentPropertiesParams>(payload);
     const { params, client, objectId } = context;
     const interactionName = params.interactionName ?? INT_EXTRACT_INFORMATION;

@@ -28,7 +28,7 @@ export interface CreateOrUpdateObjectFromInteractionRun extends DSLActivitySpec<
     name: 'createOrUpdateDocumentFromInteractionRun';
 }
 
-export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActivityExecutionPayload) {
+export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActivityExecutionPayload<CreateOrUpdateObjectFromInteractionRunParams>) {
     const { params, client } = await setupActivity<CreateOrUpdateObjectFromInteractionRunParams>(payload);
 
     const runId = params.run_id;
