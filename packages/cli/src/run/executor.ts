@@ -50,6 +50,7 @@ export class ExecutionRequest {
 
     async run(onChunk?: ((chunk: any) => void)): Promise<ExecutionRun> {
         const options = this.options;
+        
 
         //TODO: Support for other modalities, like images
         const model_options: ModelOptions = {
@@ -62,19 +63,29 @@ export class ExecutionRequest {
             stop_sequence: options.stopSequence ? options.stopSequence.trim().split(/\s*,\s*/) : undefined,
         };
 
+        const config = {
+            environment: typeof options.env === 'string' ? options.env : undefined,
+            model: typeof options.model === 'string' ? options.model : undefined,
+            model_options: model_options,
+            configMode: convertConfigMode(options.configMode),
+            run_data: convertRunData(options.runData),
+        };
+        const tags = options.tags ? options.tags.trim().split(/\s,*\s*/) : undefined;
 
-        const run = await this.client.interactions.executeByName(this.interactionSpec, {
-            data: this.data,
-            config: {
-                environment: typeof options.env === 'string' ? options.env : undefined,
-                model: typeof options.model === 'string' ? options.model : undefined,
-                model_options: model_options,
-                configMode: convertConfigMode(options.configMode),
-                run_data: convertRunData(options.runData),
-            },
-            tags: options.tags ? options.tags.trim().split(/\s,*\s*/) : undefined
-        }, onChunk);
-
+        let run;
+        if (this.options.byId) {
+            run = await this.client.interactions.execute(this.interactionSpec, {
+                data: this.data,
+                config,
+                tags
+            }, onChunk);
+        } else {
+            run = await this.client.interactions.executeByName(this.interactionSpec, {
+                data: this.data,
+                config,
+                tags
+            }, onChunk);
+        }
         // add count number in the run
         if (this.runNumber != null) {
             (run as any).runNumber = this.runNumber;
