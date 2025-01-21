@@ -1,15 +1,15 @@
 
-import { DSLWorkflowExecutionPayload } from "@vertesia/common";
-import { log, proxyActivities } from "@temporalio/workflow";
-import { GetObject } from "../activities/getObjectFromStore.js";
-import * as activities from "../activities/index.js";
+import { log } from "@temporalio/workflow";
+import { WorkflowExecutionPayload } from "@vertesia/common";
+import * as activities from "../activities/index-dsl.js";
+import { dslProxyActivities } from "../dsl/dslProxyActivities.js";
 import { NoDocumentFound } from "../errors.js";
 import { TextExtractionResult } from "../index.js";
 
 const {
     getObjectFromStore,
     extractDocumentText
-} = proxyActivities<typeof activities>({
+} = dslProxyActivities<typeof activities>("generateTextWorkflow", {
     startToCloseTimeout: "5 minute",
     retry: {
         initialInterval: '5s',
@@ -23,7 +23,7 @@ const {
 const {
     transcribeMedia,
     convertPdfToStructuredText
-} = proxyActivities<typeof activities>({
+} = dslProxyActivities<typeof activities>("generateTextWorkflow", {
     startToCloseTimeout: "30 minute",
     retry: {
         initialInterval: '30s',
@@ -35,19 +35,12 @@ const {
 });
 
 
-export async function generateObjectText(payload: DSLWorkflowExecutionPayload): Promise<TextExtractionResult> {
+export async function generateObjectText(payload: WorkflowExecutionPayload): Promise<TextExtractionResult> {
 
     const { objectIds } = payload;
     const objectId = objectIds[0];
 
-    const object = await getObjectFromStore({
-        ...payload,
-        activity: {
-            name: "getObject",
-        } satisfies GetObject,
-        params: {},
-        workflow_name: "Generate Text",
-    });
+    const object = await getObjectFromStore(payload, {});
 
     if (!object.content?.source) {
         throw new NoDocumentFound(`No source or mimetype found for object ${objectId}`, objectIds);
@@ -63,16 +56,9 @@ export async function generateObjectText(payload: DSLWorkflowExecutionPayload): 
     }
     log.info(`Converting file type ${mimetype} to text with ${converter.name}`);
 
-    const res = await converter.activity(payload)({
-        ...payload,
-        activity: {
-            name: converter.name,
-        },
-        params: converter.params,
-        workflow_name: "Generate Text",
-    });
+    const res = await converter.activity(payload)(payload, converter.params);
 
-    log.info("Generated text for object", {res, objectId});
+    log.info("Generated text for object", { res, objectId });
     return res;
 
 }
@@ -81,8 +67,8 @@ export async function generateObjectText(payload: DSLWorkflowExecutionPayload): 
 const ConverterActivity = [
     {
         type: /application\/pdf/,
-        activity: (payload: DSLWorkflowExecutionPayload) => {
-            const useTextractForPDF = payload.vars?.useTextractForPdf?? false;
+        activity: (payload: WorkflowExecutionPayload) => {
+            const useTextractForPDF = payload.vars?.useTextractForPdf ?? false;
             return useTextractForPDF ? convertPdfToStructuredText : extractDocumentText;
         },
         name: "ConvertPdfToStructuredText",
