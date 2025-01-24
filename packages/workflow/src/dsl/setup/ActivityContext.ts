@@ -13,11 +13,11 @@ registerFetchProviderFactory(DocumentProvider.ID, DocumentProvider.factory);
 registerFetchProviderFactory(DocumentTypeProvider.ID, DocumentTypeProvider.factory);
 registerFetchProviderFactory(InteractionRunProvider.ID, InteractionRunProvider.factory);
 
-export class ActivityContext<T extends Record<string, any> = Record<string, any>> {
+export class ActivityContext<ParamsT extends Record<string, any>> {
     client: VertesiaClient;
     _project?: Promise<Project | undefined>;
 
-    constructor(public payload: DSLActivityExecutionPayload, client: VertesiaClient, public params: T) {
+    constructor(public payload: DSLActivityExecutionPayload<ParamsT>, client: VertesiaClient, public params: ParamsT) {
         this.client = client;
         this.fetchProject = this.fetchProject.bind(this);
     }
@@ -45,7 +45,7 @@ export class ActivityContext<T extends Record<string, any> = Record<string, any>
 }
 
 
-export async function setupActivity<T extends Record<string, any> = Record<string, any>>(payload: DSLActivityExecutionPayload) {
+export async function setupActivity<ParamsT extends Record<string, any>>(payload: DSLActivityExecutionPayload<ParamsT>) {
 
     const isDebugMode = !!payload.debug_mode;
 
@@ -93,10 +93,10 @@ export async function setupActivity<T extends Record<string, any> = Record<strin
         }
     }
 
-    const params = vars.resolve() as T;
+    const params = vars.resolve() as ParamsT;
     log.info(`Activity ${payload.activity.name} setup complete`, { params });
 
-    return new ActivityContext<T>(payload, client, params);
+    return new ActivityContext<ParamsT>(payload, client, params);
 }
 
 

@@ -27,7 +27,7 @@ export interface CreatePdfDocumentFromSource extends DSLActivitySpec<CreatePdfDo
  * Create a new PDF by extrracting pages from a source PDF
  * @returns
  */
-export async function createPdfDocumentFromSource(payload: DSLActivityExecutionPayload) {
+export async function createPdfDocumentFromSource(payload: DSLActivityExecutionPayload<CreatePdfDocumentFromSourceParams>) {
     const { client, objectId, params } = await setupActivity<CreatePdfDocumentFromSourceParams>(payload);
     const inputObject = await client.objects.retrieve(objectId);
 

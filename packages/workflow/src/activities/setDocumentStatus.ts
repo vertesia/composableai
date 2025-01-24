@@ -15,7 +15,7 @@ export interface SetDocumentStatus extends DSLActivitySpec<SetDocumentStatusPara
  * @param objectId
  * @param status
  */
-export async function setDocumentStatus(payload: DSLActivityExecutionPayload) {
+export async function setDocumentStatus(payload: DSLActivityExecutionPayload<SetDocumentStatusParams>) {
     const { client, params, objectId } = await setupActivity<SetDocumentStatusParams>(payload);
 
     const res = await client.objects.update(objectId, { status: params.status });

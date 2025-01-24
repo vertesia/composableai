@@ -5,17 +5,25 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from './setup/ActivityContext.js';
 
-async function sayHelloFromParent(payload: DSLActivityExecutionPayload) {
+interface SayHelloParams {
+    name: string;
+}
+interface PrepareResultParams {
+    parent: string;
+    child: string;
+}
+
+async function sayHelloFromParent(payload: DSLActivityExecutionPayload<SayHelloParams>) {
     const { params } = await setupActivity(payload);
     return `Parent: Hello, ${params.name}!`;
 }
 
-async function sayHelloFromDSLChild(payload: DSLActivityExecutionPayload) {
+async function sayHelloFromDSLChild(payload: DSLActivityExecutionPayload<SayHelloParams>) {
     const { params } = await setupActivity(payload);
     return `DSL Child: Hello, ${params.name}!`;
 }
 
-async function prepareResult(payload: DSLActivityExecutionPayload) {
+async function prepareResult(payload: DSLActivityExecutionPayload<PrepareResultParams>) {
     const { params } = await setupActivity(payload);
     return [params.parent, params.child]
 }

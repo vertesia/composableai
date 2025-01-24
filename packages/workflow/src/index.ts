@@ -25,3 +25,4 @@ export * from "./activities/notifyWebhook.js";
 export * from "./iterative-generation/activities/index.js";
 
 export * from "./result-types.js";
+export * from "./dsl/dslProxyActivities.js";

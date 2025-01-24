@@ -3,13 +3,6 @@ import { BaseObject } from "./common.js";
 import { WorkflowExecutionPayload } from "./index.js";
 import { ParentClosePolicyType } from "./temporalio.js";
 
-/**
- * The interface of a function that can be used as a DSL workflow activity.
- */
-export interface DSLActivityFn {
-    (payload: DSLActivityExecutionPayload): Promise<any>;
-}
-
 
 /**
  * The payload sent when starting a workflow from the temporal client to the workflow instance.
@@ -50,9 +43,9 @@ export interface DSLRetryPolicy {
 /**
  * The payload for a DSL activity execution.
  */
-export interface DSLActivityExecutionPayload extends WorkflowExecutionPayload {
+export interface DSLActivityExecutionPayload<ParamsT extends Record<string, any>> extends WorkflowExecutionPayload {
     activity: DSLActivitySpec;
-    params: Record<string, any>;
+    params: ParamsT;
     workflow_name: string;
     debug_mode?: boolean;
 }

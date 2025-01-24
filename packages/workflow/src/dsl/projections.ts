@@ -51,7 +51,7 @@ function runProjection(obj: any, vars: Vars) {
     return obj; // return the value as is
 }
 
-export function projectResult(payload: DSLActivityExecutionPayload, params: Record<string, any>, result: any, fallback: any) {
+export function projectResult<TParams extends Record<string, any>>(payload: DSLActivityExecutionPayload<TParams>, params: Record<string, any>, result: any, fallback: any) {
     return payload.activity.projection ? makeProjection(payload.activity.projection, params, result) : fallback;
 }
 

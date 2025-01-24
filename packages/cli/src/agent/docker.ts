@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { getClient } from "../client.js";
 import { config } from "../profiles/index.js";
 import { AgentProject } from "./project.js";
+import ansiColors from "ansi-colors";
 
 
 const LOCAL_DOCKER_CONFIG_DIR = '.docker';
@@ -48,6 +49,11 @@ export function runDockerWithAgentConfig(args: string[]) {
 }
 
 export function runDocker(args: string[]) {
+    const verbose = process.argv.includes("--verbose");
+    if (verbose) {
+        const cmd = `docker ${args.join(' ')}`;
+        console.log(`Running: ${ansiColors.magenta(cmd)}`);
+    }
     const r = spawnSync('docker', args, {
         stdio: 'inherit',
         env: {
@@ -71,6 +77,11 @@ export function runDocker(args: string[]) {
 }
 
 export function runDockerWithOutput(args: string[]) {
+    const verbose = process.argv.includes("--verbose");
+    if (verbose) {
+        const cmd = `docker ${args.join(' ')}`;
+        console.log(`Running: ${ansiColors.magenta(cmd)}`);
+    }
     const r = spawnSync('docker', args, {
         encoding: 'utf-8',
         env: {

@@ -22,7 +22,7 @@ export interface GenerateImageRendition extends DSLActivitySpec<GenerateImageRen
 }
 
 
-export async function generateImageRendition(payload: DSLActivityExecutionPayload) {
+export async function generateImageRendition(payload: DSLActivityExecutionPayload<GenerateImageRenditionParams>) {
     const { client, objectId, params } = await setupActivity<GenerateImageRenditionParams>(payload);
 
     const supportedNonImageInputTypes = ['application/pdf']
