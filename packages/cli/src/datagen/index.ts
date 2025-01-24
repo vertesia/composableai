@@ -4,7 +4,7 @@ import { getClient } from "../client.js";
 import { Spinner, restoreCursotOnExit } from "../utils/console.js";
 import { writeJsonFile } from "../utils/stdio.js";
 import { ConfigModes } from "@vertesia/common";
-import { ModelOptions } from "../../../../llumiverse/core/src/types.js";
+import { TextFallbackOptions } from "../../../../llumiverse/core/src/options.js";
 
 function convertConfigMode(raw_config_mode: any): ConfigModes | undefined {
     const configStr: string =  typeof raw_config_mode === 'string' ? raw_config_mode.toUpperCase() : "";
@@ -19,7 +19,9 @@ export function genTestData(program: Command, interactionId: string, options: Re
     spinner.prefix = "Generating data. Please be patient ";
     spinner.start();
 
-    const model_options: ModelOptions = {
+   //TODO: Support for other modalities, like images
+    const model_options: TextFallbackOptions = {
+        _option_id: "text-fallback",
         temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
         max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens) : undefined,
         top_p: typeof options.topP === 'string' ? parseFloat(options.topP) : undefined,
@@ -28,7 +30,7 @@ export function genTestData(program: Command, interactionId: string, options: Re
         frequency_penalty: typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
         stop_sequence: options.stopSequence ? options.stopSequence.trim().split(/\s*,\s*/) : undefined,
     };
-
+    
     getClient(program).interactions.generateTestData(interactionId, {
         count,
         message,

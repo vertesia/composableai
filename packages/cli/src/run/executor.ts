@@ -1,6 +1,6 @@
 import { VertesiaClient } from "@vertesia/client";
 import { ConfigModes, ExecutionRun, RunDataStorageLevel } from "@vertesia/common";
-import { ModelOptions } from "../../../../llumiverse/core/src/types.js";
+import { TextFallbackOptions } from "../../../../llumiverse/core/src/options.js";
 
 export class ExecutionQueue {
     requests: ExecutionRequest[] = [];
@@ -51,9 +51,9 @@ export class ExecutionRequest {
     async run(onChunk?: ((chunk: any) => void)): Promise<ExecutionRun> {
         const options = this.options;
         
-
         //TODO: Support for other modalities, like images
-        const model_options: ModelOptions = {
+        const model_options: TextFallbackOptions = {
+            _option_id: "text-fallback",
             temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
             max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens) : undefined,
             top_p: typeof options.topP === 'string' ? parseFloat(options.topP) : undefined,

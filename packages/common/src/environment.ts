@@ -1,4 +1,4 @@
-import { AIModel, TextModelOptions } from "@llumiverse/core";
+import { AIModel, ModelOptions } from "@llumiverse/core";
 
 
 export enum SupportedProviders {
@@ -152,7 +152,7 @@ export interface MediatorEnvConfig {
     // the model used to evaluate the responses. If not specified all entries will mediates the response
     // and the best response will be picked
     mediators?: VirtualEnvEntry[];
-    model_options?: TextModelOptions;
+    model_options?: ModelOptions;
 }
 
 export interface ExecutionEnvironment {
