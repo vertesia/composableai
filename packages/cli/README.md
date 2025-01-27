@@ -1,11 +1,9 @@
-# Composable Prompts CLI
+# Vertesia CLI
 
-# Composite Prompts CLI
-
-This is a command line application that can be used to access your composable prompts projects.
+This is a command line application that can be used to access your Vertesia projects.
 It was designed to fulfil the following main use cases:
 
-* List and switch between your Composable Prompts projects
+* List and switch between your Vertesia projects
 * List the existing interactions and execution environments
 * Run interactions once or multiple times over a set of different data inputs.
 * Generate data inputs to run the interactions against.
@@ -24,9 +22,9 @@ npm -g install @vertesia/cli
 ## Basic Usage
 
 ```bash
-composable help
+vertesia help
 ```
 
 ## Documentation
 
-See https://docs.becomposable.com/cli
+See https://docs.vertesiahq.com/cli

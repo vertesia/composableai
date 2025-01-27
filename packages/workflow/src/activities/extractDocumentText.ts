@@ -15,14 +15,13 @@ const JSON: DSLActivitySpec = {
 }
 
 // doesn't have any own param
-export type ExtractDocumentTextParams = never;
-
+export interface ExtractDocumentTextParams { };
 export interface ExtractDocumentText extends DSLActivitySpec<ExtractDocumentTextParams> {
     name: 'extractDocumentText';
     projection?: never;
 }
 
-export async function extractDocumentText(payload: DSLActivityExecutionPayload): Promise<TextExtractionResult> {
+export async function extractDocumentText(payload: DSLActivityExecutionPayload<ExtractDocumentTextParams>): Promise<TextExtractionResult> {
     const { client, objectId } = await setupActivity(payload);
 
     const r = await client.objects.find({

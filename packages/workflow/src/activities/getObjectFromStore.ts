@@ -16,7 +16,7 @@ export interface GetObject extends DSLActivitySpec<GetObjectParams> {
  * @param objectId
  * @param status
  */
-export async function getObjectFromStore(payload: DSLActivityExecutionPayload): Promise<ContentObject> {
+export async function getObjectFromStore(payload: DSLActivityExecutionPayload<GetObjectParams>): Promise<ContentObject> {
     const { client, params, objectId } = await setupActivity<GetObjectParams>(payload);
 
     const obj = await client.objects.retrieve(objectId, params.select);

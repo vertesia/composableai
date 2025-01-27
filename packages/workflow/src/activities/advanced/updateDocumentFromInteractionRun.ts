@@ -15,7 +15,7 @@ export interface UpdateDocumentFromInteractionRun extends DSLActivitySpec<Update
     name: 'updateDocumentFromInteractionRun';
 }
 
-export async function updateDocumentFromInteractionRun(payload: DSLActivityExecutionPayload) {
+export async function updateDocumentFromInteractionRun(payload: DSLActivityExecutionPayload<UpdateDocumentFromInteractionRunParams>) {
     const { params, client, objectId } = await setupActivity<UpdateDocumentFromInteractionRunParams>(payload);
 
     if (!params.run) {

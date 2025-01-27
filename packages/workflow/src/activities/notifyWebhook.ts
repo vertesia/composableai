@@ -16,7 +16,7 @@ export interface NotifyWebhook extends DSLActivitySpec<NotifyWebhookParams> {
 }
 
 
-export async function notifyWebhook(payload: DSLActivityExecutionPayload) {
+export async function notifyWebhook(payload: DSLActivityExecutionPayload<NotifyWebhookParams>) {
 
     const { params } = await setupActivity<NotifyWebhookParams>(payload);
     const { target_url, method, payload: requestPayload, headers } = params
@@ -46,6 +46,6 @@ export async function notifyWebhook(payload: DSLActivityExecutionPayload) {
         throw new Error(`Failed to notify webhook ${target_url}: ${res.statusText}`);
     }
 
-    return {status: res.status, message: res.statusText, url: res.url }
+    return { status: res.status, message: res.statusText, url: res.url }
 
 }

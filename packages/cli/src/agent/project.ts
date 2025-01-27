@@ -61,23 +61,27 @@ export class PackageJson implements AgentPackageJson {
         this.data.vertesia.profile = value;
     }
 
-    getLocalDockerTag(version: string) {
+    getAgentId() {
         const image = this.vertesia.image;
         if (!image || !image.organization || !image.name) {
             console.log('Agent configuration not found or not valid in package.json');
             process.exit(1);
         }
-        return `${image.organization}/${image.name}:${version}`;
+        return `${image.organization}/${image.name}`;
+    }
+
+    getLocalDockerTag(version: string) {
+        const agentId = this.getAgentId();
+        return `${agentId}:${version}`;
     }
 
     getVertesiaDockerTag(version: string) {
-        const image = this.vertesia.image;
-        if (!image || !image.repository || !image.organization || !image.name) {
-            console.log('Agent configuration not found or not valid in package.json');
-            process.exit(1);
+        const agentId = this.getAgentId();
+        let repo = this.vertesia.image.repository;
+        if (repo.endsWith('/')) {
+            repo = repo.slice(0, -1);
         }
-        const repo = image.repository.endsWith('/') ? image.repository.slice(0, -1) : image.repository;
-        return `${repo}/agents/${image.organization}/${image.name}:${version}`;
+        return `${repo}/agents/${agentId}:${version}`;
     }
 
     get latestPublishedVersion() {
@@ -138,6 +142,10 @@ export class AgentProject {
             this._pkg = new PackageJson(this.packageJsonFile, JSON.parse(pkgContent));
         }
         return this._pkg;
+    }
+
+    getAgentId() {
+        return this.packageJson.getAgentId();
     }
 
     getVertesiaDockerTag(version: string) {

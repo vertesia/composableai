@@ -16,12 +16,12 @@ interface BaseActivityPayload extends WorkflowExecutionPayload {
     debug_mode?: boolean;
 }
 
-function dslActivityPayload(basePayload: BaseActivityPayload, activity: DSLActivitySpec, params: Record<string, any> = {}) {
+function dslActivityPayload<ParamsT extends Record<string, any>>(basePayload: BaseActivityPayload, activity: DSLActivitySpec, params: ParamsT) {
     return {
         ...basePayload,
         activity,
-        params,
-    } as DSLActivityExecutionPayload
+        params: params || {},
+    } as DSLActivityExecutionPayload<ParamsT>
 }
 
 export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {

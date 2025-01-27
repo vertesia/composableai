@@ -21,7 +21,7 @@ export interface CreateDocumentTypeFromInteractionRun extends DSLActivitySpec<Cr
     name: 'createDocumentTypeFromInteractionRun';
 }
 
-export async function createDocumentTypeFromInteractionRun(payload: DSLActivityExecutionPayload) {
+export async function createDocumentTypeFromInteractionRun(payload: DSLActivityExecutionPayload<CreateDocumentTypeFromInteractionRunParams>) {
     const { params, client } = await setupActivity<CreateDocumentTypeFromInteractionRunParams>(payload);
 
     if (!params.run) {

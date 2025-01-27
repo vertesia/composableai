@@ -1,13 +1,12 @@
-import { proxyActivities } from "@temporalio/workflow";
 
-import { DSLActivitySpec, DSLWorkflowExecutionPayload, SupportedEmbeddingTypes } from "@vertesia/common";
-import { GenerateEmbeddings } from "../activities/generateEmbeddings.js";
-import * as activities from "../activities/index.js";
+import { SupportedEmbeddingTypes, WorkflowExecutionPayload } from "@vertesia/common";
+import * as activities from "../activities/index-dsl.js";
+import { dslProxyActivities } from "../dsl/dslProxyActivities.js";
 import { NoDocumentFound } from "../errors.js";
 
 const {
     generateEmbeddings,
-} = proxyActivities<typeof activities>({
+} = dslProxyActivities<typeof activities>("recalculateEmbeddingsWorkflow", {
     startToCloseTimeout: "5 minute",
     retry: {
         initialInterval: '10s',
@@ -18,25 +17,15 @@ const {
     },
 });
 
-export async function recalculateEmbeddingsWorkflow(payload: DSLWorkflowExecutionPayload) {
+export async function recalculateEmbeddingsWorkflow(payload: WorkflowExecutionPayload) {
 
     const embeddings = [];
 
     for (const type of Object.values(SupportedEmbeddingTypes)) {
-        const activityConfig: DSLActivitySpec = {
-            name: 'generateEmbeddings',
-            params: {
-                force: true,
-                type
-            },
-        } satisfies GenerateEmbeddings;
-
-        embeddings.push(generateEmbeddings({
-            ...payload,
-            params: {},
-            workflow_name: 'recalculateEmbeddingsWorkflow',
-            activity: activityConfig,
-        }));
+        embeddings.push(generateEmbeddings(payload, {
+            force: true,
+            type
+        }))
     }
 
     const res = await Promise.all(embeddings);

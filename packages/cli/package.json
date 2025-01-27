@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/cli",
-    "version": "0.45.3",
+    "version": "0.49.0",
     "description": "Code generation for the interaction defined with Composable AI Studio",
     "type": "module",
     "bin": {
@@ -15,13 +15,13 @@
         "bin"
     ],
     "license": "MIT",
-    "homepage": "https://composableprompts.com/docs",
+    "homepage": "https://docs.vertesiahq.com/cli",
     "keywords": [
         "llm",
         "code",
         "generation",
         "interaction",
-        "composable",
+        "vertesia",
         "prompt",
         "ai"
     ],

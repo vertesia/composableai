@@ -8,6 +8,9 @@ import { setupActivity } from "./setup/ActivityContext.js";
 import { DataProvider } from './setup/fetch/DataProvider.js';
 import { registerFetchProviderFactory } from './setup/fetch/index.js';
 
+interface SayMessageParams {
+    message: string;
+}
 
 class DocumentTestProvider extends DataProvider {
 
@@ -35,7 +38,7 @@ class DocumentTestProvider extends DataProvider {
 registerFetchProviderFactory(DocumentTestProvider.ID, DocumentTestProvider.factory);
 
 
-async function sayMessage(payload: DSLActivityExecutionPayload): Promise<string> {
+async function sayMessage(payload: DSLActivityExecutionPayload<SayMessageParams>): Promise<string> {
     const { params } = await setupActivity(payload);
     return params.message;
 }

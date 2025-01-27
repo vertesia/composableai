@@ -1,24 +1,34 @@
 import colors from "ansi-colors";
-import { Command } from "commander";
 import fs from "fs";
 import os from "os";
 import { join } from "path";
 import { getClient } from "../client.js";
+import { config, getCloudTypeFromConfigUrl, Profile } from "../profiles/index.js";
 import { runDocker, runDockerWithAgentConfig, runDockerWithOutput } from "./docker.js";
 import { AgentProject } from './project.js';
 import { tryRrefreshProjectToken } from './refresh.js';
 import { updateNpmrc } from "./registry.js";
 import { validateVersion } from './version.js';
 
+export enum PublishMode {
+    Push = 1,
+    Deploy = 2,
+    PushAndDeploy = 3
+}
+
+function shoudlDeploy(mode: PublishMode) {
+    return mode & PublishMode.Deploy;
+}
+
+function shouldPush(mode: PublishMode) {
+    return mode & PublishMode.Push;
+}
+
+// we need to build for the linux/amd64 platform (this is the platform used in Vertesia k8s)
+const TARGET_PLATFORM = "linux/amd64";
 const LATEST_VERSION = "latest";
 
-export async function publish(program: Command, version: string) {
-    if (!validateVersion(version)) {
-        console.log("Invalid version format: " + version + ". Use major.minor.patch format.");
-        process.exit(1);
-    }
-
-    const project = new AgentProject();
+async function pushImage(project: AgentProject, version: string) {
 
     // we need to frefresh the profile token if needed since
     // the docker credentials helper are connecting to studio.
@@ -32,11 +42,37 @@ export async function publish(program: Command, version: string) {
     console.log(`Pushing docker image ${remoteTag}`);
     runDocker(['tag', localTag, remoteTag]);
     runDockerWithAgentConfig(['push', remoteTag]);
+}
 
-    console.log("TODO publish to studio")
-    const client = getClient(program);
-    client; //TODO
-    //client.store.agents.deploy();
+async function triggerDeploy(profile: Profile, project: AgentProject, version: string) {
+    const environment = getCloudTypeFromConfigUrl(profile.config_url);
+    const client = getClient();
+    const agentId = project.getAgentId();
+    console.log(`Deploy agent ${agentId}:${version} to ${environment}`);
+    await client.store.agents.deploy({
+        environment,
+        agentId: project.getAgentId(),
+        version,
+    });
+}
+
+export async function publish(version: string, mode: PublishMode) {
+    if (!validateVersion(version)) {
+        console.log("Invalid version format: " + version + ". Use major.minor.patch[-modifier] format.");
+        process.exit(1);
+    }
+    if (!config.current) {
+        console.log("No active profile is defined.");
+        process.exit(1);
+    }
+    const profile = config.current;
+    const project = new AgentProject();
+    if (shouldPush(mode)) {
+        await pushImage(project, version);
+    }
+    if (shoudlDeploy(mode)) {
+        await triggerDeploy(profile, project, version);
+    }
 }
 
 export async function build() {
@@ -49,12 +85,12 @@ export async function build() {
 
     const tag = project.getLocalDockerTag(LATEST_VERSION);
     console.log(`Building docker image: ${tag}`);
-    runDocker(['buildx', 'build', '-t', tag, '.']);
+    runDocker(['buildx', 'build', '--platform', TARGET_PLATFORM, '-t', tag, '.']);
 }
 
 export async function release(version: string) {
     if (!validateVersion(version)) {
-        console.log("Invalid version format: " + version + ". Use major.minor.patch format.");
+        console.log("Invalid version format: " + version + ". Use major.minor.patch[-modifier] format.");
         process.exit(1);
     }
     const project = new AgentProject();
@@ -66,7 +102,7 @@ export async function release(version: string) {
 
 export function run(version: string = LATEST_VERSION) {
     if (version !== LATEST_VERSION && !validateVersion(version)) {
-        console.log("Invalid version format: " + version + ". Use major.minor.patch format.");
+        console.log("Invalid version format: " + version + ". Use major.minor.patch[-modifier] format.");
         process.exit(1);
     }
     const project = new AgentProject();
@@ -74,7 +110,8 @@ export function run(version: string = LATEST_VERSION) {
     // we need to inject the .env file into the container
     // and to get the google credentials needed by the worker
     // TODO: the google credentials will only work with vertesia users ...
-    const args = ['run', '--env-file', '.env'];
+    // we need to specify the target palftorm to force qemu emulation for user on other platforms
+    const args = ['run', '--platform', TARGET_PLATFORM, '--env-file', '.env'];
     const googleCredsFile = getGoogleCreddentialsFile();
     if (googleCredsFile) {
         args.push('-v', `${googleCredsFile}:/tmp/google-credentials.json`);

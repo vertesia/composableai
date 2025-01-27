@@ -93,7 +93,7 @@ export interface ExecuteInteraction extends DSLActivitySpec<ExecuteInteractionPa
     name: 'executeInteraction';
 }
 
-export async function executeInteraction(payload: DSLActivityExecutionPayload) {
+export async function executeInteraction(payload: DSLActivityExecutionPayload<ExecuteInteractionParams>) {
     const {
         client, params
     } = await setupActivity<ExecuteInteractionParams>(payload);

@@ -16,6 +16,11 @@ export interface WorkflowExecutionPayload {
     event: ContentEventName;
 
     /**
+     * The ref of the user who initiated the workflow.
+     */
+    initiated_by: string;
+
+    /**
      * The account ID of the user who created the activity.
      * This is usefull to select the right database to work on.
      */
@@ -70,6 +75,7 @@ export interface WorkflowExecutionPayload {
 
 
 export interface ExecuteWorkflowPayload {
+    task_queue?: string;
     objectIds?: string[];
     vars?: Record<string, any>;
 }

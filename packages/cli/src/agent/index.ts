@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { build, listVersions, publish, release, run } from "./commands.js";
+import { build, listVersions, publish, PublishMode, release, run } from "./commands.js";
 import { connectToProject } from "./connect.js";
 import { getGooglePrincipal, getGoogleToken } from "./registry.js";
 
@@ -18,17 +18,29 @@ export function registerAgentCommand(program: Command) {
     agent.command("publish <version>")
         .description("Deploy a custom workflow worker. The user will be asked for a target image version.")
         .option("-d, --dir [project_dir]", "Use this as the current directory.")
+        .option("--push-only", "If used the docker image will be push only. The deoloyment will not be triggered.")
+        .option("--deploy-only", "If used the docker is assumed to be already pushed and only the deploy will be triggered.")
+        .option("--verbose", "Print more information.")
         //.option("-p, --profile [profile]", "The profile name to use. If not specified the one from the package.json will be used.")
         .action(async (version: string, options: Record<string, any> = {}) => {
             if (options.dir) {
                 process.chdir(options.dir);
             }
-            await publish(program, version);
+            let mode: PublishMode;
+            if (options.pushOnly) {
+                mode = PublishMode.Push;
+            } else if (options.deployOnly) {
+                mode = PublishMode.Deploy
+            } else {
+                mode = PublishMode.PushAndDeploy;
+            }
+            await publish(version, mode);
         });
 
     agent.command("build")
         .description("Build a local docker image using 'latest' as version.")
         .option("-d, --dir [project_dir]", "Use this as the current directory.")
+        .option("--verbose", "Print more information.")
         .action(async (options: Record<string, any>) => {
             if (options.dir) {
                 process.chdir(options.dir);
@@ -39,6 +51,7 @@ export function registerAgentCommand(program: Command) {
     agent.command("release [version]")
         .description("Promote the latest version to a named version (tag it).")
         .option("-d, --dir [project_dir]", "Use this as the current directory.")
+        .option("--verbose", "Print more information.")
         .action(async (version: string, options: Record<string, any>) => {
             if (options.dir) {
                 process.chdir(options.dir);
@@ -49,6 +62,7 @@ export function registerAgentCommand(program: Command) {
     agent.command("run [version]")
         .description("Run the docker image identified by the given version or the 'latest' version if no version is given.")
         .option("-d, --dir [project_dir]", "Use this as the current directory.")
+        .option("--verbose", "Print more information.")
         .action(async (version: string, options: Record<string, any>) => {
             if (options.dir) {
                 process.chdir(options.dir);
@@ -58,6 +72,7 @@ export function registerAgentCommand(program: Command) {
 
     agent.command("versions")
         .description("List existing versions.")
+        .option("--verbose", "Print more information.")
         .action(async (_options: Record<string, any>) => {
             await listVersions();
         });

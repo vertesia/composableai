@@ -24,11 +24,16 @@ export interface ActivityPropertyDefinition {
     name: string;
     type: ActivityTypeDefinition;
     optional: boolean;
+    // the JSDoc comment for the activity property
+    doc?: string;
 }
 
 export interface ActivityDefinition {
     name: string;
-    description?: string;
+    // generated from name
+    title: string;
+    // the JSDoc comment for the activity function
+    doc?: string;
     paramsType: string;
     params: ActivityPropertyDefinition[];
     returnType?: ActivityTypeDefinition | undefined;

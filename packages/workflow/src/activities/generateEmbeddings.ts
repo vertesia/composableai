@@ -20,7 +20,7 @@ export interface GenerateEmbeddings extends DSLActivitySpec<GenerateEmbeddingsPa
     name: 'generateEmbeddings';
 }
 
-export async function generateEmbeddings(payload: DSLActivityExecutionPayload) {
+export async function generateEmbeddings(payload: DSLActivityExecutionPayload<GenerateEmbeddingsParams>) {
     const { params, client, objectId, fetchProject } = await setupActivity<GenerateEmbeddingsParams>(payload);
     const { force, type } = params;
 
