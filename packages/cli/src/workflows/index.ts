@@ -53,6 +53,7 @@ export function registerWorkflowsCommand(program: Command) {
         .description("Execute a workflow by name")
         .option('-o, --objectId [objectIds...]', 'Optional object to execute the workflow on.')
         .option('--vars', 'The workflow vars as an inline JSON.')
+        .option('--queue', 'The task queue name. Defaults to zeno-content')
         .option('-f, --file [file]', 'A file containing workflow execution payload.')
         .action(async (workflowName: string, options: Record<string, any>) => {
             await executeWorkflowByName(program, workflowName, options);
