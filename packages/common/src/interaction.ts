@@ -140,21 +140,9 @@ export interface InteractionUpdatePayload
         Omit<
             Interaction,
             "result_schema" | "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "project"
-            | "temperature" | "max_tokens" | "stop_sequence" | "top_k" | "top_p" | "presence_penalty" | "frequency_penalty" | "top_logprobs"
         >
     > {
     result_schema?: JSONSchema4 | null;
-
-    // Change ModelOptions properties to include null as a possible type
-    // Null values indicate that the property should be cleared.
-    temperature?: number | null;
-    max_tokens?: number | null;
-    stop_sequence?: string[] | null;
-    top_k?: number | null;
-    top_p?: number | null;
-    top_logprobs?: number | null;
-    presence_penalty?: number | null;
-    frequency_penalty?: number | null;
 }
 
 export interface InteractionPublishPayload {
