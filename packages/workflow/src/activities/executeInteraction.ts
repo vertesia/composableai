@@ -52,8 +52,7 @@ const JSON: DSLActivitySpec = {
         }
     }
 }
-
-export interface InteractionExecutionParams extends ModelOptions {
+export interface InteractionExecutionParams {
     /**
      * The environment to use. If not specified the project default environment will be used.
      * If the latter is not specified an exeption will be thrown.
@@ -80,6 +79,12 @@ export interface InteractionExecutionParams extends ModelOptions {
      * Wether or not to include the previous error in the interaction prompt data
      */
     include_previous_error?: boolean;
+
+
+    /**
+     * Options to control generation
+     */
+    model_options?: ModelOptions; 
 }
 
 
@@ -153,8 +158,7 @@ export async function executeInteractionFromActivity(client: VertesiaClient, int
     const config: InteractionExecutionConfiguration = {
         environment: params.environment,
         model: params.model,
-        max_tokens: params.max_tokens,
-        temperature: params.temperature
+        model_options: params.model_options,
     }
     const data = {
         ...prompt_data,
