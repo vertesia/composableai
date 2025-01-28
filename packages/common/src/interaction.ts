@@ -93,7 +93,7 @@ export interface CachePolicy {
     ttl: number;
 }
 export type InteractionVisibility = 'public' | 'private';
-export interface Interaction extends ModelOptions {
+export interface Interaction {
     readonly id: string;
     name: string;
     endpoint: string;
@@ -108,6 +108,7 @@ export interface Interaction extends ModelOptions {
     result_schema?: JSONSchema4 | SchemaRef;
     cache_policy?: CachePolicy;
     model: string;
+    model_options: ModelOptions;
     prompts: PromptSegmentDef[];
     output_modality?: Modalities;
     environment: string | ExecutionEnvironmentRef;
@@ -276,12 +277,13 @@ export const ConfigModesOptions: Record<ConfigModes, ConfigModesDescription> = {
     [ConfigModes.INTERACTION_CONFIG_ONLY]: ConfigModesDescription.INTERACTION_CONFIG_ONLY,
 }
 
-export interface InteractionExecutionConfiguration extends ModelOptions {
+export interface InteractionExecutionConfiguration {
     environment?: string;
     model?: string;
     do_validate?: boolean;
     run_data?: RunDataStorageLevel;
     configMode?: ConfigModes;
+    model_options?: ModelOptions;
 }
 
 export interface GenerateInteractionPayload {

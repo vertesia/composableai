@@ -24,13 +24,15 @@ export function genTestData(program: Command, interactionId: string, options: Re
         config: {
             environment: options.env,
             model: options.model || undefined,
-            temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
-            max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens) : undefined,
-            top_p: typeof options.topP === 'string' ? parseFloat(options.topP) : undefined,
-            top_k: typeof options.topK === 'string' ? parseInt(options.topK) : undefined,
-            presence_penalty: typeof options.presencePenalty === 'string' ? parseFloat(options.presencePenalty) : undefined,
-            frequency_penalty: typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
-            stop_sequence: options.stopSequences ? options.stopSequences.trim().split(/\s*,\s*/) : undefined,
+            model_options: {
+                temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
+                max_tokens: typeof options.maxTokens === 'string' ? parseInt(options.maxTokens) : undefined,
+                top_p: typeof options.topP === 'string' ? parseFloat(options.topP) : undefined,
+                top_k: typeof options.topK === 'string' ? parseInt(options.topK) : undefined,
+                presence_penalty: typeof options.presencePenalty === 'string' ? parseFloat(options.presencePenalty) : undefined,
+                frequency_penalty: typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
+                stop_sequence: options.stopSequences ? options.stopSequences.trim().split(/\s*,\s*/) : undefined,
+            },
             configMode: convertConfigMode(options.configMode),
         }
     }).then((result) => {
