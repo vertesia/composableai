@@ -89,6 +89,9 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
         Object.assign(mergedConfig, payload);
     }
 
+    if (options.queue) {
+        mergedConfig.task_queue = options.queue;
+    }
     const res = await getClient(program).workflows.execute(workflowName, mergedConfig);
     console.log(res);
 }

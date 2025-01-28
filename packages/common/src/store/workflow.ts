@@ -75,6 +75,7 @@ export interface WorkflowExecutionPayload {
 
 
 export interface ExecuteWorkflowPayload {
+    task_queue?: string;
     objectIds?: string[];
     vars?: Record<string, any>;
 }
