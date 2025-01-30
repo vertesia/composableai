@@ -16,8 +16,7 @@ export async function init(dirName?: string | undefined) {
 
     const isDockerInstalled = await hasBin("docker");
     if (!isDockerInstalled) {
-        console.error("Docker is not installed. Please install Docker first.");
-        process.exit(1);
+        console.warn("Docker is not installed. You must install docker if you need to publish your agent.");
     }
 
     let initialPm = "npm";

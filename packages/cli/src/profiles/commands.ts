@@ -1,7 +1,7 @@
 import colors from 'ansi-colors';
 import enquirer from "enquirer";
 import jwt from 'jsonwebtoken';
-import { config, shouldRefreshProfileToken } from "./index.js";
+import { config, getConfigUrl, getServerUrls, shouldRefreshProfileToken } from "./index.js";
 import { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
 
@@ -77,7 +77,14 @@ export function deleteProfile(name: string) {
     config.remove(name).save();
 }
 
-export async function createProfile(name?: string, target?: string, onResult?: OnResultCallback) {
+interface CreateProfileOptions {
+    target?: string,
+    apikey?: string,
+    project?: string;
+    account?: string;
+    onResult?: OnResultCallback
+}
+export async function createProfile(name?: string, options: CreateProfileOptions = {}) {
     const format = (value: string) => value.trim();
     const questions: any[] = [];
     if (!name) {
@@ -98,7 +105,7 @@ export async function createProfile(name?: string, target?: string, onResult?: O
             }
         });
     }
-    if (!target) {
+    if (!options.target) {
         // only show local and staging in dev mode
         const choices = config.isDevMode ? ['local', 'staging', 'preview', 'prod', 'custom'] : ['preview', 'prod'];
         questions.push({
@@ -110,6 +117,7 @@ export async function createProfile(name?: string, target?: string, onResult?: O
         });
     }
 
+    let target = options.target === "production" ? "prod" : options.target;
     if (questions.length > 0) {
         const response: any = await prompt(questions)
         if (!name) {
@@ -120,7 +128,28 @@ export async function createProfile(name?: string, target?: string, onResult?: O
         }
     }
 
-    config.createProfile(name!, target!).start(onResult);
+    if (!target || !name) {
+        console.error("Invalid profile name or target");
+        process.exit(1);
+    }
+
+    if (options.apikey) {
+        if (!options.account || !options.project) {
+            console.error("When using --apikey you must provide the project and account IDs");
+            process.exit(1);
+        }
+        config.add({
+            account: options.account,
+            project: options.project,
+            name,
+            config_url: getConfigUrl(target),
+            apikey: options.apikey,
+            ...getServerUrls(target),
+        });
+        config.use(name!).save();
+    } else {
+        config.createProfile(name!, target!).start(options.onResult);
+    }
 
     return name!;
 }

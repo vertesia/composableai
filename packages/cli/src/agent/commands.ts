@@ -75,7 +75,7 @@ export async function publish(version: string, mode: PublishMode) {
     }
 }
 
-export async function build() {
+export async function build(contextDir = '.') {
     const project = new AgentProject();
 
     const refreshResult = await tryRrefreshProjectToken(project);
@@ -85,7 +85,7 @@ export async function build() {
 
     const tag = project.getLocalDockerTag(LATEST_VERSION);
     console.log(`Building docker image: ${tag}`);
-    runDocker(['buildx', 'build', '--platform', TARGET_PLATFORM, '-t', tag, '.']);
+    runDocker(['buildx', 'build', '--platform', TARGET_PLATFORM, '-t', tag, contextDir]);
 }
 
 export async function release(version: string) {
