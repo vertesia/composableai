@@ -6,6 +6,7 @@ settings:
 
 overrides:
   cross-spawn@<6.0.6: ^6.0.6
+  vite@>= 5.0.0, <= 5.4.11: ^5.4.12
 
 importers:
 
