@@ -92,7 +92,7 @@ importers:
         specifier: ^5.2.2
         version: 5.7.2
       vitest:
-        specifier: ^2.1.6
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.2)(terser@5.37.0)
 
   packages/cli:
@@ -190,7 +190,7 @@ importers:
         specifier: ^5.0.2
         version: 5.7.2
       vitest:
-        specifier: ^2.1.6
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@20.17.10)(terser@5.37.0)
 
   packages/common:
@@ -215,7 +215,7 @@ importers:
         specifier: ^5.0.2
         version: 5.7.2
       vitest:
-        specifier: ^2.1.6
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.2)(terser@5.37.0)
 
   packages/converters:
@@ -246,7 +246,7 @@ importers:
         specifier: ^5.0.2
         version: 5.7.2
       vitest:
-        specifier: ^2.1.6
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.2)(terser@5.37.0)
 
   packages/create-agent:
@@ -277,7 +277,7 @@ importers:
         specifier: ^5.0.2
         version: 5.7.2
       vitest:
-        specifier: ^2.1.6
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.2)(terser@5.37.0)
 
   packages/react:
@@ -402,7 +402,7 @@ importers:
         specifier: ^0.6.3
         version: 0.6.3
       vitest:
-        specifier: ^2.1.6
+        specifier: ^2.1.8
         version: 2.1.8(@types/node@22.10.2)(terser@5.37.0)
 
 packages:
