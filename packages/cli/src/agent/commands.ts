@@ -84,8 +84,13 @@ export async function build(contextDir = '.') {
     }
 
     const tag = project.getLocalDockerTag(LATEST_VERSION);
+    const args = ['buildx', 'build', '--platform', TARGET_PLATFORM, '-t', tag];
+    if (contextDir !== '.') { // not the working directory
+        // use the dockerfile in the current working directory
+        args.push('-f', 'Dockerfile')
+    }
     console.log(`Building docker image: ${tag}`);
-    runDocker(['buildx', 'build', '--platform', TARGET_PLATFORM, '-t', tag, contextDir]);
+    runDocker([...args, contextDir]);
 }
 
 export async function release(version: string) {
