@@ -17,6 +17,7 @@ export interface InteractionExecutionError {
 export interface InteractionRef {
     id: string;
     name: string;
+    parent?: string;
     description?: string;
     status: InteractionStatus;
     visibility?: InteractionVisibility;
