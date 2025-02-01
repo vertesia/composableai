@@ -109,7 +109,7 @@ export interface Interaction {
     result_schema?: JSONSchema4 | SchemaRef;
     cache_policy?: CachePolicy;
     model: string;
-    model_options: ModelOptions;
+    model_options?: ModelOptions;
     prompts: PromptSegmentDef[];
     output_modality?: Modalities;
     environment: string | ExecutionEnvironmentRef;
