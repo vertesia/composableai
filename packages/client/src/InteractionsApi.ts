@@ -29,6 +29,15 @@ export default class InteractionsApi extends ApiTopic {
     }
 
     /**
+     * List all interaction versions in the project having the given endpoint name.
+     * This is useful to list orphaned versions
+     * @param name
+     */
+    listVersionsByName(name: string): Promise<InteractionRef[]> {
+        return this.get(`/versions/${name}`);
+    }
+
+    /**
      * Get the list of all interactions facets
      * @param payload query payload to filter facet search
      * @returns ComputeInteractionFacetsResponse[]

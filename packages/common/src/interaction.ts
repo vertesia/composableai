@@ -25,7 +25,7 @@ export interface InteractionRef {
     prompts?: PromptSegmentDef<PromptTemplateRef>[];
     updated_at: Date;
 }
-export const InteractionRefPopulate = "id name description status version visibility tags updated_at prompts";
+export const InteractionRefPopulate = "id name parent description status version visibility tags updated_at prompts";
 
 export interface InteractionRefWithSchema
     extends Omit<InteractionRef, "prompts"> {
