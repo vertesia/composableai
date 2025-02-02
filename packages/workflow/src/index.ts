@@ -20,9 +20,14 @@ export * from "./activities/generateDocumentProperties.js";
 export * from "./activities/generateEmbeddings.js";
 export * from "./activities/generateImageRendition.js";
 export * from "./activities/generateOrAssignContentType.js";
-export * from "./activities/setDocumentStatus.js";
 export * from "./activities/notifyWebhook.js";
+export * from "./activities/setDocumentStatus.js";
 export * from "./iterative-generation/activities/index.js";
 
-export * from "./result-types.js";
 export * from "./dsl/dslProxyActivities.js";
+export * from "./dsl/setup/ActivityContext.js";
+export * from "./errors.js";
+export * from "./result-types.js";
+export * from "./utils/blobs.js";
+export * from "./utils/tokens.js";
+
