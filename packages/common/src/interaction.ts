@@ -17,6 +17,7 @@ export interface InteractionExecutionError {
 export interface InteractionRef {
     id: string;
     name: string;
+    parent?: string;
     description?: string;
     status: InteractionStatus;
     visibility?: InteractionVisibility;
@@ -25,7 +26,7 @@ export interface InteractionRef {
     prompts?: PromptSegmentDef<PromptTemplateRef>[];
     updated_at: Date;
 }
-export const InteractionRefPopulate = "id name description status version visibility tags updated_at prompts";
+export const InteractionRefPopulate = "id name parent description status version visibility tags updated_at prompts";
 
 export interface InteractionRefWithSchema
     extends Omit<InteractionRef, "prompts"> {
@@ -108,7 +109,7 @@ export interface Interaction {
     result_schema?: JSONSchema4 | SchemaRef;
     cache_policy?: CachePolicy;
     model: string;
-    model_options: ModelOptions;
+    model_options?: ModelOptions;
     prompts: PromptSegmentDef[];
     output_modality?: Modalities;
     environment: string | ExecutionEnvironmentRef;
