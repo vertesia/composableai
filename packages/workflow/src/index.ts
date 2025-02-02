@@ -29,5 +29,8 @@ export * from "./dsl/setup/ActivityContext.js";
 export * from "./errors.js";
 export * from "./result-types.js";
 export * from "./utils/blobs.js";
+export * from "./utils/client.js";
+export * from "./utils/memory.js";
 export * from "./utils/tokens.js";
 
+export * from "./conversion/image.js";
