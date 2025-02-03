@@ -1,8 +1,7 @@
-import { ContentObject, CreateContentObjectPayload, DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { log } from "@temporalio/activity";
+import { ContentObject, CreateContentObjectPayload, DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { mutoolPdfToText } from '../conversion/mutool.js';
 import { manyToMarkdown } from '../conversion/pandoc.js';
-import { trasformPdfToMarkdown } from '../conversion/pdf.js';
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { NoDocumentFound } from '../errors.js';
 import { TextExtractionResult, TextExtractionStatus } from '../result-types.js';
@@ -66,11 +65,7 @@ export async function extractDocumentText(payload: DSLActivityExecutionPayload<E
 
         case 'application/pdf':
             //if pdf is more than 2MB, use mutool
-            if (fileBuffer.length > 2 * 1024 * 1024) {
-                txt = await mutoolPdfToText(fileBuffer);
-            } else {
-                txt = await trasformPdfToMarkdown(fileBuffer);
-            }
+            txt = await mutoolPdfToText(fileBuffer);
             break;
 
         case 'text/plain':

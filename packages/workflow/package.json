@@ -41,7 +41,6 @@
         "@vertesia/common": "workspace:*",
         "@vertesia/memory": "^0.43.0",
         "@llumiverse/core": "workspace:*",
-        "@opendocsg/pdf2md": "0.2.0",
         "@temporalio/activity": "^1.11.5",
         "@temporalio/workflow": "^1.11.5",
         "@tensorflow/tfjs-node": "^4.19.0",
