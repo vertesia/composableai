@@ -87,6 +87,11 @@
             "import": "./lib/esm/workflows.js",
             "require": "./lib/cjs/workflows.js"
         },
+        "./dsl": {
+            "types": "./lib/types/dsl.d.ts",
+            "import": "./lib/esm/dsl.js",
+            "require": "./lib/cjs/dsl.js"
+        },
         "./workflows-bundle": {
             "import": "./lib/workflows-bundle.js"
         }
@@ -99,6 +104,9 @@
             ],
             "workflows": [
                 "./lib/types/workflows.d.ts"
+            ],
+            "dsl": [
+                "./lib/types/dsl.d.ts"
             ],
             "vars": [
                 "./lib/types/dsl/vars.d.ts"
