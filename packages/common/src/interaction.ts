@@ -106,6 +106,7 @@ export interface Interaction {
     version: number;
     tags: string[];
     test_data?: JSONObject;
+    interaction_schema: JSONSchema4 | SchemaRef;
     result_schema?: JSONSchema4 | SchemaRef;
     cache_policy?: CachePolicy;
     model: string;
