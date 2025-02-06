@@ -146,9 +146,12 @@ profilesRoot.command('use [name]')
 profilesRoot.command('add [name]')
     .alias('create')
     .option("-t, --target <env>", "The target environment for the profile. Possible values are: local, dev, staging, prod or an URL for custom servers.")
+    .option("-k, --apikey <key>", "The API key to use for the profile")
+    .option("-p, --project <project>", "The project ID to use for the profile")
+    .option("-a, --account <account>", "The account ID to use for the profile")
     .description("Create a new configuration profile")
     .action((name?: string, options?: Record<string, any>) => {
-        createProfile(name, options?.target);
+        createProfile(name, options || {});
     });
 profilesRoot.command('edit [name]')
     .alias('update')

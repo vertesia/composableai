@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/workflow",
-    "version": "0.49.0",
+    "version": "0.50.1",
     "type": "module",
     "description": "Composable prompts workflow dsl",
     "main": "./lib/esm/index.js",
@@ -30,7 +30,7 @@
         "@types/papaparse": "^5.3.15",
         "@types/tmp": "^0.2.6",
         "ts-dual-module": "^0.6.3",
-        "vitest": "^2.1.6",
+        "vitest": "^2.1.8",
         "@smithy/types": "^3.7.2"
     },
     "dependencies": {
@@ -41,7 +41,6 @@
         "@vertesia/common": "workspace:*",
         "@vertesia/memory": "^0.43.0",
         "@llumiverse/core": "workspace:*",
-        "@opendocsg/pdf2md": "0.2.0",
         "@temporalio/activity": "^1.11.5",
         "@temporalio/workflow": "^1.11.5",
         "@tensorflow/tfjs-node": "^4.19.0",
@@ -88,6 +87,11 @@
             "import": "./lib/esm/workflows.js",
             "require": "./lib/cjs/workflows.js"
         },
+        "./dsl": {
+            "types": "./lib/types/dsl.d.ts",
+            "import": "./lib/esm/dsl.js",
+            "require": "./lib/cjs/dsl.js"
+        },
         "./workflows-bundle": {
             "import": "./lib/workflows-bundle.js"
         }
@@ -100,6 +104,9 @@
             ],
             "workflows": [
                 "./lib/types/workflows.d.ts"
+            ],
+            "dsl": [
+                "./lib/types/dsl.d.ts"
             ],
             "vars": [
                 "./lib/types/dsl/vars.d.ts"

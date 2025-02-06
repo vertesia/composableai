@@ -11,7 +11,7 @@ export interface ExecuteOptions {
     memory_mapping?: Record<string, any>;
     environment?: string;
     model?: string;
-    model_options: ModelOptions
+    model_options?: ModelOptions;
     result_schema?: Record<string, any>;
 }
 
@@ -25,7 +25,7 @@ export async function execute<T = any>(client: VertesiaClient, options: ExecuteO
         config: {
             environment: options.environment,
             model: options.model,
-            model_options: options.model_options
+            model_options: options.model_options,
         }
     });
 }

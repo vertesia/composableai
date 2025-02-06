@@ -9,7 +9,7 @@ export interface ActivityTypeDefinition {
     // in case of primitive literals will be the value
     // or nested objects / arrays will be "object" or "array"
     // for record this is Record<type,type>
-    value: string | boolean | number;
+    value: string | boolean | number | null;
     // in case of objects
     members?: ActivityPropertyDefinition[];
     // in case of arrays or promises will be innertype (i.e. the element type for arrays)

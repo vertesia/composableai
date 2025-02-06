@@ -80,7 +80,6 @@ export interface InteractionExecutionParams {
      */
     include_previous_error?: boolean;
 
-
     /**
      * Options to control generation
      */

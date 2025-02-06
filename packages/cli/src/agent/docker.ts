@@ -1,10 +1,10 @@
+import ansiColors from "ansi-colors";
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { getClient } from "../client.js";
 import { config } from "../profiles/index.js";
 import { AgentProject } from "./project.js";
-import ansiColors from "ansi-colors";
 
 
 const LOCAL_DOCKER_CONFIG_DIR = '.docker';
@@ -71,7 +71,7 @@ export function runDocker(args: string[]) {
         console.error(
             `Command "docker ${args.join(' ')}" failed with exit code ${r.status}`
         );
-        process.exit(r.status);
+        process.exit(r.status ?? 1);
     }
     return r;
 }
@@ -99,7 +99,7 @@ export function runDockerWithOutput(args: string[]) {
         console.error(
             `Command "docker ${args.join(' ')}" failed with exit code ${r.status}\n${r.stderr}`
         );
-        process.exit(r.status);
+        process.exit(r.status ?? 1);
     }
     return r.stdout.trim();
 }
