@@ -320,9 +320,6 @@ importers:
       '@llumiverse/core':
         specifier: workspace:*
         version: link:../../llumiverse/core
-      '@opendocsg/pdf2md':
-        specifier: 0.2.0
-        version: 0.2.0
       '@temporalio/activity':
         specifier: ^1.11.5
         version: 1.11.5
