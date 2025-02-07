@@ -23,6 +23,7 @@
     },
     "license": "Apache-2.0",
     "devDependencies": {
+        "@smithy/types": "^3.7.2",
         "@temporalio/testing": "^1.11.5",
         "@temporalio/worker": "^1.11.5",
         "@types/jsonwebtoken": "^9.0.7",
@@ -30,21 +31,20 @@
         "@types/papaparse": "^5.3.15",
         "@types/tmp": "^0.2.6",
         "ts-dual-module": "^0.6.3",
-        "vitest": "^2.1.8",
-        "@smithy/types": "^3.7.2"
+        "vitest": "^2.1.9"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.693.0",
         "@aws-sdk/client-textract": "^3.693.0",
         "@aws-sdk/credential-providers": "^3.693.0",
-        "@vertesia/client": "workspace:*",
-        "@vertesia/common": "workspace:*",
-        "@vertesia/memory": "^0.43.0",
         "@llumiverse/core": "workspace:*",
         "@temporalio/activity": "^1.11.5",
         "@temporalio/workflow": "^1.11.5",
         "@tensorflow/tfjs-node": "^4.19.0",
         "@types/json-schema": "^7.0.15",
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*",
+        "@vertesia/memory": "^0.43.0",
         "api-fetch-client": "^0.13.0",
         "fast-deep-equal": "^3.1.3",
         "jsonwebtoken": "^9.0.2",
