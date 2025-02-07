@@ -53,7 +53,7 @@ importers:
         specifier: ^5.4.2
         version: 5.7.2
       vitest:
-        specifier: ^2.1.9
+        specifier: ^2.0.0
         version: 2.1.9(@types/node@22.10.2)(terser@5.37.0)
 
   packages/api-fetch-client:
