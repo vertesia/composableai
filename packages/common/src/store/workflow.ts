@@ -123,7 +123,7 @@ export interface WorkflowRun {
     execution_duration?: number,
     run_id?: string,
     workflow_id?: string,
-    initiated_by?: string | undefined,
+    initiated_by?: string,
     raw?: any
 }
 
