@@ -1,5 +1,5 @@
-import { ComputeRunFacetPayload, ExecutionRun, ExecutionRunRef, FindPayload, RunCreatePayload, RunListingFilters, RunListingQueryOptions, RunSearchPayload } from "@vertesia/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ComputeRunFacetPayload, ExecutionRun, ExecutionRunRef, FindPayload, RunCreatePayload, RunListingFilters, RunListingQueryOptions, RunSearchPayload } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 
 export interface FilterOption {
@@ -48,10 +48,11 @@ export class RunsApi extends ApiTopic {
 
     /**
      * Get a run by id
+     * 
      * @param id
      * @returns InteractionResult
      **/
-    retrieve(id: string): Promise<ExecutionRun> {
+    retrieve<P=any, R=any>(id: string): Promise<ExecutionRun<P, R>> {
         return this.get('/' + id);
     }
 
