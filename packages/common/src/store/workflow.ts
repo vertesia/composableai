@@ -88,6 +88,7 @@ export interface ListWorkflowRunsPayload {
     end?: string;
     status?: string;
     search_term?: string;
+    initiated_by?: string;
 }
 
 interface WorkflowRunEvent {
@@ -122,6 +123,7 @@ export interface WorkflowRun {
     execution_duration?: number,
     run_id?: string,
     workflow_id?: string,
+    initiated_by?: string | undefined,
     raw?: any
 }
 
