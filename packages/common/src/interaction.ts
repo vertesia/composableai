@@ -17,6 +17,7 @@ export interface InteractionExecutionError {
 export interface InteractionRef {
     id: string;
     name: string;
+    parent?: string;
     description?: string;
     status: InteractionStatus;
     visibility?: InteractionVisibility;
@@ -25,7 +26,7 @@ export interface InteractionRef {
     prompts?: PromptSegmentDef<PromptTemplateRef>[];
     updated_at: Date;
 }
-export const InteractionRefPopulate = "id name description status version visibility tags updated_at prompts";
+export const InteractionRefPopulate = "id name parent description status version visibility tags updated_at prompts";
 
 export interface InteractionRefWithSchema
     extends Omit<InteractionRef, "prompts"> {
@@ -93,7 +94,7 @@ export interface CachePolicy {
     ttl: number;
 }
 export type InteractionVisibility = 'public' | 'private';
-export interface Interaction extends ModelOptions {
+export interface Interaction {
     readonly id: string;
     name: string;
     endpoint: string;
@@ -105,9 +106,11 @@ export interface Interaction extends ModelOptions {
     version: number;
     tags: string[];
     test_data?: JSONObject;
+    interaction_schema?: JSONSchema4 | SchemaRef;
     result_schema?: JSONSchema4 | SchemaRef;
     cache_policy?: CachePolicy;
     model: string;
+    model_options?: ModelOptions;
     prompts: PromptSegmentDef[];
     output_modality?: Modalities;
     environment: string | ExecutionEnvironmentRef;
@@ -139,21 +142,9 @@ export interface InteractionUpdatePayload
         Omit<
             Interaction,
             "result_schema" | "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "project"
-            | "temperature" | "max_tokens" | "stop_sequence" | "top_k" | "top_p" | "presence_penalty" | "frequency_penalty" | "top_logprobs"
         >
     > {
     result_schema?: JSONSchema4 | null;
-
-    // Change ModelOptions properties to include null as a possible type
-    // Null values indicate that the property should be cleared.
-    temperature?: number | null;
-    max_tokens?: number | null;
-    stop_sequence?: string[] | null;
-    top_k?: number | null;
-    top_p?: number | null;
-    top_logprobs?: number | null;
-    presence_penalty?: number | null;
-    frequency_penalty?: number | null;
 }
 
 export interface InteractionPublishPayload {
@@ -276,12 +267,13 @@ export const ConfigModesOptions: Record<ConfigModes, ConfigModesDescription> = {
     [ConfigModes.INTERACTION_CONFIG_ONLY]: ConfigModesDescription.INTERACTION_CONFIG_ONLY,
 }
 
-export interface InteractionExecutionConfiguration extends ModelOptions {
+export interface InteractionExecutionConfiguration {
     environment?: string;
     model?: string;
     do_validate?: boolean;
     run_data?: RunDataStorageLevel;
     configMode?: ConfigModes;
+    model_options?: ModelOptions;
 }
 
 export interface GenerateInteractionPayload {

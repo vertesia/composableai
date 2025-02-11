@@ -1,7 +1,7 @@
 
 import { log } from "@temporalio/workflow";
 import { ContentEventName, WorkflowExecutionPayload } from "@vertesia/common";
-import * as activities from "../activities/index-dsl.js";
+import * as activities from "../activities/notifyWebhook.js";
 import { dslProxyActivities } from "../dsl/dslProxyActivities.js";
 
 const {

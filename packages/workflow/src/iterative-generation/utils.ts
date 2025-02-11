@@ -2,6 +2,7 @@ import { VertesiaClient } from "@vertesia/client";
 import { ExecutionRun } from "@vertesia/common";
 import { ApplicationFailure } from "@temporalio/workflow";
 import { OutputMemoryMeta, PartIndex, Toc, TocIndex, TocSection } from "./types.js";
+import { ModelOptions } from "@llumiverse/core";
 
 export interface ExecuteOptions {
     interaction: string;
@@ -9,8 +10,7 @@ export interface ExecuteOptions {
     memory_mapping?: Record<string, any>;
     environment?: string;
     model?: string;
-    max_tokens?: number;
-    temperature?: number;
+    model_options?: ModelOptions;
     result_schema?: Record<string, any>;
 }
 
@@ -24,8 +24,7 @@ export async function execute<T = any>(client: VertesiaClient, options: ExecuteO
         config: {
             environment: options.environment,
             model: options.model,
-            max_tokens: options.max_tokens,
-            temperature: options.temperature,
+            model_options: options.model_options,
         }
     });
 }
@@ -36,14 +35,17 @@ export function executeWithVars<T = any>(client: VertesiaClient, interaction: st
     } else {
         mapping = vars.input_mapping;
     }
+    const model_options: ModelOptions = {
+        max_tokens: vars.max_tokens,
+        temperature: vars.temperature
+    }
     return execute(client, {
         interaction: interaction,
         memory: `${vars.memory}/input`,
         memory_mapping: mapping,
         environment: vars.environment,
         model: vars.model,
-        max_tokens: vars.max_tokens,
-        temperature: vars.temperature,
+        model_options: model_options,
         result_schema: result_schema
     });
 }

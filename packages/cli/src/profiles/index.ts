@@ -34,6 +34,29 @@ export function getConfigUrl(value: ConfigUrlRef) {
             }
     }
 }
+const getServiceUrl = (service: string, env: string) => `https://${service}-server-${env}.api.vertesia.io`;
+export function getServerUrls(value: ConfigUrlRef) {
+    switch (value) {
+        case "local":
+            return {
+                studio_server_url: "http://localhost:8091",
+                zeno_server_url: "http://localhost:8092",
+            };
+        case "staging":
+        case "preview":
+            return {
+                studio_server_url: getServiceUrl("studio", value),
+                zeno_server_url: getServiceUrl("zeno", value),
+            };
+        case "prod":
+            return {
+                studio_server_url: getServiceUrl("studio", "production"),
+                zeno_server_url: getServiceUrl("zeno", "production"),
+            };
+        default:
+            throw new Error("Unable to detect server urls from custom target.");
+    }
+}
 export function getCloudTypeFromConfigUrl(url: string) {
     if (url.startsWith("https://localhost")) {
         return "staging";

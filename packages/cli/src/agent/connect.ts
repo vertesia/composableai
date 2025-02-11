@@ -7,27 +7,36 @@ import { updateNpmrc } from "./registry.js";
 
 const { prompt } = enquirer;
 
-export async function connectToProject() {
+interface ConnectOptions {
+    nonInteractive?: boolean;
+    profile?: string;
+}
+export async function connectToProject(options: ConnectOptions) {
+    const allowInteraction = !options.nonInteractive;
     const project = new AgentProject();
     const pkg = project.packageJson;
-    let profileName: string | undefined = pkg.vertesia.profile;
+    let profileName: string | undefined = options.profile || pkg.vertesia.profile;
     const onAuthenticationDone = async (result: ConfigResult) => {
         await updateNpmrc(project, result.profile);
     }
     try {
-        if (!profileName) {
+        if (allowInteraction && !profileName) {
             profileName = await askProfileName();
             if (!profileName) {
                 // create a new profile
-                profileName = await createProfile(undefined, undefined, onAuthenticationDone);
+                profileName = await createProfile(undefined, { onResult: onAuthenticationDone });
             }
+        }
+        if (!profileName) {
+            console.log('Profile not specified. When using --non-interactive mode you may want to specify a profile');
+            process.exit(1);
         }
         const profile = config.getProfile(profileName);
         if (!profile) {
             console.log('Profile not found:', profileName);
             process.exit(1);
         }
-        if (shouldRefreshProfileToken(profile, 10)) {
+        if (allowInteraction && shouldRefreshProfileToken(profile, 10)) {
             console.log("Refreshing auth token for profile:", profileName);
             await updateProfile(profileName, onAuthenticationDone);
         } else {

@@ -75,7 +75,7 @@ export async function publish(version: string, mode: PublishMode) {
     }
 }
 
-export async function build() {
+export async function build(contextDir = '.') {
     const project = new AgentProject();
 
     const refreshResult = await tryRrefreshProjectToken(project);
@@ -84,8 +84,13 @@ export async function build() {
     }
 
     const tag = project.getLocalDockerTag(LATEST_VERSION);
+    const args = ['buildx', 'build', '--platform', TARGET_PLATFORM, '-t', tag];
+    if (contextDir !== '.') { // not the working directory
+        // use the dockerfile in the current working directory
+        args.push('-f', 'Dockerfile')
+    }
     console.log(`Building docker image: ${tag}`);
-    runDocker(['buildx', 'build', '--platform', TARGET_PLATFORM, '-t', tag, '.']);
+    runDocker([...args, contextDir]);
 }
 
 export async function release(version: string) {
