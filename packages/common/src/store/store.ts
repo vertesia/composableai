@@ -129,7 +129,6 @@ export interface ContentObjectItem<T = any> extends BaseObject {
         encoding: string; // the encoding used to calculate the tokens
         etag: string; //the etag of the text used for the token count
     };
-    run?: string; // the ID of the interaction run that created the object
 }
 
 /**

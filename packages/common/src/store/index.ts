@@ -6,3 +6,4 @@ export * from "./object-types.js";
 export * from "./store.js";
 export * from "./temporalio.js";
 export * from "./workflow.js";
+export * from "./collections.js";
