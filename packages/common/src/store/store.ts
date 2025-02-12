@@ -48,11 +48,13 @@ export interface GenerationRunMetadata {
     target?: string;
 }
 
+
+
 export interface ContentMetadata {
     // Common fields for all media types
     type?: ContentNature;
     size?: number;      // in bytes
-    language?: string;
+    languages?: string[];
     location?: Location;
     generation_runs: GenerationRunMetadata[];
     etag?: string;
@@ -81,6 +83,15 @@ export interface VideoMetadata extends TemporalMediaMetadata {
 export interface DocumentMetadata extends ContentMetadata {
     type: 'document';
     page_count?: number;
+    content_processor?: {
+        type?: string;
+        features_requested?: string[];
+        zones_requested?: string[];
+        table_count?: number;
+        image_count: number;
+        zone_count: number;
+        needs_ocr_count?: number;
+    }
 }
 
 export interface Transcript {
