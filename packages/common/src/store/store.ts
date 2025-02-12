@@ -140,7 +140,6 @@ export interface ContentObjectItem<T = any> extends BaseObject {
         encoding: string; // the encoding used to calculate the tokens
         etag: string; //the etag of the text used for the token count
     };
-    run?: string; // the ID of the interaction run that created the object
 }
 
 /**
@@ -188,18 +187,9 @@ export interface ColumnLayout {
 }
 export interface ContentObjectType extends ContentObjectTypeItem {
     object_schema?: Record<string, any>; // an optional JSON schema for the object properties.
-    table_layout?: ColumnLayout[]; // an optional table layout for the object properties.
 }
 export interface ContentObjectTypeItem extends BaseObject {
     is_chunkable?: boolean;
-}
-/**
- * Used to list types with their table layout if any
- */
-export interface ContentObjectTypeLayout {
-    id: string;
-    name: string;
-    description?: string;
     table_layout?: ColumnLayout[];
 }
 

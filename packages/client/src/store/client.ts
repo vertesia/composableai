@@ -7,6 +7,7 @@ import { FilesApi } from "./FilesApi.js";
 import { ObjectsApi } from "./ObjectsApi.js";
 import { TypesApi } from "./TypesApi.js";
 import { WorkflowsApi } from "./WorkflowsApi.js";
+import { CollectionsApi } from "./CollectionsApi.js";
 
 export interface ZenoClientProps {
     serverUrl?: string;
@@ -60,4 +61,5 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     files = new FilesApi(this);
     commands = new CommandsApi(this);
     agents = new AgentsApi(this);
+    collections = new CollectionsApi(this);
 }
