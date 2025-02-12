@@ -20,6 +20,8 @@ export interface AwsConfiguration extends IntegrationConfigurationBase {
 
 export interface MacgicPdfConfiguration extends IntegrationConfigurationBase {
     // No additional configuration
+    default_features?: string[];
+    default_zones?: string[];
 }
 
 export enum SupportedIntegrations {
