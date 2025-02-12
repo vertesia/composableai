@@ -31,6 +31,11 @@ export enum Datacenters {
     azure = 'azure'
 }
 
+export enum BillingMethod {
+    stripe = 'stripe',
+    invoice ='invoice'
+}
+
 export interface Account {
     id: string;
     name: string;
@@ -48,6 +53,11 @@ export interface Account {
     };
 
     datacenter: string;
+
+    billing: {
+        method: BillingMethod,
+        customer_id?: string,
+    };
 
     created_by: string;
     updated_by: string;
