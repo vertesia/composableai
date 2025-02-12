@@ -176,18 +176,9 @@ export interface ColumnLayout {
 }
 export interface ContentObjectType extends ContentObjectTypeItem {
     object_schema?: Record<string, any>; // an optional JSON schema for the object properties.
-    table_layout?: ColumnLayout[]; // an optional table layout for the object properties.
 }
 export interface ContentObjectTypeItem extends BaseObject {
     is_chunkable?: boolean;
-}
-/**
- * Used to list types with their table layout if any
- */
-export interface ContentObjectTypeLayout {
-    id: string;
-    name: string;
-    description?: string;
     table_layout?: ColumnLayout[];
 }
 
