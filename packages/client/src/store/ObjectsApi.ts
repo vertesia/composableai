@@ -3,6 +3,7 @@ import { ComplexSearchPayload, ComputeObjectFacetPayload, ContentObject, Content
 
 import { StreamSource } from '../StreamSource.js';
 import { ZenoClient } from './client.js';
+import { AnalyzeDocApi } from './AnalyseDocApi.js';
 
 export interface UploadContentObjectPayload extends Omit<CreateContentObjectPayload, 'content'> {
     content?: StreamSource | File | {
@@ -31,6 +32,10 @@ export class ObjectsApi extends ApiTopic {
 
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/objects");
+    }
+
+    analyze(objectId: string) {
+        return new AnalyzeDocApi(this, objectId);
     }
 
     getUploadUrl(payload: GetUploadUrlPayload): Promise<GetFileUrlResponse> {
