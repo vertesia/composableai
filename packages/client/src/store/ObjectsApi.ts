@@ -3,7 +3,7 @@ import { ComplexSearchPayload, ComputeObjectFacetPayload, ContentObject, Content
 
 import { StreamSource } from '../StreamSource.js';
 import { ZenoClient } from './client.js';
-import { AnalyzeDocApi } from './AnalyseDocApi.js';
+import { AnalyzeDocApi } from './AnalyzeDocApi.js';
 
 export interface UploadContentObjectPayload extends Omit<CreateContentObjectPayload, 'content'> {
     content?: StreamSource | File | {
