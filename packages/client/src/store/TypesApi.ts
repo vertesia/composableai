@@ -1,4 +1,4 @@
-import { ContentObjectType, ContentObjectTypeItem, ContentObjectTypeLayout, CreateContentObjectTypePayload, FindPayload, ObjectTypeSearchQuery, ObjectTypeSearchPayload } from "@vertesia/common";
+import { ContentObjectType, ContentObjectTypeItem, CreateContentObjectTypePayload, FindPayload, ObjectTypeSearchQuery, ObjectTypeSearchPayload } from "@vertesia/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 
@@ -8,7 +8,15 @@ export class TypesApi extends ApiTopic {
         super(parent, "/api/v1/types");
     }
 
-    list(payload: ObjectTypeSearchPayload = {}): Promise<ContentObjectTypeItem[]> {
+    /**
+     * The options can be used to include more information in the return objects.
+     * You can specify to also include layout information using `layout: true`.
+     * By default the layout information is not included.
+     * @param payload
+     * @param options
+     * @returns
+     */
+    list(payload: ObjectTypeSearchPayload = {}, options?: { layout: boolean }): Promise<ContentObjectTypeItem[]> {
         const limit = payload.limit || 100;
         const offset = payload.offset || 0;
         const query = payload.query || {} as ObjectTypeSearchQuery;
@@ -17,6 +25,7 @@ export class TypesApi extends ApiTopic {
             query: {
                 limit,
                 offset,
+                layout: options?.layout ? true : false,
                 ...query
             }
         });
@@ -25,12 +34,6 @@ export class TypesApi extends ApiTopic {
     find(payload: FindPayload): Promise<ContentObjectType[]> {
         return this.post("/find", {
             payload
-        });
-    }
-
-    layouts(): Promise<ContentObjectTypeLayout[]> {
-        return this.get('/', {
-            query: { layout: true }
         });
     }
 

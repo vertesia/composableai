@@ -48,11 +48,13 @@ export interface GenerationRunMetadata {
     target?: string;
 }
 
+
+
 export interface ContentMetadata {
     // Common fields for all media types
     type?: ContentNature;
     size?: number;      // in bytes
-    language?: string;
+    languages?: string[];
     location?: Location;
     generation_runs: GenerationRunMetadata[];
     etag?: string;
@@ -81,6 +83,15 @@ export interface VideoMetadata extends TemporalMediaMetadata {
 export interface DocumentMetadata extends ContentMetadata {
     type: 'document';
     page_count?: number;
+    content_processor?: {
+        type?: string;
+        features_requested?: string[];
+        zones_requested?: string[];
+        table_count?: number;
+        image_count: number;
+        zone_count: number;
+        needs_ocr_count?: number;
+    }
 }
 
 export interface Transcript {
@@ -129,7 +140,6 @@ export interface ContentObjectItem<T = any> extends BaseObject {
         encoding: string; // the encoding used to calculate the tokens
         etag: string; //the etag of the text used for the token count
     };
-    run?: string; // the ID of the interaction run that created the object
 }
 
 /**
@@ -177,18 +187,9 @@ export interface ColumnLayout {
 }
 export interface ContentObjectType extends ContentObjectTypeItem {
     object_schema?: Record<string, any>; // an optional JSON schema for the object properties.
-    table_layout?: ColumnLayout[]; // an optional table layout for the object properties.
 }
 export interface ContentObjectTypeItem extends BaseObject {
     is_chunkable?: boolean;
-}
-/**
- * Used to list types with their table layout if any
- */
-export interface ContentObjectTypeLayout {
-    id: string;
-    name: string;
-    description?: string;
     table_layout?: ColumnLayout[];
 }
 

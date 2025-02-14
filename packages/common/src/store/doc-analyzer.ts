@@ -42,6 +42,7 @@ export interface DocTable {
  */
 export interface DocTableCsv extends DocTable {
     format: "application/csv";
+    title?: string;
     data: string;
 }
 
@@ -50,7 +51,8 @@ export interface DocTableCsv extends DocTable {
  */
 export interface DocTableJson extends DocTable {
     format: "application/json";
-    data: Object;
+    title?: string;
+    data: Object[];
 }
 
 /**
@@ -77,6 +79,7 @@ export interface DocAnalyzerProgress {
     images: DocAnalyzerProgressStatus,
     tables: DocAnalyzerProgressStatus,
     layouts: DocAnalyzerProgressStatus,
+    visuals: DocAnalyzerProgressStatus,
     started_at?: number;
     time_elapsed?: number;
   }
