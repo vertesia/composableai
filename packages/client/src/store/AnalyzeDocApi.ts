@@ -3,7 +3,7 @@ import { ContentObject, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, 
 
 export class AnalyzeDocApi extends ApiTopic {
     constructor(parent: ClientBase, public objectId: string) {
-        super(parent, "`/${objectId}/analyze");
+        super(parent, `/${objectId}/analyze`);
     }
 
     async start(payload: PdfToRichtextOptions): Promise<DocAnalyzeRunStatusResponse> {
