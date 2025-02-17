@@ -39,7 +39,7 @@ export enum BillingMethod {
 
 interface AccountBilling {
     method: BillingMethod;
-    customer_id?: string;
+    stripe_customer_id?: string;
 }
 export interface Account {
     id: string;
