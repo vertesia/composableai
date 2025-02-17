@@ -26,7 +26,7 @@ export interface DocImage {
     height?: number;
     path?: string;
 }
-    
+
 /**
  * Represents a table in a document that has been analyzed
  */
@@ -58,10 +58,11 @@ export interface DocTableJson extends DocTable {
 /**
  * Represents a document analysis run status
  */
-export interface DocAnalyzeRunStatusResponse {
-    workflow_id: string|null;
-    run_id: string|null;
+export interface DocAnalyzeRunStatusResponse {
+    workflow_id: string | null;
+    run_id: string | null;
     status: 'processing' | 'completed' | 'failed' | 'not-found';
+    progress?: DocAnalyzerProgress;
 }
 
 
@@ -82,11 +83,11 @@ export interface DocAnalyzerProgress {
     visuals: DocAnalyzerProgressStatus,
     started_at?: number;
     time_elapsed?: number;
-  }
-  
-  interface DocAnalyzerProgressStatus {
+}
+
+interface DocAnalyzerProgressStatus {
     total: number;
     processed: number;
     success: number;
     failed: number;
-  }
+}
