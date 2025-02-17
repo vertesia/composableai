@@ -79,10 +79,9 @@ export interface DocAnalyzerProgress {
     pages: DocAnalyzerProgressStatus,
     images: DocAnalyzerProgressStatus,
     tables: DocAnalyzerProgressStatus,
-    layouts: DocAnalyzerProgressStatus,
     visuals: DocAnalyzerProgressStatus,
     started_at?: number;
-    time_elapsed?: number;
+    percent: number;
 }
 
 interface DocAnalyzerProgressStatus {
