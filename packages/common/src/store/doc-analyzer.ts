@@ -1,4 +1,4 @@
-import { WorkflowExecutionPayload } from "./workflow.js";
+import { WorkflowExecutionPayload, WorkflowExecutionStatus } from "./workflow.js";
 
 export interface PdfToRichtextOptions {
     features: string[];
@@ -61,7 +61,7 @@ export interface DocTableJson extends DocTable {
 export interface DocAnalyzeRunStatusResponse {
     workflow_id: string | null;
     run_id: string | null;
-    status: 'processing' | 'completed' | 'failed' | 'not-found';
+    status: WorkflowExecutionStatus;
     progress?: DocAnalyzerProgress;
 }
 
