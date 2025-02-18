@@ -7,6 +7,7 @@ export * from "./facets.js";
 export * from './integrations.js';
 export * from './interaction.js';
 export * from './payload.js';
+export * from "./Progress.js";
 export * from './project.js';
 export * from './prompt.js';
 export * from './query.js';
@@ -19,4 +20,3 @@ export * from './user.js';
 export * from './utils/advanced-content-processing.js';
 export * from './utils/auth.js';
 export * from './utils/schemas.js';
-
