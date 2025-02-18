@@ -49,9 +49,3 @@ export interface CollectionSearchPayload {
     limit?: number;
     offset?: number;
 }
-
-export interface CollectionMembersSearchPayload {
-    limit?: number,
-    offset?: number,
-    query?: Record<string, any>
-}
