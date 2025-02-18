@@ -1,4 +1,4 @@
-import { AIModel, ModelOptions } from "@llumiverse/core";
+import { AIModel, TextFallbackOptions } from "@llumiverse/core";
 
 
 export enum SupportedProviders {
@@ -146,13 +146,13 @@ export interface LoadBalancingEnvEntryConfig extends VirtualEnvEntry {
     weight: number;
 }
 
-export interface MediatorEnvConfig{
+export interface MediatorEnvConfig {
     entries?: VirtualEnvEntry[];
     max_concurrent_requests?: number;
     // the model used to evaluate the responses. If not specified all entries will mediates the response
     // and the best response will be picked
     mediators?: VirtualEnvEntry[];
-    model_options?: ModelOptions;
+    model_options?: TextFallbackOptions;
 }
 
 export interface ExecutionEnvironment {
