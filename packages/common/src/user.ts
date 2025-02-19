@@ -31,6 +31,16 @@ export enum Datacenters {
     azure = 'azure'
 }
 
+export enum BillingMethod {
+    stripe = 'stripe',
+    invoice ='invoice'
+}
+
+
+interface AccountBilling {
+    method: BillingMethod;
+    stripe_customer_id?: string;
+}
 export interface Account {
     id: string;
     name: string;
@@ -49,6 +59,8 @@ export interface Account {
 
     datacenter: string;
 
+    billing: AccountBilling;
+
     created_by: string;
     updated_by: string;
     created_at: string;
@@ -58,6 +70,7 @@ export interface Account {
 export interface UpdateAccountPayload {
     name?: string;
     email_domains?: string[];
+    billing?: AccountBilling;
 }
 
 export interface AccountRef {

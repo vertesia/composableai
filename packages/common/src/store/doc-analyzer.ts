@@ -1,4 +1,4 @@
-import { WorkflowExecutionPayload } from "./workflow.js";
+import { WorkflowExecutionPayload, WorkflowExecutionStatus } from "./workflow.js";
 
 export interface PdfToRichtextOptions {
     features: string[];
@@ -26,7 +26,7 @@ export interface DocImage {
     height?: number;
     path?: string;
 }
-    
+
 /**
  * Represents a table in a document that has been analyzed
  */
@@ -42,6 +42,7 @@ export interface DocTable {
  */
 export interface DocTableCsv extends DocTable {
     format: "application/csv";
+    title?: string;
     data: string;
 }
 
@@ -50,16 +51,18 @@ export interface DocTableCsv extends DocTable {
  */
 export interface DocTableJson extends DocTable {
     format: "application/json";
-    data: Object;
+    title?: string;
+    data: Object[];
 }
 
 /**
  * Represents a document analysis run status
  */
-export interface DocAnalyzeRunStatusResponse {
-    workflow_id: string|null;
-    run_id: string|null;
-    status: 'processing' | 'completed' | 'failed' | 'not-found';
+export interface DocAnalyzeRunStatusResponse {
+    workflow_id: string | null;
+    run_id: string | null;
+    status: WorkflowExecutionStatus;
+    progress?: DocAnalyzerProgress;
 }
 
 
@@ -76,14 +79,14 @@ export interface DocAnalyzerProgress {
     pages: DocAnalyzerProgressStatus,
     images: DocAnalyzerProgressStatus,
     tables: DocAnalyzerProgressStatus,
-    layouts: DocAnalyzerProgressStatus,
+    visuals: DocAnalyzerProgressStatus,
     started_at?: number;
-    time_elapsed?: number;
-  }
-  
-  interface DocAnalyzerProgressStatus {
+    percent: number;
+}
+
+interface DocAnalyzerProgressStatus {
     total: number;
     processed: number;
     success: number;
     failed: number;
-  }
+}
