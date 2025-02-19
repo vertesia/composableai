@@ -3,10 +3,10 @@
  */
 
 import { VertesiaClient } from "@vertesia/client";
-import { WorkflowExecutionPayload } from "@vertesia/common";
+import { WorkflowExecutionBaseParams } from "@vertesia/common";
 
 
-export function getClient(payload: WorkflowExecutionPayload) {
+export function getVertesiaClient(payload: WorkflowExecutionBaseParams) {
 
     if (!payload.auth_token) {
         throw new Error("Authentication Token is missing from WorkflowExecutionPayload.authToken");

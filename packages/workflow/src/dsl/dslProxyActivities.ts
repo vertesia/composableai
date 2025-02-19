@@ -1,12 +1,12 @@
 import { ActivityOptions, proxyActivities } from "@temporalio/workflow";
-import { DSLActivityExecutionPayload, WorkflowExecutionPayload } from "@vertesia/common";
+import { DSLActivityExecutionPayload, WorkflowExecutionBaseParams, WorkflowExecutionPayload } from "@vertesia/common";
 
 export interface DslActivityFunction<ParamsT extends Record<string, any> = any, ReturnT = any> {
     (payload: DSLActivityExecutionPayload<ParamsT>): Promise<ReturnT>;
 }
 
 export interface DslSimplifiedActivityFunction<ParamsT = any, ReturnT = any> {
-    (payload: WorkflowExecutionPayload, params: ParamsT): Promise<ReturnT>;
+    (payload: WorkflowExecutionBaseParams, params: ParamsT): Promise<ReturnT>;
 }
 
 export function dslProxyActivities<
