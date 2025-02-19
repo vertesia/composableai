@@ -1,10 +1,10 @@
+import { log } from "@temporalio/activity";
 import { WorkflowExecutionPayload } from "@vertesia/common";
 import { parse as parseYaml } from "yaml";
-import { getClient } from "../../utils/client.js";
+import { getVertesiaClient } from "../../utils/client.js";
 import { buildAndPublishMemoryPack, loadMemoryPack } from "../../utils/memory.js";
 import { IterativeGenerationPayload, OutputMemoryMeta, Toc, TocIndex } from "../types.js";
 import { tocIndex } from "../utils.js";
-import { log } from "@temporalio/activity";
 
 /**
  * This activity is called if the toc was provided in the payload. Otherwise
@@ -15,7 +15,7 @@ import { log } from "@temporalio/activity";
 export async function it_gen_extractToc(payload: WorkflowExecutionPayload): Promise<TocIndex | null> {
     const vars = payload.vars as IterativeGenerationPayload;
     const memory = vars.memory;
-    const client = getClient(payload);
+    const client = getVertesiaClient(payload);
 
     const inMemory = await loadMemoryPack(client, `${memory}/input`);
     let tocJson: string | null = null;

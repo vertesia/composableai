@@ -9,32 +9,57 @@ export enum ContentEventName {
 }
 
 
-export interface WorkflowExecutionPayload {
+export interface WorkflowExecutionBaseParams<T=Record<string, any>> {
+
+   /**
+    * The ref of the user who initiated the workflow.
+    */
+   initiated_by?: string;
+
+   /**
+    * The account ID of the user who created the activity.
+    * This is usefull to select the right database to work on.
+    */
+   account_id: string;
+
+   /**
+    * The project ID of the account who created the activity.
+    */
+   project_id: string;
+
+   /**
+    * The vars field is mainly used to pass the user input to the workflow.
+    * The user input ar custom user options that can be used to configure the workflow.
+    * You can see the user input as the arguments for a command line app.
+    *
+    * In the case of workflows started by events (e.g. using a a workflow rule) the user input vars will be initialized with the workflow rule configuration field.
+    *
+    * In case of dsl workflows the worflow execution payload vars will be applied over the default vars values stored in the DSL vars field.
+    */
+   vars: T;
+
+   /**
+    * Auth Token to access Zeno and Composable from the workers
+    */
+   auth_token?: string;
+
+   /**
+    * The configuration for the workflow execution.
+    */
+   config?: {
+       studio_url: string;
+       store_url: string;
+       enabled_integrations?: string[]; //list of enabled integrations
+   }
+    
+}
+
+
+export interface WorkflowExecutionPayload<T=Record<string, any>> extends WorkflowExecutionBaseParams<T> {
     /**
      * The event which started the workflow who created the activity.
      */
     event: ContentEventName;
-
-    /**
-     * The ref of the user who initiated the workflow.
-     */
-    initiated_by: string;
-
-    /**
-     * The account ID of the user who created the activity.
-     * This is usefull to select the right database to work on.
-     */
-    account_id: string;
-
-    /**
-     * The project ID of the account who created the activity.
-     */
-    project_id: string;
-
-    /**
-     * The Unix timestamp when the workflow was started.
-     */
-    timestamp: number;
 
     /*
      * The Workflow Rule ID if any. If the workflow was started by a rule this field will contain the rule ID
@@ -43,25 +68,15 @@ export interface WorkflowExecutionPayload {
     wf_rule_name?: string;
 
     /**
-     * The vars field is mainly used to pass the user input to the workflow.
-     * The user input ar custom user options that can be used to configure the workflow.
-     * You can see the user input as the arguments for a command line app.
-     *
-     * In the case of workflows started by events (e.g. using a a workflow rule) the user input vars will be initialized with the workflow rule configuration field.
-     *
-     * In case of dsl workflows the worflow execution payload vars will be applied over the default vars values stored in the DSL vars field.
-     */
-    vars: Record<string, any>;
-
-    /**
-     * Auth Token to access Zeno and Composable from the workers
-     */
-    auth_token: string;
-
-    /**
      * The ID of the target objects processed by the workflow.
      */
     objectIds: string[];
+
+   /**
+    * Auth Token to access Zeno and Composable from the workers
+    */
+   auth_token: string;
+
 
     /**
      * The configuration for the workflow execution.
