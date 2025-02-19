@@ -48,14 +48,10 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
         throw new Error('No environment found in project configuration. Set environment in project configuration to generate embeddings.');
     }
 
-    const document = await client.objects.retrieve(objectId, "+text +parts +embeddings +tokens +properties");
+    const document = await client.objects.retrieve(objectId, "+text +parts +tokens +properties");
 
     if (!document) {
         throw new NoDocumentFound('Document not found', [objectId]);
-    }
-
-    if (!document.content) {
-        throw new NoDocumentFound('Document content not found', [objectId]);
     }
 
     let res;
@@ -104,9 +100,7 @@ interface ExecuteGenerateEmbeddingsParams {
 }
 
 async function generateTextEmbeddings({ document, client, type, config }: ExecuteGenerateEmbeddingsParams) {
-    // if (!force && document.embeddings[type]?.etag === (document.text_etag ?? md5(document.text))) {
-    //     return { id: objectId, status: "skipped", message: "embeddings already generated" }
-    // }
+
 
     if (!document) {
         return { status: "error", message: "document is null or undefined" }
