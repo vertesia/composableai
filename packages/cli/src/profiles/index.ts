@@ -21,11 +21,11 @@ export function getConfigUrl(value: ConfigUrlRef) {
         case "local":
             return "https://localhost:5173/cli";
         case "staging":
-            return "https://staging.cloud.becomposable.com/cli";
+            return "https://staging.cloud.vertesia.io/cli";
         case "preview":
-            return "https://preview.cloud.becomposable.com/cli";
+            return "https://preview.cloud.vertesia.io/cli";
         case "prod":
-            return "https://cloud.becomposable.com/cli";
+            return "https://cloud.vertesia.io/cli";
         default:
             if (value.startsWith("http://") || value.startsWith("https://")) {
                 return value;
