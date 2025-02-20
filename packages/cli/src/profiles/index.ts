@@ -25,7 +25,7 @@ export function getConfigUrl(value: ConfigUrlRef) {
         case "preview":
             return "https://preview.cloud.vertesia.io/cli";
         case "prod":
-            return "https://cloud.vertesia.com/cli";
+            return "https://cloud.vertesia.io/cli";
         default:
             if (value.startsWith("http://") || value.startsWith("https://")) {
                 return value;
