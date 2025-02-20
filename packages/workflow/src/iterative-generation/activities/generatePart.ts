@@ -1,14 +1,14 @@
+import { ApplicationFailure } from "@temporalio/workflow";
 import { WorkflowExecutionPayload } from "@vertesia/common";
 import { MemoryPack } from "@vertesia/memory";
-import { ApplicationFailure } from "@temporalio/workflow";
-import { getClient } from "../../utils/client.js";
+import { getVertesiaClient } from "../../utils/client.js";
 import { buildAndPublishMemoryPack, loadMemoryPack } from "../../utils/memory.js";
 import { IterativeGenerationPayload, OutputMemoryMeta, Section, TocPart, TocSection } from "../types.js";
 import { executeWithVars, expectMemoryIsConsistent } from "../utils.js";
 
 export async function it_gen_generatePart(payload: WorkflowExecutionPayload, path: number[]) {
     const vars = payload.vars as IterativeGenerationPayload;
-    const client = getClient(payload);
+    const client = getVertesiaClient(payload);
     const memory = vars.memory;
 
     const [sectionIndex, partIndex] = path;

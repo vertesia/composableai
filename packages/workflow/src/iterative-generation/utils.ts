@@ -2,8 +2,9 @@ import { VertesiaClient } from "@vertesia/client";
 import { ExecutionRun } from "@vertesia/common";
 import { ApplicationFailure } from "@temporalio/workflow";
 import { OutputMemoryMeta, PartIndex, Toc, TocIndex, TocSection } from "./types.js";
-import { ModelOptions } from "@llumiverse/core";
+import { ModelOptions, TextFallbackOptions } from "@llumiverse/core";
 
+//TODO: For whole file, support for options beyond max_tokens and temperature and multiple modalities.
 export interface ExecuteOptions {
     interaction: string;
     memory: string;
@@ -35,7 +36,8 @@ export function executeWithVars<T = any>(client: VertesiaClient, interaction: st
     } else {
         mapping = vars.input_mapping;
     }
-    const model_options: ModelOptions = {
+    const model_options: TextFallbackOptions = {
+        _option_id: "text-fallback",
         max_tokens: vars.max_tokens,
         temperature: vars.temperature
     }

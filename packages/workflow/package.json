@@ -60,7 +60,8 @@
     "ts_dual_module": {
         "outDir": "lib",
         "exports": {
-            "activities": "./activities",
+            "activities": "./activities/index.js",
+            "dsl-activities": "./activities/index-dsl.js",
             "workflows": "./workflows",
             "workflows-bundle": "./workflows-bundle.js",
             "vars": "./vars"
@@ -82,6 +83,11 @@
             "import": "./lib/esm/activities/index.js",
             "require": "./lib/cjs/activities/index.js"
         },
+        "./dsl-activities": {
+            "types": "./lib/types/activities/index-dsl.d.ts",
+            "import": "./lib/esm/activities/index-dsl.js",
+            "require": "./lib/cjs/activities/index-dsl.js"
+        },
         "./workflows": {
             "types": "./lib/types/workflows.d.ts",
             "import": "./lib/esm/workflows.js",
@@ -101,6 +107,9 @@
         "*": {
             "activities": [
                 "./lib/types/activities/index.d.ts"
+            ],
+            "dsl-activities": [
+                "./lib/types/activities/index-dsl.d.ts"
             ],
             "workflows": [
                 "./lib/types/workflows.d.ts"

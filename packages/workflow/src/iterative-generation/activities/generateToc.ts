@@ -1,5 +1,5 @@
 import { WorkflowExecutionPayload } from "@vertesia/common";
-import { getClient } from "../../utils/client.js";
+import { getVertesiaClient } from "../../utils/client.js";
 import { buildAndPublishMemoryPack } from "../../utils/memory.js";
 import { IterativeGenerationPayload, OutputMemoryMeta, Toc, TocIndex } from "../types.js";
 import { executeWithVars, tocIndex } from "../utils.js";
@@ -80,7 +80,7 @@ export async function it_gen_generateToc(payload: WorkflowExecutionPayload): Pro
 
     const schema = vars.toc_schema || defaultTocSchema;
 
-    const client = getClient(payload);
+    const client = getVertesiaClient(payload);
 
     const run = await executeWithVars(client, vars.interaction, vars, undefined, schema);
 

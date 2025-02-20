@@ -35,7 +35,7 @@ export async function saveBlobToFile(client: VertesiaClient, blobUri: string, to
 
 export async function saveBlobToTempFile(client: VertesiaClient, blobUri: string, fileExt?: string): Promise<string> {
     const tmpFile = tmp.fileSync({
-        prefix: "composable-activity-",
+        prefix: "vertesia-activity-",
         postfix: "." + fileExt,
         discardDescriptor: true
     });

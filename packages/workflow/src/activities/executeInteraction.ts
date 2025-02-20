@@ -52,8 +52,7 @@ const JSON: DSLActivitySpec = {
         }
     }
 }
-
-export interface InteractionExecutionParams{
+export interface InteractionExecutionParams {
     /**
      * The environment to use. If not specified the project default environment will be used.
      * If the latter is not specified an exeption will be thrown.
@@ -81,7 +80,10 @@ export interface InteractionExecutionParams{
      */
     include_previous_error?: boolean;
 
-    model_options?: ModelOptions;
+    /**
+     * Options to control generation
+     */
+    model_options?: ModelOptions; 
 }
 
 
