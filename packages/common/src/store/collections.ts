@@ -14,6 +14,8 @@ export interface CreateCollectionPayload {
     type?: string;
     query?: Record<string, any>;
     properties?: Record<string, any>;
+    parent?: string | null;
+    table_layout?: ColumnLayout[] | null;
 }
 
 export interface CollectionItem extends BaseObject {
