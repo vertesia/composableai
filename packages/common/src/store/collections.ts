@@ -1,5 +1,5 @@
 import { BaseObject } from "./common.js";
-import { ContentObjectTypeRef } from "./store.js";
+import { ColumnLayout, ContentObjectTypeRef } from "./store.js";
 
 export enum CollectionStatus {
     active = 'active',
@@ -26,6 +26,15 @@ export interface CollectionItem extends BaseObject {
     status: CollectionStatus;
     // A ref to the object type
     type?: ContentObjectTypeRef;
+    /**
+     * The parent collection if any
+     */
+    parent?: string | null;
+    /**
+     * The table layout to use for the collection.
+     * The layout defined in the type could serve as a fallback if not defined here.
+     */
+    table_layout?: ColumnLayout[];
 }
 
 export interface Collection extends CollectionItem {
