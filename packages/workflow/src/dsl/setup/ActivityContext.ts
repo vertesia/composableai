@@ -1,12 +1,12 @@
+import { log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
 import { DSLActivityExecutionPayload, DSLWorkflowExecutionPayload, Project, WorkflowExecutionPayload } from "@vertesia/common";
-import { log } from "@temporalio/activity";
 import { NoDocumentFound, WorkflowParamNotFound } from "../../errors.js";
-import { getClient } from "../../utils/client.js";
+import { getProjectFromToken } from "../../utils/auth.js";
+import { getVertesiaClient } from "../../utils/client.js";
 import { Vars } from "../vars.js";
 import { getFetchProvider, registerFetchProviderFactory } from "./fetch/index.js";
 import { DocumentProvider, DocumentTypeProvider, InteractionRunProvider } from "./fetch/providers.js";
-import { getProjectFromToken } from "../../utils/auth.js";
 
 
 registerFetchProviderFactory(DocumentProvider.ID, DocumentProvider.factory);
@@ -59,7 +59,7 @@ export async function setupActivity<ParamsT extends Record<string, any>>(payload
         log.info(`Setting up activity ${payload.activity.name}`, { config: payload.config, activity: payload.activity, params: payload.params, vars });
     }
 
-    const client = getClient(payload);
+    const client = getVertesiaClient(payload);
     const fetchSpecs = payload.activity.fetch;
     if (fetchSpecs) {
 
