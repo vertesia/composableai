@@ -26,9 +26,6 @@
         "vitest": "^2.1.9"
     },
     "dependencies": {
-        "@opendocsg/pdf2md": "0.2.0",
-        "@pdftron/pdfnet-node": "^10.11.0",
-        "mupdf": "^0.3.0",
         "sharp": "^0.33.5",
         "tmp": "^0.2.3"
     },
