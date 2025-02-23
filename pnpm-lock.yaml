@@ -225,15 +225,6 @@ importers:
 
   packages/converters:
     dependencies:
-      '@opendocsg/pdf2md':
-        specifier: 0.2.0
-        version: 0.2.0
-      '@pdftron/pdfnet-node':
-        specifier: ^10.11.0
-        version: 10.12.1
-      mupdf:
-        specifier: ^0.3.0
-        version: 0.3.0
       sharp:
         specifier: ^0.33.5
         version: 0.33.5
