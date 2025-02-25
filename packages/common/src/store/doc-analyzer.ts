@@ -7,7 +7,7 @@ export interface PdfToRichtextOptions {
 }
 
 
-export interface PdfToRichTextWorkflowParams extends Omit<WorkflowExecutionPayload, "vars"> {
+export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayload, "vars"> {
     vars: PdfToRichtextOptions
 }
 
