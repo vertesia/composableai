@@ -4,6 +4,7 @@ import { VertesiaClient } from "@vertesia/client";
 import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun, ExecutionRunStatus, InteractionExecutionConfiguration, RunSearchPayload } from "@vertesia/common";
 import { projectResult } from "../dsl/projections.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
+import { ActivityParamNotFound } from "../errors.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 
 //Example:
@@ -83,7 +84,7 @@ export interface InteractionExecutionParams {
     /**
      * Options to control generation
      */
-    model_options?: ModelOptions; 
+    model_options?: ModelOptions;
 }
 
 
@@ -103,6 +104,11 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
     } = await setupActivity<ExecuteInteractionParams>(payload);
 
     const { interactionName, prompt_data } = params;
+
+    if (!interactionName) {
+        log.error("Missing interactionName", { params });
+        throw new ActivityParamNotFound("interactionName", payload.activity);
+    }
 
     if (params.truncate) {
         const truncate = params.truncate;
@@ -166,9 +172,7 @@ export async function executeInteractionFromActivity(client: VertesiaClient, int
 
     const result_schema = params.result_schema;
 
-    if (debug) {
-        log.info(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags });
-    }
+    log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags });
 
     const res = await client.interactions.executeByName(interactionName, {
         config,

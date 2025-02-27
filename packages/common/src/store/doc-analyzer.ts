@@ -1,4 +1,4 @@
-import { WorkflowExecutionPayload, WorkflowExecutionStatus } from "./workflow.js";
+import { WorkflowExecutionPayload, WorkflowRunStatus } from "./workflow.js";
 
 export interface PdfToRichtextOptions {
     features: string[];
@@ -58,10 +58,7 @@ export interface DocTableJson extends DocTable {
 /**
  * Represents a document analysis run status
  */
-export interface DocAnalyzeRunStatusResponse {
-    workflow_id: string | null;
-    run_id: string | null;
-    status: WorkflowExecutionStatus;
+export interface DocAnalyzeRunStatusResponse extends WorkflowRunStatus {
     progress?: DocAnalyzerProgress;
 }
 
@@ -89,4 +86,51 @@ interface DocAnalyzerProgressStatus {
     processed: number;
     success: number;
     failed: number;
+}
+
+
+/**
+ * Adapt Tables Parameters, part of the request
+ */
+export interface AdaptTablesParams {
+
+    /**
+     * JSON Schema to to convert the table into
+     */
+    target_schema: string;
+
+    /**
+     * Natural language description of the type item the table are composed of
+     */
+    item_name: string;
+
+    /**
+     * Natural language description of the type of table or item to convert
+     */
+    instructions?: string;
+
+    /**
+     * Format to return the data in (csv, json)
+     */
+    format?: 'csv' | 'json';
+
+}
+
+
+interface DocAnalyzerRequestBase {
+
+    synchroneous?: boolean;
+
+    notify_endpoints?: string[];
+
+    /**
+     * What environmenet to use to run the request
+     * If none specified the project embedded environment will be used
+     */
+    environment?: string;
+
+}
+
+
+export interface AdaptTablesRequest extends DocAnalyzerRequestBase, AdaptTablesParams {
 }

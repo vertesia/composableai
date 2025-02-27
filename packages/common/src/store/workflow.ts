@@ -185,3 +185,13 @@ export enum WorkflowExecutionStatus {
     CONTINUED_AS_NEW = 6,
     TIMED_OUT = 7,
 }
+
+
+/**
+ * Basic response for anything run with an async workflow
+ */
+export interface WorkflowRunStatus {
+    workflow_id: string | null;
+    workflow_run_id: string | null;
+    status: WorkflowExecutionStatus;
+}

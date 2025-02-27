@@ -1,6 +1,7 @@
 import { WorkflowExecutionPayload } from "@vertesia/common";
 
 import { log, proxyActivities } from "@temporalio/workflow";
+import { WF_NON_RETRYABLE_ERRORS } from "../errors.js";
 import * as activities from "./activities/index.js";
 import { IterativeGenerationPayload, PartIndex, SECTION_ID_PLACEHOLDER } from "./types.js";
 
@@ -16,7 +17,7 @@ const {
         backoffCoefficient: 2,
         maximumAttempts: 20,
         maximumInterval: 100 * 30 * 1000, //ms
-        nonRetryableErrorTypes: [],
+        nonRetryableErrorTypes: WF_NON_RETRYABLE_ERRORS,
     },
 });
 
