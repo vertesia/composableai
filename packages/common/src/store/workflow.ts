@@ -6,6 +6,7 @@ export enum ContentEventName {
     delete = "delete",
     workflow_finished = "workflow_finished",
     workflow_execution_request = "workflow_execution_request",
+    api_request = "api_request",
 }
 
 
@@ -86,6 +87,13 @@ export interface WorkflowExecutionPayload<T=Record<string, any>> extends Workflo
         store_url: string;
         enabled_integrations?: string[]; //list of enabled integrations
     }
+
+    /**
+     * The list of endpoints to notify when the workflow finishes.
+     * It is handled by a subworkflow execution, so the main workflow will not wait for the notification to be sent.
+     */
+    notify_endpoints?: string[];
+
 }
 
 
@@ -176,4 +184,14 @@ export enum WorkflowExecutionStatus {
     TERMINATED = 5,
     CONTINUED_AS_NEW = 6,
     TIMED_OUT = 7,
+}
+
+
+/**
+ * Basic response for anything run with an async workflow
+ */
+export interface WorkflowRunStatus {
+    workflow_id: string | null;
+    workflow_run_id: string | null;
+    status: WorkflowExecutionStatus;
 }
