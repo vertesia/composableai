@@ -134,3 +134,15 @@ interface DocAnalyzerRequestBase {
 
 export interface AdaptTablesRequest extends DocAnalyzerRequestBase, AdaptTablesParams {
 }
+
+
+
+/**
+ * Get Adapted Tables Request
+ * @param raw If true, the raw data will be returned
+ * @param format The format to return the data in (csv, json)
+ */
+export interface GetAdaptedTablesRequestQuery {
+    raw?: boolean;
+    format: 'csv' | 'json';
+}

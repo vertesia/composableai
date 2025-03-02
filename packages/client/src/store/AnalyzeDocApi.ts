@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { AdaptTablesRequest, ContentObject, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
+import { AdaptTablesRequest, ContentObject, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, GetAdaptedTablesRequestQuery, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
 
 export class AnalyzeDocApi extends ApiTopic {
     constructor(parent: ClientBase, public objectId: string) {
@@ -22,9 +22,9 @@ export class AnalyzeDocApi extends ApiTopic {
         return this.post("/adapt_tables", { payload });
     }
 
-    async getAdaptedTables(runId?: string): Promise<DocTableJson[]> {
+    async getAdaptedTables(runId?: string, query?: GetAdaptedTablesRequestQuery): Promise<DocTableJson[]> {
         const path = runId ? `/adapt_tables/${runId}` : "/adapt_tables";
-        return this.get(path);
+        return this.get(path, { query: { raw: query?.raw, format: query?.format } });
     }
 
     async getXml(): Promise<string> {
