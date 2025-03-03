@@ -22,9 +22,21 @@ export class AnalyzeDocApi extends ApiTopic {
         return this.post("/adapt_tables", { payload });
     }
 
-    async getAdaptedTables(runId?: string, query?: GetAdaptedTablesRequestQuery): Promise<DocTableJson[]> {
+    async getAdaptedTables(runId?: string, query?: GetAdaptedTablesRequestQuery): Promise<any> {
         const path = runId ? `/adapt_tables/${runId}` : "/adapt_tables";
-        return this.get(path, { query: { raw: query?.raw, format: query?.format } });
+        
+        // Build query parameters
+        const queryParams: any = {};
+        if (query?.format) queryParams.format = query.format;
+        if (query?.raw !== undefined) queryParams.raw = query.raw;
+        
+        // If format is CSV, set response type to text to avoid automatic JSON parsing
+        const options: any = { query: queryParams };
+        if (query?.format === 'csv') {
+            options.responseType = 'text';
+        }
+        
+        return this.get(path, options);
     }
 
     async getXml(): Promise<string> {
@@ -46,5 +58,4 @@ export class AnalyzeDocApi extends ApiTopic {
     async getAnnotated(): Promise<{ url: string }> {
         return this.get("/annotated");
     }
-
 }
