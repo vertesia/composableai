@@ -1,5 +1,6 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec, RenditionProperties } from "@vertesia/common";
 import { log } from "@temporalio/activity";
+import { NodeStreamSource } from "@vertesia/client/node";
+import { DSLActivityExecutionPayload, DSLActivitySpec, RenditionProperties } from "@vertesia/common";
 import fs from 'fs';
 import sharp, { FormatEnum } from "sharp";
 import { imageResizer } from "../conversion/image.js";
@@ -7,7 +8,6 @@ import { pdfToImages } from "../conversion/mutool.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
 import { fetchBlobAsBuffer, saveBlobToTempFile } from "../utils/blobs.js";
-import { NodeStreamSource } from "../utils/memory.js";
 interface GenerateImageRenditionParams {
     max_hw: number; //maximum size of the longuest side of the image
     format: keyof FormatEnum; //format of the output image
