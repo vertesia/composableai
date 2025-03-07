@@ -14,7 +14,7 @@
     },
     "devDependencies": {
         "@types/eventsource": "^1.1.14",
-        "@types/node": "^20.8.9",
+        "@types/node": "^22.13.5",
         "ts-dual-module": "^0.6.3",
         "typescript": "^5.0.2",
         "vitest": "^2.1.9"
@@ -29,8 +29,22 @@
         "outDir": "lib"
     },
     "exports": {
-        "types": "./lib/types/index.d.ts",
-        "import": "./lib/esm/index.js",
-        "require": "./lib/cjs/index.js"
+        ".": {
+            "types": "./lib/types/index.d.ts",
+            "import": "./lib/esm/index.js",
+            "require": "./lib/cjs/index.js"
+        },
+        "./node": {
+            "types": "./lib/types/nodejs/index.d.ts",
+            "import": "./lib/esm/nodejs/index.js",
+            "require": "./lib/cjs/nodejs/index.js"
+        }
+    },
+    "typesVersions": {
+        "*": {
+            "node": [
+                "./lib/types/nodejs/index.d.ts"
+            ]
+        }
     }
 }
