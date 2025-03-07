@@ -3,6 +3,7 @@ import { log } from "@temporalio/workflow";
 import { ContentEventName, WorkflowExecutionPayload } from "@vertesia/common";
 import * as activities from "../activities/notifyWebhook.js";
 import { dslProxyActivities } from "../dsl/dslProxyActivities.js";
+import { WF_NON_RETRYABLE_ERRORS } from "../errors.js";
 
 const {
     notifyWebhook
@@ -13,7 +14,7 @@ const {
         backoffCoefficient: 2,
         maximumAttempts: 5,
         maximumInterval: 100 * 30 * 1000, //ms
-        nonRetryableErrorTypes: [],
+        nonRetryableErrorTypes: WF_NON_RETRYABLE_ERRORS,
     },
 });
 
