@@ -1,9 +1,9 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { log } from "@temporalio/activity";
+import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { WorkflowParamNotFound } from "../errors.js";
 
-interface NotifyWebhookParams {
+export interface NotifyWebhookParams {
     target_url: string; //URL to send the notification to
     method: 'GET' | 'POST'; //HTTP method to use
     payload: Record<string, any>; //payload to send (if POST then as JSON body, if GET then as query string)
