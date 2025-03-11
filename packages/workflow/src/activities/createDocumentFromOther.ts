@@ -1,11 +1,11 @@
 import { log } from "@temporalio/activity";
+import { NodeStreamSource } from "@vertesia/client/node";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import fs from 'fs';
 import { pdfExtractPages } from "../conversion/mutool.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { NoDocumentFound } from "../errors.js";
 import { saveBlobToTempFile } from "../utils/blobs.js";
-import { NodeStreamSource } from "../utils/memory.js";
 
 interface CreatePdfDocumentFromSourceParams {
 

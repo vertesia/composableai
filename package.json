@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/packages",
-    "version": "0.50.1",
+    "version": "0.51.0",
     "private": true,
     "scripts": {
         "bump": "pnpm exec wst bump minor -x llumiverse",
@@ -14,10 +14,11 @@
         "rimraf": "^5.0.5",
         "typescript": "^5.3.3"
     },
-    "packageManager": "pnpm@9.13.2",
+    "packageManager": "pnpm@10.6.2",
     "pnpm": {
         "overrides": {
             "cross-spawn@<6.0.6": "^6.0.6",
+            "esbuild@<0.25.0": "^0.25.0",
             "koa@>=2.0.0 <2.15.4": "^2.15.4",
             "vite@>=5.0.0 <=5.4.11": "^5.4.12"
         }

@@ -83,14 +83,20 @@ export interface InteractionExecutionParams {
     /**
      * Options to control generation
      */
-    model_options?: ModelOptions; 
+    model_options?: ModelOptions;
 }
 
 
 export interface ExecuteInteractionParams extends InteractionExecutionParams {
     interactionName: string;
     prompt_data: Record<string, any>;
-    truncate?: Record<string, TruncateSpec>
+    /**
+     * Additional prompt data passed by the workflow configuration. This will be merged with prompt_data if any.
+     * You should use `import: ["static_prompt_data"]` to import the workflow prompt data as static_prompt_data param.
+     * Otherwise the workflow prompt data will be ignored.
+     */
+    static_prompt_data?: Record<string, any>;
+    truncate?: Record<string, TruncateSpec>;
 }
 
 export interface ExecuteInteraction extends DSLActivitySpec<ExecuteInteractionParams> {
@@ -102,7 +108,10 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         client, params
     } = await setupActivity<ExecuteInteractionParams>(payload);
 
-    const { interactionName, prompt_data } = params;
+    const { interactionName, prompt_data, static_prompt_data: wf_prompt_data } = params;
+    if (wf_prompt_data) {
+        Object.assign(prompt_data, wf_prompt_data);
+    }
 
     if (params.truncate) {
         const truncate = params.truncate;

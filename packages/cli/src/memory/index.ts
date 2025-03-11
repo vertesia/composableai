@@ -1,7 +1,7 @@
-import { VertesiaClient, StreamSource } from "@vertesia/client";
+import { VertesiaClient } from "@vertesia/client";
+import { NodeStreamSource } from "@vertesia/client/node";
 import { Command } from "commander";
 import { createReadStream } from "fs";
-import { readableToWebStream } from "node-web-stream-adapters";
 import { getClient } from "../client.js";
 
 export function getPublishMemoryAction(program: Command) {
@@ -12,8 +12,8 @@ export function getPublishMemoryAction(program: Command) {
 }
 
 async function publishMemory(client: VertesiaClient, file: string, name: string) {
-    const stream = readableToWebStream(createReadStream(file));
-    const path = await client.files.uploadMemoryPack(new StreamSource(stream,
+    const stream = createReadStream(file);
+    const path = await client.files.uploadMemoryPack(new NodeStreamSource(stream,
         name,
         "application/gzip"
     ));

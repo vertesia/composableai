@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/cli",
-    "version": "0.50.1",
+    "version": "0.51.0",
     "description": "Code generation for the interaction defined with Composable AI Studio",
     "type": "module",
     "bin": {
@@ -46,7 +46,6 @@
         "json-schema-to-typescript": "^13.1.1",
         "jsonwebtoken": "^9.0.2",
         "mime": "^4.0.4",
-        "node-web-stream-adapters": "^0.2.1",
         "open": "^10.1.0",
         "seedrandom": "^3.0.5",
         "signal-exit": "^4.1.0",

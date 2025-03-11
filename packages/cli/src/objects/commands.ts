@@ -1,4 +1,5 @@
-import { VertesiaClient, StreamSource } from "@vertesia/client";
+import { VertesiaClient } from "@vertesia/client";
+import { NodeStreamSource } from "@vertesia/client/node";
 import { ContentObject, ContentObjectTypeItem, CreateContentObjectPayload } from "@vertesia/common";
 import { Command } from "commander";
 import enquirer from "enquirer";
@@ -6,7 +7,6 @@ import { Dirent, Stats, createReadStream } from "fs";
 import { readdir, stat } from "fs/promises";
 import { glob } from 'glob';
 import mime from "mime";
-import { createReadableStreamFromReadable } from "node-web-stream-adapters";
 import { basename, join, resolve } from "path";
 import { getClient } from "../client.js";
 const { prompt } = enquirer;
@@ -185,7 +185,7 @@ export async function createObjectFromLocalFile(client: VertesiaClient, file: st
     const fileName = basename(file);
     const stream = createReadStream(file);
 
-    const content = new StreamSource(createReadableStreamFromReadable(stream), fileName);
+    const content = new NodeStreamSource(stream, fileName);
     const mime_type = mime.getType(file);
     if (mime_type) {
         content.type = mime_type;
