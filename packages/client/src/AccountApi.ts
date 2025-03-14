@@ -42,11 +42,19 @@ export default class AccountApi extends ApiTopic {
     }
 
     /**
-     * Fetch Invites for account
+     * Fetch Invites for Principal
      * @returns UserInviteTokenData[]
      * */
     listInvites(): Promise<TransientToken<UserInviteTokenData>[]> {
         return this.get('/invites');
+    }
+
+    /**
+     * Fetch Invites for Account
+     * @returns UserInviteTokenData[]
+     * */
+    listAccountInvitation(id: string): Promise<TransientToken<UserInviteTokenData>[]> {
+        return this.get(`/invites/${id}`);
     }
 
     /**
