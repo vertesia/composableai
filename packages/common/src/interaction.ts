@@ -159,6 +159,17 @@ export interface InteractionForkPayload {
 }
 
 
+/**
+ * The payload for the interaction execution workflow to execute async interactions
+ * @see async oparameter of InteractionExecutionPayload
+ */
+export interface ExecuteInteractionWorkflowParams {
+    interactionName: string, // usefull for logging
+    runId: string,
+    requestorAccountId: string,
+    requestorProjectId: string,
+}
+
 export interface InteractionExecutionPayload {
     /**
      * If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location.
@@ -168,6 +179,14 @@ export interface InteractionExecutionPayload {
     config?: InteractionExecutionConfiguration;
     result_schema?: JSONSchema4;
     stream?: boolean;
+    /**
+     * Either use async or stream. You cannot use both at the same time.
+     * If async is true then the run will be created and
+     * the wexecution will be started in a temporalio workflow.
+     * If async is falkse then the execution will block until the processing
+     * is completed and the result is returned.
+     */
+    async?: boolean;
     do_validate?: boolean;
     tags?: string | string[]; // tags to be added to the execution run
 }
