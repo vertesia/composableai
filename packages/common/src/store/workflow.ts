@@ -10,53 +10,60 @@ export enum ContentEventName {
 }
 
 
-export interface WorkflowExecutionBaseParams<T=Record<string, any>> {
+export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
 
-   /**
-    * The ref of the user who initiated the workflow.
-    */
-   initiated_by?: string;
+    /**
+     * The ref of the user who initiated the workflow.
+     */
+    initiated_by?: string;
 
-   /**
-    * The account ID of the user who created the activity.
-    * This is usefull to select the right database to work on.
-    */
-   account_id: string;
+    /**
+     * The account ID of the user who created the activity.
+     * This is usefull to select the right database to work on.
+     */
+    account_id: string;
 
-   /**
-    * The project ID of the account who created the activity.
-    */
-   project_id: string;
+    /**
+     * The project ID of the account who created the activity.
+     */
+    project_id: string;
 
-   /**
-    * The vars field is mainly used to pass the user input to the workflow.
-    * The user input ar custom user options that can be used to configure the workflow.
-    * You can see the user input as the arguments for a command line app.
-    *
-    * In the case of workflows started by events (e.g. using a a workflow rule) the user input vars will be initialized with the workflow rule configuration field.
-    *
-    * In case of dsl workflows the worflow execution payload vars will be applied over the default vars values stored in the DSL vars field.
-    */
-   vars: T;
+    /**
+     * The vars field is mainly used to pass the user input to the workflow.
+     * The user input ar custom user options that can be used to configure the workflow.
+     * You can see the user input as the arguments for a command line app.
+     *
+     * In the case of workflows started by events (e.g. using a a workflow rule) the user input vars will be initialized with the workflow rule configuration field.
+     *
+     * In case of dsl workflows the worflow execution payload vars will be applied over the default vars values stored in the DSL vars field.
+     */
+    vars: T;
 
-   /**
-    * Auth Token to access Zeno and Composable from the workers
-    */
-   auth_token?: string;
+    /**
+     * Auth Token to access Zeno and Composable from the workers
+     */
+    auth_token?: string;
 
-   /**
-    * The configuration for the workflow execution.
-    */
-   config?: {
-       studio_url: string;
-       store_url: string;
-       enabled_integrations?: string[]; //list of enabled integrations
-   }
-    
+    /**
+     * The configuration for the workflow execution.
+     */
+    config?: {
+        studio_url: string;
+        store_url: string;
+        enabled_integrations?: string[]; //list of enabled integrations
+    }
+
+
+    /**
+     * The list of endpoints to notify when the workflow finishes.
+     * It is handled by a subworkflow execution, so the main workflow will not wait for the notification to be sent.
+     */
+    notify_endpoints?: string[];
+
 }
 
 
-export interface WorkflowExecutionPayload<T=Record<string, any>> extends WorkflowExecutionBaseParams<T> {
+export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {
     /**
      * The event which started the workflow who created the activity.
      */
@@ -73,26 +80,10 @@ export interface WorkflowExecutionPayload<T=Record<string, any>> extends Workflo
      */
     objectIds: string[];
 
-   /**
-    * Auth Token to access Zeno and Composable from the workers
-    */
-   auth_token: string;
-
-
     /**
-     * The configuration for the workflow execution.
+     * Auth Token to access Zeno and Composable from the workers
      */
-    config?: {
-        studio_url: string;
-        store_url: string;
-        enabled_integrations?: string[]; //list of enabled integrations
-    }
-
-    /**
-     * The list of endpoints to notify when the workflow finishes.
-     * It is handled by a subworkflow execution, so the main workflow will not wait for the notification to be sent.
-     */
-    notify_endpoints?: string[];
+    auth_token: string;
 
 }
 
