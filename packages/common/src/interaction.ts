@@ -164,6 +164,7 @@ export interface InteractionForkPayload {
  * @see async oparameter of InteractionExecutionPayload
  */
 export interface ExecuteInteractionWorkflowParams {
+    interactionName: string, // usefull for logging
     runId: string,
     requestorAccountId: string,
     requestorProjectId: string,
