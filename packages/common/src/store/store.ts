@@ -105,8 +105,8 @@ export interface TranscriptSegment {
     text: string
     speaker?: number
     end?: number
-    language?: string
     confidence?: number
+    language?: string
 }
 
 export interface ContentSource {

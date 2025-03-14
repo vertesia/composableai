@@ -1,10 +1,11 @@
+import { ModelOptions } from "@llumiverse/core";
+import { activityInfo, log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
 import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun, ExecutionRunStatus, InteractionExecutionConfiguration, RunSearchPayload } from "@vertesia/common";
-import { activityInfo, log } from "@temporalio/activity";
 import { projectResult } from "../dsl/projections.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
+import { ActivityParamNotFound } from "../errors.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
-import { ModelOptions } from "@llumiverse/core";
 
 //Example:
 //@ts-ignore
@@ -113,6 +114,11 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         Object.assign(prompt_data, wf_prompt_data);
     }
 
+    if (!interactionName) {
+        log.error("Missing interactionName", { params });
+        throw new ActivityParamNotFound("interactionName", payload.activity);
+    }
+
     if (params.truncate) {
         const truncate = params.truncate;
         for (const [key, value] of Object.entries(truncate)) {
@@ -175,9 +181,7 @@ export async function executeInteractionFromActivity(client: VertesiaClient, int
 
     const result_schema = params.result_schema;
 
-    if (debug) {
-        log.info(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags });
-    }
+    log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags });
 
     const res = await client.interactions.executeByName(interactionName, {
         config,
