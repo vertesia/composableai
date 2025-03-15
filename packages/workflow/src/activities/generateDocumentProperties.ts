@@ -1,5 +1,5 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { log } from "@temporalio/activity";
+import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { TruncateSpec } from "../utils/tokens.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
@@ -79,7 +79,6 @@ export async function generateDocumentProperties(payload: DSLActivityExecutionPa
             ...infoRes.result,
             etag: doc.text_etag
         },
-        text: infoRes.result.description ?? undefined,
         generation_run_info: {
             id: infoRes.id,
             date: new Date().toISOString(),
