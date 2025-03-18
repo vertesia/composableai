@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { Account, InviteUserRequestPayload, InviteUserResponsePayload, OnboardingProgress, ProjectRef, TransientToken, UpdateAccountPayload, User, UserInviteTokenData } from "@vertesia/common";
+import { Account, InviteUserRequestPayload, InviteUserResponsePayload, OnboardingProgress, ProjectRef, StripeBillingStatusResponse, TransientToken, UpdateAccountPayload, User, UserInviteTokenData } from "@vertesia/common";
 
 export default class AccountApi extends ApiTopic {
 
@@ -87,6 +87,10 @@ export default class AccountApi extends ApiTopic {
      */
     getGoogleToken(): Promise<{ principal: string, token: string }> {
         return this.get('/google-token');
+    }
+
+    getStripeBillingStatus(): Promise<StripeBillingStatusResponse> {
+        return this.get('/stripe-billing-status')
     }
 
 }

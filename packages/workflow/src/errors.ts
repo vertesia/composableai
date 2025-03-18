@@ -22,3 +22,5 @@ export class WorkflowParamNotFound extends Error {
         this.name = "WorkflowParamNotFound";
     }
 }
+
+export const WF_NON_RETRYABLE_ERRORS = ["NoDocumentFound", "ActivityParamNotFound", "WorkflowParamNotFound"];
