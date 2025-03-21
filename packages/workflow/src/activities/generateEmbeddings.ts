@@ -1,8 +1,7 @@
-import { VertesiaClient } from "@vertesia/client";
-import { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec, ProjectConfigurationEmbeddings, SupportedEmbeddingTypes } from "@vertesia/common";
 import { EmbeddingsResult } from "@llumiverse/core";
 import { log } from "@temporalio/activity";
-import * as tf from '@tensorflow/tfjs-node';
+import { VertesiaClient } from "@vertesia/client";
+import { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec, ProjectConfigurationEmbeddings, SupportedEmbeddingTypes } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { NoDocumentFound } from '../errors.js';
 import { fetchBlobAsBase64, md5 } from "../utils/blobs.js";
@@ -305,35 +304,37 @@ async function generateEmbeddingsFromStudio(text: string, env: string, client: V
 
 }
 
-function computeAttentionEmbedding(embeddingsArray: number[][], axis: number = 0) {
-    if (embeddingsArray.length === 0) return [];
-    log.info('Computing attention embedding for', { embeddingsArrays: embeddingsArray.map(a => a.length) });
+//Simplified attention mechanism
+// This is a naive implementation and should be replaced with a more sophisticated 
+// using tensorflow in a specific package
+function computeAttentionEmbedding(chunkEmbeddings: number[][]): number[] {
+    if (chunkEmbeddings.length === 0) return [];
+
     const start = new Date().getTime();
 
-    // Convert embeddings array to TensorFlow tensor
-    const embeddingsTensor = tf.tensor(embeddingsArray);
+    // Generate random attention weights
+    const attentionWeights = chunkEmbeddings.map(() => Math.random());
 
-    // Initialize trainable attention weights
-    const attentionWeights = tf.variable(tf.randomNormal([embeddingsArray.length]), true);
+    // Apply softmax to get attention scores
+    const expWeights = attentionWeights.map(w => Math.exp(w));
+    const sumExpWeights = expWeights.reduce((sum, val) => sum + val, 0);
+    const attentionScores = expWeights.map(w => w / sumExpWeights);
 
-    // Compute attention scoresje sui
-    const attentionScores = tf.softmax(attentionWeights);
+    // Get embedding dimension
+    const embeddingDim = chunkEmbeddings[0].length;
 
-    // Compute weighted sum of embeddings
-    const weightedEmbeddings = tf.mul(embeddingsTensor.transpose(), attentionScores).transpose();
-    const documentEmbeddingTensor = tf.sum(weightedEmbeddings, axis);
+    // Initialize document embedding
+    const documentEmbedding = new Array(embeddingDim).fill(0);
 
-    // Convert the result back to a JavaScript array
-    const documentEmbedding = documentEmbeddingTensor.arraySync() as number[];
-    const duration = (new Date().getTime() - start);
-    log.info(`Computed attention embeddings in ${duration}ms - array size: ${documentEmbedding.length}`, { length: documentEmbedding.length });
+    // Weighted sum of embeddings
+    for (let i = 0; i < chunkEmbeddings.length; i++) {
+        for (let j = 0; j < embeddingDim; j++) {
+            documentEmbedding[j] += chunkEmbeddings[i][j] * attentionScores[i];
+        }
+    }
 
-    // Clean up tensors
-    embeddingsTensor.dispose();
-    attentionWeights.dispose();
-    attentionScores.dispose();
-    weightedEmbeddings.dispose();
-    documentEmbeddingTensor.dispose();
+    const duration = new Date().getTime() - start;
+    console.log(`Computed document embedding in ${duration}ms for ${chunkEmbeddings.length} chunks`);
 
     return documentEmbedding;
 }

@@ -2,7 +2,7 @@
 import { SupportedEmbeddingTypes, WorkflowExecutionPayload } from "@vertesia/common";
 import * as activities from "../activities/index-dsl.js";
 import { dslProxyActivities } from "../dsl/dslProxyActivities.js";
-import { NoDocumentFound } from "../errors.js";
+import { WF_NON_RETRYABLE_ERRORS } from "../errors.js";
 
 const {
     generateEmbeddings,
@@ -13,7 +13,7 @@ const {
         backoffCoefficient: 2,
         maximumAttempts: 10,
         maximumInterval: 100 * 30 * 1000, //ms
-        nonRetryableErrorTypes: [NoDocumentFound.name],
+        nonRetryableErrorTypes: WF_NON_RETRYABLE_ERRORS,
     },
 });
 

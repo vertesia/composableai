@@ -10,7 +10,11 @@ export async function fetchBlobAsStream(client: VertesiaClient, blobUri: string)
     try {
         return await client.files.downloadFile(blobUri);
     } catch (err: any) {
-        throw new NoDocumentFound(`Failed to download blob ${blobUri}: ${err.message}`, []);
+        if (err.message.includes("not found")) { //TODO improve error handling with a fetch fail error class in the client
+            throw new NoDocumentFound(`Failed to download blob ${blobUri}: ${err.message}`, []);
+        } else {
+            throw new Error(`Failed to download blob ${blobUri}: ${err.message}`);
+        }
     }
 }
 export async function fetchBlobAsBuffer(client: VertesiaClient, blobUri: string): Promise<Buffer> {

@@ -5,6 +5,7 @@ export interface ICreateProjectPayload {
     name: string;
     namespace: string;
     description?: string;
+    auto_config?: boolean;
 }
 export enum ProjectRoles {
     owner = "owner", // all permissions
