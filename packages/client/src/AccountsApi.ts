@@ -11,6 +11,10 @@ export default class AccountsApi extends ApiTopic {
         return this.post('/', { payload: { name } });
     }
 
+    list(): Promise<Account[]> {
+        return this.get('/');
+    }
+
 
 
 

@@ -1,5 +1,5 @@
 import { log } from "@temporalio/activity";
-import { CreateContentObjectTypePayload, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import { ContentObjectTypeItem, CreateContentObjectTypePayload, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { ActivityContext, setupActivity } from "../dsl/setup/ActivityContext.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
@@ -56,12 +56,7 @@ export async function generateOrAssignContentType(payload: DSLActivityExecutionP
     const types = await client.types.list();
 
     //make a list of all existing types, and add hints if any
-    const existing_types = types.map(t => t.name).filter(n => !["DocumentPart", "Rendition"].includes(n));
-    if (params.typesHint) {
-        const newHints = params.typesHint.filter((t: string) => !existing_types.includes(t));
-        existing_types.push(...newHints);
-    }
-
+    const existing_types = types.filter(t => !["DocumentPart", "Rendition"].includes(t.name));
     const content = object.text ? truncByMaxTokens(object.text, params.truncate || 4000) : undefined;
 
     const getImage = async () => {
@@ -98,7 +93,6 @@ export async function generateOrAssignContentType(payload: DSLActivityExecutionP
     if (!selectedType) {
         log.warn("Document type not idenfified: starting type generation");
         const newType = await generateNewType(context, existing_types, content, fileRef);
-
         selectedType = { id: newType.id, name: newType.name };
     }
 
@@ -119,14 +113,14 @@ export async function generateOrAssignContentType(payload: DSLActivityExecutionP
     };
 }
 
-async function generateNewType(context: ActivityContext<GenerateOrAssignContentTypeParams>, existing_types: string[], content?: string, fileRef?: string) {
+async function generateNewType(context: ActivityContext<GenerateOrAssignContentTypeParams>, existing_types: ContentObjectTypeItem[], content?: string, fileRef?: string) {
     const { client, params } = context;
 
     const project = await context.fetchProject();
     const interactionName = params.interactionNames?.generateMetadataModel ?? INT_GENERATE_METADATA_MODEL;
 
     const genTypeRes = await executeInteractionFromActivity(client, interactionName, params, {
-        existing_types: existing_types,
+        existing_types: existing_types.map(t => t.name),
         content: content,
         human_context: project?.configuration?.human_context ?? undefined,
         image: fileRef ? fileRef : undefined
