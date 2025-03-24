@@ -1,4 +1,4 @@
-import type { JSONObject, Modalities, ModelOptions } from "@llumiverse/core";
+import type { ExecutionOptions, JSONObject, Modalities, ModelOptions, ToolUse } from "@llumiverse/core";
 import { JSONSchema4 } from 'json-schema';
 
 import { ExecutionTokenUsage } from '@llumiverse/core';
@@ -189,6 +189,10 @@ export interface InteractionExecutionPayload {
     async?: boolean;
     do_validate?: boolean;
     tags?: string | string[]; // tags to be added to the execution run
+    /**
+     * If true then the conversation will be included in the result
+     */
+    conversation?: boolean;
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
@@ -198,6 +202,18 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
      * Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag
      */
     interaction: string;
+}
+
+/**
+ * The payload to sent the tool responses back to the target LLM
+ */
+export interface ToolResultsPayload {
+    environment: string; // the environment ID
+    options: ExecutionOptions; // the options used on the first execution
+    results: {
+        tool_use_id: string;
+        content: string;
+    }[];
 }
 
 export enum RunSourceTypes {
@@ -259,6 +275,12 @@ export interface ExecutionRun<P = any, R = any> {
     output_modality: Modalities;
     created_by: string,
     updated_by: string,
+}
+
+export interface InteractionExecutionResult<P = any, R = any> extends ExecutionRun<P, R> {
+    tool_use?: ToolUse[];
+    conversation?: unknown;
+    options?: ExecutionOptions;
 }
 
 export interface ExecutionRunRef
