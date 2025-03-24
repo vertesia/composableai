@@ -24,6 +24,17 @@ const EXPIRATION_THRESHOLD = 60000;
 export interface VertesiaClientProps {
     serverUrl: string;
     storeUrl: string;
+    /**
+     * The site name of Vertesia.
+     *
+     * This is used to determine the API backend. It should not include the protocol.
+     *
+     * @example api.vertesia.io
+     * @example api-preview.vertesia.io
+     * @example api-staging.vertesia.io
+     * @default api.vertesia.io
+     */
+    site?: string;
     apikey?: string;
     projectId?: string;
     sessionTags?: string | string[];
@@ -128,6 +139,13 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.types;
     }
 
+    get serverUrl() {
+        return this.baseUrl;
+    }
+
+    get storeUrl() {
+        return this.store.baseUrl;
+    }
 
     set project(projectId: string | null) {
         if (projectId) {

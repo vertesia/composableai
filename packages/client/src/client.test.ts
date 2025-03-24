@@ -28,4 +28,16 @@ describe('Test Vertesia Client', () => {
             });
         }).toThrowError('serverUrl is required for VertesiaClient');
     });
+
+    test('Initialization with site', () => {
+        const client = new VertesiaClient({
+            serverUrl: 'https://api.vertesia.io',
+            storeUrl: 'https://api.vertesia.io',
+            site: 'api.vertesia.io',
+        });
+
+        expect(client).toBeDefined();
+        expect(client.storeUrl).toBe('https://api.vertesia.io');
+        expect(client.baseUrl).toBe('https://api.vertesia.io');
+    });
 });
