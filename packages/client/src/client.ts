@@ -139,10 +139,6 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.types;
     }
 
-    get serverUrl() {
-        return this.baseUrl;
-    }
-
     get storeUrl() {
         return this.store.baseUrl;
     }
