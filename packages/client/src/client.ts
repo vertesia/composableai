@@ -53,7 +53,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     ) {
         super(opts.serverUrl);
         if (!opts.serverUrl) {
-            throw new Error("storeUrl is required for VertesiaClient");
+            throw new Error("serverUrl is required for VertesiaClient");
         }
         if (!opts.storeUrl) {
             throw new Error("storeUrl is required for VertesiaClient");

@@ -10,4 +10,22 @@ describe('Test Vertesia Client', () => {
         });
         expect(client).toBeDefined();
     });
-})
+
+    test('Initialization with studio URL only', () => {
+        expect(() => {
+            new VertesiaClient({
+                serverUrl: 'https://api.vertesia.io',
+                storeUrl: '',
+            });
+        }).toThrowError('storeUrl is required for VertesiaClient');
+    });
+
+    test('Initialization with zeno URL only', () => {
+        expect(() => {
+            new VertesiaClient({
+                serverUrl: '',
+                storeUrl: 'https://api.vertesia.io',
+            });
+        }).toThrowError('serverUrl is required for VertesiaClient');
+    });
+});
