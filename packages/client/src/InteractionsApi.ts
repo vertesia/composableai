@@ -1,8 +1,7 @@
-import { ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionExecutionPayload, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionUpdatePayload, InteractionsExportPayload, InteractionSearchPayload, InteractionSearchQuery, InteractionExecutionResult, ToolResultsPayload } from "@vertesia/common";
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
+import { ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 import { executeInteraction, executeInteractionByName } from "./execute.js";
-import { ExecutionResponse } from "@llumiverse/core";
 
 export interface ComputeInteractionFacetsResponse {
     tags?: { _id: string, count: number }[];
@@ -154,12 +153,6 @@ export default class InteractionsApi extends ApiTopic {
             } else {
                 throw err;
             }
-        });
-    }
-
-    sendToolResults(payload: ToolResultsPayload): Promise<ExecutionResponse> {
-        return this.post(`/tool-results`, {
-            payload
         });
     }
 
