@@ -18,7 +18,7 @@
         "@types/node": "^22.13.5",
         "ts-dual-module": "^0.6.3",
         "typescript": "^5.0.2",
-        "vitest": "^3.0.8"
+        "vitest": "^3.0.9"
     },
     "dependencies": {
         "@llumiverse/core": "workspace:*",
