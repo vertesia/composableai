@@ -1,4 +1,4 @@
-import type { ExecutionOptions, JSONObject, Modalities, ModelOptions, ToolUse } from "@llumiverse/core";
+import type { JSONObject, Modalities, ModelOptions, StatelessExecutionOptions, ToolDefinition, ToolUse } from "@llumiverse/core";
 import { JSONSchema4 } from 'json-schema';
 
 import { ExecutionTokenUsage } from '@llumiverse/core';
@@ -6,6 +6,7 @@ import { ExecutionTokenUsage } from '@llumiverse/core';
 import { ExecutionEnvironmentRef } from './environment.js';
 import { ProjectRef } from './project.js';
 import { PopulatedPromptSegmentDef, PromptSegmentDef, PromptTemplateRef, PromptTemplateRefWithSchema } from './prompt.js';
+import { ExecutionRunDocRef } from "./runs.js";
 import { AccountRef } from './user.js';
 
 export interface InteractionExecutionError {
@@ -164,10 +165,8 @@ export interface InteractionForkPayload {
  * @see async oparameter of InteractionExecutionPayload
  */
 export interface ExecuteInteractionWorkflowParams {
-    interactionName: string, // usefull for logging
-    runId: string,
-    requestorAccountId: string,
-    requestorProjectId: string,
+    interaction_name: string, // usefull for logging
+    run: ExecutionRunDocRef;
 }
 
 export interface InteractionExecutionPayload {
@@ -189,10 +188,20 @@ export interface InteractionExecutionPayload {
     async?: boolean;
     do_validate?: boolean;
     tags?: string | string[]; // tags to be added to the execution run
+
     /**
-     * If true then the conversation will be included in the result
+     * The conversation state to be used in the execution if any.
+     * If the `true` is passed then the conversation will be returned in the result.
+     * The true value must be used for the first execution that starts the conversation.
+     * If conversation is falsy then no conversation is returned back.
+     * For regular executions the conversation is not returned back to save memory.
      */
-    conversation?: boolean;
+    conversation?: true | unknown;
+
+    /**
+     * The tools to be used in the execution
+     */
+    tools?: ToolDefinition[];
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
@@ -208,8 +217,11 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
  * The payload to sent the tool responses back to the target LLM
  */
 export interface ToolResultsPayload {
+    run: ExecutionRunDocRef; // the run created by the first execution.
     environment: string; // the environment ID
-    options: ExecutionOptions; // the options used on the first execution
+    options: StatelessExecutionOptions; // the options used on the first execution
+    conversation: unknown; // the conversation state
+    tools: ToolDefinition[]; // the tools to be used
     results: {
         tool_use_id: string;
         content: string;
@@ -280,7 +292,7 @@ export interface ExecutionRun<P = any, R = any> {
 export interface InteractionExecutionResult<P = any, R = any> extends ExecutionRun<P, R> {
     tool_use?: ToolUse[];
     conversation?: unknown;
-    options?: ExecutionOptions;
+    options?: StatelessExecutionOptions;
 }
 
 export interface ExecutionRunRef
