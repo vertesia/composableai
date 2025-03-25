@@ -37,8 +37,27 @@ describe('Test Vertesia Client', () => {
         });
 
         expect(client).toBeDefined();
-        expect(client.storeUrl).toBe('https://api.vertesia.io');
         expect(client.baseUrl).toBe('https://api.vertesia.io');
+        expect(client.storeUrl).toBe('https://api.vertesia.io');
+    });
+
+    test('Initialization with default parameters', () => {
+        const client = new VertesiaClient();
+
+        expect(client).toBeDefined();
+        expect(client.baseUrl).toBe('https://api.vertesia.io');
+        expect(client.storeUrl).toBe('https://api.vertesia.io');
+    });
+
+    test('Initialization with site localhost', () => {
+        const client = new VertesiaClient({
+            serverUrl: 'http://localhost:8091',
+            storeUrl: 'http://localhost:8092',
+        });
+
+        expect(client).toBeDefined();
+        expect(client.baseUrl).toBe('http://localhost:8091');
+        expect(client.storeUrl).toBe('http://localhost:8092');
     });
 
     test('Initialization with overrides', () => {
@@ -49,7 +68,7 @@ describe('Test Vertesia Client', () => {
         });
 
         expect(client).toBeDefined();
-        expect(client.storeUrl).toBe('https://zeno-server-production.api.becomposable.com');
         expect(client.baseUrl).toBe('https://studio-server-production.api.becomposable.com');
+        expect(client.storeUrl).toBe('https://zeno-server-production.api.becomposable.com');
     });
 });
