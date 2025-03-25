@@ -49,6 +49,26 @@ describe('Test Vertesia Client', () => {
         expect(client.storeUrl).toBe('https://api.vertesia.io');
     });
 
+    test('Initialization with site api-preview.vertesia.io', () => {
+        const client = new VertesiaClient({
+            site: 'api-preview.vertesia.io',
+        });
+
+        expect(client).toBeDefined();
+        expect(client.baseUrl).toBe('https://api-preview.vertesia.io');
+        expect(client.storeUrl).toBe('https://api-preview.vertesia.io');
+    });
+
+    test('Initialization with site api-staging.vertesia.io', () => {
+        const client = new VertesiaClient({
+            site: 'api-staging.vertesia.io',
+        });
+
+        expect(client).toBeDefined();
+        expect(client.baseUrl).toBe('https://api-staging.vertesia.io');
+        expect(client.storeUrl).toBe('https://api-staging.vertesia.io');
+    });
+
     test('Initialization with site localhost', () => {
         const client = new VertesiaClient({
             serverUrl: 'http://localhost:8091',
