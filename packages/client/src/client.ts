@@ -21,9 +21,9 @@ import UsersApi from "./UsersApi.js";
  */
 const EXPIRATION_THRESHOLD = 60000;
 
-export interface VertesiaClientProps {
-    serverUrl: string;
-    storeUrl: string;
+export type VertesiaClientProps = {
+    serverUrl?: string;
+    storeUrl?: string;
     /**
      * The site name of Vertesia.
      *
@@ -60,15 +60,28 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     sessionTags?: string | string[];
 
     constructor(
-        opts: VertesiaClientProps = {} as any
+        opts: VertesiaClientProps = {}
     ) {
-        super(opts.serverUrl);
-        if (!opts.serverUrl) {
-            throw new Error("serverUrl is required for VertesiaClient");
+        let studioServerUrl: string;
+        let zenoServerUrl: string;
+
+        if (opts.serverUrl) {
+            studioServerUrl = opts.serverUrl;
+        } else if (opts.site) {
+            studioServerUrl = `https://${opts.site}`;
+        } else {
+            throw new Error("Parameter 'site' or 'serverUrl' is required for VertesiaClient");
         }
-        if (!opts.storeUrl) {
-            throw new Error("storeUrl is required for VertesiaClient");
+
+        if (opts.storeUrl) {
+            zenoServerUrl = opts.storeUrl;
+        } else if (opts.site) {
+            zenoServerUrl = `https://${opts.site}`;
+        } else {
+            throw new Error("Parameter 'site' or 'storeUrl' is required for VertesiaClient");
         }
+
+        super(studioServerUrl);
         this.store = new ZenoClient({
             serverUrl: opts.storeUrl,
             apikey: opts.apikey,

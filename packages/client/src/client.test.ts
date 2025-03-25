@@ -17,7 +17,7 @@ describe('Test Vertesia Client', () => {
                 serverUrl: 'https://api.vertesia.io',
                 storeUrl: '',
             });
-        }).toThrowError('storeUrl is required for VertesiaClient');
+        }).toThrowError("Parameter 'site' or 'storeUrl' is required for VertesiaClient");
     });
 
     test('Initialization with zeno URL only', () => {
@@ -26,10 +26,10 @@ describe('Test Vertesia Client', () => {
                 serverUrl: '',
                 storeUrl: 'https://api.vertesia.io',
             });
-        }).toThrowError('serverUrl is required for VertesiaClient');
+        }).toThrowError("Parameter 'site' or 'serverUrl' is required for VertesiaClient");
     });
 
-    test('Initialization with site', () => {
+    test('Initialization with same site', () => {
         const client = new VertesiaClient({
             serverUrl: 'https://api.vertesia.io',
             storeUrl: 'https://api.vertesia.io',
@@ -39,5 +39,17 @@ describe('Test Vertesia Client', () => {
         expect(client).toBeDefined();
         expect(client.storeUrl).toBe('https://api.vertesia.io');
         expect(client.baseUrl).toBe('https://api.vertesia.io');
+    });
+
+    test('Initialization with overrides', () => {
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio-server-production.api.becomposable.com',
+            storeUrl: 'https://zeno-server-production.api.becomposable.com',
+            site: 'api.vertesia.io',
+        });
+
+        expect(client).toBeDefined();
+        expect(client.storeUrl).toBe('https://zeno-server-production.api.becomposable.com');
+        expect(client.baseUrl).toBe('https://studio-server-production.api.becomposable.com');
     });
 });
