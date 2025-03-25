@@ -14,7 +14,7 @@ export async function listProfiles() {
         console.log(profile.name + (selected === profile.name ? " " + colors.symbols.check : ""));
     }
     if (!config.profiles.length) {
-        console.log("No profiles are defined. Run `cpcli config create` to add a new profile.");
+        console.log("No profiles are defined. Run `vertesia profiles add` to add a new profile.");
         console.log();
         const r: any = await prompt({
             type: "confirm",
@@ -37,7 +37,7 @@ export async function useProfile(name?: string) {
 export function showProfile(name?: string) {
     if (!name) {
         if (config.profiles.length === 0) {
-            console.log('No profiles are defined. Run `composable profiles create` to add a new profile.');
+            console.log('No profiles are defined. Run `vertesia profiles create` to add a new profile.');
             return;
         } else {
             console.log(JSON.stringify({
@@ -57,7 +57,7 @@ export function showProfile(name?: string) {
 
 export function showActiveAuthToken() {
     if (config.profiles.length === 0) {
-        console.log('No profiles are defined. Run `composable profiles create` to add a new profile.');
+        console.log('No profiles are defined. Run `vertesia profiles create` to add a new profile.');
         return;
     } else if (config.current) {
         const token = jwt.decode(config.current.apikey, { json: true });
@@ -68,7 +68,7 @@ export function showActiveAuthToken() {
             console.log(config.current.apikey);
         }
     } else {
-        console.log('No profile is selected. Run `composable auth refresh` to refrehs the token');
+        console.log('No profile is selected. Run `vertesia auth refresh` to refrehs the token');
     }
 }
 
@@ -168,7 +168,7 @@ export async function updateProfile(name?: string, onResult?: OnResultCallback) 
 
 export function updateCurrentProfile(onResult?: OnResultCallback) {
     if (!config.current) {
-        console.log("No profile is selected. Run `cpcli config use <name>` to select a profile");
+        console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
         process.exit(1);
     }
     config.updateProfile(config.current.name).start(onResult);
