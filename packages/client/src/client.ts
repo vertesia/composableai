@@ -32,6 +32,7 @@ export type VertesiaClientProps = {
      * @example api-preview.vertesia.io
      * @example api-staging.vertesia.io
      * @default api.vertesia.io
+     * @since 0.52.0
      */
     site?: 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api-staging.vertesia.io';
     serverUrl?: string;
