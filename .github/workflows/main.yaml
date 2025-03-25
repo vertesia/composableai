@@ -44,7 +44,7 @@ jobs:
           node-version: 22
           cache: "pnpm"
       - run: pnpm install
-      - run: npm --prefix packages/client test
+      - run: pnpm --prefix packages/client test
 
   converters-test:
     runs-on: ubuntu-latest
