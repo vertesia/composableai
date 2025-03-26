@@ -53,7 +53,7 @@
     "ts-node": "^10.9.1",
     "tsx": "^3.14.0",
     "typescript": "^5.2.2",
-    "vitest": "^3.0.8"
+    "vitest": "^3.0.9"
   },
   "dependencies": {
     "eventsource-parser": "^1.1.1"

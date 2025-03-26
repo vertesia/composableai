@@ -23,7 +23,7 @@
         "@types/tmp": "^0.2.6",
         "ts-dual-module": "^0.6.3",
         "typescript": "^5.0.2",
-        "vitest": "^3.0.8"
+        "vitest": "^3.0.9"
     },
     "dependencies": {
         "sharp": "^0.33.5",

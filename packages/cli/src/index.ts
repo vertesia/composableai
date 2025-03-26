@@ -41,7 +41,7 @@ authRoot.command("token")
     })
 
 authRoot.command("refresh")
-    .description("Refresh the auth token used by the current profile. An alias to 'composable profiles refresh'.")
+    .description("Refresh the auth token used by the current profile. An alias to 'vertesia profiles refresh'.")
     .action(() => {
         updateCurrentProfile();
     })
