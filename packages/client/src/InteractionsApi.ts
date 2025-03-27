@@ -1,7 +1,7 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload } from "@vertesia/common";
+import { ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionAsyncExecutionPayload, InteractionCreatePayload, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
-import { executeInteraction, executeInteractionByName } from "./execute.js";
+import { executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
 
 export interface ComputeInteractionFacetsResponse {
     tags?: { _id: string, count: number }[];
@@ -154,6 +154,15 @@ export default class InteractionsApi extends ApiTopic {
                 throw err;
             }
         });
+    }
+
+    /**
+     * Execute an interaction in an workflow
+     * @param payload
+     * @returns
+     */
+    executeAsync(payload: InteractionAsyncExecutionPayload): Promise<string> {
+        return executeInteractionAsync(this.client as VertesiaClient, payload);
     }
 
     publish(id: string, payload: InteractionPublishPayload): Promise<Interaction> {
