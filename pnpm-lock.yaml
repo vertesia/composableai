@@ -39,9 +39,6 @@ importers:
       '@types/eventsource':
         specifier: ^1.1.15
         version: 1.1.15
-      '@types/json-schema':
-        specifier: ^7.0.15
-        version: 7.0.15
       api-fetch-client:
         specifier: ^0.13.0
         version: 0.13.0
