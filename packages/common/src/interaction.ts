@@ -1,4 +1,4 @@
-import type { JSONObject, Modalities, ModelOptions, StatelessExecutionOptions, ToolDefinition, ToolUse } from "@llumiverse/core";
+import type { JSONObject, JSONSchema, Modalities, ModelOptions, StatelessExecutionOptions, ToolDefinition, ToolUse } from "@llumiverse/core";
 import { JSONSchema4 } from 'json-schema';
 
 import { ExecutionTokenUsage } from '@llumiverse/core';
@@ -160,14 +160,6 @@ export interface InteractionForkPayload {
 }
 
 
-/**
- * The payload for the interaction execution workflow to execute async interactions
- * @see async oparameter of InteractionExecutionPayload
- */
-export interface ExecuteInteractionWorkflowParams {
-    interaction_name: string, // usefull for logging
-    run: ExecutionRunDocRef;
-}
 
 export interface InteractionExecutionPayload {
     /**
@@ -178,14 +170,6 @@ export interface InteractionExecutionPayload {
     config?: InteractionExecutionConfiguration;
     result_schema?: JSONSchema4;
     stream?: boolean;
-    /**
-     * Either use async or stream. You cannot use both at the same time.
-     * If async is true then the run will be created and
-     * the wexecution will be started in a temporalio workflow.
-     * If async is falkse then the execution will block until the processing
-     * is completed and the result is returned.
-     */
-    async?: boolean;
     do_validate?: boolean;
     tags?: string | string[]; // tags to be added to the execution run
 
@@ -211,6 +195,60 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
      * Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag
      */
     interaction: string;
+}
+
+export type ToolRef = string | { name: string, description: string };
+export interface InteractionAsyncExecutionPayload {
+    /**
+     * The environment ID to use.
+     */
+    environment: string;
+
+    /**
+     * The model to use
+     */
+    model: string;
+
+    /**
+     * The interaction name to execute to start the conversation.
+     */
+    interaction: string;
+
+    /**
+     * The options to use on the first execution
+     */
+    model_options?: ModelOptions;
+
+    /**
+     * The initial prompt input data
+     */
+    prompt_data?: Record<string, any>;
+
+    /**
+     * Optional result schema
+     */
+    result_schema?: JSONSchema;
+
+    /**
+     * The tools to use
+     */
+    tools?: ToolRef[];
+
+    /**
+     * Optional tags to add to the execution run
+     */
+    tags?: string[];
+
+    /**
+     * The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used.
+     */
+    max_iterations?: number;
+
+    /**
+     * Only used for non conversation workflows to include the error on next retry.
+     * If tools is defined this is not used
+     */
+    include_previous_error?: boolean;
 }
 
 /**
