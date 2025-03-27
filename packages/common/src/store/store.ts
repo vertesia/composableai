@@ -186,11 +186,19 @@ export interface ColumnLayout {
     default?: any;
 }
 export interface ContentObjectType extends ContentObjectTypeItem {
-    object_schema?: Record<string, any>; // an optional JSON schema for the object properties.
 }
 export interface ContentObjectTypeItem extends BaseObject {
     is_chunkable?: boolean;
+    /**
+     * This is only included in ContentObjectTypeItem if explicitely requested
+     * It is always included in ContentObjectType
+     */
     table_layout?: ColumnLayout[];
+    /**
+     * this is only included in ContentObjectTypeItem if explicitely requested
+     * It is always included in ContentObjectType
+     */
+    object_schema?: Record<string, any>; // an optional JSON schema for the object properties.
 }
 
 export interface CreateContentObjectTypePayload extends Omit<ContentObjectType, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'> {

@@ -1,4 +1,4 @@
-import { ExecutionRun, ExecutionRunStatus, InteractionExecutionPayload, NamedInteractionExecutionPayload } from '@vertesia/common';
+import { ExecutionRunStatus, InteractionAsyncExecutionPayload, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload } from '@vertesia/common';
 import { VertesiaClient } from './client.js';
 
 export function EventSourceProvider(): Promise<typeof EventSource> {
@@ -22,7 +22,7 @@ export function EventSourceProvider(): Promise<typeof EventSource> {
 export async function executeInteraction<P = any, R = any>(client: VertesiaClient,
     interactionId: string,
     payload: InteractionExecutionPayload = {},
-    onChunk?: (chunk: string) => void): Promise<ExecutionRun<P, R>> {
+    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P, R>> {
     const stream = !!onChunk;
     const response = await client.runs.create({
         ...payload, interaction: interactionId, stream
@@ -55,7 +55,7 @@ export async function executeInteraction<P = any, R = any>(client: VertesiaClien
 export async function executeInteractionByName<P = any, R = any>(client: VertesiaClient,
     interaction: string,
     payload: InteractionExecutionPayload = {},
-    onChunk?: (chunk: string) => void): Promise<ExecutionRun<P, R>> {
+    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P, R>> {
     const stream = !!onChunk;
     const response = await client.post('/api/v1/execute', {
         payload: {
@@ -111,4 +111,11 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
             reject(err);
         }
     });
+}
+
+export async function executeInteractionAsync(client: VertesiaClient, payload: InteractionAsyncExecutionPayload) {
+    const response = await client.post('/api/v1/execute/async', {
+        payload,
+    }) as { id: string };
+    return response.id;
 }

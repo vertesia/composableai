@@ -1,7 +1,7 @@
-import { ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionExecutionPayload, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionUpdatePayload, InteractionsExportPayload, InteractionSearchPayload, InteractionSearchQuery } from "@vertesia/common";
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
+import { ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionAsyncExecutionPayload, InteractionCreatePayload, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
-import { executeInteraction, executeInteractionByName } from "./execute.js";
+import { executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
 
 export interface ComputeInteractionFacetsResponse {
     tags?: { _id: string, count: number }[];
@@ -146,7 +146,7 @@ export default class InteractionsApi extends ApiTopic {
      * @returns
      */
     executeByName<P = any, R = any>(nameWithTag: string, payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<ExecutionRun<P, R>> {
+        onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P, R>> {
         return executeInteractionByName(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
             if (err instanceof ServerError && err.payload?.id) {
                 throw err.updateDetails({ run_id: err.payload.id });
@@ -154,6 +154,15 @@ export default class InteractionsApi extends ApiTopic {
                 throw err;
             }
         });
+    }
+
+    /**
+     * Execute an interaction in an workflow
+     * @param payload
+     * @returns
+     */
+    executeAsync(payload: InteractionAsyncExecutionPayload): Promise<string> {
+        return executeInteractionAsync(this.client as VertesiaClient, payload);
     }
 
     publish(id: string, payload: InteractionPublishPayload): Promise<Interaction> {

@@ -1,4 +1,4 @@
-import type { JSONObject, Modalities, ModelOptions } from "@llumiverse/core";
+import type { JSONObject, JSONSchema, Modalities, ModelOptions, StatelessExecutionOptions, ToolDefinition, ToolUse } from "@llumiverse/core";
 import { JSONSchema4 } from 'json-schema';
 
 import { ExecutionTokenUsage } from '@llumiverse/core';
@@ -6,6 +6,7 @@ import { ExecutionTokenUsage } from '@llumiverse/core';
 import { ExecutionEnvironmentRef } from './environment.js';
 import { ProjectRef } from './project.js';
 import { PopulatedPromptSegmentDef, PromptSegmentDef, PromptTemplateRef, PromptTemplateRefWithSchema } from './prompt.js';
+import { ExecutionRunDocRef } from "./runs.js";
 import { AccountRef } from './user.js';
 
 export interface InteractionExecutionError {
@@ -159,16 +160,6 @@ export interface InteractionForkPayload {
 }
 
 
-/**
- * The payload for the interaction execution workflow to execute async interactions
- * @see async oparameter of InteractionExecutionPayload
- */
-export interface ExecuteInteractionWorkflowParams {
-    interactionName: string, // usefull for logging
-    runId: string,
-    requestorAccountId: string,
-    requestorProjectId: string,
-}
 
 export interface InteractionExecutionPayload {
     /**
@@ -179,16 +170,22 @@ export interface InteractionExecutionPayload {
     config?: InteractionExecutionConfiguration;
     result_schema?: JSONSchema4;
     stream?: boolean;
-    /**
-     * Either use async or stream. You cannot use both at the same time.
-     * If async is true then the run will be created and
-     * the wexecution will be started in a temporalio workflow.
-     * If async is falkse then the execution will block until the processing
-     * is completed and the result is returned.
-     */
-    async?: boolean;
     do_validate?: boolean;
     tags?: string | string[]; // tags to be added to the execution run
+
+    /**
+     * The conversation state to be used in the execution if any.
+     * If the `true` is passed then the conversation will be returned in the result.
+     * The true value must be used for the first execution that starts the conversation.
+     * If conversation is falsy then no conversation is returned back.
+     * For regular executions the conversation is not returned back to save memory.
+     */
+    conversation?: true | unknown;
+
+    /**
+     * The tools to be used in the execution
+     */
+    tools?: ToolDefinition[];
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
@@ -198,6 +195,75 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
      * Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag
      */
     interaction: string;
+}
+
+export type ToolRef = string | { name: string, description: string };
+export interface InteractionAsyncExecutionPayload {
+    /**
+     * The environment ID to use.
+     */
+    environment: string;
+
+    /**
+     * The model to use
+     */
+    model: string;
+
+    /**
+     * The interaction name to execute to start the conversation.
+     */
+    interaction: string;
+
+    /**
+     * The options to use on the first execution
+     */
+    model_options?: ModelOptions;
+
+    /**
+     * The initial prompt input data
+     */
+    prompt_data?: Record<string, any>;
+
+    /**
+     * Optional result schema
+     */
+    result_schema?: JSONSchema;
+
+    /**
+     * The tools to use
+     */
+    tools?: ToolRef[];
+
+    /**
+     * Optional tags to add to the execution run
+     */
+    tags?: string[];
+
+    /**
+     * The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used.
+     */
+    max_iterations?: number;
+
+    /**
+     * Only used for non conversation workflows to include the error on next retry.
+     * If tools is defined this is not used
+     */
+    include_previous_error?: boolean;
+}
+
+/**
+ * The payload to sent the tool responses back to the target LLM
+ */
+export interface ToolResultsPayload {
+    run: ExecutionRunDocRef; // the run created by the first execution.
+    environment: string; // the environment ID
+    options: StatelessExecutionOptions; // the options used on the first execution
+    conversation: unknown; // the conversation state
+    tools: ToolDefinition[]; // the tools to be used
+    results: {
+        tool_use_id: string;
+        content: string;
+    }[];
 }
 
 export enum RunSourceTypes {
@@ -259,6 +325,12 @@ export interface ExecutionRun<P = any, R = any> {
     output_modality: Modalities;
     created_by: string,
     updated_by: string,
+}
+
+export interface InteractionExecutionResult<P = any, R = any> extends ExecutionRun<P, R> {
+    tool_use?: ToolUse[];
+    conversation?: unknown;
+    options?: StatelessExecutionOptions;
 }
 
 export interface ExecutionRunRef

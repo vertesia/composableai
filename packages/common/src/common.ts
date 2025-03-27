@@ -1,5 +1,6 @@
 export interface FindPayload {
     query: Record<string, any>;
+    offset?: number;
     limit?: number;
     select?: string;
 }
