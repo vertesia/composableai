@@ -87,7 +87,10 @@ export interface InteractionExecutionParams {
     model_options?: ModelOptions;
 }
 
-
+/**
+ * TODO: must be kept in sync with InteractionAsyncExecutionPayload form @vertesia/common
+ * Also see the executeInteractionAsync endpoint on the server for how the client payload is sent to the workflow.
+ */
 export interface ExecuteInteractionParams extends InteractionExecutionParams {
     interactionName: string;
     prompt_data: Record<string, any>;
