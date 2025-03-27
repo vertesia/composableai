@@ -63,13 +63,13 @@ export class WorkflowsApi extends ApiTopic {
         return this.get(`/runs/${workflowId}/${runId}/updates`, { query });
     }
 
-    streamMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
-        const query = {
-            since,
-        };
-        //return this.get(`/runs/${workflowId}/${runId}/stream`, { query });
-        throw new Error("Not implemented");
-    }
+    // streamMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
+    //     const query = {
+    //         since,
+    //     };
+    //     //return this.get(`/runs/${workflowId}/${runId}/stream`, { query });
+    //     throw new Error("Not implemented");
+    // }
 
     rules = new WorkflowsRulesApi(this);
     definitions = new WorkflowsDefinitionApi(this);
