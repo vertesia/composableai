@@ -186,3 +186,22 @@ export interface WorkflowRunStatus {
     workflow_run_id: string | null;
     status: WorkflowExecutionStatus;
 }
+
+
+/**
+ * Workflow Update Message
+ */
+export interface AgentMessage {
+    timestamp: number;
+    workflow_id: string;
+    workflow_run_id: string;
+    type: AgentMessageType;
+    content?: string;
+}
+
+export enum AgentMessageType {
+    INIT = "init",
+    UPDATE = "update",
+    COMPLETE = "complete",
+    ERROR = "error"
+}

@@ -1,8 +1,21 @@
-import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
-import { ActivityCatalog, CreateWorkflowRulePayload, DSLWorkflowDefinition, DSLWorkflowSpec, ExecuteWorkflowPayload, ListWorkflowRunsPayload, ListWorkflowRunsResponse, WorkflowDefinitionRef, WorkflowRule, WorkflowRuleItem, WorkflowRunWithDetails } from '@vertesia/common';
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import {
+    ActivityCatalog,
+    AgentMessage,
+    AgentMessageType,
+    CreateWorkflowRulePayload,
+    DSLWorkflowDefinition,
+    DSLWorkflowSpec,
+    ExecuteWorkflowPayload,
+    ListWorkflowRunsPayload,
+    ListWorkflowRunsResponse,
+    WorkflowDefinitionRef,
+    WorkflowRule,
+    WorkflowRuleItem,
+    WorkflowRunWithDetails,
+} from "@vertesia/common";
 
 export class WorkflowsApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/workflows");
     }
@@ -35,23 +48,41 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/execute/${name}`, { payload });
     }
 
+    postMessage(workflowId: string, runId: string, message: string, type?: AgentMessageType): Promise<void> {
+        const payload = {
+            message,
+            type,
+        };
+        return this.post(`/runs/${workflowId}/${runId}/updates`, { payload });
+    }
+
+    retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
+        const query = {
+            since,
+        };
+        return this.get(`/runs/${workflowId}/${runId}/updates`, { query });
+    }
+
+    streamMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
+        const query = {
+            since,
+        };
+        //return this.get(`/runs/${workflowId}/${runId}/stream`, { query });
+        throw new Error("Not implemented");
+    }
+
     rules = new WorkflowsRulesApi(this);
     definitions = new WorkflowsDefinitionApi(this);
-
 }
 
-
 export class WorkflowsRulesApi extends ApiTopic {
-
     constructor(parent: WorkflowsApi) {
         super(parent, "/rules");
     }
 
-
     list(): Promise<WorkflowRuleItem[]> {
         return this.get("/");
     }
-
 
     retrieve(id: string): Promise<WorkflowRule> {
         return this.get(`/${id}`);
@@ -59,13 +90,13 @@ export class WorkflowsRulesApi extends ApiTopic {
 
     update(id: string, payload: any): Promise<WorkflowRule> {
         return this.put(`/${id}`, {
-            payload
+            payload,
         });
     }
 
     create(payload: CreateWorkflowRulePayload): Promise<WorkflowRule> {
         return this.post("/", {
-            payload
+            payload,
         });
     }
 
@@ -73,19 +104,16 @@ export class WorkflowsRulesApi extends ApiTopic {
         return this.del(`/${id}`);
     }
 
-
     execute(id: string, objectIds?: string[], vars?: Record<string, any>): Promise<{ runIds: string[] }> {
         const payload: ExecuteWorkflowPayload = {
             objectIds,
-            vars
+            vars,
         };
         return this.post(`/${id}/execute`, { payload });
     }
-
 }
 
 export class WorkflowsDefinitionApi extends ApiTopic {
-
     //model: DSLWorkflowDefinition;
 
     constructor(parent: WorkflowsApi) {
@@ -96,26 +124,23 @@ export class WorkflowsDefinitionApi extends ApiTopic {
         return this.get("/");
     }
 
-
     retrieve(id: string): Promise<DSLWorkflowDefinition> {
         return this.get(`/${id}`);
     }
 
     update(id: string, payload: any): Promise<DSLWorkflowDefinition> {
         return this.put(`/${id}`, {
-            payload
+            payload,
         });
     }
 
     create(payload: DSLWorkflowSpec): Promise<DSLWorkflowDefinition> {
         return this.post("/", {
-            payload
+            payload,
         });
     }
 
     delete(id: string) {
         return this.del(`/${id}`);
     }
-
-
 }
