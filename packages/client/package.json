@@ -10,14 +10,15 @@
     "scripts": {
         "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
         "build": "pnpm exec tsmod build",
-        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
+        "test": "vitest run"
     },
     "devDependencies": {
         "@types/eventsource": "^1.1.14",
         "@types/node": "^22.13.5",
         "ts-dual-module": "^0.6.3",
         "typescript": "^5.0.2",
-        "vitest": "^3.0.8"
+        "vitest": "^3.0.9"
     },
     "dependencies": {
         "@llumiverse/core": "workspace:*",

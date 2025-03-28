@@ -107,11 +107,9 @@ export interface UserSessionInfo extends SessionInfo<User> { }
 export interface ApiKeySessionInfo extends SessionInfo<ApiKey> { }
 
 export interface OnboardingProgress {
-    projects: boolean,
     interactions: boolean,
     prompts: boolean,
     environments: boolean,
-    runs: boolean;
     default_environment_defined: boolean
 }
 

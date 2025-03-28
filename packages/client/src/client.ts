@@ -21,9 +21,22 @@ import UsersApi from "./UsersApi.js";
  */
 const EXPIRATION_THRESHOLD = 60000;
 
-export interface VertesiaClientProps {
-    serverUrl: string;
-    storeUrl: string;
+export type VertesiaClientProps = {
+    /**
+     * The site name of Vertesia.
+     *
+     * This is used to determine the API backend. It should not include the protocol. For more
+     * advanced configurations, use `serverUrl` and `storeUrl` instead.
+     *
+     * @example api.vertesia.io
+     * @example api-preview.vertesia.io
+     * @example api-staging.vertesia.io
+     * @default api.vertesia.io
+     * @since 0.52.0
+     */
+    site?: 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api-staging.vertesia.io';
+    serverUrl?: string;
+    storeUrl?: string;
     apikey?: string;
     projectId?: string;
     sessionTags?: string | string[];
@@ -49,17 +62,33 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     sessionTags?: string | string[];
 
     constructor(
-        opts: VertesiaClientProps = {} as any
+        opts: VertesiaClientProps = {
+            site: 'api.vertesia.io',
+        }
     ) {
-        super(opts.serverUrl);
-        if (!opts.serverUrl) {
-            throw new Error("storeUrl is required for VertesiaClient");
+        let studioServerUrl: string;
+        let zenoServerUrl: string;
+
+        if (opts.serverUrl) {
+            studioServerUrl = opts.serverUrl;
+        } else if (opts.site) {
+            studioServerUrl = `https://${opts.site}`;
+        } else {
+            throw new Error("Parameter 'site' or 'serverUrl' is required for VertesiaClient");
         }
-        if (!opts.storeUrl) {
-            throw new Error("storeUrl is required for VertesiaClient");
+
+        if (opts.storeUrl) {
+            zenoServerUrl = opts.storeUrl;
+        } else if (opts.site) {
+            zenoServerUrl = `https://${opts.site}`;
+        } else {
+            throw new Error("Parameter 'site' or 'storeUrl' is required for VertesiaClient");
         }
+
+        super(studioServerUrl);
+
         this.store = new ZenoClient({
-            serverUrl: opts.storeUrl,
+            serverUrl: zenoServerUrl,
             apikey: opts.apikey,
             onRequest: opts.onRequest,
             onResponse: opts.onResponse
@@ -128,6 +157,9 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.types;
     }
 
+    get storeUrl() {
+        return this.store.baseUrl;
+    }
 
     set project(projectId: string | null) {
         if (projectId) {

@@ -1,6 +1,7 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { ComputeRunFacetPayload, ExecutionRun, ExecutionRunRef, FindPayload, RunCreatePayload, RunListingFilters, RunListingQueryOptions, RunSearchPayload } from "@vertesia/common";
+import { ComputeRunFacetPayload, ExecutionRun, ExecutionRunRef, FindPayload, RunCreatePayload, RunListingFilters, RunListingQueryOptions, RunSearchPayload, ToolResultsPayload } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
+import { ExecutionResponse } from "@llumiverse/core";
 
 export interface FilterOption {
     id: string,
@@ -48,11 +49,11 @@ export class RunsApi extends ApiTopic {
 
     /**
      * Get a run by id
-     * 
+     *
      * @param id
      * @returns InteractionResult
      **/
-    retrieve<P=any, R=any>(id: string): Promise<ExecutionRun<P, R>> {
+    retrieve<P = any, R = any>(id: string): Promise<ExecutionRun<P, R>> {
         return this.get('/' + id);
     }
 
@@ -80,6 +81,13 @@ export class RunsApi extends ApiTopic {
             payload = { ...payload, tags }
         }
         return this.post("/", {
+            payload
+        });
+    }
+
+
+    sendToolResults(payload: ToolResultsPayload): Promise<ExecutionResponse> {
+        return this.post(`/tool-results`, {
             payload
         });
     }
