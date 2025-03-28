@@ -50,10 +50,11 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/execute/${name}`, { payload });
     }
 
-    postMessage(runId: string, message: string, type?: AgentMessageType): Promise<void> {
+    postMessage(runId: string, message: string, type?: AgentMessageType, details?: string): Promise<void> {
         const payload = {
             message,
             type,
+            details,
         };
         return this.post(`/runs/${runId}/updates`, { payload });
     }
@@ -101,8 +102,8 @@ export class WorkflowsApi extends ApiTopic {
                 sse.addEventListener("close", (ev) => {
                     try {
                         sse.close();
-                        const msg = JSON.parse(ev.data) as AgentMessage;
-                        resolve(msg.content);
+                        const update = JSON.parse(ev.data) as AgentMessage;
+                        resolve(update.message);
                     } catch (err) {
                         reject(err);
                     }

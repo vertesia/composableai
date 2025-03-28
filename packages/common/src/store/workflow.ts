@@ -1,4 +1,3 @@
-
 export enum ContentEventName {
     create = "create",
     change_type = "change_type",
@@ -9,9 +8,7 @@ export enum ContentEventName {
     api_request = "api_request",
 }
 
-
 export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
-
     /**
      * The ref of the user who initiated the workflow.
      */
@@ -51,17 +48,14 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
         studio_url: string;
         store_url: string;
         enabled_integrations?: string[]; //list of enabled integrations
-    }
-
+    };
 
     /**
      * The list of endpoints to notify when the workflow finishes.
      * It is handled by a subworkflow execution, so the main workflow will not wait for the notification to be sent.
      */
     notify_endpoints?: string[];
-
 }
-
 
 export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {
     /**
@@ -84,9 +78,7 @@ export interface WorkflowExecutionPayload<T = Record<string, any>> extends Workf
      * Auth Token to access Zeno and Composable from the workers
      */
     auth_token: string;
-
 }
-
 
 export interface ExecuteWorkflowPayload {
     task_queue?: string;
@@ -116,7 +108,7 @@ interface WorkflowRunEvent {
         name: string;
         id: string;
         input?: any;
-    }
+    };
 
     error?: {
         message: string;
@@ -125,20 +117,19 @@ interface WorkflowRunEvent {
         type?: string;
     };
 
-    result?: any
-
+    result?: any;
 }
 
 export interface WorkflowRun {
-    status?: WorkflowExecutionStatus | string,
-    type?: string,
-    started_at?: number,
-    closed_at?: number,
-    execution_duration?: number,
-    run_id?: string,
-    workflow_id?: string,
-    initiated_by?: string,
-    raw?: any
+    status?: WorkflowExecutionStatus | string;
+    type?: string;
+    started_at?: number;
+    closed_at?: number;
+    execution_duration?: number;
+    run_id?: string;
+    workflow_id?: string;
+    initiated_by?: string;
+    raw?: any;
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
@@ -148,12 +139,12 @@ export interface ListWorkflowRunsResponse {
     runs: WorkflowRun[];
 }
 
-export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, 'config'> {
+export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, "config"> {
     config: {
         interactionName: string;
         action: DocumentActionConfig;
         data: Record<string, any>;
-    }
+    };
 }
 
 export interface DocumentActionConfig {
@@ -177,7 +168,6 @@ export enum WorkflowExecutionStatus {
     TIMED_OUT = 7,
 }
 
-
 /**
  * Basic response for anything run with an async workflow
  */
@@ -187,7 +177,6 @@ export interface WorkflowRunStatus {
     status: WorkflowExecutionStatus;
 }
 
-
 /**
  * Workflow Update Message
  */
@@ -195,12 +184,13 @@ export interface AgentMessage {
     timestamp: number;
     workflow_run_id: string;
     type: AgentMessageType;
-    content?: string;
+    message?: string;
+    details?: string;
 }
 
 export enum AgentMessageType {
     INIT = "init",
     UPDATE = "update",
     COMPLETE = "complete",
-    ERROR = "error"
+    ERROR = "error",
 }
