@@ -193,7 +193,6 @@ export interface WorkflowRunStatus {
  */
 export interface AgentMessage {
     timestamp: number;
-    workflow_id: string;
     workflow_run_id: string;
     type: AgentMessageType;
     content?: string;

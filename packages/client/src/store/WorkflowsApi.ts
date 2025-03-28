@@ -50,23 +50,22 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/execute/${name}`, { payload });
     }
 
-    postMessage(workflowId: string, runId: string, message: string, type?: AgentMessageType): Promise<void> {
+    postMessage(runId: string, message: string, type?: AgentMessageType): Promise<void> {
         const payload = {
             message,
             type,
         };
-        return this.post(`/runs/${workflowId}/${runId}/updates`, { payload });
+        return this.post(`/runs/${runId}/updates`, { payload });
     }
 
-    retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
+    retrieveMessages(runId: string, since?: number): Promise<AgentMessage[]> {
         const query = {
             since,
         };
-        return this.get(`/runs/${workflowId}/${runId}/updates`, { query });
+        return this.get(`/runs/${runId}/updates`, { query });
     }
 
     streamMessages(
-        workflowId: string,
         runId: string,
         onMessage?: (message: AgentMessage) => void,
         since?: number,
@@ -75,7 +74,7 @@ export class WorkflowsApi extends ApiTopic {
             try {
                 const EventSourceImpl = await EventSourceProvider();
                 const client = this.client as VertesiaClient;
-                const streamUrl = new URL(client.workflows + "/" + workflowId + "/" + runId + "/stream");
+                const streamUrl = new URL(client.workflows + "/" + runId + "/stream");
                 if (since) {
                     streamUrl.searchParams.set("since", since.toString());
                 }
