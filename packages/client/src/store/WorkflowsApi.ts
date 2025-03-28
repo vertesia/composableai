@@ -87,18 +87,22 @@ export class WorkflowsApi extends ApiTopic {
                 let isClosed = false;
 
                 sse.onmessage = (ev: MessageEvent) => {
+                    if (!ev.data || ev.data.startsWith(":")) {
+                        console.log("Received comment or heartbeat; ignoring it.: ", ev.data);
+                        return;
+                    }
+
                     try {
                         const message = JSON.parse(ev.data) as AgentMessage;
                         if (onMessage) onMessage(message);
 
-                        // End the stream when done
                         if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.ERROR) {
                             sse.close();
                             isClosed = true;
                             resolve();
                         }
                     } catch (err) {
-                        console.error("Failed to parse SSE message:", err);
+                        console.error("Failed to parse SSE message:", err, ev.data);
                     }
                 };
 
