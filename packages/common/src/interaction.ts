@@ -1,13 +1,26 @@
-import type { JSONObject, JSONSchema, Modalities, ModelOptions, StatelessExecutionOptions, ToolDefinition, ToolUse } from "@llumiverse/core";
-import { JSONSchema4 } from 'json-schema';
+import type {
+    JSONObject,
+    JSONSchema,
+    Modalities,
+    ModelOptions,
+    StatelessExecutionOptions,
+    ToolDefinition,
+    ToolUse,
+} from "@llumiverse/core";
+import { JSONSchema4 } from "json-schema";
 
-import { ExecutionTokenUsage } from '@llumiverse/core';
+import { ExecutionTokenUsage } from "@llumiverse/core";
 
-import { ExecutionEnvironmentRef } from './environment.js';
-import { ProjectRef } from './project.js';
-import { PopulatedPromptSegmentDef, PromptSegmentDef, PromptTemplateRef, PromptTemplateRefWithSchema } from './prompt.js';
+import { ExecutionEnvironmentRef } from "./environment.js";
+import { ProjectRef } from "./project.js";
+import {
+    PopulatedPromptSegmentDef,
+    PromptSegmentDef,
+    PromptTemplateRef,
+    PromptTemplateRefWithSchema,
+} from "./prompt.js";
 import { ExecutionRunDocRef } from "./runs.js";
-import { AccountRef } from './user.js';
+import { AccountRef } from "./user.js";
 
 export interface InteractionExecutionError {
     code: string;
@@ -29,8 +42,7 @@ export interface InteractionRef {
 }
 export const InteractionRefPopulate = "id name parent description status version visibility tags updated_at prompts";
 
-export interface InteractionRefWithSchema
-    extends Omit<InteractionRef, "prompts"> {
+export interface InteractionRefWithSchema extends Omit<InteractionRef, "prompts"> {
     result_schema?: JSONSchema4;
     prompts?: PromptSegmentDef<PromptTemplateRefWithSchema>[];
 }
@@ -47,7 +59,7 @@ export interface InteractionsExportPayload {
     /*
      * if not specified, all versions will be exported
      */
-    versions?: (number | 'draft' | 'latest')[];
+    versions?: (number | "draft" | "latest")[];
 }
 
 export enum InteractionStatus {
@@ -66,20 +78,20 @@ export enum ExecutionRunStatus {
 export enum RunDataStorageLevel {
     STANDARD = "STANDARD",
     RESTRICTED = "RESTRICTED",
-    DEBUG = "DEBUG"
+    DEBUG = "DEBUG",
 }
 
 export enum RunDataStorageDescription {
     STANDARD = "Run data is stored for both the model inputs and output.",
     RESTRICTED = "No run data is stored for the model inputs — only the model output.",
-    DEBUG = "Run data is stored for the model inputs and output, schema, and final prompt."
+    DEBUG = "Run data is stored for the model inputs and output, schema, and final prompt.",
 }
 
 export const RunDataStorageOptions: Record<RunDataStorageLevel, RunDataStorageDescription> = {
     [RunDataStorageLevel.STANDARD]: RunDataStorageDescription.STANDARD,
     [RunDataStorageLevel.RESTRICTED]: RunDataStorageDescription.RESTRICTED,
     [RunDataStorageLevel.DEBUG]: RunDataStorageDescription.DEBUG,
-}
+};
 
 /**
  * Schema can be stored or specified as a reference to an external schema.
@@ -94,7 +106,7 @@ export interface CachePolicy {
     varies_on: string[];
     ttl: number;
 }
-export type InteractionVisibility = 'public' | 'private';
+export type InteractionVisibility = "public" | "private";
 export interface Interaction {
     readonly id: string;
     name: string;
@@ -119,21 +131,31 @@ export interface Interaction {
     project: string | ProjectRef;
     // only for drafts - when it was last published
     last_published_at?: Date;
-    created_by: string,
-    updated_by: string,
+    created_by: string;
+    updated_by: string;
     created_at: Date;
     updated_at: Date;
 }
 
-export interface PopulatedInteraction
-    extends Omit<Interaction, "prompts"> {
+export interface PopulatedInteraction extends Omit<Interaction, "prompts"> {
     prompts: PopulatedPromptSegmentDef[];
 }
 
 export interface InteractionCreatePayload
     extends Omit<
         Interaction,
-        "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "project" | "formatter" | "tags" | "parent" | "version" | "visibility" | "endpoint"
+        | "id"
+        | "created_at"
+        | "updated_at"
+        | "created_by"
+        | "updated_by"
+        | "project"
+        | "formatter"
+        | "tags"
+        | "parent"
+        | "version"
+        | "visibility"
+        | "endpoint"
     > {
     visibility?: InteractionVisibility;
 }
@@ -158,8 +180,6 @@ export interface InteractionForkPayload {
     forkPrompts?: boolean;
     targetProject?: string;
 }
-
-
 
 export interface InteractionExecutionPayload {
     /**
@@ -197,7 +217,7 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
     interaction: string;
 }
 
-export type ToolRef = string | { name: string, description: string };
+export type ToolRef = string | { name: string; description: string };
 export interface InteractionAsyncExecutionPayload {
     /**
      * The environment ID to use.
@@ -278,7 +298,7 @@ export enum RunSourceTypes {
 export interface RunSource {
     type: RunSourceTypes;
     label: string;
-    principal_type: 'user' | 'apikey';
+    principal_type: "user" | "apikey";
     principal_id: string;
     client_ip: string;
 }
@@ -290,10 +310,10 @@ export interface ExecutionRun<P = any, R = any> {
      */
     parent?: string | ExecutionRun;
     evaluation?: {
-        score?: number,
-        selected?: boolean,
-        scores?: Record<string, number>
-    }
+        score?: number;
+        selected?: boolean;
+        scores?: Record<string, number>;
+    };
     result: R;
     /**
      * The parameters used to create the interaction.
@@ -323,8 +343,8 @@ export interface ExecutionRun<P = any, R = any> {
     error?: InteractionExecutionError;
     source: RunSource;
     output_modality: Modalities;
-    created_by: string,
-    updated_by: string,
+    created_by: string;
+    updated_by: string;
 }
 
 export interface InteractionExecutionResult<P = any, R = any> extends ExecutionRun<P, R> {
@@ -333,8 +353,7 @@ export interface InteractionExecutionResult<P = any, R = any> extends ExecutionR
     options?: StatelessExecutionOptions;
 }
 
-export interface ExecutionRunRef
-    extends Omit<ExecutionRun, "result" | "parameters" | "interaction"> {
+export interface ExecutionRunRef extends Omit<ExecutionRun, "result" | "parameters" | "interaction"> {
     interaction: InteractionRef;
 }
 
@@ -343,20 +362,20 @@ export const ExecutionRunRefSelect = "-result -parameters -result_schema -prompt
 export enum ConfigModes {
     RUN_AND_INTERACTION_CONFIG = "RUN_AND_INTERACTION_CONFIG",
     RUN_CONFIG_ONLY = "RUN_CONFIG_ONLY",
-    INTERACTION_CONFIG_ONLY = "INTERACTION_CONFIG_ONLY"
-};
+    INTERACTION_CONFIG_ONLY = "INTERACTION_CONFIG_ONLY",
+}
 
 export enum ConfigModesDescription {
     RUN_AND_INTERACTION_CONFIG = "This run configuration is used. Undefined options are filled with interaction configuration.",
     RUN_CONFIG_ONLY = "Only this run configuration is used. Undefined options remain undefined.",
-    INTERACTION_CONFIG_ONLY = "Only interaction configuration is used."
+    INTERACTION_CONFIG_ONLY = "Only interaction configuration is used.",
 }
 
 export const ConfigModesOptions: Record<ConfigModes, ConfigModesDescription> = {
     [ConfigModes.RUN_AND_INTERACTION_CONFIG]: ConfigModesDescription.RUN_AND_INTERACTION_CONFIG,
     [ConfigModes.RUN_CONFIG_ONLY]: ConfigModesDescription.RUN_CONFIG_ONLY,
     [ConfigModes.INTERACTION_CONFIG_ONLY]: ConfigModesDescription.INTERACTION_CONFIG_ONLY,
-}
+};
 
 export interface InteractionExecutionConfiguration {
     environment?: string;
