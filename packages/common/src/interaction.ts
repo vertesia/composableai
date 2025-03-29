@@ -287,6 +287,8 @@ export interface ToolResultsPayload {
     }[];
 }
 
+export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results" | "tools">
+
 export enum RunSourceTypes {
     api = "api",
     cli = "cli",

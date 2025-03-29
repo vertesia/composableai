@@ -1,5 +1,6 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
+    CheckpointConversationPayload,
     ComputeRunFacetPayload,
     ExecutionRun,
     ExecutionRunRef,
@@ -98,7 +99,7 @@ export class RunsApi extends ApiTopic {
         });
     }
 
-    createCheckpoint(payload: ToolResultsPayload): Promise<ExecutionResponse> {
+    createCheckpoint(payload: CheckpointConversationPayload): Promise<ExecutionResponse> {
         return this.post(`/checkpoints`, {
             payload,
         });
