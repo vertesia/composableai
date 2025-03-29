@@ -1,27 +1,36 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { ComputeRunFacetPayload, ExecutionRun, ExecutionRunRef, FindPayload, RunCreatePayload, RunListingFilters, RunListingQueryOptions, RunSearchPayload, ToolResultsPayload } from "@vertesia/common";
+import {
+    ComputeRunFacetPayload,
+    ExecutionRun,
+    ExecutionRunRef,
+    FindPayload,
+    RunCreatePayload,
+    RunListingFilters,
+    RunListingQueryOptions,
+    RunSearchPayload,
+    ToolResultsPayload,
+} from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 import { ExecutionResponse } from "@llumiverse/core";
 
 export interface FilterOption {
-    id: string,
-    name: string,
-    count: number
+    id: string;
+    name: string;
+    count: number;
 }
 
 export interface ComputeRunFacetsResponse {
-    environments?: { _id: string, count: number }[];
-    interactions?: { _id: string, count: number }[];
-    models?: { _id: string, count: number }[];
-    tags?: { _id: string, count: number }[];
-    status?: { _id: string, count: number }[];
+    environments?: { _id: string; count: number }[];
+    interactions?: { _id: string; count: number }[];
+    models?: { _id: string; count: number }[];
+    tags?: { _id: string; count: number }[];
+    status?: { _id: string; count: number }[];
     total?: { count: number }[];
 }
 
 export class RunsApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
-        super(parent, "/api/v1/runs")
+        super(parent, "/api/v1/runs");
     }
 
     /**
@@ -31,19 +40,18 @@ export class RunsApi extends ApiTopic {
      * @returns InteractionResult[]
      **/
     list({ limit, offset, filters }: RunListingQueryOptions): Promise<ExecutionRunRef[]> {
-
         const query = {
             limit,
             offset,
-            ...filters
-        }
+            ...filters,
+        };
 
-        return this.get('/', { query: query });
+        return this.get("/", { query: query });
     }
 
     find(payload: FindPayload): Promise<ExecutionRun[]> {
         return this.post("/find", {
-            payload
+            payload,
         });
     }
 
@@ -54,7 +62,7 @@ export class RunsApi extends ApiTopic {
      * @returns InteractionResult
      **/
     retrieve<P = any, R = any>(id: string): Promise<ExecutionRun<P, R>> {
-        return this.get('/' + id);
+        return this.get("/" + id);
     }
 
     /**
@@ -63,10 +71,9 @@ export class RunsApi extends ApiTopic {
      */
     filterOptions(field: string, filters: RunListingFilters): Promise<FilterOption[]> {
         const query = {
-            ...filters
-        }
+            ...filters,
+        };
         return this.get(`/filter-options/${field}`, { query });
-
     }
 
     create(payload: RunCreatePayload): Promise<ExecutionRun> {
@@ -74,21 +81,26 @@ export class RunsApi extends ApiTopic {
         if (sessionTags) {
             let tags = Array.isArray(sessionTags) ? sessionTags : [sessionTags];
             if (Array.isArray(payload.tags)) {
-                tags = tags.concat(payload.tags)
+                tags = tags.concat(payload.tags);
             } else if (payload.tags) {
-                tags = tags.concat([payload.tags])
+                tags = tags.concat([payload.tags]);
             }
-            payload = { ...payload, tags }
+            payload = { ...payload, tags };
         }
         return this.post("/", {
-            payload
+            payload,
         });
     }
 
-
     sendToolResults(payload: ToolResultsPayload): Promise<ExecutionResponse> {
         return this.post(`/tool-results`, {
-            payload
+            payload,
+        });
+    }
+
+    createCheckpoint(payload: ToolResultsPayload): Promise<ExecutionResponse> {
+        return this.post(`/checkpoints`, {
+            payload,
         });
     }
 
@@ -99,14 +111,13 @@ export class RunsApi extends ApiTopic {
      **/
     computeFacets(query: ComputeRunFacetPayload): Promise<ComputeRunFacetsResponse> {
         return this.post("/facets", {
-            payload: query
+            payload: query,
         });
     }
 
     search(payload: RunSearchPayload): Promise<ExecutionRunRef[]> {
         return this.post("/search", {
-            payload
+            payload,
         });
     }
-
 }

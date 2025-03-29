@@ -30,10 +30,10 @@ export async function streamRun(runId: string, program: any, options: Record<str
             }
 
             const typeColor = {
-                system: chalk.cyan,
+                init: chalk.cyan,
                 error: chalk.red.bold,
                 warning: chalk.yellow.bold,
-                info: chalk.blue,
+                update: chalk.blue,
                 success: chalk.green.bold,
                 complete: chalk.magenta.bold,
             };
@@ -48,16 +48,13 @@ export async function streamRun(runId: string, program: any, options: Record<str
                 return;
             }
 
+            const content = formatMessageContent(message.message);
+
             // Special handling for COMPLETE messages
             if (message.type.toLowerCase() === "complete") {
-                console.log(`${time} [${type}]:`, chalk.white(JSON.stringify(message.message, null, 2)));
+                console.log(`${time} [${type}]:`, chalk.white(content));
                 return;
             }
-
-            const content =
-                typeof message.message === "string"
-                    ? chalk.white(message.message)
-                    : chalk.white(JSON.stringify(message.message, null, 2));
 
             console.log(`${time} [${type}]: ${content}`);
 
@@ -75,5 +72,17 @@ export async function streamRun(runId: string, program: any, options: Record<str
         console.log("Streaming complete.");
     } catch (err) {
         console.error("Error streaming messages:", err);
+    }
+}
+
+function formatMessageContent(content: any) {
+    if (typeof content === "string") {
+        console.log("we have a string");
+        // Replace escaped newlines with actual newlines
+        return content.replace(/\\n/g, "\n");
+    } else {
+        console.log("we have an object", content);
+        // For objects, use pretty-printing with actual newlines
+        return JSON.stringify(content, null, 2);
     }
 }
