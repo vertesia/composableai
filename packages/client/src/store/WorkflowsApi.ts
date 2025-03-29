@@ -50,7 +50,7 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/execute/${name}`, { payload });
     }
 
-    postMessage(runId: string, message: string, type?: AgentMessageType, details?: string): Promise<void> {
+    postMessage(runId: string, message: string, type?: AgentMessageType, details?: any): Promise<void> {
         const payload = {
             message,
             type,

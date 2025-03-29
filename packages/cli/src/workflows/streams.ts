@@ -77,11 +77,9 @@ export async function streamRun(runId: string, program: any, options: Record<str
 
 function formatMessageContent(content: any) {
     if (typeof content === "string") {
-        console.log("we have a string");
         // Replace escaped newlines with actual newlines
         return content.replace(/\\n/g, "\n");
     } else {
-        console.log("we have an object", content);
         // For objects, use pretty-printing with actual newlines
         return JSON.stringify(content, null, 2);
     }

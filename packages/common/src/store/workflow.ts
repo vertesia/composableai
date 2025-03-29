@@ -185,7 +185,7 @@ export interface AgentMessage {
     workflow_run_id: string;
     type: AgentMessageType;
     message?: string;
-    details?: string;
+    details?: any;
 }
 
 export enum AgentMessageType {
