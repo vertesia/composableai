@@ -190,7 +190,11 @@ export interface AgentMessage {
 
 export enum AgentMessageType {
     INIT = "init",
+    SYSTEM = "system",
+    THOUGHT = "thought",
+    PLAN = "plan",
     UPDATE = "update",
     COMPLETE = "complete",
+    WARNING = "warning",
     ERROR = "error",
 }
