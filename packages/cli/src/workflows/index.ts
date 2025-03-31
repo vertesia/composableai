@@ -80,6 +80,7 @@ export function registerWorkflowsCommand(program: Command) {
         .option("--queue", "The task queue name. Defaults to zeno-content")
         .option("-f, --file [file]", "A file containing workflow execution payload.")
         .option("-s, --stream", "Stream the execution")
+        .option("--output [output]", "Output file for the workflow execution")
         .action(async (workflowName: string, options: Record<string, any>) => {
             console.debug("Executing workflow", workflowName, "with options", options);
             await executeWorkflowByName(program, workflowName, options);

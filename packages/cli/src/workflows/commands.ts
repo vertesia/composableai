@@ -72,7 +72,7 @@ export async function getWorkflowRule(program: Command, objectId: string, option
 }
 
 export async function executeWorkflowByName(program: Command, workflowName: string, options: Record<string, any>) {
-    const { objectId, vars, file, stream } = options;
+    const { objectId, vars, file, stream, output: outputFile } = options;
     console.debug("Executing interaction in workflow", workflowName, "with options", options);
 
     let mergedConfig = {
@@ -93,9 +93,16 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
     const wfRunId = res.runIds[0];
     console.log("Workflow run ID:", wfRunId);
 
+    // Save the result to a file if outputFile is specified
+    if (outputFile) {
+        const outputContent = JSON.stringify(res, null, 2);
+        fs.writeFileSync(outputFile, outputContent);
+        console.log(`Workflow execution result saved to ${outputFile}`);
+    }
+
     if (stream) {
         console.debug("Streaming messages for workflow run", wfRunId);
-        await streamRun(wfRunId, program, options); // ⬅️ use the shared function
+        await streamRun(wfRunId, program, { ...options, outputFile });
     }
 }
 
