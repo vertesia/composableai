@@ -7,6 +7,7 @@ import gradient from "gradient-string";
 import figures from "figures";
 import logUpdate from "log-update";
 import logSymbols from "log-symbols";
+import { initSpeechSynthesis, speakText, voiceSynthConfig } from "./voice.js";
 
 // Define emoji icons for different message types
 const typeIcons = {
@@ -62,6 +63,31 @@ export async function streamRun(runId: string, program: any, options: Record<str
     const client = getClient(program);
     const since = options.since ? parseInt(options.since, 10) : undefined;
 
+    // Initialize speech synthesis
+    const speechAvailable = initSpeechSynthesis();
+    if (speechAvailable && options.voice === false) {
+        voiceSynthConfig.enabled = false;
+    } else if (options.voiceSynthesis === true) {
+        voiceSynthConfig.enabled = true;
+    }
+
+    // Configure voice synthesis if options provided
+    if (options.speakTypes) {
+        voiceSynthConfig.speakTypes = options.speakTypes.split(",");
+    }
+    if (options.voiceRate) {
+        voiceSynthConfig.rate = parseFloat(options.voiceRate);
+    }
+    if (options.voicePitch) {
+        voiceSynthConfig.pitch = parseFloat(options.voicePitch);
+    }
+    if (options.voiceVolume) {
+        voiceSynthConfig.volume = parseFloat(options.voiceVolume);
+    }
+    if (options.voiceName) {
+        voiceSynthConfig.voice = options.voiceName;
+    }
+
     // Display run header
     console.log("\n");
     console.log(
@@ -70,6 +96,15 @@ export async function streamRun(runId: string, program: any, options: Record<str
         ),
     );
     console.log(gradient.atlas(`Run ID: ${runId}\n`));
+
+    // Show voice synthesis status
+    if (voiceSynthConfig.enabled) {
+        console.log(
+            gradient.cristal(`Voice Synthesis: Enabled (speaking: ${voiceSynthConfig.speakTypes.join(", ")})\n`),
+        );
+    } else {
+        console.log(chalk.gray(`Voice Synthesis: Disabled\n`));
+    }
 
     let lastHeartbeat = Date.now();
     let heartbeatCount = 0;
@@ -141,11 +176,17 @@ export async function streamRun(runId: string, program: any, options: Record<str
 
             const content = formatMessageContent(message.message);
 
+            // Speak the message if voice synthesis is enabled
+            if (voiceSynthConfig.enabled) {
+                speakText(content, messageType);
+            }
+
             // Special message formatting based on type
             if (messageType === "error" || messageType === "warning" || messageType === "complete") {
                 const boxStyle = boxStyles[messageType as keyof typeof boxStyles];
                 const formattedContent = `${time}\n[${type}]:\n\n${content}`;
                 console.log(boxen(formattedContent, boxStyle));
+                return Promise.resolve();
             } else {
                 console.log(`${time} [${type}]: ${content}`);
             }

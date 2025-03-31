@@ -90,19 +90,32 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
     }
 
     const res = await getClient(program).workflows.execute(workflowName, mergedConfig);
-    const wfRunId = res.runIds[0];
-    console.log("Workflow run ID:", wfRunId);
+    const wfRun = res[0];
+    console.log("Workflow ID:", wfRun);
 
-    // Save the result to a file if outputFile is specified
-    if (outputFile) {
-        const outputContent = JSON.stringify(res, null, 2);
-        fs.writeFileSync(outputFile, outputContent);
-        console.log(`Workflow execution result saved to ${outputFile}`);
+    if (stream && wfRun) {
+        console.debug("Streaming messages for workflow run", wfRun.run_id);
+        await streamRun(wfRun.run_id, program, { ...options, outputFile });
+        process.exit(0);
     }
 
-    if (stream) {
-        console.debug("Streaming messages for workflow run", wfRunId);
-        await streamRun(wfRunId, program, { ...options, outputFile });
+    // Save the result to a file if outputFile is specified
+    if (outputFile && wfRun) {
+        const runDetails = await getClient(program).workflows.getRunDetails(wfRun.run_id, wfRun.workflow_id);
+        const output = runDetails.result.output;
+        let outputContent: string = "";
+        if (!output) {
+            console.error("No output found for workflow run", wfRun.run_id);
+            process.exit(1);
+        }
+        if (typeof output === "object") {
+            outputContent = JSON.stringify(output, null, 2);
+        } else {
+            outputContent = output.toString();
+        }
+
+        fs.writeFileSync(outputFile, outputContent);
+        console.log(`Workflow execution result saved to ${outputFile}`);
     }
 }
 

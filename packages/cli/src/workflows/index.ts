@@ -81,6 +81,7 @@ export function registerWorkflowsCommand(program: Command) {
         .option("-f, --file [file]", "A file containing workflow execution payload.")
         .option("-s, --stream", "Stream the execution")
         .option("--output [output]", "Output file for the workflow execution")
+        .option("--voice", "Enable voice to speak out messages", false)
         .action(async (workflowName: string, options: Record<string, any>) => {
             console.debug("Executing workflow", workflowName, "with options", options);
             await executeWorkflowByName(program, workflowName, options);

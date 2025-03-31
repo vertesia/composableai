@@ -46,7 +46,10 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs/${workflowId}/${runId}/cancel`, { payload: { reason } });
     }
 
-    execute(name: string, payload: ExecuteWorkflowPayload = {}): Promise<{ runIds: string[] }> {
+    execute(
+        name: string,
+        payload: ExecuteWorkflowPayload = {},
+    ): Promise<({ run_id: string; workflow_id: string } | undefined)[]> {
         return this.post(`/execute/${name}`, { payload });
     }
 
@@ -167,7 +170,11 @@ export class WorkflowsRulesApi extends ApiTopic {
         return this.del(`/${id}`);
     }
 
-    execute(id: string, objectIds?: string[], vars?: Record<string, any>): Promise<{ runIds: string[] }> {
+    execute(
+        id: string,
+        objectIds?: string[],
+        vars?: Record<string, any>,
+    ): Promise<({ run_id: string; workflow_id: string } | undefined)[]> {
         const payload: ExecuteWorkflowPayload = {
             objectIds,
             vars,
