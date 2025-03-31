@@ -4,7 +4,6 @@ import { getClient } from "../client.js";
 import boxen from "boxen";
 import ora from "ora";
 import gradient from "gradient-string";
-import cliTable from "cli-table3";
 import figures from "figures";
 import logUpdate from "log-update";
 import logSymbols from "log-symbols";
@@ -151,9 +150,32 @@ export async function streamRun(runId: string, program: any, options: Record<str
                 console.log(`${time} [${type}]: ${content}`);
             }
 
-            // Format details with indentation and colorized JSON
+            // Check if message details are long plan or complex data
             if (message.details) {
-                formatDetails(message.details);
+                // Special handling for plans - they can be very long
+                if (messageType === "plan" && typeof message.details === "object" && message.details.plan) {
+                    console.log(gradient.passion("\n▸ Plan Summary"));
+
+                    try {
+                        const plan = Array.isArray(message.details.plan)
+                            ? message.details.plan
+                            : JSON.parse(message.details.plan);
+                        plan.forEach((task: any, index: number) => {
+                            console.log(chalk.bold.cyan(`\n${index + 1}. ${task.goal}`));
+                            if (task.instructions && Array.isArray(task.instructions)) {
+                                task.instructions.forEach((instruction: string) => {
+                                    console.log(`   ${chalk.gray("•")} ${instruction}`);
+                                });
+                            }
+                        });
+                        console.log(""); // add spacing
+                    } catch (e) {
+                        // If parsing fails, fall back to standard formatting
+                        formatDetails(message.details);
+                    }
+                } else {
+                    formatDetails(message.details);
+                }
             }
 
             // Restart spinner
@@ -198,7 +220,7 @@ function formatMessageContent(content: any): string {
     }
 }
 
-// Helper function to format details using cli-table3
+// Helper function to format details in a cleaner way
 function formatDetails(details: any): void {
     // Check if details are empty or minimal
     const detailsStr = typeof details === "string" ? details : JSON.stringify(details);
@@ -208,44 +230,33 @@ function formatDetails(details: any): void {
     }
 
     console.log("");
-    console.log(gradient.atlas("DETAILS:"));
+    console.log(gradient.atlas("▸ Details"));
 
-    // Create table for object details
+    // Create a cleaner display for object details
     if (typeof details === "object" && details !== null) {
         try {
-            // For simple objects, display as key-value table
-            if (!Array.isArray(details)) {
-                const table = new cliTable({
-                    head: [chalk.cyan("Property"), chalk.cyan("Value")],
-                    chars: {
-                        top: "═",
-                        "top-mid": "╤",
-                        "top-left": "╔",
-                        "top-right": "╗",
-                        bottom: "═",
-                        "bottom-mid": "╧",
-                        "bottom-left": "╚",
-                        "bottom-right": "╝",
-                        left: "║",
-                        "left-mid": "╟",
-                        mid: "─",
-                        "mid-mid": "┼",
-                        right: "║",
-                        "right-mid": "╢",
-                        middle: "│",
-                    },
-                    style: {
-                        head: [], // No additional styling needed as we've colored the headers
-                        border: [], // Keep borders as default color
-                    },
-                });
+            // For simple objects with small values, display as simple key-value pairs
+            if (!Array.isArray(details) && Object.keys(details).length < 10) {
+                const longestKey = Math.max(...Object.keys(details).map((k) => k.length));
+                const padding = longestKey + 2;
 
-                // Add rows for each property
                 Object.entries(details).forEach(([key, value]) => {
                     let displayValue: string;
+                    let paddedKey = key.padEnd(padding);
 
+                    // Format the value based on its type
                     if (typeof value === "object" && value !== null) {
-                        displayValue = JSON.stringify(value);
+                        if (JSON.stringify(value).length < 80) {
+                            displayValue = JSON.stringify(value);
+                        } else {
+                            // For longer objects, format with indentation
+                            displayValue =
+                                "\n" +
+                                formatColorizedJSON(value)
+                                    .split("\n")
+                                    .map((line) => "  " + line)
+                                    .join("\n");
+                        }
                     } else {
                         displayValue = String(value);
                     }
@@ -261,16 +272,34 @@ function formatDetails(details: any): void {
                         displayValue = chalk.red("null");
                     }
 
-                    table.push([chalk.cyan(key), displayValue]);
+                    console.log(`${chalk.cyan(paddedKey)}: ${displayValue}`);
                 });
-
-                console.log(table.toString());
+            } else if (Array.isArray(details)) {
+                // For arrays with simple values, show in a compact form
+                if (details.length > 0 && typeof details[0] !== "object") {
+                    console.log(chalk.cyan("["));
+                    details.forEach((item, i) => {
+                        const displayValue =
+                            typeof item === "string"
+                                ? chalk.green(`"${item}"`)
+                                : typeof item === "number"
+                                  ? chalk.yellow(item)
+                                  : typeof item === "boolean"
+                                    ? chalk.magenta(item)
+                                    : item;
+                        console.log(`  ${displayValue}${i < details.length - 1 ? "," : ""}`);
+                    });
+                    console.log(chalk.cyan("]"));
+                } else {
+                    // For more complex arrays, use the colorized JSON
+                    console.log(formatColorizedJSON(details));
+                }
             } else {
-                // For arrays, just use JSON
+                // For complex objects, fall back to pretty-printed JSON
                 console.log(formatColorizedJSON(details));
             }
         } catch (err) {
-            // Fall back to colorized JSON if table creation fails
+            // Fall back to colorized JSON if formatting fails
             console.log(formatColorizedJSON(details));
         }
     } else {
