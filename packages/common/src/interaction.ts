@@ -221,19 +221,19 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
 export type ToolRef = string | { name: string; description: string };
 export interface InteractionAsyncExecutionPayload {
     /**
+     * The interaction endpoint to execute to start the conversation.
+     */
+    interaction: string;
+
+    /**
      * The environment ID to use.
      */
-    environment: string;
+    environment?: string;
 
     /**
      * The model to use
      */
-    model: string;
-
-    /**
-     * The interaction name to execute to start the conversation.
-     */
-    interaction: string;
+    model?: string;
 
     /**
      * The options to use on the first execution
