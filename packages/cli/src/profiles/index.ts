@@ -121,7 +121,6 @@ export class ConfigureProfile {
             process.exit(1);
             return;
         }
-        
         const oldName = this.data.name!;
         this.data.name = result.profile;
         this.data.account = result.account;
