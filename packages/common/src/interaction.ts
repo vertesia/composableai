@@ -22,10 +22,64 @@ import {
 import { ExecutionRunDocRef } from "./runs.js";
 import { AccountRef } from "./user.js";
 
+
 export interface InteractionExecutionError {
     code: string;
     message: string;
     data?: any;
+}
+
+/**
+ * The payload to query the interaction endpoints
+ */
+export interface InteractionEndpointQuery {
+    limit?: number;
+    offset?: number;
+
+    status?: InteractionStatus;
+    visibility?: InteractionVisibility;
+    version?: number;
+    tags?: string[];
+
+    /**
+     * Filter by interaction endpoint name to include only the specified endpoints
+     * * If both includes and excludes are specified then omly the includes filter will be used.
+     */
+    includes?: string[];
+
+    /**
+     * Filter by interaction endpoint name to excludes the specified endpoints.
+     * If both includes and excludes are specified then omly the includes filter will be used.
+     */
+    excludes?: string[];
+
+    /**
+     * Whether or not to return the parameters schema.
+     * The parameters schema is an array of JSON schemas.
+     * Each schema is a JSON schema that describes the parameters of an interaction prompt.
+     */
+    include_params_schema?: boolean;
+
+    /**
+     * Whether or not to return the result schema
+     */
+    include_result_schema?: boolean;
+}
+
+/**
+ * A description of an interaction endpoint.
+ */
+export interface InteractionEndpoint {
+    id: string;
+    name: string;
+    endpoint: string;
+    description?: string;
+    status: InteractionStatus;
+    visibility?: InteractionVisibility;
+    version: number;
+    tags: string[];
+    result_schema?: JSONSchema;
+    params_schema?: JSONSchema;
 }
 
 export interface InteractionRef {
