@@ -16,8 +16,10 @@ export async function connectToProject(options: ConnectOptions) {
     const project = new AgentProject();
     const pkg = project.packageJson;
     let profileName: string | undefined = options.profile || pkg.vertesia.profile;
-    const onAuthenticationDone = async (result: ConfigResult) => {
-        await updateNpmrc(project, result.profile);
+    const onAuthenticationDone = async (result: ConfigResult | undefined) => {
+        if (result) {
+            await updateNpmrc(project, result.profile);
+        }
     }
     try {
         if (allowInteraction && !profileName) {

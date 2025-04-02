@@ -89,7 +89,10 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
         mergedConfig.task_queue = options.queue;
     }
 
-    const res = await getClient(program).workflows.execute(workflowName, mergedConfig);
+    const res = await getClient(program).workflows.execute(workflowName, {
+        ...mergedConfig,
+        unique: true,
+    });
     const wfRun = res[0];
     console.log("Workflow ID:", wfRun);
 

@@ -24,7 +24,7 @@ export function tryRrefreshToken(profile: Profile): Promise<ConfigResult | undef
     // Set up signal handler
     const handleSignal = () => {
         abortController.abort();
-        console.log(chalk.yellow("\nToken refresh interrupted"));
+        console.log("\nToken refresh interrupted");
         process.exit(0);
     };
     

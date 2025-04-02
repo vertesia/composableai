@@ -284,7 +284,7 @@ export async function streamRun(runId: string, program: any, options: Record<str
     try {
         // Pass abort signal to streamMessages if the API supports it
         // Note: You might need to modify the client implementation to accept this parameter
-        await client.workflows.streamMessages(runId, onMessage, since, streamController.signal);
+        await client.workflows.streamMessages(runId, onMessage, since);
         
         if (!isTerminating) {
             if (spinner) spinner.stop();

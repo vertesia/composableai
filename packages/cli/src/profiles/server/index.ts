@@ -1,5 +1,6 @@
 import { randomInt } from "crypto";
 import enquirer from "enquirer";
+import { Server } from "http";
 import net from "net";
 import open from "open";
 import { handleCors } from "./cors.js";
@@ -52,7 +53,7 @@ export async function startConfigSession(
     }
     
     const code = randomInt(1000, 9999);
-    let server;
+    let server: Server;
     
     try {
         server = await startServer(async (req, res) => {
