@@ -34,16 +34,20 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs`, { payload: payload });
     }
 
+    sendSignal(workflowId: string, runId: string, signal: string, payload?: any): Promise<{ message: string }> {
+        return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
+    }
+
     getRunDetails(runId: string, workflowId: string): Promise<WorkflowRunWithDetails> {
         return this.get(`/runs/${workflowId}/${runId}`);
     }
 
     terminate(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
-        return this.post(`/runs/${workflowId}/${runId}/terminate`, { payload: { reason } });
+        return this.post(`/runs/${workflowId}/${runId}/actions/terminate`, { payload: { reason } });
     }
 
     cancel(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
-        return this.post(`/runs/${workflowId}/${runId}/cancel`, { payload: { reason } });
+        return this.post(`/runs/${workflowId}/${runId}/actions/cancel`, { payload: { reason } });
     }
 
     execute(
