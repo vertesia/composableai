@@ -114,7 +114,11 @@ export class ConfigureProfile {
         }
     }
 
-    async applyConfigResult(result: ConfigResult) {
+    async applyConfigResult(result: ConfigResult | undefined) {
+        if (!result) {
+            // Handle case when result is undefined (e.g., aborted)
+            return;
+        }
         const oldName = this.data.name!;
         this.data.name = result.profile;
         this.data.account = result.account;
