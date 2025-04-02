@@ -54,6 +54,9 @@ export class WorkflowsApi extends ApiTopic {
     }
 
     postMessage(runId: string, message: string, type?: AgentMessageType, details?: any): Promise<void> {
+        if (!runId) {
+            throw new Error("runId is required");
+        }
         const payload = {
             message,
             type,

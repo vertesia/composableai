@@ -51,11 +51,27 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     }
 
     get runId() {
-        return activityInfo().workflowExecution.runId;
+        const runId = activityInfo().workflowExecution.runId;
+        if (!runId) {
+            log.error("No runId found in activityInfo");
+            throw new WorkflowParamNotFound(
+                "runId",
+                (this.payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload).workflow,
+            );
+        }
+        return runId;
     }
 
     get workflowId() {
-        return activityInfo().workflowExecution.workflowId;
+        const workflowId = activityInfo().workflowExecution.workflowId;
+        if (!workflowId) {
+            log.error("No workflowId found in activityInfo");
+            throw new WorkflowParamNotFound(
+                "workflowId",
+                (this.payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload).workflow,
+            );
+        }
+        return workflowId;
     }
 
     fetchProject() {
