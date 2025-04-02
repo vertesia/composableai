@@ -10,6 +10,7 @@ import {
     RunListingQueryOptions,
     RunSearchPayload,
     ToolResultsPayload,
+    UserMessagePayload,
 } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 import { ExecutionResponse } from "@llumiverse/core";
@@ -93,14 +94,30 @@ export class RunsApi extends ApiTopic {
         });
     }
 
+    /**
+     * Send tool results and continues the conversation
+     * @param payload
+     * @returns
+     */
     sendToolResults(payload: ToolResultsPayload): Promise<ExecutionResponse> {
         return this.post(`/tool-results`, {
             payload,
         });
     }
 
+    /**
+     *
+     * @param payload
+     * @returns
+     */
+    sendUserMessage(payload: UserMessagePayload): Promise<ExecutionResponse> {
+        return this.post(`/user-message`, {
+            payload,
+        });
+    }
+
     createCheckpoint(payload: CheckpointConversationPayload): Promise<ExecutionResponse> {
-        return this.post(`/checkpoints`, {
+        return this.post(`/checkpoint`, {
             payload,
         });
     }

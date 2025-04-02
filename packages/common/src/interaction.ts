@@ -326,20 +326,28 @@ export interface InteractionAsyncExecutionPayload {
     include_previous_error?: boolean;
 }
 
-/**
- * The payload to sent the tool responses back to the target LLM
- */
-export interface ToolResultsPayload {
+interface ResumeConversationPayload {
     run: ExecutionRunDocRef; // the run created by the first execution.
     environment: string; // the environment ID
     options: StatelessExecutionOptions; // the options used on the first execution
     conversation: unknown; // the conversation state
     tools: ToolDefinition[]; // the tools to be used
+}
+
+/**
+ * The payload to sent the tool responses back to the target LLM
+ */
+export interface ToolResultsPayload extends ResumeConversationPayload {
     results: {
         tool_use_id: string;
         content: string;
     }[];
 }
+
+export interface UserMessagePayload extends ResumeConversationPayload {
+    message: string
+}
+
 
 export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results" | "tools">
 
