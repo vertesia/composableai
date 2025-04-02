@@ -35,7 +35,7 @@ export class WorkflowsApi extends ApiTopic {
     }
 
     getRunDetails(runId: string, workflowId: string): Promise<WorkflowRunWithDetails> {
-        return this.get(`/runs/${workflowId}/${runId}`, { query: { workflowId } });
+        return this.get(`/runs/${workflowId}/${runId}`);
     }
 
     terminate(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
