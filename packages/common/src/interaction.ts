@@ -272,8 +272,13 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
     interaction: string;
 }
 
+
+// ================= async execution payloads ====================
 export type ToolRef = string | { name: string; description: string };
-export interface InteractionAsyncExecutionPayload {
+
+interface AsyncExecutionPayloadBase {
+    type: "conversation" | "interaction";
+
     /**
      * The interaction endpoint to execute to start the conversation.
      */
@@ -305,14 +310,18 @@ export interface InteractionAsyncExecutionPayload {
     result_schema?: JSONSchema;
 
     /**
-     * The tools to use
-     */
-    tools?: ToolRef[];
-
-    /**
      * Optional tags to add to the execution run
      */
     tags?: string[];
+}
+
+export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
+    type: "conversation";
+
+    /**
+     * The tools to use
+     */
+    tools?: ToolRef[];
 
     /**
      * The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used.
@@ -320,16 +329,27 @@ export interface InteractionAsyncExecutionPayload {
     max_iterations?: number;
 
     /**
-     * Only used for non conversation workflows to include the error on next retry.
-     * If tools is defined this is not used
-     */
-    include_previous_error?: boolean;
-
-    /**
      * Whether the conversation should be interactive or not
      */
     interactive?: boolean;
 }
+
+export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
+    type: "interaction";
+
+    /**
+     * The tools to use
+     */
+    tools?: ToolDefinition[];
+
+    /**
+     * Only used for non conversation workflows to include the error on next retry.
+     * If tools is defined this is not used
+     */
+    include_previous_error?: boolean;
+}
+
+export type AsyncExecutionPayload = AsyncConversationExecutionPayload | AsyncInteractionExecutionPayload;
 
 interface ResumeConversationPayload {
     run: ExecutionRunDocRef; // the run created by the first execution.
@@ -354,6 +374,8 @@ export interface UserMessagePayload extends ResumeConversationPayload {
 }
 
 export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results" | "tools">;
+
+// ================= end async execution payloads ====================
 
 export enum RunSourceTypes {
     api = "api",

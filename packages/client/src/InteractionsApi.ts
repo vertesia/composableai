@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionAsyncExecutionPayload, InteractionCreatePayload, InteractionEndpointQuery, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload } from "@vertesia/common";
+import { AsyncExecutionPayload, ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionEndpointQuery, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 import { executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
 
@@ -170,7 +170,7 @@ export default class InteractionsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    executeAsync(payload: InteractionAsyncExecutionPayload): Promise<string> {
+    executeAsync(payload: AsyncExecutionPayload): Promise<string> {
         return executeInteractionAsync(this.client as VertesiaClient, payload);
     }
 
