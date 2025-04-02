@@ -55,13 +55,6 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
      * It is handled by a subworkflow execution, so the main workflow will not wait for the notification to be sent.
      */
     notify_endpoints?: string[];
-
-    /**
-     * Wether to keep the workflow open, after the final message from the model, or close.
-     * If true, the workflow will be kept open and the user will be able to continue working on it.
-     * If false, the workflow will be closed and the user will not be able to continue working on it.
-     */
-    interactive?: boolean;
 }
 
 export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {

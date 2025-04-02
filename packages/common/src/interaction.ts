@@ -22,7 +22,6 @@ import {
 import { ExecutionRunDocRef } from "./runs.js";
 import { AccountRef } from "./user.js";
 
-
 export interface InteractionExecutionError {
     code: string;
     message: string;
@@ -95,7 +94,8 @@ export interface InteractionRef {
     prompts?: PromptSegmentDef<PromptTemplateRef>[];
     updated_at: Date;
 }
-export const InteractionRefPopulate = "id name endpoint parent description status version visibility tags updated_at prompts";
+export const InteractionRefPopulate =
+    "id name endpoint parent description status version visibility tags updated_at prompts";
 
 export interface InteractionRefWithSchema extends Omit<InteractionRef, "prompts"> {
     result_schema?: JSONSchema4;
@@ -324,6 +324,11 @@ export interface InteractionAsyncExecutionPayload {
      * If tools is defined this is not used
      */
     include_previous_error?: boolean;
+
+    /**
+     * Whether the conversation should be interactive or not
+     */
+    interactive?: boolean;
 }
 
 interface ResumeConversationPayload {
@@ -345,11 +350,10 @@ export interface ToolResultsPayload extends ResumeConversationPayload {
 }
 
 export interface UserMessagePayload extends ResumeConversationPayload {
-    message: string
+    message: string;
 }
 
-
-export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results" | "tools">
+export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results" | "tools">;
 
 export enum RunSourceTypes {
     api = "api",
