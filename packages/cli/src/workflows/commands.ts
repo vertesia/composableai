@@ -96,7 +96,6 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
     if (stream && wfRun) {
         console.debug("Streaming messages for workflow run", wfRun.run_id);
         await streamRun(wfRun.run_id, program, { ...options, outputFile });
-        process.exit(0);
     }
 
     // Save the result to a file if outputFile is specified
@@ -116,6 +115,7 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
 
         fs.writeFileSync(outputFile, outputContent);
         console.log(`Workflow execution result saved to ${outputFile}`);
+        process.exit(0);
     }
 }
 
