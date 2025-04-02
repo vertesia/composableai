@@ -62,6 +62,48 @@ const boxStyles = {
 export async function streamRun(runId: string, program: any, options: Record<string, any> = {}) {
     const client = getClient(program);
     const since = options.since ? parseInt(options.since, 10) : undefined;
+    
+    // Setup cleanup resources
+    let spinner: ReturnType<typeof ora> | null = null;
+    let isTerminating = false;
+    let cleanupTimeouts: NodeJS.Timeout[] = [];
+    let streamController: AbortController | null = null;
+    
+    // Signal handler function for proper cleanup
+    const cleanup = () => {
+        isTerminating = true;
+        
+        // Clean up spinner
+        if (spinner) {
+            spinner.stop();
+            spinner = null;
+        }
+        
+        // Clean up any pending timeouts
+        for (const timeout of cleanupTimeouts) {
+            clearTimeout(timeout);
+        }
+        cleanupTimeouts = [];
+        
+        // Clear any log update
+        logUpdate.clear();
+        
+        // Abort any active streams
+        if (streamController) {
+            streamController.abort();
+        }
+        
+        // Console message about termination
+        console.log(chalk.yellow("\nStream terminated by user (Ctrl+C)"));
+        
+        // Ensure the process exits cleanly
+        process.exit(0);
+    };
+    
+    // Set up signal handlers
+    const sigintHandler = () => cleanup();
+    process.on('SIGINT', sigintHandler);
+    process.on('SIGTERM', sigintHandler);
 
     // Initialize speech synthesis
     const speechAvailable = initSpeechSynthesis();
@@ -108,12 +150,15 @@ export async function streamRun(runId: string, program: any, options: Record<str
 
     let lastHeartbeat = Date.now();
     let heartbeatCount = 0;
-    let spinner = ora("Waiting for messages...").start();
+    spinner = ora("Waiting for messages...").start();
 
     const onMessage = (message: AgentMessage) => {
+        // Skip processing if we're terminating
+        if (isTerminating) return;
+        
         try {
             // Stop spinner when a message arrives
-            spinner.stop();
+            if (spinner) spinner.stop();
 
             // Check if message is completely empty or malformed (heartbeat)
             if (!message || (message && !message.type && !message.message)) {
@@ -130,10 +175,12 @@ export async function streamRun(runId: string, program: any, options: Record<str
                     heartbeatCount = 0;
 
                     // Reset line after brief pause
-                    setTimeout(() => {
+                    const timeout = setTimeout(() => {
+                        if (isTerminating) return;
                         logUpdate.clear();
                         spinner = ora("Waiting for messages...").start();
                     }, 1000);
+                    cleanupTimeouts.push(timeout);
                 }
                 return;
             }
@@ -220,33 +267,50 @@ export async function streamRun(runId: string, program: any, options: Record<str
             }
 
             // Restart spinner
-            spinner = ora("Waiting for messages...").start();
+            if (!isTerminating) {
+                spinner = ora("Waiting for messages...").start();
+            }
         } catch (err) {
             console.error("Error formatting message:", err);
             console.log("Raw message:", JSON.stringify(message));
-            spinner = ora("Waiting for messages...").start();
+            if (!isTerminating) {
+                spinner = ora("Waiting for messages...").start();
+            }
         }
     };
 
+    streamController = new AbortController();
+    
     try {
-        await client.workflows.streamMessages(runId, onMessage, since);
-        spinner.stop();
-        console.log(
-            gradient.summer.multiline(
-                "\n╔═════════════════════════════════════╗\n║                                     ║\n║       STREAMING COMPLETE            ║\n║                                     ║\n╚═════════════════════════════════════╝\n",
-            ),
-        );
+        // Pass abort signal to streamMessages if the API supports it
+        // Note: You might need to modify the client implementation to accept this parameter
+        await client.workflows.streamMessages(runId, onMessage, since, streamController.signal);
+        
+        if (!isTerminating) {
+            if (spinner) spinner.stop();
+            console.log(
+                gradient.summer.multiline(
+                    "\n╔═════════════════════════════════════╗\n║                                     ║\n║       STREAMING COMPLETE            ║\n║                                     ║\n╚═════════════════════════════════════╝\n",
+                ),
+            );
+        }
     } catch (err) {
-        spinner.stop();
-        console.error(
-            boxen(gradient.fruit("ERROR STREAMING MESSAGES") + "\n\n" + err, {
-                padding: 1,
-                margin: 1,
-                borderStyle: "round" as const,
-                borderColor: "red" as const,
-                backgroundColor: "#400",
-            }),
-        );
+        if (!isTerminating) {
+            if (spinner) spinner.stop();
+            console.error(
+                boxen(gradient.fruit("ERROR STREAMING MESSAGES") + "\n\n" + err, {
+                    padding: 1,
+                    margin: 1,
+                    borderStyle: "round" as const,
+                    borderColor: "red" as const,
+                    backgroundColor: "#400",
+                }),
+            );
+        }
+    } finally {
+        // Always clean up signal handlers when done
+        process.off('SIGINT', sigintHandler);
+        process.off('SIGTERM', sigintHandler);
     }
 }
 

@@ -5,7 +5,7 @@ import { config, getConfigUrl, getServerUrls, shouldRefreshProfileToken } from "
 import { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
 
-export type OnResultCallback = (result: ConfigResult) => void | Promise<void>;
+export type OnResultCallback = (result: ConfigResult | undefined) => void | Promise<void>;
 
 
 export async function listProfiles() {
@@ -154,7 +154,7 @@ export async function createProfile(name?: string, options: CreateProfileOptions
     return name!;
 }
 
-export async function updateProfile(name?: string, onResult?: OnResultCallback) {
+export async function updateProfile(name?: string, onResult?: OnResultCallback, signal?: AbortSignal) {
     if (!name) {
         name = await selectProfile("Select the profile to update");
     }
@@ -163,15 +163,15 @@ export async function updateProfile(name?: string, onResult?: OnResultCallback) 
         console.error(`Profile ${name} not found`);
         process.exit(1);
     }
-    config.updateProfile(name).start(onResult);
+    config.updateProfile(name).start(onResult, signal);
 }
 
-export function updateCurrentProfile(onResult?: OnResultCallback) {
+export function updateCurrentProfile(onResult?: OnResultCallback, signal?: AbortSignal) {
     if (!config.current) {
         console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
         process.exit(1);
     }
-    config.updateProfile(config.current.name).start(onResult);
+    config.updateProfile(config.current.name).start(onResult, signal);
 }
 
 

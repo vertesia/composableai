@@ -138,9 +138,14 @@ export class ConfigureProfile {
         process.exit(0);
     }
 
-    async start(onResult?: OnResultCallback) {
+    async start(onResult?: OnResultCallback, signal?: AbortSignal) {
         this.onResultCallback = onResult;
-        await startConfigSession(this.data.config_url!, this.getConfigPayload(), this.applyConfigResult.bind(this));
+        await startConfigSession(
+            this.data.config_url!, 
+            this.getConfigPayload(), 
+            this.applyConfigResult.bind(this),
+            signal
+        );
     }
 }
 
