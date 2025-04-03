@@ -11,8 +11,8 @@ import {
  */
 export class EmbeddingsApi extends ApiTopic {
 
-    constructor(parent: ClientBase) {
-        super(parent, "/embeddings");
+    constructor(parent: ClientBase, basePath: string = "/api/v1/embeddings") {
+        super(parent, basePath);
     }
 
     async status(type: SupportedEmbeddingTypes): Promise<EmbeddingsStatusResponse> {

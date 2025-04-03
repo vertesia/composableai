@@ -11,5 +11,5 @@ export class CommandsApi extends ApiTopic {
         super(parent, "/api/v1/commands");
     }
 
-    embeddings = new EmbeddingsApi(this);
+    embeddings = new EmbeddingsApi(this, "/embeddings");
 }
