@@ -4,7 +4,7 @@ import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { TruncateSpec } from "../utils/tokens.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
 
-const INT_EXTRACT_INFORMATION = "sys:ExtractInformation"
+const INT_EXTRACT_INFORMATION = "sys:ExtractInformation";
 export interface GenerateDocumentPropertiesParams extends InteractionExecutionParams {
     typesHint?: string[];
     /**
@@ -17,10 +17,12 @@ export interface GenerateDocumentPropertiesParams extends InteractionExecutionPa
     use_vision?: boolean;
 }
 export interface GenerateDocumentProperties extends DSLActivitySpec<GenerateDocumentPropertiesParams> {
-    name: 'generateDocumentProperties';
+    name: "generateDocumentProperties";
 }
 
-export async function generateDocumentProperties(payload: DSLActivityExecutionPayload<GenerateDocumentPropertiesParams>) {
+export async function generateDocumentProperties(
+    payload: DSLActivityExecutionPayload<GenerateDocumentPropertiesParams>,
+) {
     const context = await setupActivity<GenerateDocumentPropertiesParams>(payload);
     const { params, client, objectId } = context;
     const interactionName = params.interactionName ?? INT_EXTRACT_INFORMATION;
@@ -32,7 +34,7 @@ export async function generateDocumentProperties(payload: DSLActivityExecutionPa
 
     if (!doc?.text && !params.use_vision && !doc?.content?.type?.startsWith("image/")) {
         log.warn(`Object ${objectId} not found or text is empty`);
-        return { status: "failed", error: "no-text" }
+        return { status: "failed", error: "no-text" };
     }
 
     if (!type || !type.object_schema) {
@@ -50,16 +52,19 @@ export async function generateDocumentProperties(payload: DSLActivityExecutionPa
         }
 
         log.info(`Object ${objectId} is not an image or pdf`);
-        return undefined
-    }
+        return undefined;
+    };
 
     const promptData = {
         content: doc.text ?? undefined,
         image: getImageRef() ?? undefined,
         human_context: project?.configuration?.human_context ?? undefined,
-    }
+    };
 
-    log.info(` Extracting information from object ${objectId} with type ${type.name}`, payload.debug_mode ? { params, } : undefined);
+    log.info(
+        ` Extracting information from object ${objectId} with type ${type.name}`,
+        payload.debug_mode ? { params } : undefined,
+    );
 
     const infoRes = await executeInteractionFromActivity(
         client,
@@ -70,23 +75,39 @@ export async function generateDocumentProperties(payload: DSLActivityExecutionPa
             result_schema: type.object_schema,
         },
         promptData,
-        payload.debug_mode ?? false
+        payload.debug_mode ?? false,
     );
+    const getText = () => {
+        if (doc.text) {
+            return undefined;
+        }
+        let text = "";
+        if (infoRes.result.title) {
+            text += infoRes.result.title + "\n";
+        }
+        if (infoRes.result.description) {
+            text += infoRes.result.description;
+        }
+        if (text) {
+            return text;
+        } else {
+            return undefined;
+        }
+    };
 
     log.info(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
     await client.objects.update(doc.id, {
         properties: {
             ...infoRes.result,
-            etag: doc.text_etag
+            etag: doc.text_etag,
         },
+        text: getText(),
         generation_run_info: {
             id: infoRes.id,
             date: new Date().toISOString(),
             model: infoRes.modelId,
-        }
+        },
     });
 
-
     return { status: "completed" };
-
 }
