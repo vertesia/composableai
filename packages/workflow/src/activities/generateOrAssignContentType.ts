@@ -77,7 +77,7 @@ export async function generateOrAssignContentType(payload: DSLActivityExecutionP
 
     const fileRef = await getImage();
 
-    log.info("Execute SelectDocumentType interaction on content with \nexisting types: " + existing_types.join(","));
+    log.info("Execute SelectDocumentType interaction on content with \nexisting types: " + existing_types.map(t => t.name).join(","));
 
     const res = await executeInteractionFromActivity(client, interactionName, params, {
         existing_types, content, image: fileRef
