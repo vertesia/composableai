@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { EmbeddingsApi } from "./EmbeddingsApi";
+import { EmbeddingsApi } from "./EmbeddingsApi.js";
 
 /**
  * @deprecated use EmbeddingsApi instead
