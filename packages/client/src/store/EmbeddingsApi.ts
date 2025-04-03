@@ -1,5 +1,10 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { EmbeddingsStatusResponse, GenericCommandResponse, ProjectConfigurationEmbeddings, SupportedEmbeddingTypes } from "@vertesia/common";
+import {
+    EmbeddingsStatusResponse,
+    GenericCommandResponse,
+    ProjectConfigurationEmbeddings,
+    SupportedEmbeddingTypes,
+} from "@vertesia/common";
 
 /**
  * @since 0.52.0
