@@ -332,6 +332,11 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * Whether the conversation should be interactive or not
      */
     interactive?: boolean;
+
+    /**
+     * Whether to disable the generation of interaction tools or not.
+     */
+    disable_interaction_tools?: boolean;
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
