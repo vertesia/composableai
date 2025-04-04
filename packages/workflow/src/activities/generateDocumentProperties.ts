@@ -1,10 +1,8 @@
 import { log } from "@temporalio/activity";
-import { CreateContentObjectPayload, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { TruncateSpec } from "../utils/tokens.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
-import { ContentObject } from "@vertesia/common";
-import { Create } from "sharp";
 
 const INT_EXTRACT_INFORMATION = "sys:ExtractInformation";
 export interface GenerateDocumentPropertiesParams extends InteractionExecutionParams {
