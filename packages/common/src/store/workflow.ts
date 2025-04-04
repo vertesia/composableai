@@ -47,6 +47,7 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     config?: {
         studio_url: string;
         store_url: string;
+        slack_app_url?: string;
         enabled_integrations?: string[]; //list of enabled integrations
     };
 
@@ -199,4 +200,6 @@ export enum AgentMessageType {
     COMPLETE = "complete",
     WARNING = "warning",
     ERROR = "error",
+    ANSWER = "answer",
+    END = "end",
 }
