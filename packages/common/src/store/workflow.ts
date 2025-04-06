@@ -86,6 +86,7 @@ export interface ExecuteWorkflowPayload {
     objectIds?: string[];
     vars?: Record<string, any>;
     unique?: boolean;
+    timeout?: number; //timeout in seconds
 }
 
 export interface ListWorkflowRunsPayload {
@@ -201,5 +202,6 @@ export enum AgentMessageType {
     WARNING = "warning",
     ERROR = "error",
     ANSWER = "answer",
+    REQUEST_INPUT = "request_input",
     END = "end",
 }
