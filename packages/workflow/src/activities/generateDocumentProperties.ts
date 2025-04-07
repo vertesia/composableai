@@ -79,27 +79,21 @@ export async function generateDocumentProperties(
     );
 
     const getText = () => {
-        // If there is already text, and it is not trivially improveable by adding a description,
-        // return undefined to keep the original text
-        if (doc.text
-            && doc.text !== infoRes.result.title
-            && doc.text !== doc.name) {
+        if (doc.text) {
             return undefined;
         }
-
         let text = "";
         if (infoRes.result.title) {
-            text += infoRes.result.title;
+            text += infoRes.result.title + "\n";
         }
         if (infoRes.result.description) {
-            if (text) {
-                text += "\n";
-            }
             text += infoRes.result.description;
         }
-
-        // If falsy (e.g. empty string), return file name
-        return text ? text : doc.name;
+        if (text) {
+            return text;
+        } else {
+            return undefined;
+        }
     };
 
     log.info(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
