@@ -1,4 +1,4 @@
-import { AgentMessage } from "@vertesia/common";
+import { AgentMessage, UserInputSignal } from "@vertesia/common";
 import chalk from "chalk";
 import { getClient } from "../client.js";
 import boxen from "boxen";
@@ -8,6 +8,7 @@ import figures from "figures";
 import logUpdate from "log-update";
 import logSymbols from "log-symbols";
 import { initSpeechSynthesis, speakText, voiceSynthConfig } from "./voice.js";
+import * as readline from "readline";
 
 // Define emoji icons for different message types
 const typeIcons = {
@@ -59,51 +60,58 @@ const boxStyles = {
     },
 };
 
-export async function streamRun(runId: string, program: any, options: Record<string, any> = {}) {
+export async function streamRun(workflowId: string, runId: string, program: any, options: Record<string, any> = {}) {
     const client = getClient(program);
     const since = options.since ? parseInt(options.since, 10) : undefined;
-    
+    const interactive = options.interactive === true;
+
     // Setup cleanup resources
     let spinner: ReturnType<typeof ora> | null = null;
     let isTerminating = false;
     let cleanupTimeouts: NodeJS.Timeout[] = [];
     let streamController: AbortController | null = null;
-    
-    // Signal handler function for proper cleanup
-    const cleanup = () => {
+
+    // Signal handler function for proper cleanup - use a variable that can be redefined
+    let cleanupFn = () => {
         isTerminating = true;
-        
+
         // Clean up spinner
         if (spinner) {
             spinner.stop();
             spinner = null;
         }
-        
+
         // Clean up any pending timeouts
         for (const timeout of cleanupTimeouts) {
             clearTimeout(timeout);
         }
         cleanupTimeouts = [];
-        
+
         // Clear any log update
         logUpdate.clear();
-        
+
         // Abort any active streams
         if (streamController) {
             streamController.abort();
         }
-        
+
+        // If interactive mode was on, restore stdin to normal mode
+        if (interactive) {
+            process.stdin.setRawMode?.(false);
+            process.stdin.pause();
+        }
+
         // Console message about termination
         console.log(chalk.yellow("\nStream terminated by user (Ctrl+C)"));
-        
+
         // Ensure the process exits cleanly
         process.exit(0);
     };
-    
+
     // Set up signal handlers
-    const sigintHandler = () => cleanup();
-    process.on('SIGINT', sigintHandler);
-    process.on('SIGTERM', sigintHandler);
+    const sigintHandler = () => cleanupFn();
+    process.on("SIGINT", sigintHandler);
+    process.on("SIGTERM", sigintHandler);
 
     // Initialize speech synthesis
     const speechAvailable = initSpeechSynthesis();
@@ -155,7 +163,7 @@ export async function streamRun(runId: string, program: any, options: Record<str
     const onMessage = (message: AgentMessage) => {
         // Skip processing if we're terminating
         if (isTerminating) return;
-        
+
         try {
             // Stop spinner when a message arrives
             if (spinner) spinner.stop();
@@ -280,12 +288,73 @@ export async function streamRun(runId: string, program: any, options: Record<str
     };
 
     streamController = new AbortController();
-    
+
+    // Setup for interactive mode if enabled
+    if (interactive) {
+        // Initialize readline interface
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+            prompt: gradient.passion("> "),
+        });
+
+        // Set up handler for user input
+        rl.on("line", async (input: string) => {
+            // Stop the spinner while processing input
+            if (spinner) spinner.stop();
+
+            if (input.trim() === "") {
+                // Prompt again for empty input
+                rl.prompt();
+                return;
+            }
+
+            try {
+                console.log(gradient.atlas(`\nSending message to workflow...`));
+
+                // Send the user input to the workflow run
+                const signal = "userInput";
+                const payload: UserInputSignal = {
+                    message: input,
+                };
+                await client.workflows.sendSignal(workflowId, runId, signal, payload);
+
+                console.log(gradient.mind(`Message sent successfully!\n`));
+            } catch (err) {
+                console.error(chalk.red(`Error sending message: ${err}`));
+            }
+
+            // Restart spinner and prompt
+            if (!isTerminating) {
+                spinner = ora("Waiting for messages...").start();
+                rl.prompt();
+            }
+        });
+
+        // Add cleanup for readline interface
+        const origCleanup = cleanupFn;
+        cleanupFn = () => {
+            rl.close();
+            origCleanup(); // This includes process.exit(0), so anything after won't execute
+            // Never reached due to process.exit in origCleanup
+            process.exit(0);
+        };
+
+        // Show initial instructions
+        console.log(
+            gradient.passion("\nInteractive mode enabled. Type messages and press Enter to send to the workflow."),
+        );
+        console.log(gradient.cristal("Press Ctrl+C to exit.\n"));
+
+        // Start the prompt
+        rl.prompt();
+    }
+
     try {
         // Pass abort signal to streamMessages if the API supports it
         // Note: You might need to modify the client implementation to accept this parameter
         await client.workflows.streamMessages(runId, onMessage, since);
-        
+
         if (!isTerminating) {
             if (spinner) spinner.stop();
             console.log(
@@ -293,6 +362,15 @@ export async function streamRun(runId: string, program: any, options: Record<str
                     "\n╔═════════════════════════════════════╗\n║                                     ║\n║       STREAMING COMPLETE            ║\n║                                     ║\n╚═════════════════════════════════════╝\n",
                 ),
             );
+
+            // Close readline if interactive mode was on
+            if (interactive) {
+                const rl = readline.createInterface({
+                    input: process.stdin,
+                    output: process.stdout,
+                });
+                rl.close();
+            }
         }
     } catch (err) {
         if (!isTerminating) {
@@ -309,8 +387,8 @@ export async function streamRun(runId: string, program: any, options: Record<str
         }
     } finally {
         // Always clean up signal handlers when done
-        process.off('SIGINT', sigintHandler);
-        process.off('SIGTERM', sigintHandler);
+        process.off("SIGINT", sigintHandler);
+        process.off("SIGTERM", sigintHandler);
     }
 }
 

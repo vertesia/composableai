@@ -72,12 +72,12 @@ export async function getWorkflowRule(program: Command, objectId: string, option
 }
 
 export async function executeWorkflowByName(program: Command, workflowName: string, options: Record<string, any>) {
-    const { objectId, vars, file, stream, output: outputFile } = options;
+    const { objectId, vars, file, stream, interactive, output: outputFile } = options;
     console.debug("Executing interaction in workflow", workflowName, "with options", options);
 
     let mergedConfig = {
         objectIds: objectId ? objectId : [],
-        vars: JSON.parse(vars) || {},
+        vars: JSON.parse(vars || '{}') || {},
     } as ExecuteWorkflowPayload;
 
     if (file) {
@@ -93,21 +93,27 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
         ...mergedConfig,
         unique: true,
     });
-    const wfRun = res[0];
-    console.log("Workflow ID:", wfRun);
+    if (!res[0]) {
+        console.error("Workflow execution failed");
+        process.exit(1);
+    }
 
-    if (stream && wfRun) {
-        console.debug("Streaming messages for workflow run", wfRun.run_id);
-        await streamRun(wfRun.run_id, program, { ...options, outputFile });
+    const { workflow_id: workflowId, run_id: runId } = res[0];
+    console.log("Workflow ID:", workflowId);
+    console.log("Run ID:", runId);
+
+    if (stream || interactive) {
+        console.debug("Streaming messages for workflow run");
+        await streamRun(workflowId, runId, program, { ...options, outputFile });
     }
 
     // Save the result to a file if outputFile is specified
-    if (outputFile && wfRun) {
-        const runDetails = await getClient(program).workflows.getRunDetails(wfRun.run_id, wfRun.workflow_id);
+    if (outputFile && runId) {
+        const runDetails = await getClient(program).workflows.getRunDetails(runId, workflowId);
         const output = runDetails.result.output;
         let outputContent: string = "";
         if (!output) {
-            console.error("No output found for workflow run", wfRun.run_id);
+            console.error("No output found for workflow run", runId);
             process.exit(1);
         }
         if (typeof output === "object") {

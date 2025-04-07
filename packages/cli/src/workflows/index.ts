@@ -80,19 +80,24 @@ export function registerWorkflowsCommand(program: Command) {
         .option("--queue", "The task queue name. Defaults to zeno-content")
         .option("-f, --file [file]", "A file containing workflow execution payload.")
         .option("-s, --stream", "Stream the execution")
+        .option("-i, --interactive", "Enable interactive mode to send messages during workflow execution", false)
         .option("--output [output]", "Output file for the workflow execution")
-        .option("--voice", "Enable voice to speak out messages", false)
         .action(async (workflowName: string, options: Record<string, any>) => {
+            // If interactive is true, make sure stream is also enabled
+            if (options.interactive) {
+                options.stream = true;
+            }
             console.debug("Executing workflow", workflowName, "with options", options);
             await executeWorkflowByName(program, workflowName, options);
         });
     const definitions = workflows.command("definitions");
 
     workflows
-        .command("stream <runId>")
+        .command("stream <workflowId> <runId>")
         .description("Stream messages for an existing workflow run")
         .option("--since <timestamp>", "Stream only messages after this timestamp")
-        .action((runId, options) => streamRun(runId, program, options));
+        .option("-i, --interactive", "Enable interactive mode to send messages to the workflow", false)
+        .action((workflowId, runId, options) => streamRun(workflowId, runId, program, options));
 
     definitions
         .command("transpile <files...>")
