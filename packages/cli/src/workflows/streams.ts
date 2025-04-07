@@ -7,7 +7,6 @@ import gradient from "gradient-string";
 import figures from "figures";
 import logUpdate from "log-update";
 import logSymbols from "log-symbols";
-import { initSpeechSynthesis, speakText, voiceSynthConfig } from "./voice.js";
 import * as readline from "readline";
 
 // Define emoji icons for different message types
@@ -113,31 +112,6 @@ export async function streamRun(workflowId: string, runId: string, program: any,
     process.on("SIGINT", sigintHandler);
     process.on("SIGTERM", sigintHandler);
 
-    // Initialize speech synthesis
-    const speechAvailable = initSpeechSynthesis();
-    if (speechAvailable && options.voice === false) {
-        voiceSynthConfig.enabled = false;
-    } else if (options.voiceSynthesis === true) {
-        voiceSynthConfig.enabled = true;
-    }
-
-    // Configure voice synthesis if options provided
-    if (options.speakTypes) {
-        voiceSynthConfig.speakTypes = options.speakTypes.split(",");
-    }
-    if (options.voiceRate) {
-        voiceSynthConfig.rate = parseFloat(options.voiceRate);
-    }
-    if (options.voicePitch) {
-        voiceSynthConfig.pitch = parseFloat(options.voicePitch);
-    }
-    if (options.voiceVolume) {
-        voiceSynthConfig.volume = parseFloat(options.voiceVolume);
-    }
-    if (options.voiceName) {
-        voiceSynthConfig.voice = options.voiceName;
-    }
-
     // Display run header
     console.log("\n");
     console.log(
@@ -146,15 +120,7 @@ export async function streamRun(workflowId: string, runId: string, program: any,
         ),
     );
     console.log(gradient.atlas(`Run ID: ${runId}\n`));
-
-    // Show voice synthesis status
-    if (voiceSynthConfig.enabled) {
-        console.log(
-            gradient.cristal(`Voice Synthesis: Enabled (speaking: ${voiceSynthConfig.speakTypes.join(", ")})\n`),
-        );
-    } else {
-        console.log(chalk.gray(`Voice Synthesis: Disabled\n`));
-    }
+    console.log(chalk.gray(`Voice Synthesis: Disabled\n`));
 
     let lastHeartbeat = Date.now();
     let heartbeatCount = 0;
@@ -230,11 +196,6 @@ export async function streamRun(workflowId: string, runId: string, program: any,
             }
 
             const content = formatMessageContent(message.message);
-
-            // Speak the message if voice synthesis is enabled
-            if (voiceSynthConfig.enabled) {
-                speakText(content, messageType);
-            }
 
             // Special message formatting based on type
             if (messageType === "error" || messageType === "warning" || messageType === "complete") {
