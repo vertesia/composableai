@@ -1,18 +1,12 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { log } from "@temporalio/activity";
+import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
+import { DocPart } from "../utils/chunks.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
 
 const INT_CHUNK_DOCUMENT = "sys:ChunkDocument"
 
-interface DocPart {
 
-    line_number_start: number
-    line_number_end: number
-    name: string
-    type: string
-
-}
 
 export interface ChunkDocumentResult {
     id: string
@@ -22,9 +16,28 @@ export interface ChunkDocumentResult {
 }
 
 export interface ChunkDocumentParams extends InteractionExecutionParams {
+
+    /**
+     * If true, force chunking even if the document is already chunked
+     */
     force?: boolean;
+
+    /**
+     * The interaction name to use for chunking
+     * If not set, the default interaction will be used
+     */
     interactionName?: string;
+
+    /**
+     * The object type to use for the document parts
+     * If not set, the type of the document will be used
+     */
     docPartType?: string;
+
+    /**
+     * If true, create parts as document objects
+     */
+    createParts?: boolean;
 }
 
 export interface ChunkDocument extends DSLActivitySpec<ChunkDocumentParams> {
@@ -75,47 +88,54 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
         return { id: objectId, status: "failed", parts: [], message: "no parts found" }
     }
 
-    const partDocs = await Promise.all(parts.map(async (part, i) => {
 
-        const text = lines.filter((_l, i) => i >= part.line_number_start && i <= part.line_number_end).join('\n');
+    /**
+     * Only create parts as document if the flag is set
+     */
+    if (params.createParts) {
 
-        const location = () => {
-            let location = document.location;
-            if (location.endsWith('/')) {
-                location += document.name + "/" + part.type
+        const partDocs = await Promise.all(parts.map(async (part, i) => {
+
+            const text = lines.filter((_l, i) => i >= part.line_number_start && i <= part.line_number_end).join('\n');
+
+            const location = () => {
+                let location = document.location;
+                if (location.endsWith('/')) {
+                    location += document.name + "/" + part.type
+                }
+                location += '/' + document.name + "/" + part.type;
+                return location;
             }
-            location += '/' + document.name + "/" + part.type;
-            return location;
+
+            const docPart = await client.objects.create({
+                name: part.name,
+                parent: objectId,
+                text: text,
+                location: location(),
+                properties: {
+                    part_number: i + 1,
+                    etag: document.text_etag,
+                    source_line_start: part.line_number_start,
+                    source_line_end: part.line_number_end,
+                    title: part.name
+                }
+            });
+            return docPart;
+        }));
+
+        //delete previous parts
+        if (document.parts && document.parts.length > 0) {
+            log.info('Deleting previous parts for object ID: ' + objectId, { parts: document.parts });
+            await Promise.all(document.parts.map(async (partId) => {
+                await client.objects.delete(partId);
+            }));
         }
 
-        const docPart = await client.objects.create({
-            name: part.name,
-            parent: objectId,
-            text: text,
-            location: location(),
-            properties: {
-                part_number: i + 1,
-                etag: document.text_etag,
-                source_line_start: part.line_number_start,
-                source_line_end: part.line_number_end,
-                title: part.name
-            }
+        await client.objects.update(objectId, {
+            parts: partDocs.map(p => p.id),
+            parts_etag: document.text_etag
         });
-        return docPart;
-    }));
-
-    //delete previous parts
-    if (document.parts && document.parts.length > 0) {
-        log.info('Deleting previous parts for object ID: ' + objectId, { parts: document.parts });
-        await Promise.all(document.parts.map(async (partId) => {
-            await client.objects.delete(partId);
-        }));
     }
-
-    await client.objects.update(objectId, {
-        parts: partDocs.map(p => p.id),
-        parts_etag: document.text_etag
-    });
 
     log.info(`Object ${objectId} chunking completed`, { parts: document.parts });
 
