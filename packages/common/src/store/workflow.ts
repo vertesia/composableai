@@ -193,7 +193,6 @@ export interface AgentMessage {
 }
 
 export enum AgentMessageType {
-    INIT = "init",
     SYSTEM = "system",
     THOUGHT = "thought",
     PLAN = "plan",
@@ -203,5 +202,5 @@ export enum AgentMessageType {
     ERROR = "error",
     ANSWER = "answer",
     REQUEST_INPUT = "request_input",
-    END = "end",
+    IDLE = "idle",
 }
