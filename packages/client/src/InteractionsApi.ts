@@ -9,6 +9,10 @@ export interface ComputeInteractionFacetsResponse {
     total?: { count: number }[];
 }
 
+export interface AsyncExecutionResult {
+    runId: string, workflowId: string
+}
+
 export default class InteractionsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/interactions");
@@ -170,7 +174,7 @@ export default class InteractionsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    executeAsync(payload: AsyncExecutionPayload): Promise<string> {
+    executeAsync(payload: AsyncExecutionPayload): Promise<AsyncExecutionResult> {
         return executeInteractionAsync(this.client as VertesiaClient, payload);
     }
 
