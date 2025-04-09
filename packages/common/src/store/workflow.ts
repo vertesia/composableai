@@ -201,6 +201,7 @@ export enum AgentMessageType {
     WARNING = "warning",
     ERROR = "error",
     ANSWER = "answer",
+    QUESTION = "question",
     REQUEST_INPUT = "request_input",
     IDLE = "idle",
 }
