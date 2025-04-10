@@ -132,6 +132,21 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         );
     }
 
+    async getRawJWT() {
+        if (!this._jwt && this._auth) {
+            const auth = await this._auth();
+            if (!this._jwt) { // the _jwt may be set by the auth callback
+                this._jwt = auth.trim().split(' ')[1]; // remove Bearer prefix
+            }
+        }
+        return this._jwt || null;
+    }
+
+    async getDecodedJWT() {
+        const jwt = await this.getRawJWT();
+        return jwt ? decodeJWT(jwt) : null;
+    }
+
     /**
      * Alias for store.workflows
      */
@@ -214,10 +229,34 @@ function isTokenExpired(token: string | null) {
         return true;
     }
 
-    const payloadBase64 = token.split('.')[1];
-    const decodedJson = Buffer.from(payloadBase64, 'base64').toString();
-    const decoded = JSON.parse(decodedJson)
+    const decoded = decodeJWT(token);
     const exp = decoded.exp;
     const currentTime = Date.now();
     return (currentTime <= exp * 1000 - EXPIRATION_THRESHOLD);
+}
+
+function decodeJWT(jwt: string) {
+    const payloadBase64 = jwt.split('.')[1];
+    const decodedJson = base64UrlDecode(payloadBase64);
+    return JSON.parse(decodedJson)
+}
+
+function base64UrlDecode(input: string): string {
+    // Convert base64url to base64
+    const base64 = input.replace(/-/g, '+').replace(/_/g, '/')
+        // Pad with '=' to make length a multiple of 4
+        .padEnd(Math.ceil(input.length / 4) * 4, '=');
+
+    if (typeof Buffer !== 'undefined') {
+        // Node.js
+        return Buffer.from(base64, 'base64').toString('utf-8');
+    } else if (typeof atob !== 'undefined' && typeof TextDecoder !== 'undefined') {
+        // Browser
+        const binary = atob(base64);
+        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        // decode to utf8
+        return new TextDecoder().decode(bytes);
+    } else {
+        throw new Error('No base64 decoder available');
+    }
 }
