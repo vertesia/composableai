@@ -69,8 +69,7 @@ export async function imageResizer(
 
         log.info(`Resizing image using ImageMagick: ${inputPath} -> ${outputPath}`);
 
-        const { stderr } = await execFile("magick", [
-            "convert",
+        const { stderr } = await execFile("convert", [
             inputPath,
             "-resize",
             `${max_hw}x${max_hw}>`,
