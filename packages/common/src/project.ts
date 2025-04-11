@@ -44,6 +44,12 @@ export interface ProjectRef {
     id: string;
     name: string;
     account: string;
+    /**
+     * Only set when fetching the list of projects visible to an user which is an org admin or owner.
+     * If present and true, it means that the project is not accessible to the user.(even if it visible in listing)
+     * If not present or false then the project is accessible to the user.
+     */
+    restricted?: boolean;
 }
 
 export enum ResourceVisibility {
