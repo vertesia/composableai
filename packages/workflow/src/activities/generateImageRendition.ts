@@ -16,7 +16,7 @@ interface GenerateImageRenditionParams {
 }
 
 export interface GenerateImageRendition extends DSLActivitySpec<GenerateImageRenditionParams> {
-    name: 'generateImageRendition';
+    name: "generateImageRendition";
 }
 
 export async function generateImageRendition(payload: DSLActivityExecutionPayload<GenerateImageRenditionParams>) {
@@ -29,7 +29,7 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
         }
         throw err;
     });
-    const renditionType = await client.types.getTypeByName('Rendition');
+    const renditionType = await client.types.getTypeByName("Rendition");
 
     if (!params.format) {
         log.error(`Format not found`);
@@ -55,10 +55,9 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
     let renditionPages: string[] = [];
 
     if (inputObject.content.type.startsWith('image/')) {
-        const tmpFile = await saveBlobToTempFile(client, inputObject.content.source);
-        const filestats = fs.statSync(tmpFile);
-        log.info(`Image ${objectId} copied to ${tmpFile}`, { filestats });
-        renditionPages.push(tmpFile);
+        const imageFile = await saveBlobToTempFile(client, inputObject.content.source);
+        log.info(`Image ${objectId} copied to ${imageFile}`);
+        renditionPages.push(imageFile);
     } else if (inputObject.content.type.startsWith('video/')) {
         const videoFile = await saveBlobToTempFile(client, inputObject.content.source);
         const tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'video-rendition-'));
@@ -109,14 +108,17 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
     const getRenditionName = (index: number = 0) => {
         const name = `renditions/${objectId}/${params.max_hw}/${index}.${params.format}`;
         return name;
-    }
+    };
 
     if (!renditionPages || !renditionPages.length) {
         log.error(`Failed to generate rendition for ${objectId}`);
         throw new Error(`Failed to generate rendition for ${objectId}`);
     }
 
-    log.info(`Uploading rendition for ${objectId} with ${renditionPages.length} pages (max_hw: ${params.max_hw}, format: ${params.format})`, { renditionPages });
+    log.info(
+        `Uploading rendition for ${objectId} with ${renditionPages.length} pages (max_hw: ${params.max_hw}, format: ${params.format})`,
+        { renditionPages },
+    );
     const uploads = renditionPages.map(async (page, i) => {
         const pageId = getRenditionName(i);
         let resizedImagePath = null;
@@ -130,42 +132,23 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
 
             const source = new NodeStreamSource(
                 fileStream,
-                pageId.replace('renditions/', '').replace('/', '_'),
-                'image/' + params.format,
+                pageId.split("/").pop() ?? "0." + params.format,
+                "image/" + params.format,
                 pageId,
             );
 
-            log.info(`Uploading rendition for ${objectId} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`);
+            log.info(
+                `Uploading rendition for ${objectId} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`,
+            );
 
             const result = await client.objects.upload(source).catch((err) => {
-                log.error(`Failed to upload rendition for ${objectId} page ${i}`, err);
+                log.error(`Failed to upload rendition for ${objectId} page ${i}`, { error: err });
                 return Promise.resolve(null);
             });
-
-            // Clean up the temporary file after upload
-            if (resizedImagePath && fs.existsSync(resizedImagePath)) {
-                try {
-                    fs.unlinkSync(resizedImagePath);
-                    log.info(`Cleaned up temporary file: ${resizedImagePath}`);
-                } catch (cleanupError) {
-                    log.warn(`Failed to clean up temporary file: ${resizedImagePath}`, { error: cleanupError });
-                }
-            }
 
             return result;
         } catch (error) {
             log.error(`Failed to process rendition for ${objectId} page ${i}`, { error });
-
-            // Clean up the temporary file if there was an error
-            if (resizedImagePath && fs.existsSync(resizedImagePath)) {
-                try {
-                    fs.unlinkSync(resizedImagePath);
-                    log.info(`Cleaned up temporary file: ${resizedImagePath}`);
-                } catch (cleanupError) {
-                    log.warn(`Failed to clean up temporary file: ${resizedImagePath}`, { error: cleanupError });
-                }
-            }
-
             return Promise.resolve(null);
         }
     });
@@ -173,26 +156,26 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
     const uploaded = await Promise.all(uploads);
     if (!uploaded || !uploaded.length || !uploaded[0]) {
         log.error(`Failed to upload rendition for ${objectId}`);
-        throw new Error(`Failed to upload rendition for ${objectId}`);
+        throw new Error(`Failed to upload rendition for ${objectId} - upload object is empty`);
     }
 
-
-    log.info(`Creating rendition for ${objectId} with max_hw: ${params.max_hw} and format: ${params.format}`, { uploaded });
+    log.info(`Creating rendition for ${objectId} with max_hw: ${params.max_hw} and format: ${params.format}`, {
+        uploaded,
+    });
     const rendition = await client.objects.create({
         name: inputObject.name + ` [Rendition ${params.max_hw}]`,
         type: renditionType.id,
         parent: inputObject.id,
         content: uploaded[0],
         properties: {
-            mime_type: 'image/' + params.format,
+            mime_type: "image/" + params.format,
             source_etag: inputObject.content.source,
             height: params.max_hw,
-            width: params.max_hw
-        } satisfies RenditionProperties
+            width: params.max_hw,
+        } satisfies RenditionProperties,
     });
 
     log.info(`Rendition ${rendition.id} created for ${objectId}`, { rendition });
 
     return { id: rendition.id, format: params.format, status: "success" };
-
 }
