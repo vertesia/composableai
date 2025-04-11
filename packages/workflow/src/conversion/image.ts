@@ -20,8 +20,10 @@ export async function imageResizer(
     format: string,
     progressive: boolean = true,
 ): Promise<string> {
-    if (!format || format.trim() === '') {
-        throw new Error(`Invalid format: ${format}`);
+    const allowedFormats = ["jpg", "jpeg", "png", "webp"];
+
+    if (!format || format.trim() === "") {
+        throw new Error(`Invalid format: ${format}.Supported : ${allowedFormats.join(", ")}`);
     }
     // Create a temporary file
     const { path: outputPath, cleanup } = await file({ postfix: `.${format}` });
@@ -36,20 +38,20 @@ export async function imageResizer(
         }
 
         // Progressive loading options
-        let progressiveOption = "";
+        let conversionOption = "";
 
         // Only add progressive option for formats that support it
         if (progressive) {
             // JPEG and some other formats support progressive loading
             const lowerFormat = format.toLowerCase();
-            if (lowerFormat === "jpg" || lowerFormat === "jpeg" || lowerFormat === "pjpeg") {
-                progressiveOption = "-interlace JPEG";
+            if (lowerFormat === "jpg" || lowerFormat === "jpeg") {
+                conversionOption = "-interlace JPEG";
                 log.info(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
             } else if (lowerFormat === "png") {
-                progressiveOption = "-interlace PNG";
+                conversionOption = "-interlace PNG";
                 log.info(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
             } else if (lowerFormat === "gif") {
-                progressiveOption = "-interlace GIF";
+                conversionOption = "-interlace GIF";
                 log.info(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
             }
         }
@@ -58,7 +60,7 @@ export async function imageResizer(
 
         // Execute ImageMagick command with progressive option when applicable
         const { stderr } = await exec(
-            `magick convert "${inputPath}" -resize "${max_hw}x${max_hw}>" ${progressiveOption} "${outputPath}"`,
+            `magick convert "${inputPath}" -resize "${max_hw}x${max_hw}>" ${conversionOption} "${outputPath}"`,
         );
 
         if (stderr) {
