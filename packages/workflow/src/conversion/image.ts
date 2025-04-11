@@ -1,9 +1,9 @@
 import { log } from "@temporalio/activity";
-import { exec as execCallback } from "child_process";
+import { execFile as execFileCallback } from "child_process";
 import fs from "fs";
 import { file } from "tmp-promise";
 import { promisify } from "util";
-const exec = promisify(execCallback);
+const execFile = promisify(execFileCallback);
 
 /**
  * Resizes an image to a maximum height or width using ImageMagick
@@ -25,6 +25,17 @@ export async function imageResizer(
     if (!format || format.trim() === "") {
         throw new Error(`Invalid format: ${format}.Supported : ${allowedFormats.join(", ")}`);
     }
+
+    //check that max_hw is valid
+    if (!Number.isInteger(max_hw) || max_hw <= 0) {
+        throw new Error(`Invalid max_hw value: ${max_hw}`);
+    }
+
+    //check that inputPath exists
+    if (!fs.existsSync(inputPath)) {
+        throw new Error(`Input file does not exist: ${inputPath}`);
+    }
+
     // Create a temporary file
     const { path: outputPath, cleanup } = await file({ postfix: `.${format}` });
     try {
@@ -58,10 +69,14 @@ export async function imageResizer(
 
         log.info(`Resizing image using ImageMagick: ${inputPath} -> ${outputPath}`);
 
-        // Execute ImageMagick command with progressive option when applicable
-        const { stderr } = await exec(
-            `magick convert "${inputPath}" -resize "${max_hw}x${max_hw}>" ${conversionOption} "${outputPath}"`,
-        );
+        const { stderr } = await execFile("magick", [
+            "convert",
+            inputPath,
+            "-resize",
+            `${max_hw}x${max_hw}>`,
+            ...(conversionOption ? conversionOption.split(" ") : []),
+            outputPath,
+        ]);
 
         if (stderr) {
             log.warn(`ImageMagick warning: ${stderr}`);
