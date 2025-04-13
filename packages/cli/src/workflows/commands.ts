@@ -77,7 +77,7 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
 
     let mergedConfig = {
         objectIds: objectId ? objectId : [],
-        vars: JSON.parse(vars || '{}') || {},
+        vars: JSON.parse(vars || "{}") || {},
     } as ExecuteWorkflowPayload;
 
     if (file) {
@@ -110,7 +110,7 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
     // Save the result to a file if outputFile is specified
     if (outputFile && runId) {
         const runDetails = await getClient(program).workflows.getRunDetails(runId, workflowId);
-        const output = runDetails.result.output;
+        const output = runDetails.result?.output;
         let outputContent: string = "";
         if (!output) {
             console.error("No output found for workflow run", runId);

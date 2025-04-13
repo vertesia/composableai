@@ -272,7 +272,6 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
     interaction: string;
 }
 
-
 // ================= async execution payloads ====================
 export type ToolRef = string | { name: string; description: string };
 
@@ -378,7 +377,7 @@ export interface UserMessagePayload extends ResumeConversationPayload {
     message: string;
 }
 
-export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results" | "tools">;
+export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results">;
 
 // ================= end async execution payloads ====================
 

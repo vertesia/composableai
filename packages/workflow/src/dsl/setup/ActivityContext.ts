@@ -116,7 +116,7 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
                     fetchSpec = { ...fetchSpec, query };
                 }
 
-                const provider = await getFetchProvider(client, fetchSpec);
+                const provider = getFetchProvider(client, fetchSpec);
 
                 log.info(`Fetching data for ${key} with provider ${provider.name}`, { fetchSpec });
                 const result = await provider.fetch(fetchSpec);
@@ -136,7 +136,7 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
     }
 
     const params = vars.resolve() as ParamsT;
-    log.info(`Activity ${payload.activity.name} setup complete`, { params });
+    log.info(`Activity ${payload.activity.name} setup complete`);
 
     return new ActivityContext<ParamsT>(payload, client, params);
 }

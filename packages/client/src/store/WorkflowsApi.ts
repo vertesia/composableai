@@ -106,7 +106,7 @@ export class WorkflowsApi extends ApiTopic {
                         const message = JSON.parse(ev.data) as AgentMessage;
                         if (onMessage) onMessage(message);
 
-                        if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.ERROR) {
+                        if (message.type === AgentMessageType.COMPLETE) {
                             sse.close();
                             isClosed = true;
                             resolve();
@@ -125,7 +125,7 @@ export class WorkflowsApi extends ApiTopic {
                 };
 
                 // Prevent Node from exiting prematurely
-                const interval = setInterval(() => {}, 1000);
+                const interval = setInterval(() => { }, 1000);
 
                 // Cleanup when stream resolves
                 const cleanup = () => {
