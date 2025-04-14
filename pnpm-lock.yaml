@@ -8,7 +8,6 @@ overrides:
   cross-spawn@<6.0.6: ^6.0.6
   esbuild@<0.25.0: ^0.25.0
   koa@>=2.0.0 <2.15.4: ^2.15.4
-  vite@>=5.0.0 <5.4.17: ^5.4.17
   vite@>=6.0.0 <6.2.6: ^6.2.6
 
 importers:
@@ -51,7 +50,7 @@ importers:
         version: 5.7.2
       vitest:
         specifier: ^3.0.9
-        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)
+        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1)
 
   packages/api-fetch-client:
     dependencies:
@@ -91,7 +90,7 @@ importers:
         version: 5.7.2
       vitest:
         specifier: ^3.0.9
-        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)
+        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1)
 
   packages/cli:
     dependencies:
@@ -186,7 +185,7 @@ importers:
         version: 5.7.2
       vitest:
         specifier: ^3.0.9
-        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)
+        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1)
 
   packages/common:
     dependencies:
@@ -214,7 +213,7 @@ importers:
         version: 5.7.2
       vitest:
         specifier: ^3.0.9
-        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)
+        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1)
 
   packages/converters:
     dependencies:
@@ -236,7 +235,7 @@ importers:
         version: 5.7.2
       vitest:
         specifier: ^3.0.9
-        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)
+        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1)
 
   packages/create-agent:
     dependencies:
@@ -267,7 +266,7 @@ importers:
         version: 5.7.2
       vitest:
         specifier: ^3.0.9
-        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)
+        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1)
 
   packages/react:
     dependencies:
@@ -386,7 +385,7 @@ importers:
         version: 0.6.3
       vitest:
         specifier: ^3.0.9
-        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)
+        version: 3.0.9(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1)
 
 packages:
 
@@ -1489,7 +1488,7 @@ packages:
     resolution: {integrity: sha512-ryERPIBOnvevAkTq+L1lD+DTFBRcjueL9lOUfXsLfwP92h4e+Heb+PjiqS3/OURWPtywfafK0kj++yDFjWUmrA==}
     peerDependencies:
       msw: ^2.4.9
-      vite: ^5.4.17
+      vite: ^6.2.6
     peerDependenciesMeta:
       msw:
         optional: true
@@ -3109,21 +3108,26 @@ packages:
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
 
-  vite@5.4.18:
-    resolution: {integrity: sha512-1oDcnEp3lVyHCuQ2YFelM4Alm2o91xNoMncRm1U7S+JdYfYOvbiGZ3/CxGttrOu2M/KcGz7cRC2DoNUA6urmMA==}
-    engines: {node: ^18.0.0 || >=20.0.0}
+  vite@6.2.6:
+    resolution: {integrity: sha512-9xpjNl3kR4rVDZgPNdTL0/c6ao4km69a/2ihNQbcANz8RuCOK3hQBmLSJf3bRKVQjVMda+YvizNE8AwvogcPbw==}
+    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
     peerDependencies:
-      '@types/node': ^18.0.0 || >=20.0.0
+      '@types/node': ^18.0.0 || ^20.0.0 || >=22.0.0
+      jiti: '>=1.21.0'
       less: '*'
       lightningcss: ^1.21.0
       sass: '*'
       sass-embedded: '*'
       stylus: '*'
       sugarss: '*'
-      terser: ^5.4.0
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
     peerDependenciesMeta:
       '@types/node':
+        optional: true
+      jiti:
         optional: true
       less:
         optional: true
@@ -3138,6 +3142,10 @@ packages:
       sugarss:
         optional: true
       terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
         optional: true
 
   vitest@3.0.9:
@@ -4927,13 +4935,13 @@ snapshots:
       chai: 5.2.0
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.0.9(vite@5.4.18(@types/node@22.13.8)(terser@5.37.0))':
+  '@vitest/mocker@3.0.9(vite@6.2.6(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1))':
     dependencies:
       '@vitest/spy': 3.0.9
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
-      vite: 5.4.18(@types/node@22.13.8)(terser@5.37.0)
+      vite: 6.2.6(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1)
 
   '@vitest/pretty-format@3.0.9':
     dependencies:
@@ -6626,15 +6634,16 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite-node@3.0.9(@types/node@22.13.8)(terser@5.37.0):
+  vite-node@3.0.9(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1):
     dependencies:
       cac: 6.7.14
       debug: 4.4.0(supports-color@8.1.1)
       es-module-lexer: 1.6.0
       pathe: 2.0.3
-      vite: 5.4.18(@types/node@22.13.8)(terser@5.37.0)
+      vite: 6.2.6(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1)
     transitivePeerDependencies:
       - '@types/node'
+      - jiti
       - less
       - lightningcss
       - sass
@@ -6643,8 +6652,10 @@ snapshots:
       - sugarss
       - supports-color
       - terser
+      - tsx
+      - yaml
 
-  vite@5.4.18(@types/node@22.13.8)(terser@5.37.0):
+  vite@6.2.6(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1):
     dependencies:
       esbuild: 0.25.1
       postcss: 8.5.3
@@ -6653,11 +6664,13 @@ snapshots:
       '@types/node': 22.13.8
       fsevents: 2.3.3
       terser: 5.37.0
+      tsx: 3.14.0
+      yaml: 2.6.1
 
-  vitest@3.0.9(@types/node@22.13.8)(terser@5.37.0):
+  vitest@3.0.9(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1):
     dependencies:
       '@vitest/expect': 3.0.9
-      '@vitest/mocker': 3.0.9(vite@5.4.18(@types/node@22.13.8)(terser@5.37.0))
+      '@vitest/mocker': 3.0.9(vite@6.2.6(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1))
       '@vitest/pretty-format': 3.0.9
       '@vitest/runner': 3.0.9
       '@vitest/snapshot': 3.0.9
@@ -6673,12 +6686,13 @@ snapshots:
       tinyexec: 0.3.2
       tinypool: 1.0.2
       tinyrainbow: 2.0.0
-      vite: 5.4.18(@types/node@22.13.8)(terser@5.37.0)
-      vite-node: 3.0.9(@types/node@22.13.8)(terser@5.37.0)
+      vite: 6.2.6(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1)
+      vite-node: 3.0.9(@types/node@22.13.8)(terser@5.37.0)(tsx@3.14.0)(yaml@2.6.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.13.8
     transitivePeerDependencies:
+      - jiti
       - less
       - lightningcss
       - msw
@@ -6688,6 +6702,8 @@ snapshots:
       - sugarss
       - supports-color
       - terser
+      - tsx
+      - yaml
 
   watchpack@2.4.2:
     dependencies:
