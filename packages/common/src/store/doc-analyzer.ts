@@ -16,14 +16,10 @@ export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayl
 export interface DocImage {
     id?: string;
     page_number?: number;
-    image_number?: number;
-    title?: string;
-    url?: string;
     description?: string;
     is_meaningful?: boolean;
     width?: number;
     height?: number;
-    path?: string;
 }
 
 /**
