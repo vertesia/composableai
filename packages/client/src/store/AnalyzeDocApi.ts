@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { AdaptTablesRequest, ContentObject, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, GetAdaptedTablesRequestQuery, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
+import { AdaptTablesRequest, ContentObject, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, ExportTableFormats, GetAdaptedTablesRequestQuery, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
 
 export class AnalyzeDocApi extends ApiTopic {
     constructor(parent: ClientBase, public objectId: string) {
@@ -43,8 +43,12 @@ export class AnalyzeDocApi extends ApiTopic {
         return this.get("/xml");
     }
 
-    async getTables(): Promise<DocTableCsv[] | DocTableJson[]> {
-        return this.get("/tables");
+    async getTables(format?: ExportTableFormats): Promise<DocTableCsv[] | DocTableJson[]> {
+        const options: any = {};
+        if (format) {
+            options.query = {format: format}
+        }
+        return this.get("/tables", options);
     }
 
     async getImages(): Promise<DocImage[]> {
