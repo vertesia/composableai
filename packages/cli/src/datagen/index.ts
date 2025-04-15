@@ -17,6 +17,27 @@ export function genTestData(program: Command, interactionId: string, options: Re
     const output = options.output || undefined;
     const spinner = new Spinner('dots');
     spinner.prefix = "Generating data. Please be patient ";
+    
+    // Create abort controller for handling interruption
+    const abortController = new AbortController();
+    const { signal } = abortController;
+    
+    // Set up cleanup function
+    const cleanup = () => {
+        spinner.done(false);
+        console.log("\nData generation interrupted");
+        process.exit(0);
+    };
+    
+    // Set up signal handlers
+    const handleSignal = () => {
+        abortController.abort();
+        cleanup();
+    };
+    
+    process.on('SIGINT', handleSignal);
+    process.on('SIGTERM', handleSignal);
+    
     spinner.start();
 
    //TODO: Support for other modalities, like images
@@ -40,7 +61,13 @@ export function genTestData(program: Command, interactionId: string, options: Re
             model_options: model_options,
             configMode: convertConfigMode(options.configMode),
         }
+        // Pass abort signal if the API supports it
+        // signal
     }).then((result) => {
+        // Remove signal handlers
+        process.off('SIGINT', handleSignal);
+        process.off('SIGTERM', handleSignal);
+        
         spinner.done();
         if (output) {
             const file = resolve(output);
@@ -50,6 +77,15 @@ export function genTestData(program: Command, interactionId: string, options: Re
         console.log();
         console.log(result);
     }).catch(err => {
+        // Remove signal handlers
+        process.off('SIGINT', handleSignal);
+        process.off('SIGTERM', handleSignal);
+        
+        // Don't show error if aborted
+        if (signal.aborted) {
+            return;
+        }
+        
         spinner.done(false);
         console.log('Failed to generate data:', err.message);
     });

@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { AdaptTablesRequest, ContentObject, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, GetAdaptedTablesRequestQuery, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
+import { AdaptedTable, AdaptTablesRequest, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, ExportTableFormats, GetAdaptedTablesRequestQuery, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
 
 export class AnalyzeDocApi extends ApiTopic {
     constructor(parent: ClientBase, public objectId: string) {
@@ -22,7 +22,7 @@ export class AnalyzeDocApi extends ApiTopic {
         return this.post("/adapt_tables", { payload });
     }
 
-    async getAdaptedTables(runId?: string, query?: GetAdaptedTablesRequestQuery): Promise<any> {
+    async getAdaptedTables(runId?: string, query?: GetAdaptedTablesRequestQuery): Promise<Record<number, AdaptedTable>> {
         const path = runId ? `/adapt_tables/${runId}` : "/adapt_tables";
         
         // Build query parameters
@@ -43,16 +43,16 @@ export class AnalyzeDocApi extends ApiTopic {
         return this.get("/xml");
     }
 
-    async getTables(): Promise<DocTableCsv[] | DocTableJson[]> {
-        return this.get("/tables");
+    async getTables(format?: ExportTableFormats): Promise<DocTableCsv[] | DocTableJson[]> {
+        const options: any = {};
+        if (format) {
+            options.query = {format: format}
+        }
+        return this.get("/tables", options);
     }
 
     async getImages(): Promise<DocImage[]> {
         return this.get("/images");
-    }
-
-    async getParts(): Promise<ContentObject[]> {
-        return this.get("/parts");
     }
 
     async getAnnotated(): Promise<{ url: string }> {

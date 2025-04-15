@@ -5,14 +5,38 @@ import { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec, ProjectCon
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { NoDocumentFound } from '../errors.js';
 import { fetchBlobAsBase64, md5 } from "../utils/blobs.js";
+import { DocPart, getContentParts } from "../utils/chunks.js";
 import { countTokens } from "../utils/tokens.js";
 
 
 export interface GenerateEmbeddingsParams {
+
+    /**
+     * The model to use for embedding generation
+     * If not set, the default model for the project will be used
+     */
     model?: string;
+
+    /**
+     * The environment to use for embedding generation
+     * If not set, the default environment for the project will be used
+     */
     environment?: string;
+
+    /**
+     * If true, force embedding generation even if the document already has embeddings
+     */
     force?: boolean;
+
+    /**
+     * The embedding type to generate
+     */
     type: SupportedEmbeddingTypes;
+
+    /**
+     * The DocParts to use for long documents
+     */
+    parts?: DocPart[];
 }
 
 export interface GenerateEmbeddings extends DSLActivitySpec<GenerateEmbeddingsParams> {
@@ -98,8 +122,10 @@ interface ExecuteGenerateEmbeddingsParams {
     force?: boolean;
 }
 
-async function generateTextEmbeddings({ document, client, type, config }: ExecuteGenerateEmbeddingsParams) {
-
+async function generateTextEmbeddings({ document, client, type, config }: ExecuteGenerateEmbeddingsParams, parts?: DocPart[],) {
+    // if (!force && document.embeddings[type]?.etag === (document.text_etag ?? md5(document.text))) {
+    //     return { id: objectId, status: "skipped", message: "embeddings already generated" }
+    // }
 
     if (!document) {
         return { status: "error", message: "document is null or undefined" }
@@ -117,6 +143,8 @@ async function generateTextEmbeddings({ document, client, type, config }: Execut
     }
 
     const { environment, model } = config;
+
+    const partDefinitions = parts ?? [];
 
     // Count tokens if not already done
     if (!document.tokens?.count && type === SupportedEmbeddingTypes.text) {
@@ -143,79 +171,64 @@ async function generateTextEmbeddings({ document, client, type, config }: Execut
     if (type === SupportedEmbeddingTypes.text && document.tokens?.count && document.tokens?.count > maxTokens) {
         log.info('Document too large, generating embeddings for parts');
 
-        if (!document.parts || document.parts.length === 0) {
-            return { id: document.id, status: "skipped", message: "no parts found" }
+
+        if (!document.text) {
+            return { id: document.id, status: "failed", message: "no text found" }
         }
 
-        const docParts = await Promise.all(document.parts?.map(async (partId) => client.objects.retrieve(partId, "+text +embeddings +properties +tokens")));
+        if (!partDefinitions || partDefinitions.length === 0) {
+            log.info('No parts found for document, skipping embeddings generation');
+            return { id: document.id, status: "failed", message: "no parts found" }
+        }
+
+
+        log.info('Generating embeddings for parts', { parts: partDefinitions, max_tokens: maxTokens });
+        const docParts = getContentParts(document.text, partDefinitions);
+
+
         log.info(`Retrieved ${docParts.length} parts`)
-
-        const generatePartEmbeddings = async (part: ContentObject<any>, i: number) => {
+        const start = new Date().getTime();
+        const generatePartEmbeddings = async (partContent: string, i: number) => {
+            const localStart = new Date().getTime();
             try {
-                log.info(`Generating embeddings for part ${part.id}`, { text_len: part.text?.length })
-                if (!part.text) {
-                    return { id: part.id, number: i, result: null, status: "skipped", message: "no text found" }
+                log.info(`Generating embeddings for part ${i}`, { text_len: partContent.length })
+                if (!partContent) {
+                    return { id: i, number: i, result: null, status: "skipped", message: "no text found" }
                 }
 
-                if (part.tokens?.count && part.tokens.count > maxTokens) {
-                    log.info('Part too large, skipping embeddings generation for part', { part: part.id, tokens: part.tokens.count });
-                    return { id: part.id, number: i, result: null, message: "part too large" }
-                }
-
-                const e = await generateEmbeddingsFromStudio(part.text, environment, client, model).catch(e => {
-                    log.error('Error generating embeddings for part', { part: part.id, tokens: part.tokens, text_length: part.text?.length, error: e });
+                const e = await generateEmbeddingsFromStudio(partContent, environment, client, model).catch(e => {
+                    log.error('Error generating embeddings for part ' + i, { text_length: partContent.length, error: e });
                     return null;
                 });
 
                 if (!e || !e.values) {
-                    return { id: part.id, number: i, result: null, message: "no embeddings generated" }
+                    return { id: i, number: i, result: null, message: "no embeddings generated" }
                 }
 
-                log.info(`Embeddings generated for part ${part.id}, updating object in the store.`)
-                await client.objects.setEmbedding(part.id, SupportedEmbeddingTypes.text,
-                    {
-                        values: e.values,
-                        model: e.model,
-                        etag: part.text_etag
-                    }).catch(err => {
-                        log.info(`Error updating embeddings on part ${part.id}`);
-                        return { id: part.id, number: i, result: null, message: "error setting embeddings on part", error: err.message }
-                    })
+                if (e.values.length === 0) {
+                    return { id: i, number: i, result: null, message: "no embeddings generated" }
+                }
+                log.info(`Generated embeddings for part ${i}`, { len: e.values.length, duration: new Date().getTime() - localStart });
 
-                log.info('Generated embeddings for part: ' + part.id);
-                return { id: part.id, number: i, result: e }
+                return { inumber: i, result: e }
             } catch (err: any) {
-                log.info(`Error generating ${type} embeddings for part ${part.id} of ${document.id}`, { error: err });
-                return { id: part.id, number: i, result: null, message: "error generating embeddings", error: err.message }
+                log.info(`Error generating ${type} embeddings for part ${i} of ${document.id}`, { error: err });
+                return { number: i, result: null, message: "error generating embeddings", error: err.message }
             }
         }
 
-        const promises = docParts.map((p, i) => generatePartEmbeddings(p, i))
-        const res = await Promise.all(promises);
-        // let i = 0;
-        // for (const p of docParts) {
-        //     log.info(`Processing part ${p.id}`)
-        //     const r = await generatePartEmbeddings(p, i++);
-        //     res.push(r)
-        // }
-
-
-        // Filter out parts without embeddings
-        const validEmbeddings = res.filter(item => item.result !== null) as { id: string, number: number, result: EmbeddingsResult }[];
-
-        // Compute the document-level embedding using TensorFlow for attention mechanism
-        log.info('Computing document-level embedding using TF');
-        const documentEmbedding = computeAttentionEmbedding(validEmbeddings.map(item => item.result.values));
-
-        // Save the document-level embedding
+        const partEmbeddings = await Promise.all(docParts.map((part, i) => generatePartEmbeddings(part, i)));
+        const validPartEmbeddings = partEmbeddings.filter(e => e.result !== null).map(e => e.result);
+        const averagedEmbedding = computeAttentionEmbedding(validPartEmbeddings.map(e => e.values));
+        log.info(`Averaged embeddings for document ${document.id} in ${(new Date().getTime() - start) / 1000} seconds`, { len: averagedEmbedding.length, count: validPartEmbeddings.length, max_tokens: maxTokens });
         await client.objects.setEmbedding(document.id, type,
             {
-                values: documentEmbedding,
-                model: "attention",
+                values: averagedEmbedding,
+                model: validPartEmbeddings[0].model,
                 etag: document.text_etag
             }
         );
-        return { id: document.id, status: "completed", parts: docParts.map(i => i.id), len: documentEmbedding.length, part_embeddings: res.map(r => { return { id: r.id, status: r.status, error: r.error, message: r.message } }) }
+        log.info(`Object ${document.id} embedding set`, { type, len: averagedEmbedding.length });
 
     } else {
         log.info(`Generating ${type} embeddings for document`);

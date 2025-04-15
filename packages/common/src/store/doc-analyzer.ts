@@ -6,9 +6,8 @@ export interface PdfToRichtextOptions {
     [key: string]: any;
 }
 
-
 export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayload, "vars"> {
-    vars: PdfToRichtextOptions
+    vars: PdfToRichtextOptions;
 }
 
 /**
@@ -17,15 +16,16 @@ export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayl
 export interface DocImage {
     id?: string;
     page_number?: number;
-    image_number?: number;
-    title?: string;
-    url?: string;
     description?: string;
     is_meaningful?: boolean;
     width?: number;
     height?: number;
-    path?: string;
 }
+
+/**
+ * The export type formats for tables.
+ */
+export type ExportTableFormats = 'json' | 'csv' | 'xml';
 
 /**
  * Represents a table in a document that has been analyzed
@@ -62,21 +62,18 @@ export interface DocAnalyzeRunStatusResponse extends WorkflowRunStatus {
     progress?: DocAnalyzerProgress;
 }
 
-
 export interface DocAnalyzerResultResponse {
     document?: string;
     tables?: DocTableCsv[] | DocTableJson[];
     images?: DocImage[];
-    parts?: { id: string, title: string }[];
     annotated?: string | null;
 }
 
-
 export interface DocAnalyzerProgress {
-    pages: DocAnalyzerProgressStatus,
-    images: DocAnalyzerProgressStatus,
-    tables: DocAnalyzerProgressStatus,
-    visuals: DocAnalyzerProgressStatus,
+    pages: DocAnalyzerProgressStatus;
+    images: DocAnalyzerProgressStatus;
+    tables: DocAnalyzerProgressStatus;
+    visuals: DocAnalyzerProgressStatus;
     started_at?: number;
     percent: number;
 }
@@ -88,12 +85,10 @@ interface DocAnalyzerProgressStatus {
     failed: number;
 }
 
-
 /**
  * Adapt Tables Parameters, part of the request
  */
 export interface AdaptTablesParams {
-
     /**
      * JSON Schema to to convert the table into
      */
@@ -112,13 +107,20 @@ export interface AdaptTablesParams {
     /**
      * Format to return the data in (csv, json)
      */
-    format?: 'csv' | 'json';
+    format?: "csv" | "json";
 
+    /**
+     * Process the table as a whole or by page
+     */
+    process_as?: "page" | "table";
+
+    /**
+     * Process the table as a CSV file
+     */
+    process_as_csv?: boolean;
 }
 
-
 interface DocAnalyzerRequestBase {
-
     synchroneous?: boolean;
 
     notify_endpoints?: string[];
@@ -128,14 +130,9 @@ interface DocAnalyzerRequestBase {
      * If none specified the project embedded environment will be used
      */
     environment?: string;
-
 }
 
-
-export interface AdaptTablesRequest extends DocAnalyzerRequestBase, AdaptTablesParams {
-}
-
-
+export interface AdaptTablesRequest extends DocAnalyzerRequestBase, AdaptTablesParams {}
 
 /**
  * Get Adapted Tables Request
@@ -144,5 +141,12 @@ export interface AdaptTablesRequest extends DocAnalyzerRequestBase, AdaptTablesP
  */
 export interface GetAdaptedTablesRequestQuery {
     raw?: boolean;
-    format: 'csv' | 'json';
+    format: "csv" | "json";
+}
+/**
+ * The adapted table result format
+ */
+export interface AdaptedTable {
+    comment?: string;
+    data: Record<string, any>[];
 }

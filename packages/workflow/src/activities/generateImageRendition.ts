@@ -1,11 +1,15 @@
 import { log } from "@temporalio/activity";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { DSLActivityExecutionPayload, DSLActivitySpec, RenditionProperties } from "@vertesia/common";
-import fs from "fs";
+import fs from 'fs';
+import ffmpeg from 'fluent-ffmpeg';
+import path from 'path';
+import os from 'os';
 import { imageResizer } from "../conversion/image.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
 import { saveBlobToTempFile } from "../utils/blobs.js";
+
 interface GenerateImageRenditionParams {
     max_hw: number; //maximum size of the longuest side of the image
     format: string; //format of the output image
@@ -42,18 +46,63 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
         throw new NoDocumentFound(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type || !inputObject.content.type?.startsWith("image/")) {
-        log.error(`Document ${objectId} is not an image`);
-        throw new NoDocumentFound(`Document ${objectId} is not an image: ${inputObject.content.type}`, [objectId]);
+    if (!inputObject.content.type || (!inputObject.content.type?.startsWith("image/") && !inputObject.content.type?.startsWith("video/"))) {
+        log.error(`Document ${objectId} is not an image or a video: ${inputObject.content.type}`);
+        throw new NoDocumentFound(`Document ${objectId} is not an image or a video: ${inputObject.content.type}`, [objectId]);
     }
 
     //array of rendition files to upload
     let renditionPages: string[] = [];
 
-    // Process image
-    const imageFile = await saveBlobToTempFile(client, inputObject.content.source);
-    log.info(`Image ${objectId} copied to ${imageFile}`);
-    renditionPages.push(imageFile);
+    if (inputObject.content.type.startsWith('image/')) {
+        const imageFile = await saveBlobToTempFile(client, inputObject.content.source);
+        log.info(`Image ${objectId} copied to ${imageFile}`);
+        renditionPages.push(imageFile);
+    } else if (inputObject.content.type.startsWith('video/')) {
+        const videoFile = await saveBlobToTempFile(client, inputObject.content.source);
+        const tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'video-rendition-'));
+        const thumbnailPath = path.join(tempOutputDir, 'thumbnail.png');
+
+        try {
+            // Extract a frame at 10% of the video duration
+            await new Promise<void>((resolve, reject) => {
+                ffmpeg.ffprobe(videoFile, (err, metadata) => {
+                    if (err) {
+                        log.error(`Failed to probe video metadata: ${err.message}`);
+                        return reject(err);
+                    }
+
+                    const duration = metadata.format.duration || 0;
+                    const timestamp = Math.max(0.1 * duration, 1);
+
+                    ffmpeg(videoFile)
+                        .screenshots({
+                            timestamps: [timestamp],
+                            filename: 'thumbnail.png',
+                            folder: tempOutputDir,
+                            size: `${params.max_hw}x?`
+                        })
+                        .on('end', () => {
+                            log.info(`Video frame extraction complete for ${objectId}`);
+                            resolve();
+                        })
+                        .on('error', (err) => {
+                            log.error(`Error extracting frame from video: ${err.message}`);
+                            reject(err);
+                        });
+                });
+            });
+
+            if (fs.existsSync(thumbnailPath)) {
+                renditionPages.push(thumbnailPath);
+            } else {
+                throw new Error(`Failed to generate thumbnail for video ${objectId}`);
+            }
+        } catch (error) {
+            log.error(`Error generating image rendition for video: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw new Error(`Failed to generate image rendition for video: ${objectId}`);
+        }
+    }
 
     //generate rendition name, pass an index for multi parts
     const getRenditionName = (index: number = 0) => {
