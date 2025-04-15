@@ -1,4 +1,4 @@
-import { ExecutionRunStatus, InteractionAsyncExecutionPayload, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload } from '@vertesia/common';
+import { AsyncExecutionPayload, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload } from '@vertesia/common';
 import { VertesiaClient } from './client.js';
 
 export function EventSourceProvider(): Promise<typeof EventSource> {
@@ -113,9 +113,8 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
     });
 }
 
-export async function executeInteractionAsync(client: VertesiaClient, payload: InteractionAsyncExecutionPayload) {
-    const response = await client.post('/api/v1/execute/async', {
+export async function executeInteractionAsync(client: VertesiaClient, payload: AsyncExecutionPayload): Promise<{ runId: string, workflowId: string }> {
+    return await client.post('/api/v1/execute/async', {
         payload,
-    }) as { id: string };
-    return response.id;
+    });
 }

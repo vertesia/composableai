@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionAsyncExecutionPayload, InteractionCreatePayload, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload } from "@vertesia/common";
+import { AsyncExecutionPayload, ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionEndpointQuery, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 import { executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
 
@@ -7,6 +7,10 @@ export interface ComputeInteractionFacetsResponse {
     tags?: { _id: string, count: number }[];
     status?: { _id: string, count: number }[];
     total?: { count: number }[];
+}
+
+export interface AsyncExecutionResult {
+    runId: string, workflowId: string
 }
 
 export default class InteractionsApi extends ApiTopic {
@@ -25,6 +29,15 @@ export default class InteractionsApi extends ApiTopic {
             query: {
                 ...query
             }
+        });
+    }
+    /**
+     * Find interractions given a mongo match query.
+     * You can also specify if prompts schemas are included in the result
+     */
+    listEndpoints(payload: InteractionEndpointQuery): Promise<InteractionRef[]> {
+        return this.post("/endpoints", {
+            payload
         });
     }
 
@@ -161,7 +174,7 @@ export default class InteractionsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    executeAsync(payload: InteractionAsyncExecutionPayload): Promise<string> {
+    executeAsync(payload: AsyncExecutionPayload): Promise<AsyncExecutionResult> {
         return executeInteractionAsync(this.client as VertesiaClient, payload);
     }
 

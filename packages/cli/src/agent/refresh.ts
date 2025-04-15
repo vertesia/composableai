@@ -18,12 +18,39 @@ export function tryRrefreshProjectToken(project: AgentProject): Promise<ConfigRe
 }
 
 export function tryRrefreshToken(profile: Profile): Promise<ConfigResult | undefined> {
+    // Create abort controller for cancellation
+    const abortController = new AbortController();
+    
+    // Set up signal handler
+    const handleSignal = () => {
+        abortController.abort();
+        console.log("\nToken refresh interrupted");
+        process.exit(0);
+    };
+    
+    // Register signal handlers
+    process.on('SIGINT', handleSignal);
+    process.on('SIGTERM', handleSignal);
+    
     return new Promise<ConfigResult | undefined>((resolve) => {
-        if (shouldRefreshProfileToken(profile, 10)) {
-            console.log("Refreshing auth token for profile:", profile.name);
-            updateProfile(profile.name, resolve);
-        } else {
-            resolve(undefined)
+        // If token doesn't need refresh, resolve immediately
+        if (!shouldRefreshProfileToken(profile, 10)) {
+            process.off('SIGINT', handleSignal);
+            process.off('SIGTERM', handleSignal);
+            resolve(undefined);
+            return;
         }
+        
+        console.log("Refreshing auth token for profile:", profile.name);
+        
+        // Create a callback that cleans up signal handlers
+        const wrappedResolve = (result: ConfigResult | undefined) => {
+            process.off('SIGINT', handleSignal);
+            process.off('SIGTERM', handleSignal);
+            resolve(result);
+        };
+        
+        // Start the update with our wrapped resolver
+        updateProfile(profile.name, wrappedResolve, abortController.signal);
     });
 }
