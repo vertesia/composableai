@@ -46,7 +46,7 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
         throw new NoDocumentFound(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type || (!inputObject.content.type?.startsWith('image/') && !inputObject.content.type?.startsWith('video/'))) {
+    if (!inputObject.content.type || (!inputObject.content.type?.startsWith("image/") && !inputObject.content.type?.startsWith("video/"))) {
         log.error(`Document ${objectId} is not an image or a video: ${inputObject.content.type}`);
         throw new NoDocumentFound(`Document ${objectId} is not an image or a video: ${inputObject.content.type}`, [objectId]);
     }
