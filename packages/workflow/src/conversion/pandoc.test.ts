@@ -9,14 +9,16 @@ let testEnv: TestWorkflowEnvironment;
 let activityContext: MockActivityEnvironment;
 
 beforeAll(async () => {
-  testEnv = await TestWorkflowEnvironment.createLocal();
-  activityContext = new MockActivityEnvironment();
+    testEnv = await TestWorkflowEnvironment.createLocal();
+    activityContext = new MockActivityEnvironment();
 });
 
 
 // Add more test cases for other file types (ODT, DOCX) if needed
 test('should convert docx to markdown', async () => {
-  const docx = fs.readFileSync(path.join(__dirname, '../../fixtures', 'us-ciia.docx'));
-  const result = await activityContext.run(manyToMarkdown, Buffer.from(docx), 'docx');
-  expect(result).to.include('confidential');
+    const filepath = path.join(__dirname, '../../fixtures', 'us-ciia.docx');
+    console.log("Converting file from", filepath);
+    const docx = fs.readFileSync(filepath);
+    const result = await activityContext.run(manyToMarkdown, Buffer.from(docx), 'docx');
+    expect(result).to.include('confidential');
 });

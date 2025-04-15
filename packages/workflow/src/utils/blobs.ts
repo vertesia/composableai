@@ -10,7 +10,8 @@ export async function fetchBlobAsStream(client: VertesiaClient, blobUri: string)
     try {
         return await client.files.downloadFile(blobUri);
     } catch (err: any) {
-        if (err.message.includes("not found")) { //TODO improve error handling with a fetch fail error class in the client
+        if (err.message.includes("not found")) {
+            //TODO improve error handling with a fetch fail error class in the client
             throw new NoDocumentFound(`Failed to download blob ${blobUri}: ${err.message}`, []);
         } else {
             throw new Error(`Failed to download blob ${blobUri}: ${err.message}`);
@@ -28,7 +29,7 @@ export async function fetchBlobAsBuffer(client: VertesiaClient, blobUri: string)
 
 export async function fetchBlobAsBase64(client: VertesiaClient, blobUri: string): Promise<string> {
     const buffer = await fetchBlobAsBuffer(client, blobUri);
-    return buffer.toString('base64');
+    return buffer.toString("base64");
 }
 
 export async function saveBlobToFile(client: VertesiaClient, blobUri: string, toFile: string): Promise<void> {
@@ -40,8 +41,8 @@ export async function saveBlobToFile(client: VertesiaClient, blobUri: string, to
 export async function saveBlobToTempFile(client: VertesiaClient, blobUri: string, fileExt?: string): Promise<string> {
     const tmpFile = tmp.fileSync({
         prefix: "vertesia-activity-",
-        postfix: "." + fileExt,
-        discardDescriptor: true
+        postfix: fileExt ? "." + fileExt : "",
+        discardDescriptor: true,
     });
     await saveBlobToFile(client, blobUri, tmpFile.name);
     return tmpFile.name;
@@ -51,12 +52,12 @@ async function writeChunksToStream(chunks: AsyncIterable<Uint8Array>, out: NodeJ
     for await (const chunk of chunks) {
         if (!out.write(chunk)) {
             // If the internal buffer is full, wait until it's drained
-            await new Promise(resolve => out.once('drain', resolve));
+            await new Promise((resolve) => out.once("drain", resolve));
         }
     }
     out.end(); // Close the stream when done
 }
 
 export function md5(contents: string) {
-    return crypto.createHash('md5').update(contents).digest("hex");
+    return crypto.createHash("md5").update(contents).digest("hex");
 }
