@@ -7,49 +7,84 @@ import { ExecutionQueue, ExecutionRequest } from "./executor.js";
 
 
 export default async function runInteraction(program: Command, interactionSpec: string, options: Record<string, any>) {
-    const queue = new ExecutionQueue();
-    const data = await getInputData(options);
-    const client = getClient(program);
+    // Create abort controller for handling interruption
+    const abortController = new AbortController();
+    const { signal } = abortController;
+    
+    // Set up signal handlers
+    let spinner: Spinner | undefined;
+    
+    const cleanup = () => {
+        if (spinner) {
+            spinner.done(false);
+        }
+        console.log("\nInteraction execution interrupted");
+        process.exit(0);
+    };
+    
+    const handleSignal = () => {
+        abortController.abort();
+        cleanup();
+    };
+    
+    process.on('SIGINT', handleSignal);
+    process.on('SIGTERM', handleSignal);
+    
+    try {
+        const queue = new ExecutionQueue();
+        const data = await getInputData(options);
+        const client = getClient(program);
 
-    let count = options.count ? parseInt(options.count) : 1;
-    if (isNaN(count) || count < 0) {
-        count = 1;
-    }
+        let count = options.count ? parseInt(options.count) : 1;
+        if (isNaN(count) || count < 0) {
+            count = 1;
+        }
 
-    const hasMultiOutputs = (Array.isArray(data) && data.length > 1) || count > 1;
-    const totalSize = Array.isArray(data) ? data.length * count : count;
+        const hasMultiOutputs = (Array.isArray(data) && data.length > 1) || count > 1;
+        const totalSize = Array.isArray(data) ? data.length * count : count;
 
-    let onChunk: ((chunk: any) => void) | undefined = undefined;
-    // TODO we can add an option --async to be able to force sync mode and use streaming for array data inputs?
-    if (!hasMultiOutputs && options.stream) { // stream to stdout
-        onChunk = (chunk: string) => {
-            if (chunk) {
-                process.stdout.write(chunk);
+        let onChunk: ((chunk: any) => void) | undefined = undefined;
+        // TODO we can add an option --async to be able to force sync mode and use streaming for array data inputs?
+        if (!hasMultiOutputs && options.stream) { // stream to stdout
+            onChunk = (chunk: string) => {
+                if (chunk && !signal.aborted) {
+                    process.stdout.write(chunk);
+                }
             }
         }
-    }
 
-    let verbose = options.verbose || false;
+        let verbose = options.verbose || false;
 
-    let spinner: Spinner | undefined;
-    if (!onChunk) {
-        if (!verbose) {
-            spinner = new Spinner('dots');
-            spinner.prefix = `Running. Please be patient (0/${totalSize}) `;
-            spinner.start();
+        if (!onChunk) {
+            if (!verbose) {
+                spinner = new Spinner('dots');
+                spinner.prefix = `Running. Please be patient (0/${totalSize}) `;
+                spinner.start();
+            } else {
+                console.log(`Running ${totalSize} requests. Please be patient`)
+            }
         } else {
-            console.log(`Running ${totalSize} requests. Please be patient`)
+            verbose = false;
         }
-    } else {
-        verbose = false;
-    }
 
-    let result: ExecutionRun[]
-    try {
+        // Check if aborted early
+        if (signal.aborted) {
+            if (spinner) spinner.done(false);
+            return;
+        }
+
+        let result: ExecutionRun[]
+        
         for (let i = 0; i < count; i++) {
+            // Exit loop if aborted
+            if (signal.aborted) break;
+            
             let runNumber = count > 1 ? 0 : i + 1;
             if (Array.isArray(data)) {
                 for (const d of data) {
+                    // Exit loop if aborted
+                    if (signal.aborted) break;
+                    
                     const req = new ExecutionRequest(client, interactionSpec, d, options);
                     if (runNumber > 0) {
                         req.runNumber = runNumber;
@@ -65,7 +100,16 @@ export default async function runInteraction(program: Command, interactionSpec: 
             }
         }
 
+        // Check if aborted again
+        if (signal.aborted) {
+            if (spinner) spinner.done(false);
+            return;
+        }
+
         result = await queue.run((completed) => {
+            // Skip updating if aborted
+            if (signal.aborted) return;
+            
             if (spinner) {
                 spinner.prefix = `Running. Please be patient (${completed.length}/${totalSize}) `;
             } else if (verbose) {
@@ -77,16 +121,32 @@ export default async function runInteraction(program: Command, interactionSpec: 
                     console.log('----------------------------------------\n');
                 }
             }
-        }, onChunk);
-        spinner?.done(true);
-
+        }, onChunk, signal);
+        
+        // Check if aborted before wrapping up
+        if (signal.aborted) return;
+        
+        if (spinner) spinner.done(true);
+        
+        // Clean up signal handlers
+        process.off('SIGINT', handleSignal);
+        process.off('SIGTERM', handleSignal);
+        
+        writeResult(result, hasMultiOutputs, options);
     } catch (err: any) {
-        spinner?.done(false);
-        console.error("Failed to execute the interaction", err?.message);//, err?.stack);
+        // Clean up signal handlers
+        process.off('SIGINT', handleSignal);
+        process.off('SIGTERM', handleSignal);
+        
+        // Don't show error if aborted
+        if (signal.aborted) {
+            return;
+        }
+        
+        if (spinner) spinner.done(false);
+        console.error("Failed to execute the interaction", err?.message);
         throw err;
     }
-
-    writeResult(result, hasMultiOutputs, options);
 }
 
 async function getInputData(options: Record<string, any>) {

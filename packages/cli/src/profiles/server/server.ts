@@ -1,6 +1,6 @@
 import { Server, createServer, ServerResponse, IncomingMessage } from 'http';
 
-export function startServer(cb: (req: IncomingMessage, res: ServerResponse) => void): Promise<Server> {
+export async function startServer(cb: (req: IncomingMessage, res: ServerResponse) => void): Promise<Server> {
     const server = createServer(cb);
     const onSigint = () => {
         server.close();

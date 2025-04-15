@@ -114,7 +114,13 @@ export class ConfigureProfile {
         }
     }
 
-    async applyConfigResult(result: ConfigResult) {
+    async applyConfigResult(result: ConfigResult | undefined) {
+        if (!result) {
+            // Handle cancellation or no result
+            console.log('\nAuthentication canceled or failed.');
+            process.exit(1);
+            return;
+        }
         const oldName = this.data.name!;
         this.data.name = result.profile;
         this.data.account = result.account;
@@ -138,9 +144,14 @@ export class ConfigureProfile {
         process.exit(0);
     }
 
-    async start(onResult?: OnResultCallback) {
+    async start(onResult?: OnResultCallback, signal?: AbortSignal) {
         this.onResultCallback = onResult;
-        await startConfigSession(this.data.config_url!, this.getConfigPayload(), this.applyConfigResult.bind(this));
+        await startConfigSession(
+            this.data.config_url!, 
+            this.getConfigPayload(), 
+            this.applyConfigResult.bind(this),
+            signal
+        );
     }
 }
 
