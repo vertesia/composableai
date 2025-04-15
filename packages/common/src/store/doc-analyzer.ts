@@ -66,7 +66,6 @@ export interface DocAnalyzerResultResponse {
     document?: string;
     tables?: DocTableCsv[] | DocTableJson[];
     images?: DocImage[];
-    parts?: { id: string; title: string }[];
     annotated?: string | null;
 }
 

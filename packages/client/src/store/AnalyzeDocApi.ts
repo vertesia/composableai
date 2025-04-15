@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { AdaptTablesRequest, ContentObject, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, ExportTableFormats, GetAdaptedTablesRequestQuery, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
+import { AdaptTablesRequest, DocAnalyzerResultResponse, DocAnalyzeRunStatusResponse, DocImage, DocTableCsv, DocTableJson, ExportTableFormats, GetAdaptedTablesRequestQuery, PdfToRichtextOptions, WorkflowRunStatus } from "@vertesia/common";
 
 export class AnalyzeDocApi extends ApiTopic {
     constructor(parent: ClientBase, public objectId: string) {
@@ -53,10 +53,6 @@ export class AnalyzeDocApi extends ApiTopic {
 
     async getImages(): Promise<DocImage[]> {
         return this.get("/images");
-    }
-
-    async getParts(): Promise<ContentObject[]> {
-        return this.get("/parts");
     }
 
     async getAnnotated(): Promise<{ url: string }> {
