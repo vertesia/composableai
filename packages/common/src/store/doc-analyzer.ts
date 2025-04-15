@@ -16,15 +16,16 @@ export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayl
 export interface DocImage {
     id?: string;
     page_number?: number;
-    image_number?: number;
-    title?: string;
-    url?: string;
     description?: string;
     is_meaningful?: boolean;
     width?: number;
     height?: number;
-    path?: string;
 }
+
+/**
+ * The export type formats for tables.
+ */
+export type ExportTableFormats = 'json' | 'csv' | 'xml';
 
 /**
  * Represents a table in a document that has been analyzed
@@ -65,7 +66,6 @@ export interface DocAnalyzerResultResponse {
     document?: string;
     tables?: DocTableCsv[] | DocTableJson[];
     images?: DocImage[];
-    parts?: { id: string; title: string }[];
     annotated?: string | null;
 }
 
@@ -142,4 +142,11 @@ export interface AdaptTablesRequest extends DocAnalyzerRequestBase, AdaptTablesP
 export interface GetAdaptedTablesRequestQuery {
     raw?: boolean;
     format: "csv" | "json";
+}
+/**
+ * The adapted table result format
+ */
+export interface AdaptedTable {
+    comment?: string;
+    data: Record<string, any>[];
 }
