@@ -143,3 +143,10 @@ export interface GetAdaptedTablesRequestQuery {
     raw?: boolean;
     format: "csv" | "json";
 }
+/**
+ * The adapted table result format
+ */
+export interface AdaptedTable {
+    comment?: string;
+    data: Record<string, any>[];
+}
