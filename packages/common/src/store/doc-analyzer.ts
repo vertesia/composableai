@@ -23,6 +23,11 @@ export interface DocImage {
 }
 
 /**
+ * The export type formats for tables.
+ */
+export type ExportTableFormats = 'json' | 'csv' | 'xml';
+
+/**
  * Represents a table in a document that has been analyzed
  */
 export interface DocTable {
