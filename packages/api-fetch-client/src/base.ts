@@ -164,6 +164,9 @@ export abstract class ClientBase {
                 return params.reader.call(this, res);
             }
         } else {
+            if (res.ok && res.headers.get("content-type") === "application/xml") {
+                return res.text().then((payload) => {return payload});
+            } 
             return this.readJSONPayload(res).then((payload) => {
                 if (res.ok) {
                     return payload;
