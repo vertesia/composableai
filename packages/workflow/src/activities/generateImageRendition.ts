@@ -2,25 +2,25 @@ import { log } from "@temporalio/activity";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { DSLActivityExecutionPayload, DSLActivitySpec, RenditionProperties } from "@vertesia/common";
 import fs from 'fs';
+import ffmpeg from 'fluent-ffmpeg';
+import path from 'path';
+import os from 'os';
 import sharp, { FormatEnum } from "sharp";
 import { imageResizer } from "../conversion/image.js";
 import { pdfToImages } from "../conversion/mutool.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
 import { fetchBlobAsBuffer, saveBlobToTempFile } from "../utils/blobs.js";
+
 interface GenerateImageRenditionParams {
     max_hw: number; //maximum size of the longuest side of the image
     format: keyof FormatEnum; //format of the output image
     multi_page?: boolean; //if true, generate a multi-page rendition
 }
 
-
 export interface GenerateImageRendition extends DSLActivitySpec<GenerateImageRenditionParams> {
-
     name: 'generateImageRendition';
-
 }
-
 
 export async function generateImageRendition(payload: DSLActivityExecutionPayload<GenerateImageRenditionParams>) {
     const { client, objectId, params } = await setupActivity<GenerateImageRenditionParams>(payload);
@@ -50,9 +50,9 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
         throw new NoDocumentFound(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type || (!inputObject.content.type?.startsWith('image/') && !supportedNonImageInputTypes.includes(inputObject.content.type))) {
+    if (!inputObject.content.type || (!inputObject.content.type?.startsWith('image/') && !inputObject.content.type?.startsWith('video/') && !supportedNonImageInputTypes.includes(inputObject.content.type))) {
         log.error(`Document ${objectId} is not an image`);
-        throw new NoDocumentFound(`Document ${objectId} is not an image or pdf: ${inputObject.content.type}`, [objectId]);
+        throw new NoDocumentFound(`Document ${objectId} is not an image, a pdf or a video: ${inputObject.content.type}`, [objectId]);
     }
 
     //array of rendition files to upload
@@ -72,6 +72,50 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
         const filestats = fs.statSync(tmpFile);
         log.info(`Image ${objectId} copied to ${tmpFile}`, { filestats });
         renditionPages.push(tmpFile);
+    } else if (inputObject.content.type.startsWith('video/')) {
+        const videoFile = await saveBlobToTempFile(client, inputObject.content.source);
+        const tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'video-rendition-'));
+        const thumbnailPath = path.join(tempOutputDir, 'thumbnail.png');
+
+        try {
+            // Extract a frame at 10% of the video duration
+            await new Promise<void>((resolve, reject) => {
+                ffmpeg.ffprobe(videoFile, (err, metadata) => {
+                    if (err) {
+                        log.error(`Failed to probe video metadata: ${err.message}`);
+                        return reject(err);
+                    }
+
+                    const duration = metadata.format.duration || 0;
+                    const timestamp = Math.max(0.1 * duration, 1);
+
+                    ffmpeg(videoFile)
+                        .screenshots({
+                            timestamps: [timestamp],
+                            filename: 'thumbnail.png',
+                            folder: tempOutputDir,
+                            size: `${params.max_hw}x?`
+                        })
+                        .on('end', () => {
+                            log.info(`Video frame extraction complete for ${objectId}`);
+                            resolve();
+                        })
+                        .on('error', (err) => {
+                            log.error(`Error extracting frame from video: ${err.message}`);
+                            reject(err);
+                        });
+                });
+            });
+
+            if (fs.existsSync(thumbnailPath)) {
+                renditionPages.push(thumbnailPath);
+            } else {
+                throw new Error(`Failed to generate thumbnail for video ${objectId}`);
+            }
+        } catch (error) {
+            log.error(`Error generating image rendition for video: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw new Error(`Failed to generate image rendition for video: ${objectId}`);
+        }
     }
 
     //generate rendition name, pass an index for multi parts
