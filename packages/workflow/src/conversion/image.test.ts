@@ -34,7 +34,7 @@ describe("ImageMagick image resizing", () => {
         expect(fs.existsSync(resizedImagePath)).toBe(true);
 
         // Use ImageMagick identify to get metadata about the resized image
-        const { stdout } = await execAsync(`magick identify -format "%w %h %m" "${resizedImagePath}"`);
+        const { stdout } = await execAsync(`identify -format "%w %h %m" "${resizedImagePath}"`);
         const [width, height, imageFormat] = stdout.trim().split(" ");
 
         console.log({ width, height, imageFormat });
@@ -83,7 +83,7 @@ describe("ImageMagick image resizing", () => {
         expect(fs.existsSync(resizedImagePath)).toBe(true);
 
         // Use ImageMagick identify to check if the image is interlaced
-        const { stdout } = await execAsync(`magick identify -format "%[interlace]" "${resizedImagePath}"`);
+        const { stdout } = await execAsync(`identify -format "%[interlace]" "${resizedImagePath}"`);
         const interlaceMode = stdout.trim();
 
         console.log({ interlaceMode });
@@ -107,7 +107,7 @@ describe("ImageMagick image resizing", () => {
         expect(fs.existsSync(resizedImagePath)).toBe(true);
 
         // Use ImageMagick identify to check if the image is interlaced
-        const { stdout } = await execAsync(`magick identify -format "%[interlace]" "${resizedImagePath}"`);
+        const { stdout } = await execAsync(`identify -format "%[interlace]" "${resizedImagePath}"`);
         const interlaceMode = stdout.trim().toLowerCase();
 
         console.log({ interlaceMode });
