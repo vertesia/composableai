@@ -53,6 +53,13 @@ describe('Test requests', () => {
             done();
         }).catch(done);
     });
+    it('handles xml content', done => {
+        client.get('/xml').then((payload) => {
+            assert(payload === "<document></document>");
+            done();
+        }).catch(done);
+    });
+
 });
 
 

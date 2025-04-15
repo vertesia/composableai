@@ -34,5 +34,11 @@ export default class Endpoints extends Resource {
         ctx.status = 204;
     }
 
+    @get("/xml")
+    async getXML(ctx: Context) {
+        ctx.response.type = "application/xml";
+        return '<document></document>'
+    }
+
 }
 
