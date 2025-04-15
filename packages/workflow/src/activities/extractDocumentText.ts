@@ -156,13 +156,34 @@ function createResponse(doc: ContentObject, text: string, status: TextExtraction
 }
 
 
-//if file is less than 100KB, check if it looks like text
 function sniffIfText(buf: Buffer) {
-    if (buf.length < 100 * 1024) {
-        const s = buf.toString('utf8');
-        if (s.length > 0) {
-            return true;
+    // If file is too large, don't even try
+    if (buf.length > 500 * 1024) {
+        return false;
+    }
+
+    // Count binary/control characters
+    let binaryCount = 0;
+    const sampleSize = Math.min(buf.length, 1000); // Check first 1000 bytes
+
+    for (let i = 0; i < sampleSize; i++) {
+        // Count control characters (except common whitespace)
+        const byte = buf[i];
+        if ((byte < 32 && ![9, 10, 13].includes(byte)) || byte === 0) {
+            binaryCount++;
         }
     }
-    return false;
+
+    // If more than 10% binary/control chars, probably not text
+    if (binaryCount / sampleSize > 0.1) {
+        return false;
+    }
+
+    // Additional check for valid UTF-8 encoding
+    try {
+        const s = buf.toString('utf8');
+        return s.length > 0 && !s.includes('\uFFFD'); // Replacement character
+    } catch (e) {
+        return false;
+    }
 }
