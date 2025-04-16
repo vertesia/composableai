@@ -5,27 +5,23 @@ import fs from 'fs';
 import ffmpeg from 'fluent-ffmpeg';
 import path from 'path';
 import os from 'os';
-import sharp, { FormatEnum } from "sharp";
 import { imageResizer } from "../conversion/image.js";
-import { pdfToImages } from "../conversion/mutool.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
-import { fetchBlobAsBuffer, saveBlobToTempFile } from "../utils/blobs.js";
+import { saveBlobToTempFile } from "../utils/blobs.js";
 
 interface GenerateImageRenditionParams {
     max_hw: number; //maximum size of the longuest side of the image
-    format: keyof FormatEnum; //format of the output image
-    multi_page?: boolean; //if true, generate a multi-page rendition
+    format: string; //format of the output image
 }
 
 export interface GenerateImageRendition extends DSLActivitySpec<GenerateImageRenditionParams> {
-    name: 'generateImageRendition';
+    name: "generateImageRendition";
 }
 
 export async function generateImageRendition(payload: DSLActivityExecutionPayload<GenerateImageRenditionParams>) {
     const { client, objectId, params } = await setupActivity<GenerateImageRenditionParams>(payload);
 
-    const supportedNonImageInputTypes = ['application/pdf']
     const inputObject = await client.objects.retrieve(objectId).catch((err) => {
         log.error(`Failed to retrieve document ${objectId}`, err);
         if (err.response?.status === 404) {
@@ -33,7 +29,7 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
         }
         throw err;
     });
-    const renditionType = await client.types.getTypeByName('Rendition');
+    const renditionType = await client.types.getTypeByName("Rendition");
 
     if (!params.format) {
         log.error(`Format not found`);
@@ -50,28 +46,18 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
         throw new NoDocumentFound(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type || (!inputObject.content.type?.startsWith('image/') && !inputObject.content.type?.startsWith('video/') && !supportedNonImageInputTypes.includes(inputObject.content.type))) {
-        log.error(`Document ${objectId} is not an image`);
-        throw new NoDocumentFound(`Document ${objectId} is not an image, a pdf or a video: ${inputObject.content.type}`, [objectId]);
+    if (!inputObject.content.type || (!inputObject.content.type?.startsWith("image/") && !inputObject.content.type?.startsWith("video/"))) {
+        log.error(`Document ${objectId} is not an image or a video: ${inputObject.content.type}`);
+        throw new NoDocumentFound(`Document ${objectId} is not an image or a video: ${inputObject.content.type}`, [objectId]);
     }
 
     //array of rendition files to upload
     let renditionPages: string[] = [];
 
-    //if PDF, convert to pages
-    if (inputObject.content.type === 'application/pdf') {
-        const pdfBuffer = await fetchBlobAsBuffer(client, inputObject.content.source);
-        const pages = await pdfToImages(pdfBuffer);
-        if (!pages.length) {
-            log.error(`Failed to convert pdf to image`);
-            throw new Error(`Failed to convert pdf to image`);
-        }
-        renditionPages = [...pages];
-    } else if (inputObject.content.type.startsWith('image/')) {
-        const tmpFile = await saveBlobToTempFile(client, inputObject.content.source);
-        const filestats = fs.statSync(tmpFile);
-        log.info(`Image ${objectId} copied to ${tmpFile}`, { filestats });
-        renditionPages.push(tmpFile);
+    if (inputObject.content.type.startsWith('image/')) {
+        const imageFile = await saveBlobToTempFile(client, inputObject.content.source);
+        log.info(`Image ${objectId} copied to ${imageFile}`);
+        renditionPages.push(imageFile);
     } else if (inputObject.content.type.startsWith('video/')) {
         const videoFile = await saveBlobToTempFile(client, inputObject.content.source);
         const tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'video-rendition-'));
@@ -122,57 +108,74 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
     const getRenditionName = (index: number = 0) => {
         const name = `renditions/${objectId}/${params.max_hw}/${index}.${params.format}`;
         return name;
-    }
+    };
 
     if (!renditionPages || !renditionPages.length) {
         log.error(`Failed to generate rendition for ${objectId}`);
         throw new Error(`Failed to generate rendition for ${objectId}`);
     }
 
-    log.info(`Uploading rendition for ${objectId} with ${renditionPages.length} pages (max_hw: ${params.max_hw}, format: ${params.format})`, { renditionPages });
+    log.info(
+        `Uploading rendition for ${objectId} with ${renditionPages.length} pages (max_hw: ${params.max_hw}, format: ${params.format})`,
+        { renditionPages },
+    );
     const uploads = renditionPages.map(async (page, i) => {
         const pageId = getRenditionName(i);
-        const resized = sharp(page).pipe(imageResizer(params.max_hw, params.format));
+        let resizedImagePath = null;
 
-        const source = new NodeStreamSource(
-            resized,
-            pageId.replace('renditions/', '').replace('/', '_'),
-            'image/' + params.format,
-            pageId,
-        )
+        try {
+            // Resize the image using ImageMagick
+            resizedImagePath = await imageResizer(page, params.max_hw, params.format);
 
-        log.info(`Uploading rendition for ${objectId} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`);
-        return client.objects.upload(source).catch((err) => {
-            log.error(`Failed to upload rendition for ${objectId} page ${i}`, err);
+            // Create a read stream from the resized image file
+            const fileStream = fs.createReadStream(resizedImagePath);
+
+            const source = new NodeStreamSource(
+                fileStream,
+                pageId.split("/").pop() ?? "0." + params.format,
+                "image/" + params.format,
+                pageId,
+            );
+
+            log.info(
+                `Uploading rendition for ${objectId} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`,
+            );
+
+            const result = await client.objects.upload(source).catch((err) => {
+                log.error(`Failed to upload rendition for ${objectId} page ${i}`, { error: err });
+                return Promise.resolve(null);
+            });
+
+            return result;
+        } catch (error) {
+            log.error(`Failed to process rendition for ${objectId} page ${i}`, { error });
             return Promise.resolve(null);
-        });
+        }
     });
 
     const uploaded = await Promise.all(uploads);
     if (!uploaded || !uploaded.length || !uploaded[0]) {
         log.error(`Failed to upload rendition for ${objectId}`);
-        throw new Error(`Failed to upload rendition for ${objectId}`);
+        throw new Error(`Failed to upload rendition for ${objectId} - upload object is empty`);
     }
 
-
-    log.info(`Creating rendition for ${objectId} with max_hw: ${params.max_hw} and format: ${params.format}`, { uploaded });
+    log.info(`Creating rendition for ${objectId} with max_hw: ${params.max_hw} and format: ${params.format}`, {
+        uploaded,
+    });
     const rendition = await client.objects.create({
         name: inputObject.name + ` [Rendition ${params.max_hw}]`,
         type: renditionType.id,
         parent: inputObject.id,
         content: uploaded[0],
         properties: {
-            mime_type: 'image/' + params.format,
+            mime_type: "image/" + params.format,
             source_etag: inputObject.content.source,
             height: params.max_hw,
             width: params.max_hw,
-            multipart: uploaded.length > 1,
-            total_parts: uploaded.length
-        } satisfies RenditionProperties
+        } satisfies RenditionProperties,
     });
 
     log.info(`Rendition ${rendition.id} created for ${objectId}`, { rendition });
 
     return { id: rendition.id, format: params.format, status: "success" };
-
 }

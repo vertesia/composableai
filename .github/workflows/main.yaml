@@ -101,7 +101,7 @@ jobs:
       - name: Install mutool
         run: |
           sudo apt-get update
-          sudo apt-get install -y mupdf-tools
+          sudo apt-get install -y imagemagick mupdf-tools
         shell: bash
       - run: pnpm install
       - run: pnpm build
