@@ -1,10 +1,10 @@
 import { log } from "@temporalio/activity";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { DSLActivityExecutionPayload, DSLActivitySpec, RenditionProperties } from "@vertesia/common";
-import fs from 'fs';
 import ffmpeg from 'fluent-ffmpeg';
-import path from 'path';
+import fs from 'fs';
 import os from 'os';
+import path from 'path';
 import { imageResizer } from "../conversion/image.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
@@ -23,8 +23,8 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
     const { client, objectId, params } = await setupActivity<GenerateImageRenditionParams>(payload);
 
     const inputObject = await client.objects.retrieve(objectId).catch((err) => {
-        log.error(`Failed to retrieve document ${objectId}`, err);
-        if (err.response?.status === 404) {
+        log.error(`Failed to retrieve document ${objectId}`, { err });
+        if (err.message.includes("not found")) {
             throw new NoDocumentFound(`Document ${objectId} not found`, [objectId]);
         }
         throw err;
@@ -155,7 +155,7 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
 
     const uploaded = await Promise.all(uploads);
     if (!uploaded || !uploaded.length || !uploaded[0]) {
-        log.error(`Failed to upload rendition for ${objectId}`);
+        log.error(`Failed to upload rendition for ${objectId}`, { uploaded });
         throw new Error(`Failed to upload rendition for ${objectId} - upload object is empty`);
     }
 
