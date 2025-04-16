@@ -164,6 +164,7 @@ export abstract class ClientBase {
                 return params.reader.call(this, res);
             }
         } else {
+            // handle non json common text payload
             if (res.ok && res.headers.has("content-type") && res.headers.get("content-type") !== "application/json") {
                 const contentType = res.headers.get("content-type");
                 if (contentType && (contentType.startsWith("text/") || contentType === "application/xml")) {
@@ -176,7 +177,7 @@ export abstract class ClientBase {
                     }); 
                 } 
             } 
-
+            // default behavior
             return this.readJSONPayload(res).then((payload) => {
                 if (res.ok) {
                     return payload;
