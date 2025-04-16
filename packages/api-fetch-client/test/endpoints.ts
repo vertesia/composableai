@@ -40,5 +40,11 @@ export default class Endpoints extends Resource {
         return '<document></document>'
     }
 
+    @get("/csv")
+    async getCSV(ctx: Context) {
+        ctx.response.type = "text/csv";
+        return '"1","2","3"'
+    }
+
 }
 

@@ -164,9 +164,19 @@ export abstract class ClientBase {
                 return params.reader.call(this, res);
             }
         } else {
-            if (res.ok && res.headers.get("content-type") === "application/xml") {
-                return res.text().then((payload) => {return payload});
+            if (res.ok && res.headers.has("content-type") && res.headers.get("content-type") !== "application/json") {
+                const contentType = res.headers.get("content-type");
+                if (contentType && (contentType.startsWith("text/") || contentType === "application/xml")) {
+                    return res.text().then((payload) => {return payload}).catch((err) => {
+                        return {
+                            status: res.status,
+                            error: "Unable to read response content",
+                            message: err.message,
+                        };
+                    }); 
+                } 
             } 
+
             return this.readJSONPayload(res).then((payload) => {
                 if (res.ok) {
                     return payload;

@@ -59,7 +59,12 @@ describe('Test requests', () => {
             done();
         }).catch(done);
     });
-
+    it('handles csv content', done => {
+        client.get('/csv').then((payload) => {
+            assert(payload === '"1","2","3"');
+            done();
+        }).catch(done);
+    });
 });
 
 
