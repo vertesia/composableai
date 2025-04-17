@@ -14,7 +14,6 @@
         "test": "vitest run"
     },
     "devDependencies": {
-        "@types/eventsource": "^1.1.14",
         "@types/node": "^22.13.5",
         "ts-dual-module": "^0.6.3",
         "typescript": "^5.0.2",
@@ -24,7 +23,7 @@
         "@llumiverse/core": "workspace:*",
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "eventsource": "^2.0.2"
+        "eventsource": "^3.0.6"
     },
     "ts_dual_module": {
         "outDir": "lib"

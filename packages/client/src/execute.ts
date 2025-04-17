@@ -1,11 +1,12 @@
 import { AsyncExecutionPayload, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload } from '@vertesia/common';
 import { VertesiaClient } from './client.js';
+import { EventSource } from 'eventsource';
 
-export function EventSourceProvider(): Promise<typeof EventSource> {
+export function EventSourceProvider(): typeof globalThis.EventSource {
     if (typeof globalThis.EventSource === 'function') {
-        return Promise.resolve(globalThis.EventSource)
+        return globalThis.EventSource;
     } else {
-        return import('eventsource').then(module => module.default as unknown as typeof EventSource);
+        return EventSource as typeof globalThis.EventSource;
     }
 }
 /**
@@ -76,7 +77,7 @@ export async function executeInteractionByName<P = any, R = any>(client: Vertesi
 function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk: string) => void) {
     return new Promise(async (resolve, reject) => {
         try {
-            const EventSourceImpl = await EventSourceProvider();
+            const EventSourceImpl = EventSourceProvider();
             const streamUrl = new URL(client.runs.baseUrl + '/' + runId + '/stream');
             const bearerToken = client._auth ? await client._auth() : undefined;
 

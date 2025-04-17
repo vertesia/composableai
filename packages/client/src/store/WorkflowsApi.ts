@@ -79,7 +79,7 @@ export class WorkflowsApi extends ApiTopic {
     streamMessages(runId: string, onMessage?: (message: AgentMessage) => void, since?: number): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
-                const EventSourceImpl = await EventSourceProvider();
+                const EventSourceImpl = EventSourceProvider();
                 const client = this.client as VertesiaClient;
                 const streamUrl = new URL(client.workflows.baseUrl + "/runs/" + runId + "/stream");
 
