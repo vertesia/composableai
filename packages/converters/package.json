@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/converters",
-    "version": "0.51.0",
+    "version": "0.52.0",
     "description": "Image and content converters",
     "type": "module",
     "types": "./lib/types/index.d.ts",
