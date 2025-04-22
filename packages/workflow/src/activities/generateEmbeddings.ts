@@ -71,14 +71,10 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
         throw new Error('No environment found in project configuration. Set environment in project configuration to generate embeddings.');
     }
 
-    const document = await client.objects.retrieve(objectId, "+text +parts +embeddings +tokens +properties");
+    const document = await client.objects.retrieve(objectId, "+text +parts +tokens +properties");
 
     if (!document) {
         throw new NoDocumentFound('Document not found', [objectId]);
-    }
-
-    if (!document.content) {
-        throw new NoDocumentFound('Document content not found', [objectId]);
     }
 
     let res;
