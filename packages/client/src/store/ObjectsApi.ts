@@ -1,35 +1,54 @@
-import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
-import { ComplexSearchPayload, ComputeObjectFacetPayload, ContentObject, ContentObjectItem, ContentSource, CreateContentObjectPayload, Embedding, ExportPropertiesPayload, ExportPropertiesResponse, FindPayload, GetFileUrlPayload, GetFileUrlResponse, GetRenditionResponse, GetUploadUrlPayload, ListWorkflowRunsResponse, ObjectSearchPayload, ObjectSearchQuery, SupportedEmbeddingTypes } from '@vertesia/common';
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import {
+    ComplexSearchPayload,
+    ComputeObjectFacetPayload,
+    ContentObject,
+    ContentObjectItem,
+    ContentSource,
+    CreateContentObjectPayload,
+    Embedding,
+    ExportPropertiesPayload,
+    ExportPropertiesResponse,
+    FindPayload,
+    GetFileUrlPayload,
+    GetFileUrlResponse,
+    GetRenditionResponse,
+    GetUploadUrlPayload,
+    ListWorkflowRunsResponse,
+    ObjectSearchPayload,
+    ObjectSearchQuery,
+    SupportedEmbeddingTypes,
+} from "@vertesia/common";
 
-import { StreamSource } from '../StreamSource.js';
-import { ZenoClient } from './client.js';
-import { AnalyzeDocApi } from './AnalyzeDocApi.js';
+import { StreamSource } from "../StreamSource.js";
+import { ZenoClient } from "./client.js";
+import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
 
-export interface UploadContentObjectPayload extends Omit<CreateContentObjectPayload, 'content'> {
-    content?: StreamSource | File | {
+export interface UploadContentObjectPayload extends Omit<CreateContentObjectPayload, "content"> {
+    content?:
+        | StreamSource
+        | File
+        | {
+              // the source URI
+              source: string;
+              // the original name of the input file if any
+              name?: string;
+              // the mime type of the content source.
+              type?: string;
 
-        // the source URI
-        source: string,
-        // the original name of the input file if any
-        name?: string,
-        // the mime type of the content source.
-        type?: string
-
-        // the target id in the content store
-        id?: string
-
-    }
+              // the target id in the content store
+              id?: string;
+          };
 }
 
 export interface ComputeFacetsResponse {
-    type?: { _id: string, count: number }[];
-    location?: { _id: string, count: number }[];
-    status?: { _id: string, count: number }[];
+    type?: { _id: string; count: number }[];
+    location?: { _id: string; count: number }[];
+    status?: { _id: string; count: number }[];
     total?: { count: number }[];
 }
 
 export class ObjectsApi extends ApiTopic {
-
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/objects");
     }
@@ -39,17 +58,17 @@ export class ObjectsApi extends ApiTopic {
     }
 
     getUploadUrl(payload: GetUploadUrlPayload): Promise<GetFileUrlResponse> {
-        return this.post('/upload-url', {
-            payload
-        })
+        return this.post("/upload-url", {
+            payload,
+        });
     }
 
     getDownloadUrl(fileUri: string): Promise<{ url: string }> {
-        return this.post('/download-url', {
+        return this.post("/download-url", {
             payload: {
-                file: fileUri
-            } satisfies GetFileUrlPayload
-        })
+                file: fileUri,
+            } satisfies GetFileUrlPayload,
+        });
     }
 
     getContentSource(objectId: string): Promise<ContentSource> {
@@ -59,44 +78,44 @@ export class ObjectsApi extends ApiTopic {
     list(payload: ObjectSearchPayload = {}): Promise<ContentObjectItem[]> {
         const limit = payload.limit || 100;
         const offset = payload.offset || 0;
-        const query = payload.query || {} as ObjectSearchQuery;
+        const query = payload.query || ({} as ObjectSearchQuery);
 
         return this.get("/", {
             query: {
                 limit,
                 offset,
-                ...query
-            }
+                ...query,
+            },
         });
     }
 
     computeFacets(query: ComputeObjectFacetPayload): Promise<ComputeFacetsResponse> {
         return this.post("/facets", {
-            payload: query
+            payload: query,
         });
     }
 
-    listFolders(path: string = '/') {
-        path;//TODO
+    listFolders(path: string = "/") {
+        path; //TODO
     }
 
     find(payload: FindPayload): Promise<ContentObject[]> {
         return this.post("/find", {
-            payload
+            payload,
         });
     }
 
     search(payload: ComplexSearchPayload): Promise<ContentObjectItem[]> {
         return this.post("/search", {
-            payload
+            payload,
         });
     }
 
     retrieve(id: string, select?: string): Promise<ContentObject> {
         return this.get(`/${id}`, {
             query: {
-                select
-            }
+                select,
+            },
         });
     }
 
@@ -110,10 +129,10 @@ export class ObjectsApi extends ApiTopic {
         const { url, id, mime_type } = await this.getUploadUrl({
             id: isStream ? source.id : undefined,
             name: source.name,
-            mime_type: source.type
+            mime_type: source.type,
         });
 
-        console.log(`Uploading file to ${url}`, { id, mime_type, isStream, source })
+        console.log(`Uploading content to ${url}`, { id, mime_type, isStream, source });
 
         // upload the file content to the signed URL
         /*const res = await this.fetch(url, {
@@ -134,44 +153,44 @@ export class ObjectsApi extends ApiTopic {
         });*/
 
         const res = await fetch(url, {
-            method: 'PUT',
+            method: "PUT",
             body: isStream ? source.stream : source,
             //@ts-ignore: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
             duplex: isStream ? "half" : undefined,
             headers: {
-                'Content-Type': mime_type || 'application/octet-stream'
-            }
-        }).then((res: Response) => {
-            if (res.ok) {
-                return res;
-            } else {
-                console.log(res);
-                throw new Error(`Failed to upload file: ${res.statusText}`);
-            }
-        }).catch(err => {
-            console.error('Failed to upload file', err);
-            throw err;
-        });
-
+                "Content-Type": mime_type || "application/octet-stream",
+            },
+        })
+            .then((res: Response) => {
+                if (res.ok) {
+                    return res;
+                } else {
+                    console.log(res);
+                    throw new Error(`Failed to upload file: ${res.statusText}`);
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to upload file", err);
+                throw err;
+            });
 
         return {
             source: id,
             name: source.name,
             type: mime_type,
-            etag: res.headers.get('etag') ?? undefined
-        }
+            etag: res.headers.get("etag") ?? undefined,
+        };
     }
 
     async create(payload: UploadContentObjectPayload): Promise<ContentObject> {
-
         const createPayload: CreateContentObjectPayload = {
-            ...payload
+            ...payload,
         };
         if (payload.content instanceof StreamSource || payload.content instanceof File) {
             createPayload.content = await this.upload(payload.content);
         }
-        return await this.post('/', {
-            payload: createPayload
+        return await this.post("/", {
+            payload: createPayload,
         });
     }
 
@@ -184,24 +203,24 @@ export class ObjectsApi extends ApiTopic {
      * @returns
      */
     async createFromExternalSource(uri: string, payload: CreateContentObjectPayload = {}): Promise<ContentObject> {
-        const metadata = await ((this.client as ZenoClient).files.getMetadata(uri));
+        const metadata = await (this.client as ZenoClient).files.getMetadata(uri);
         const createPayload: CreateContentObjectPayload = {
             ...payload,
             content: {
                 source: uri,
                 name: metadata.name,
                 type: metadata.contentType,
-                etag: metadata.etag
-            }
+                etag: metadata.etag,
+            },
         };
-        return await this.post('/', {
-            payload: createPayload
+        return await this.post("/", {
+            payload: createPayload,
         });
     }
 
     update(id: string, payload: Partial<CreateContentObjectPayload>): Promise<ContentObject> {
         return this.put(`/${id}`, {
-            payload
+            payload,
         });
     }
 
@@ -210,9 +229,7 @@ export class ObjectsApi extends ApiTopic {
     }
 
     listWorkflowRuns(documentId: string): Promise<ListWorkflowRunsResponse> {
-
-        return this.get(`/${documentId}/workflow-runs`)
-
+        return this.get(`/${documentId}/workflow-runs`);
     }
 
     listRenditions(documentId: string): Promise<ContentObjectItem[]> {
@@ -220,27 +237,29 @@ export class ObjectsApi extends ApiTopic {
     }
 
     getRendition(documentId: string, options: GetRenditionParams): Promise<GetRenditionResponse> {
-
         const query = {
             max_hw: options.max_hw,
-            generate_if_missing: options.generate_if_missing
-        }
+            generate_if_missing: options.generate_if_missing,
+        };
 
         return this.get(`/${documentId}/renditions/${options.format}`, { query });
     }
 
     exportProperties(payload: ExportPropertiesPayload): Promise<ExportPropertiesResponse> {
         return this.post("/export", {
-            payload
+            payload,
         });
     }
 
-    setEmbedding(id: string, type: SupportedEmbeddingTypes, payload: Embedding): Promise<Record<SupportedEmbeddingTypes, Embedding>> {
+    setEmbedding(
+        id: string,
+        type: SupportedEmbeddingTypes,
+        payload: Embedding,
+    ): Promise<Record<SupportedEmbeddingTypes, Embedding>> {
         return this.put(`/${id}/embeddings/${type}`, {
-            payload
+            payload,
         });
     }
-
 }
 
 interface GetRenditionParams {

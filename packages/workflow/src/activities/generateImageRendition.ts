@@ -32,8 +32,8 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
     log.info(`Generating image rendition for ${objectId}`, { originParams, params });
 
     const inputObject = await client.objects.retrieve(objectId).catch((err) => {
-        log.error(`Failed to retrieve document ${objectId}`, err);
-        if (err.response?.status === 404) {
+        log.error(`Failed to retrieve document ${objectId}`, { err });
+        if (err.message.includes("not found")) {
             throw new NoDocumentFound(`Document ${objectId} not found`, [objectId]);
         }
         throw err;
@@ -176,7 +176,7 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
 
     const uploaded = await Promise.all(uploads);
     if (!uploaded || !uploaded.length || !uploaded[0]) {
-        log.error(`Failed to upload rendition for ${objectId}`);
+        log.error(`Failed to upload rendition for ${objectId}`, { uploaded });
         throw new Error(`Failed to upload rendition for ${objectId} - upload object is empty`);
     }
 
