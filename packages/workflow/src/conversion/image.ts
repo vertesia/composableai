@@ -20,6 +20,8 @@ export async function imageResizer(
     format: string,
     progressive: boolean = true,
 ): Promise<string> {
+    log.info(`[image-resizer] Resizing image: ${inputPath} to max_hw: ${max_hw}, format: ${format}, progressive: ${progressive}`);
+
     const allowedFormats = ["jpg", "jpeg", "png", "webp"];
 
     if (!format || format.trim() === "") {
@@ -69,13 +71,17 @@ export async function imageResizer(
 
         log.info(`Resizing image using ImageMagick: ${inputPath} -> ${outputPath}`);
 
-        const { stderr } = await execFile("convert", [
+        const command = `convert`
+        const args = [
             inputPath,
             "-resize",
             `${max_hw}x${max_hw}>`,
             ...(conversionOption ? conversionOption.split(" ") : []),
             outputPath,
-        ]);
+        ];
+        log.info(`ImageMagick command: ${command} ${args.join(" ")}`);
+
+        const { stderr } = await execFile(command, args);
 
         if (stderr) {
             log.warn(`ImageMagick warning: ${stderr}`);

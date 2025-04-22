@@ -1,10 +1,10 @@
 import { log } from "@temporalio/activity";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { DSLActivityExecutionPayload, DSLActivitySpec, RenditionProperties } from "@vertesia/common";
-import fs from 'fs';
 import ffmpeg from 'fluent-ffmpeg';
-import path from 'path';
+import fs from 'fs';
 import os from 'os';
+import path from 'path';
 import { imageResizer } from "../conversion/image.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
@@ -20,11 +20,20 @@ export interface GenerateImageRendition extends DSLActivitySpec<GenerateImageRen
 }
 
 export async function generateImageRendition(payload: DSLActivityExecutionPayload<GenerateImageRenditionParams>) {
-    const { client, objectId, params } = await setupActivity<GenerateImageRenditionParams>(payload);
+    const { client, objectId, params: originParams } = await setupActivity<GenerateImageRenditionParams>(payload);
+
+    // Fix: Use maxHeightWidth if max_hw is not provided
+    const params = {
+        ...originParams,
+        max_hw: originParams.max_hw || (originParams as any).maxHeightWidth || 1024, // Default to 1024 if both are missing
+        format: originParams.format || (originParams as any).format_output || 'png'  // Default to png if format is missing
+    };
+
+    log.info(`Generating image rendition for ${objectId}`, { originParams, params });
 
     const inputObject = await client.objects.retrieve(objectId).catch((err) => {
-        log.error(`Failed to retrieve document ${objectId}`, err);
-        if (err.response?.status === 404) {
+        log.error(`Failed to retrieve document ${objectId}`, { err });
+        if (err.message.includes("not found")) {
             throw new NoDocumentFound(`Document ${objectId} not found`, [objectId]);
         }
         throw err;
@@ -124,38 +133,50 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
         let resizedImagePath = null;
 
         try {
+            log.info(`Resizing image for ${objectId} page ${i}`, { page, params });
             // Resize the image using ImageMagick
             resizedImagePath = await imageResizer(page, params.max_hw, params.format);
 
             // Create a read stream from the resized image file
             const fileStream = fs.createReadStream(resizedImagePath);
-
+            const format = "image/" + params.format;
+            const fileId = pageId.split("/").pop() ?? "0." + params.format;
             const source = new NodeStreamSource(
                 fileStream,
-                pageId.split("/").pop() ?? "0." + params.format,
-                "image/" + params.format,
+                fileId,
+                format,
                 pageId,
             );
 
             log.info(
-                `Uploading rendition for ${objectId} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`,
+                `Uploading rendition for ${objectId} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`, {
+                resizedImagePath,
+                fileId,
+                format,
+                pageId,
+            }
             );
 
             const result = await client.objects.upload(source).catch((err) => {
-                log.error(`Failed to upload rendition for ${objectId} page ${i}`, { error: err });
-                return Promise.resolve(null);
+                log.error(`Failed to upload rendition for ${objectId} page ${i}`, {
+                    error: err,
+                    errorMessage: err.message,
+                    stack: err.stack
+                });
+                return Promise.reject(`Upload failed: ${err.message}`);
             });
+            log.info(`Rendition uploaded for ${objectId} page ${i}`, { result });
 
             return result;
         } catch (error) {
             log.error(`Failed to process rendition for ${objectId} page ${i}`, { error });
-            return Promise.resolve(null);
+            return Promise.reject(error instanceof Error ? error.message : null);
         }
     });
 
     const uploaded = await Promise.all(uploads);
     if (!uploaded || !uploaded.length || !uploaded[0]) {
-        log.error(`Failed to upload rendition for ${objectId}`);
+        log.error(`Failed to upload rendition for ${objectId}`, { uploaded });
         throw new Error(`Failed to upload rendition for ${objectId} - upload object is empty`);
     }
 

@@ -1,3 +1,4 @@
+import { ActivityInterfaceFor, ActivityOptions, executeChild, log, proxyActivities, startChild, UntypedActivities } from "@temporalio/workflow";
 import {
     DSLActivityExecutionPayload,
     DSLActivityOptions,
@@ -6,7 +7,6 @@ import {
     DSLWorkflowExecutionPayload,
     WorkflowExecutionPayload
 } from "@vertesia/common";
-import { ActivityInterfaceFor, ActivityOptions, executeChild, log, proxyActivities, startChild, UntypedActivities } from "@temporalio/workflow";
 import ms, { StringValue } from 'ms';
 import { ActivityParamNotFound, NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
 import { Vars } from "./vars.js";
@@ -42,9 +42,9 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
         ...convertDSLActivityOptions(definition.options),
         startToCloseTimeout: "5 minute",
         retry: {
-            initialInterval: '30s',
+            initialInterval: '10s',
             backoffCoefficient: 2,
-            maximumAttempts: 20,
+            maximumAttempts: 10,
             maximumInterval: 100 * 30 * 1000, //ms
             nonRetryableErrorTypes: [
                 NoDocumentFound.name,
