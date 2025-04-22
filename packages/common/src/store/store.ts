@@ -120,26 +120,96 @@ export interface ContentSource {
     etag?: string;
 }
 
+
+/**
+ * 
+ */
+export interface RevisionInfo {
+
+    /** Direct parent revision id (omit on the first revision) */
+    parent?: string;
+
+    /** The root revision id (omit on the first revision) */
+    root: string;
+
+    /** True if this revision is the head revision */
+    head: boolean
+
+    /** Human‑friendly tag or state ("v1.2", "approved") */
+    label?: string;
+
+    /** Extra parents when two branches are merged (leave undefined until needed) */
+    //merge_parents?: string[]; //maybe later
+
+    /** Pointer to a diff / patch blob if you store deltas instead of full content */
+    //delta_ref?: string;
+}
+
 /**
  * The content object item is a simplified version of the ContentObject that is returned by the store API when listing objects.
  */
 export interface ContentObjectItem<T = any> extends BaseObject {
-    root?: string; // the ID of the root parent object. The root object doesn't have the root field set.
     parent: string; // the id of the direct parent object. The root object doesn't have the parent field set.
+
+
+    /** An optional path based location for the object */
     location: string; // the path of the parent object
+
+    /** 
+     * Object status.
+     * - created: the object was created and is being processed
+     * - processing: the object is being processed
+     * - completed: the object was processed and is ready to use
+     * - failed: the object processing failed
+     * - archived: the object was archived and is no longer available
+     */
     status: ContentObjectStatus;
-    // A ref to the object type
+
+    /** 
+     * Object type id.
+     */
     type?: ContentObjectTypeRef;
-    // the content source URL and type
+
+    /** 
+     * Content source information, typically a link to an object store
+     */
     content: ContentSource;
+
+    /** 
+     * External identifier for integration with other systems
+     */
     external_id?: string;
+
+    /** The object properties. This is a JSON object that describes the object, matching the object type schema */
     properties: T | Record<string, any>; // a JSON object that describes the object
+
+    /** Technical metadata of the object */
     metadata?: VideoMetadata | AudioMetadata | ImageMetadata | DocumentMetadata | ContentMetadata;
+
+    /** Token information  */
     tokens?: {
         count: number; // the number of tokens in the text
         encoding: string; // the encoding used to calculate the tokens
         etag: string; //the etag of the text used for the token count
     };
+
+    /**
+     * Revision information. This is used to track the history of the object.
+     */
+    revision: RevisionInfo; // the revision info of the object
+
+    /** 
+     * Soft delete flag. When true, the object should be considered deleted
+     * but is still retained in the database for historical purposes.
+     */
+    is_deleted?: boolean;
+
+    /** 
+     * Soft lock flag. When true, the object should be considered read-only
+     * and modification attempts should be rejected.
+     */
+    is_locked?: boolean;
+
 }
 
 /**

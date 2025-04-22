@@ -75,16 +75,28 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${objectId}/content-source`);
     }
 
+    /**
+     * List objects with revision filtering options
+     *
+     * @param payload Search/filter parameters
+     * @returns Matching content objects
+     */
     list(payload: ObjectSearchPayload = {}): Promise<ContentObjectItem[]> {
         const limit = payload.limit || 100;
         const offset = payload.offset || 0;
         const query = payload.query || ({} as ObjectSearchQuery);
+
+        // Add revision filtering options
+        const showAllRevisions = payload.show_all_revisions === true;
+        const revisionRoot = payload.from_root;
 
         return this.get("/", {
             query: {
                 limit,
                 offset,
                 ...query,
+                all_revisions: showAllRevisions ? "true" : undefined,
+                from_root: revisionRoot,
             },
         });
     }
@@ -218,9 +230,61 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    update(id: string, payload: Partial<CreateContentObjectPayload>): Promise<ContentObject> {
-        return this.put(`/${id}`, {
-            payload,
+    /**
+     * Updates an existing object or creates a new revision
+     * Handles file uploads similar to the create method
+     *
+     * @param id The ID of the object to update
+     * @param payload The changes to apply
+     * @param options Additional options
+     * @param options.createRevision Whether to create a new revision instead of updating in place
+     * @param options.revisionLabel Optional label for the revision (e.g., "v1.2")
+     * @returns The updated object or newly created revision
+     */
+    async update(
+        id: string,
+        payload: Partial<CreateContentObjectPayload>,
+        options?: {
+            createRevision?: boolean;
+            revisionLabel?: string;
+        },
+    ): Promise<ContentObject> {
+        const updatePayload: Partial<CreateContentObjectPayload> = {
+            ...payload,
+        };
+
+        // Handle file upload if content is provided as File or StreamSource
+        if (payload.content instanceof StreamSource || payload.content instanceof File) {
+            updatePayload.content = await this.upload(payload.content);
+        }
+
+        if (options?.createRevision) {
+            return this.put(`/${id}`, {
+                payload: updatePayload,
+                headers: {
+                    "x-create-revision": "true",
+                    "x-revision-label": options.revisionLabel || "",
+                },
+            });
+        } else {
+            return this.put(`/${id}`, {
+                payload: updatePayload,
+            });
+        }
+    }
+
+    /**
+     * Retrieves all revisions of a content object
+     *
+     * @param id The ID of any revision in the object's history
+     * @returns Array of all revisions sharing the same root
+     */
+    getRevisions(id: string): Promise<ContentObjectItem[]> {
+        return this.get("/", {
+            query: {
+                from_root: id,
+                all_revisions: "true",
+            },
         });
     }
 
