@@ -95,7 +95,7 @@ export class ObjectsApi extends ApiTopic {
                 limit,
                 offset,
                 ...query,
-                all_revisions: showAllRevisions ? "true" : undefined,
+                show_all_revisions: showAllRevisions ? "true" : undefined,
                 from_root: revisionRoot,
             },
         });
@@ -280,12 +280,7 @@ export class ObjectsApi extends ApiTopic {
      * @returns Array of all revisions sharing the same root
      */
     getRevisions(id: string): Promise<ContentObjectItem[]> {
-        return this.get("/", {
-            query: {
-                from_root: id,
-                all_revisions: "true",
-            },
-        });
+        return this.get(`/${id}/revisions`);
     }
 
     delete(id: string): Promise<{ id: string }> {

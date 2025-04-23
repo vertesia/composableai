@@ -2,6 +2,7 @@ export enum ContentEventName {
     create = "create",
     change_type = "change_type",
     update = "update",
+    revision_created = "revision_created",
     delete = "delete",
     workflow_finished = "workflow_finished",
     workflow_execution_request = "workflow_execution_request",
