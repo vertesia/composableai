@@ -108,7 +108,11 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
             ...payload,
             workflow: step.spec,
             vars: resolvedVars
-        }]
+        }],
+        searchAttributes: {
+            AccountId: [payload.account_id],
+            ProjectId: [payload.project_id],
+        },
     });
     if (step.output) {
         vars.setValue(step.output, handle.workflowId);
@@ -131,7 +135,11 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
             ...payload,
             workflow: step.spec,
             vars: resolvedVars,
-        }]
+        }],
+        searchAttributes: {
+            AccountId: [payload.account_id],
+            ProjectId: [payload.project_id],
+        },
     });
 
     if (step.output) {

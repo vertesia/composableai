@@ -1,6 +1,7 @@
-import { ContentEventName, DSLActivityExecutionPayload, DSLActivitySpec, DSLWorkflowExecutionPayload } from '@vertesia/common';
+import * as protos from '@temporalio/proto';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker } from '@temporalio/worker';
+import { ContentEventName, DSLActivityExecutionPayload, DSLActivitySpec, DSLWorkflowExecutionPayload } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from "./setup/ActivityContext.js";
@@ -52,6 +53,14 @@ describe('DSL Workflow', () => {
 
     beforeAll(async () => {
         testEnv = await TestWorkflowEnvironment.createLocal();
+        const { connection } = testEnv;
+        await connection.operatorService.addSearchAttributes({
+            namespace: 'default',
+            searchAttributes: {
+                AccountId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
+                ProjectId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
+            },
+        });
     });
 
     afterAll(async () => {
