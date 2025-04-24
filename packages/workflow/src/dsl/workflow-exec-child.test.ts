@@ -87,25 +87,25 @@ const steps2: DSLWorkflowStep[] = [
 // ========== test env setup ==========
 
 
-let testEnv: TestWorkflowEnvironment;
-
-beforeAll(async () => {
-    testEnv = await TestWorkflowEnvironment.createLocal();
-    const { connection } = testEnv;
-    await connection.operatorService.addSearchAttributes({
-        namespace: 'default',
-        searchAttributes: {
-            AccountId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
-            ProjectId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
-        },
-    });
-});
-
-afterAll(async () => {
-    await testEnv?.teardown();
-});
-
 describe('DSL Workflow with chld workflows', () => {
+
+    let testEnv: TestWorkflowEnvironment;
+
+    beforeAll(async () => {
+        testEnv = await TestWorkflowEnvironment.createLocal();
+        const { connection } = testEnv;
+        await connection.operatorService.addSearchAttributes({
+            namespace: 'default',
+            searchAttributes: {
+                AccountId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
+                ProjectId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
+            },
+        });
+    });
+
+    afterAll(async () => {
+        await testEnv?.teardown();
+    });
 
     test('execute child workflow', async () => {
         const { client, nativeConnection } = testEnv;
