@@ -1,10 +1,10 @@
-import { ContentEventName, DSLActivityExecutionPayload, DSLWorkflowExecutionPayload, DSLWorkflowStep } from '@vertesia/common';
+import * as protos from '@temporalio/proto';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { Worker } from '@temporalio/worker';
+import { ContentEventName, DSLActivityExecutionPayload, DSLWorkflowExecutionPayload, DSLWorkflowStep } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from './setup/ActivityContext.js';
-import * as protos from '@temporalio/proto';
 
 interface SayHelloParams {
     name: string;
