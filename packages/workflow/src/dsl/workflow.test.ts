@@ -45,18 +45,18 @@ const activities: DSLActivitySpec[] = [
 
 // ========== test env setup ==========
 
+let testEnv: TestWorkflowEnvironment;
+
+beforeAll(async () => {
+    testEnv = await TestWorkflowEnvironment.createLocal();
+});
+
+afterAll(async () => {
+    await testEnv?.teardown();
+});
 
 describe('DSL Workflow', () => {
 
-    let testEnv: TestWorkflowEnvironment;
-
-    beforeAll(async () => {
-        testEnv = await TestWorkflowEnvironment.createLocal();
-    });
-
-    afterAll(async () => {
-        await testEnv?.teardown();
-    });
 
     it('successfully completes a mock workflow', async () => {
         const { client, nativeConnection } = testEnv;

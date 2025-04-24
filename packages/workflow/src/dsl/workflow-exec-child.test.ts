@@ -86,17 +86,17 @@ const steps2: DSLWorkflowStep[] = [
 // ========== test env setup ==========
 
 
+let testEnv: TestWorkflowEnvironment;
+
+beforeAll(async () => {
+    testEnv = await TestWorkflowEnvironment.createLocal();
+});
+
+afterAll(async () => {
+    await testEnv?.teardown();
+});
+
 describe('DSL Workflow with chld workflows', () => {
-
-    let testEnv: TestWorkflowEnvironment;
-
-    beforeAll(async () => {
-        testEnv = await TestWorkflowEnvironment.createLocal();
-    });
-
-    afterAll(async () => {
-        await testEnv?.teardown();
-    });
 
     test('execute child workflow', async () => {
         const { client, nativeConnection } = testEnv;
