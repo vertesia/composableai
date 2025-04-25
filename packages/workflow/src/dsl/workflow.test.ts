@@ -58,6 +58,7 @@ describe('DSL Workflow', () => {
             namespace: 'default',
             searchAttributes: {
                 AccountId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
+                DocumentId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
                 ProjectId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
             },
         });

@@ -81,6 +81,13 @@ export interface WorkflowExecutionPayload<T = Record<string, any>> extends Workf
     auth_token: string;
 }
 
+export function getDocumentIds(payload: WorkflowExecutionPayload): string[] {
+    if ("objectIds" in payload) {
+        return payload.objectIds;
+    }
+    return [];
+}
+
 export interface ExecuteWorkflowPayload {
     task_queue?: string;
     objectIds?: string[];
