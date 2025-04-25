@@ -81,7 +81,7 @@ export class ObjectsApi extends ApiTopic {
      * @param payload Search/filter parameters
      * @returns Matching content objects
      */
-    list(payload: ObjectSearchPayload = {}): Promise<ContentObjectItem[]> {
+    list<T = any>(payload: ObjectSearchPayload = {}): Promise<ContentObjectItem<T>[]> {
         const limit = payload.limit || 100;
         const offset = payload.offset || 0;
         const query = payload.query || ({} as ObjectSearchQuery);
