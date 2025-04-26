@@ -95,8 +95,8 @@ export async function generateOrAssignContentType(
     const fileRef = await getImage();
 
     log.info(
-        "Execute SelectDocumentType interaction on content with \nexisting types: " +
-            existing_types.map((t) => t.name).join(","),
+        "Execute SelectDocumentType interaction on content with \nexisting types - passing full types: " +
+            existing_types.filter((t) => !t.tags?.includes("system")),
     );
 
     const res = await executeInteractionFromActivity(client, interactionName, params, {
@@ -163,6 +163,7 @@ async function generateNewType(
         name: genTypeRes.result.document_type,
         object_schema: genTypeRes.result.metadata_schema,
         is_chunkable: genTypeRes.result.is_chunkable,
+        table_layout: genTypeRes.result.table_layout,
     };
 
     const type = await client.types.create(typeData);

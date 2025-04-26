@@ -336,6 +336,17 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * Whether to disable the generation of interaction tools or not.
      */
     disable_interaction_tools?: boolean;
+
+    /**
+     * On which scope should the searched by applied, by the search_tool.
+     * Only supports collection scope or null for now.
+     */
+    search_scope?: string;
+
+    /**
+     * The collection in which this workflow is executing
+     */
+    collection_id?: string;
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {

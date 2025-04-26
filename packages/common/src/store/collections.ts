@@ -2,8 +2,8 @@ import { BaseObject } from "./common.js";
 import { ColumnLayout, ContentObjectTypeRef } from "./store.js";
 
 export enum CollectionStatus {
-    active = 'active',
-    archived = 'archived'
+    active = "active",
+    archived = "archived",
 }
 
 export interface CreateCollectionPayload {
@@ -16,6 +16,7 @@ export interface CreateCollectionPayload {
     properties?: Record<string, any>;
     parent?: string | null;
     table_layout?: ColumnLayout[] | null;
+    allowed_types?: string[];
 }
 
 export interface CollectionItem extends BaseObject {
@@ -37,6 +38,11 @@ export interface CollectionItem extends BaseObject {
      * The layout defined in the type could serve as a fallback if not defined here.
      */
     table_layout?: ColumnLayout[];
+
+    /**
+     * The allowed types for the collection.
+     */
+    allowed_types?: string[];
 }
 
 export interface Collection extends CollectionItem {

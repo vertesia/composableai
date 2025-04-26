@@ -84,4 +84,5 @@ export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {
 
 export interface ComplexSearchQuery extends ObjectSearchQuery {
     vector?: VectorSearchQuery;
+    match?: Record<string, any>;
 }
