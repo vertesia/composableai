@@ -91,14 +91,53 @@ export interface ExecuteWorkflowPayload {
 }
 
 export interface ListWorkflowRunsPayload {
+
+    /**
+     * The document ID passed to a workflow run.
+     */
+
     document_id?: string;
+
+    /**
+     * The event name that triggered the workflow.
+     */
     event_name?: string;
+
+    /**
+     * The workflow rule ID that triggered the workflow.
+     */
     rule_id?: string;
+
+    /**
+     * The start time for filtering workflow runs.
+     */
     start?: string;
+
+    /**
+     * The end time for filtering workflow runs.
+     */
     end?: string;
+
+    /**
+     * The status of the workflow run.
+     */
     status?: string;
+
+    /**
+     * search term to filter on workflow id and run id
+     */
     search_term?: string;
+
+    /**
+     * The user or service account that initiated the workflow run.
+     */
     initiated_by?: string;
+
+    /**
+     * Lucene query string to search for the workflow runs.
+     * This is a full text search on the workflow run history.
+     */
+    query?: string;
 }
 
 interface WorkflowRunEvent {
