@@ -106,6 +106,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
         ).catch((_) => {
             // ignore errors
         });
+        throw e;
     }
 
     return vars.getValue(definition.result || 'result');
