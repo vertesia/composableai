@@ -74,7 +74,7 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
 
 
 function generateCallbackUrlForGladia(baseUrl: string, authToken: string, taskToken: string, objectId: string) {
-    return `${baseUrl}/api/v1/webhooks/gladia/${objectId}?auth_token=${authToken}&task_token=${taskToken}`;
+    return `${baseUrl}/api/v1/webhooks/gladia/${objectId}?access_token=${authToken}&task_token=${taskToken}`;
 }
 
 interface GladiaTranscriptRequestResponse {
