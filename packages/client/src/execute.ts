@@ -1,11 +1,11 @@
 import { AsyncExecutionPayload, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload } from '@vertesia/common';
 import { VertesiaClient } from './client.js';
 
-export function EventSourceProvider(): Promise<typeof EventSource> {
+export async function EventSourceProvider(): Promise<typeof EventSource> {
     if (typeof globalThis.EventSource === 'function') {
-        return Promise.resolve(globalThis.EventSource)
+        return globalThis.EventSource;
     } else {
-        return import('eventsource').then(module => module.default as unknown as typeof EventSource);
+        return (await import('eventsource')).EventSource;
     }
 }
 /**
