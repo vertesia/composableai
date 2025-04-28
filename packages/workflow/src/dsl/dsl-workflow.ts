@@ -1,5 +1,6 @@
 import { ActivityInterfaceFor, ActivityOptions, executeChild, log, proxyActivities, startChild, UntypedActivities } from "@temporalio/workflow";
 import {
+    ContentObjectStatus,
     DSLActivityExecutionPayload,
     DSLActivityOptions,
     DSLActivitySpec,
@@ -11,6 +12,7 @@ import {
 import ms, { StringValue } from 'ms';
 import { ActivityParamNotFound, NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
 import { Vars } from "./vars.js";
+import { getVertesiaClient } from "../utils/client.js";
 
 interface BaseActivityPayload extends WorkflowExecutionPayload {
     workflow_name: string;
@@ -29,11 +31,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     try {
         await _doDslWorkflow(payload);
     } catch (err) {
-        for (const compensation of payload.workflow.compensations || []) {
-            // todo
-            console.log("Compensating", compensation);
-        }
-        return;
+        await updateObjectStatuses(payload, ContentObjectStatus.failed);
     }
 }
 
@@ -252,4 +250,15 @@ function convertDSLActivityOptions(options?: DSLActivityOptions): ActivityOption
         }
     }
     return result;
+}
+
+export async function updateObjectStatuses(payload: DSLWorkflowExecutionPayload, status: ContentObjectStatus) {
+    const client = getVertesiaClient(payload);
+    for (const objectId of payload.objectIds) {
+        let result = await client.store.objects.update(objectId, {
+            status: status,
+        });
+        console.log("Updated object status", result);
+    }
+    return;
 }
