@@ -40,6 +40,9 @@ export interface DSLRetryPolicy {
     nonRetryableErrorTypes?: string[];
 }
 
+export interface DSLWorkflowCompensation {
+}
+
 /**
  * The payload for a DSL activity execution.
  */
@@ -235,6 +238,14 @@ export interface DSLWorkflowSpecBase {
     // if not specified "result" will be assumed
     result?: string;
     debug_mode?: boolean;
+
+    /**
+     * Compensation logic defines what you do to undo or fix things if a workflow fails, gets
+     * canceled, or needs to roll back part of what it did.
+     *
+     * @since 0.52.0
+     */
+    compensations?: DSLWorkflowCompensation[];
 }
 
 export interface DSLWorkflowSpecWithSteps extends DSLWorkflowSpecBase {
