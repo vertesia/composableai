@@ -1,5 +1,6 @@
 import { ActivityInterfaceFor, ActivityOptions, executeChild, log, proxyActivities, startChild, UntypedActivities } from "@temporalio/workflow";
 import {
+    ContentObjectStatus,
     DSLActivityExecutionPayload,
     DSLActivityOptions,
     DSLActivitySpec,
@@ -26,14 +27,6 @@ function dslActivityPayload<ParamsT extends Record<string, any>>(basePayload: Ba
 }
 
 export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
-    try {
-        await _doDslWorkflow(payload);
-    } catch (err) {
-        console.log("Workflow error", err);
-    }
-}
-
-async function _doDslWorkflow(payload: DSLWorkflowExecutionPayload): Promise<any> {
     const definition = payload.workflow;
     if (!definition) {
         throw new WorkflowParamNotFound("workflow");
@@ -76,27 +69,45 @@ async function _doDslWorkflow(payload: DSLWorkflowExecutionPayload): Promise<any
 
     log.info("Executing workflow", { payload });
 
-    if (definition.steps) {
-        for (const step of definition.steps) {
-            const stepType = step.type;
-            if (stepType === 'workflow') {
-                const childWorkflowStep = step as DSLChildWorkflowStep;
-                if (childWorkflowStep.async) {
-                    await startChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode);
-                } else {
-                    await executeChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode);
+    try {
+        if (definition.steps) {
+            for (const step of definition.steps) {
+                const stepType = step.type;
+                if (stepType === 'workflow') {
+                    const childWorkflowStep = step as DSLChildWorkflowStep;
+                    if (childWorkflowStep.async) {
+                        await startChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode);
+                    } else {
+                        await executeChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode);
+                    }
+                } else { // activity
+                    await runActivity(step as DSLActivitySpec, basePayload, vars, defaultProxy, defaultOptions);
                 }
-            } else { // activity
-                await runActivity(step as DSLActivitySpec, basePayload, vars, defaultProxy, defaultOptions);
             }
+        } else if (definition.activities) { // legacy support
+            for (const activity of definition.activities) {
+                await runActivity(activity, basePayload, vars, defaultProxy, defaultOptions);
+            }
+        } else {
+            throw new Error("No steps or activities found in the workflow definition");
         }
-    } else if (definition.activities) { // legacy support
-        for (const activity of definition.activities) {
-            await runActivity(activity, basePayload, vars, defaultProxy, defaultOptions);
-        }
-    } else {
-        throw new Error("No steps or activities found in the workflow definition");
+    } catch (e) {
+        // TODO: make this dynamic
+        log.warn("Workflow execution failed", { error: e });
+        await runActivity(
+            {
+                name: "setDocumentStatus",
+                params: { status: ContentObjectStatus.failed },
+            } as DSLActivitySpec,
+            basePayload,
+            vars,
+            defaultProxy,
+            defaultOptions,
+        ).catch((_) => {
+            // ignore errors
+        });
     }
+
     return vars.getValue(definition.result || 'result');
 }
 
