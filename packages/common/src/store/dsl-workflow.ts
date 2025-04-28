@@ -40,7 +40,9 @@ export interface DSLRetryPolicy {
     nonRetryableErrorTypes?: string[];
 }
 
-export interface DSLWorkflowCompensation {
+export interface DSLWorkflowErrorHandlingSpec {
+    name: string;
+    params: Record<string, any>;
 }
 
 /**
@@ -240,12 +242,11 @@ export interface DSLWorkflowSpecBase {
     debug_mode?: boolean;
 
     /**
-     * Compensation logic defines what you do to undo or fix things if a workflow fails, gets
-     * canceled, or needs to roll back part of what it did.
+     * It defines a list of cleanup steps to be executed in case of failure.
      *
      * @since 0.52.0
      */
-    compensations?: DSLWorkflowCompensation[];
+    on_error?: DSLWorkflowErrorHandlingSpec[];
 }
 
 export interface DSLWorkflowSpecWithSteps extends DSLWorkflowSpecBase {
