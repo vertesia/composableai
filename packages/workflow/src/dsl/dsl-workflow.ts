@@ -31,7 +31,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     try {
         await _doDslWorkflow(payload);
     } catch (err) {
-        await updateObjectStatuses(payload, ContentObjectStatus.failed);
+        console.log("Workflow error", err);
     }
 }
 
