@@ -26,7 +26,18 @@ function dslActivityPayload<ParamsT extends Record<string, any>>(basePayload: Ba
 }
 
 export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
+    try {
+        await _doDslWorkflow(payload);
+    } catch (err) {
+        for (const compensation of payload.workflow.compensations || []) {
+            // todo
+            console.log("Compensating", compensation);
+        }
+        return;
+    }
+}
 
+async function _doDslWorkflow(payload: DSLWorkflowExecutionPayload): Promise<any> {
     const definition = payload.workflow;
     if (!definition) {
         throw new WorkflowParamNotFound("workflow");
