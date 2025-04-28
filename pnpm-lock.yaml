@@ -392,6 +392,9 @@ importers:
       '@smithy/types':
         specifier: ^3.7.2
         version: 3.7.2
+      '@temporalio/proto':
+        specifier: ^1.11.5
+        version: 1.11.7
       '@temporalio/testing':
         specifier: ^1.11.5
         version: 1.11.7

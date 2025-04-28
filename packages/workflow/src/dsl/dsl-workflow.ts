@@ -5,6 +5,7 @@ import {
     DSLActivitySpec,
     DSLChildWorkflowStep,
     DSLWorkflowExecutionPayload,
+    getDocumentIds,
     WorkflowExecutionPayload
 } from "@vertesia/common";
 import ms, { StringValue } from 'ms';
@@ -101,14 +102,18 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
     if (debug_mode) {
         log.debug(`Workflow vars before starting child workflow ${step.name}`, { vars: resolvedVars });
     }
-    //@ts-ignore
     const handle = await startChild(step.name, {
         ...step.options,
         args: [{
             ...payload,
             workflow: step.spec,
             vars: resolvedVars
-        }]
+        }],
+        searchAttributes: {
+            AccountId: [payload.account_id],
+            DocumentId: getDocumentIds(payload),
+            ProjectId: [payload.project_id],
+        },
     });
     if (step.output) {
         vars.setValue(step.output, handle.workflowId);
@@ -124,14 +129,18 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
     if (debug_mode) {
         log.debug(`Workflow vars before excuting child workflow ${step.name}`, { vars: resolvedVars });
     }
-    //@ts-ignore
     const result = await executeChild(step.name, {
         ...step.options,
         args: [{
             ...payload,
             workflow: step.spec,
             vars: resolvedVars,
-        }]
+        }],
+        searchAttributes: {
+            AccountId: [payload.account_id],
+            DocumentId: getDocumentIds(payload),
+            ProjectId: [payload.project_id],
+        },
     });
 
     if (step.output) {
