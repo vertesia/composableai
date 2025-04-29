@@ -132,8 +132,6 @@ async function handleError(originalError: any, definition: DSLWorkflowSpec, base
         throw originalError;
     }
 
-    log.warn(`Workflow execution failed, executing error handler to update document status`, { error: originalError });
-
     const markDocumentAsFailed = async () => {
         try {
             await runActivity(
@@ -153,12 +151,14 @@ async function handleError(originalError: any, definition: DSLWorkflowSpec, base
     }
 
     if (isCancellation(originalError)) {
+        log.warn(`Workflow execution cancelled, executing error handler to update document status`, { error: originalError });
         // Cleanup logic must be in a nonCancellable scope
         // If we'd run cleanup outside of a nonCancellable scope it would've been cancelled
         // before being started because the Workflow's root scope is cancelled.
         // see https://docs.temporal.io/develop/typescript/cancellation
         await CancellationScope.nonCancellable(() => markDocumentAsFailed());
     } else {
+        log.warn(`Workflow execution failed, executing error handler to update document status`, { error: originalError });
         markDocumentAsFailed();
         throw originalError;
     }
