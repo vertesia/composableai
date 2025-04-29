@@ -1,33 +1,41 @@
 import { log } from "@temporalio/activity";
-import { ContentObject, CreateContentObjectPayload, DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
-import { mutoolPdfToText } from '../conversion/mutool.js';
-import { manyToMarkdown } from '../conversion/pandoc.js';
+import {
+    ContentObject,
+    CreateContentObjectPayload,
+    DSLActivityExecutionPayload,
+    DSLActivitySpec,
+} from "@vertesia/common";
+import { mutoolPdfToText } from "../conversion/mutool.js";
+import { markdownWithPandoc } from "../conversion/pandoc.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { NoDocumentFound } from '../errors.js';
-import { TextExtractionResult, TextExtractionStatus } from '../result-types.js';
-import { fetchBlobAsBuffer, md5 } from '../utils/blobs.js';
-import { countTokens } from '../utils/tokens.js';
+import { NoDocumentFound } from "../errors.js";
+import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
+import { fetchBlobAsBuffer, md5 } from "../utils/blobs.js";
+import { countTokens } from "../utils/tokens.js";
+import { markdownWithMarkitdown } from "../conversion/markitdown.js";
 
 //@ts-ignore
 const JSON: DSLActivitySpec = {
-    name: 'extractDocumentText',
-}
+    name: "extractDocumentText",
+};
 
 // doesn't have any own param
-export interface ExtractDocumentTextParams { };
+export interface ExtractDocumentTextParams {}
 export interface ExtractDocumentText extends DSLActivitySpec<ExtractDocumentTextParams> {
-    name: 'extractDocumentText';
+    name: "extractDocumentText";
     projection?: never;
 }
 
-export async function extractDocumentText(payload: DSLActivityExecutionPayload<ExtractDocumentTextParams>): Promise<TextExtractionResult> {
+export async function extractDocumentText(
+    payload: DSLActivityExecutionPayload<ExtractDocumentTextParams>,
+): Promise<TextExtractionResult> {
     const { client, objectId } = await setupActivity(payload);
 
     const r = await client.objects.find({
         query: { _id: objectId },
         limit: 1,
-        select: "+text"
-    })
+        select: "+text",
+    });
     const doc = r[0] as ContentObject;
     if (!doc) {
         log.error(`Document ${objectId} not found`);
@@ -35,7 +43,6 @@ export async function extractDocumentText(payload: DSLActivityExecutionPayload<E
     }
 
     log.info(`Extracting text for object ${doc.id}`);
-
 
     if (!doc.content?.type || !doc.content?.source) {
         if (doc.text) {
@@ -58,73 +65,79 @@ export async function extractDocumentText(payload: DSLActivityExecutionPayload<E
         return createResponse(doc, "", TextExtractionStatus.error, e.message);
     }
 
-
     let txt: string;
 
     switch (doc.content.type) {
-
-        case 'application/pdf':
-            //if pdf is more than 2MB, use mutool
+        case "application/pdf":
             txt = await mutoolPdfToText(fileBuffer);
             break;
 
-        case 'text/plain':
-            txt = fileBuffer.toString('utf8')
+        case "text/plain":
+            txt = fileBuffer.toString("utf8");
             break;
 
         //docx
-        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-            txt = await manyToMarkdown(fileBuffer, 'docx');
+        case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            txt = await markdownWithMarkitdown(fileBuffer, "docx");
+            break;
+
+        //pptx
+        case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+            txt = await markdownWithMarkitdown(fileBuffer, "pptx");
             break;
 
         //html
-        case 'text/html':
-            txt = await manyToMarkdown(fileBuffer, 'html');
+        case "text/html":
+            txt = await markdownWithPandoc(fileBuffer, "html");
             break;
 
         //opendocument
-        case 'application/vnd.oasis.opendocument.text':
-            txt = await manyToMarkdown(fileBuffer, 'odt');
+        case "application/vnd.oasis.opendocument.text":
+            txt = await markdownWithPandoc(fileBuffer, "odt");
             break;
 
         //rtf
-        case 'application/rtf':
-            txt = await manyToMarkdown(fileBuffer, 'rtf');
+        case "application/rtf":
+            txt = await markdownWithPandoc(fileBuffer, "rtf");
             break;
 
         //markdown
-        case 'text/markdown':
-            txt = fileBuffer.toString('utf8');
+        case "text/markdown":
+            txt = fileBuffer.toString("utf8");
             break;
 
         //csv
-        case 'text/csv':
-            txt = fileBuffer.toString('utf8');
+        case "text/csv":
+            txt = fileBuffer.toString("utf8");
             break;
 
         //typescript
-        case 'application/typescript':
-            txt = fileBuffer.toString('utf8');
+        case "application/typescript":
+            txt = fileBuffer.toString("utf8");
             break;
 
         //javascript
-        case 'application/javascript':
-            txt = fileBuffer.toString('utf8');
+        case "application/javascript":
+            txt = fileBuffer.toString("utf8");
             break;
 
         //json
-        case 'application/json':
-            txt = fileBuffer.toString('utf8');
+        case "application/json":
+            txt = fileBuffer.toString("utf8");
             break;
 
         default:
             if (sniffIfText(fileBuffer)) {
-                txt = fileBuffer.toString('utf8'); //TODO: add charset detection
+                txt = fileBuffer.toString("utf8"); //TODO: add charset detection
                 break;
             }
-            return createResponse(doc, doc.text ?? '', TextExtractionStatus.skipped, `Unsupported mime type: ${doc.content.type}`);
+            return createResponse(
+                doc,
+                doc.text ?? "",
+                TextExtractionStatus.skipped,
+                `Unsupported mime type: ${doc.content.type}`,
+            );
     }
-
 
     const tokensData = countTokens(txt);
     const etag = doc.content.etag ?? md5(txt);
@@ -135,15 +148,20 @@ export async function extractDocumentText(payload: DSLActivityExecutionPayload<E
         tokens: {
             ...tokensData,
             etag: etag,
-        }
-    }
+        },
+    };
 
     await client.objects.update(doc.id, updateData);
 
     return createResponse(doc, txt, TextExtractionStatus.success);
 }
 
-function createResponse(doc: ContentObject, text: string, status: TextExtractionStatus, message?: string): TextExtractionResult {
+function createResponse(
+    doc: ContentObject,
+    text: string,
+    status: TextExtractionStatus,
+    message?: string,
+): TextExtractionResult {
     return {
         status,
         message,
@@ -151,10 +169,8 @@ function createResponse(doc: ContentObject, text: string, status: TextExtraction
         len: text.length,
         objectId: doc.id,
         hasText: !!text,
-    }
-
+    };
 }
-
 
 function sniffIfText(buf: Buffer) {
     // If file is too large, don't even try
@@ -181,8 +197,8 @@ function sniffIfText(buf: Buffer) {
 
     // Additional check for valid UTF-8 encoding
     try {
-        const s = buf.toString('utf8');
-        return s.length > 0 && !s.includes('\uFFFD'); // Replacement character
+        const s = buf.toString("utf8");
+        return s.length > 0 && !s.includes("\uFFFD"); // Replacement character
     } catch (e) {
         return false;
     }
