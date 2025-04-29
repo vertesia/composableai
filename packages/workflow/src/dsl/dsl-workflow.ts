@@ -6,6 +6,7 @@ import {
     DSLActivitySpec,
     DSLChildWorkflowStep,
     DSLWorkflowExecutionPayload,
+    DSLWorkflowSpec,
     getDocumentIds,
     WorkflowExecutionPayload
 } from "@vertesia/common";
@@ -70,32 +71,36 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     log.info("Executing workflow", { payload });
 
     try {
-        if (definition.steps) {
-            for (const step of definition.steps) {
-                const stepType = step.type;
-                if (stepType === 'workflow') {
-                    const childWorkflowStep = step as DSLChildWorkflowStep;
-                    if (childWorkflowStep.async) {
-                        await startChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode);
-                    } else {
-                        await executeChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode);
-                    }
-                } else { // activity
-                    await runActivity(step as DSLActivitySpec, basePayload, vars, defaultProxy, defaultOptions);
-                }
-            }
-        } else if (definition.activities) { // legacy support
-            for (const activity of definition.activities) {
-                await runActivity(activity, basePayload, vars, defaultProxy, defaultOptions);
-            }
-        } else {
-            throw new Error("No steps or activities found in the workflow definition");
-        }
+        executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions);
     } catch (e) {
         await handleError(e, basePayload, vars, defaultProxy, defaultOptions);
     }
 
     return vars.getValue(definition.result || 'result');
+}
+
+async function executeSteps(definition: DSLWorkflowSpec, payload: DSLWorkflowExecutionPayload, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
+    if (definition.steps) {
+        for (const step of definition.steps) {
+            const stepType = step.type;
+            if (stepType === 'workflow') {
+                const childWorkflowStep = step as DSLChildWorkflowStep;
+                if (childWorkflowStep.async) {
+                    await startChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode);
+                } else {
+                    await executeChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode);
+                }
+            } else { // activity
+                await runActivity(step as DSLActivitySpec, basePayload, vars, defaultProxy, defaultOptions);
+            }
+        }
+    } else if (definition.activities) { // legacy support
+        for (const activity of definition.activities) {
+            await runActivity(activity, basePayload, vars, defaultProxy, defaultOptions);
+        }
+    } else {
+        throw new Error("No steps or activities found in the workflow definition");
+    }
 }
 
 async function handleError(e: any, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
