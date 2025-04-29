@@ -89,7 +89,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
             await handleError(e, definition, basePayload, vars, defaultProxy, defaultOptions);
         }
     } else {
-        // v1: old version without error handler, deprecated since v0.50.0
+        // v1: old version without error handler, deprecated since v0.52.0
         await executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions);
     }
 
