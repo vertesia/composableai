@@ -28,6 +28,7 @@ function dslActivityPayload<ParamsT extends Record<string, any>>(basePayload: Ba
 }
 
 export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
+
     const definition = payload.workflow;
     if (!definition) {
         throw new WorkflowParamNotFound("workflow");
