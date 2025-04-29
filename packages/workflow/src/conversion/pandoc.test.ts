@@ -2,7 +2,7 @@ import { MockActivityEnvironment, TestWorkflowEnvironment } from '@temporalio/te
 import fs from 'fs';
 import path from 'path';
 import { beforeAll, expect, test } from 'vitest';
-import { manyToMarkdown } from '../conversion/pandoc';
+import { markdownWithPandoc } from '../conversion/pandoc';
 
 
 let testEnv: TestWorkflowEnvironment;
@@ -19,6 +19,6 @@ test('should convert docx to markdown', async () => {
     const filepath = path.join(__dirname, '../../fixtures', 'us-ciia.docx');
     console.log("Converting file from", filepath);
     const docx = fs.readFileSync(filepath);
-    const result = await activityContext.run(manyToMarkdown, Buffer.from(docx), 'docx');
+    const result = await activityContext.run(markdownWithPandoc, Buffer.from(docx), 'docx');
     expect(result).to.include('confidential');
 });
