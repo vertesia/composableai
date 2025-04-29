@@ -24,6 +24,7 @@
     "license": "Apache-2.0",
     "devDependencies": {
         "@smithy/types": "^3.7.2",
+        "@temporalio/proto": "^1.11.5",
         "@temporalio/testing": "^1.11.5",
         "@temporalio/worker": "^1.11.5",
         "@types/fluent-ffmpeg": "^2.1.27",

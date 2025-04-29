@@ -48,6 +48,7 @@ export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
 
 export interface PromptSearchQuery extends SimpleSearchQuery {
     role?: string;
+    matchInteractions?: boolean;
 }
 
 export interface InteractionSearchQuery extends SimpleSearchQuery {
