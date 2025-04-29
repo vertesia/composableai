@@ -1,18 +1,14 @@
 import { log } from "@temporalio/activity";
-import { ApplicationFailure } from "@temporalio/workflow";
 import {
     ContentObjectTypeItem,
     CreateContentObjectTypePayload,
     DSLActivityExecutionPayload,
     DSLActivitySpec,
 } from "@vertesia/common";
-// @ts-ignore
 import { ActivityContext, setupActivity } from "../dsl/setup/ActivityContext.js";
-// @ts-ignore
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
 
-// @ts-ignore
 const INT_SELECT_DOCUMENT_TYPE = "sys:SelectDocumentType";
 const INT_GENERATE_METADATA_MODEL = "sys:GenerateMetadataModel";
 
@@ -38,14 +34,8 @@ export interface GenerateOrAssignContentType extends DSLActivitySpec<GenerateOrA
 }
 
 export async function generateOrAssignContentType(
-    // @ts-ignore
     payload: DSLActivityExecutionPayload<GenerateOrAssignContentTypeParams>,
 ) {
-    throw ApplicationFailure.create({
-        message: "This workflow should not be executed directly",
-        nonRetryable: true,
-    });
-/*
     const context = await setupActivity<GenerateOrAssignContentTypeParams>(payload);
     const { params, client, objectId } = context;
 
@@ -143,9 +133,8 @@ export async function generateOrAssignContentType(
         name: selectedType.name,
         isNew: !types.find((t) => t.name === selectedType.name),
     };
-*/
 }
-// @ts-ignore
+
 async function generateNewType(
     context: ActivityContext<GenerateOrAssignContentTypeParams>,
     existing_types: ContentObjectTypeItem[],
