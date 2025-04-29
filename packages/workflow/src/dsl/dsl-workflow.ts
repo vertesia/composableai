@@ -123,7 +123,7 @@ async function executeSteps(definition: DSLWorkflowSpec, payload: DSLWorkflowExe
 async function handleError(originalError: any, definition: DSLWorkflowSpec, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
     const isIntake = definition.name === "StandardDocumentIntake" || definition.name === "StandardImageIntake";
     if (!isIntake) {
-        log.warn(`Workflow execution failed, but no error handler registered for this workflow: ${definition.name}`, { error: e });
+        log.warn(`Workflow execution failed, but no error handler registered for this workflow: ${definition.name}`, { error: originalError });
         throw originalError;
     }
 
