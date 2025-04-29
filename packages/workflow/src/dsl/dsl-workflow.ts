@@ -103,8 +103,14 @@ async function executeSteps(definition: DSLWorkflowSpec, payload: DSLWorkflowExe
     }
 }
 
-async function handleError(e: any, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
-    log.warn("Workflow execution failed", { error: e });
+async function handleError(originalError: any, definition: DSLWorkflowSpec, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
+    const isIntake = definition.name === "StandardDocumentIntake" || definition.name === "StandardImageIntake";
+    if (!isIntake) {
+        log.warn(`Workflow execution failed, but no error handler registered for this workflow: ${definition.name}`, { error: e });
+        throw originalError;
+    }
+
+    log.warn(`Workflow execution failed, executing error handler to update document status`, { error: originalError });
     try {
         await runActivity(
             {
@@ -116,11 +122,11 @@ async function handleError(e: any, basePayload: BaseActivityPayload, vars: Vars,
             defaultProxy,
             defaultOptions,
         );
-    } catch(e2) {
-        // ignore errors in the error handler
-        log.warn("Error handler failed", { error: e2 });
+    } catch(handleError) {
+        // ignore errors in the error handler because we don't want to fail the workflow
+        log.error("Failed to handle error", { error: handleError });
     }
-    throw e;
+    throw originalError;
 }
 
 async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean) {
