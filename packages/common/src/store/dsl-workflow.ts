@@ -40,11 +40,6 @@ export interface DSLRetryPolicy {
     nonRetryableErrorTypes?: string[];
 }
 
-export interface DSLWorkflowErrorHandlingSpec {
-    name: string;
-    params: Record<string, any>;
-}
-
 /**
  * The payload for a DSL activity execution.
  */
@@ -240,13 +235,6 @@ export interface DSLWorkflowSpecBase {
     // if not specified "result" will be assumed
     result?: string;
     debug_mode?: boolean;
-
-    /**
-     * It defines a list of cleanup steps to be executed in case of failure.
-     *
-     * @since 0.52.0
-     */
-    on_error?: DSLWorkflowErrorHandlingSpec[];
 }
 
 export interface DSLWorkflowSpecWithSteps extends DSLWorkflowSpecBase {
