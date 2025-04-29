@@ -160,8 +160,8 @@ async function handleError(originalError: any, definition: DSLWorkflowSpec, base
     } else {
         log.warn(`Workflow execution failed, executing error handler to update document status`, { error: originalError });
         markDocumentAsFailed();
-        throw originalError;
     }
+    throw originalError;
 }
 
 async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean) {
