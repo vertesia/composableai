@@ -80,13 +80,16 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
 
     log.info("Executing workflow", { payload });
 
+    // TODO(mhuang): remove patch when all workflows are migrated to v2
     if (patched('error-handler')) {
+        // v2: new version with error handler
         try {
             await executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions);
         } catch (e) {
             await handleError(e, definition, basePayload, vars, defaultProxy, defaultOptions);
         }
     } else {
+        // v1: old version without error handler, deprecated since v0.50.0
         await executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions);
     }
 
