@@ -1,7 +1,9 @@
 import {
     ActivityInterfaceFor,
     ActivityOptions,
+    CancellationScope,
     executeChild,
+    isCancellation,
     log,
     patched,
     proxyActivities,
@@ -131,22 +133,35 @@ async function handleError(originalError: any, definition: DSLWorkflowSpec, base
     }
 
     log.warn(`Workflow execution failed, executing error handler to update document status`, { error: originalError });
-    try {
-        await runActivity(
-            {
-                name: "setDocumentStatus",
-                params: { status: ContentObjectStatus.failed },
-            } as DSLActivitySpec,
-            basePayload,
-            vars,
-            defaultProxy,
-            defaultOptions,
-        );
-    } catch(handleError) {
-        // ignore errors in the error handler because we don't want to fail the workflow
-        log.error("Failed to handle error", { error: handleError });
+
+    const markDocumentAsFailed = async () => {
+        try {
+            await runActivity(
+                {
+                    name: "setDocumentStatus",
+                    params: { status: ContentObjectStatus.failed },
+                } as DSLActivitySpec,
+                basePayload,
+                vars,
+                defaultProxy,
+                defaultOptions,
+            );
+        } catch(handleError) {
+            // ignore errors in the error handler because we don't want to fail the workflow
+            log.error("Failed to handle error", { error: handleError });
+        }
     }
-    throw originalError;
+
+    if (isCancellation(originalError)) {
+        // Cleanup logic must be in a nonCancellable scope
+        // If we'd run cleanup outside of a nonCancellable scope it would've been cancelled
+        // before being started because the Workflow's root scope is cancelled.
+        // see https://docs.temporal.io/develop/typescript/cancellation
+        await CancellationScope.nonCancellable(() => markDocumentAsFailed());
+    } else {
+        markDocumentAsFailed();
+        throw originalError;
+    }
 }
 
 async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean) {
