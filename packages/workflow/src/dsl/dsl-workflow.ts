@@ -81,6 +81,9 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     log.info("Executing workflow", { payload });
 
     // TODO(mhuang): remove patch when all workflows are migrated to v2
+    //   It avoids breaking the ongoing workflow execution running in v1 and also allows us to
+    //   deploy the new error handler in production.
+    //   See https://docs.temporal.io/develop/typescript/versioning
     if (patched('dsl-workflow-error-handling')) {
         // v2: new version with error handler
         try {
