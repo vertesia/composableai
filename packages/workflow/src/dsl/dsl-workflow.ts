@@ -1,5 +1,6 @@
 import { ActivityInterfaceFor, ActivityOptions, executeChild, log, proxyActivities, startChild, UntypedActivities } from "@temporalio/workflow";
 import {
+    ContentObjectStatus,
     DSLActivityExecutionPayload,
     DSLActivityOptions,
     DSLActivitySpec,
@@ -91,25 +92,30 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
             throw new Error("No steps or activities found in the workflow definition");
         }
     } catch (e) {
-        log.warn("Workflow execution failed", { error: e });
-        for (const step of definition.on_error || []) {
-            await runActivity(
-                {
-                    name: step.name, //"setDocumentStatus",
-                    params: step.params,
-                } as DSLActivitySpec,
-                basePayload,
-                vars,
-                defaultProxy,
-                defaultOptions,
-            ).catch((_) => {
-                // ignore errors
-            });
-        }
-        throw e;
+        await handleError(e, basePayload, vars, defaultProxy, defaultOptions);
     }
 
     return vars.getValue(definition.result || 'result');
+}
+
+async function handleError(e: any, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
+    log.warn("Workflow execution failed", { error: e });
+    try {
+        await runActivity(
+            {
+                name: "setDocumentStatus",
+                params: { status: ContentObjectStatus.failed },
+            } as DSLActivitySpec,
+            basePayload,
+            vars,
+            defaultProxy,
+            defaultOptions,
+        );
+    } catch(e2) {
+        // ignore errors in the error handler
+        log.warn("Error handler failed", { error: e2 });
+    }
+    throw e;
 }
 
 async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean) {
