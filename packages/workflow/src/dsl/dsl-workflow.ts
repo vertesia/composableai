@@ -1,4 +1,13 @@
-import { ActivityInterfaceFor, ActivityOptions, executeChild, log, proxyActivities, startChild, UntypedActivities } from "@temporalio/workflow";
+import {
+    ActivityInterfaceFor,
+    ActivityOptions,
+    executeChild,
+    log,
+    patched,
+    proxyActivities,
+    startChild,
+    UntypedActivities,
+} from "@temporalio/workflow";
 import {
     ContentObjectStatus,
     DSLActivityExecutionPayload,
@@ -71,10 +80,14 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
 
     log.info("Executing workflow", { payload });
 
-    try {
-        executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions);
-    } catch (e) {
-        await handleError(e, basePayload, vars, defaultProxy, defaultOptions);
+    if (patched('error-handler')) {
+        try {
+            await executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions);
+        } catch (e) {
+            await handleError(e, definition, basePayload, vars, defaultProxy, defaultOptions);
+        }
+    } else {
+        await executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions);
     }
 
     return vars.getValue(definition.result || 'result');
