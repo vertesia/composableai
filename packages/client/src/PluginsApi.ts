@@ -8,11 +8,11 @@ export default class PluginsApi extends ApiTopic {
     }
 
     create(manifest: Omit<PluginManifest, 'id'>): Promise<PluginManifest> {
-        return this.post('/', { payload: { manifest } });
+        return this.post('/', { payload: manifest });
     }
 
     update(manifest: PluginManifest) {
-        return this.put(`/${manifest.id}`, { payload: { manifest } });
+        return this.put(`/${manifest.id}`, { payload: manifest });
     }
 
     /**
