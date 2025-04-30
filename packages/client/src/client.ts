@@ -15,6 +15,7 @@ import { RunsApi } from "./RunsApi.js";
 import { ZenoClient } from "./store/client.js";
 import TrainingApi from "./TrainingApi.js";
 import UsersApi from "./UsersApi.js";
+import PluginsApi from "./PluginsApi.js";
 
 /**
  * 1 min threshold constant in ms
@@ -218,6 +219,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     iam = new IamApi(this);
     refs = new RefsApi(this);
     commands = new CommandsApi(this);
+    plugins = new PluginsApi(this);
 }
 
 function isApiKey(apiKey: string) {

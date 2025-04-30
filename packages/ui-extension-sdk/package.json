@@ -1,0 +1,66 @@
+{
+    "name": "@vertesia/ui-extension-sdk",
+    "version": "0.52.0",
+    "description": "SDK for vertesia UI extensions",
+    "type": "module",
+    "main": "./lib/index.js",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "license": "MIT",
+    "homepage": "https://docs.vertesiahq.com",
+    "keywords": [
+        "vertesia",
+        "extension",
+        "plugin",
+        "sdk",
+        "ui"
+    ],
+    "scripts": {
+        "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+    },
+    "devDependencies": {
+        "@types/react": "^19.1.0",
+        "@types/react-dom": "^19.1.1",
+        "typescript": "^5.0.2"
+    },
+    "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-dom": ">=19.0.0"
+    },
+    "optionalDependencies": {
+        "react": ">=19.0.0",
+        "react-dom": ">=19.0.0"
+    },
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        },
+        "./host": {
+            "types": "./lib/host.d.ts",
+            "default": "./lib/host.js"
+        },
+        "./manifest": {
+            "types": "./lib/manifest.d.ts",
+            "default": "./lib/manifest.js"
+        }
+    },
+    "types": "./lib/index.d.ts",
+    "typesVersions": {
+        "*": {
+            ".": [
+                "./lib/index.d.ts"
+            ],
+            "manifest": [
+                "./lib/manifest.d.ts"
+            ],
+            "host": [
+                "./lib/host.d.ts"
+            ]
+        }
+    }
+}
