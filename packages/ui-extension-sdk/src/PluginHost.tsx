@@ -1,9 +1,19 @@
-import { useInsertionEffect } from "react";
-import { MountContext } from "./slots.js";
+import { useEffect, useInsertionEffect, useState } from "react";
+import { HostContext } from "./HostContext.js";
 import { usePluginModule } from "./PluginManager.js";
+import { createSharedContext } from "./host.js";
+import { Slot } from "./slots.js";
 
+export function PluginHost({ pluginId, slot, context }: { pluginId: string, slot: Slot, context: HostContext }) {
+    const [contextCreated, setContextCreated] = useState(false);
+    useEffect(() => {
+        createSharedContext(context);
+        setContextCreated(true);
+    }, []);
+    return contextCreated && <_PluginHost pluginId={pluginId} slot={slot} />
+}
 
-export function PluginHost({ pluginId, context }: { pluginId: string, context: MountContext }) {
+function _PluginHost({ pluginId, slot }: { pluginId: string, slot: Slot }) {
     const { plugin, module, error } = usePluginModule(pluginId);
     useInsertionEffect(() => {
         if (module) {
@@ -16,7 +26,7 @@ export function PluginHost({ pluginId, context }: { pluginId: string, context: M
     } else if (error) {
         return <div>Failed to load plugin {plugin.manifest.name} from {plugin.manifest.src}: {error.message}</div>
     } else if (module) {
-        return module.mount(context)
+        return module.mount(slot)
     } else {
         return <div>Loading ...</div>
     }

@@ -1,19 +1,11 @@
-export interface LinksParams {
-    // Define properties specific to LinksParams
-    linkUrl: string;
+
+export interface Slot {
+    readonly name: string;
 }
 
-export interface PageParams {
-    // Define properties specific to PageParams
-    pageTitle: string;
+export class PageSlot implements Slot {
+    readonly name = "page";
+    // the page path relative to the plugin root
+    constructor(public path: string) {
+    }
 }
-
-export interface FooterParams {
-    // Define properties specific to FooterParams
-    footerText: string;
-}
-
-export type MountContext =
-    | { slot: "links", params: LinksParams }
-    | { slot: "page", params: PageParams }
-    | { slot: "footer", params: FooterParams };

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { MountContext } from "./slots.js";
 import { PluginManifest } from "./manifest.js";
+import { Slot } from "./slots.js";
 
 export enum PluginInstanceStatus {
     registered,
@@ -11,7 +11,7 @@ export enum PluginInstanceStatus {
 }
 
 export interface PluginModule {
-    mount(ctx: MountContext): React.ReactNode;
+    mount(slot: Slot): React.ReactNode;
     css?: string;
 }
 
@@ -37,17 +37,18 @@ export class PluginInstance {
 
     async _load() {
         if (this.status === PluginInstanceStatus.registered) {
-            return import(/* @vite-ignore */ this.manifest.src).then(module => {
+            try {
+                const module = await import(/* @vite-ignore */ this.manifest.src);
                 this.status = PluginInstanceStatus.loading;
                 if (typeof module.mount !== "function") {
                     throw new Error(`Plugin ${this.manifest.id} does not provide a mount function`);
                 }
                 this._module = module;
                 this.status = PluginInstanceStatus.loaded;
-            }).catch(err => {
+            } catch (err) {
                 this.status = PluginInstanceStatus.error;
                 throw err;
-            });
+            }
         } else {
             throw new Error(`Plugin ${this.manifest.id} was already loaded`);
         }
