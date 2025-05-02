@@ -30,10 +30,10 @@ export class AnalyzeDocApi extends ApiTopic {
         if (query?.format) queryParams.format = query.format;
         if (query?.raw !== undefined) queryParams.raw = query.raw;
         
-        // If format is CSV, set response type to text to avoid automatic JSON parsing
+        // If format is CSV, use text reader to avoid automatic JSON parsing
         const options: any = { query: queryParams };
         if (query?.format === 'csv') {
-            options.responseType = 'text';
+            options.reader = (response: Response) => response.text();
         }
         
         return this.get(path, options);
@@ -53,6 +53,12 @@ export class AnalyzeDocApi extends ApiTopic {
 
     async getImages(): Promise<DocImage[]> {
         return this.get("/images");
+    }
+
+    async getMarkdown(): Promise<string> {
+        return this.get("/markdown", { 
+            reader: response => response.text() 
+        });
     }
 
     async getAnnotated(): Promise<{ url: string }> {
