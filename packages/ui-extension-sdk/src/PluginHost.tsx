@@ -2,9 +2,8 @@ import { useEffect, useInsertionEffect, useState } from "react";
 import { HostContext } from "./HostContext.js";
 import { usePluginModule } from "./PluginManager.js";
 import { createSharedContext } from "./host.js";
-import { Slot } from "./slots.js";
 
-export function PluginHost({ pluginId, slot, context }: { pluginId: string, slot: Slot, context: HostContext }) {
+export function PluginHost({ pluginId, slot, context }: { pluginId: string, slot: string, context: HostContext }) {
     const [contextCreated, setContextCreated] = useState(false);
     useEffect(() => {
         createSharedContext(context);
@@ -13,7 +12,7 @@ export function PluginHost({ pluginId, slot, context }: { pluginId: string, slot
     return contextCreated && <_PluginHost pluginId={pluginId} slot={slot} />
 }
 
-function _PluginHost({ pluginId, slot }: { pluginId: string, slot: Slot }) {
+function _PluginHost({ pluginId, slot }: { pluginId: string, slot: string }) {
     const { plugin, module, error } = usePluginModule(pluginId);
     useInsertionEffect(() => {
         if (module) {

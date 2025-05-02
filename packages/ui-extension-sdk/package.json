@@ -49,10 +49,6 @@
         "./manifest": {
             "types": "./lib/manifest.d.ts",
             "default": "./lib/manifest.js"
-        },
-        "./context": {
-            "types": "./lib/context.d.ts",
-            "default": "./lib/context.js"
         }
     },
     "types": "./lib/index.d.ts",
@@ -66,9 +62,6 @@
             ],
             "host": [
                 "./lib/host.d.ts"
-            ],
-            "context": [
-                "./lib/context.d.ts"
             ]
         }
     }

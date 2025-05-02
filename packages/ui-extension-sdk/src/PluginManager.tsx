@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { PluginManifest } from "./manifest.js";
-import { Slot } from "./slots.js";
 
 export enum PluginInstanceStatus {
     registered,
@@ -11,7 +10,7 @@ export enum PluginInstanceStatus {
 }
 
 export interface PluginModule {
-    mount(slot: Slot): React.ReactNode;
+    mount(slot: string): React.ReactNode;
     css?: string;
 }
 
@@ -75,8 +74,8 @@ export class PluginInstance {
                     this.status = PluginInstanceStatus.installed;
                 }
             }
-        } else {
-            throw new Error(`Plugin ${this.manifest.id} is not loaded`);
+        } else if (this.status !== PluginInstanceStatus.installed) {
+            throw new Error(`Plugin ${this.manifest.id} is not loaded: ` + this.status);
         }
     }
 
