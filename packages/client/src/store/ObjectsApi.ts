@@ -186,11 +186,17 @@ export class ObjectsApi extends ApiTopic {
                 throw err;
             });
 
+        //Etag need to be unquoted
+        //When a server returns an ETag header, it includes the quotes around the actual hash value.
+        //This is part of the HTTP specification (RFC 7232), which states that ETags should be
+        //enclosed in double quotes.
+        const etag = res.headers.get("etag")?.replace(/^"(.*)"$/, "$1");
+
         return {
             source: id,
             name: source.name,
             type: mime_type,
-            etag: res.headers.get("etag") ?? undefined,
+            etag,
         };
     }
 
@@ -201,6 +207,7 @@ export class ObjectsApi extends ApiTopic {
         if (payload.content instanceof StreamSource || payload.content instanceof File) {
             createPayload.content = await this.upload(payload.content);
         }
+        console.log("create", { createPayload });
         return await this.post("/", {
             payload: createPayload,
         });
