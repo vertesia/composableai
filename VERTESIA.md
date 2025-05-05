@@ -12,7 +12,7 @@
 This Git repository is a mono-repository built on top of pnpm.
 
 - `.github/**` contains changes related to GitHub
-- `packages/**` contains different packages for different purposes, particularly, `packages/cli/**` is the Vertesia CLI and `packages/client` is the Vertesia JS Client.
+- `packages/**` contains different packages for different purposes, particularly, `packages/cli` is the Vertesia CLI and `packages/client` is the Vertesia JS Client.
 - `llumiverse` is a Git submodule pointing to another Git repository for LLM connectors 
 
 # Code Style
