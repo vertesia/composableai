@@ -347,6 +347,13 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * The collection in which this workflow is executing
      */
     collection_id?: string;
+
+    /**
+     * The token threshold in thousands (K) for creating checkpoints.
+     * If total tokens exceed this value, a checkpoint will be created.
+     * If not specified, default value of 150K tokens will be used.
+     */
+    checkpoint_tokens?: number;
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {

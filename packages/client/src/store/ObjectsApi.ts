@@ -111,12 +111,21 @@ export class ObjectsApi extends ApiTopic {
         path; //TODO
     }
 
+    /** Find object based on query */
     find(payload: FindPayload): Promise<ContentObject[]> {
         return this.post("/find", {
             payload,
         });
     }
 
+    /** Count number of objects matching this query */
+    count(payload: FindPayload): Promise<ContentObject[]> {
+        return this.post("/count", {
+            payload,
+        });
+    }
+
+    /** Search object — different from find because allow full text search */
     search(payload: ComplexSearchPayload): Promise<ContentObjectItem[]> {
         return this.post("/search", {
             payload,
