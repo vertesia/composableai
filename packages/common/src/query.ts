@@ -3,14 +3,14 @@ import { SupportedEmbeddingTypes } from './project.js';
 
 export interface RunListingQueryOptions {
     project?: string;
-    interaction?: string;
+    interaction?: string | string[];
     limit?: number;
     offset?: number;
     filters?: RunListingFilters;
 }
 
 export interface RunListingFilters {
-    interaction?: string,
+    interaction?: string | string[],
     status?: ExecutionRunStatus,
     model?: string,
     environment?: string,
