@@ -14,7 +14,7 @@ export async function EventSourceProvider(): Promise<typeof EventSource> {
  * the run completes or fails.
  * If the onChunk callback is passed then the streaming of the result is enabled.
  * The onChunk callback with be called with the next chunk of the result as soon as it is available.
- * When all chunks are received the fucntion will return the resolved promise
+ * When all chunks are received the function will return the resolved promise
  * @param id of the interaction to execute
  * @param payload InteractionExecutionPayload
  * @param onChunk callback to be called when the next chunk of the response is available
@@ -38,7 +38,7 @@ export async function executeInteraction<P = any, R = any>(client: VertesiaClien
 
 /**
  * Same as executeInteraction but uses the interaction name selector instead of the id.
- * A name selector is the interaction endpoint name suffuxed with an optional tag or version wich is starting with a `@` character.
+ * A name selector is the interaction endpoint name suffixed with an optional tag or version which is starting with a `@` character.
  * The special `draft` tag is used to select the draft version of the interaction. If no tag or version is specified then the latest version is selected.
  * Examples of selectors:
  * - `ReviewContract` - select the latest version of the ReviewContract interaction

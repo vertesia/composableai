@@ -30,7 +30,7 @@ export async function iterativeGenerationWorkflow(payload: WorkflowExecutionPayl
     }
 
     // extractToc tries to extract the toc from the input memory pack (toc.json or toc.yaml)
-    // the generateToc activity is retiurning the toc hierarchy.
+    // the generateToc activity is returning the toc hierarchy.
     // It doesn't include extra TOC details like description etc.
     // To minimize the payload size only the hierarchy and the section/part names are returned
     let toc = await it_gen_extractToc(payload);

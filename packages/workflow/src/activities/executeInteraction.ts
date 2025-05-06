@@ -56,13 +56,13 @@ const JSON: DSLActivitySpec = {
 export interface InteractionExecutionParams {
     /**
      * The environment to use. If not specified the project default environment will be used.
-     * If the latter is not specified an exeption will be thrown.
+     * If the latter is not specified an exception will be thrown.
      */
     environment?: string;
     /**
      * The model to use. If not specified the project default model will be used.
      * If the latter is not specified the default model of the environment will be used.
-     * If the latter is not specified an exeption will be thrown.
+     * If the latter is not specified an exception will be thrown.
      */
     model?: string;
 
@@ -90,7 +90,7 @@ export interface InteractionExecutionParams {
 /**
  * TODO: must be kept in sync with InteractionAsyncExecutionPayload form @vertesia/common
  * Also see the executeInteractionAsync endpoint on the server for how the client payload is sent to the workflow.
- * (interaction is translsted to interactionName)
+ * (interaction is translated to interactionName)
  */
 export interface ExecuteInteractionParams extends InteractionExecutionParams {
     //TODO rename to interaction as in InteractionAsyncExecutionPayload

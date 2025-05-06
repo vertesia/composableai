@@ -9,7 +9,7 @@ import { AgentProject } from "./project.js";
 
 const LOCAL_DOCKER_CONFIG_DIR = '.docker';
 
-export function genrateDockerConfig() {
+export function generateDockerConfig() {
     return JSON.stringify({
         "credHelpers": {
             "us-central1-docker.pkg.dev": "vertesia"

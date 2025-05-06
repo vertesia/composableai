@@ -120,7 +120,7 @@ export async function pdfToImages(file: Buffer | string, pages?: number[]): Prom
 
 
 /**
- * Get somes pages from a PDF to create a new one
+ * Get some pages from a PDF to create a new one
  */
 
 export async function pdfExtractPages(file: Buffer | string, pages: number[]): Promise<string> {

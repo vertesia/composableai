@@ -45,7 +45,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     if (!definition) {
         throw new WorkflowParamNotFound("workflow");
     }
-    // the base payload wiull be used to create the activities payload
+    // the base payload will be used to create the activities payload
     const basePayload: BaseActivityPayload = {
         ...payload,
         workflow_name: definition.name,
@@ -73,7 +73,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     });
     const defaultProxy = proxyActivities(defaultOptions);
     log.debug("Default activity proxy is ready");
-    // merge default vars with the payload vars and add objectIds and obejctId
+    // merge default vars with the payload vars and add objectIds and objectId
     const vars = new Vars({
         ...definition.vars,
         ...payload.vars,
@@ -186,7 +186,7 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
         Object.assign(resolvedVars, step.vars);
     }
     if (debug_mode) {
-        log.debug(`Workflow vars before excuting child workflow ${step.name}`, { vars: resolvedVars });
+        log.debug(`Workflow vars before executing child workflow ${step.name}`, { vars: resolvedVars });
     }
     const result = await executeChild(step.name, {
         ...step.options,
@@ -217,7 +217,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         log.debug(`Workflow vars before executing activity ${activity.name}`, { vars: vars.resolve() });
     }
     if (activity.condition && !vars.match(activity.condition)) {
-        log.info("Activity skiped: condition not satisfied", activity.condition);
+        log.info("Activity skipped: condition not satisfied", activity.condition);
         return;
     }
     const importParams = vars.createImportVars(activity.import);

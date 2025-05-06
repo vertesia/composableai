@@ -11,7 +11,7 @@ import { NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
 import { saveBlobToTempFile } from "../utils/blobs.js";
 
 interface GenerateImageRenditionParams {
-    max_hw: number; //maximum size of the longuest side of the image
+    max_hw: number; //maximum size of the longest side of the image
     format: string; //format of the output image
 }
 

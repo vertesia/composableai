@@ -472,21 +472,21 @@ export class TextractProcessor {
         }
     
         // Build final output
-        let fulltext = '';
+        let fullText = '';
         let imgNumber = 1;
         let tableNumber = 1;
         for (const page of pageContents) {
-            fulltext += `<page number="${page.pageNumber}">\n`;
+            fullText += `<page number="${page.pageNumber}">\n`;
             for (const block of page.blocks) {
                 if (block.type === 'text') {
-                    fulltext += `<text>\n${block.content}\n</text>\n\n`;
+                    fullText += `<text>\n${block.content}\n</text>\n\n`;
                 } else if (block.type === 'table') {
                     const confidenceAttr = block.confidence !== undefined && this.includeConfidenceInTables
                         ? ` confidence="${block.confidence.toFixed(2)}"`
                         : '';
-                    fulltext += `<table number=${tableNumber++} type="csv" ${confidenceAttr}>\n`;
-                    fulltext += `${block.content}\n`;
-                    fulltext += `</table>\n\n`;
+                    fullText += `<table number=${tableNumber++} type="csv" ${confidenceAttr}>\n`;
+                    fullText += `${block.content}\n`;
+                    fullText += `</table>\n\n`;
                 } else if (block.type === 'image') {
                     // Include geometry if you like
                     const leftAttr = block.left ? ` left="${block.left.toFixed(4)}"` : '';
@@ -494,13 +494,13 @@ export class TextractProcessor {
                     const widthAttr = block.width ? ` width="${block.width.toFixed(4)}"` : '';
                     const heightAttr = block.height ? ` height="${block.height.toFixed(4)}"` : '';
     
-                    fulltext += `<image id="${imgNumber++}" ${leftAttr}${topAttr}${widthAttr}${heightAttr}>\n${block.content.trim()}\n</image>\n\n`;
+                    fullText += `<image id="${imgNumber++}" ${leftAttr}${topAttr}${widthAttr}${heightAttr}>\n${block.content.trim()}\n</image>\n\n`;
                 }
             }
-            fulltext += `</page>\n\n`;
+            fullText += `</page>\n\n`;
         }
     
-        return fulltext;
+        return fullText;
     }
     
 }

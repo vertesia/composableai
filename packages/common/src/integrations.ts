@@ -18,7 +18,7 @@ export interface AwsConfiguration extends IntegrationConfigurationBase {
     s3_role_arn: string;
 }
 
-export interface MacgicPdfConfiguration extends IntegrationConfigurationBase {
+export interface MagicPdfConfiguration extends IntegrationConfigurationBase {
     // No additional configuration
     default_features?: string[];
     default_zones?: string[];

@@ -1,7 +1,7 @@
 /**
  * Decode a stream of bytes into a stream of characters.
  * Some javascript env like Bun.js doesn't supports the TextDecoderStream (as for jan 2024)
- * This is a polyfill for bunjs
+ * This is a polyfill for bunJS
  */
 let _TextDecoderStream: typeof TextDecoderStream;
 if (globalThis.TextDecoderStream && typeof globalThis.TextDecoderStream === 'function') {

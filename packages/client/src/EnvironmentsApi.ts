@@ -34,8 +34,8 @@ export default class EnvironmentsApi extends ApiTopic {
     }
 
     /**
-     * udpate enabled models and / or config. If enabled_models is not provided, the existing enabled models will not change.
-     * Same, if config is not provioded the exiting config is not changed.
+     * Update enabled models and / or config. If enabled_models is not provided, the existing enabled models will not change.
+     * Same, if config is not provided the exiting config is not changed.
      * If the config is provided then it will be updated without removing fields that are not provided.
      *
      * @param id

@@ -20,9 +20,9 @@ export function splitPath(path: string) {
 
 /**
  * Get the property named by "name" of the given object
- * If an array is idnexed using a string key then a map is done and an array with the content of the properties with that name are returned
+ * If an array is indexed using a string key then a map is done and an array with the content of the properties with that name are returned
  * Ex: docs.text => will return an array of text properties of the docs array
- * @param object the obejct
+ * @param object the object
  * @param name the name of the property.
  * @returns the property value
  */
@@ -128,7 +128,7 @@ export class Vars {
     map: Record<string, any>;
     /**
      * This property is used when resolving params. It contains the list of references that should not be resolved to their value
-     * but instead they need to return the string representation of the expression to eb able to regenrate another Vars instance with the same expression
+     * but instead they need to return the string representation of the expression to be able to regenerate another Vars instance with the same expression
      */
     //TODO this feature is no more used - it was replaced by importVars so we can now delete `preserveRefs`
     preserveRefs: Set<string> | undefined;
@@ -154,7 +154,7 @@ export class Vars {
     }
 
     /**
-     * Set a literal value (canboot set a ref)
+     * Set a literal value (cannot set a ref)
      * To add refs use `append()`
      * @param name
      * @param value
@@ -291,7 +291,7 @@ export class Vars {
     }
 
     getUnknownReferences(obj: any) {
-        const visitor = new UnknownRefrencesVisitor(this);
+        const visitor = new UnknownReferencesVisitor(this);
         new ObjectWalker().walk(obj, visitor);
         return visitor.result;
     }
@@ -311,7 +311,7 @@ function addImportVar(varPath: string, asName: string | undefined, vars: Vars, r
 }
 
 
-class UnknownRefrencesVisitor implements ObjectVisitor {
+class UnknownReferencesVisitor implements ObjectVisitor {
 
     result: { name: string, expression: string }[] = [];
 

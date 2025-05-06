@@ -40,7 +40,7 @@ export async function it_gen_extractToc(payload: WorkflowExecutionPayload): Prom
     await buildAndPublishMemoryPack(client, `${vars.memory}/output`, async () => {
         return {
             toc,
-            lastProcessdPart: undefined, // the part index (a number array)
+            lastProcessedPart: undefined, // the part index (a number array)
             previouslyGenerated: ""
         } as OutputMemoryMeta
     });

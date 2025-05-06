@@ -12,7 +12,7 @@ export interface ExecutionRunDocRef {
 
 /**
  * Interaction execution payload for creating a new run
- * It uses interaction field (from NamedInteractionExecutionPayload) to pass the intercation ID to run
+ * It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run
  */
 export interface RunCreatePayload extends NamedInteractionExecutionPayload {
 }
@@ -27,7 +27,7 @@ export interface RangeValue {
     lte?: number | string,
 }
 
-export interface RunSearchMetaRepsonse {
+export interface RunSearchMetaResponse {
     count: {
         lower_bound?: number,
         total?: number,
