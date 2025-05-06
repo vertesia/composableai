@@ -119,7 +119,7 @@ export class ObjectsApi extends ApiTopic {
     }
 
     /** Count number of objects matching this query */
-    count(payload: FindPayload): Promise<ContentObject[]> {
+    count(payload: FindPayload): Promise<{ count: number }> {
         return this.post("/count", {
             payload,
         });
