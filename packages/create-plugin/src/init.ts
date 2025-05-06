@@ -1,13 +1,13 @@
 import enquirer from "enquirer";
 import { mkdirSync } from "node:fs";
-import { basename, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { chdir } from "node:process";
 import { fileURLToPath } from "node:url";
 import { copyTree } from "./copy.js";
 import { installDeps } from "./deps.js";
 import { hasBin } from "./hasBin.js";
 import { Package } from "./Package.js";
-import { processAndRenameTemplateFile, processVarsInFile } from "./template.js";
+import { processVarsInFile } from "./template.js";
 
 const { prompt } = enquirer;
 
@@ -21,16 +21,6 @@ export async function init(dirName?: string | undefined) {
         initialPm = "pnpm";
     } else if (currentPmPath.endsWith("yarn")) {
         initialPm = "yarn";
-    }
-
-    let dir: string;
-    if (!dirName) {
-        dir = process.cwd();
-        dirName = basename(dir);
-    } else {
-        dir = resolve(dirName);
-        mkdirSync(dir, { recursive: true });
-        chdir(dir);
     }
 
     const pms = ["npm", "pnpm"];
@@ -62,6 +52,16 @@ export async function init(dirName?: string | undefined) {
     }]);
 
     const cmd = answer.pm;
+
+    let dir: string;
+    if (!dirName) {
+        dirName = answer.plugin_name;
+        dir = join(process.cwd(), dirName!);
+    } else {
+        dir = resolve(dirName);
+    }
+    mkdirSync(dir, { recursive: true });
+    chdir(dir);
 
     // copy template to current directory
     const templDir = resolve(fileURLToPath(import.meta.url), '../../template');
@@ -96,7 +96,7 @@ export async function init(dirName?: string | undefined) {
     const plugin_title = generatePluginTitle(answer.plugin_name);
     const plugin_var_name = generatePluginVarName(answer.plugin_name);
     console.log("Processing source files");
-    processVarsInFile(`${dir}/vite.config.js`, {
+    processVarsInFile(`${dir}/vite.config.ts`, {
         plugin_name: answer.plugin_name,
         plugin_var_name
     });
