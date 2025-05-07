@@ -46,8 +46,8 @@
             "default": "./lib/index.js"
         },
         "./host": {
-            "types": "./lib/host.d.ts",
-            "default": "./lib/host.js"
+            "types": "./lib/host/index.d.ts",
+            "default": "./lib/host/index.js"
         },
         "./context": {
             "types": "./lib/context/index.d.ts",
