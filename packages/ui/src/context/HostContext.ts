@@ -1,7 +1,8 @@
-import { VertesiaClient, ZenoClient } from "@vertesia/client";
-import { AccountRef, AuthTokenPayload, ProjectRef } from "@vertesia/common";
+import type { VertesiaClient, ZenoClient } from "@vertesia/client";
+import type { AccountRef, AuthTokenPayload, ProjectRef } from "@vertesia/common";
 
-export const HOST_CONTEXT_VAR = '__vetesia_host_context__';
+// TODO This file redeclare some types from the composable UI / router
+// we need to make these pblics and move shared composable-ui parts here.
 
 export interface UserSession {
     isLoading: boolean;

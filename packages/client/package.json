@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/client",
-    "version": "0.53.0",
+    "version": "0.52.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -24,7 +24,6 @@
         "@llumiverse/core": "workspace:*",
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "@vertesia/ui-extension-sdk": "workspace:*",
         "eventsource": "^3.0.6"
     },
     "ts_dual_module": {

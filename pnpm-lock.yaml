@@ -194,9 +194,6 @@ importers:
       '@vertesia/common':
         specifier: workspace:*
         version: link:../common
-      '@vertesia/ui-extension-sdk':
-        specifier: workspace:*
-        version: link:../ui-extension-sdk
       eventsource:
         specifier: ^3.0.6
         version: 3.0.6
@@ -339,7 +336,7 @@ importers:
         specifier: ^5.0.2
         version: 5.8.3
 
-  packages/ui-extension-sdk:
+  packages/ui:
     dependencies:
       '@vertesia/client':
         specifier: workspace:*

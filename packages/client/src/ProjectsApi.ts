@@ -1,6 +1,6 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MacgicPdfConfiguration, Project, ProjectIntegrationListEntry, ProjectRef, SupportedIntegrations } from "@vertesia/common";
-import { PluginManifest } from "@vertesia/ui-extension-sdk/manifest";
+import { PluginManifest } from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {

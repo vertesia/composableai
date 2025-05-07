@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import type { PluginManifest } from "@vertesia/ui-extension-sdk/manifest";
+import type { PluginManifest } from "@vertesia/common";
 
 export default class PluginsApi extends ApiTopic {
 

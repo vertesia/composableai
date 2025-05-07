@@ -5,14 +5,17 @@
  * import {SomeComponnet, useSomeHook } from '@vetesia/ui-extension-sdk/context';
  */
 
-import { HOST_CONTEXT_VAR, HostContext } from "./HostContext.js";
+import { HostContext } from "./HostContext.js";
+
+export const HOST_CONTEXT_VAR = '__vetesia_host_context__';
 
 const context = (globalThis as any)[HOST_CONTEXT_VAR] as HostContext;
 
 export const {
-    useUserSession,
     useRouterContext,
     useNavigate,
     useLocation,
     MultiPagePlugin,
 } = context;
+
+export * from "./HostContext.js";

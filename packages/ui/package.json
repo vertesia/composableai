@@ -1,7 +1,7 @@
 {
-    "name": "@vertesia/ui-extension-sdk",
+    "name": "@vertesia/ui",
     "version": "0.52.0",
-    "description": "SDK for vertesia UI extensions",
+    "description": "Vertesia UI components and and hooks",
     "type": "module",
     "main": "./lib/index.js",
     "files": [
@@ -12,10 +12,10 @@
     "homepage": "https://docs.vertesiahq.com",
     "keywords": [
         "vertesia",
-        "extension",
-        "plugin",
-        "sdk",
-        "ui"
+        "UI",
+        "react",
+        "components",
+        "hooks"
     ],
     "scripts": {
         "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
@@ -28,14 +28,17 @@
         "typescript": "^5.0.2"
     },
     "peerDependencies": {
-        "@vertesia/common": "workspace:*",
-        "@vertesia/client": "workspace:*",
         "react": ">=19.0.0",
         "react-dom": ">=19.0.0"
     },
     "optionalDependencies": {
         "react": ">=19.0.0",
         "react-dom": ">=19.0.0"
+    },
+    "types": "./lib/index.d.ts",
+    "dependencies": {
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*"
     },
     "exports": {
         ".": {
@@ -46,22 +49,21 @@
             "types": "./lib/host.d.ts",
             "default": "./lib/host.js"
         },
-        "./manifest": {
-            "types": "./lib/manifest.d.ts",
-            "default": "./lib/manifest.js"
+        "./context": {
+            "types": "./lib/context/index.d.ts",
+            "default": "./lib/context/index.js"
         }
     },
-    "types": "./lib/index.d.ts",
     "typesVersions": {
         "*": {
             ".": [
                 "./lib/index.d.ts"
             ],
-            "manifest": [
-                "./lib/manifest.d.ts"
-            ],
             "host": [
                 "./lib/host.d.ts"
+            ],
+            "context": [
+                "./lib/context/index.d.ts"
             ]
         }
     }

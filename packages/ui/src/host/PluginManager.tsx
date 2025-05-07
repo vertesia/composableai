@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { PluginManifest } from "./manifest.js";
+import { PluginManifest } from "@vertesia/common";
 
 export enum PluginInstanceStatus {
     registered,

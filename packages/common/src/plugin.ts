@@ -1,5 +1,5 @@
 /**
- * Used on server side too
+ * A vertesia plugin manifest
  */
 export interface PluginManifest {
     id: string;

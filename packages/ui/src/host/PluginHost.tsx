@@ -1,7 +1,11 @@
 import { useEffect, useInsertionEffect, useState } from "react";
-import { HostContext } from "./HostContext.js";
 import { usePluginModule } from "./PluginManager.js";
-import { createSharedContext } from "./host.js";
+import { HOST_CONTEXT_VAR, HostContext } from "../context/index.js";
+
+export function createSharedContext(context: HostContext): HostContext {
+    (globalThis as any)[HOST_CONTEXT_VAR] = context;
+    return context;
+}
 
 export function PluginHost({ pluginId, slot, context }: { pluginId: string, slot: string, context: HostContext }) {
     const [contextCreated, setContextCreated] = useState(false);
