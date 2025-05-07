@@ -75,16 +75,28 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${objectId}/content-source`);
     }
 
-    list(payload: ObjectSearchPayload = {}): Promise<ContentObjectItem[]> {
+    /**
+     * List objects with revision filtering options
+     *
+     * @param payload Search/filter parameters
+     * @returns Matching content objects
+     */
+    list<T = any>(payload: ObjectSearchPayload = {}): Promise<ContentObjectItem<T>[]> {
         const limit = payload.limit || 100;
         const offset = payload.offset || 0;
         const query = payload.query || ({} as ObjectSearchQuery);
+
+        // Add revision filtering options
+        const showAllRevisions = payload.show_all_revisions === true;
+        const revisionRoot = payload.from_root;
 
         return this.get("/", {
             query: {
                 limit,
                 offset,
                 ...query,
+                show_all_revisions: showAllRevisions ? "true" : undefined,
+                from_root: revisionRoot,
             },
         });
     }
@@ -99,12 +111,21 @@ export class ObjectsApi extends ApiTopic {
         path; //TODO
     }
 
+    /** Find object based on query */
     find(payload: FindPayload): Promise<ContentObject[]> {
         return this.post("/find", {
             payload,
         });
     }
 
+    /** Count number of objects matching this query */
+    count(payload: FindPayload): Promise<{ count: number }> {
+        return this.post("/count", {
+            payload,
+        });
+    }
+
+    /** Search object — different from find because allow full text search */
     search(payload: ComplexSearchPayload): Promise<ContentObjectItem[]> {
         return this.post("/search", {
             payload,
@@ -174,11 +195,17 @@ export class ObjectsApi extends ApiTopic {
                 throw err;
             });
 
+        //Etag need to be unquoted
+        //When a server returns an ETag header, it includes the quotes around the actual hash value.
+        //This is part of the HTTP specification (RFC 7232), which states that ETags should be
+        //enclosed in double quotes.
+        const etag = res.headers.get("etag")?.replace(/^"(.*)"$/, "$1");
+
         return {
             source: id,
             name: source.name,
             type: mime_type,
-            etag: res.headers.get("etag") ?? undefined,
+            etag,
         };
     }
 
@@ -218,10 +245,57 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    update(id: string, payload: Partial<CreateContentObjectPayload>): Promise<ContentObject> {
-        return this.put(`/${id}`, {
-            payload,
-        });
+    /**
+     * Updates an existing object or creates a new revision
+     * Handles file uploads similar to the create method
+     *
+     * @param id The ID of the object to update
+     * @param payload The changes to apply
+     * @param options Additional options
+     * @param options.createRevision Whether to create a new revision instead of updating in place
+     * @param options.revisionLabel Optional label for the revision (e.g., "v1.2")
+     * @returns The updated object or newly created revision
+     */
+    async update(
+        id: string,
+        payload: Partial<CreateContentObjectPayload>,
+        options?: {
+            createRevision?: boolean;
+            revisionLabel?: string;
+        },
+    ): Promise<ContentObject> {
+        const updatePayload: Partial<CreateContentObjectPayload> = {
+            ...payload,
+        };
+
+        // Handle file upload if content is provided as File or StreamSource
+        if (payload.content instanceof StreamSource || payload.content instanceof File) {
+            updatePayload.content = await this.upload(payload.content);
+        }
+
+        if (options?.createRevision) {
+            return this.put(`/${id}`, {
+                payload: updatePayload,
+                headers: {
+                    "x-create-revision": "true",
+                    "x-revision-label": options.revisionLabel || "",
+                },
+            });
+        } else {
+            return this.put(`/${id}`, {
+                payload: updatePayload,
+            });
+        }
+    }
+
+    /**
+     * Retrieves all revisions of a content object
+     *
+     * @param id The ID of any revision in the object's history
+     * @returns Array of all revisions sharing the same root
+     */
+    getRevisions(id: string): Promise<ContentObjectItem[]> {
+        return this.get(`/${id}/revisions`);
     }
 
     delete(id: string): Promise<{ id: string }> {
