@@ -1,4 +1,4 @@
-import { MultiPagePlugin } from "@vertesia/ui-extension-sdk";
+import { MultiPagePlugin } from "@vertesia/ui/context";
 import "./index.css";
 import { routes } from "./routes";
 

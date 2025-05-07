@@ -1,9 +1,9 @@
-import { useNavigate, useUserSession } from "@vertesia/ui-extension-sdk";
+import { useNavigate, useUserSession } from "@vertesia/ui/context";
 import { useEffect } from "react";
 
-interface MyPageProps {
+interface HomePageProps {
 }
-export function MyPage({ }: MyPageProps) {
+export function HomePage({ }: HomePageProps) {
     const { user, client } = useUserSession();
     const navigate = useNavigate();
 

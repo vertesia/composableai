@@ -1,9 +1,9 @@
-import { MyPage } from "./MyPage";
+import { HomePage } from "./pages/HomePage";
 
 export const routes = [
     {
         path: '/home',
-        Component: MyPage,
+        Component: HomePage,
     },
     {
         path: '/test',

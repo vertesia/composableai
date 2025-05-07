@@ -1,7 +1,7 @@
 import { runCommand } from "./utils.js";
 
 const DEV_DEPS: string[] = [
-    "@vertesia/ui-extension-sdk",
+    "@vertesia/ui",
     "@vertesia/vite-plugin-export-css",
     "@eslint/js",
     "@tailwindcss/vite",
@@ -13,12 +13,13 @@ const DEV_DEPS: string[] = [
     "eslint-plugin-react-hooks",
     "eslint-plugin-react-refresh",
     "globals",
+    "react",
+    "react-dom",
     "tailwindcss",
     "typescript",
     "typescript-eslint",
     "vite",
-    "vite-plugin-dts"
-
+    "vite-plugin-dts",
 ];
 
 function addDevDependencies(pm: "npm" | "pnpm", deps: string[]) {
