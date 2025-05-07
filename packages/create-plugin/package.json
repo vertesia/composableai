@@ -1,10 +1,10 @@
 {
-    "name": "@vertesia/create-agent",
+    "name": "@vertesia/create-puglin",
     "version": "0.54.0",
-    "description": "Initialize workflow agent package",
+    "description": "Initialize a Vertesia plugin package",
     "type": "module",
     "bin": {
-        "create-agent": "./bin/create-agent.mjs"
+        "create-plugin": "./bin/create-plugin.mjs"
     },
     "main": "./lib/main.js",
     "types": "./lib/main.d.ts",
@@ -13,14 +13,12 @@
         "template",
         "bin"
     ],
-    "license": "MIT",
-    "homepage": "https://composableprompts.com/docs",
+    "license": "Apache-2.0",
+    "homepage": "https://docs.vertesiahq.com/",
     "keywords": [
-        "workflow",
-        "temporal",
-        "agent",
-        "llm",
-        "composable"
+        "vertesia",
+        "ui",
+        "plugin"
     ],
     "scripts": {
         "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
