@@ -68,7 +68,7 @@ export interface PromptTemplate {
     inputSchema?: JSONSchema4;
     project: string | ProjectRef; // or projectRef? ObjectIdType;
     // The name of a field in the input data that is of the specified schema and on each the template will iterate.
-    // If not specified then the sceham will define the whole input data
+    // If not specified then the schema will define the whole input data
     tags?: string[];
     // only for drafts - when it was last published
     last_published_at?: Date;

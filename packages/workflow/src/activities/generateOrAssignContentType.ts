@@ -113,7 +113,7 @@ export async function generateOrAssignContentType(
     selectedType = types.find((t) => t.name === res.result.document_type);
 
     if (!selectedType) {
-        log.warn("Document type not idenfified: starting type generation");
+        log.warn("Document type not identified: starting type generation");
         const newType = await generateNewType(context, existing_types, content, fileRef);
         selectedType = { id: newType.id, name: newType.name };
     }

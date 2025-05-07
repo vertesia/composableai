@@ -6,7 +6,7 @@ import { getClient } from "../client.js";
 import { config, getCloudTypeFromConfigUrl, Profile } from "../profiles/index.js";
 import { runDocker, runDockerWithAgentConfig, runDockerWithOutput } from "./docker.js";
 import { AgentProject } from './project.js';
-import { tryRrefreshProjectToken } from './refresh.js';
+import { tryRefreshProjectToken } from './refresh.js';
 import { updateNpmrc } from "./registry.js";
 import { validateVersion } from './version.js';
 
@@ -16,7 +16,7 @@ export enum PublishMode {
     PushAndDeploy = 3
 }
 
-function shoudlDeploy(mode: PublishMode) {
+function shouldDeploy(mode: PublishMode) {
     return mode & PublishMode.Deploy;
 }
 
@@ -30,10 +30,10 @@ const LATEST_VERSION = "latest";
 
 async function pushImage(project: AgentProject, version: string) {
 
-    // we need to frefresh the profile token if needed since
+    // we need to refresh the profile token if needed since
     // the docker credentials helper are connecting to studio.
     // this will refresh the profile token if needed by asking the user to reconnect
-    await tryRrefreshProjectToken(project);
+    await tryRefreshProjectToken(project);
 
     const localTag = project.getLocalDockerTag(version);
     const remoteTag = project.getVertesiaDockerTag(version);
@@ -70,7 +70,7 @@ export async function publish(version: string, mode: PublishMode) {
     if (shouldPush(mode)) {
         await pushImage(project, version);
     }
-    if (shoudlDeploy(mode)) {
+    if (shouldDeploy(mode)) {
         await triggerDeploy(profile, project, version);
     }
 }
@@ -78,7 +78,7 @@ export async function publish(version: string, mode: PublishMode) {
 export async function build(contextDir = '.') {
     const project = new AgentProject();
 
-    const refreshResult = await tryRrefreshProjectToken(project);
+    const refreshResult = await tryRefreshProjectToken(project);
     if (refreshResult) {
         await updateNpmrc(project, refreshResult.profile);
     }
@@ -115,9 +115,9 @@ export function run(version: string = LATEST_VERSION) {
     // we need to inject the .env file into the container
     // and to get the google credentials needed by the worker
     // TODO: the google credentials will only work with vertesia users ...
-    // we need to specify the target palftorm to force qemu emulation for user on other platforms
+    // we need to specify the target platform to force qemu emulation for user on other platforms
     const args = ['run', '--platform', TARGET_PLATFORM, '--env-file', '.env'];
-    const googleCredsFile = getGoogleCreddentialsFile();
+    const googleCredsFile = getGoogleCredentialsFile();
     if (googleCredsFile) {
         args.push('-v', `${googleCredsFile}:/tmp/google-credentials.json`);
         args.push('-e', 'GOOGLE_APPLICATION_CREDENTIALS=/tmp/google-credentials.json');
@@ -150,7 +150,7 @@ export async function listVersions() {
             } else if (line.startsWith(remoteTagPrefix)) {
                 remoteTags[version] = { version, name };
                 versions.add(version);
-            } // else igonre
+            } // else ignore
         }
     }
 
@@ -182,7 +182,7 @@ interface TagInfo {
     name: string;
 }
 
-function getGoogleCreddentialsFile() {
+function getGoogleCredentialsFile() {
     const file = join(os.homedir(), '.config/gcloud/application_default_credentials.json');
     if (fs.existsSync(file)) {
         return file;

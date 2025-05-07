@@ -23,7 +23,7 @@ export interface CollectionItem extends BaseObject {
     /**
      * A flag to indicate if the collection is dynamic or static.
      * If the collection is dynamic, the members are determined by a query using the query field.
-     * Id the collection is static, the members are explicitly defined jusing the members array.
+     * If the collection is static, the members are explicitly defined using the members array.
      */
     dynamic: boolean;
     status: CollectionStatus;

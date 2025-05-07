@@ -37,7 +37,7 @@ program
   .description("Configure AWS Bedrock Execution environment")
   .requiredOption("-r, --region <region>", "The AWS region to use")
   .option(
-    "--env <environnment_name>",
+    "--env <environment_name>",
     "The Vertesia Execution Environment Name",
     "AWS Bedrock",
   )
@@ -60,7 +60,7 @@ program
 
 program
   .command("gcp")
-  .description("Configure GCP Vertex AI xecution environment")
+  .description("Configure GCP Vertex AI execution environment")
   .requiredOption("-r, --region <region>", "The GCP region to use")
   .option(
     "--pool-name <pool_name>",
@@ -77,7 +77,7 @@ program
     "The GCP project to use. defaults to the default project configured in gcloud",
   )
   .option(
-    "--env <environnment_name>",
+    "--env <environment_name>",
     "The Vertesia Execution Environment Name",
     "GCP Vertex AI",
   )

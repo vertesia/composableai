@@ -20,7 +20,7 @@ export function registerAgentCommand(program: Command) {
     agent.command("publish <version>")
         .description("Deploy a custom workflow worker. The user will be asked for a target image version.")
         .option("-d, --dir [project_dir]", "Use this as the current directory.")
-        .option("--push-only", "If used the docker image will be push only. The deoloyment will not be triggered.")
+        .option("--push-only", "If used the docker image will be push only. The deployment will not be triggered.")
         .option("--deploy-only", "If used the docker is assumed to be already pushed and only the deploy will be triggered.")
         .option("--verbose", "Print more information.")
         //.option("-p, --profile [profile]", "The profile name to use. If not specified the one from the package.json will be used.")

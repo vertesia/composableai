@@ -73,8 +73,8 @@ export async function init(dirName?: string | undefined) {
     const cmd = answer.pm;
 
     // copy template to current directory
-    const templDir = resolve(fileURLToPath(import.meta.url), '../../template');
-    await copyTree(templDir, dir);
+    const templateDirectory = resolve(fileURLToPath(import.meta.url), '../../template');
+    await copyTree(templateDirectory, dir);
 
     console.log("Generating package.json");
     const pkg = new Package({

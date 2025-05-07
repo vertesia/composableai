@@ -12,7 +12,7 @@ export interface ActivityTypeDefinition {
     value: string | boolean | number | null;
     // in case of objects
     members?: ActivityPropertyDefinition[];
-    // in case of arrays or promises will be innertype (i.e. the element type for arrays)
+    // in case of arrays or promises will be innerType (i.e. the element type for arrays)
     innerType?: ActivityTypeDefinition;
     // in case of enums the enum values will be here
     enum?: string[] | number[] | undefined;

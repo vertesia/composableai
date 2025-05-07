@@ -43,7 +43,7 @@ export interface ObjectSearchQuery extends SimpleSearchQuery {
 }
 
 export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
-    chunckable?: boolean;
+    chunkable?: boolean;
 }
 
 export interface PromptSearchQuery extends SimpleSearchQuery {

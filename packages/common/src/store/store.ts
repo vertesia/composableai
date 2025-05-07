@@ -205,7 +205,7 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
 }
 
 /**
- * When creating from an uploaded file the content shouild be an URL to the uploaded file
+ * When creating from an uploaded file the content should be an URL to the uploaded file
  */
 export interface CreateContentObjectPayload<T = any>
     extends Partial<Omit<ContentObject<T>, "id" | "root" | "created_at" | "updated_at" | "type" | "owner">> {
@@ -250,12 +250,12 @@ export interface ContentObjectType extends ContentObjectTypeItem {}
 export interface ContentObjectTypeItem extends BaseObject {
     is_chunkable?: boolean;
     /**
-     * This is only included in ContentObjectTypeItem if explicitely requested
+     * This is only included in ContentObjectTypeItem if explicitly requested
      * It is always included in ContentObjectType
      */
     table_layout?: ColumnLayout[];
     /**
-     * this is only included in ContentObjectTypeItem if explicitely requested
+     * this is only included in ContentObjectTypeItem if explicitly requested
      * It is always included in ContentObjectType
      */
     object_schema?: Record<string, any>; // an optional JSON schema for the object properties.
