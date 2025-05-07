@@ -2,7 +2,7 @@ import { createParser, ReconnectInterval, type EventSourceParser, type ParsedEve
 
 /**
  * We copied this file from the eventsource-parser/stream package and made it a part of our project.
- * because importing the eventsource-parser/stream breaks tsc build when buuilding the commonjs version
+ * because importing the eventsource-parser/stream breaks tsc build when building the commonjs version
  * see for a similar error: 
  * https://stackoverflow.com/questions/77280140/why-typescript-dont-see-exports-of-package-with-module-commonjs-and-moduleres
  */

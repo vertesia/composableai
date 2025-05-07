@@ -91,11 +91,11 @@ export async function convertPdfToStructuredText(payload: DSLActivityExecutionPa
 
         if (jobStatus === "SUCCEEDED") {
             log.info(`Job ${jobId} succeeded, saving results`, { jobId });
-            const ftext = await processor.processResults(jobId);
-            const tokensData = countTokens(ftext);
-            const etag = object.content.etag ?? md5(ftext);
+            const fText = await processor.processResults(jobId);
+            const tokensData = countTokens(fText);
+            const etag = object.content.etag ?? md5(fText);
             const updateData: CreateContentObjectPayload = {
-                text: ftext,
+                text: fText,
                 text_etag: etag,
                 tokens: {
                     ...tokensData,

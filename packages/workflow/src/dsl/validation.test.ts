@@ -18,7 +18,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(1);
     })
 
-    test('activities shpuld be an array', () => {
+    test('activities should be an array', () => {
         const workflow: any = {
             name: "test",
             activities: {}
@@ -81,7 +81,7 @@ describe('workflow validation', () => {
         expect(errors.length).toBe(0);
     })
 
-    test('import unknown imorted var through expressions', () => {
+    test('import unknown imported var through expressions', () => {
         const workflow: any = {
             name: "test",
             vars: { "foo": true },

@@ -121,12 +121,12 @@ export interface AdaptTablesParams {
 }
 
 interface DocAnalyzerRequestBase {
-    synchroneous?: boolean;
+    synchronous?: boolean;
 
     notify_endpoints?: string[];
 
     /**
-     * What environmenet to use to run the request
+     * What environment to use to run the request
      * If none specified the project embedded environment will be used
      */
     environment?: string;

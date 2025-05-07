@@ -11,7 +11,7 @@ import { streamRun } from "./streams.js";
 export async function createWorkflowRule(program: Command, options: Record<string, any>) {
     const { name, on, run, inputType } = options;
     if (!name) {
-        console.log("A name for the worklow is required. Use --name argument");
+        console.log("A name for the workflow is required. Use --name argument");
         process.exit(1);
     }
     if (!on) {

@@ -32,7 +32,7 @@ export async function it_gen_generatePart(payload: WorkflowExecutionPayload, pat
 
     const content = await loadGeneratedContent(outMemory);
 
-    let previously_generated = getPreviouslyGeneratedContent(content, !part, vars.rememberance_strategy);
+    let previously_generated = getPreviouslyGeneratedContent(content, !part, vars.remembrance_strategy);
 
     if (!part) { // a new section
         content.push({
@@ -58,7 +58,7 @@ export async function it_gen_generatePart(payload: WorkflowExecutionPayload, pat
 
     const result = r.result as string;
     content[content.length - 1].content += result;
-    meta.lastProcessdPart = path;
+    meta.lastProcessedPart = path;
     await buildAndPublishMemoryPack(client, `${memory}/output`, async ({ copyText }) => {
         copyText(JSON.stringify(content, null, 2), "content.json");
         return meta;

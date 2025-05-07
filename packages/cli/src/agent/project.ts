@@ -57,7 +57,7 @@ export class PackageJson implements AgentPackageJson {
         return this.data.vertesia.profile;
     }
 
-    set proffile(value: string) {
+    set profile(value: string) {
         this.data.vertesia.profile = value;
     }
 

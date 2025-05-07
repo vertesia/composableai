@@ -13,7 +13,7 @@ export interface IterativeGenerationPayload {
     // the main interaction will only be used to prepare the iteration (to generate the TOC)
     // otherwise it will be used for the iterative generation too.
     interaction: string;
-    // if defined this will be used for the iterative interaction which will genrate parts.
+    // if defined this will be used for the iterative interaction which will generate parts.
     // otherwise the main interaction will be used for iterative generation.
     iterative_interaction?: string;
     // the environment to use
@@ -34,10 +34,10 @@ export interface IterativeGenerationPayload {
      * If not set to "none" the previously generated content will be passed to the iteration.
      * If not set at all defaults to "section".
      * If "section" is used only the section content previously generated will be passed to the next iteration.
-     * If "document" is used the whole previopusly generated document content will be passed to the next iteration.
+     * If "document" is used the whole previously generated document content will be passed to the next iteration.
      * Defaults to section.
      */
-    rememberance_strategy?: "document" | "section" | "none";
+    remembrance_strategy?: "document" | "section" | "none";
     /**
      * If present will save sections in files using the pattern
      * The pattern must include a placeholder for the section id: %id.
@@ -88,7 +88,7 @@ export interface TocIndex {
 export interface OutputMemoryMeta {
     toc: Toc;
     previouslyGenerated: string;
-    lastProcessdPart?: number[] | undefined;
+    lastProcessedPart?: number[] | undefined;
 }
 
 export interface Section {

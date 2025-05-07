@@ -17,7 +17,7 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
 
     /**
      * The account ID of the user who created the activity.
-     * This is usefull to select the right database to work on.
+     * This is useful to select the right database to work on.
      */
     account_id: string;
 
@@ -33,7 +33,7 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
      *
      * In the case of workflows started by events (e.g. using a a workflow rule) the user input vars will be initialized with the workflow rule configuration field.
      *
-     * In case of dsl workflows the worflow execution payload vars will be applied over the default vars values stored in the DSL vars field.
+     * In case of dsl workflows the workflow execution payload vars will be applied over the default vars values stored in the DSL vars field.
      */
     vars: T;
 
@@ -54,7 +54,7 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
 
     /**
      * The list of endpoints to notify when the workflow finishes.
-     * It is handled by a subworkflow execution, so the main workflow will not wait for the notification to be sent.
+     * It is handled by a sub-workflow execution, so the main workflow will not wait for the notification to be sent.
      */
     notify_endpoints?: string[];
 

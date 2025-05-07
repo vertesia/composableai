@@ -104,7 +104,7 @@ export function registerWorkflowsCommand(program: Command) {
         .description("Transpile a typescript workflow definition to JSON.")
         .option(
             "-o, --out [file]",
-            "An output file or directory. When multiple files are specified it must be a directory. If not specified the transpiled files are printed to stdoud.",
+            "An output file or directory. When multiple files are specified it must be a directory. If not specified the transpiled files are printed to stdout.",
         )
         .action(async (files: string[], options: Record<string, any>) => {
             await transpileWorkflow(program, files, options);

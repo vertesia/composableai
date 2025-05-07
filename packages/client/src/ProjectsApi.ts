@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MacgicPdfConfiguration, Project, ProjectIntegrationListEntry, ProjectRef, SupportedIntegrations } from "@vertesia/common";
+import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MagicPdfConfiguration, Project, ProjectIntegrationListEntry, ProjectRef, SupportedIntegrations } from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -40,7 +40,7 @@ class IntegrationsConfigurationApi extends ApiTopic {
         return this.get(`/${projectId}/integrations`).then(res => res.integrations);
     }
 
-    retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<GladiaConfiguration | GithubConfiguration | AwsConfiguration | MacgicPdfConfiguration | undefined> {
+    retrieve(projectId: string, integrationId: SupportedIntegrations): Promise<GladiaConfiguration | GithubConfiguration | AwsConfiguration | MagicPdfConfiguration | undefined> {
         return this.get(`/${projectId}/integrations/${integrationId}`).catch(err => {
             if (err.status === 404) {
                 return undefined;

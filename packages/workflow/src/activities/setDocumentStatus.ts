@@ -11,7 +11,7 @@ export interface SetDocumentStatus extends DSLActivitySpec<SetDocumentStatusPara
 }
 
 /**
- * We are using a union type for the status parameter since typescript enumbs breaks the workflow code generation
+ * We are using a union type for the status parameter since typescript enums breaks the workflow code generation
  * @param objectId
  * @param status
  */

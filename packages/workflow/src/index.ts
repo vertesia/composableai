@@ -3,7 +3,7 @@
  * Modify the `./activities/index.ts` if you want to modify activity exports
  * 2. Workflows are exported through the '/workflows' named export in package.json.
  * Modify the `./workflows.ts` file if you want to modify workflow exports
- * 3. Here we export the API to be used to validate workflows and the types reuired to create workflow TS definitions.
+ * 3. Here we export the API to be used to validate workflows and the types required to create workflow TS definitions.
  */
 
 //TODO remove this - it is only for backward compat - iot is used from old workflows

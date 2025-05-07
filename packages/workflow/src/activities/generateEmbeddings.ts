@@ -214,7 +214,7 @@ async function generateTextEmbeddings({ document, client, type, config }: Execut
                 }
                 log.info(`Generated embeddings for part ${i}`, { len: e.values.length, duration: new Date().getTime() - localStart });
 
-                return { inumber: i, result: e }
+                return { number: i, result: e }
             } catch (err: any) {
                 log.info(`Error generating ${type} embeddings for part ${i} of ${document.id}`, { error: err });
                 return { number: i, result: null, message: "error generating embeddings", error: err.message }
