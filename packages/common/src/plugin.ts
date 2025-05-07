@@ -8,4 +8,5 @@ export interface PluginManifest {
     version: string;
     publisher: string;
     description?: string;
+    icon?: string;
 }
