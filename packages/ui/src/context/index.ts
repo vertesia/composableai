@@ -10,6 +10,7 @@ import { HOST_CONTEXT_VAR, HostContext } from "./HostContext.js";
 const context = (globalThis as any)[HOST_CONTEXT_VAR] as HostContext;
 
 export const {
+    useUserSession,
     useRouterContext,
     useNavigate,
     useLocation,
