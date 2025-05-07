@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/vite-plugin-export-css",
-  "version": "0.52.0",
+  "version": "0.54.0",
   "description": "Export css as part of the plugin main entry file",
   "type": "module",
   "types": "./lib/index.d.ts",
