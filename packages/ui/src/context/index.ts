@@ -5,9 +5,7 @@
  * import {SomeComponnet, useSomeHook } from '@vetesia/ui-extension-sdk/context';
  */
 
-import { HostContext } from "./HostContext.js";
-
-export const HOST_CONTEXT_VAR = '__vetesia_host_context__';
+import { HOST_CONTEXT_VAR, HostContext } from "./HostContext.js";
 
 const context = (globalThis as any)[HOST_CONTEXT_VAR] as HostContext;
 
