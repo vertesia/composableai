@@ -17,7 +17,8 @@ export function mergeJSONSchemas(schemas: JSONSchema[]) {
             Object.assign(props, schema.properties);
         }
     }
-    return Object.keys(props).length > 0 ? { properties: props, required } as JSONSchema : null;
+    const schema = Object.keys(props).length > 0 ? { properties: props, required, type: 'object' } as JSONSchema : null;
+    return schema;
 }
 
 export function _mergePromptsSchema(prompts: PromptSegmentDef<PromptTemplateRefWithSchema>[] | PopulatedPromptSegmentDef[]) {
