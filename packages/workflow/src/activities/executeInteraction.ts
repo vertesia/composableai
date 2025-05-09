@@ -154,6 +154,9 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         if (error.message.includes("Failed to validate merged prompt schema")) {
             //issue with the input data, don't retry
             throw new ActivityParamInvalid("prompt_data", payload.activity, error.message);
+        } else if (error.message.includes("modelId: Path `modelId` is required")) {
+            //issue with the input data, don't retry
+            throw new ActivityParamInvalid("model", payload.activity, error.message);
         } else {
             throw error;
         }
