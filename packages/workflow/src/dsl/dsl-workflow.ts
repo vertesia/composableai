@@ -21,7 +21,7 @@ import {
     WorkflowExecutionPayload
 } from "@vertesia/common";
 import ms, { StringValue } from 'ms';
-import { ActivityParamNotFound, NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
+import { ActivityParamInvalid, ActivityParamNotFound, NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
 import { Vars } from "./vars.js";
 import { HandleDslErrorParams } from "../activities/handleError.js";
 import * as activities from "../activities/index.js";
@@ -65,6 +65,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
                 NoDocumentFound.name,
                 ActivityParamNotFound.name,
                 WorkflowParamNotFound.name,
+                ActivityParamInvalid.name,
             ],
         },
     };
