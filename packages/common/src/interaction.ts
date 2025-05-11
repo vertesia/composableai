@@ -354,6 +354,9 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * If not specified, default value of 150K tokens will be used.
      */
     checkpoint_tokens?: number;
+
+    /** In child execution workflow, this is the curent task_id */
+    task_id?: string;
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {

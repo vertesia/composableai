@@ -24,9 +24,15 @@ export interface MagicPdfConfiguration extends IntegrationConfigurationBase {
     default_zones?: string[];
 }
 
+export interface SerperConfiguration extends IntegrationConfigurationBase {
+    api_key: string;
+    url?: string;
+}
+
 export enum SupportedIntegrations {
     gladia = "gladia",
     github = "github",
     aws = "aws",
     magic_pdf = "magic_pdf",
+    serper = "serper",
 }

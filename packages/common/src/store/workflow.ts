@@ -58,6 +58,11 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
      */
     notify_endpoints?: string[];
 
+    /** If this is a child workflow, parent contains parent's ids  */
+    parent?: {
+        run_id: string;
+        workflow_id: string;
+    };
 }
 
 export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {
@@ -91,7 +96,6 @@ export function getDocumentIds(payload: WorkflowExecutionPayload): string[] {
 }
 
 export interface ExecuteWorkflowPayload {
-
     /**
      * The task queue to assign the workflow to. Deprecated, queues are choosend server side
      */
@@ -115,8 +119,8 @@ export interface ExecuteWorkflowPayload {
     unique?: boolean;
 
     /**
-         * A custom ID to use for the workflow execution id instead of the generated one.
-         */
+     * A custom ID to use for the workflow execution id instead of the generated one.
+     */
     custom_id?: string;
 
     /**
@@ -126,7 +130,6 @@ export interface ExecuteWorkflowPayload {
 }
 
 export interface ListWorkflowRunsPayload {
-
     /**
      * The document ID passed to a workflow run.
      */
@@ -268,6 +271,7 @@ export interface AgentMessage {
     type: AgentMessageType;
     message?: string;
     details?: any;
+    workstream_id?: string;
 }
 
 export enum AgentMessageType {
@@ -282,4 +286,17 @@ export enum AgentMessageType {
     QUESTION = "question",
     REQUEST_INPUT = "request_input",
     IDLE = "idle",
+}
+
+interface PlanTask {
+    id: number;
+    goal: string;
+    instructions: string[];
+    comment?: string;
+    status?: "pending" | "in_progress" | "completed";
+}
+
+export interface Plan {
+    plan: PlanTask[];
+    comment?: string;
 }
