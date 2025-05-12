@@ -288,12 +288,12 @@ export enum AgentMessageType {
     IDLE = "idle",
 }
 
-interface PlanTask {
+export interface PlanTask {
     id: number;
     goal: string;
     instructions: string[];
     comment?: string;
-    status?: "pending" | "in_progress" | "completed";
+    status?: "pending" | "in_progress" | "completed" | "skipped";
 }
 
 export interface Plan {
