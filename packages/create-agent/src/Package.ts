@@ -12,8 +12,10 @@ interface PackageJson {
     devDependencies?: Record<string, string>;
     scripts?: Record<string, string>;
     bin?: Record<string, string>,
-    vertesia?: {
+    config?: {
         pm?: string;
+    };
+    vertesia?: {
         profile?: string;
         image?: {
             repository?: string;
