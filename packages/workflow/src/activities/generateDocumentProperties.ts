@@ -73,6 +73,7 @@ export async function generateDocumentProperties(
             ...params,
             include_previous_error: true,
             result_schema: type.object_schema,
+            validate_result: type.strict_mode,
         },
         promptData,
         payload.debug_mode ?? false,
