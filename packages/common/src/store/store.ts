@@ -246,7 +246,7 @@ export interface ColumnLayout {
      */
     default?: any;
 }
-export interface ContentObjectType extends ContentObjectTypeItem {}
+export interface ContentObjectType extends ContentObjectTypeItem { }
 export interface ContentObjectTypeItem extends BaseObject {
     is_chunkable?: boolean;
     /**
@@ -259,10 +259,15 @@ export interface ContentObjectTypeItem extends BaseObject {
      * It is always included in ContentObjectType
      */
     object_schema?: Record<string, any>; // an optional JSON schema for the object properties.
+
+    /**
+     * Determines if the content will be validated against the object schema a generation time and save/update time.
+     */
+    strict_mode?: boolean;
 }
 
 export interface CreateContentObjectTypePayload
-    extends Omit<ContentObjectType, "id" | "created_at" | "updated_at" | "created_by" | "updated_by"> {}
+    extends Omit<ContentObjectType, "id" | "created_at" | "updated_at" | "created_by" | "updated_by"> { }
 
 export enum WorkflowRuleInputType {
     single = "single",
@@ -302,7 +307,7 @@ export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {
     endpoint: string; // required
 }
 export interface UploadWorkflowRulePayload
-    extends Partial<Omit<WorkflowRule, "id" | "created_at" | "updated_at" | "owner">> {}
+    extends Partial<Omit<WorkflowRule, "id" | "created_at" | "updated_at" | "owner">> { }
 
 export interface GetRenditionResponse {
     status: "found" | "generating" | "failed";
