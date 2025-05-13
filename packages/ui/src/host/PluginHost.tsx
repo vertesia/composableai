@@ -1,6 +1,6 @@
 import { useEffect, useInsertionEffect, useState } from "react";
-import { usePluginModule } from "./PluginManager.js";
 import { HOST_CONTEXT_VAR, HostContext } from "../context/HostContext.js";
+import { usePluginModule } from "./PluginManager.js";
 
 function createSharedContext(context: HostContext): HostContext {
     (globalThis as any)[HOST_CONTEXT_VAR] = context;
@@ -16,6 +16,7 @@ export function PluginHost({ pluginId, slot, context }: { pluginId: string, slot
     return contextCreated && <_PluginHost pluginId={pluginId} slot={slot} />
 }
 
+
 function _PluginHost({ pluginId, slot }: { pluginId: string, slot: string }) {
     const { plugin, module, error } = usePluginModule(pluginId);
     useInsertionEffect(() => {
@@ -23,7 +24,6 @@ function _PluginHost({ pluginId, slot }: { pluginId: string, slot: string }) {
             plugin!.install();
         }
     }, [module]);
-
     if (!plugin) {
         return <div>Plugin {pluginId} not found</div>
     } else if (error) {
@@ -33,5 +33,4 @@ function _PluginHost({ pluginId, slot }: { pluginId: string, slot: string }) {
     } else {
         return <div>Loading ...</div>
     }
-
 }

@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { PluginManifest } from "@vertesia/common";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 export enum PluginInstanceStatus {
     registered,
@@ -19,7 +19,11 @@ export class PluginInstance {
     _module?: PluginModule;
     error?: Error;
 
-    constructor(public manifest: PluginManifest) {
+    constructor(public manifest: PluginManifest, importFn?: (name: string) => Promise<any>) {
+        this.manifest = manifest;
+        if (importFn) {
+            this._import = () => importFn(this.manifest.id);
+        }
     }
 
     get isInstalled() {
@@ -34,10 +38,14 @@ export class PluginInstance {
         return `plugin-style-${this.manifest.id}`;
     }
 
+    _import() {
+        return import(/* @vite-ignore */ this.manifest.src);
+    }
+
     async _load() {
         if (this.status === PluginInstanceStatus.registered) {
             try {
-                const module = await import(/* @vite-ignore */ this.manifest.src);
+                const module = await this._import();
                 this.status = PluginInstanceStatus.loading;
                 if (typeof module.mount !== "function") {
                     throw new Error(`Plugin ${this.manifest.id} does not provide a mount function`);
@@ -92,14 +100,14 @@ export class PluginInstance {
 
 export class PluginManager {
     plugins: Record<string, PluginInstance> = {};
-    constructor(manifests: PluginManifest[] = []) {
+    constructor(manifests: PluginManifest[] = [], public importFn?: (name: string) => Promise<any>) {
         this.addAll(manifests);
     }
     addAll(manifests: PluginManifest[]) {
         return manifests.map(manifest => this.add(manifest));
     }
     add(manifest: PluginManifest) {
-        const instance = new PluginInstance(manifest);
+        const instance = new PluginInstance(manifest, this.importFn);
         this.plugins[manifest.id] = instance;
         return instance;
     }
@@ -125,10 +133,11 @@ const PluginManagerContext = createContext<PluginManagerState | null>(null);
 interface PluginsProviderProps {
     plugins: PluginManifest[];
     children?: React.ReactNode | React.ReactNode[];
+    importFn?: (name: string) => Promise<any>;
 }
-export function PluginsProvider({ plugins, children }: PluginsProviderProps) {
+export function PluginsProvider({ plugins, children, importFn }: PluginsProviderProps) {
     const [key, setKey] = useState(0);
-    const manager = useMemo(() => new PluginManager(plugins), [plugins]);
+    const manager = useMemo(() => new PluginManager(plugins, importFn), [plugins]);
     const ctx = {
         manager,
         refresh: () => setKey(key + 1),
