@@ -209,7 +209,7 @@ export async function executeInteractionFromActivity(
         environment: params.environment,
         model: params.model,
         model_options: params.model_options,
-        do_validate: strict_validation,
+        do_validate: params.validate_result,
     };
     const data = {
         ...prompt_data,
