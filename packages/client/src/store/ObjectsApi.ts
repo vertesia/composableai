@@ -212,8 +212,8 @@ export class ObjectsApi extends ApiTopic {
     async create(
         payload: UploadContentObjectPayload,
         options?: {
-            collectionId?: string
-        }
+            collection_id?: string;
+        },
     ): Promise<ContentObject> {
         const createPayload: CreateContentObjectPayload = {
             ...payload,
