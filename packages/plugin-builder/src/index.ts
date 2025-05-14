@@ -3,25 +3,25 @@ import { join } from "node:path";
 import { Plugin } from "vite";
 import { extractTailwindUtilitiesLayer } from "./parse-css.js";
 
-interface ProcessPluginCssOptions {
+interface VertesiaPluginBuilderOptions {
     cssVar?: string;
     // the input file. defaults to src/index.css
     input?: string;
     // the output file name. Defaults to index.css
     output?: string;
 }
-export function processPluginCss({
+export function vertesiaPluginBuilder({
     cssVar,
     input,
     output,
-}: ProcessPluginCssOptions = {}) {
+}: VertesiaPluginBuilderOptions = {}) {
     const CSS_VAR = cssVar || 'css';
     if (!input) input = 'src/index.css';
-    if (!output) output = 'index.css';
+    if (!output) output = 'plugin.css';
     const inputRelative = input.startsWith('./') ? input : `./${input}`;
     const jsOutput = output.replace('.css', '.js');
     return {
-        name: 'process-vertesia-plugin-css',
+        name: 'vertesia-plugin-builder',
         apply: 'build' as 'build',
         enforce: 'post',
         resolveId(id) {

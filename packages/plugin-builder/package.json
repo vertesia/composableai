@@ -1,7 +1,7 @@
 {
-  "name": "@vertesia/vite-process-plugin-css",
+  "name": "@vertesia/plugin-builder",
   "version": "0.55.0",
-  "description": "Export css as part of the plugin main entry file",
+  "description": "A vite plugin to build vertesia UI plugins",
   "type": "module",
   "types": "./lib/index.d.ts",
   "main": "./lib/index.js",
