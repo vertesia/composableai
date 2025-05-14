@@ -209,7 +209,12 @@ export class ObjectsApi extends ApiTopic {
         };
     }
 
-    async create(payload: UploadContentObjectPayload): Promise<ContentObject> {
+    async create(
+        payload: UploadContentObjectPayload,
+        options?: {
+            collection_id?: string;
+        },
+    ): Promise<ContentObject> {
         const createPayload: CreateContentObjectPayload = {
             ...payload,
         };
@@ -218,6 +223,7 @@ export class ObjectsApi extends ApiTopic {
         }
         return await this.post("/", {
             payload: createPayload,
+            query: options || {},
         });
     }
 

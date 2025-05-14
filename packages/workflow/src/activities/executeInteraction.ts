@@ -74,9 +74,12 @@ export interface InteractionExecutionParams {
     model?: string;
 
     /**
-     * Force a JSON schema for the result
+     * Request a JSON schema for the result
      */
     result_schema?: any;
+
+    /** Wether to validate the result against the schema */
+    validate_result?: boolean;
 
     /**
      * Tags to add to the execution run
@@ -206,6 +209,7 @@ export async function executeInteractionFromActivity(
         environment: params.environment,
         model: params.model,
         model_options: params.model_options,
+        do_validate: params.validate_result,
     };
     const data = {
         ...prompt_data,

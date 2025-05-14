@@ -57,16 +57,11 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/execute/${name}`, { payload });
     }
 
-    postMessage(runId: string, message: string, type?: AgentMessageType, details?: any): Promise<void> {
+    postMessage(runId: string, msg: AgentMessage): Promise<void> {
         if (!runId) {
             throw new Error("runId is required");
         }
-        const payload = {
-            message,
-            type,
-            details,
-        };
-        return this.post(`/runs/${runId}/updates`, { payload });
+        return this.post(`/runs/${runId}/updates`, { payload: msg });
     }
 
     retrieveMessages(runId: string, since?: number): Promise<AgentMessage[]> {
@@ -106,10 +101,14 @@ export class WorkflowsApi extends ApiTopic {
                         const message = JSON.parse(ev.data) as AgentMessage;
                         if (onMessage) onMessage(message);
 
-                        if (message.type === AgentMessageType.COMPLETE) {
+                        // Only close the stream when the main workstream completes
+                        if (message.type === AgentMessageType.COMPLETE && (!message.workstream_id || message.workstream_id === 'main')) {
+                            console.log("Closing stream due to COMPLETE message from main workstream");
                             sse.close();
                             isClosed = true;
                             resolve();
+                        } else if (message.type === AgentMessageType.COMPLETE) {
+                            console.log(`Received COMPLETE message from non-main workstream: ${message.workstream_id || 'unknown'}, keeping stream open`);
                         }
                     } catch (err) {
                         console.error("Failed to parse SSE message:", err, ev.data);
@@ -125,7 +124,7 @@ export class WorkflowsApi extends ApiTopic {
                 };
 
                 // Prevent Node from exiting prematurely
-                const interval = setInterval(() => { }, 1000);
+                const interval = setInterval(() => {}, 1000);
 
                 // Cleanup when stream resolves
                 const cleanup = () => {

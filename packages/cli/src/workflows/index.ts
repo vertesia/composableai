@@ -77,7 +77,7 @@ export function registerWorkflowsCommand(program: Command) {
         .description("Execute a workflow by name")
         .option("-o, --objectId [objectIds...]", "Optional object to execute the workflow on.")
         .option("-v, --vars [vars]", "The workflow vars as an inline JSON.")
-        .option("--queue", "The task queue name. Defaults to zeno-content")
+        .option("--queue [queue]", "The task queue name. Defaults to zeno-content","zeno-content")
         .option("-f, --file [file]", "A file containing workflow execution payload.")
         .option("-s, --stream", "Stream the execution")
         .option("-i, --interactive", "Enable interactive mode to send messages during workflow execution", false)
