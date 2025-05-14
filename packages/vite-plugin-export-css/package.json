@@ -1,5 +1,5 @@
 {
-  "name": "@vertesia/vite-plugin-export-css",
+  "name": "@vertesia/vite-process-plugin-css",
   "version": "0.55.0",
   "description": "Export css as part of the plugin main entry file",
   "type": "module",
@@ -30,5 +30,8 @@
   "dependencies": {
     "@adobe/css-tools": "^4.4.1",
     "@types/node": "^22.13.1"
+  },
+  "peerDependencies": {
+    "vite": ">=4.2.0"
   }
 }
