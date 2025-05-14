@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts'; // Generates TypeScript declarations
 import { exportPluginCss } from '@vertesia/vite-plugin-export-css';
-import { version } from "./package.json"
 
 const EXTERNALS = [
   'react',
