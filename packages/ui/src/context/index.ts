@@ -14,7 +14,7 @@ export const {
     useRouterContext,
     useNavigate,
     useLocation,
-    MultiPagePlugin,
+    NestedRouterProvider,
 } = context;
 
 export * from "./HostContext.js";

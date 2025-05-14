@@ -54,8 +54,7 @@ interface LazyComponentRoute {
     LazyComponent: LazyImportFn;
 }
 type Route = ComponentRoute | LazyComponentRoute;
-export interface MultiPagePluginProps {
-    title: string;
+export interface NestedRouterProviderProps {
     routes: Route[],
     /**
      * The path to use for the root resource. Defaults to '/'. Cannot contains path vairables or wildcards
@@ -69,5 +68,5 @@ export interface HostContext {
     useRouterContext: () => RouterContext;
     useNavigate: () => (path: string, options?: NavigateOptions) => void;
     useLocation: () => Location;
-    MultiPagePlugin: React.ComponentType<MultiPagePluginProps>;
+    NestedRouterProvider: React.ComponentType<NestedRouterProviderProps>;
 }
