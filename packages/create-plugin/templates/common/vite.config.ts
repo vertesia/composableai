@@ -32,7 +32,6 @@ export default defineConfig(({ command }) => {
       lib: isBuildMode ? {
         entry: './src/index.tsx', // Main entry point of your library
         formats: ['es'], // Build ESM versions
-        name: '${plugin_var_name}',
         fileName: "plugin",
       } : undefined,
       minify: false,
