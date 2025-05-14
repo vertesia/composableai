@@ -34,7 +34,7 @@ export default defineConfig(({ command }) => {
         entry: './src/index.tsx', // Main entry point of your library
         formats: ['es'], // Build ESM versions
         name: '${plugin_var_name}',
-        fileName: `${plugin_name}-${version}`,
+        fileName: "plugin",
       } : undefined,
       minify: false,
       rollupOptions: {
