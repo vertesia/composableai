@@ -8,7 +8,7 @@ overrides:
   cross-spawn@<6.0.6: ^6.0.6
   esbuild@<0.25.0: ^0.25.0
   koa@>=2.0.0 <2.15.4: ^2.15.4
-  vite: ^6.2.7
+  vite: ^6.3.5
 
 importers:
 
@@ -24,7 +24,7 @@ importers:
         specifier: ^5.3.3
         version: 5.8.3
       vite:
-        specifier: ^6.2.7
+        specifier: ^6.3.5
         version: 6.3.5(@types/node@22.13.8)(terser@5.39.0)(tsx@3.14.0)(yaml@2.7.1)
 
   llumiverse/core:
@@ -1612,7 +1612,7 @@ packages:
     resolution: {integrity: sha512-ryERPIBOnvevAkTq+L1lD+DTFBRcjueL9lOUfXsLfwP92h4e+Heb+PjiqS3/OURWPtywfafK0kj++yDFjWUmrA==}
     peerDependencies:
       msw: ^2.4.9
-      vite: ^6.2.7
+      vite: ^6.3.5
     peerDependenciesMeta:
       msw:
         optional: true
