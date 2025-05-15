@@ -19,4 +19,8 @@ export interface PluginManifest {
      * Default is false.
      */
     external?: boolean;
+    /**
+     * The default is "beta".
+     */
+    status?: "beta" | "stable" | "deprecated" | "hidden";
 }

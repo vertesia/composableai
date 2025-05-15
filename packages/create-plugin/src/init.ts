@@ -111,7 +111,8 @@ export async function init(dirName?: string | undefined) {
             title: pluginName.title,
             icon: "icon:AppWindowIcon",
             publisher: pluginName.scope || "vertesia",
-            external: false
+            external: false,
+            status: "beta",
         }
     });
 

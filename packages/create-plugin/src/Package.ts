@@ -21,6 +21,7 @@ interface PackageJson {
         icon?: string;
         publisher?: string;
         external?: boolean;
+        status?: "beta" | "stable" | "deprecated" | "hidden";
     };
 }
 
