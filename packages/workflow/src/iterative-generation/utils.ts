@@ -79,19 +79,19 @@ export function getPreviousPathIndex(toc: Toc, pathIndex: number[]): number[] | 
 
 
 export function expectMemoryIsConsistent(meta: OutputMemoryMeta, pathIndex: number[]) {
-    const metaLastProcessedPart = meta.lastProcessdPart;
+    const metaLastProcessedPart = meta.lastProcessedPart;
     if (!metaLastProcessedPart) {
         if (pathIndex.length > 1 && pathIndex[0] !== 0) {
-            throw ApplicationFailure.nonRetryable('Memory last processed part is not consitent with the workflow.', 'MemoryPackNotConsistent', { currentIndex: pathIndex, expectedPreviousIndex: [pathIndex[0], pathIndex[1] - 1], previousIndex: metaLastProcessedPart });
+            throw ApplicationFailure.nonRetryable('Memory last processed part is not consistent with the workflow.', 'MemoryPackNotConsistent', { currentIndex: pathIndex, expectedPreviousIndex: [pathIndex[0], pathIndex[1] - 1], previousIndex: metaLastProcessedPart });
         } else {
             return;
         }
     }
     const prevPathIndex = getPreviousPathIndex(meta.toc, pathIndex);
     if (!prevPathIndex) {
-        throw ApplicationFailure.nonRetryable('Memory last processed part is not consitent with the workflow', 'MemoryPackNotConsistent', { currentIndex: pathIndex, expectedPreviousIndex: prevPathIndex, previousIndex: metaLastProcessedPart });
+        throw ApplicationFailure.nonRetryable('Memory last processed part is not consistent with the workflow', 'MemoryPackNotConsistent', { currentIndex: pathIndex, expectedPreviousIndex: prevPathIndex, previousIndex: metaLastProcessedPart });
     } else if (!isSamePartIndex(prevPathIndex, metaLastProcessedPart)) {
-        throw ApplicationFailure.nonRetryable('Memory last processed part is not consitent with the workflow', 'MemoryPackNotConsistent', { currentIndex: pathIndex, expectedPreviousIndex: prevPathIndex, previousIndex: meta.lastProcessdPart });
+        throw ApplicationFailure.nonRetryable('Memory last processed part is not consistent with the workflow', 'MemoryPackNotConsistent', { currentIndex: pathIndex, expectedPreviousIndex: prevPathIndex, previousIndex: meta.lastProcessedPart });
     }
 }
 

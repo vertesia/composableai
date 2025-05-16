@@ -42,13 +42,13 @@ export interface InteractionEndpointQuery {
 
     /**
      * Filter by interaction endpoint name to include only the specified endpoints
-     * * If both includes and excludes are specified then omly the includes filter will be used.
+     * * If both includes and excludes are specified then only the includes filter will be used.
      */
     includes?: string[];
 
     /**
      * Filter by interaction endpoint name to excludes the specified endpoints.
-     * If both includes and excludes are specified then omly the includes filter will be used.
+     * If both includes and excludes are specified then only the includes filter will be used.
      */
     excludes?: string[];
 
@@ -104,7 +104,7 @@ export interface InteractionRefWithSchema extends Omit<InteractionRef, "prompts"
 
 export interface InteractionsExportPayload {
     /**
-     * The name of the interaction. If not spcified all the interactions in the current project will be exported
+     * The name of the interaction. If not specified all the interactions in the current project will be exported
      */
     name?: string;
     /*
@@ -239,7 +239,7 @@ export interface InteractionForkPayload {
 export interface InteractionExecutionPayload {
     /**
      * If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location.
-     * and the other proerties of the data will contain the memory pack mapping.
+     * and the other properties of the data will contain the memory pack mapping.
      */
     data?: Record<string, any> | `memory:${string}`;
     config?: InteractionExecutionConfiguration;
@@ -336,6 +336,27 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * Whether to disable the generation of interaction tools or not.
      */
     disable_interaction_tools?: boolean;
+
+    /**
+     * On which scope should the searched by applied, by the search_tool.
+     * Only supports collection scope or null for now.
+     */
+    search_scope?: string;
+
+    /**
+     * The collection in which this workflow is executing
+     */
+    collection_id?: string;
+
+    /**
+     * The token threshold in thousands (K) for creating checkpoints.
+     * If total tokens exceed this value, a checkpoint will be created.
+     * If not specified, default value of 150K tokens will be used.
+     */
+    checkpoint_tokens?: number;
+
+    /** In child execution workflow, this is the curent task_id */
+    task_id?: string;
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
@@ -413,7 +434,7 @@ export interface ExecutionRun<P = any, R = any> {
     /**
      * The parameters used to create the interaction.
      * If the parameters contains the special property "@memory" it will be used
-     * to locate a meory pack and the other properties will be used as the memory pack mapping.
+     * to locate a memory pack and the other properties will be used as the memory pack mapping.
      */
     parameters: P; //params used to create the interaction, only in varies on?
     tags?: string[];

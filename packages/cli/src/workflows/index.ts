@@ -77,7 +77,7 @@ export function registerWorkflowsCommand(program: Command) {
         .description("Execute a workflow by name")
         .option("-o, --objectId [objectIds...]", "Optional object to execute the workflow on.")
         .option("-v, --vars [vars]", "The workflow vars as an inline JSON.")
-        .option("--queue", "The task queue name. Defaults to zeno-content")
+        .option("--queue [queue]", "The task queue name. Defaults to zeno-content","zeno-content")
         .option("-f, --file [file]", "A file containing workflow execution payload.")
         .option("-s, --stream", "Stream the execution")
         .option("-i, --interactive", "Enable interactive mode to send messages during workflow execution", false)
@@ -104,7 +104,7 @@ export function registerWorkflowsCommand(program: Command) {
         .description("Transpile a typescript workflow definition to JSON.")
         .option(
             "-o, --out [file]",
-            "An output file or directory. When multiple files are specified it must be a directory. If not specified the transpiled files are printed to stdoud.",
+            "An output file or directory. When multiple files are specified it must be a directory. If not specified the transpiled files are printed to stdout.",
         )
         .action(async (files: string[], options: Record<string, any>) => {
             await transpileWorkflow(program, files, options);

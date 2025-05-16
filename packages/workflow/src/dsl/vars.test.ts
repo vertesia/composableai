@@ -125,7 +125,7 @@ describe('Workflow vars', () => {
         expect(resolved.prompt_data.message).toBe("hello");
         expect(resolved.data2).toBeTypeOf("object");
         expect(resolved.data2.message).toBe("hello");
-        expect(resolved.unnown).toBeUndefined();
+        expect(resolved.unknown).toBeUndefined();
     });
 
 

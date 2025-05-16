@@ -31,9 +31,9 @@ export function registerObjectsCommand(program: Command) {
             getObject(program, objectId, options);
         });
     store.command('list [folderPath]')
-        .description("List the objects inside a folder. If no folder is specified all the obejcts are listed.")
-        .option('-l,--limit [limit]', 'Limit the number of objects returned. The default limit is 100. Usefull for pagination.')
-        .option('-s,--skip [skip]', 'Skip the number of objects to skip. Default is 0. Usefull for pagination.')
+        .description("List the objects inside a folder. If no folder is specified all the objects are listed.")
+        .option('-l,--limit [limit]', 'Limit the number of objects returned. The default limit is 100. Useful for pagination.')
+        .option('-s,--skip [skip]', 'Skip the number of objects to skip. Default is 0. Useful for pagination.')
         .action((folderPath: string | undefined, options: Record<string, any>) => {
             listObjects(program, folderPath, options);
         });

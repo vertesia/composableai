@@ -1,0 +1,70 @@
+{
+    "name": "@vertesia/ui",
+    "version": "0.55.0",
+    "description": "Vertesia UI components and and hooks",
+    "type": "module",
+    "main": "./lib/index.js",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "license": "Apache-2.0",
+    "homepage": "https://docs.vertesiahq.com",
+    "keywords": [
+        "vertesia",
+        "UI",
+        "react",
+        "components",
+        "hooks"
+    ],
+    "scripts": {
+        "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+    },
+    "devDependencies": {
+        "@types/react": "^19.1.0",
+        "@types/react-dom": "^19.1.1",
+        "typescript": "^5.0.2"
+    },
+    "peerDependencies": {
+        "react": ">=19.0.0",
+        "react-dom": ">=19.0.0"
+    },
+    "optionalDependencies": {
+        "react": ">=19.0.0",
+        "react-dom": ">=19.0.0"
+    },
+    "types": "./lib/index.d.ts",
+    "dependencies": {
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*"
+    },
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        },
+        "./host": {
+            "types": "./lib/host/index.d.ts",
+            "default": "./lib/host/index.js"
+        },
+        "./context": {
+            "types": "./lib/context/index.d.ts",
+            "default": "./lib/context/index.js"
+        }
+    },
+    "typesVersions": {
+        "*": {
+            ".": [
+                "./lib/index.d.ts"
+            ],
+            "host": [
+                "./lib/host.d.ts"
+            ],
+            "context": [
+                "./lib/context/index.d.ts"
+            ]
+        }
+    }
+}

@@ -1,6 +1,6 @@
 export interface CreateAgentDeploymentRequest {
     /**
-     * The agent ID is composed from the agent organization and the agen name, separated by a slash.
+     * The agent ID is composed from the agent organization and the agent name, separated by a slash.
      * Example: vertesia/docgen-agent
      */
     agentId: string;

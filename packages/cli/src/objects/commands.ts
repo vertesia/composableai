@@ -44,8 +44,8 @@ async function listFilesInDirectory(dir: string, recursive = false): Promise<str
     return await readdir(dir, {
         withFileTypes: true,
         recursive,
-    }).then((ents: Dirent[]) => ents.filter(ent => {
-        // eclude hidden files and include only file with extensions
+    }).then((entries: Dirent[]) => entries.filter(ent => {
+        // exclude hidden files and include only file with extensions
         return ent.isFile() && ent.name.lastIndexOf('.') > 0;
     }).map(ent => join(ent.path || '', ent.name)));
 }

@@ -50,7 +50,7 @@ export class ApiKeysApi extends ApiTopic {
     }
 
     /**
-     * get or create a temporary public key which can be used from browser to browse and execute itneractions.
+     * get or create a temporary public key which can be used from browser to browse and execute interactions.
      * If a public key already exists for the given project (or for the current organization) then it is returned, otherwise a new one is created.
      * The payload object can contain the following properties:
      * - name: the name of the public key. If not specified a random name is generated.

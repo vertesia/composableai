@@ -11,6 +11,7 @@ export { generateEmbeddings } from "./generateEmbeddings.js";
 export { generateImageRendition } from "./generateImageRendition.js";
 export { generateOrAssignContentType } from "./generateOrAssignContentType.js";
 export { getObjectFromStore } from "./getObjectFromStore.js";
+export { handleDslError } from "./handleError.js";
 export { convertPdfToStructuredText } from "./media/processPdfWithTextract.js";
 export { transcribeMedia } from "./media/transcribeMediaWithGladia.js";
 export { notifyWebhook } from "./notifyWebhook.js";

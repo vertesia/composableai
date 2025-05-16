@@ -64,7 +64,7 @@ describe('DSL Workflow import vars', () => {
             auth_token: 'test',
             config: {
                 studio_url: process.env.CP_STUDIO_URL || "http://localhost:8081",
-                store_url: process.env.CP_STODRE_URL || "http://localhost:8082",
+                store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
                 activities,

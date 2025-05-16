@@ -24,7 +24,7 @@ export interface CreatePdfDocumentFromSource extends DSLActivitySpec<CreatePdfDo
 
 
 /**
- * Create a new PDF by extrracting pages from a source PDF
+ * Create a new PDF by extracting pages from a source PDF
  * @returns
  */
 export async function createPdfDocumentFromSource(payload: DSLActivityExecutionPayload<CreatePdfDocumentFromSourceParams>) {
