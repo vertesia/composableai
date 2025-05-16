@@ -71,75 +71,90 @@ export class WorkflowsApi extends ApiTopic {
         return this.get(`/runs/${runId}/updates`, { query });
     }
 
-    streamMessages(runId: string, onMessage?: (message: AgentMessage) => void, since?: number): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const EventSourceImpl = await EventSourceProvider();
-                const client = this.client as VertesiaClient;
-                const streamUrl = new URL(client.workflows.baseUrl + "/runs/" + runId + "/stream");
-
-                if (since) {
-                    streamUrl.searchParams.set("since", since.toString());
-                }
-
-                const bearerToken = client._auth ? await client._auth() : undefined;
-                if (!bearerToken) return reject(new Error("No auth token available"));
-
-                const token = bearerToken.split(" ")[1];
-                streamUrl.searchParams.set("access_token", token);
-
-                const sse = new EventSourceImpl(streamUrl.href);
-                let isClosed = false;
-
-                sse.onmessage = (ev: MessageEvent) => {
-                    if (!ev.data || ev.data.startsWith(":")) {
-                        console.log("Received comment or heartbeat; ignoring it.: ", ev.data);
+    async streamMessages(runId: string, onMessage?: (message: AgentMessage) => void, since?: number): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const setupStream = async () => {
+                try {
+                    const EventSourceImpl = await EventSourceProvider();
+                    const client = this.client as VertesiaClient;
+                    const streamUrl = new URL(client.workflows.baseUrl + "/runs/" + runId + "/stream");
+    
+                    if (since) {
+                        streamUrl.searchParams.set("since", since.toString());
+                    }
+    
+                    const bearerToken = client._auth ? await client._auth() : undefined;
+                    if (!bearerToken) {
+                        reject(new Error("No auth token available"));
                         return;
                     }
-
-                    try {
-                        const message = JSON.parse(ev.data) as AgentMessage;
-                        if (onMessage) onMessage(message);
-
-                        // Only close the stream when the main workstream completes
-                        if (message.type === AgentMessageType.COMPLETE && (!message.workstream_id || message.workstream_id === 'main')) {
-                            console.log("Closing stream due to COMPLETE message from main workstream");
-                            sse.close();
-                            isClosed = true;
-                            resolve();
-                        } else if (message.type === AgentMessageType.COMPLETE) {
-                            console.log(`Received COMPLETE message from non-main workstream: ${message.workstream_id || 'unknown'}, keeping stream open`);
+    
+                    const token = bearerToken.split(" ")[1];
+                    streamUrl.searchParams.set("access_token", token);
+    
+                    const sse = new EventSourceImpl(streamUrl.href);
+                    let isClosed = false;
+    
+                    // Prevent Node from exiting prematurely
+                    const interval = setInterval(() => {}, 1000);
+    
+                    // Cleanup when stream resolves
+                    const cleanup = () => {
+                        clearInterval(interval);
+                    };
+    
+                    sse.onmessage = (ev: MessageEvent) => {
+                        if (!ev.data || ev.data.startsWith(":")) {
+                            console.log("Received comment or heartbeat; ignoring it.: ", ev.data);
+                            return;
                         }
-                    } catch (err) {
-                        console.error("Failed to parse SSE message:", err, ev.data);
-                    }
-                };
-
-                sse.onerror = (err: any) => {
-                    if (!isClosed) {
-                        console.error("SSE stream error:", err);
-                        sse.close();
-                        reject(err);
-                    }
-                };
-
-                // Prevent Node from exiting prematurely
-                const interval = setInterval(() => {}, 1000);
-
-                // Cleanup when stream resolves
-                const cleanup = () => {
-                    clearInterval(interval);
-                };
-
-                // Attach cleanup
-                sse.addEventListener("close", () => {
-                    isClosed = true;
-                    cleanup();
-                    resolve();
-                });
-            } catch (err) {
-                reject(err);
-            }
+    
+                        try {
+                            const message = JSON.parse(ev.data) as AgentMessage;
+                            if (onMessage) onMessage(message);
+    
+                            // Only close the stream when the main workstream completes
+                            if (message.type === AgentMessageType.COMPLETE && (!message.workstream_id || message.workstream_id === 'main')) {
+                                console.log("Closing stream due to COMPLETE message from main workstream");
+                                if (!isClosed) {
+                                    isClosed = true;
+                                    sse.close();
+                                    cleanup();
+                                    resolve();
+                                }
+                            } else if (message.type === AgentMessageType.COMPLETE) {
+                                console.log(`Received COMPLETE message from non-main workstream: ${message.workstream_id || 'unknown'}, keeping stream open`);
+                            }
+                        } catch (err) {
+                            console.error("Failed to parse SSE message:", err, ev.data);
+                        }
+                    };
+    
+                    sse.onerror = (err: any) => {
+                        if (!isClosed) {
+                            console.error("SSE stream error:", err);
+                            isClosed = true;
+                            sse.close();
+                            cleanup();
+                            reject(err);
+                        }
+                    };
+    
+                    // Attach cleanup to close event as well for completeness
+                    sse.addEventListener("close", () => {
+                        if (!isClosed) {
+                            isClosed = true;
+                            cleanup();
+                            resolve();
+                        }
+                    });
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            
+            // Start the async setup process
+            setupStream();
         });
     }
 
