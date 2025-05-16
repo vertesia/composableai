@@ -1,4 +1,4 @@
-import { useNavigate } from "@vertesia/ui/context";
+import { useNavigate } from "@vertesia/ui/router";
 import { ReactNode } from "react";
 
 export function HomePage() {

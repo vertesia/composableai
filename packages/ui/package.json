@@ -36,10 +36,6 @@
     "typescript": "~5.8.3"
   },
   "exports": {
-    "./context": {
-      "types": "./lib/types/context/index.d.ts",
-      "default": "./lib/context.js"
-    },
     "./router": {
       "types": "./lib/types/router/index.d.ts",
       "default": "./lib/router.js"
@@ -68,9 +64,6 @@
   "types": "./lib/index.d.ts",
   "typesVersions": {
     "*": {
-      "context": [
-        "./lib/types/context/index.d.ts"
-      ],
       "router": [
         "./lib/types/router/index.d.ts"
       ],

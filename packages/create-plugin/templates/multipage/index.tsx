@@ -1,4 +1,4 @@
-import { NestedRouterProvider } from "@vertesia/ui/context";
+import { NestedRouterProvider } from "@vertesia/ui/router";
 import { routes } from "./routes";
 
 /**
