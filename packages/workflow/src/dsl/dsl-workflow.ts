@@ -1,16 +1,30 @@
-import { ActivityInterfaceFor, ActivityOptions, executeChild, log, proxyActivities, startChild, UntypedActivities } from "@temporalio/workflow";
+import {
+    ActivityInterfaceFor,
+    ActivityOptions,
+    CancellationScope,
+    executeChild,
+    isCancellation,
+    log,
+    patched,
+    proxyActivities,
+    startChild,
+    UntypedActivities,
+} from "@temporalio/workflow";
 import {
     DSLActivityExecutionPayload,
     DSLActivityOptions,
     DSLActivitySpec,
     DSLChildWorkflowStep,
     DSLWorkflowExecutionPayload,
+    DSLWorkflowSpec,
     getDocumentIds,
     WorkflowExecutionPayload
 } from "@vertesia/common";
 import ms, { StringValue } from 'ms';
-import { ActivityParamNotFound, NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
+import { ActivityParamInvalid, ActivityParamNotFound, NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
 import { Vars } from "./vars.js";
+import { HandleDslErrorParams } from "../activities/handleError.js";
+import * as activities from "../activities/index.js";
 
 interface BaseActivityPayload extends WorkflowExecutionPayload {
     workflow_name: string;
@@ -31,7 +45,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     if (!definition) {
         throw new WorkflowParamNotFound("workflow");
     }
-    // the base payload wiull be used to create the activities payload
+    // the base payload will be used to create the activities payload
     const basePayload: BaseActivityPayload = {
         ...payload,
         workflow_name: definition.name,
@@ -51,6 +65,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
                 NoDocumentFound.name,
                 ActivityParamNotFound.name,
                 WorkflowParamNotFound.name,
+                ActivityParamInvalid.name,
             ],
         },
     };
@@ -59,7 +74,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     });
     const defaultProxy = proxyActivities(defaultOptions);
     log.debug("Default activity proxy is ready");
-    // merge default vars with the payload vars and add objectIds and obejctId
+    // merge default vars with the payload vars and add objectIds and objectId
     const vars = new Vars({
         ...definition.vars,
         ...payload.vars,
@@ -69,6 +84,26 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
 
     log.info("Executing workflow", { payload });
 
+    // TODO(mhuang): remove patch when all workflows are migrated to v2
+    //   It avoids breaking the ongoing workflow execution running in v1 and also allows us to
+    //   deploy the new error handler in production.
+    //   See https://docs.temporal.io/develop/typescript/versioning
+    if (patched('dsl-workflow-error-handling')) {
+        // v2: new version with error handler
+        try {
+            await executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions);
+        } catch (e) {
+            await handleError(e, basePayload, defaultOptions);
+        }
+    } else {
+        // v1: old version without error handler, deprecated since v0.52.0
+        await executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions);
+    }
+
+    return vars.getValue(definition.result || 'result');
+}
+
+async function executeSteps(definition: DSLWorkflowSpec, payload: DSLWorkflowExecutionPayload, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
     if (definition.steps) {
         for (const step of definition.steps) {
             const stepType = step.type;
@@ -90,7 +125,32 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     } else {
         throw new Error("No steps or activities found in the workflow definition");
     }
-    return vars.getValue(definition.result || 'result');
+}
+
+async function handleError(originalError: any, basePayload: BaseActivityPayload, defaultOptions: ActivityOptions) {
+    const { handleDslError } = proxyActivities<typeof activities>(defaultOptions);
+
+    const payload = dslActivityPayload(
+        basePayload,
+        {
+            name: "handleDslError",
+            params: { errorMessage: originalError.message },
+        } as DSLActivitySpec,
+        { errorMessage: originalError.message } satisfies HandleDslErrorParams,
+    )
+
+    if (isCancellation(originalError)) {
+        log.warn(`Workflow execution cancelled, executing error handler to update document status`, { error: originalError });
+        // Cleanup logic must be in a nonCancellable scope
+        // If we'd run cleanup outside of a nonCancellable scope it would've been cancelled
+        // before being started because the Workflow's root scope is cancelled.
+        // see https://docs.temporal.io/develop/typescript/cancellation
+        await CancellationScope.nonCancellable(() => handleDslError(payload));
+    } else {
+        log.warn(`Workflow execution failed, executing error handler to update document status`, { error: originalError });
+        handleDslError(payload);
+    }
+    throw originalError;
 }
 
 async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean) {
@@ -127,7 +187,7 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
         Object.assign(resolvedVars, step.vars);
     }
     if (debug_mode) {
-        log.debug(`Workflow vars before excuting child workflow ${step.name}`, { vars: resolvedVars });
+        log.debug(`Workflow vars before executing child workflow ${step.name}`, { vars: resolvedVars });
     }
     const result = await executeChild(step.name, {
         ...step.options,
@@ -158,7 +218,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         log.debug(`Workflow vars before executing activity ${activity.name}`, { vars: vars.resolve() });
     }
     if (activity.condition && !vars.match(activity.condition)) {
-        log.info("Activity skiped: condition not satisfied", activity.condition);
+        log.info("Activity skipped: condition not satisfied", activity.condition);
         return;
     }
     const importParams = vars.createImportVars(activity.import);

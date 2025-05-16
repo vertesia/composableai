@@ -123,7 +123,7 @@ export default class PromptsApi extends ApiTopic {
     }
 
     /**
-     * List the versions of the prompt template. Returens an empty array if no versions are found
+     * List the versions of the prompt template. Returns an empty array if no versions are found
      * @param id
      * @returns the versions list or an empty array if no versions are found
      */

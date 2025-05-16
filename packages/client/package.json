@@ -1,12 +1,13 @@
 {
     "name": "@vertesia/client",
-    "version": "0.53.0",
+    "version": "0.55.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
         "lib",
         "src"
     ],
+    "license": "Apache-2.0",
     "scripts": {
         "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
         "build": "pnpm exec tsmod build",

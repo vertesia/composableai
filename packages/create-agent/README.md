@@ -27,7 +27,7 @@ These generated files are containing a "Hello world!" workflow and activity as a
 
 ## Developing your agent workflows / activities.
 
-Export your temporal wrofklows `from src/workflows.ts` and your activities from `src/activities.ts`
+Export your temporal workflows `from src/workflows.ts` and your activities from `src/activities.ts`
 
 ## Test locally the workflows.
 
@@ -47,7 +47,7 @@ See https://docs.temporal.io/develop/typescript/debugging for more information
 ## Packaging and publishing your Vertesia agent
 
 When the workflows are working you will want to publish the agent to Vertesia.
-The agent should be packaged as a docker imageand then published to the Vertesia cloud.
+The agent should be packaged as a docker image and then published to the Vertesia cloud.
 
 ### Build the agent docker image
 
@@ -58,7 +58,7 @@ This image is only useable to test locally. You cannot push it to Vertesia.
 
 ### Releasing the agent docker image
 
-When you aready to push your agent to Vertesia you must first create a version using the following command:
+When you are ready to push your agent to Vertesia you must first create a version using the following command:
 
 ```
 vertesia agent release <version>
@@ -71,7 +71,7 @@ This command is creating a new docker tag `your-organization/your-agent-name:ver
 
 ### Publishing the agent docker image to Vertesia
 
-Versionned images (using the `release` command) can be published to Vertesia. This can be done using the following command:
+Versioned images (using the `release` command) can be published to Vertesia. This can be done using the following command:
 
 ```
 vertesia agent publish <version>
@@ -91,7 +91,7 @@ The you can deploy an agent that you previously uploaded to Vertesia by using th
 vertesia agent publish <version> --deploy-only
 ```
 
-## Manaing agent versions
+## Managing agent versions
 
 You can see the docker image versions you created using the following command:
 

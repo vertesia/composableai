@@ -32,7 +32,7 @@ export default class InteractionsApi extends ApiTopic {
         });
     }
     /**
-     * Find interractions given a mongo match query.
+     * Find interactions given a mongo match query.
      * You can also specify if prompts schemas are included in the result
      */
     listEndpoints(payload: InteractionEndpointQuery): Promise<InteractionRef[]> {
@@ -92,7 +92,7 @@ export default class InteractionsApi extends ApiTopic {
     }
 
     /**
-     * Retrieve an existing interaction definiton
+     * Retrieve an existing interaction definition
      * @param id of the interaction to retrieve
      * @returns Interaction
      **/
@@ -101,7 +101,7 @@ export default class InteractionsApi extends ApiTopic {
     }
 
     /**
-     * Update an existing interaction definiton
+     * Update an existing interaction definition
      * @param id of the interaction to update
      * @param payload InteractionUpdatePayload
      * @returns Interaction
@@ -121,7 +121,7 @@ export default class InteractionsApi extends ApiTopic {
      * the run completes or fails.
      * If the onChunk callback is passed then the streaming of the result is enabled.
      * The onChunk callback with be called with the next chunk of the result as soon as it is available.
-     * When all chunks are received the fucntion will return the resolved promise
+     * When all chunks are received the function will return the resolved promise
      * @param id of the interaction to execute
      * @param payload InteractionExecutionPayload
      * @param onChunk callback to be called when the next chunk of the response is available
@@ -146,7 +146,7 @@ export default class InteractionsApi extends ApiTopic {
     /**
      * Same as execute but uses the interaction name selector instead of the id.
      *
-     * A name selector is the interaction endpoint name suffuxed with an optional tag or version wich is starting with a `@` character.
+     * A name selector is the interaction endpoint name suffixed with an optional tag or version which is starting with a `@` character.
      * The special `draft` tag is used to select the draft version of the interaction. If no tag or version is specified then the latest version is selected.
      * Examples of selectors:
      * - `ReviewContract` - select the latest version of the ReviewContract interaction

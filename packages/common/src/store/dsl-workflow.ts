@@ -16,7 +16,7 @@ export interface DSLWorkflowExecutionPayload extends WorkflowExecutionPayload {
 }
 
 /**
- * The payload for a DSL acitivty options.
+ * The payload for a DSL activity options.
  *
  * @see ActivityOptions in @temporalio/common
  */
@@ -58,7 +58,7 @@ export interface ActivityFetchSpec {
      */
     type: "document" | "document_type" | "interaction_run";
     /**
-     * An optinal URI to the data source.
+     * An optional URI to the data source.
      */
     source?: string;
     /**
@@ -72,13 +72,13 @@ export interface ActivityFetchSpec {
     select?: string;
 
     /**
-     * The number of results to return. If the result is limitedto 1 the result will be a single object
+     * The number of results to return. If the result is limited to 1 the result will be a single object
      */
     limit?: number;
 
     /**
      * How to handle not found objects.
-     * 1. ignore - Ignore and return an empty array for multi objects query (or undefined for single object query) or empty array for multiple objectthrow an error.
+     * 1. ignore - Ignore and return an empty array for multi objects query (or undefined for single object query) or empty array for multiple objects throw an error.
      * 2. throw - Throw an error if the object or no objects are found.
      */
     on_not_found?: "ignore" | "throw";
@@ -107,7 +107,7 @@ export interface DSLActivitySpec<PARAMS extends Record<string, any> = Record<str
     description?: string;
     /**
      * Activities parameters. These parameters can be either literals
-     * (hardcoded strings, numbers, booleans, obejcts, arrays etc.), either
+     * (hardcoded strings, numbers, booleans, objects, arrays etc.), either
      * references to the workflow variables.
      * The workflow variables are built from the workflow params (e.g. the workflow configuration)
      * and from the result of the previous activities.
@@ -116,14 +116,14 @@ export interface DSLActivitySpec<PARAMS extends Record<string, any> = Record<str
     /**
      * The name of the workflow variable that will store the result of the activity
      * If not specified the result will not be stored
-     * The parameters describe how the actual parameters will be obtained from the worlkfow execution vars.
+     * The parameters describe how the actual parameters will be obtained from the workflow execution vars.
      * since it may contain references to workflow execution vars.
      */
     output?: string;
 
     /**
      * A JSON expression which evaluate to true or false similar to mongo matches.
-     * We support fow now basic expreion like: $true, $false, $eq, $ne, $gt, $gte, $lt, $lte, $in, $nin, $regexp
+     * We support for now basic expression like: $true, $false, $eq, $ne, $gt, $gte, $lt, $lte, $in, $nin, $regexp
      * {$eq: {name: value}},
      * Ex: {$eq: {wfVarName: value}}
      */
@@ -186,7 +186,7 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
     /**
      * The name of the workflow variable that will store the result of the child workflow (if async the workflow id is stored)
      * If not specified the result will not be stored
-     * The parameters describe how the actual parameters will be obtained from the worlkfow execution vars.
+     * The parameters describe how the actual parameters will be obtained from the workflow execution vars.
      * since it may contain references to workflow execution vars.
      */
     output?: string;
@@ -257,7 +257,7 @@ export interface DSLWorkflowSpecWithActivities extends DSLWorkflowSpecBase {
 }
 
 /**
- * activities and steps fields are mutally exclusive
+ * activities and steps fields are mutually exclusive
  * steps was added after activities and may contain a mix of activities and other tasks like exec child workflows.
  * For backward compatibility we keep the activities field as a fallback but one should use one or the other not both.
  */

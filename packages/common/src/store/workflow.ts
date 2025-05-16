@@ -2,6 +2,7 @@ export enum ContentEventName {
     create = "create",
     change_type = "change_type",
     update = "update",
+    revision_created = "revision_created",
     delete = "delete",
     workflow_finished = "workflow_finished",
     workflow_execution_request = "workflow_execution_request",
@@ -16,7 +17,7 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
 
     /**
      * The account ID of the user who created the activity.
-     * This is usefull to select the right database to work on.
+     * This is useful to select the right database to work on.
      */
     account_id: string;
 
@@ -32,7 +33,7 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
      *
      * In the case of workflows started by events (e.g. using a a workflow rule) the user input vars will be initialized with the workflow rule configuration field.
      *
-     * In case of dsl workflows the worflow execution payload vars will be applied over the default vars values stored in the DSL vars field.
+     * In case of dsl workflows the workflow execution payload vars will be applied over the default vars values stored in the DSL vars field.
      */
     vars: T;
 
@@ -53,9 +54,15 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
 
     /**
      * The list of endpoints to notify when the workflow finishes.
-     * It is handled by a subworkflow execution, so the main workflow will not wait for the notification to be sent.
+     * It is handled by a sub-workflow execution, so the main workflow will not wait for the notification to be sent.
      */
     notify_endpoints?: string[];
+
+    /** If this is a child workflow, parent contains parent's ids  */
+    parent?: {
+        run_id: string;
+        workflow_id: string;
+    };
 }
 
 export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {
@@ -89,22 +96,86 @@ export function getDocumentIds(payload: WorkflowExecutionPayload): string[] {
 }
 
 export interface ExecuteWorkflowPayload {
+    /**
+     * The task queue to assign the workflow to. Deprecated, queues are choosend server side
+     */
+    //@deprecated
     task_queue?: string;
+
+    /**
+     * Docuument IDs pon which the workflow will be executed, deprecated, replaced params in vars
+     */
+    //@deprecated
     objectIds?: string[];
+
+    /**
+     * Parameters to pass to the workflow
+     */
     vars?: Record<string, any>;
+
+    /**
+     * Make the workflow ID unique by always adding a random token to the ID.
+     */
     unique?: boolean;
+
+    /**
+     * A custom ID to use for the workflow execution id instead of the generated one.
+     */
+    custom_id?: string;
+
+    /**
+     * Timeout for the workflow execution to complete, in seconds.
+     */
     timeout?: number; //timeout in seconds
 }
 
 export interface ListWorkflowRunsPayload {
+    /**
+     * The document ID passed to a workflow run.
+     */
+
     document_id?: string;
+
+    /**
+     * The event name that triggered the workflow.
+     */
     event_name?: string;
+
+    /**
+     * The workflow rule ID that triggered the workflow.
+     */
     rule_id?: string;
+
+    /**
+     * The start time for filtering workflow runs.
+     */
     start?: string;
+
+    /**
+     * The end time for filtering workflow runs.
+     */
     end?: string;
+
+    /**
+     * The status of the workflow run.
+     */
     status?: string;
+
+    /**
+     * search term to filter on workflow id and run id
+     */
     search_term?: string;
+
+    /**
+     * The user or service account that initiated the workflow run.
+     */
     initiated_by?: string;
+
+    /**
+     * Lucene query string to search for the workflow runs.
+     * This is a full text search on the workflow run history.
+     */
+    query?: string;
 }
 
 interface WorkflowRunEvent {
@@ -145,6 +216,9 @@ export interface WorkflowRun {
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
     history?: WorkflowRunEvent[];
+    memo?: {
+        [key: string]: any;
+    } | null;
 }
 export interface ListWorkflowRunsResponse {
     runs: WorkflowRun[];
@@ -197,6 +271,7 @@ export interface AgentMessage {
     type: AgentMessageType;
     message?: string;
     details?: any;
+    workstream_id?: string;
 }
 
 export enum AgentMessageType {
@@ -211,4 +286,17 @@ export enum AgentMessageType {
     QUESTION = "question",
     REQUEST_INPUT = "request_input",
     IDLE = "idle",
+}
+
+export interface PlanTask {
+    id: number;
+    goal: string;
+    instructions: string[];
+    comment?: string;
+    status?: "pending" | "in_progress" | "completed" | "skipped";
+}
+
+export interface Plan {
+    plan: PlanTask[];
+    comment?: string;
 }

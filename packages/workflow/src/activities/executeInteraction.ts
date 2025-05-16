@@ -1,16 +1,23 @@
 import { ModelOptions } from "@llumiverse/core";
 import { activityInfo, log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
-import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun, ExecutionRunStatus, InteractionExecutionConfiguration, RunSearchPayload } from "@vertesia/common";
+import {
+    DSLActivityExecutionPayload,
+    DSLActivitySpec,
+    ExecutionRun,
+    ExecutionRunStatus,
+    InteractionExecutionConfiguration,
+    RunSearchPayload,
+} from "@vertesia/common";
 import { projectResult } from "../dsl/projections.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { ActivityParamNotFound } from "../errors.js";
+import { ActivityParamInvalid, ActivityParamNotFound } from "../errors.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 
 //Example:
 //@ts-ignore
 const JSON: DSLActivitySpec = {
-    name: 'executeInteraction',
+    name: "executeInteraction",
     import: ["defaultModel", "guidlineId", "docTypeId"],
     params: {
         defaultModel: "${model}",
@@ -23,8 +30,8 @@ const JSON: DSLActivitySpec = {
         result_schema: "${docType.object_schema}",
         prompt_data: {
             documents: "${documents}",
-            guidline: "${guidline.text}"
-        }
+            guidline: "${guidline.text}",
+        },
     },
     fetch: {
         documents: {
@@ -41,7 +48,7 @@ const JSON: DSLActivitySpec = {
                 id: "${guidlineId}",
             },
             select: "+text",
-            on_not_found: "throw"
+            on_not_found: "throw",
         },
         docType: {
             type: "document_type",
@@ -50,26 +57,29 @@ const JSON: DSLActivitySpec = {
                 id: "${docTypeId}",
             },
             select: "+object_schema",
-        }
-    }
-}
+        },
+    },
+};
 export interface InteractionExecutionParams {
     /**
      * The environment to use. If not specified the project default environment will be used.
-     * If the latter is not specified an exeption will be thrown.
+     * If the latter is not specified an exception will be thrown.
      */
     environment?: string;
     /**
      * The model to use. If not specified the project default model will be used.
      * If the latter is not specified the default model of the environment will be used.
-     * If the latter is not specified an exeption will be thrown.
+     * If the latter is not specified an exception will be thrown.
      */
     model?: string;
 
     /**
-     * Force a JSON schema for the result
+     * Request a JSON schema for the result
      */
     result_schema?: any;
+
+    /** Wether to validate the result against the schema */
+    validate_result?: boolean;
 
     /**
      * Tags to add to the execution run
@@ -90,7 +100,7 @@ export interface InteractionExecutionParams {
 /**
  * TODO: must be kept in sync with InteractionAsyncExecutionPayload form @vertesia/common
  * Also see the executeInteractionAsync endpoint on the server for how the client payload is sent to the workflow.
- * (interaction is translsted to interactionName)
+ * (interaction is translated to interactionName)
  */
 export interface ExecuteInteractionParams extends InteractionExecutionParams {
     //TODO rename to interaction as in InteractionAsyncExecutionPayload
@@ -106,13 +116,11 @@ export interface ExecuteInteractionParams extends InteractionExecutionParams {
 }
 
 export interface ExecuteInteraction extends DSLActivitySpec<ExecuteInteractionParams> {
-    name: 'executeInteraction';
+    name: "executeInteraction";
 }
 
 export async function executeInteraction(payload: DSLActivityExecutionPayload<ExecuteInteractionParams>) {
-    const {
-        client, params
-    } = await setupActivity<ExecuteInteractionParams>(payload);
+    const { client, params } = await setupActivity<ExecuteInteractionParams>(payload);
 
     const { interactionName, prompt_data, static_prompt_data: wf_prompt_data } = params;
     if (wf_prompt_data) {
@@ -131,17 +139,40 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         }
     }
 
-    const res = await executeInteractionFromActivity(client, interactionName, params, prompt_data, payload.debug_mode);
-
-    return projectResult(payload, params, res, {
-        runId: res.id,
-        status: res.status,
-        result: res.result,
-    });
-
+    try {
+        const res = await executeInteractionFromActivity(
+            client,
+            interactionName,
+            params,
+            prompt_data,
+            payload.debug_mode,
+        );
+        return projectResult(payload, params, res, {
+            runId: res.id,
+            status: res.status,
+            result: res.result,
+        });
+    } catch (error: any) {
+        log.error("Failed to execute interaction", { error });
+        if (error.message.includes("Failed to validate merged prompt schema")) {
+            //issue with the input data, don't retry
+            throw new ActivityParamInvalid("prompt_data", payload.activity, error.message);
+        } else if (error.message.includes("modelId: Path `modelId` is required")) {
+            //issue with the input data, don't retry
+            throw new ActivityParamInvalid("model", payload.activity, error.message);
+        } else {
+            throw error;
+        }
+    }
 }
 
-export async function executeInteractionFromActivity(client: VertesiaClient, interactionName: string, params: InteractionExecutionParams, prompt_data: any, debug?: boolean) {
+export async function executeInteractionFromActivity(
+    client: VertesiaClient,
+    interactionName: string,
+    params: InteractionExecutionParams,
+    prompt_data: any,
+    debug?: boolean,
+) {
     const userTags = params.tags;
     const info = activityInfo();
     const runId = info.workflowExecution.runId;
@@ -161,7 +192,7 @@ export async function executeInteractionFromActivity(client: VertesiaClient, int
             };
             const previousRun = await client.runs.search(payload).then((res) => {
                 log.info("Search results", { results: res });
-                return res ? res[0] ?? undefined : undefined
+                return res ? (res[0] ?? undefined) : undefined;
             });
 
             if (previousRun) {
@@ -178,26 +209,29 @@ export async function executeInteractionFromActivity(client: VertesiaClient, int
         environment: params.environment,
         model: params.model,
         model_options: params.model_options,
-    }
+        do_validate: params.validate_result,
+    };
     const data = {
         ...prompt_data,
         previous_error: previousStudioExecutionRun?.error,
-    }
+    };
 
     const result_schema = params.result_schema;
 
     log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags });
 
-    const res = await client.interactions.executeByName(interactionName, {
-        config,
-        data,
-        result_schema,
-        tags,
-        stream: false,
-    }).catch((err) => {
-        log.error(`Error executing interaction ${interactionName}`, { err });
-        throw new Error(`Interaction Execution failed ${interactionName}: ${err.message}`);
-    });
+    const res = await client.interactions
+        .executeByName(interactionName, {
+            config,
+            data,
+            result_schema,
+            tags,
+            stream: false,
+        })
+        .catch((err) => {
+            log.error(`Error executing interaction ${interactionName}`, { err });
+            throw new Error(`Interaction Execution failed ${interactionName}: ${err.message}`);
+        });
 
     if (debug) {
         log.info(`Interaction executed ${interactionName}`, res);

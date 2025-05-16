@@ -9,13 +9,13 @@ export interface IRequestParams {
     query?: Record<string, IPrimitives> | null;
     headers?: Record<string, string> | null;
     /*
-     * custom response reader. The default is to read a JSON objectusing the jsonParse method
+     * custom response reader. The default is to read a JSON object using the jsonParse method
      * The reader function is called with the client as the `this` context
      * This can be an async function (i.e. return a promise). If a promise is returned
      * it will wait for the promise to resolve before returning the result
      *
      * If set to 'sse' the response will be treated as a server-sent event stream
-     * and the requets will return a Promise<ReadableStream<ServerSentEvent>> object
+     * and the request will return a Promise<ReadableStream<ServerSentEvent>> object
      */
     reader?: 'sse' | ((response: Response) => any);
     /**
@@ -145,7 +145,7 @@ export abstract class ClientBase {
         }).catch((err) => {
             return {
                 status: res.status,
-                error: "Unable to load repsonse content",
+                error: "Unable to load response content",
                 message: err.message,
             };
         });
