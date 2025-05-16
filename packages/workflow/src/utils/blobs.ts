@@ -3,6 +3,8 @@ import crypto from "crypto";
 import { createWriteStream } from "fs";
 import tmp from "tmp";
 import { NoDocumentFound } from "../errors.js";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
 
 tmp.setGracefulCleanup();
 
@@ -32,30 +34,22 @@ export async function fetchBlobAsBase64(client: VertesiaClient, blobUri: string)
     return buffer.toString("base64");
 }
 
-export async function saveBlobToFile(client: VertesiaClient, blobUri: string, toFile: string): Promise<void> {
-    let stream = await fetchBlobAsStream(client, blobUri);
+async function saveBlobToFile(client: VertesiaClient, blobUri: string, toFile: string): Promise<void> {
+    const stream = await fetchBlobAsStream(client, blobUri);
+
+    const nodeReadable = Readable.from(stream);
     const out = createWriteStream(toFile);
-    await writeChunksToStream(stream, out);
+
+    await pipeline(nodeReadable, out); // Ensures completion before continuing
 }
 
 export async function saveBlobToTempFile(client: VertesiaClient, blobUri: string, fileExt?: string): Promise<string> {
     const tmpFile = tmp.fileSync({
         prefix: "vertesia-activity-",
         postfix: fileExt ? "." + fileExt : "",
-        discardDescriptor: true,
     });
     await saveBlobToFile(client, blobUri, tmpFile.name);
     return tmpFile.name;
-}
-
-async function writeChunksToStream(chunks: AsyncIterable<Uint8Array>, out: NodeJS.WritableStream) {
-    for await (const chunk of chunks) {
-        if (!out.write(chunk)) {
-            // If the internal buffer is full, wait until it's drained
-            await new Promise((resolve) => out.once("drain", resolve));
-        }
-    }
-    out.end(); // Close the stream when done
 }
 
 export function md5(contents: string) {
