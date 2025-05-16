@@ -47,6 +47,22 @@
     "./session": {
       "types": "./lib/types/session/index.d.ts",
       "default": "./lib/session.js"
+    },
+    "./components": {
+      "types": "./lib/types/components/index.d.ts",
+      "default": "./lib/components.js"
+    },
+    "./code": {
+      "types": "./lib/types/code/index.d.ts",
+      "default": "./lib/code.js"
+    },
+    "./form": {
+      "types": "./lib/types/form/index.d.ts",
+      "default": "./lib/form.js"
+    },
+    "./features": {
+      "types": "./lib/types/features/index.d.ts",
+      "default": "./lib/features.js"
     }
   },
   "types": "./lib/index.d.ts",
@@ -60,6 +76,18 @@
       ],
       "session": [
         "./lib/types/session/index.d.ts"
+      ],
+      "components": [
+        "./lib/types/components/index.d.ts"
+      ],
+      "code": [
+        "./lib/types/code/index.d.ts"
+      ],
+      "features": [
+        "./lib/types/features/index.d.ts"
+      ],
+      "form": [
+        "./lib/types/form/index.d.ts"
       ]
     }
   }

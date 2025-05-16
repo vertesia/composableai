@@ -118,13 +118,19 @@ export async function init(dirName?: string | undefined) {
 
     pkg.saveTo(`${dir}/package.json`);
 
+    const PluginComponent = pluginName.pascalCase + "Plugin";
     console.log("Processing source files");
     processVarsInFile(`${dir}/index.html`, {
         plugin_title: pluginName.title,
     });
+    processVarsInFile(`${dir}/src/main.tsx`, {
+        PluginComponent,
+    });
+    processVarsInFile(`${dir}/src/index.tsx`, {
+        PluginComponent,
+    });
 
     installDeps(cmd);
-
 }
 
 

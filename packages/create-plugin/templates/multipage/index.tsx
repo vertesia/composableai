@@ -2,9 +2,9 @@ import { NestedRouterProvider } from "@vertesia/ui/context";
 import { routes } from "./routes";
 
 /**
- * Mount a React component to the host.
+ * Export the plugin component.
  */
-export function mount(slot: string) {
+export default function ${ PluginComponent } ({ slot }: { slot: string }) {
     if (slot === "page") {
         return (
             <NestedRouterProvider
