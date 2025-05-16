@@ -139,15 +139,6 @@ export class WorkflowsApi extends ApiTopic {
                             reject(err);
                         }
                     };
-    
-                    // Attach cleanup to close event as well for completeness
-                    sse.addEventListener("close", () => {
-                        if (!isClosed) {
-                            isClosed = true;
-                            cleanup();
-                            resolve();
-                        }
-                    });
                 } catch (err) {
                     reject(err);
                 }
