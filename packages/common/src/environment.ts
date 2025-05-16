@@ -1,4 +1,4 @@
-import { AIModel, TextFallbackOptions } from "@llumiverse/core";
+import type { AIModel, TextFallbackOptions } from "@llumiverse/core";
 
 
 export enum SupportedProviders {

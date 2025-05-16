@@ -1,11 +1,8 @@
 {
   "compilerOptions": {
-    "composite": true,
     "target": "ES2020",
     "module": "ESNext",
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "declarationDir": "lib/types",
+    "declaration": false,
     "outDir": "lib",
     "moduleResolution": "Node",
     "jsx": "react-jsx",

@@ -9,7 +9,7 @@
     ],
     "scripts": {
         "test": "vitest run",
-        "build": "pnpm exec tsmod build",
+        "build": "pnpm exec tsmod build && pnpm exec rollup -c",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "exports": {
@@ -18,7 +18,12 @@
         "require": "./lib/cjs/index.js"
     },
     "devDependencies": {
+        "@rollup/plugin-commonjs": "^28.0.3",
+        "@rollup/plugin-node-resolve": "^16.0.1",
+        "@rollup/plugin-typescript": "^12.1.2",
         "@types/json-schema": "^7.0.15",
+        "rollup": "^4.40.2",
+        "rollup-plugin-terser": "^7.0.2",
         "ts-dual-module": "^0.6.3",
         "typescript": "^5.0.2",
         "vitest": "^3.0.9"

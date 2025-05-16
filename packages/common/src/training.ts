@@ -1,4 +1,4 @@
-import { TrainingJob } from "@llumiverse/core";
+import type { TrainingJob } from "@llumiverse/core";
 import { ExecutionEnvironmentRef } from "./environment.js";
 
 export enum TrainingSessionStatus {

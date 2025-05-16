@@ -1,7 +1,9 @@
-import path from 'path';
-import fs from 'fs';
 import typescript from '@rollup/plugin-typescript';
-import dts from 'rollup-plugin-dts';
+import nodeResolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+//import { terser } from 'rollup-plugin-terser';
+import fs from 'fs';
+import path from 'path';
 import { defineConfig } from 'rollup';
 
 const inputDir = 'src';
@@ -21,8 +23,13 @@ const jsEntries = entries.map((name) => ({
         format: 'es',
         sourcemap: true,
     },
-    external: ['react', 'react-dom'],
+    external: ['react', 'react-dom', "@vertesia/client", "@vertesia/common"],
     plugins: [
+        nodeResolve({
+            browser: true,  // Prefer browser-compatible versions of packages
+            exportConditions: ['browser', 'module', 'import'],
+        }),
+        commonjs(),        // Convert CommonJS modules to ES6
         typescript({
             tsconfig: './tsconfig.json',
             declaration: true,
@@ -31,6 +38,7 @@ const jsEntries = entries.map((name) => ({
             outDir: outputDir,
             rootDir: inputDir,
         }),
+        //terser(),          // Optional: minify for production
     ],
 }));
 

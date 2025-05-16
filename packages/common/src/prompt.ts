@@ -1,4 +1,4 @@
-import { JSONSchema4 } from "json-schema";
+import type { JSONSchema4 } from "json-schema";
 import type { JSONObject } from "@llumiverse/core";
 import { ProjectRef } from "./project.js";
 import { PromptRole } from "@llumiverse/core";

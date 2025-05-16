@@ -7,7 +7,7 @@ import type {
     ToolDefinition,
     ToolUse,
 } from "@llumiverse/core";
-import { JSONSchema4 } from "json-schema";
+import type { JSONSchema4 } from "json-schema";
 
 import { ExecutionTokenUsage } from "@llumiverse/core";
 
