@@ -13,7 +13,7 @@ import {
     UserMessagePayload,
 } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
-import { ExecutionResponse } from "@llumiverse/core";
+import type { ExecutionResponse } from "@llumiverse/core";
 
 export interface FilterOption {
     id: string;

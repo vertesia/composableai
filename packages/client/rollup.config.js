@@ -14,7 +14,7 @@ export default {
     },
     external: [
         // Add any packages you want to keep external (e.g., use via import map)
-        "@vertesia/common", "eventsource"
+        "@vertesia/common", "eventsource", "ajv"
     ],
     plugins: [
         nodeResolve({
