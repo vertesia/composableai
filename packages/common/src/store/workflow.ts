@@ -269,7 +269,7 @@ export interface AgentMessage {
     timestamp: number;
     workflow_run_id: string;
     type: AgentMessageType;
-    message?: string;
+    message: string;
     details?: any;
     workstream_id?: string;
 }
