@@ -1,4 +1,4 @@
-import type { TrainingJob } from "@llumiverse/core";
+import type { TrainingJob } from "@llumiverse/common";
 import { ExecutionRunRef, ListTrainingSessionsQuery, TrainingSession, TrainingSessionCreatePayload, TrainingSessionRef } from "@vertesia/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 

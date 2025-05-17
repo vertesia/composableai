@@ -26,7 +26,7 @@
         "vitest": "^3.0.9"
     },
     "dependencies": {
-        "@llumiverse/core": "workspace:*",
+        "@llumiverse/common": "workspace:*",
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "eventsource": "^3.0.6"

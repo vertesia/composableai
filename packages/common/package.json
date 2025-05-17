@@ -29,7 +29,7 @@
         "vitest": "^3.0.9"
     },
     "dependencies": {
-        "@llumiverse/core": "workspace:*",
+        "@llumiverse/common": "workspace:*",
         "ajv": "^8.16.0",
         "json-schema": "^0.4.0"
     },

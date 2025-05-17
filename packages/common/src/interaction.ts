@@ -6,10 +6,10 @@ import type {
     StatelessExecutionOptions,
     ToolDefinition,
     ToolUse,
-} from "@llumiverse/core";
+} from "@llumiverse/common";
 import type { JSONSchema4 } from "json-schema";
 
-import { ExecutionTokenUsage } from "@llumiverse/core";
+import { ExecutionTokenUsage } from "@llumiverse/common";
 
 import { ExecutionEnvironmentRef } from "./environment.js";
 import { ProjectRef } from "./project.js";

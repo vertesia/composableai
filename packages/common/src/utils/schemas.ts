@@ -1,5 +1,5 @@
-import { PromptRole } from "@llumiverse/core";
-import type { JSONSchema } from "@llumiverse/core";
+import { PromptRole } from "@llumiverse/common";
+import type { JSONSchema } from "@llumiverse/common";
 import type { JSONSchema4 } from "json-schema";
 import { InteractionRefWithSchema, PopulatedInteraction } from "../interaction.js";
 import { PopulatedPromptSegmentDef, PromptSegmentDef, PromptSegmentDefType, PromptTemplateRefWithSchema } from "../prompt.js";
