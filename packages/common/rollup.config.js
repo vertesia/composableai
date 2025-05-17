@@ -9,7 +9,7 @@ export default {
     input: 'src/index.ts',
     output: {
         file: TARGET_FILE,         // ES module output for browser
-        format: 'esm',
+        format: 'es',
         sourcemap: true,
     },
     external: [

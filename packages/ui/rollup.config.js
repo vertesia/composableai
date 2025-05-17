@@ -1,7 +1,7 @@
 import typescript from '@rollup/plugin-typescript';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-//import { terser } from 'rollup-plugin-terser';
+import { terser } from 'rollup-plugin-terser';
 import fs from 'fs';
 import path from 'path';
 import { defineConfig } from 'rollup';
@@ -19,7 +19,7 @@ const entries = fs.readdirSync(inputDir).filter((name) => {
 const jsEntries = entries.map((name) => ({
     input: path.join(inputDir, name, 'index.ts'),
     output: {
-        file: path.join(outputDir, `${name}.js`),
+        file: path.join(outputDir, `vertesia-ui-${name}.js`),
         format: 'es',
         sourcemap: true,
     },
@@ -31,14 +31,11 @@ const jsEntries = entries.map((name) => ({
         }),
         commonjs(),        // Convert CommonJS modules to ES6
         typescript({
-            tsconfig: './tsconfig.json',
-            declaration: true,
-            declarationDir: 'lib/types',
-            emitDeclarationOnly: false,
-            outDir: outputDir,
-            rootDir: inputDir,
+            tsconfig: './tsconfig.web.json',
+            sourceMap: true,
+            declaration: false,
         }),
-        //terser(),          // Optional: minify for production
+        terser(),          // Optional: minify for production
     ],
 }));
 

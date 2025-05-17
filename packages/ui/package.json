@@ -18,7 +18,7 @@
     "hooks"
   ],
   "scripts": {
-    "build": "pnpm exec rollup -c",
+    "build": "tsc -b && pnpm exec rollup -c",
     "lint": "eslint ."
   },
   "dependencies": {
