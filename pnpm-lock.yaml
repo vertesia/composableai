@@ -240,9 +240,6 @@ importers:
       json-schema:
         specifier: ^0.4.0
         version: 0.4.0
-      mime:
-        specifier: ^4.0.4
-        version: 4.0.7
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^28.0.3
@@ -418,9 +415,6 @@ importers:
       rollup:
         specifier: ^4.40.2
         version: 4.40.2
-      rollup-plugin-dts:
-        specifier: ^6.2.1
-        version: 6.2.1(rollup@4.40.2)(typescript@5.8.3)
       rollup-plugin-terser:
         specifier: ^7.0.2
         version: 7.0.2(rollup@4.40.2)
@@ -3191,13 +3185,6 @@ packages:
     resolution: {integrity: sha512-9dkvaxAsk/xNXSJzMgFqqMCuFgt2+KsOFek3TMLfo8NCPfWpBmqwyNn5Y+NX56QUYfCtsyhF3ayiboEoUmJk/A==}
     engines: {node: 20 || >=22}
     hasBin: true
-
-  rollup-plugin-dts@6.2.1:
-    resolution: {integrity: sha512-sR3CxYUl7i2CHa0O7bA45mCrgADyAQ0tVtGSqi3yvH28M+eg1+g5d7kQ9hLvEz5dorK3XVsH5L2jwHLQf72DzA==}
-    engines: {node: '>=16'}
-    peerDependencies:
-      rollup: ^3.29.4 || ^4
-      typescript: ^4.5 || ^5.0
 
   rollup-plugin-terser@7.0.2:
     resolution: {integrity: sha512-w3iIaU4OxcF52UUXiZNsNeuXIMDvFrr+ZXK6bFZ0Q60qyVfq4uLptoS4bbq3paG3x216eQllFZX7zt6TIImguQ==}
@@ -6981,14 +6968,6 @@ snapshots:
     dependencies:
       glob: 11.0.1
       package-json-from-dist: 1.0.1
-
-  rollup-plugin-dts@6.2.1(rollup@4.40.2)(typescript@5.8.3):
-    dependencies:
-      magic-string: 0.30.17
-      rollup: 4.40.2
-      typescript: 5.8.3
-    optionalDependencies:
-      '@babel/code-frame': 7.27.1
 
   rollup-plugin-terser@7.0.2(rollup@4.40.2):
     dependencies:

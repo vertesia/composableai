@@ -31,8 +31,7 @@
     "dependencies": {
         "@llumiverse/core": "workspace:*",
         "ajv": "^8.16.0",
-        "json-schema": "^0.4.0",
-        "mime": "^4.0.4"
+        "json-schema": "^0.4.0"
     },
     "ts_dual_module": {
         "outDir": "lib"
