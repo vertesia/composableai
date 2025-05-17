@@ -44,7 +44,10 @@
   ],
   "references": [
     {
-      "path": "../../llumiverse/core/tsconfig.json"
+      "common": "../common/tsconfig.json"
+    },
+    {
+      "client": "../client/tsconfig.json"
     },
   ]
 }

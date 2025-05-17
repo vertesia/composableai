@@ -352,9 +352,6 @@ importers:
 
   packages/react:
     dependencies:
-      '@types/json-schema':
-        specifier: ^7.0.15
-        version: 7.0.15
       '@vertesia/client':
         specifier: workspace:*
         version: link:../client
@@ -368,6 +365,9 @@ importers:
         specifier: '>=16.8.0'
         version: 19.1.0
     devDependencies:
+      '@types/json-schema':
+        specifier: ^7.0.15
+        version: 7.0.15
       '@types/react':
         specifier: ^18.3.4
         version: 18.3.20
