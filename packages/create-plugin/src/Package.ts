@@ -16,14 +16,12 @@ interface PackageJson {
     optionalDependencies?: Record<string, string>;
     scripts?: Record<string, string>;
     bin?: Record<string, string>,
-    vertesia?: {
-        pm?: string;
-        profile?: string;
-        image?: {
-            repository?: string;
-            organization?: string;
-            name?: string;
-        }
+    plugin?: {
+        title?: string;
+        icon?: string;
+        publisher?: string;
+        external?: boolean;
+        status?: "beta" | "stable" | "deprecated" | "hidden";
     };
 }
 

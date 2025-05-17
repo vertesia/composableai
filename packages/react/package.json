@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/react",
-    "version": "0.55.0",
+    "version": "0.56.0",
     "description": "React helpers for Composable AI",
     "type": "module",
     "types": "./lib/index.d.ts",
@@ -25,6 +25,7 @@
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "devDependencies": {
+        "@types/json-schema": "^7.0.15",
         "@types/react": "^18.3.4",
         "typescript": "^5.0.2"
     },
@@ -34,7 +35,6 @@
     "dependencies": {
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "@types/json-schema": "^7.0.15",
         "json-schema": "^0.4.0"
     }
 }

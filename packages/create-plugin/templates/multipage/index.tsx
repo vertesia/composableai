@@ -1,15 +1,13 @@
-import { MultiPagePlugin } from "@vertesia/ui/context";
-import "./index.css";
+import { NestedRouterProvider } from "@vertesia/ui/router";
 import { routes } from "./routes";
 
 /**
- * Mount a React component to the DOM.
+ * Export the plugin component.
  */
-export function mount(slot: string) {
+export default function ${ PluginComponent } ({ slot }: { slot: string }) {
     if (slot === "page") {
         return (
-            <MultiPagePlugin
-                title="${plugin_title}"
+            <NestedRouterProvider
                 routes={routes}
                 index="/home" />
         );

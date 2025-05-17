@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/cli",
-    "version": "0.55.0",
+    "version": "0.56.0",
     "description": "Code generation for the interaction defined with Composable AI Studio",
     "type": "module",
     "bin": {
@@ -31,6 +31,7 @@
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "dependencies": {
+        "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "@vertesia/memory-cli": "^0.43.0",

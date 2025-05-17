@@ -1,6 +1,6 @@
 import { readFileSync, renameSync, writeFileSync } from "fs";
 
-const VAR_RX = /\$\{([a-zA-Z_$][a-zA-Z_$0-9]*)\}/g;
+const VAR_RX = /\$\{\s*([a-zA-Z_$][a-zA-Z_$0-9]*)\s*\}/g;
 
 
 export function expandVars(content: string, vars: Record<string, string>) {

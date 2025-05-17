@@ -1,10 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import ${ PluginComponent } from './index.tsx'
 import './index.css'
-import { mount } from './index.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {mount("page")}
+    <${PluginComponent} slot="page" />
   </StrictMode>,
 )
