@@ -318,9 +318,10 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     type: "conversation";
 
     /**
-     * The tools to use
+     * The tools to use, list of tool or function names.
+     * You can use + and - to add or remove from default, if no sign, then list replaces default
      */
-    tools?: ToolRef[];
+    tools?: string[];
 
     /**
      * The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used.

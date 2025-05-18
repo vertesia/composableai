@@ -21,24 +21,24 @@ import {
 } from "@vertesia/common";
 
 import { StreamSource } from "../StreamSource.js";
-import { ZenoClient } from "./client.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
+import { ZenoClient } from "./client.js";
 
 export interface UploadContentObjectPayload extends Omit<CreateContentObjectPayload, "content"> {
     content?:
-        | StreamSource
-        | File
-        | {
-              // the source URI
-              source: string;
-              // the original name of the input file if any
-              name?: string;
-              // the mime type of the content source.
-              type?: string;
+    | StreamSource
+    | File
+    | {
+        // the source URI
+        source: string;
+        // the original name of the input file if any
+        name?: string;
+        // the mime type of the content source.
+        type?: string;
 
-              // the target id in the content store
-              id?: string;
-          };
+        // the target id in the content store
+        id?: string;
+    };
 }
 
 export interface ComputeFacetsResponse {
@@ -87,7 +87,7 @@ export class ObjectsApi extends ApiTopic {
         const query = payload.query || ({} as ObjectSearchQuery);
 
         // Add revision filtering options
-        const showAllRevisions = payload.show_all_revisions === true;
+        const showAllRevisions = payload.all_revisions === true;
         const revisionRoot = payload.from_root;
 
         return this.get("/", {
@@ -95,7 +95,7 @@ export class ObjectsApi extends ApiTopic {
                 limit,
                 offset,
                 ...query,
-                show_all_revisions: showAllRevisions ? "true" : undefined,
+                all_revisions: showAllRevisions ? "true" : undefined,
                 from_root: revisionRoot,
             },
         });
@@ -152,8 +152,6 @@ export class ObjectsApi extends ApiTopic {
             name: source.name,
             mime_type: source.type,
         });
-
-        console.log(`Uploading content to ${url}`, { id, mime_type, isStream, source });
 
         // upload the file content to the signed URL
         /*const res = await this.fetch(url, {
