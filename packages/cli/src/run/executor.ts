@@ -1,6 +1,6 @@
 import { VertesiaClient } from "@vertesia/client";
 import { ConfigModes, ExecutionRun, RunDataStorageLevel } from "@vertesia/common";
-import { TextFallbackOptions } from "../../../../llumiverse/core/src/options.js";
+import { TextFallbackOptions } from "@llumiverse/common";
 
 export class ExecutionQueue {
     requests: ExecutionRequest[] = [];
@@ -13,7 +13,7 @@ export class ExecutionQueue {
     add(request: ExecutionRequest) {
         this.requests.push(request);
     }
-    
+
     abort() {
         this.abortController.abort();
     }
@@ -26,42 +26,42 @@ export class ExecutionQueue {
                 this.abortController.abort();
                 return [];
             }
-            
+
             // Forward external abort signals to our controller
             const forwardAbort = () => this.abortController.abort();
             signal.addEventListener('abort', forwardAbort, { once: true });
-            
+
             // Clean up listener when done
             const cleanup = () => signal.removeEventListener('abort', forwardAbort);
             this.abortController.signal.addEventListener('abort', cleanup, { once: true });
         }
-        
+
         const chunkSize = this.size;
         const out: ExecutionRun[] = [];
         const requests = this.requests;
-        
+
         try {
             for (let i = 0; i < requests.length; i += chunkSize) {
                 // Check if aborted before processing chunk
                 if (this.abortController.signal.aborted) {
                     break;
                 }
-                
+
                 const chunk = requests.slice(i, i + chunkSize);
-                
+
                 // Pass our abort signal to each request
                 const res = await Promise.all(
                     chunk.map(request => request.run(onChunk, this.abortController.signal))
                 );
-                
+
                 out.push(...res);
-                
+
                 // Only notify if not aborted
                 if (!this.abortController.signal.aborted) {
                     onBatch(out);
                 }
             }
-            
+
             return out;
         } catch (error) {
             // If this is an abort error, just return what we have so far
@@ -99,9 +99,9 @@ export class ExecutionRequest {
         if (signal?.aborted) {
             throw new Error("Operation aborted");
         }
-        
+
         const options = this.options;
-        
+
         //TODO: Support for other modalities, like images
         const model_options: TextFallbackOptions = {
             _option_id: "text-fallback",
@@ -144,12 +144,12 @@ export class ExecutionRequest {
                     tags
                 }, abortAwareChunkHandler);
             }
-            
+
             // Check if aborted during execution
             if (signal?.aborted) {
                 throw new Error("Operation aborted");
             }
-            
+
             // add count number in the run
             if (this.runNumber != null) {
                 (run as any).runNumber = this.runNumber;

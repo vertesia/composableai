@@ -49,9 +49,20 @@ export async function init(dirName?: string | undefined) {
         required: false,
         message: "Package description",
         initial: '',
+    }, {
+        name: 'template',
+        type: 'select',
+        message: "Template to use",
+        initial: 0,
+        choices: [
+            { name: 'Simple plugin', value: 'simple' },
+            { name: 'Multi Page Plugin', value: 'multipage' },
+        ]
     }]);
 
     const cmd = answer.pm;
+
+    const pluginName = new PluginName(answer.plugin_name);
 
     let dir: string;
     if (!dirName) {
@@ -63,9 +74,16 @@ export async function init(dirName?: string | undefined) {
     mkdirSync(dir, { recursive: true });
     chdir(dir);
 
+    const srcDir = join(dir, 'src');
+
     // copy template to current directory
-    const templDir = resolve(fileURLToPath(import.meta.url), '../../template');
-    await copyTree(templDir, dir);
+    const templsDir = resolve(fileURLToPath(import.meta.url), '../../templates');
+    await copyTree(join(templsDir, "common"), dir);
+    if (answer.template === 'multipage') {
+        await copyTree(join(templsDir, "multipage"), srcDir);
+    } else {
+        await copyTree(join(templsDir, "simple"), srcDir);
+    }
 
     console.log("Generating package.json");
     const pkg = new Package({
@@ -89,35 +107,58 @@ export async function init(dirName?: string | undefined) {
             "react": "^19.0.0",
             "react-dom": "^19.0.0"
         },
+        plugin: {
+            title: pluginName.title,
+            icon: "icon:AppWindowIcon",
+            publisher: pluginName.scope || "vertesia",
+            external: false,
+            status: "beta",
+        }
     });
 
     pkg.saveTo(`${dir}/package.json`);
 
-    const plugin_title = generatePluginTitle(answer.plugin_name);
-    const plugin_var_name = generatePluginVarName(answer.plugin_name);
+    const PluginComponent = pluginName.pascalCase + "Plugin";
     console.log("Processing source files");
-    processVarsInFile(`${dir}/vite.config.ts`, {
-        plugin_name: answer.plugin_name,
-        plugin_var_name
+    processVarsInFile(`${dir}/index.html`, {
+        plugin_title: pluginName.title,
+    });
+    processVarsInFile(`${dir}/src/main.tsx`, {
+        PluginComponent,
     });
     processVarsInFile(`${dir}/src/index.tsx`, {
-        plugin_title
-    });
-    processVarsInFile(`${dir}/index.html`, {
-        plugin_title
+        PluginComponent,
     });
 
     installDeps(cmd);
-
 }
 
 
-function generatePluginTitle(name: string) {
-    const words = name.split('-');
-    return words.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-}
-
-function generatePluginVarName(name: string) {
-    const words = name.split('-');
-    return words.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+class PluginName {
+    scope?: string;
+    name: string;
+    _title?: string;
+    constructor(public value: string) {
+        if (value.startsWith('@')) {
+            const index = value.indexOf('/');
+            if (index > -1) {
+                this.name = value.substring(index + 1);
+                this.scope = value.substring(1, index);
+            } else {
+                throw new Error("Invalid plugin name");
+            }
+        } else {
+            this.name = value;
+            this.scope = undefined
+        }
+    }
+    get title() {
+        if (!this._title) {
+            this._title = this.name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        }
+        return this._title;
+    }
+    get pascalCase() {
+        return this.name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+    }
 }

@@ -1,4 +1,4 @@
-import { JSONSchemaType } from "ajv"
+import type { JSONSchemaType } from "ajv"
 
 /*Default JSON Schema type for rendition*/
 
@@ -12,7 +12,7 @@ export interface RenditionProperties {
 }
 
 export const RenditionSchema: JSONSchemaType<RenditionProperties> = {
-    
+
     type: "object",
     description: "Represent a rendition of a file stored in an object. It will be stored as a separate object in the database.",
     properties: {
@@ -64,7 +64,7 @@ export interface DocumentPartProperties {
     description?: string,
     height?: number,
     width?: number,
-    
+
 }
 
 
@@ -125,4 +125,3 @@ export const DocumentPartSchema: JSONSchemaType<DocumentPartProperties> = {
     },
     required: ["part_number"],
 }
-

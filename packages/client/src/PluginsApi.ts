@@ -16,13 +16,15 @@ export default class PluginsApi extends ApiTopic {
     }
 
     /**
-     * If a project ID is specified through the project query param
-     * then only the plugins that are enabled on the project are returned.
-     * @param query
+     * @param ids - ids to filter by
      * @returns
      */
-    list(): Promise<PluginManifest[]> {
-        return this.get('/');
+    list(ids?: string[]): Promise<PluginManifest[]> {
+        return this.get('/', {
+            query: {
+                ids: ids ? ids.join(',') : undefined,
+            }
+        });
     }
 
 }

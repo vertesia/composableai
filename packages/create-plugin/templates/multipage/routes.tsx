@@ -1,4 +1,4 @@
-import { HomePage } from "./pages/HomePage";
+import { HomePage, NextPage } from "./pages";
 
 export const routes = [
     {
@@ -6,8 +6,8 @@ export const routes = [
         Component: HomePage,
     },
     {
-        path: '/test',
-        Component: () => <div className="p-4">Test</div>,
+        path: '/next',
+        Component: NextPage,
     },
     {
         path: '*',
