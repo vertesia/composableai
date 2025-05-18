@@ -34,8 +34,28 @@ const jsEntries = entries.map((name) => ({
         'react',
         'react-dom',
         'react/jsx-runtime',
+        "@headlessui/react",
+        "lucide-react",
+        "clsx",
+        "@radix-ui/react-checkbox",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-popover",
+        "@radix-ui/react-separator",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-tabs",
+        "@radix-ui/react-tooltip",
+        "class-variance-authority",
+        "cmdk",
+        "date-fns",
+        "lodash-es",
+        "motion",
+        /^motion\/.*/,
+        "react-day-picker",
+        "tailwind-merge",
         "@vertesia/client",
         "@vertesia/common",
+
         /^@vertesia\/ui\/.*/
     ],
     plugins: [
@@ -44,7 +64,7 @@ const jsEntries = entries.map((name) => ({
             exportConditions: ['browser', 'module', 'import'],
         }),
         commonjs(),
-        terser(),
+        //terser(),
     ],
 }));
 

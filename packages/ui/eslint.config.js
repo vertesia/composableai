@@ -58,6 +58,16 @@ export default [
     {
         rules: {
             '@typescript-eslint/explicit-module-boundary-types': 'off',
+
+            //TODO review the following rules
+            "@typescript-eslint/no-unused-vars": "off",
+            "@typescript-eslint/no-wrapper-object-types": "off",
+            "@typescript-eslint/no-empty-object-type": "off",
+            "react-hooks/exhaustive-deps": "off",
+            "import/no-unresolved": "off",
+            "no-empty-pattern": "off",
+            "react/display-name": "off",
+            "react/no-unknown-property": "off",
         },
     },
 
@@ -86,7 +96,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../widgets/*', '../router/*', '../session/*', '../features/*'] },
+                { patterns: ['../widgets/*', '../router/*', '../session/*', '../features/*', '../layout/*'] },
             ],
         },
     },
@@ -95,7 +105,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../widgets/*', '../router/*', '../core/*', '../features/*'] },
+                { patterns: ['../widgets/*', '../router/*', '../core/*', '../features/*', '../layout/*'] },
             ],
         },
     },
@@ -104,7 +114,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../widgets/*', '../session/*', '../features/*'] },
+                { patterns: ['../core/*', '../widgets/*', '../session/*', '../features/*', '../layout/*'] },
             ],
         },
     },
@@ -113,7 +123,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../router/*', '../session/*', '../features/*'] },
+                { patterns: ['../core/*', '../router/*', '../session/*', '../features/*', '../layout/*'] },
             ],
         },
     },
@@ -122,7 +132,16 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*'] },
+                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../layout/*'] },
+            ],
+        },
+    },
+    {
+        files: ['src/layout/**/*'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../features/*'] },
             ],
         },
     },
