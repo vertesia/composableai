@@ -18,8 +18,9 @@
     "hooks"
   ],
   "scripts": {
-    "build": "tsc -b && pnpm exec rollup -c",
-    "lint": "eslint ."
+    "build": "pnpm lint && pnpm exec rimraf ./lib && tsc -b && pnpm exec rollup -c",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix"
   },
   "dependencies": {
     "@vertesia/client": "workspace:*",
@@ -28,14 +29,21 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.27.0",
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-typescript": "^12.1.2",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
+    "eslint": "^9.27.0",
+    "eslint-import-resolver-typescript": "^4.3.5",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "rimraf": "^6.0.1",
     "rollup": "^4.40.2",
     "rollup-plugin-terser": "^7.0.2",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.32.1"
   },
   "exports": {
     "./router": {
@@ -46,9 +54,13 @@
       "types": "./lib/types/session/index.d.ts",
       "default": "./lib/session.js"
     },
-    "./components": {
-      "types": "./lib/types/components/index.d.ts",
-      "default": "./lib/components.js"
+    "./core": {
+      "types": "./lib/types/core/index.d.ts",
+      "default": "./lib/core.js"
+    },
+    "./widgets": {
+      "types": "./lib/types/widgets/index.d.ts",
+      "default": "./lib/widgets.js"
     },
     "./code": {
       "types": "./lib/types/code/index.d.ts",
@@ -72,8 +84,11 @@
       "session": [
         "./lib/types/session/index.d.ts"
       ],
-      "components": [
-        "./lib/types/components/index.d.ts"
+      "core": [
+        "./lib/types/core/index.d.ts"
+      ],
+      "widgets": [
+        "./lib/types/widgets/index.d.ts"
       ],
       "code": [
         "./lib/types/code/index.d.ts"
