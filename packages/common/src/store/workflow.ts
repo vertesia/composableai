@@ -176,6 +176,8 @@ export interface ListWorkflowRunsPayload {
      * This is a full text search on the workflow run history.
      */
     query?: string;
+
+    type?: string;
 }
 
 interface WorkflowRunEvent {
