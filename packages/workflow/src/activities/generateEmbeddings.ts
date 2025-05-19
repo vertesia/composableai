@@ -1,4 +1,4 @@
-import { EmbeddingsResult } from "@llumiverse/core";
+import { EmbeddingsResult } from "@llumiverse/common";
 import { log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
 import { ContentObject, DSLActivityExecutionPayload, DSLActivitySpec, ProjectConfigurationEmbeddings, SupportedEmbeddingTypes } from "@vertesia/common";
@@ -318,7 +318,7 @@ async function generateEmbeddingsFromStudio(text: string, env: string, client: V
 }
 
 //Simplified attention mechanism
-// This is a naive implementation and should be replaced with a more sophisticated 
+// This is a naive implementation and should be replaced with a more sophisticated
 // using tensorflow in a specific package
 function computeAttentionEmbedding(chunkEmbeddings: number[][]): number[] {
     if (chunkEmbeddings.length === 0) return [];

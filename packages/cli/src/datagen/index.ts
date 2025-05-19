@@ -4,7 +4,7 @@ import { getClient } from "../client.js";
 import { Spinner, restoreCursorOnExit } from "../utils/console.js";
 import { writeJsonFile } from "../utils/stdio.js";
 import { ConfigModes } from "@vertesia/common";
-import { TextFallbackOptions } from "../../../../llumiverse/core/src/options.js";
+import { TextFallbackOptions } from "@llumiverse/common";
 
 function convertConfigMode(raw_config_mode: any): ConfigModes | undefined {
     const configStr: string = typeof raw_config_mode === 'string' ? raw_config_mode.toUpperCase() : "";

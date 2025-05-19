@@ -1,8 +1,7 @@
 import { runCommand } from "./utils.js";
 
 const DEV_DEPS: string[] = [
-    "@vertesia/ui",
-    "@vertesia/vite-plugin-export-css",
+    "@vertesia/plugin-builder",
     "@eslint/js",
     "@tailwindcss/vite",
     "@types/node",
@@ -22,8 +21,15 @@ const DEV_DEPS: string[] = [
     "vite-plugin-dts",
 ];
 
+const RUNTIME_DEPS: string[] = [
+    "@vertesia/ui",
+]
+
 function addDevDependencies(pm: "npm" | "pnpm", deps: string[]) {
     _addDependencies(pm, deps, "dev");
+}
+function addRuntimeDependencies(pm: "npm" | "pnpm", deps: string[]) {
+    _addDependencies(pm, deps, "runtime");
 }
 function _addDependencies(pm: "npm" | "pnpm", deps: string[], type: "dev" | "runtime" = "runtime") {
     const args = [
@@ -41,4 +47,5 @@ function _addDependencies(pm: "npm" | "pnpm", deps: string[], type: "dev" | "run
 export function installDeps(pm: "npm" | "pnpm") {
     console.log("Installing dependencies");
     addDevDependencies(pm, DEV_DEPS);
+    addRuntimeDependencies(pm, RUNTIME_DEPS);
 }

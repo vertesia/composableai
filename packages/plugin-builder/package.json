@@ -1,0 +1,37 @@
+{
+  "name": "@vertesia/plugin-builder",
+  "version": "0.56.0",
+  "description": "A vite plugin to build vertesia UI plugins",
+  "type": "module",
+  "types": "./lib/index.d.ts",
+  "main": "./lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "license": "MIT",
+  "homepage": "https://composableprompts.com/docs",
+  "keywords": [
+    "llm",
+    "streaming",
+    "composable",
+    "prompt",
+    "ai",
+    "react"
+  ],
+  "scripts": {
+    "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+    "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc",
+    "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.2"
+  },
+  "dependencies": {
+    "@adobe/css-tools": "^4.4.1",
+    "@types/node": "^22.13.1"
+  },
+  "peerDependencies": {
+    "vite": ">=4.2.0"
+  }
+}

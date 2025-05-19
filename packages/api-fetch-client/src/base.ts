@@ -1,5 +1,5 @@
 import { ConnectionError, RequestError, ServerError } from "./errors.js";
-import { sse } from "./index.js";
+import { sse } from "./sse/index.js";
 import { buildQueryString, join, removeTrailingSlash } from "./utils.js";
 
 export type FETCH_FN = (input: RequestInfo, init?: RequestInit) => Promise<Response>;
