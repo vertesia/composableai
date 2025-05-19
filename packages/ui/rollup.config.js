@@ -1,41 +1,70 @@
-import typescript from '@rollup/plugin-typescript';
-import nodeResolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import { terser } from 'rollup-plugin-terser';
+import nodeResolve from '@rollup/plugin-node-resolve';
 import fs from 'fs';
 import path from 'path';
 import { defineConfig } from 'rollup';
+import { terser } from 'rollup-plugin-terser';
 
-const inputDir = 'src';
-const outputDir = 'lib';
+const outputDir = path.resolve('lib');
+const esmOutputDir = path.join(outputDir, 'esm');
+
 
 // Get all directories with index.ts or index.tsx
-const entries = fs.readdirSync(inputDir).filter((name) => {
-    const dir = path.join(inputDir, name);
-    const hasIndex = fs.existsSync(path.join(dir, 'index.ts')) || fs.existsSync(path.join(dir, 'index.tsx'));
-    return fs.statSync(dir).isDirectory() && hasIndex;
+const entries = fs.readdirSync(esmOutputDir).filter((name) => {
+    const dir = path.join(esmOutputDir, name);
+    try {
+        if (fs.statSync(dir).isDirectory()) {
+            return fs.existsSync(path.join(dir, 'index.js'));
+        }
+    } catch (e) {
+        // ignore
+    }
+    return false;
 });
 
+
 const jsEntries = entries.map((name) => ({
-    input: path.join(inputDir, name, 'index.ts'),
+    input: path.join(outputDir, 'esm', name, 'index.js'),
     output: {
         file: path.join(outputDir, `vertesia-ui-${name}.js`),
         format: 'es',
         sourcemap: true,
     },
-    external: ['react', 'react-dom', "@vertesia/client", "@vertesia/common"],
+    external: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        "@headlessui/react",
+        "lucide-react",
+        "clsx",
+        "@radix-ui/react-checkbox",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-label",
+        "@radix-ui/react-popover",
+        "@radix-ui/react-separator",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-tabs",
+        "@radix-ui/react-tooltip",
+        "class-variance-authority",
+        "cmdk",
+        "date-fns",
+        "lodash-es",
+        "motion",
+        /^motion\/.*/,
+        "react-day-picker",
+        "tailwind-merge",
+        "@vertesia/client",
+        "@vertesia/common",
+
+        /^@vertesia\/ui\/.*/
+    ],
     plugins: [
         nodeResolve({
-            browser: true,  // Prefer browser-compatible versions of packages
+            browser: true,
             exportConditions: ['browser', 'module', 'import'],
         }),
-        commonjs(),        // Convert CommonJS modules to ES6
-        typescript({
-            tsconfig: './tsconfig.web.json',
-            sourceMap: true,
-            declaration: false,
-        }),
-        terser(),          // Optional: minify for production
+        commonjs(),
+        //terser(),
     ],
 }));
 
