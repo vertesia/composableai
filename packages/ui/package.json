@@ -67,35 +67,35 @@
   "exports": {
     "./router": {
       "types": "./lib/types/router/index.d.ts",
-      "default": "./lib/router.js"
+      "default": "./lib/esm/router/index.js"
     },
     "./session": {
       "types": "./lib/types/session/index.d.ts",
-      "default": "./lib/session.js"
+      "default": "./lib/esm/session/index.js"
     },
     "./core": {
       "types": "./lib/types/core/index.d.ts",
-      "default": "./lib/core.js"
+      "default": "./lib/esm/core/index.js"
     },
     "./widgets": {
       "types": "./lib/types/widgets/index.d.ts",
-      "default": "./lib/widgets.js"
+      "default": "./lib/esm/widgets/index.js"
     },
     "./code": {
       "types": "./lib/types/code/index.d.ts",
-      "default": "./lib/code.js"
+      "default": "./lib/esm/code/index.js"
     },
     "./form": {
       "types": "./lib/types/form/index.d.ts",
-      "default": "./lib/form.js"
+      "default": "./lib/esm/form/index.js"
     },
     "./layout": {
       "types": "./lib/types/layout/index.d.ts",
-      "default": "./lib/layout.js"
+      "default": "./lib/esm/layout/index.js"
     },
     "./features": {
       "types": "./lib/types/features/index.d.ts",
-      "default": "./lib/features.js"
+      "default": "./lib/esm/features/index.js"
     }
   },
   "types": "./lib/index.d.ts",
