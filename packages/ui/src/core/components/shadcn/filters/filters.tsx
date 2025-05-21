@@ -88,7 +88,7 @@ export default function Filters({
             {filters
                 .filter((filter) => filter.value?.length > 0)
                 .map((filter) => (
-                    <div className="flex gap-[1px] items-center text-xs" key={filter.name + '-' + (filter.type == 'date' ? 'date' : filter.value.map(v => v.value).join(','))}>
+                    <div className="flex gap-[1px] items-center text-sm" key={filter.name + '-' + (filter.type == 'date' ? 'date' : filter.value.map(v => v.value).join(','))}>
                         <div className="flex gap-1.5 shrink-0 rounded-l bg-muted px-1.5 py-1 items-center">
                             {filter.placeholder || filter.name}
                         </div>
@@ -101,7 +101,7 @@ export default function Filters({
                             }}
                             className="bg-muted rounded-l-none rounded-r-sm h-6 w-6 text-muted-foreground hover:text-primary hover:bg-muted/50 transition shrink-0"
                         >
-                            <X className="size-3" />
+                            <X className="size-4" />
                         </Button>
                     </div>
                 ))}

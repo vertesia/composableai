@@ -59,7 +59,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
         onSelect={() => handleSelect(group.name)}
         className="group flex gap-2 items-center hover:bg-muted"
       >
-        <span className="text-muted">{group.placeholder ?? group.name}</span>
+        <span>{group.placeholder ?? group.name}</span>
       </CommandItem>
     ));
   };
@@ -212,7 +212,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
   }, []);
 
   return (
-    <div className="flex gap-2 flex-wrap justify-start w-full">
+    <div className="flex gap-2 flex-wrap justify-start w-full items-center">
       <div className="flex gap-2 items-center">
         <Popover _open={open} onOpenChange={handleOpen}>
           <PopoverTrigger asChild>
@@ -225,7 +225,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
                 "transition group flex gap-1.5",
               )}
             >
-              <ListFilter className="size-3 shrink-0 transition-all text-muted" />
+              <ListFilter className="size-4 shrink-0 transition-all text-muted" />
               {"Filter"}
             </Button>
           </PopoverTrigger>
