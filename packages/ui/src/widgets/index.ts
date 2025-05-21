@@ -1,1 +1,1 @@
-// widgets impl
+export * from "./xml-viewer/index.js";
