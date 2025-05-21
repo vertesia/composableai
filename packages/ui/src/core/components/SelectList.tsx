@@ -76,7 +76,7 @@ interface SelectListOptionProps<T> {
 
 function SelectListOption<T>({ option, onSelect, layout, noCheck }: SelectListOptionProps<T>) {
     return (
-        <div className={clsx('group flex items-center cursor-pointer gap-x-2',
+        <div className={clsx('group flex items-center cursor-pointer gap-x-2 hover:bg-muted',
             layout.reverse && 'flex-row-reverse', layout.className)} onClick={() => onSelect(option)}>
             {noCheck ? null : <div className="">{layout.check}</div>}
             <div className='flex-1'>{layout.label}</div>

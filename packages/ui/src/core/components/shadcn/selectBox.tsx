@@ -95,7 +95,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                         className,
                         border && 'border border-border',
                         'flex flex-row gap-2 items-center justify-between p-2 rounded-md group',
-                        !disabled && "cursor-pointer hover:bg-accent hover:text-muted"
+                        !disabled && "cursor-pointer hover:bg-muted"
                     )}
                 >
                     <div
@@ -152,7 +152,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                                 <CommandItem
                                     key={index}
                                     onSelect={() => _onClick(opt)}
-                                    className="w-full cursor-pointer hover:bg-accent hover:text-muted"
+                                    className="w-full"
                                 >
                                     <PopoverClose className='w-full flex justify-between items-center'>
                                         <div className='w-full truncate text-left'>

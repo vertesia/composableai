@@ -16,6 +16,7 @@ export * from './query.js';
 export * from './refs.js';
 export * from './runs.js';
 export * from "./store/index.js";
+export * from './tenant.js';
 export * from "./training.js";
 export * from './transient-tokens.js';
 export * from './user.js';
