@@ -71,6 +71,10 @@
       "types": "./lib/types/router/index.d.ts",
       "default": "./lib/esm/router/index.js"
     },
+    "./env": {
+      "types": "./lib/types/env/index.d.ts",
+      "default": "./lib/esm/env/index.js"
+    },
     "./session": {
       "types": "./lib/types/session/index.d.ts",
       "default": "./lib/esm/session/index.js"
@@ -105,6 +109,9 @@
     "*": {
       "router": [
         "./lib/types/router/index.d.ts"
+      ],
+      "env": [
+        "./lib/types/env/index.d.ts"
       ],
       "session": [
         "./lib/types/session/index.d.ts"
