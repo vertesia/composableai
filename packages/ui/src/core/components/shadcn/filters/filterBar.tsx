@@ -59,7 +59,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
         onSelect={() => handleSelect(group.name)}
         className="group flex gap-2 items-center hover:bg-muted"
       >
-        <span className="text-accent">{group.placeholder ?? group.name}</span>
+        <span className="text-muted">{group.placeholder ?? group.name}</span>
       </CommandItem>
     ));
   };
@@ -220,9 +220,9 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
               variant="ghost"
               role="combobox"
               aria-expanded={open}
-              size="sm"
+              size="md"
               className={cn(
-                "transition group h-6 text-xs rounded-sm flex gap-1.5 items-center",
+                "transition group flex gap-1.5",
               )}
             >
               <ListFilter className="size-3 shrink-0 transition-all text-muted" />
