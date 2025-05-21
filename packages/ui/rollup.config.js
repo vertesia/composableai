@@ -34,6 +34,7 @@ const jsEntries = entries.map((name) => ({
         'react',
         'react-dom',
         'react/jsx-runtime',
+        'firebase',
         'firebase/app',
         'firebase/auth',
         'firebase/analytics',
