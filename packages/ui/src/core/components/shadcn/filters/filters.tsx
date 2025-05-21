@@ -99,9 +99,9 @@ export default function Filters({
                             onClick={() => {
                                 setFilters((prev) => prev.filter((f) => f !== filter));
                             }}
-                            className="bg-muted rounded-l-none rounded-r-sm h-6 w-6 text-muted-foreground hover:text-primary hover:bg-muted/50 transition shrink-0"
+                            className="bg-muted rounded-l-none rounded-r-sm size-7 hover:text-primary hover:bg-muted/50 transition shrink-0"
                         >
-                            <X className="size-4" />
+                            <X className="size-6" />
                         </Button>
                     </div>
                 ))}
