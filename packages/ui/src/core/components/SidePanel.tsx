@@ -69,7 +69,7 @@ export function SidePanel({ isOpen, title, onClose, children }: SidePanelProps) 
                                         <div className="flex-1 flex flex-col overflow-y-scroll gap-4 bg-background py-6 shadow-xl">
                                             <div className="px-4 sm:px-6">
                                                 <div className="flex items-start justify-between">
-                                                    <DialogTitle className="w-full text-base font-semibold leading-6 text-gray-900 dark:text-slate-50">
+                                                    <DialogTitle className="w-full text-base font-semibold leading-6">
                                                         <div className="text-2xl">{title ?? ""}</div>
                                                     </DialogTitle>
                                                     <div className="ml-3 flex h-7 items-center">
