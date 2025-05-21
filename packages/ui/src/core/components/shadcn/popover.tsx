@@ -11,7 +11,23 @@ interface PopoverContextValue {
   hover: boolean;
   click: boolean;
 }
-const PopoverContext = React.createContext<PopoverContextValue | null>(null);
+
+const defaultContextValue: PopoverContextValue = {
+  open: false,
+  setOpen: () => {},
+  hover: false,
+  click: false
+};
+
+const PopoverContext = React.createContext<PopoverContextValue>(defaultContextValue);
+
+function usePopoverContext() {
+  const context = React.useContext(PopoverContext);
+  if (context === defaultContextValue) {
+    console.warn("usePopoverContext must be used within a Popover component");
+  }
+  return context;
+}
 
 interface PopoverProps {
   _open?: boolean;
@@ -31,8 +47,15 @@ const Popover = ({ hover = false, click = false, children, _open, onOpenChange }
     }
   };
 
+  const contextValue = React.useMemo(() => ({
+    open,
+    setOpen,
+    hover,
+    click
+  }), [open, hover, click]);
+
   return (
-    <PopoverContext.Provider value={{ open, setOpen, hover, click }}>
+    <PopoverContext.Provider value={contextValue}>
       <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange} modal={insideModal}>
         {children}
       </PopoverPrimitive.Root>
@@ -50,12 +73,7 @@ const PopoverTrigger = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger>
 >(({ children, ...props }, ref) => {
-  const context = React.useContext(PopoverContext);
-
-  if (!context) {
-    throw new Error("PopoverTrigger must be used within a Popover");
-  }
-
+  const context = usePopoverContext();
   const { setOpen, hover, click } = context;
 
   return (
@@ -80,12 +98,7 @@ const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
 >(({ className, align = "center", side = "bottom", ...props }, ref) => {
-  const context = React.useContext<PopoverContextValue | null>(PopoverContext);
-
-  if (!context) {
-    throw new Error("PopoverContent must be used within a Popover");
-  }
-
+  const context = usePopoverContext();
   const { setOpen, hover } = context;
 
   return (
@@ -112,4 +125,4 @@ PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 const PopoverClose = PopoverPrimitive.Close;
 PopoverClose.displayName = PopoverPrimitive.Close.displayName;
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor, PopoverClose };
+export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor, PopoverClose, usePopoverContext };
