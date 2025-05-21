@@ -1,7 +1,7 @@
 import { Env } from '@vertesia/ui/env';
 import { AuthTokenPayload } from '@vertesia/common';
 import { logEvent } from "firebase/analytics";
-import { analytics } from "./auth/firebase";
+import { getFirebaseAnalytics } from "./auth/firebase";
 
 export function useUXTracking() {
 
@@ -26,7 +26,7 @@ export function useUXTracking() {
         }
 
         //GA via firebase
-        logEvent(analytics, eventName, { ...eventProperties, debug_mode: !Env.isProd });
+        logEvent(getFirebaseAnalytics(), eventName, { ...eventProperties, debug_mode: !Env.isProd });
 
     }
 

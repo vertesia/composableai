@@ -5,7 +5,7 @@ import { AuthTokenPayload } from "@vertesia/common";
 import { jwtDecode } from "jwt-decode";
 import { Env } from '@vertesia/ui/env';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../UserSession';
-import { firebaseAuth, getFirebaseAuthToken } from './firebase';
+import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
 
 let AUTH_TOKEN_RAW: string | undefined;
 let AUTH_TOKEN: AuthTokenPayload | undefined;
@@ -145,7 +145,7 @@ export async function getComposableToken(accountId?: string, projectId?: string,
     }
 
     //token is close to expire, refresh it
-    if (firebaseAuth.currentUser) {
+    if (getFirebaseAuth().currentUser) {
         //we have a firebase user, get the token from there
         AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
     } else if (initToken || AUTH_TOKEN_RAW) {

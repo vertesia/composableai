@@ -6,7 +6,7 @@ import { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 
 import { getComposableToken } from './auth/composable';
-import { firebaseAuth } from './auth/firebase';
+import { getFirebaseAuth } from './auth/firebase';
 import { TypeRegistry } from './TypeRegistry';
 
 export const LastSelectedAccountId_KEY = 'composableai.lastSelectedAccountId';
@@ -117,7 +117,7 @@ class UserSession {
     logout() {
         console.log('Logging out');
         if (this.authToken) {
-            firebaseAuth.signOut();
+            getFirebaseAuth().signOut();
         }
         this.authError = undefined;
         this.isLoading = false;

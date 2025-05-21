@@ -1,7 +1,7 @@
 import { onAuthStateChanged } from "firebase/auth";
 import { ReactNode, useEffect, useState } from "react";
 import { UserNotFoundError, getComposableToken } from "./auth/composable";
-import { firebaseAuth } from "./auth/firebase";
+import { getFirebaseAuth } from "./auth/firebase";
 import { useAuthState } from "./auth/useAuthState";
 import { Env } from "@vertesia/ui/env";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from "./UserSession";
@@ -122,7 +122,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
             }
         }
 
-        return onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+        return onAuthStateChanged(getFirebaseAuth(), async (firebaseUser) => {
             if (firebaseUser) {
                 console.log("Auth: successful login with firebase");
                 Env.logger.info("Successful login with firebase", {

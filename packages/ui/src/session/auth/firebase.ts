@@ -1,12 +1,41 @@
 import { UIResolvedTenant } from "@vertesia/common";
-import { getAnalytics } from "firebase/analytics";
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
 import { Env } from "@vertesia/ui/env";
+import { Analytics, getAnalytics } from "firebase/analytics";
+import { FirebaseApp, initializeApp } from "firebase/app";
+import { Auth, getAuth } from "firebase/auth";
 
-const firebaseApp = initializeApp(Env.firebase);
-const analytics = getAnalytics(firebaseApp);
-const firebaseAuth = getAuth(firebaseApp);
+// Use lazy initialization to avoid accessing Env before it's initialized
+let _firebaseApp: FirebaseApp | null = null;
+let _analytics: Analytics | null = null;
+let _firebaseAuth: Auth | null = null;
+
+// Getters that lazily initialize Firebase components when first accessed
+export function getFirebaseApp(): FirebaseApp {
+    if (!_firebaseApp) {
+        try {
+            _firebaseApp = initializeApp(Env.firebase);
+        } catch (error) {
+            console.error("Failed to initialize Firebase app:", error);
+            throw new Error("Firebase initialization failed - environment may not be properly initialized");
+        }
+    }
+    return _firebaseApp;
+}
+
+export function getFirebaseAnalytics(): Analytics {
+    if (!_analytics) {
+        _analytics = getAnalytics(getFirebaseApp());
+    }
+    return _analytics;
+}
+
+export function getFirebaseAuth(): Auth {
+    if (!_firebaseAuth) {
+        _firebaseAuth = getAuth(getFirebaseApp());
+    }
+    return _firebaseAuth;
+}
+
 
 export async function setFirebaseTenant(tenantEmail?: string) {
     if (!tenantEmail) {
@@ -64,9 +93,10 @@ export async function setFirebaseTenant(tenantEmail?: string) {
                 const data = (await response.json()) as UIResolvedTenant;
 
                 if (data && data.firebaseTenantId) {
-                    firebaseAuth.tenantId = data.firebaseTenantId;
+                    const auth = getFirebaseAuth();
+                    auth.tenantId = data.firebaseTenantId;
                     Env.firebase.providerType = data.provider ?? "oidc";
-                    console.log(`Tenant ID set to ${firebaseAuth.tenantId}`);
+                    console.log(`Tenant ID set to ${auth.tenantId}`);
                     return data;
                 } else {
                     console.error(`Invalid response format, missing tenantId for ${tenantEmail}`);
@@ -93,8 +123,9 @@ export async function setFirebaseTenant(tenantEmail?: string) {
     }
 }
 
-async function getFirebaseAuthToken(refresh?: boolean) {
-    const user = firebaseAuth.currentUser;
+export async function getFirebaseAuthToken(refresh?: boolean) {
+    const auth = getFirebaseAuth();
+    const user = auth.currentUser;
     if (user) {
         return user
             .getIdToken(refresh)
@@ -127,5 +158,3 @@ async function getFirebaseAuthToken(refresh?: boolean) {
         return Promise.resolve(null);
     }
 }
-
-export { analytics, firebaseApp, firebaseAuth, getFirebaseAuthToken };
