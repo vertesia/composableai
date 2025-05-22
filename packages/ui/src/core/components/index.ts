@@ -6,7 +6,7 @@ export * from "./ComboBox.js";
 export * from "./ConfirmModal.js";
 export * from "./DeleteModal.js";
 export * from "./Divider.js";
-export * from "./Drawer.js";
+export * from "./SidePanel.js";
 export * from "./Dropdown.js";
 export * from "./DropdownList.js";
 export * from "./EmptyCollection.js";
