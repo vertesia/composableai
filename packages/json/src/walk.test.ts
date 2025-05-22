@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { ObjectWalker, AsyncObjectWalker } from "./walk.ts";
+import { ObjectWalker, AsyncObjectWalker } from "./walk.js";
 
 describe('walk object', () => {
 
