@@ -173,6 +173,7 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
             AccountId: [payload.account_id],
             DocumentId: getDocumentIds(payload),
             ProjectId: [payload.project_id],
+            InitiatedBy: payload.initiated_by ? [payload.initiated_by] : [],
         },
     });
     if (step.output) {
@@ -200,6 +201,7 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
             AccountId: [payload.account_id],
             DocumentId: getDocumentIds(payload),
             ProjectId: [payload.project_id],
+            InitiatedBy: payload.initiated_by ? [payload.initiated_by] : [],
         },
     });
 
