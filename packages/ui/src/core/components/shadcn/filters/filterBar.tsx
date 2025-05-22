@@ -32,7 +32,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
   };
 
   const getAvailableFilterGroups = () => {
-    let  options = filterGroups.map(group => ({
+    let options = filterGroups.map(group => ({
       ...group,
       options: (group.options ?? []).filter(option =>
         !filters.some(filter => {
@@ -59,7 +59,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
         onSelect={() => handleSelect(group.name)}
         className="group flex gap-2 items-center hover:bg-muted"
       >
-        <span className="text-accent">{group.placeholder ?? group.name}</span>
+        <span>{group.placeholder ?? group.name}</span>
       </CommandItem>
     ));
   };
@@ -86,22 +86,24 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
 
   const ButtonClearFilter = () => {
     return (
-      <Button
-        variant="outline"
-        size="xs"
-        className="transition group h-6 text-xs items-center rounded-sm"
-        onClick={() => setFilters([])}
-      >
-        Clear All
-      </Button>
+      <div className="flex gap-2 items-center">
+        <Button
+          variant="outline"
+          size="xs"
+          className="transition group"
+          onClick={() => setFilters([])}
+        >
+          Clear All
+        </Button>
+      </div>
     );
   };
 
   const renderFilterOptions = () => {
     if (!selectedView) return null;
-    
+
     const selectedGroupType = filterGroups.find(g => g.name === selectedView)?.type;
-    
+
     switch (selectedGroupType) {
       case "date":
         return (
@@ -144,12 +146,12 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
   useEffect(() => {
     try {
       const urlSafeFilters = filters.map(filter => {
-        const safeValue = Array.isArray(filter.value) 
+        const safeValue = Array.isArray(filter.value)
           ? filter.value.map(item => ({
-              value: item.value
-            }))
+            value: item.value
+          }))
           : filter.value;
-        
+
         return {
           name: filter.name,
           type: filter.type,
@@ -157,14 +159,14 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
           placeholder: filter.placeholder
         };
       });
-      
+
       const params = new URLSearchParams(searchParams.toString());
       if (filters.length > 0) {
         params.set('filters', encodeURIComponent(JSON.stringify(urlSafeFilters)));
       } else {
         params.delete('filters');
       }
-      
+
       const newUrl = `${window.location.pathname}?${params.toString()}`;
       window.history.replaceState({}, '', newUrl);
     } catch (error) {
@@ -177,16 +179,16 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
     if (filtersParam) {
       try {
         const parsedFilters = JSON.parse(decodeURIComponent(filtersParam));
-        
+
         const hydratedFilters = parsedFilters.map((filter: any) => {
-          
+
           if (Array.isArray(filter.value)) {
             const group = filterGroups.find(g => g.name === filter.name);
             console.log("group", group);
-            
+
             const valuesWithLabels = filter.value.map((item: any) => {
               const matchingOption = group?.options?.find(opt => opt.value === item.value);
-              
+
               return {
                 value: item.value,
                 label: matchingOption?.label || item.value
@@ -194,16 +196,16 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
             });
 
             console.log("valuesWithLabels", valuesWithLabels);
-            
+
             return {
               ...filter,
               value: valuesWithLabels
             };
           }
-          
+
           return filter;
         });
-        
+
         setFilters(hydratedFilters);
       } catch (error) {
         console.error("Failed to parse filters from URL:", error);
@@ -212,7 +214,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
   }, []);
 
   return (
-    <div className="flex gap-2 flex-wrap justify-start w-full">
+    <div className="flex gap-2 flex-wrap justify-start w-full items-center">
       <div className="flex gap-2 items-center">
         <Popover _open={open} onOpenChange={handleOpen}>
           <PopoverTrigger asChild>
@@ -220,12 +222,12 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
               variant="ghost"
               role="combobox"
               aria-expanded={open}
-              size="sm"
+              size="md"
               className={cn(
-                "transition group h-6 text-xs rounded-sm flex gap-1.5 items-center",
+                "transition group flex gap-1.5",
               )}
             >
-              <ListFilter className="size-3 shrink-0 transition-all text-muted" />
+              <ListFilter className="size-4 shrink-0 transition-all text-muted" />
               {"Filter"}
             </Button>
           </PopoverTrigger>

@@ -1,5 +1,4 @@
 import { cn } from "../../libs/utils";
-import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 interface AnimateChangeInHeightProps {
@@ -32,13 +31,11 @@ export const AnimateChangeInHeight: React.FC<AnimateChangeInHeightProps> = ({
     }, []);
 
     return (
-        <motion.div
-            className={cn(className, "overflow-hidden")}
+        <div
+            className={cn(className, "overflow-hidden transition-all duration-100 ease-in")}
             style={{ height }}
-            animate={{ height }}
-            transition={{ duration: 0.1, damping: 0.2, ease: "easeIn" }}
         >
             <div ref={containerRef}>{children}</div>
-        </motion.div>
+        </div>
     );
 };
