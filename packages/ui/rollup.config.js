@@ -74,7 +74,7 @@ const jsEntries = entries.map((name) => ({
         "ajv",
         ///^ajv\/.*/,
 
-        /^ @vertesia\/ui\/.*/
+        /^@vertesia\/ui\/.*/
     ],
     plugins: [
         nodeResolve({
