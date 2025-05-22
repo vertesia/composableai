@@ -169,6 +169,9 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
             workflow: step.spec,
             vars: resolvedVars
         }],
+        memo: {
+            InitiatedBy: payload.initiated_by,
+        },
         searchAttributes: {
             AccountId: [payload.account_id],
             DocumentId: getDocumentIds(payload),
@@ -197,6 +200,9 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
             workflow: step.spec,
             vars: resolvedVars,
         }],
+        memo: {
+            InitiatedBy: payload.initiated_by,
+        },
         searchAttributes: {
             AccountId: [payload.account_id],
             DocumentId: getDocumentIds(payload),
