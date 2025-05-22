@@ -17,7 +17,7 @@ export class Schema {
     validator: ValidateFunction;
     constructor(schema?: JSONSchema) {
         this.schema = schema || { type: 'object', properties: {} };
-        this.validator = new Ajv().compile(this.schema);
+        this.validator = new Ajv({ strict: false }).compile(this.schema);
         this.load();
     }
 
