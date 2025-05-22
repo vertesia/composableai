@@ -1,4 +1,5 @@
 import commonjs from '@rollup/plugin-commonjs';
+import json from '@rollup/plugin-json';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import fs from 'fs';
 import path from 'path';
@@ -70,6 +71,8 @@ const jsEntries = entries.map((name) => ({
         "@vertesia/client",
         "@vertesia/common",
         "@vertesia/json",
+        "ajv",
+        ///^ajv\/.*/,
 
         /^ @vertesia\/ui\/.*/
     ],
@@ -78,6 +81,7 @@ const jsEntries = entries.map((name) => ({
             browser: true,
             exportConditions: ['browser', 'module', 'import'],
         }),
+        json(),
         commonjs(),
         //terser(),
     ],
