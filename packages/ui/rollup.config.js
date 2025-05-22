@@ -58,10 +58,20 @@ const jsEntries = entries.map((name) => ({
         /^motion\/.*/,
         "react-day-picker",
         "tailwind-merge",
+        "debounce",
+        "fast-xml-parser",
+        // codemirror
+        "codemirror",
+        "@codemirror/state",
+        "@codemirror/view",
+        "@codemirror/lang-json",
+        // verteisa deps
+        "@llumiverse/common",
         "@vertesia/client",
         "@vertesia/common",
+        "@vertesia/json",
 
-        /^@vertesia\/ui\/.*/
+        /^ @vertesia\/ui\/.*/
     ],
     plugins: [
         nodeResolve({

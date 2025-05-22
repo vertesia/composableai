@@ -22,3 +22,4 @@ export * from './transient-tokens.js';
 export * from './user.js';
 export * from './utils/auth.js';
 export * from './utils/schemas.js';
+export * from './json-schema.js'
