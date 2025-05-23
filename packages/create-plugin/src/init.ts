@@ -7,7 +7,6 @@ import { copyTree } from "./copy.js";
 import { installDeps } from "./deps.js";
 import { hasBin } from "./hasBin.js";
 import { Package } from "./Package.js";
-import { processVarsInFile } from "./template.js";
 
 const { prompt } = enquirer;
 
@@ -49,16 +48,23 @@ export async function init(dirName?: string | undefined) {
         required: false,
         message: "Package description",
         initial: '',
-    }, {
-        name: 'template',
-        type: 'select',
-        message: "Template to use",
-        initial: 0,
-        choices: [
-            { name: 'Simple plugin', value: 'simple' },
-            { name: 'Multi Page Plugin', value: 'multipage' },
-        ]
-    }]);
+    },
+        //TODO
+        // {
+        //     name: 'template',
+        //     type: 'select',
+        //     message: "Template to use",
+        //     initial: 0,
+        //     choices: [
+        //         { message: 'Web plugin', name: 'web' },
+        //         { message: 'Agent tool', name: 'tool' },
+        //         { message: 'Workflow Acitity', name: 'activity' },
+        //     ]
+        // },
+    ]);
+
+    //TODO remove this
+    (answer as any).template = 'web';
 
     const cmd = answer.pm;
 
@@ -74,15 +80,24 @@ export async function init(dirName?: string | undefined) {
     mkdirSync(dir, { recursive: true });
     chdir(dir);
 
-    const srcDir = join(dir, 'src');
-
-    // copy template to current directory
+    const PluginComponent = pluginName.pascalCase + "Plugin";
+    const templateProps = {
+        suffix: '.tmpl',
+        context: {
+            plugin_title: pluginName.title,
+            PluginComponent,
+        }
+    }
+    // copy template to current directory and process template files
     const templsDir = resolve(fileURLToPath(import.meta.url), '../../templates');
-    await copyTree(join(templsDir, "common"), dir);
-    if (answer.template === 'multipage') {
-        await copyTree(join(templsDir, "multipage"), srcDir);
+    if (answer.template === 'web') {
+        await copyTree(join(templsDir, "web"), dir, templateProps);
+    } else if (answer.template === 'tool') {
+
+    } else if (answer.template === 'activity') {
+
     } else {
-        await copyTree(join(templsDir, "simple"), srcDir);
+        throw new Error("Invalid template type");
     }
 
     console.log("Generating package.json");
@@ -109,7 +124,6 @@ export async function init(dirName?: string | undefined) {
         },
         plugin: {
             title: pluginName.title,
-            icon: "icon:AppWindowIcon",
             publisher: pluginName.scope || "vertesia",
             external: false,
             status: "beta",
@@ -117,18 +131,6 @@ export async function init(dirName?: string | undefined) {
     });
 
     pkg.saveTo(`${dir}/package.json`);
-
-    const PluginComponent = pluginName.pascalCase + "Plugin";
-    console.log("Processing source files");
-    processVarsInFile(`${dir}/index.html`, {
-        plugin_title: pluginName.title,
-    });
-    processVarsInFile(`${dir}/src/main.tsx`, {
-        PluginComponent,
-    });
-    processVarsInFile(`${dir}/src/index.tsx`, {
-        PluginComponent,
-    });
 
     installDeps(cmd);
 }
