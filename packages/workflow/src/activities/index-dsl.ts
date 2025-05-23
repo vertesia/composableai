@@ -9,6 +9,7 @@ export { extractDocumentText } from "./extractDocumentText.js";
 export { generateDocumentProperties } from "./generateDocumentProperties.js";
 export { generateEmbeddings } from "./generateEmbeddings.js";
 export { generateImageRendition } from "./renditions/generateImageRendition.js";
+export { generateVideoRendition } from "./renditions/generateVideoRendition.js";
 export { generateOrAssignContentType } from "./generateOrAssignContentType.js";
 export { getObjectFromStore } from "./getObjectFromStore.js";
 export { handleDslError } from "./handleError.js";
