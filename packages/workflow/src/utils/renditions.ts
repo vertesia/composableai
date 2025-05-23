@@ -57,7 +57,7 @@ export async function uploadRenditionPages(
     { files },
   );
   const uploads = files.map(async (file, i) => {
-    const pageId = getRenditionPagePath(objectId, params);
+    const pageId = getRenditionPagePath(objectId, params, i + 1);
     let resizedImagePath = null;
 
     try {
