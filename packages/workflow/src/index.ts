@@ -18,7 +18,8 @@ export * from "./activities/executeInteraction.js";
 export * from "./activities/extractDocumentText.js";
 export * from "./activities/generateDocumentProperties.js";
 export * from "./activities/generateEmbeddings.js";
-export * from "./activities/generateImageRendition.js";
+export * from "./activities/renditions/generateImageRendition.js";
+export * from "./activities/renditions/generateVideoRendition.js";
 export * from "./activities/generateOrAssignContentType.js";
 export * from "./activities/notifyWebhook.js";
 export * from "./activities/setDocumentStatus.js";
@@ -31,5 +32,6 @@ export * from "./utils/blobs.js";
 export * from "./utils/client.js";
 export * from "./utils/memory.js";
 export * from "./utils/tokens.js";
+export * from "./utils/renditions.js";
 
 export * from "./conversion/image.js";

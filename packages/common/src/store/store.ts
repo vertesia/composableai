@@ -2,7 +2,6 @@ import { SearchPayload } from "../payload.js";
 import { SupportedEmbeddingTypes } from "../project.js";
 import { ComplexSearchQuery } from "../query.js";
 import { BaseObject } from "./common.js";
-import { RenditionProperties } from "./index.js";
 
 export enum ContentObjectStatus {
     created = "created",
@@ -309,9 +308,17 @@ export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {
 export interface UploadWorkflowRulePayload
     extends Partial<Omit<WorkflowRule, "id" | "created_at" | "updated_at" | "owner">> { }
 
+
+export interface GetRenditionParams {
+    format: string;
+    max_hw?: number;
+    generate_if_missing?: boolean;
+    sign_url?: boolean;
+}
+
 export interface GetRenditionResponse {
     status: "found" | "generating" | "failed";
-    rendition?: ContentObject<RenditionProperties>; //TODO add <Rendition>
+    renditions?: string[]; //file paths for the renditions
     workflow_run_id?: string;
 }
 
