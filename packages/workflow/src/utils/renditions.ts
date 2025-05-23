@@ -3,15 +3,11 @@ import { imageResizer } from "../conversion/image.js";
 import fs from "fs";
 import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
+import { ImageRenditionFormat } from "@vertesia/common";
 
 export interface ImageRenditionParams {
   max_hw: number; //maximum size of the longest side of the image
   format: ImageRenditionFormat;
-}
-
-export enum ImageRenditionFormat {
-  jpeg = "jpeg",
-  png = "png",
 }
 
 /**

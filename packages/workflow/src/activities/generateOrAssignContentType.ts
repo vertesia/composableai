@@ -4,6 +4,7 @@ import {
   CreateContentObjectTypePayload,
   DSLActivityExecutionPayload,
   DSLActivitySpec,
+  ImageRenditionFormat,
 } from "@vertesia/common";
 import {
   ActivityContext,
@@ -104,7 +105,7 @@ export async function generateOrAssignContentType(
     }
     const res = await client.objects.getRendition(objectId, {
       max_hw: 1024,
-      format: "image/png",
+      format: ImageRenditionFormat.jpeg,
       generate_if_missing: true,
     });
     if (!res.renditions?.length && res.status === "generating") {

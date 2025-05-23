@@ -5,6 +5,7 @@ import {
   ContentObject,
   DSLActivityExecutionPayload,
   DSLActivitySpec,
+  ImageRenditionFormat,
   ProjectConfigurationEmbeddings,
   SupportedEmbeddingTypes,
 } from "@vertesia/common";
@@ -384,7 +385,7 @@ async function generateImageEmbeddings({
   const { environment, model } = config;
 
   const resRnd = await client.store.objects.getRendition(document.id, {
-    format: "image/png",
+    format: ImageRenditionFormat.jpeg,
     max_hw: 1024,
     generate_if_missing: true,
     sign_url: false,
