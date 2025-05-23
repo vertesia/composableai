@@ -1,6 +1,5 @@
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
-import { X } from "lucide-react";
-import { Check, ChevronsUpDownIcon } from "lucide-react";
+import { X, Check, ChevronsUpDownIcon } from "lucide-react";
 import clsx from "clsx";
 import { ComponentType, KeyboardEvent, ReactNode, SyntheticEvent, useState, useEffect, useRef } from "react";
 import { Button } from "./Button";
