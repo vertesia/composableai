@@ -1,10 +1,10 @@
 import { log } from "@temporalio/activity";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { exec } from "child_process";
-import { promisify } from "util";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { promisify } from "util";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { NoDocumentFound, WorkflowParamNotFound } from "../../errors.js";
 import { saveBlobToTempFile } from "../../utils/blobs.js";
@@ -15,7 +15,7 @@ import {
 
 const execAsync = promisify(exec);
 
-interface GenerateVideoRenditionParams extends ImageRenditionParams {}
+interface GenerateVideoRenditionParams extends ImageRenditionParams { }
 
 export interface GenerateVideoRendition
     extends DSLActivitySpec<GenerateVideoRenditionParams> {
@@ -52,75 +52,61 @@ async function getVideoMetadata(videoPath: string): Promise<VideoMetadata> {
     }
 }
 
-async function generateThumbnails(
+async function generateThumbnail(
     videoPath: string,
     outputDir: string,
-    timestamps: number[],
+    timestamp: number,
     maxSize: number,
-): Promise<string[]> {
-    const generatedFiles: string[] = [];
+): Promise<string | undefined> {
+    //pad timestamp to 5 digits as filename
+    const outputFile = path.join(
+        outputDir,
+        `thumb-${timestamp.toString().padStart(5, "0")}.jpg`,
+    );
 
+    // FFmpeg command to extract thumbnail at specific timestamp
+    // Use proper scale filter syntax: scale=w:h:force_original_aspect_ratio=decrease
+    const scaleFilter = `scale=${maxSize}:${maxSize}:force_original_aspect_ratio=decrease`;
+
+    const command = [
+        "ffmpeg",
+        "-y", // Overwrite output files
+        "-ss",
+        timestamp.toString(), // Seek to timestamp
+        "-i",
+        `"${videoPath}"`, // Input file
+        "-vframes",
+        "1", // Extract only 1 frame
+        "-vf",
+        `"${scaleFilter}"`, // Scale maintaining aspect ratio
+        "-q:v",
+        "2", // High quality
+        `"${outputFile}"`,
+    ].join(" ");
+    log.info(`Generating thumbnail at ${timestamp}s`), { command };
     try {
-        // Generate thumbnails for each timestamp
-        for (const timestamp of timestamps) {
-            //pad timestamp to 5 digits as filename
-            const outputFile = path.join(
-                outputDir,
-                `thumb-${timestamp.toString().padStart(5, "0")}.jpg`,
+        const { stderr } = await execAsync(command);
+
+        // Log any warnings from ffmpeg
+        if (stderr && !stderr.includes("frame=")) {
+            log.debug(
+                `FFmpeg stderr for thumbnail at ${timestamp}s: ${stderr}`,
             );
-
-            // FFmpeg command to extract thumbnail at specific timestamp
-            // Use proper scale filter syntax: scale=w:h:force_original_aspect_ratio=decrease
-            const scaleFilter = `scale=${maxSize}:${maxSize}:force_original_aspect_ratio=decrease`;
-
-            const command = [
-                "ffmpeg",
-                "-y", // Overwrite output files
-                "-ss",
-                timestamp.toString(), // Seek to timestamp
-                "-i",
-                `"${videoPath}"`, // Input file
-                "-vframes",
-                "1", // Extract only 1 frame
-                "-vf",
-                `"${scaleFilter}"`, // Scale maintaining aspect ratio
-                "-q:v",
-                "2", // High quality
-                `"${outputFile}"`,
-            ].join(" ");
-            log.info(`Generating thumbnail at ${timestamp}s`), { command };
-            try {
-                const { stderr } = await execAsync(command);
-
-                // Log any warnings from ffmpeg
-                if (stderr && !stderr.includes("frame=")) {
-                    log.debug(
-                        `FFmpeg stderr for thumbnail at ${timestamp}s: ${stderr}`,
-                    );
-                }
-
-                // Verify the file was created
-                if (fs.existsSync(outputFile)) {
-                    generatedFiles.push(outputFile);
-                    log.debug(`Generated thumbnail at ${timestamp}s`);
-                } else {
-                    log.warn(
-                        `Thumbnail not generated for timestamp ${timestamp}s`,
-                    );
-                }
-            } catch (error) {
-                log.error(
-                    `Failed to generate thumbnail at ${timestamp}s: ${error instanceof Error ? error.message : "Unknown error"}`,
-                );
-            }
         }
 
-        return generatedFiles;
+        // Verify the file was created
+        if (fs.existsSync(outputFile)) {
+            log.debug(`Generated thumbnail at ${timestamp}s`);
+            return outputFile;
+        } else {
+            log.warn(`Thumbnail not generated for timestamp ${timestamp}s`);
+            return undefined;
+        }
     } catch (error) {
         log.error(
-            `Error in thumbnail generation process: ${error instanceof Error ? error.message : "Unknown error"}`,
+            `Failed to generate thumbnail at ${timestamp}s: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
-        throw error;
+        return undefined;
     }
 }
 
@@ -234,11 +220,15 @@ export async function generateVideoRendition(
         );
 
         // Generate thumbnails using command line ffmpeg
-        const generatedThumbnails = await generateThumbnails(
-            videoFile,
-            tempOutputDir,
-            timestamps,
-            params.max_hw,
+        const generatedThumbnails = await Promise.all(
+            timestamps.map(async (timestamp) => {
+                return await generateThumbnail(
+                    videoFile,
+                    tempOutputDir,
+                    timestamp,
+                    params.max_hw,
+                );
+            }),
         );
 
         if (generatedThumbnails.length === 0) {
@@ -252,7 +242,11 @@ export async function generateVideoRendition(
             );
         }
 
-        renditionPages.push(...generatedThumbnails);
+        renditionPages.push(
+            ...generatedThumbnails.filter(
+                (thumbnail) => thumbnail !== undefined,
+            ),
+        );
         log.info(
             `Successfully generated ${generatedThumbnails.length} thumbnails for ${objectId}`,
             {
@@ -281,7 +275,7 @@ export async function generateVideoRendition(
     const uploaded = await uploadRenditionPages(
         client,
         objectId,
-        renditionPages, // Now contains multiple thumbnail paths
+        renditionPages,
         params,
     );
 
