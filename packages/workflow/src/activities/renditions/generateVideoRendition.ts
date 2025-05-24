@@ -62,11 +62,11 @@ async function generateThumbnails(
 
     try {
         // Generate thumbnails for each timestamp
-        for (let i = 0; i < timestamps.length; i++) {
-            const timestamp = timestamps[i];
+        for (const timestamp of timestamps) {
+            //pad timestamp to 5 digits as filename
             const outputFile = path.join(
                 outputDir,
-                `thumb_${String(i + 1).padStart(3, "0")}.jpg`,
+                `thumb-${timestamp.toString().padStart(5, "0")}.jpg`,
             );
 
             // FFmpeg command to extract thumbnail at specific timestamp
@@ -88,26 +88,21 @@ async function generateThumbnails(
                 "2", // High quality
                 `"${outputFile}"`,
             ].join(" ");
-            log.info(
-                `Generating thumbnail ${i + 1}/${timestamps.length} at ${timestamp}s`,
-            ),
-                { command };
+            log.info(`Generating thumbnail at ${timestamp}s`), { command };
             try {
                 const { stderr } = await execAsync(command);
 
                 // Log any warnings from ffmpeg
                 if (stderr && !stderr.includes("frame=")) {
                     log.debug(
-                        `FFmpeg stderr for thumbnail ${i + 1}: ${stderr}`,
+                        `FFmpeg stderr for thumbnail at ${timestamp}s: ${stderr}`,
                     );
                 }
 
                 // Verify the file was created
                 if (fs.existsSync(outputFile)) {
                     generatedFiles.push(outputFile);
-                    log.debug(
-                        `Generated thumbnail ${i + 1}/${timestamps.length} at ${timestamp}s`,
-                    );
+                    log.debug(`Generated thumbnail at ${timestamp}s`);
                 } else {
                     log.warn(
                         `Thumbnail not generated for timestamp ${timestamp}s`,
@@ -117,7 +112,6 @@ async function generateThumbnails(
                 log.error(
                     `Failed to generate thumbnail at ${timestamp}s: ${error instanceof Error ? error.message : "Unknown error"}`,
                 );
-                // Continue with other thumbnails even if one fails
             }
         }
 
@@ -290,22 +284,6 @@ export async function generateVideoRendition(
         renditionPages, // Now contains multiple thumbnail paths
         params,
     );
-
-    // Clean up temporary thumbnail files
-    try {
-        renditionPages.forEach((thumbnailPath) => {
-            if (fs.existsSync(thumbnailPath)) {
-                fs.unlinkSync(thumbnailPath);
-            }
-        });
-        if (fs.existsSync(tempOutputDir)) {
-            fs.rmdirSync(tempOutputDir);
-        }
-    } catch (cleanupError) {
-        log.warn(
-            `Failed to cleanup temporary thumbnail files: ${tempOutputDir}`,
-        );
-    }
 
     return {
         uploads: uploaded.map((u) => u),
