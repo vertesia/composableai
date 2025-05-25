@@ -74,7 +74,7 @@ export class FilesApi extends ApiTopic {
      */
     async uploadFile(source: StreamSource | File): Promise<string> {
         const isStream = source instanceof StreamSource;
-        const { url, path } = await this.getUploadUrl(source);
+        const { url, id, path } = await this.getUploadUrl(source);
 
         await fetch(url, {
             method: "PUT",
@@ -94,11 +94,11 @@ export class FilesApi extends ApiTopic {
                 }
             })
             .catch((err) => {
-                console.error("Failed to upload file", err);
+                console.error("Failed to upload file", { err, url, id, path });
                 throw err;
             });
 
-        return path;
+        return id;
     }
 
     async downloadFile(name: string): Promise<ReadableStream<Uint8Array>> {
