@@ -22,7 +22,11 @@ export default defineConfig(({ command }) => {
     plugins: [
       tailwindcss(),
       react(),
-      dts({ rollupTypes: true }),
+      dts({
+        rollupTypes: true,
+        tsconfigPath: './tsconfig.app.json',
+        logLevel: 'info'
+      }),
       vertesiaPluginBuilder(),
     ],
     optimizeDeps: isBuildMode ? {
