@@ -114,7 +114,7 @@ export async function init(dirName?: string | undefined) {
         ],
         scripts: {
             "dev": "vite",
-            "build": "tsc -b && vite build",
+            "build": "vite build",
             "lint": "eslint .",
             "preview": "vite preview"
         },

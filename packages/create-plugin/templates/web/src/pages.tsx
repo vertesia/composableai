@@ -1,6 +1,6 @@
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 export function HomePage() {
     const { user } = useUserSession();
