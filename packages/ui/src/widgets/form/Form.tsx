@@ -169,7 +169,7 @@ function ListField({ object }: ListFieldProps) {
                 })
             }
             <div>
-                <Button variant='soft' onClick={addItem}><Plus className="size-6" /> Add</Button>
+                <Button variant='secondary' onClick={addItem}><Plus className="size-6" /> Add</Button>
             </div>
         </div>
     )
@@ -188,7 +188,7 @@ function ListItem({ list, object, onDelete }: ListItemProps) {
                     renderItemProperty(object, list.schema.arraySchema.editor)
                 }
             </div>
-            <Button variant='soft' onClick={onDelete}><Trash2 className='size-4' /></Button>
+            <Button variant='secondary' onClick={onDelete}><Trash2 className='size-4' /></Button>
         </div>
     )
 }
