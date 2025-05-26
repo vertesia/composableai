@@ -1,5 +1,5 @@
 import { ExecutionEnvironment, ExecutionEnvironmentCreatePayload, ExecutionEnvironmentRef, ExecutionEnvironmentUpdatePayload, LoadBalancingEnvConfig, MediatorEnvConfig } from "@vertesia/common";
-import { AIModel, EmbeddingsOptions, EmbeddingsResult, ModelSearchPayload } from "@llumiverse/core";
+import type { AIModel, EmbeddingsOptions, EmbeddingsResult, ModelSearchPayload } from "@llumiverse/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 export default class EnvironmentsApi extends ApiTopic {

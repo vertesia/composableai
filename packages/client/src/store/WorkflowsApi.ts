@@ -73,14 +73,45 @@ export class WorkflowsApi extends ApiTopic {
 
     async streamMessages(runId: string, onMessage?: (message: AgentMessage) => void, since?: number): Promise<void> {
         return new Promise((resolve, reject) => {
-            const setupStream = async () => {
+            let reconnectAttempts = 0;
+            let lastMessageTimestamp = since || 0;
+            let isClosed = false;
+            let currentSse: EventSource | null = null;
+            let interval: NodeJS.Timeout | null = null;
+
+            const maxReconnectAttempts = 10;
+            const baseDelay = 1000; // 1 second base delay
+            const maxDelay = 30000; // 30 seconds max delay
+
+            const calculateBackoffDelay = (attempts: number): number => {
+                const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+                // Add jitter to prevent thundering herd
+                const jitter = Math.random() * 0.1 * exponentialDelay;
+                return exponentialDelay + jitter;
+            };
+
+            const cleanup = () => {
+                if (interval) {
+                    clearInterval(interval);
+                    interval = null;
+                }
+                if (currentSse) {
+                    currentSse.close();
+                    currentSse = null;
+                }
+            };
+
+            const setupStream = async (isReconnect: boolean = false) => {
+                if (isClosed) return;
+
                 try {
                     const EventSourceImpl = await EventSourceProvider();
                     const client = this.client as VertesiaClient;
                     const streamUrl = new URL(client.workflows.baseUrl + "/runs/" + runId + "/stream");
     
-                    if (since) {
-                        streamUrl.searchParams.set("since", since.toString());
+                    // Use the timestamp of the last received message for reconnection
+                    if (lastMessageTimestamp > 0) {
+                        streamUrl.searchParams.set("since", lastMessageTimestamp.toString());
                     }
     
                     const bearerToken = client._auth ? await client._auth() : undefined;
@@ -91,18 +122,25 @@ export class WorkflowsApi extends ApiTopic {
     
                     const token = bearerToken.split(" ")[1];
                     streamUrl.searchParams.set("access_token", token);
+
+                    if (isReconnect) {
+                        console.log(`Reconnecting to SSE stream for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                    }
     
                     const sse = new EventSourceImpl(streamUrl.href);
-                    let isClosed = false;
+                    currentSse = sse;
     
                     // Prevent Node from exiting prematurely
-                    const interval = setInterval(() => {}, 1000);
+                    interval = setInterval(() => {}, 1000);
     
-                    // Cleanup when stream resolves
-                    const cleanup = () => {
-                        clearInterval(interval);
+                    sse.onopen = () => {
+                        if (isReconnect) {
+                            console.log(`Successfully reconnected to SSE stream for run ${runId}`);
+                        }
+                        // Reset reconnect attempts on successful connection
+                        reconnectAttempts = 0;
                     };
-    
+
                     sse.onmessage = (ev: MessageEvent) => {
                         if (!ev.data || ev.data.startsWith(":")) {
                             console.log("Received comment or heartbeat; ignoring it.: ", ev.data);
@@ -111,6 +149,12 @@ export class WorkflowsApi extends ApiTopic {
     
                         try {
                             const message = JSON.parse(ev.data) as AgentMessage;
+                            
+                            // Update last message timestamp for reconnection
+                            if (message.timestamp) {
+                                lastMessageTimestamp = Math.max(lastMessageTimestamp, message.timestamp);
+                            }
+
                             if (onMessage) onMessage(message);
     
                             // Only close the stream when the main workstream completes
@@ -118,7 +162,6 @@ export class WorkflowsApi extends ApiTopic {
                                 console.log("Closing stream due to COMPLETE message from main workstream");
                                 if (!isClosed) {
                                     isClosed = true;
-                                    sse.close();
                                     cleanup();
                                     resolve();
                                 }
@@ -131,21 +174,52 @@ export class WorkflowsApi extends ApiTopic {
                     };
     
                     sse.onerror = (err: any) => {
-                        if (!isClosed) {
-                            console.error("SSE stream error:", err);
+                        if (isClosed) return;
+
+                        console.warn(`SSE stream error for run ${runId}:`, err);
+                        cleanup();
+
+                        // Check if we should attempt reconnection
+                        if (reconnectAttempts < maxReconnectAttempts) {
+                            const delay = calculateBackoffDelay(reconnectAttempts);
+                            console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                            
+                            reconnectAttempts++;
+                            setTimeout(() => {
+                                if (!isClosed) {
+                                    setupStream(true);
+                                }
+                            }, delay);
+                        } else {
+                            console.error(`Failed to reconnect to SSE stream for run ${runId} after ${maxReconnectAttempts} attempts`);
                             isClosed = true;
-                            sse.close();
-                            cleanup();
-                            reject(err);
+                            reject(new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`));
                         }
                     };
                 } catch (err) {
-                    reject(err);
+                    console.error("Error setting up SSE stream:", err);
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        const delay = calculateBackoffDelay(reconnectAttempts);
+                        reconnectAttempts++;
+                        setTimeout(() => {
+                            if (!isClosed) {
+                                setupStream(true);
+                            }
+                        }, delay);
+                    } else {
+                        reject(err);
+                    }
                 }
             };
             
             // Start the async setup process
-            setupStream();
+            setupStream(false);
+
+            // Return cleanup function for external cancellation
+            return () => {
+                isClosed = true;
+                cleanup();
+            };
         });
     }
 

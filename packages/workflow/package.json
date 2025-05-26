@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/workflow",
-    "version": "0.55.0",
+    "version": "0.60.0",
     "type": "module",
     "description": "Composable prompts workflow dsl",
     "main": "./lib/esm/index.js",
@@ -39,7 +39,7 @@
         "@aws-sdk/client-s3": "^3.693.0",
         "@aws-sdk/client-textract": "^3.693.0",
         "@aws-sdk/credential-providers": "^3.693.0",
-        "@llumiverse/core": "workspace:*",
+        "@llumiverse/common": "workspace:*",
         "@temporalio/activity": "^1.11.5",
         "@temporalio/workflow": "^1.11.5",
         "@types/json-schema": "^7.0.15",
@@ -58,7 +58,8 @@
         "tiktoken": "^1.0.15",
         "tmp": "^0.2.3",
         "tmp-promise": "^3.0.3",
-        "yaml": "^2.6.0"
+        "yaml": "^2.6.0",
+        "mime": "^4.0.0"
     },
     "ts_dual_module": {
         "outDir": "lib",

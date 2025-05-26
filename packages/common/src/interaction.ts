@@ -6,10 +6,10 @@ import type {
     StatelessExecutionOptions,
     ToolDefinition,
     ToolUse,
-} from "@llumiverse/core";
-import { JSONSchema4 } from "json-schema";
+} from "@llumiverse/common";
+import type { JSONSchema4 } from "json-schema";
 
-import { ExecutionTokenUsage } from "@llumiverse/core";
+import { ExecutionTokenUsage } from "@llumiverse/common";
 
 import { ExecutionEnvironmentRef } from "./environment.js";
 import { ProjectRef } from "./project.js";
@@ -318,9 +318,10 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     type: "conversation";
 
     /**
-     * The tools to use
+     * The tools to use, list of tool or function names.
+     * You can use + and - to add or remove from default, if no sign, then list replaces default
      */
-    tools?: ToolRef[];
+    tools?: string[];
 
     /**
      * The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used.
@@ -391,6 +392,7 @@ export interface ToolResultsPayload extends ResumeConversationPayload {
     results: {
         tool_use_id: string;
         content: string;
+        files?: string[];
     }[];
 }
 

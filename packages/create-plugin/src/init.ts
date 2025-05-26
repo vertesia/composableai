@@ -7,7 +7,6 @@ import { copyTree } from "./copy.js";
 import { installDeps } from "./deps.js";
 import { hasBin } from "./hasBin.js";
 import { Package } from "./Package.js";
-import { processVarsInFile } from "./template.js";
 
 const { prompt } = enquirer;
 
@@ -49,9 +48,27 @@ export async function init(dirName?: string | undefined) {
         required: false,
         message: "Package description",
         initial: '',
-    }]);
+    },
+        //TODO
+        // {
+        //     name: 'template',
+        //     type: 'select',
+        //     message: "Template to use",
+        //     initial: 0,
+        //     choices: [
+        //         { message: 'Web plugin', name: 'web' },
+        //         { message: 'Agent tool', name: 'tool' },
+        //         { message: 'Workflow Acitity', name: 'activity' },
+        //     ]
+        // },
+    ]);
+
+    //TODO remove this
+    (answer as any).template = 'web';
 
     const cmd = answer.pm;
+
+    const pluginName = new PluginName(answer.plugin_name);
 
     let dir: string;
     if (!dirName) {
@@ -63,9 +80,25 @@ export async function init(dirName?: string | undefined) {
     mkdirSync(dir, { recursive: true });
     chdir(dir);
 
-    // copy template to current directory
-    const templDir = resolve(fileURLToPath(import.meta.url), '../../template');
-    await copyTree(templDir, dir);
+    const PluginComponent = pluginName.pascalCase + "Plugin";
+    const templateProps = {
+        suffix: '.tmpl',
+        context: {
+            plugin_title: pluginName.title,
+            PluginComponent,
+        }
+    }
+    // copy template to current directory and process template files
+    const templsDir = resolve(fileURLToPath(import.meta.url), '../../templates');
+    if (answer.template === 'web') {
+        await copyTree(join(templsDir, "web"), dir, templateProps);
+    } else if (answer.template === 'tool') {
+
+    } else if (answer.template === 'activity') {
+
+    } else {
+        throw new Error("Invalid template type");
+    }
 
     console.log("Generating package.json");
     const pkg = new Package({
@@ -81,7 +114,7 @@ export async function init(dirName?: string | undefined) {
         ],
         scripts: {
             "dev": "vite",
-            "build": "tsc -b && vite build",
+            "build": "vite build",
             "lint": "eslint .",
             "preview": "vite preview"
         },
@@ -89,35 +122,45 @@ export async function init(dirName?: string | undefined) {
             "react": "^19.0.0",
             "react-dom": "^19.0.0"
         },
+        plugin: {
+            title: pluginName.title,
+            publisher: pluginName.scope || "vertesia",
+            external: false,
+            status: "beta",
+        }
     });
 
     pkg.saveTo(`${dir}/package.json`);
 
-    const plugin_title = generatePluginTitle(answer.plugin_name);
-    const plugin_var_name = generatePluginVarName(answer.plugin_name);
-    console.log("Processing source files");
-    processVarsInFile(`${dir}/vite.config.ts`, {
-        plugin_name: answer.plugin_name,
-        plugin_var_name
-    });
-    processVarsInFile(`${dir}/src/index.tsx`, {
-        plugin_title
-    });
-    processVarsInFile(`${dir}/index.html`, {
-        plugin_title
-    });
-
     installDeps(cmd);
-
 }
 
 
-function generatePluginTitle(name: string) {
-    const words = name.split('-');
-    return words.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-}
-
-function generatePluginVarName(name: string) {
-    const words = name.split('-');
-    return words.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+class PluginName {
+    scope?: string;
+    name: string;
+    _title?: string;
+    constructor(public value: string) {
+        if (value.startsWith('@')) {
+            const index = value.indexOf('/');
+            if (index > -1) {
+                this.name = value.substring(index + 1);
+                this.scope = value.substring(1, index);
+            } else {
+                throw new Error("Invalid plugin name");
+            }
+        } else {
+            this.name = value;
+            this.scope = undefined
+        }
+    }
+    get title() {
+        if (!this._title) {
+            this._title = this.name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        }
+        return this._title;
+    }
+    get pascalCase() {
+        return this.name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+    }
 }

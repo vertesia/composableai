@@ -1,7 +1,7 @@
-import { JSONSchema4 } from "json-schema";
-import type { JSONObject } from "@llumiverse/core";
+import type { JSONSchema4 } from "json-schema";
+import type { JSONObject } from "@llumiverse/common";
 import { ProjectRef } from "./project.js";
-import { PromptRole } from "@llumiverse/core";
+import { PromptRole } from "@llumiverse/common";
 
 export interface ChatPromptSchema {
     role: PromptRole.user | PromptRole.assistant;

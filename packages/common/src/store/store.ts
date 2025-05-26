@@ -2,7 +2,6 @@ import { SearchPayload } from "../payload.js";
 import { SupportedEmbeddingTypes } from "../project.js";
 import { ComplexSearchQuery } from "../query.js";
 import { BaseObject } from "./common.js";
-import { RenditionProperties } from "./index.js";
 
 export enum ContentObjectStatus {
     created = "created",
@@ -27,7 +26,13 @@ export interface ContentObject<T = any> extends ContentObjectItem<T> {
     transcript?: Transcript;
 }
 
-export type ContentNature = "video" | "image" | "audio" | "document" | "code" | "other";
+export type ContentNature =
+    | "video"
+    | "image"
+    | "audio"
+    | "document"
+    | "code"
+    | "other";
 
 export interface Dimensions {
     width: number;
@@ -177,7 +182,12 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
     properties: T; // a JSON object that describes the object
 
     /** Technical metadata of the object */
-    metadata?: VideoMetadata | AudioMetadata | ImageMetadata | DocumentMetadata | ContentMetadata;
+    metadata?:
+    | VideoMetadata
+    | AudioMetadata
+    | ImageMetadata
+    | DocumentMetadata
+    | ContentMetadata;
 
     /** Token information  */
     tokens?: {
@@ -208,7 +218,12 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
  * When creating from an uploaded file the content should be an URL to the uploaded file
  */
 export interface CreateContentObjectPayload<T = any>
-    extends Partial<Omit<ContentObject<T>, "id" | "root" | "created_at" | "updated_at" | "type" | "owner">> {
+    extends Partial<
+        Omit<
+            ContentObject<T>,
+            "id" | "root" | "created_at" | "updated_at" | "type" | "owner"
+        >
+    > {
     id?: string; // An optional existing object ID to be replaced by the new one
     type?: string; // the object type ID
     generation_run_info?: GenerationRunMetadata;
@@ -267,7 +282,10 @@ export interface ContentObjectTypeItem extends BaseObject {
 }
 
 export interface CreateContentObjectTypePayload
-    extends Omit<ContentObjectType, "id" | "created_at" | "updated_at" | "created_by" | "updated_by"> { }
+    extends Omit<
+        ContentObjectType,
+        "id" | "created_at" | "updated_at" | "created_by" | "updated_by"
+    > { }
 
 export enum WorkflowRuleInputType {
     single = "single",
@@ -307,11 +325,31 @@ export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {
     endpoint: string; // required
 }
 export interface UploadWorkflowRulePayload
-    extends Partial<Omit<WorkflowRule, "id" | "created_at" | "updated_at" | "owner">> { }
+    extends Partial<
+        Omit<WorkflowRule, "id" | "created_at" | "updated_at" | "owner">
+    > { }
+
+export enum ImageRenditionFormat {
+    jpeg = "jpeg",
+    png = "png",
+    webp = "webp",
+}
+
+export enum MarkdownRenditionFormat {
+    docx = "docx",
+    pdf = "pdf",
+}
+
+export interface GetRenditionParams {
+    format: ImageRenditionFormat | MarkdownRenditionFormat;
+    max_hw?: number;
+    generate_if_missing?: boolean;
+    sign_url?: boolean;
+}
 
 export interface GetRenditionResponse {
     status: "found" | "generating" | "failed";
-    rendition?: ContentObject<RenditionProperties>; //TODO add <Rendition>
+    renditions?: string[]; //file paths for the renditions
     workflow_run_id?: string;
 }
 

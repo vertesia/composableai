@@ -1,4 +1,4 @@
-import { ModelOptions } from "@llumiverse/core";
+import { ModelOptions } from "@llumiverse/common";
 import { activityInfo, log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
 import {

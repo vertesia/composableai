@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MagicPdfConfiguration, PluginManifest, Project, ProjectIntegrationListEntry, ProjectRef, SupportedIntegrations } from "@vertesia/common";
+import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MagicPdfConfiguration, Project, ProjectIntegrationListEntry, ProjectRef, SupportedIntegrations } from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -26,7 +26,7 @@ export default class ProjectsApi extends ApiTopic {
         });
     }
 
-    listPlugins(projectId: string): Promise<PluginManifest[]> {
+    listPlugins(projectId: string): Promise<string[]> {
         return this.get(`/${projectId}/plugins`);
     }
 
