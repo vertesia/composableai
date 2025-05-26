@@ -30,7 +30,6 @@ export default defineConfig(({ command }) => {
       vertesiaPluginBuilder(),
     ],
     optimizeDeps: isBuildMode ? {
-      exclude: EXTERNALS
     } : undefined,
     build: {
       lib: isBuildMode ? {
