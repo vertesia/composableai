@@ -205,6 +205,11 @@ interface WorkflowRunEvent {
 
 export interface WorkflowRun {
     status?: WorkflowExecutionStatus | string;
+    /**
+     * The Temporal Workflow Type of this Workflow Run.
+     *
+     * @see https://docs.temporal.io/workflows
+     */
     type?: string;
     started_at?: number;
     closed_at?: number;
@@ -214,6 +219,13 @@ export interface WorkflowRun {
     initiated_by?: string;
     result?: any;
     raw?: any;
+    /**
+     * The Vertesia Workflow Type of this Workflow Run.
+     *  - For DSL workflows (`type:dslWorkflow`), the vertesia_type refers to the "Workflow Rule Name" specified in the
+     *    DSL. For example, "Standard Document Intake" or "Standard Image Intake".
+     *  - For non-DSL workflows, the vertesia_type is the name of the Temporal Workflow Type.
+     */
+    vertesia_workflow_type?: string;
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
