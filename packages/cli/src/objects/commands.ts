@@ -11,7 +11,8 @@ import { basename, join, resolve } from "path";
 import { getClient } from "../client.js";
 const { prompt } = enquirer;
 
-const AUTOMATIC_TYPE_SELECTION = "AutomaticTypeSelection";
+const AUTOMATIC_TYPE_SELECTION = "auto";
+const AUTOMATIC_TYPE_SELECTION_DESC = "Auto (Vertesia will analyze each file and select the most appropriate type)";
 const TYPE_SELECTION_ERROR = "TypeSelectionError";
 
 function splitInChunksWithSize<T>(arr: Array<T>, size: number): T[][] {
@@ -240,7 +241,7 @@ export async function listObjects(program: Command, folderPath: string | undefin
 
 export async function listTypes(program: Command) {
     var types: any[] = []
-    types.push({ name: AUTOMATIC_TYPE_SELECTION, value: AUTOMATIC_TYPE_SELECTION })
+    types.push({ name: AUTOMATIC_TYPE_SELECTION_DESC, value: AUTOMATIC_TYPE_SELECTION })
 
     const platformTypes: ContentObjectTypeItem[] = await getClient(program).types.list();
     for (const type of platformTypes) {
