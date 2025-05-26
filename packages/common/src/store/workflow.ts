@@ -225,7 +225,7 @@ export interface WorkflowRun {
      *    DSL. For example, "Standard Document Intake" or "Standard Image Intake".
      *  - For non-DSL workflows, the vertesia_type is the name of the Temporal Workflow Type.
      */
-    vertesia_type?: string;
+    vertesia_workflow_type?: string;
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
