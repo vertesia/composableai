@@ -24,7 +24,7 @@ export class EditorApi {
 }
 
 const customTheme = EditorView.theme({
-    "&": { fontSize: "16px", fontFamily: "Sans-Serif" },
+    "&": { fontSize: "14px", fontFamily: "monospace" },
     ".cm-content": { fontFamily: "inherit" },
     ".cm-scroller": { fontFamily: "inherit" },
     ".cm-gutters": { backgroundColor: "transparent", color: "#ddd" },
