@@ -17,12 +17,11 @@ const buttonVariants = cva(
         outline:
           "border border-input bg-background shadow-xs hover:bg-muted ring-inset",
         secondary:
-          "bg-secondary-background text-secondary hover:bg-secondary-background/80 ring-inset",
+          "bg-primary/5 dark:bg-primary/10 text-primary shadow-xs hover:bg-primary/10 dark:hover:bg-primary/20 ring-inset",
         ghost: "hover:bg-muted/50 dark:hover:bg-muted/20 ring-inset",
         link: "text-white underline-offset-4 hover:underline ring-inset",
         primary:
           "bg-primary text-white shadow-xs hover:bg-primary/90 ring-inset",
-        soft: "bg-primary/5 dark:bg-primary/10 text-primary shadow-xs hover:bg-primary/10 dark:hover:bg-primary/20 ring-inset",
         unstyled:
           ""
       },
