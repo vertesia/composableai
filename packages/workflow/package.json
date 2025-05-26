@@ -58,7 +58,8 @@
         "tiktoken": "^1.0.15",
         "tmp": "^0.2.3",
         "tmp-promise": "^3.0.3",
-        "yaml": "^2.6.0"
+        "yaml": "^2.6.0",
+        "mime": "^4.0.0"
     },
     "ts_dual_module": {
         "outDir": "lib",
