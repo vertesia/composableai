@@ -12,7 +12,7 @@ import { getClient } from "../client.js";
 const { prompt } = enquirer;
 
 const AUTOMATIC_TYPE_SELECTION = "auto";
-const AUTOMATIC_TYPE_SELECTION_DESC = "Auto (Vertesia will analyze each file and select the most appropriate type)";
+const AUTOMATIC_TYPE_SELECTION_DESC = "Auto (Vertesia will analyze the file and select the most appropriate type)";
 const TYPE_SELECTION_ERROR = "TypeSelectionError";
 
 function splitInChunksWithSize<T>(arr: Array<T>, size: number): T[][] {
