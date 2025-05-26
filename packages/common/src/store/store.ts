@@ -183,11 +183,11 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
 
     /** Technical metadata of the object */
     metadata?:
-    | VideoMetadata
-    | AudioMetadata
-    | ImageMetadata
-    | DocumentMetadata
-    | ContentMetadata;
+        | VideoMetadata
+        | AudioMetadata
+        | ImageMetadata
+        | DocumentMetadata
+        | ContentMetadata;
 
     /** Token information  */
     tokens?: {
@@ -261,7 +261,7 @@ export interface ColumnLayout {
      */
     default?: any;
 }
-export interface ContentObjectType extends ContentObjectTypeItem { }
+export interface ContentObjectType extends ContentObjectTypeItem {}
 export interface ContentObjectTypeItem extends BaseObject {
     is_chunkable?: boolean;
     /**
@@ -285,7 +285,7 @@ export interface CreateContentObjectTypePayload
     extends Omit<
         ContentObjectType,
         "id" | "created_at" | "updated_at" | "created_by" | "updated_by"
-    > { }
+    > {}
 
 export enum WorkflowRuleInputType {
     single = "single",
@@ -327,7 +327,7 @@ export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {
 export interface UploadWorkflowRulePayload
     extends Partial<
         Omit<WorkflowRule, "id" | "created_at" | "updated_at" | "owner">
-    > { }
+    > {}
 
 export enum ImageRenditionFormat {
     jpeg = "jpeg",
@@ -345,6 +345,7 @@ export interface GetRenditionParams {
     max_hw?: number;
     generate_if_missing?: boolean;
     sign_url?: boolean;
+    max_images?: number;
 }
 
 export interface GetRenditionResponse {

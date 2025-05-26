@@ -4,7 +4,6 @@ import fs from "fs";
 import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { ImageRenditionFormat } from "@vertesia/common";
-import path from "path";
 
 export interface ImageRenditionParams {
     max_hw: number; //maximum size of the longest side of the image
@@ -32,14 +31,11 @@ export function getRenditionsPath(
 export function getRenditionPagePath(
     objectId: string,
     params: ImageRenditionParams,
-    pageNumber: number | string = 1,
+    pageNumber: number = 1,
 ) {
-    //if number, pad to 5 char
-    if (typeof pageNumber === "number") {
-        pageNumber = String(pageNumber).padStart(5, "0");
-    }
+    const name = String(pageNumber).padStart(5, "0");
     const path = getRenditionsPath(objectId, params);
-    const pagePath = `${path}/${pageNumber}.${params.format}`;
+    const pagePath = `${path}/${name}.${params.format}`;
     return pagePath;
 }
 
@@ -57,8 +53,7 @@ export async function uploadRenditionPages(
         { files },
     );
     const uploads = files.map(async (file, i) => {
-        const filename = path.basename(file).split(".")[0];
-        const pageId = getRenditionPagePath(objectId, params, filename);
+        const pageId = getRenditionPagePath(objectId, params, i);
         let resizedImagePath = null;
 
         try {
