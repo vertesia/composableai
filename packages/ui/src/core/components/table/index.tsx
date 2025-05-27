@@ -47,3 +47,11 @@ export function TBody({ isLoading = false, columns, rows = 3, children }: TBodyS
         </tbody>
     )
 }
+
+export function TR({ className, children, ...others }: React.HTMLProps<HTMLTableRowElement>) {
+    return (
+        <tr className={clsx("hover:bg-muted hover:cursor-pointer", className)} {...others}>
+            {children}
+        </tr>
+    )
+}
