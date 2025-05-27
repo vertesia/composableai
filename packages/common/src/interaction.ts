@@ -463,6 +463,40 @@ export interface ExecutionRun<P = any, R = any> {
     output_modality: Modalities;
     created_by: string;
     updated_by: string;
+
+    /**
+     * The Vertesia Workflow related to this Interaction Run.
+     *
+     * This is only set when the interaction is executed as part of a workflow.
+     *
+     * @since 0.60.0
+     */
+    workflow?: ExecutionRunWorkflow;
+}
+
+export interface ExecutionRunWorkflow {
+    /**
+     * The Temporal Workflow Run ID related to this Interaction Run.
+     *
+     * A Run ID is a globally unique, platform-level identifier for a Workflow Execution.
+     *
+     * @example 01970d37-a890-70c0-9f44-1256d063e69a
+     * @see https://docs.temporal.io/workflow-execution/workflowid-runid
+     */
+    run_id: string;
+    /**
+     * The Temporal Workflow ID related to this Interaction Run.
+     *
+     * @example Standard Document Intake:6834841e4f828d4e36192796
+     * @see https://docs.temporal.io/workflow-execution/workflowid-runid
+     */
+    workflow_id: string;
+    /**
+     * The Temporal Activity Type used for calling this Interaction.
+     *
+     * @example generateDocumentProperties
+     */
+    activity_type: string;
 }
 
 export interface InteractionExecutionResult<P = any, R = any> extends ExecutionRun<P, R> {
