@@ -6,6 +6,7 @@ import {
     DSLActivitySpec,
     ExecutionRun,
     ExecutionRunStatus,
+    ExecutionRunWorkflow,
     InteractionExecutionConfiguration,
     RunSearchPayload,
 } from "@vertesia/common";
@@ -180,6 +181,11 @@ export async function executeInteractionFromActivity(
     if (userTags) {
         tags = tags.concat(userTags);
     }
+    const workflow = {
+        run_id: info.workflowExecution.runId,
+        workflow_id: info.workflowExecution.workflowId,
+        activity_type: info.activityType,
+    } as ExecutionRunWorkflow;
 
     let previousStudioExecutionRun: ExecutionRun | undefined = undefined;
     if (params.include_previous_error) {
@@ -227,6 +233,7 @@ export async function executeInteractionFromActivity(
             result_schema,
             tags,
             stream: false,
+            workflow,
         })
         .catch((err) => {
             log.error(`Error executing interaction ${interactionName}`, { err });

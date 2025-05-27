@@ -261,6 +261,11 @@ export interface InteractionExecutionPayload {
      * The tools to be used in the execution
      */
     tools?: ToolDefinition[];
+
+    /**
+     * The workflow related to this Interaction Run.
+     */
+    workflow?: ExecutionRunWorkflow;
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
