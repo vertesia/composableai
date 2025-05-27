@@ -72,7 +72,7 @@ export async function init(dirName?: string | undefined) {
 
     let dir: string;
     if (!dirName) {
-        dirName = answer.plugin_name;
+        dirName = pluginName.name;
         dir = join(process.cwd(), dirName!);
     } else {
         dir = resolve(dirName);

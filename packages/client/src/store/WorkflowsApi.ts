@@ -71,8 +71,8 @@ export class WorkflowsApi extends ApiTopic {
         return this.get(`/runs/${runId}/updates`, { query });
     }
 
-    async streamMessages(runId: string, onMessage?: (message: AgentMessage) => void, since?: number): Promise<void> {
-        return new Promise((resolve, reject) => {
+    async streamMessages(runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
+        return new Promise<unknown>((resolve, reject) => {
             let reconnectAttempts = 0;
             let lastMessageTimestamp = since || 0;
             let isClosed = false;
@@ -98,6 +98,14 @@ export class WorkflowsApi extends ApiTopic {
                 if (currentSse) {
                     currentSse.close();
                     currentSse = null;
+                }
+            };
+
+            const exit = (payload: unknown) => {
+                if (!isClosed) {
+                    isClosed = true;
+                    cleanup();
+                    resolve(payload);
                 }
             };
 
@@ -155,7 +163,7 @@ export class WorkflowsApi extends ApiTopic {
                                 lastMessageTimestamp = Math.max(lastMessageTimestamp, message.timestamp);
                             }
 
-                            if (onMessage) onMessage(message);
+                            if (onMessage) onMessage(message, exit);
     
                             // Only close the stream when the main workstream completes
                             if (message.type === AgentMessageType.COMPLETE && (!message.workstream_id || message.workstream_id === 'main')) {
@@ -163,7 +171,7 @@ export class WorkflowsApi extends ApiTopic {
                                 if (!isClosed) {
                                     isClosed = true;
                                     cleanup();
-                                    resolve();
+                                    resolve(null);
                                 }
                             } else if (message.type === AgentMessageType.COMPLETE) {
                                 console.log(`Received COMPLETE message from non-main workstream: ${message.workstream_id || 'unknown'}, keeping stream open`);
