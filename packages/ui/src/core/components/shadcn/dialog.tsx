@@ -58,7 +58,7 @@ export function VModal({
             </VisuallyHidden>
             <DialogContent
                 className={cn(
-                    "min-h-20 p-2",
+                    "min-h-20 p-4",
                     "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 sm:rounded-lg",
                     className
                 )}
@@ -97,7 +97,7 @@ export const VModalTitle = ({
     }
     return (
         <DialogTitle
-            className={cn("text-lg font-semibold leading-6 tracking-tight p-4", className)}
+            className={cn("text-lg font-semibold leading-6 tracking-tight py-2", className)}
             {...props}
         >
             {children}
@@ -111,7 +111,7 @@ export const VModalBody = ({
     ...props
 }: React.HTMLAttributes<HTMLDivElement>) => {
     return (
-        <div className={cn("text-sm p-4 max-h-[80vh] overflow-y-auto", className)} {...props}>
+        <div className={cn("text-sm max-h-[80vh] overflow-y-auto", className)} {...props}>
             {children}
         </div>
     );
