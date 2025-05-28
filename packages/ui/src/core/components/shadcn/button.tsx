@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { VTooltip } from "./tooltip"
 
 import { cn } from "../libs/utils"
-import { Check, Files, Loader2 } from "lucide-react"
+import { Check, CopyIcon, Loader2 } from "lucide-react"
 import clsx from "clsx"
 import { useState } from "react"
 
@@ -94,6 +94,7 @@ Button.displayName = "Button"
 
 interface CopyButtonProps {
   content: string
+  alt?: string
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "icon"
   toast?: {
     toast: any,
@@ -103,7 +104,7 @@ interface CopyButtonProps {
 }
 
 const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
-  ({ size, content, toast, className, ...props }, ref) => {
+  ({ size, content, toast, className, alt, ...props }, ref) => {
 
     const [isCopied, setIsCopied] = useState(false);
 
@@ -138,11 +139,12 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
         size={size || "sm"}
         onClick={handleCopy}
         {...props}
+        alt={alt ?? "Copy"}
       >
         {isCopied ? 
           <Check className="text-success" />
           :
-          <Files className="size-4" />
+          <CopyIcon className="size-4" />
         }
       </Button>
     )
