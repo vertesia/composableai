@@ -186,7 +186,6 @@ export async function executeInteractionFromActivity(
         workflow_id: info.workflowExecution.workflowId,
         activity_type: info.activityType,
     };
-    log.debug(`workflow info extracted`, { workflow });
 
     let previousStudioExecutionRun: ExecutionRun | undefined = undefined;
     if (params.include_previous_error) {
@@ -225,7 +224,7 @@ export async function executeInteractionFromActivity(
 
     const result_schema = params.result_schema;
 
-    log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags });
+    log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags, workflow });
 
     const res = await client.interactions
         .executeByName(interactionName, {
