@@ -1,5 +1,5 @@
 import { MessageBox } from '@vertesia/ui/core';
-import { VertesiaErrorBoundary } from '@vertesia/ui/features/errors/VertesiaErrorBoundary';
+import { VertesiaErrorBoundary } from './VertesiaErrorBoundary';
 import { ReactNode } from 'react';
 
 export function PanelErrorBoundary({ children }: { children: ReactNode }) {

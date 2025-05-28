@@ -1,4 +1,4 @@
-import { VertesiaErrorBoundary } from '@vertesia/ui/features/errors/VertesiaErrorBoundary';
+import { VertesiaErrorBoundary } from './VertesiaErrorBoundary';
 import { ReactNode } from 'react';
 
 export function WidgetErrorBoundary({ children }: { children: ReactNode }) {
