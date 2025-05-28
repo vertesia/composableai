@@ -181,11 +181,12 @@ export async function executeInteractionFromActivity(
     if (userTags) {
         tags = tags.concat(userTags);
     }
-    const workflow = {
+    const workflow: ExecutionRunWorkflow = {
         run_id: info.workflowExecution.runId,
         workflow_id: info.workflowExecution.workflowId,
         activity_type: info.activityType,
-    } as ExecutionRunWorkflow;
+    };
+    log.debug(`workflow info extracted`, { workflow });
 
     let previousStudioExecutionRun: ExecutionRun | undefined = undefined;
     if (params.include_previous_error) {
