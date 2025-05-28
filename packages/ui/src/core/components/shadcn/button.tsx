@@ -4,8 +4,9 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { VTooltip } from "./tooltip"
 
 import { cn } from "../libs/utils"
-import { Loader2 } from "lucide-react"
+import { Check, Files, Loader2 } from "lucide-react"
 import clsx from "clsx"
+import { useState } from "react"
 
 const buttonVariants = cva(
   "hover:cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -58,7 +59,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         className={clsx(
           className,
-          cn(buttonVariants({ variant, size}))
+          cn(buttonVariants({ variant, size }))
         )}
         disabled={isDisabled || isLoading || props.disabled}
         ref={ref}
@@ -91,4 +92,62 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 )
 Button.displayName = "Button"
 
-export { Button, buttonVariants }
+interface CopyButtonProps {
+  content: string
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "icon"
+  toast?: {
+    toast: any,
+    message: string
+  }
+  className?: string
+}
+
+const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
+  ({ size, content, toast, className, ...props }, ref) => {
+
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopy = () => {
+      navigator.clipboard.writeText(content).then(() => {
+        setIsCopied(true)
+        setTimeout(() => setIsCopied(false), 2000)
+        if (!toast || !toast.toast) {
+          return
+        }
+        toast.toast({
+          status: "success",
+          title: toast.message || "Copied to clipboard",
+          duration: 2000,
+        })
+      }).catch((err) => {
+        console.error("Failed to copy text: ", err)
+        if (toast && toast.toast)
+          toast.toast({
+            status: "error",
+            title: "Failed to copy",
+            duration: 2000,
+          })
+      })
+    }
+
+    return (
+      <Button
+        ref={ref}
+        className={cn(className)}
+        variant={"unstyled"}
+        size={size || "sm"}
+        onClick={handleCopy}
+        {...props}
+      >
+        {isCopied ? 
+          <Check className="text-success" />
+          :
+          <Files className="size-4" />
+        }
+      </Button>
+    )
+  }
+)
+CopyButton.displayName = "CopyButton"
+
+export { Button, CopyButton, buttonVariants }
