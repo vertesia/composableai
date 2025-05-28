@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../popover";
 import { FilterOption } from "./types";
 import { AnimateChangeInHeight } from "./animateChangeInHeight";
 import { Button } from "../button";
-import { VInput } from "../input";
+import { Input } from "../input";
 
 
 export const SelectionCombobox = ({
@@ -228,7 +228,7 @@ export const TextCombobox = ({
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-3">
                 <div className="flex flex-col gap-2 p-2">
-                    <VInput autoFocus
+                    <Input autoFocus
                         type="text" size={"sm"}
                         value={inputValue}
                         onChange={setInputValue}

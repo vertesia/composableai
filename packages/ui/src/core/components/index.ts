@@ -11,7 +11,6 @@ export * from "./Dropdown.js";
 export * from "./DropdownList.js";
 export * from "./EmptyCollection.js";
 export * from "./FileUpload.js";
-export * from "./Input.js";
 export * from "./InputList.js";
 export * from "./Link.js";
 export * from "./MenuList.js";

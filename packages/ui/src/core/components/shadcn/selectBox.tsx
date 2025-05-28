@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
-import { VInput } from './input';
+import { Input } from './input';
 
 interface VSelectBoxProps<T> {
     options: T[] | undefined;
@@ -27,7 +27,7 @@ interface VSelectBoxProps<T> {
     border?: boolean;
 }
 
-export function VSelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border= true }: Readonly<VSelectBoxProps<T>>) {
+export function VSelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true }: Readonly<VSelectBoxProps<T>>) {
     const triggerRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [width, setWidth] = useState<number>(0);
@@ -141,7 +141,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                         <div className='mx-2'>
                             <SearchIcon className="size-4" />
                         </div>
-                        <VInput variant='unstyled' value={filterValue} onChange={setFilterValue} className="w-full p-1 rounded-md" placeholder="Search..." />
+                        <Input variant='unstyled' value={filterValue} onChange={setFilterValue} className="w-full p-1 rounded-md" placeholder="Search..." />
                     </div>
                 )}
                 <Command className="overflow-hidden">

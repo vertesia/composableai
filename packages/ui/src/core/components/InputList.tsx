@@ -2,7 +2,8 @@ import clsx from 'clsx';
 import { useState } from 'react';
 
 import { Badge } from './Badge';
-import { VInput } from './shadcn/input';
+import { Input } from './shadcn/input';
+import { Styles } from './styles';
 
 interface InputListProps {
     value?: string[];
@@ -48,7 +49,7 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
     };
 
     return (
-        <div className={clsx(className, 'w-full space-x-1 space-y-1 flex flex-wrap w-full rounded-md py-2 px-1 text-sm border border-input bg-background dark:bg-slate-800 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2')}>
+        <div className={clsx(className, 'w-full space-x-1 space-y-1 p-2', Styles.INPUT)}>
             {
                 value && value.length > 0 &&
                 (value.map((v, index) =>
@@ -58,7 +59,7 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
                 ))
             }
             <div>
-                <VInput
+                <Input
                     clearable={false}
                     className='placeholder:text-muted-foreground px-1'
                     variant='unstyled'

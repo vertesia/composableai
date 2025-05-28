@@ -11,7 +11,7 @@ export default function runExport(program: Command, interactionName: string | un
     }
 
     const tags = options.tags ? options.tags.split(/\s*,\s*/) : undefined;
-    const versions = options.versions ? options.versions.split(/\s*,\s*/) : ["draft", "latest"];
+    const versions = options.versions ? options.versions.split(/\s*,\s*/) : ["draft"];
 
     const payload = {
         name: interactionName,
@@ -24,5 +24,8 @@ export default function runExport(program: Command, interactionName: string | un
             project: client.project!,
             exportVersion: options.export || undefined,
         });
+    }).catch((error) => {
+        console.error('Failed to export interactions:', error.message || error);
+        process.exit(1);
     })
 }
