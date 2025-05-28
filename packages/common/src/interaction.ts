@@ -497,11 +497,12 @@ export interface ExecutionRunWorkflow {
      */
     workflow_id: string;
     /**
-     * The Temporal Activity Type used for calling this Interaction.
+     * The Temporal Activity Type used for executing this Interaction. Undefined if the interaction
+     * was not executed as part of a workflow (such as Agent Runner).
      *
      * @example generateDocumentProperties
      */
-    activity_type: string;
+    activity_type?: string;
 }
 
 export interface InteractionExecutionResult<P = any, R = any> extends ExecutionRun<P, R> {
