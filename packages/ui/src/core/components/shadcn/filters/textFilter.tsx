@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, VInput } from "../index";
+import { Button, Input } from "../index";
 import { Filter, FilterGroup } from "./types";
 
 interface TextFilterProps {
@@ -37,7 +37,7 @@ export default function TextFilter({
 
   return (
     <div className="p-2 flex flex-col gap-2">
-      <VInput
+      <Input
         autoFocus
         type="text"
         size="sm"
