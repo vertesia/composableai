@@ -1,5 +1,5 @@
 import { JSONSchema, JSONSchemaType, JSONSchemaTypeName } from "@vertesia/common";
-import Ajv, { ValidateFunction } from "ajv";
+import Ajv, { ErrorObject, ValidateFunction } from "ajv";
 
 function createSchemaFromType(type: JSONSchemaTypeName): JSONSchema {
     if (type === 'object') {
@@ -57,11 +57,11 @@ export class Schema {
         return this.schema.type as JSONSchemaTypeName;
     }
 
-    validate(value: any) {
+    validate(value: any): ErrorObject<string, Record<string, any>, unknown>[] | null {
         if (!this.validator(value)) {
             return this.validator.errors || [];
         } else {
-            return true;
+            return null;
         }
     }
 
