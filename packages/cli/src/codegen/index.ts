@@ -24,5 +24,8 @@ export default function runExport(program: Command, interactionName: string | un
             project: client.project!,
             exportVersion: options.export || undefined,
         });
+    }).catch((error) => {
+        console.error('Failed to export interactions:', error.message || error);
+        process.exit(1);
     })
 }
