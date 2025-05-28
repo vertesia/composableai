@@ -11,7 +11,7 @@ export default function runExport(program: Command, interactionName: string | un
     }
 
     const tags = options.tags ? options.tags.split(/\s*,\s*/) : undefined;
-    const versions = options.versions ? options.versions.split(/\s*,\s*/) : ["draft", "latest"];
+    const versions = options.versions ? options.versions.split(/\s*,\s*/) : ["draft"];
 
     const payload = {
         name: interactionName,
