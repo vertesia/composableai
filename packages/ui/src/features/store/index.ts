@@ -1,2 +1,2 @@
-export * from "./SelectContentType";
-export * from "./TableLayoutEditor";
+export * from "./objects";
+export * from "./types";
