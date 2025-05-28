@@ -97,6 +97,9 @@ export interface InteractionRef {
 export const InteractionRefPopulate =
     "id name endpoint parent description status version visibility tags updated_at prompts";
 
+export const InteractionRefWithSchemaPopulate =
+    `${InteractionRefPopulate} result_schema`;
+
 export interface InteractionRefWithSchema extends Omit<InteractionRef, "prompts"> {
     result_schema?: JSONSchema4;
     prompts?: PromptSegmentDef<PromptTemplateRefWithSchema>[];
