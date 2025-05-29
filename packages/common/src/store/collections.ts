@@ -65,4 +65,5 @@ export interface CollectionSearchPayload {
     status?: CollectionStatus;
     limit?: number;
     offset?: number;
+    name?: string;
 }
