@@ -101,8 +101,17 @@ export class FilesApi extends ApiTopic {
         return id;
     }
 
-    async downloadFile(name: string): Promise<ReadableStream<Uint8Array>> {
-        const { url } = await this.getDownloadUrl(name);
+    /**
+     *
+     * @param location can be a relative path in the project, a reference to a cloud storage, or a accessible HTTPS URL (typically signed URL)
+     * @returns ReadableStream
+     */
+    async downloadFile(location: string): Promise<ReadableStream<Uint8Array>> {
+        //if start with HTTPS, no download url needed - assume it's signed already
+        const needSign = !location.startsWith("https:");
+        const { url } = needSign
+            ? await this.getDownloadUrl(location)
+            : { url: location };
 
         const res = await fetch(url, {
             method: "GET",
@@ -111,24 +120,24 @@ export class FilesApi extends ApiTopic {
                 if (res.ok) {
                     return res;
                 } else if (res.status === 404) {
-                    throw new Error(`File ${name} not found`); //TODO: type fetch error better with a fetch error class
+                    throw new Error(`File ${location} not found`); //TODO: type fetch error better with a fetch error class
                 } else if (res.status === 403) {
-                    throw new Error(`File ${name} is forbidden`);
+                    throw new Error(`File ${location} is forbidden`);
                 } else {
                     console.log(res);
                     throw new Error(
-                        `Failed to download file ${name}: ${res.statusText}`,
+                        `Failed to download file ${location}: ${res.statusText}`,
                     );
                 }
             })
             .catch((err) => {
-                console.error(`Failed to download file ${name}.`, err);
+                console.error(`Failed to download file ${location}.`, err);
                 throw err;
             });
 
         if (!res.body) {
             throw new Error(
-                `No body in response while downloading memory pack ${name}`,
+                `No body in response while downloading file ${location}`,
             );
         }
 
