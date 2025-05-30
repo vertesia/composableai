@@ -28,7 +28,7 @@ const buttonVariants = cva(
       },
       size: {
         xs: 'h-7 rounded px-2 py-1 text-xs gap-x-1',
-        sm: "h-8 rounded px-2 text-xs",
+        sm: "h-8 rounded px-3 text-xs",
         md: "h-9 rounded-md px-4 py-2",
         lg: "h-10 rounded-md px-3",
         xl: 'rounded-md px-3.5 py-2.5 text-sm gap-x-2',
@@ -58,8 +58,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const buttonElement = (
       <Comp
         className={clsx(
-          className,
-          cn(buttonVariants({ variant, size }))
+          cn(buttonVariants({ variant, size})),
+          className
         )}
         disabled={isDisabled || isLoading || props.disabled}
         ref={ref}

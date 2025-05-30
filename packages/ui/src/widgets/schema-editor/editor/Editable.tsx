@@ -1,13 +1,13 @@
 import clsx from 'clsx';
 import { ChangeEvent, ComponentType, KeyboardEvent, useEffect, useRef, useState } from 'react';
 
-import { Pencil, Trash2 } from 'lucide-react';
-import { Styles } from '@vertesia/ui/core';
+import { SquarePen, Trash2 } from 'lucide-react';
+import { Button, Styles } from '@vertesia/ui/core';
 import { useClickOutside, useFlag } from '@vertesia/ui/core';
 
-const VIEW_BOX = "block sm:text-sm sm:leading-6 rounded-md border-0 py-1.5 px-2 text-gray-900 dark:text-slate-50"
-const VIEW_BOX_HOVER = `${VIEW_BOX} hover:shadow-xs hover:ring-1 hover:ring-inset hover:ring-gray-300 dark:hover:ring-slate-600`
-const EDIT_BOX = `${VIEW_BOX} shadow-xs ring-1 ring-inset ring-gray-300 dark:ring-slate-600`
+const VIEW_BOX = "block text-sm sm:leading-6 rounded-md border-0 py-1.5 px-4"
+const VIEW_BOX_HOVER = `${VIEW_BOX} hover:shadow-xs hover:ring-1 hover:ring-inset hover:ring-ring`
+const EDIT_BOX = `${VIEW_BOX} shadow-xs ring-1 ring-inset ring-ring`
 
 export interface DataViewerProps<T> {
     value: T | undefined;
@@ -78,7 +78,7 @@ export function Editable<T>({ value, onChange, onDelete,
     };
 
     return (
-        <div>
+        <div className="">
             {
                 isOn && !readonly ?
                     <DataEdit
@@ -125,7 +125,7 @@ function DataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHove
         }
     };
 
-    const btnStyle = 'hidden group-hover:block text-gray-400 hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-400';
+    const btnStyle = 'invisible group-hover:visible';
 
     return (
         <div tabIndex={0} onKeyUp={onKeyUp} onClick={onClick} className={clsx("flex justify-start items-center group", outlineOnHover ? VIEW_BOX_HOVER : VIEW_BOX, { 'cursor-pointer': editOnClick })}>
@@ -133,15 +133,15 @@ function DataView<T>({ viewer: Viewer, value, onEdit, editOnClick, outlineOnHove
             <div className='ml-auto flex space-x-2'>
                 {
                     !readonly && onDelete &&
-                    <button className={btnStyle} onClick={onDelete}>
+                    <Button variant="ghost" size="sm" className={btnStyle} onClick={onDelete}>
                         <Trash2 className="size-4" />
-                    </button>
+                    </Button>
                 }
                 {
                     !readonly ?
-                        <button className={btnStyle} onClick={onEdit}>
-                            <Pencil className="size-4" />
-                        </button>
+                        <Button variant="ghost" size="sm" className={btnStyle} onClick={onEdit}>
+                            <SquarePen className="size-4" />
+                        </Button>
                         : null
                 }
             </div>
