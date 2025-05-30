@@ -21,7 +21,6 @@ function generateComboboxOptions(
         case 'date':
             return (
                 <DateCombobox
-                    filterType={filter.name}
                     filterValues={filter.value.map(v => v.value || '')}
                     setFilterValues={(filterValues) => {
                         setFilters((prev) =>
@@ -59,7 +58,7 @@ function generateComboboxOptions(
                 />
             );
         case 'select':
-        default:
+        default: {
             const filterGroup = filterGroups.find(group => group.name === filter.name);
             return (
                 <SelectionCombobox
@@ -76,6 +75,7 @@ function generateComboboxOptions(
                     labelRenderer={filterGroup?.labelRenderer}
                 />
             );
+        }
     }
 }
 
