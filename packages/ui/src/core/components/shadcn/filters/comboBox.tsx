@@ -7,10 +7,11 @@ import { format } from "date-fns";
 import { Checkbox } from "../checkbox";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "../command";
 import { Popover, PopoverContent, PopoverTrigger } from "../popover";
-import { FilterOption } from "./types";
+import { FilterOption, FilterGroupOption } from "./types";
 import { AnimateChangeInHeight } from "./animateChangeInHeight";
 import { Button } from "../button";
 import { Input } from "../input";
+import { DynamicLabel } from "./DynamicLabel";
 
 
 export const SelectionCombobox = ({
@@ -18,11 +19,13 @@ export const SelectionCombobox = ({
     filterValues,
     setFilterValues,
     options,
+    labelRenderer,
 }: {
     filterType: string;
     filterValues: FilterOption[];
     setFilterValues: (filterValues: FilterOption[]) => void;
-    options: FilterOption[];
+    options: FilterGroupOption[];
+    labelRenderer?: (value: string) => React.ReactNode | Promise<React.ReactNode>;
 }) => {
     const [open, setOpen] = useState(false);
     const [commandInput, setCommandInput] = useState("");
@@ -43,21 +46,26 @@ export const SelectionCombobox = ({
             }}
         >
             <PopoverTrigger
-                className="rounded-none px-1.5 py-1 bg-muted hover:bg-muted/50 transition
-  text-muted-foreground hover:text-primary shrink-0"
+                className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 transition text-muted hover:text-primary shrink-0"
             >
                 <div className="flex gap-1.5 items-center">
                     {filterValues?.length === 1 ? (
                         (() => {
                             const option = filterValues[0];
-                            return option.label
+                            return (
+                                <DynamicLabel
+                                    value={option.value || ''}
+                                    labelRenderer={labelRenderer}
+                                    fallbackLabel={option.label}
+                                />
+                            )
                         })()
                     ) : (
                         `${filterValues?.length} selected`
                     )}
                 </div>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
+            <PopoverContent className="w-[300px] p-0">
                 <AnimateChangeInHeight>
                     <Command>
                         <CommandInput
@@ -86,7 +94,11 @@ export const SelectionCombobox = ({
                                             }}
                                         >
                                             <Checkbox checked={true} />
-                                            {value.label}
+                                            <DynamicLabel
+                                                value={value.value || ''}
+                                                labelRenderer={labelRenderer}
+                                                fallbackLabel={value.label}
+                                            />
                                         </CommandItem>
                                     );
                                 })}
@@ -97,15 +109,18 @@ export const SelectionCombobox = ({
                                     <CommandGroup>
                                         {nonSelectedFilterValues
                                             .filter(option =>
-                                                String(option.label).toLowerCase().includes(commandInput.toLowerCase())
+                                                String(option.label || option.value).toLowerCase().includes(commandInput.toLowerCase())
                                             )
-                                            .map((filter: FilterOption) => (
+                                            .map((filter: FilterGroupOption) => (
                                                 <CommandItem
                                                     className="group flex gap-2 items-center"
                                                     key={filter.value}
-                                                    value={String(filter.label)}
+                                                    value={String(filter.label || filter.value)}
                                                     onSelect={() => {
-                                                        setFilterValues([...filterValues, filter]);
+                                                        setFilterValues([...filterValues, {
+                                                            value: filter.value,
+                                                            label: filter.label
+                                                        }]);
                                                         setTimeout(() => {
                                                             setCommandInput("");
                                                         }, 200);
@@ -116,8 +131,12 @@ export const SelectionCombobox = ({
                                                         checked={false}
                                                         className="opacity-0 group-data-[selected=true]:opacity-100"
                                                     />
-                                                    <span className="text-accent-foreground">
-                                                        {filter.label}
+                                                    <span className="text-muted">
+                                                        <DynamicLabel
+                                                            value={filter.value || ''}
+                                                            labelRenderer={filter.labelRenderer || labelRenderer}
+                                                            fallbackLabel={filter.label}
+                                                        />
                                                     </span>
                                                 </CommandItem>
                                             ))}
@@ -136,7 +155,6 @@ export const DateCombobox = ({
     filterValues,
     setFilterValues,
 }: {
-    filterType: string;
     filterValues: string[];
     setFilterValues: (values: string[]) => void;
 }) => {
@@ -149,8 +167,7 @@ export const DateCombobox = ({
     return (
         <Popover _open={open} onOpenChange={setOpen}>
             <PopoverTrigger
-                className="rounded-none px-1.5 py-1 bg-muted hover:bg-muted/50 transition
-                text-muted-foreground hover:text-primary shrink-0"
+                className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition"
             >
                 <div className="flex gap-1.5 items-center">
                     {dateRange?.from ? (
@@ -191,6 +208,7 @@ export const DateCombobox = ({
 };
 
 export const TextCombobox = ({
+    filterType,
     filterValue,
     setFilterValue,
 }: {
@@ -219,15 +237,17 @@ export const TextCombobox = ({
             }}
         >
             <PopoverTrigger
-                className="rounded-none px-1.5 py-1 bg-muted hover:bg-muted/50 transition
-                text-muted-foreground hover:text-primary shrink-0"
+                className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition"
             >
                 <div className="flex gap-1.5 items-center">
                     {filterValue || "Enter text..."}
                 </div>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-3">
-                <div className="flex flex-col gap-2 p-2">
+            <PopoverContent className="w-[300px] p-3">
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center p-1.5 text-xs text-muted">
+                        <span>{filterType}</span>
+                    </div>
                     <Input autoFocus
                         type="text" size={"sm"}
                         value={inputValue}

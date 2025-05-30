@@ -28,17 +28,25 @@ export default function DateFilter({
     setDateRange(range);
     if (range?.from && range?.to) {
       const selectedGroup = filterGroups.find(g => g.name === selectedView);
+      
+      // Set from date to start of day (00:00) and to date to end of day (23:59:59)
+      const fromDate = new Date(range.from);
+      fromDate.setHours(0, 0, 0, 0);
+      
+      const toDate = new Date(range.to);
+      toDate.setHours(23, 59, 59, 999);
+      
       setFilters([
         ...filters,
         {
           name: selectedView || "",
           value: [
             {
-              value: format(range.from!, "yyyy-MM-dd"),
+              value: fromDate.toISOString(),
               label: format(range.from!, "LLL dd, y")
             },
             {
-              value: format(range.to!, "yyyy-MM-dd"),
+              value: toDate.toISOString(),
               label: format(range.to!, "LLL dd, y")
             }
           ],
