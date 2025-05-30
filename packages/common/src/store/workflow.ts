@@ -184,19 +184,21 @@ interface WorkflowRunEvent {
     event_id: number;
     event_time: number;
     event_type: string;
-    task_id: string;
+    task_id?: string;
     attempt: number;
 
     activity?: {
-        name: string;
-        id: string;
+        name?: string;
+        id?: string;
         input?: any;
+        scheduledEventId?: string;
+        startedEventId?: string;
     };
 
     error?: {
-        message: string;
-        source: string;
-        stacktrace: string;
+        message?: string;
+        source?: string;
+        stacktrace?: string;
         type?: string;
     };
 

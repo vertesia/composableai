@@ -1,11 +1,11 @@
 import { JSONSchema, JSONSchemaType, JSONSchemaTypeName } from "@vertesia/common";
-import Ajv, { ValidateFunction } from "ajv";
+import Ajv, { ErrorObject, ValidateFunction } from "ajv";
 
 function createSchemaFromType(type: JSONSchemaTypeName): JSONSchema {
     if (type === 'object') {
         return { type: 'object', properties: {} };
     } else if (type === 'array') {
-        return { type: 'array', items: { type: 'any' } };
+        return { type: 'array', items: {} };
     } else {
         return { type };
     }
@@ -14,11 +14,18 @@ function createSchemaFromType(type: JSONSchemaTypeName): JSONSchema {
 export class Schema {
     schema: JSONSchema;
     properties: Record<string, PropertySchema> = {};
-    validator: ValidateFunction;
+    _validator?: ValidateFunction;
     constructor(schema?: JSONSchema) {
         this.schema = schema || { type: 'object', properties: {} };
-        this.validator = new Ajv({ strict: false }).compile(this.schema);
         this.load();
+    }
+
+    get validator() {
+        if (!this._validator) {
+            const ajv = new Ajv({ allErrors: true, strict: false });
+            this._validator = ajv.compile(this.schema);
+        }
+        return this._validator;
     }
 
     private load() {
@@ -57,11 +64,11 @@ export class Schema {
         return this.schema.type as JSONSchemaTypeName;
     }
 
-    validate(value: any) {
+    validate(value: any): ErrorObject<string, Record<string, any>, unknown>[] | null {
         if (!this.validator(value)) {
             return this.validator.errors || [];
         } else {
-            return true;
+            return null;
         }
     }
 
@@ -194,7 +201,7 @@ function getArrayElementType(schema: JSONSchema) {
         throw new Error('Expecting an array schema');
     }
     if (!schema.items) {
-        schema.items = { type: 'any' };
+        schema.items = {};
     } else if (Array.isArray(schema.items)) {
         throw new Error('Tuple arrays are not supported');
     }
