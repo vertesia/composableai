@@ -1,14 +1,13 @@
 
 import React from "react";
 import { Calendar } from "../calendar";
-import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { Filter, FilterGroup } from "./types";
 
 interface DateFilterProps {
   selectedView: string | null;
-  dateRange: DateRange | undefined;
-  setDateRange: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
+  selectedDate: Date | undefined;
+  setSelectedDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
   setFilters: React.Dispatch<React.SetStateAction<Filter[]>>;
   filters: Filter[];
   handleClose: () => void;
@@ -17,37 +16,31 @@ interface DateFilterProps {
 
 export default function DateFilter({
   selectedView,
-  dateRange,
-  setDateRange,
+  selectedDate,
+  setSelectedDate,
   setFilters,
   filters,
   handleClose,
   filterGroups,
 }: DateFilterProps) {
-  const handleDateRangeSelect = (range: DateRange | undefined) => {
-    setDateRange(range);
-    if (range?.from && range?.to) {
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    if (date) {
       const selectedGroup = filterGroups.find(g => g.name === selectedView);
       
-      // Set from date to start of day (00:00) and to date to end of day (23:59:59)
-      const fromDate = new Date(range.from);
-      fromDate.setHours(0, 0, 0, 0);
-      
-      const toDate = new Date(range.to);
-      toDate.setHours(23, 59, 59, 999);
+      // Set date to start of day (00:00)
+      const selectedDateStart = new Date(date);
+      selectedDateStart.setHours(0, 0, 0, 0);
       
       setFilters([
         ...filters,
         {
           name: selectedView || "",
+          placeholder: selectedGroup?.placeholder,
           value: [
             {
-              value: fromDate.toISOString(),
-              label: format(range.from!, "LLL dd, y")
-            },
-            {
-              value: toDate.toISOString(),
-              label: format(range.to!, "LLL dd, y")
+              value: selectedDateStart.toISOString(),
+              label: format(date, "LLL dd, y")
             }
           ],
           type: selectedGroup?.type || "date",
@@ -61,11 +54,10 @@ export default function DateFilter({
   return (
     <div className="p-2">
       <Calendar
-        initialFocus
-        mode="range"
-        defaultMonth={dateRange?.from}
-        selected={dateRange}
-        onSelect={handleDateRangeSelect}
+        mode="single"
+        defaultMonth={selectedDate}
+        selected={selectedDate}
+        onSelect={handleDateSelect}
         size="sm"
       />
     </div>

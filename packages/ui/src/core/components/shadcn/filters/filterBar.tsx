@@ -2,7 +2,6 @@ import React, { Dispatch, SetStateAction, useEffect } from "react";
 import { cn } from "../../libs/utils";
 import { Button, Popover, PopoverTrigger, PopoverContent, Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "../index";
 import { ListFilter } from "lucide-react";
-import { DateRange } from "react-day-picker";
 
 import { Filter, FilterGroup } from "./types";
 import Filters from "./filters";
@@ -22,7 +21,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
   const [selectedView, setSelectedView] = React.useState<string | null>(null);
   const [commandInput, setCommandInput] = React.useState("");
   const commandInputRef = React.useRef<HTMLInputElement>(null);
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
   const [textValue, setTextValue] = React.useState("");
 
   const handleSelect = (groupName: string) => {
@@ -69,7 +68,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
     setTimeout(() => {
       setSelectedView(null);
       setCommandInput("");
-      setDateRange(undefined);
+      setSelectedDate(undefined);
     }, 200);
   };
 
@@ -109,8 +108,8 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
         return (
           <DateFilter
             selectedView={selectedView}
-            dateRange={dateRange}
-            setDateRange={setDateRange}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
             setFilters={setFilters}
             filters={filters}
             handleClose={handleClose}

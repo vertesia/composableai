@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 // import { AnimatePresence, motion } from "motion/react";
 import { Calendar } from "../calendar";
-import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
 import { Checkbox } from "../checkbox";
@@ -159,10 +158,7 @@ export const DateCombobox = ({
     setFilterValues: (values: string[]) => void;
 }) => {
     const [open, setOpen] = useState(false);
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: filterValues[0] ? new Date(filterValues[0]) : undefined,
-        to: filterValues[1] ? new Date(filterValues[1]) : undefined,
-    });
+    const selectedDate = filterValues[0] ? new Date(filterValues[0]) : undefined;
 
     return (
         <Popover _open={open} onOpenChange={setOpen}>
@@ -170,37 +166,25 @@ export const DateCombobox = ({
                 className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition"
             >
                 <div className="flex gap-1.5 items-center">
-                    {dateRange?.from ? (
-                        dateRange.to ? (
-                            <>
-                                {format(dateRange.from, "LLL dd, y")} -{" "}
-                                {format(dateRange.to, "LLL dd, y")}
-                            </>
-                        ) : (
-                            format(dateRange.from, "LLL dd, y")
-                        )
+                    {selectedDate ? (
+                        format(selectedDate, "LLL dd, y")
                     ) : (
                         <span>Pick a date</span>
                     )}
                 </div>
             </PopoverTrigger>
-            <PopoverContent className="w-full p-0" align="start">
+            <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
-                    initialFocus
-                    mode="range"
-                    className="w-4/5 p-0"
-                    defaultMonth={dateRange?.from}
-                    selected={dateRange}
-                    onSelect={(range) => {
-                        setDateRange(range);
-                        if (range?.from) {
-                            setFilterValues([
-                                format(range.from, "yyyy-MM-dd"),
-                                range.to ? format(range.to, "yyyy-MM-dd") : "",
-                            ]);
+                    mode="single"
+                    className="p-0"
+                    defaultMonth={selectedDate}
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                        if (date) {
+                            setFilterValues([format(date, "yyyy-MM-dd")]);
+                            setOpen(false);
                         }
                     }}
-                    numberOfMonths={2}
                 />
             </PopoverContent>
         </Popover>

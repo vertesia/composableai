@@ -27,10 +27,10 @@ function generateComboboxOptions(
                             prev.map((f) =>
                                 f === filter ? {
                                     ...f,
-                                    value: filterValues.map(val => ({
-                                        value: val,
-                                        label: format(new Date(val), "LLL dd, y")
-                                    }))
+                                    value: filterValues.length > 0 ? [{
+                                        value: filterValues[0],
+                                        label: format(new Date(filterValues[0]), "LLL dd, y")
+                                    }] : []
                                 } : f
                             )
                         );
