@@ -1,16 +1,16 @@
 import { useRef, useState } from "react";
 // import { AnimatePresence, motion } from "motion/react";
-import { Calendar } from "../calendar";
+import dayjs from "dayjs";
 import { DateRange } from "react-day-picker";
-import { format } from "date-fns";
+import { Calendar } from "../calendar";
 
+import { Button } from "../button";
 import { Checkbox } from "../checkbox";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "../command";
-import { Popover, PopoverContent, PopoverTrigger } from "../popover";
-import { FilterOption } from "./types";
-import { AnimateChangeInHeight } from "./animateChangeInHeight";
-import { Button } from "../button";
 import { Input } from "../input";
+import { Popover, PopoverContent, PopoverTrigger } from "../popover";
+import { AnimateChangeInHeight } from "./animateChangeInHeight";
+import { FilterOption } from "./types";
 
 
 export const SelectionCombobox = ({
@@ -156,11 +156,11 @@ export const DateCombobox = ({
                     {dateRange?.from ? (
                         dateRange.to ? (
                             <>
-                                {format(dateRange.from, "LLL dd, y")} -{" "}
-                                {format(dateRange.to, "LLL dd, y")}
+                                {dayjs(dateRange.from).format("LLL dd, y")} -{" "}
+                                {dayjs(dateRange.to).format("LLL dd, y")}
                             </>
                         ) : (
-                            format(dateRange.from, "LLL dd, y")
+                            dayjs(dateRange.from).format("LLL dd, y")
                         )
                     ) : (
                         <span>Pick a date</span>
@@ -178,8 +178,8 @@ export const DateCombobox = ({
                         setDateRange(range);
                         if (range?.from) {
                             setFilterValues([
-                                format(range.from, "yyyy-MM-dd"),
-                                range.to ? format(range.to, "yyyy-MM-dd") : "",
+                                dayjs(range.from).format("yyyy-MM-dd"),
+                                range.to ? dayjs(range.to).format("yyyy-MM-dd") : "",
                             ]);
                         }
                     }}
