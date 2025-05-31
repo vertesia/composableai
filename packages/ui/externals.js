@@ -45,6 +45,7 @@ export const EXTERNALS = [
     "@vertesia/common",
     "@vertesia/json",
     "ajv",
+    "dayjs",
     "react-error-boundary",
     /^@vertesia\/ui\/.*/,
 ];
