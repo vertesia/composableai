@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
-import { useToast } from '@vertesia/ui/core';
+import { Button, useToast } from '@vertesia/ui/core';
 
 import { ManagedSchema, SchemaNode } from '../ManagedSchema.js';
 import { TypeNames } from '../type-signature.js';
@@ -154,8 +154,8 @@ function AddPropertyButton({ parent }: AddPropertyButtonProps) {
         parent.reloadTree();
     }
     return (
-        <button className="ml-1 py-2 flex items-center text-gray-400 hover:text-indigo-600" onClick={add}>
-            <Plus className='size-5' /><div className='ml-2'>Add property</div>
-        </button>
+        <Button variant="outline" onClick={add}>
+            <Plus className='size-4' />Add property
+        </Button>
     )
 }
