@@ -46,8 +46,11 @@ export const EXTERNALS = [
     "@vertesia/json",
     "ajv",
     "dayjs",
+    /^dayjs\/.*/,
     "react-error-boundary",
     /^@vertesia\/ui\/.*/,
+    "@floating-ui/dom",
+    "@floating-ui/react",
 ];
 
 // Put here exceptions - deps that shuld be inlined

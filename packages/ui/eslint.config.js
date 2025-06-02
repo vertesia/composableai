@@ -78,6 +78,7 @@ export default [
         },
         rules: {
             ...pluginImport.configs.recommended.rules,
+            'import/no-unresolved': 'off',
         },
         settings: {
             'import/resolver': {
