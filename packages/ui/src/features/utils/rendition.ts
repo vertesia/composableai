@@ -2,10 +2,11 @@ import { isImage, isPdf, isVideo } from "./mimeType.js";
 import { VertesiaClient } from "@vertesia/client";
 import { ContentObjectItem, ImageRenditionFormat } from "@vertesia/common";
 
+//TODO we must use a setting in Env.
 const env = import.meta.env;
 
 const RENDITION_OPTIONS = {
-  max_hw: env.VITE_RENDITION_HW || 256,
+  max_hw: env?.VITE_RENDITION_HW || 256,
   format: ImageRenditionFormat.jpeg,
   generate_if_missing: true,
 };
