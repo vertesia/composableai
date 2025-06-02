@@ -1,9 +1,8 @@
 import { useUserSession } from "@vertesia/ui/session";
 import { ApiKey, ApiKeyTypes, PrincipalType, User } from "@vertesia/common";
-import { Avatar, Table } from "@vertesia/ui/core";
+import { Avatar, Table, Popover, PopoverContent, PopoverTrigger } from "@vertesia/ui/core";
 import { useFetch } from "@vertesia/ui/core";
 import { ReactNode } from "react";
-import { Popover } from "@vertesia/ui/widgets";
 
 //TODO use a real cache
 const USER_CACHE: Record<string, Promise<User>> = {};
@@ -201,16 +200,16 @@ interface UserPopoverPanelProps {
 }
 function UserPopoverPanel({ title, description, children }: UserPopoverPanelProps) {
     return (
-        <Popover strategy='fixed' placement='right-start' zIndex={100}>
-            <Popover.Trigger hover className="cursor-pointer flex items-center">
+        <Popover hover>
+            <PopoverTrigger className="cursor-pointer flex items-center">
                 {children}
-            </Popover.Trigger>
-            <Popover.Content>
+            </PopoverTrigger>
+            <PopoverContent>
                 <div className="flex flex-col gap-1 rounded-md shadow-md p-2">
-                    <div className='text-lg font-semibold'>{title}</div>
+                    <div className='text-md font-semibold'>{title}</div>
                     <div>{description}</div>
                 </div>
-            </Popover.Content>
+            </PopoverContent>
         </Popover>
     )
 }
