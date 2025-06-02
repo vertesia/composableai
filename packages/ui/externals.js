@@ -6,14 +6,14 @@
 import { readFileSync } from "fs";
 
 export const EXTERNALS = [
-    'react',
-    'react-dom',
-    'react/jsx-runtime',
-    'firebase',
-    'firebase/app',
-    'firebase/auth',
-    'firebase/analytics',
-    'jwt-decode',
+    "react",
+    "react-dom",
+    "react/jsx-runtime",
+    "firebase",
+    "firebase/app",
+    "firebase/auth",
+    "firebase/analytics",
+    "jwt-decode",
     "@headlessui/react",
     "lucide-react",
     "clsx",
@@ -27,7 +27,6 @@ export const EXTERNALS = [
     "@radix-ui/react-tooltip",
     "class-variance-authority",
     "cmdk",
-    "date-fns",
     "lodash-es",
     "motion",
     /^motion\/.*/,
@@ -46,13 +45,13 @@ export const EXTERNALS = [
     "@vertesia/common",
     "@vertesia/json",
     "ajv",
-    'react-error-boundary',
-    /^@vertesia\/ui\/.*/
-]
+    "dayjs",
+    "react-error-boundary",
+    /^@vertesia\/ui\/.*/,
+];
 
 // Put here exceptions - deps that shuld be inlined
-const INLINED_DEPS = [
-]
+const INLINED_DEPS = [];
 
 function resolve(path) {
     return new URL(path, import.meta.url).pathname;
@@ -64,29 +63,38 @@ function validateExternals() {
     const pkg = JSON.parse(content);
     const pkgDependencies = Object.keys(pkg.dependencies || {});
 
-    const externals = new Set(EXTERNALS.filter(ext => typeof ext === "string"));
-    const regexps = EXTERNALS.filter(ext => ext instanceof RegExp);
+    const externals = new Set(
+        EXTERNALS.filter((ext) => typeof ext === "string"),
+    );
+    const regexps = EXTERNALS.filter((ext) => ext instanceof RegExp);
     const unmatched = new Set();
-    const inlinedDeps = new Set(INLINED_DEPS)
+    const inlinedDeps = new Set(INLINED_DEPS);
     for (const dependency of pkgDependencies) {
         if (externals.has(dependency)) {
             externals.delete(dependency);
             continue;
-        } else if (regexps.some(regexp => regexp.test(dependency))) {
+        } else if (regexps.some((regexp) => regexp.test(dependency))) {
             continue;
         } else if (!inlinedDeps.has(dependency)) {
             unmatched.add(dependency);
         }
     }
     if (externals.size > 0) {
-        console.warn(`⚠️ Warning: The following externals are not used: ${Array.from(externals).join(", ")}`);
+        console.warn(
+            `⚠️ Warning: The following externals are not used: ${Array.from(externals).join(", ")}`,
+        );
     }
     if (unmatched.size > 0) {
-        console.error('❌ Error: The following dependencies form package.json are not declared as external:', Array.from(unmatched));
+        console.error(
+            "❌ Error: The following dependencies form package.json are not declared as external:",
+            Array.from(unmatched),
+        );
         process.exit(1);
     }
 
-    console.log('✅ External dependencies are consistent with package.json dependencies.');
+    console.log(
+        "✅ External dependencies are consistent with package.json dependencies.",
+    );
 }
 
 validateExternals();

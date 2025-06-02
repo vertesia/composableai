@@ -9,7 +9,7 @@ export function PropertyViewer({ value }: DataViewerProps<EditableSchemaProperty
             <div>
                 {value.name || ''}
             </div>
-            <div className='ml-2 text-sm text-gray-400'>{value.type || ''}</div>
+            <div className='ml-2 text-sm text-muted'>{value.type || ''}</div>
         </div>
     )
 }
