@@ -10,7 +10,7 @@ import { Input } from "../input";
 import { Popover, PopoverContent, PopoverTrigger } from "../popover";
 import { AnimateChangeInHeight } from "./animateChangeInHeight";
 import { FilterGroupOption, FilterOption } from "./types";
-import { DynamicLabel } from "@vertesia/ui/core/components/shadcn/filters/DynamicLabel";
+import { DynamicLabel } from "./DynamicLabel";
 
 
 export const SelectionCombobox = ({
