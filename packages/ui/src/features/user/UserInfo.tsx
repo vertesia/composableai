@@ -201,10 +201,10 @@ interface UserPopoverPanelProps {
 function UserPopoverPanel({ title, description, children }: UserPopoverPanelProps) {
     return (
         <Popover hover>
-            <PopoverTrigger className="cursor-pointer flex items-center">
-                {children}
+            <PopoverTrigger className="cursor-pointer flex items-center inline-block">
+                <div>{children}</div>
             </PopoverTrigger>
-            <PopoverContent>
+            <PopoverContent align="center" sideOffset={8} side="right">
                 <div className="flex flex-col gap-1 rounded-md shadow-md p-2">
                     <div className='text-md font-semibold'>{title}</div>
                     <div>{description}</div>
