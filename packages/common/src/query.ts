@@ -54,7 +54,7 @@ export interface PromptSearchQuery extends SimpleSearchQuery {
 export interface InteractionSearchQuery extends SimpleSearchQuery {
     prompt?: string;
     tags?: string[];
-    version?: number;
+    version?: string;
 }
 
 export interface RunSearchQuery extends SimpleSearchQuery {
