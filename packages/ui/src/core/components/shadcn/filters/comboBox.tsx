@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 // import { AnimatePresence, motion } from "motion/react";
 import dayjs from "dayjs";
-import { DateRange } from "react-day-picker";
 import { Calendar } from "../calendar";
 
 import { Button } from "../button";
@@ -10,7 +9,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Input } from "../input";
 import { Popover, PopoverContent, PopoverTrigger } from "../popover";
 import { AnimateChangeInHeight } from "./animateChangeInHeight";
-import { FilterOption } from "./types";
+import { FilterGroupOption, FilterOption } from "./types";
+import { DynamicLabel } from "./DynamicLabel";
 
 
 export const SelectionCombobox = ({
@@ -18,11 +18,13 @@ export const SelectionCombobox = ({
     filterValues,
     setFilterValues,
     options,
+    labelRenderer,
 }: {
     filterType: string;
     filterValues: FilterOption[];
     setFilterValues: (filterValues: FilterOption[]) => void;
-    options: FilterOption[];
+    options: FilterGroupOption[];
+    labelRenderer?: (value: string) => React.ReactNode | Promise<React.ReactNode>;
 }) => {
     const [open, setOpen] = useState(false);
     const [commandInput, setCommandInput] = useState("");
@@ -43,21 +45,26 @@ export const SelectionCombobox = ({
             }}
         >
             <PopoverTrigger
-                className="rounded-none px-1.5 py-1 bg-muted hover:bg-muted/50 transition
-  text-muted-foreground hover:text-primary shrink-0"
+                className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 transition text-muted hover:text-primary shrink-0"
             >
                 <div className="flex gap-1.5 items-center">
                     {filterValues?.length === 1 ? (
                         (() => {
                             const option = filterValues[0];
-                            return option.label
+                            return (
+                                <DynamicLabel
+                                    value={option.value || ''}
+                                    labelRenderer={labelRenderer}
+                                    fallbackLabel={option.label}
+                                />
+                            )
                         })()
                     ) : (
                         `${filterValues?.length} selected`
                     )}
                 </div>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
+            <PopoverContent className="w-[300px] p-0">
                 <AnimateChangeInHeight>
                     <Command>
                         <CommandInput
@@ -86,7 +93,11 @@ export const SelectionCombobox = ({
                                             }}
                                         >
                                             <Checkbox checked={true} />
-                                            {value.label}
+                                            <DynamicLabel
+                                                value={value.value || ''}
+                                                labelRenderer={labelRenderer}
+                                                fallbackLabel={value.label}
+                                            />
                                         </CommandItem>
                                     );
                                 })}
@@ -97,15 +108,18 @@ export const SelectionCombobox = ({
                                     <CommandGroup>
                                         {nonSelectedFilterValues
                                             .filter(option =>
-                                                String(option.label).toLowerCase().includes(commandInput.toLowerCase())
+                                                String(option.label || option.value).toLowerCase().includes(commandInput.toLowerCase())
                                             )
-                                            .map((filter: FilterOption) => (
+                                            .map((filter: FilterGroupOption) => (
                                                 <CommandItem
                                                     className="group flex gap-2 items-center"
                                                     key={filter.value}
-                                                    value={String(filter.label)}
+                                                    value={String(filter.label || filter.value)}
                                                     onSelect={() => {
-                                                        setFilterValues([...filterValues, filter]);
+                                                        setFilterValues([...filterValues, {
+                                                            value: filter.value,
+                                                            label: filter.label
+                                                        }]);
                                                         setTimeout(() => {
                                                             setCommandInput("");
                                                         }, 200);
@@ -116,8 +130,12 @@ export const SelectionCombobox = ({
                                                         checked={false}
                                                         className="opacity-0 group-data-[selected=true]:opacity-100"
                                                     />
-                                                    <span className="text-accent-foreground">
-                                                        {filter.label}
+                                                    <span className="text-muted">
+                                                        <DynamicLabel
+                                                            value={filter.value || ''}
+                                                            labelRenderer={filter.labelRenderer || labelRenderer}
+                                                            fallbackLabel={filter.label}
+                                                        />
                                                     </span>
                                                 </CommandItem>
                                             ))}
@@ -136,54 +154,37 @@ export const DateCombobox = ({
     filterValues,
     setFilterValues,
 }: {
-    filterType: string;
     filterValues: string[];
     setFilterValues: (values: string[]) => void;
 }) => {
     const [open, setOpen] = useState(false);
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: filterValues[0] ? new Date(filterValues[0]) : undefined,
-        to: filterValues[1] ? new Date(filterValues[1]) : undefined,
-    });
+    const selectedDate = filterValues[0] ? new Date(filterValues[0]) : undefined;
 
     return (
         <Popover _open={open} onOpenChange={setOpen}>
             <PopoverTrigger
-                className="rounded-none px-1.5 py-1 bg-muted hover:bg-muted/50 transition
-                text-muted-foreground hover:text-primary shrink-0"
+                className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition"
             >
                 <div className="flex gap-1.5 items-center">
-                    {dateRange?.from ? (
-                        dateRange.to ? (
-                            <>
-                                {dayjs(dateRange.from).format("LLL dd, y")} -{" "}
-                                {dayjs(dateRange.to).format("LLL dd, y")}
-                            </>
-                        ) : (
-                            dayjs(dateRange.from).format("LLL dd, y")
-                        )
+                    {selectedDate ? (
+                        dayjs(selectedDate).format("MMM D, YYYY")
                     ) : (
                         <span>Pick a date</span>
                     )}
                 </div>
             </PopoverTrigger>
-            <PopoverContent className="w-full p-0" align="start">
+            <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
-                    initialFocus
-                    mode="range"
-                    className="w-4/5 p-0"
-                    defaultMonth={dateRange?.from}
-                    selected={dateRange}
-                    onSelect={(range) => {
-                        setDateRange(range);
-                        if (range?.from) {
-                            setFilterValues([
-                                dayjs(range.from).format("yyyy-MM-dd"),
-                                range.to ? dayjs(range.to).format("yyyy-MM-dd") : "",
-                            ]);
+                    mode="single"
+                    className="p-0"
+                    defaultMonth={selectedDate}
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                        if (date) {
+                            setFilterValues([dayjs(date).format("YYYY-MM-DD")]);
+                            setOpen(false);
                         }
                     }}
-                    numberOfMonths={2}
                 />
             </PopoverContent>
         </Popover>
@@ -191,6 +192,7 @@ export const DateCombobox = ({
 };
 
 export const TextCombobox = ({
+    filterType,
     filterValue,
     setFilterValue,
 }: {
@@ -219,15 +221,17 @@ export const TextCombobox = ({
             }}
         >
             <PopoverTrigger
-                className="rounded-none px-1.5 py-1 bg-muted hover:bg-muted/50 transition
-                text-muted-foreground hover:text-primary shrink-0"
+                className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition"
             >
                 <div className="flex gap-1.5 items-center">
                     {filterValue || "Enter text..."}
                 </div>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-3">
-                <div className="flex flex-col gap-2 p-2">
+            <PopoverContent className="w-[300px] p-3">
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center p-1.5 text-xs text-muted">
+                        <span>{filterType}</span>
+                    </div>
                     <Input autoFocus
                         type="text" size={"sm"}
                         value={inputValue}

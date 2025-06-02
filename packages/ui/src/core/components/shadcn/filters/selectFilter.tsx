@@ -1,6 +1,7 @@
 import React from "react";
 import { CommandItem, CommandEmpty } from "../index";
-import { Filter, FilterGroup, FilterOption } from "./types";
+import { Filter, FilterGroup, FilterGroupOption } from "./types";
+import { DynamicLabel } from "./DynamicLabel";
 
 interface SelectFilterProps {
   selectedView: string | null;
@@ -45,47 +46,65 @@ export default function SelectFilter({
   };
 
   if (!selectedView) return null;
-  
+
   const options = getFilteredOptions(selectedView);
-  
+
   if (options.length === 0) {
     return <CommandEmpty>No matching options</CommandEmpty>;
   }
-  
+
+  const groupTitle = filterGroups.find(group => group.name === selectedView)?.placeholder || filterGroups.find(group => group.name === selectedView)?.name;
+
   return (
     <>
-      {options.map((option: FilterOption) => (
-        <CommandItem
-          key={option.value || `option-${Math.random()}`}
-          className="group flex gap-2 items-center w-full hover:bg-muted"
-          onSelect={() => {
-            setFilters((prev: Filter[]) => {
-              const existingFilterIndex = prev.findIndex(f => f.name === selectedView);
-              const selectedGroup = filterGroups.find(g => g.name === selectedView);
+      <div className="flex items-center p-1.5 text-xs text-muted">
+        <span>{groupTitle}</span>
+      </div>
+      {options.map((option: FilterGroupOption) => {
+          const selectedGroup = filterGroups.find(g => g.name === selectedView);
 
-              if (existingFilterIndex >= 0) {
-                const updatedFilters = [...prev];
-                updatedFilters[existingFilterIndex] = {
-                  ...updatedFilters[existingFilterIndex],
-                  value: [...updatedFilters[existingFilterIndex].value, option]
-                };
-                return updatedFilters;
-              } else {
-                return [...prev, {
-                  name: selectedView || "",
-                  placeholder: selectedGroup?.placeholder || "",
-                  value: [option],
-                  type: selectedGroup?.type || "select",
-                }];
-              }
-            });
+          return (
+            <CommandItem
+              key={option.value || `option-${Math.random()}`}
+              className="group flex gap-2 items-center w-full hover:bg-muted"
+              onSelect={() => {
+                setFilters((prev: Filter[]) => {
+                  const existingFilterIndex = prev.findIndex(f => f.name === selectedView);
 
-            handleClose();
-          }}
-        >
-          {option.label || option.value || 'Unnamed option'}
-        </CommandItem>
-      ))}
+                  // Create filter option with value and label for storage
+                  const filterOption = {
+                    value: option.value,
+                    label: option.label
+                  };
+
+                  if (existingFilterIndex >= 0) {
+                    const updatedFilters = [...prev];
+                    updatedFilters[existingFilterIndex] = {
+                      ...updatedFilters[existingFilterIndex],
+                      value: [...updatedFilters[existingFilterIndex].value, filterOption]
+                    };
+                    return updatedFilters;
+                  } else {
+                    return [...prev, {
+                      name: selectedView || "",
+                      placeholder: selectedGroup?.placeholder || "",
+                      value: [filterOption],
+                      type: selectedGroup?.type || "select",
+                    }];
+                  }
+                });
+
+                handleClose();
+              }}
+            >
+              <DynamicLabel
+                value={option.value || ''}
+                labelRenderer={option.labelRenderer || selectedGroup?.labelRenderer}
+                fallbackLabel={option.label}
+              />
+            </CommandItem>
+          );
+        })}
     </>
   );
 }
