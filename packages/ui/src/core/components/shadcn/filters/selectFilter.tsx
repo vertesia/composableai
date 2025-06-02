@@ -1,7 +1,7 @@
 import React from "react";
 import { CommandItem, CommandEmpty } from "../index";
 import { Filter, FilterGroup, FilterGroupOption } from "./types";
-import { DynamicLabel } from "./DynamicLabel";
+import { DynamicLabel } from "@vertesia/ui/core/components/shadcn/filters/DynamicLabel";
 
 interface SelectFilterProps {
   selectedView: string | null;
