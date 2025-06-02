@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
-import { VTooltip } from "./tooltip"
+import { VTooltip } from "@vertesia/ui/core"
 
 import { cn } from "../libs/utils"
 import { Check, CopyIcon, Loader2 } from "lucide-react"
