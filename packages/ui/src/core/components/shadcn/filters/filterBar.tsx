@@ -225,7 +225,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
         <Popover _open={open} onOpenChange={handleOpen}>
           <PopoverTrigger asChild>
             <Button
-              variant="secondary"
+              variant="ghost"
               role="combobox"
               aria-expanded={open}
               size="md"

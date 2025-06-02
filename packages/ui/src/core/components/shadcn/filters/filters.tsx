@@ -2,9 +2,9 @@ import { X } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import { Button } from "../button";
 
+import { DateCombobox, SelectionCombobox, TextCombobox } from "./comboBox";
 import { Filter, FilterGroup } from "./types";
-import { SelectionCombobox, DateCombobox, TextCombobox } from "./comboBox";
-import { format } from "date-fns";
+import dayjs from "dayjs";
 
 interface FiltersProps {
     filters: Filter[];
@@ -15,10 +15,10 @@ interface FiltersProps {
 function generateComboboxOptions(
     filter: Filter,
     setFilters: Dispatch<SetStateAction<Filter[]>>,
-    filterGroups: FilterGroup[]
+    filterGroups: FilterGroup[],
 ) {
     switch (filter.type) {
-        case 'date':
+        case "date":
             return (
                 <DateCombobox
                     filterValues={filter.value.map(v => v.value || '')}
@@ -29,7 +29,7 @@ function generateComboboxOptions(
                                     ...f,
                                     value: filterValues.length > 0 ? [{
                                         value: filterValues[0],
-                                        label: format(new Date(filterValues[0]), "LLL dd, y")
+                                        label: dayjs(filterValues[0]).format("LLL dd, y"),
                                     }] : []
                                 } : f
                             )
@@ -37,22 +37,26 @@ function generateComboboxOptions(
                     }}
                 />
             );
-        case 'text':
+        case "text":
             return (
                 <TextCombobox
                     filterType={filter.placeholder || filter.name}
-                    filterValue={filter.value[0]?.value || ''}
+                    filterValue={filter.value[0]?.value || ""}
                     setFilterValue={(textValue) => {
                         setFilters((prev) =>
                             prev.map((f) =>
-                                f === filter ? {
-                                    ...f,
-                                    value: [{
-                                        value: textValue,
-                                        label: textValue
-                                    }]
-                                } : f
-                            )
+                                f === filter
+                                    ? {
+                                          ...f,
+                                          value: [
+                                              {
+                                                  value: textValue,
+                                                  label: textValue,
+                                              },
+                                          ],
+                                      }
+                                    : f,
+                            ),
                         );
                     }}
                 />
@@ -67,8 +71,10 @@ function generateComboboxOptions(
                     setFilterValues={(filterValues) => {
                         setFilters((prev) =>
                             prev.map((f) =>
-                                f === filter ? { ...f, value: filterValues } : f
-                            )
+                                f === filter
+                                    ? { ...f, value: filterValues }
+                                    : f,
+                            ),
                         );
                     }}
                     options={filterGroup?.options || []}
@@ -84,7 +90,6 @@ export default function Filters({
     setFilters,
     filterGroups,
 }: FiltersProps) {
-
     return (
         <div className="flex gap-2 flex-wrap justify-start">
             {filters
@@ -94,12 +99,18 @@ export default function Filters({
                         <div className="flex gap-1.5 shrink-0 rounded-l bg-muted p-1.5 h-8 items-center">
                             {filter.placeholder || filter.name}
                         </div>
-                        {generateComboboxOptions(filter, setFilters, filterGroups)}
+                        {generateComboboxOptions(
+                            filter,
+                            setFilters,
+                            filterGroups,
+                        )}
                         <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                                setFilters((prev) => prev.filter((f) => f !== filter));
+                                setFilters((prev) =>
+                                    prev.filter((f) => f !== filter),
+                                );
                             }}
                             className="bg-muted rounded-l-none rounded-r-sm size-8 hover:text-primary hover:bg-muted/50 transition shrink-0"
                         >

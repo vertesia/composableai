@@ -1,7 +1,6 @@
-
+import dayjs from "dayjs";
 import React from "react";
 import { Calendar } from "../calendar";
-import { format } from "date-fns";
 import { Filter, FilterGroup } from "./types";
 
 interface DateFilterProps {
@@ -40,16 +39,16 @@ export default function DateFilter({
           value: [
             {
               value: selectedDateStart.toISOString(),
-              label: format(date, "LLL dd, y")
+              label: dayjs(selectedDateStart).format("LLL dd, y"),
             }
           ],
           type: selectedGroup?.type || "date",
         } as Filter,
       ]);
 
-      handleClose();
-    }
-  };
+            handleClose();
+        }
+    };
 
   return (
     <div className="p-2">

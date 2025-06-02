@@ -1,16 +1,16 @@
 import { useRef, useState } from "react";
 // import { AnimatePresence, motion } from "motion/react";
+import dayjs from "dayjs";
 import { Calendar } from "../calendar";
-import { format } from "date-fns";
 
+import { Button } from "../button";
 import { Checkbox } from "../checkbox";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "../command";
-import { Popover, PopoverContent, PopoverTrigger } from "../popover";
-import { FilterOption, FilterGroupOption } from "./types";
-import { AnimateChangeInHeight } from "./animateChangeInHeight";
-import { Button } from "../button";
 import { Input } from "../input";
-import { DynamicLabel } from "./DynamicLabel";
+import { Popover, PopoverContent, PopoverTrigger } from "../popover";
+import { AnimateChangeInHeight } from "./animateChangeInHeight";
+import { FilterGroupOption, FilterOption } from "./types";
+import { DynamicLabel } from "@vertesia/ui/core/components/shadcn/filters/DynamicLabel";
 
 
 export const SelectionCombobox = ({
@@ -167,7 +167,7 @@ export const DateCombobox = ({
             >
                 <div className="flex gap-1.5 items-center">
                     {selectedDate ? (
-                        format(selectedDate, "LLL dd, y")
+                        dayjs(selectedDate).format("MMM D, YYYY")
                     ) : (
                         <span>Pick a date</span>
                     )}
@@ -181,7 +181,7 @@ export const DateCombobox = ({
                     selected={selectedDate}
                     onSelect={(date) => {
                         if (date) {
-                            setFilterValues([format(date, "yyyy-MM-dd")]);
+                            setFilterValues([dayjs(date).format("YYYY-MM-DD")]);
                             setOpen(false);
                         }
                     }}
