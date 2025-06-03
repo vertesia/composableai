@@ -2,21 +2,19 @@ import dayjs from 'dayjs';
 import LocalizedFormat from 'dayjs/plugin/localizedFormat';
 import { useState } from 'react';
 
-import { GenericPageNavHeader } from "@vertesia/ui/features";
-import { UserInfo } from '../../user/UserInfo';
-import { PropertiesView } from '@vertesia/ui/widgets';
-import { useUserSession } from '@vertesia/ui/session';
-import { EllipsisVertical, SquarePen, Trash2 } from 'lucide-react';
-import { Button, Center, ErrorBox, Spinner, Switch, Tab, Tabs, TabsBar, TabsPanel, useToast } from '@vertesia/ui/core';
-import { useFetch } from '@vertesia/ui/core';
+import { ColumnLayout, ContentObjectType } from '@vertesia/common';
+import { Button, Center, ErrorBox, Popover, PopoverContent, PopoverTrigger, Spinner, Switch, Tab, Tabs, TabsBar, TabsPanel, useFetch, useToast } from '@vertesia/ui/core';
 import { FullHeightLayout } from '@vertesia/ui/layout';
 import { useLocation, useNavigate } from "@vertesia/ui/router";
-import { ColumnLayout, ContentObjectType } from '@vertesia/common';
-import { Popover, PopoverContent, PopoverTrigger } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
+import { PropertiesView } from '@vertesia/ui/widgets';
+import { EllipsisVertical, SquarePen, Trash2 } from 'lucide-react';
+import { GenericPageNavHeader } from "../../layout";
+import { UserInfo } from '../../user/UserInfo';
 
 import { CreateOrUpdateTypeModal, CreateOrUpdateTypePayload } from './CreateOrUpdateTypeModal';
 import { ObjectSchemaEditor } from './ObjectSchemaEditor';
-import { TableLayoutEditor } from '@vertesia/ui/features';
+import { TableLayoutEditor } from './TableLayoutEditor';
 
 dayjs.extend(LocalizedFormat)
 

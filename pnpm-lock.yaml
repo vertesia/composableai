@@ -497,6 +497,9 @@ importers:
       tailwind-merge:
         specifier: ^3.3.0
         version: 3.3.0
+      ts-md5:
+        specifier: ^1.3.1
+        version: 1.3.1
     devDependencies:
       '@eslint/js':
         specifier: ^9.27.0
@@ -5176,6 +5179,10 @@ packages:
   ts-dual-module@0.6.3:
     resolution: {integrity: sha512-pBUAYDgy1HtVmDySNyybAduDvIm9e7yyC7Gn6spe3Z2t4H8lUNioTMsbbIFh6Xymv4uXwyty/39LV2WUrMej5A==}
     hasBin: true
+
+  ts-md5@1.3.1:
+    resolution: {integrity: sha512-DiwiXfwvcTeZ5wCE0z+2A9EseZsztaiZtGrtSaY5JOD7ekPnR/GoIVD5gXZAlK9Na9Kvpo9Waz5rW64WKAWApg==}
+    engines: {node: '>=12'}
 
   ts-node@10.9.2:
     resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
@@ -11064,6 +11071,8 @@ snapshots:
   ts-dual-module@0.6.3:
     dependencies:
       enquirer: 2.4.1
+
+  ts-md5@1.3.1: {}
 
   ts-node@10.9.2(@swc/core@1.11.29(@swc/helpers@0.5.17))(@types/node@22.15.29)(typescript@5.8.3):
     dependencies:
