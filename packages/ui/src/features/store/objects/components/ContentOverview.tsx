@@ -160,11 +160,10 @@ export function ContentOverview({
     const seemsMarkdown =
         text &&
         // Look for markdown indicators
-        (text.startsWith("#") ||
-            text.startsWith("*") ||
-            text.includes("![") ||
-            // Still recognize headings even if they appear after HTML comments
-            /#/.test(text.replace(/<!--.*?-->/gs, "").trim()));
+        (text.includes("\n#") ||
+            text.includes("\n*") ||
+            text.includes("\n+") ||
+            text.includes("!["));
 
     useEffect(() => {
         if (isImage) {
