@@ -1,3 +1,4 @@
+import { ApplicationFailure } from "@temporalio/workflow";
 import { DSLActivitySpec, DSLWorkflowSpec } from "@vertesia/common";
 
 export class NoDocumentFound extends Error {
@@ -8,6 +9,16 @@ export class NoDocumentFound extends Error {
         super(message);
         this.name = "NoDocumentFound";
         this.ids = ids;
+    }
+}
+
+export class DocumentNotFoundError extends ApplicationFailure {
+    constructor(message: string, public ids?: string[]) {
+        super(
+            message,
+            "DocumentNotFoundError",
+            true, // non-retryable
+        )
     }
 }
 
