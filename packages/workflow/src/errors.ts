@@ -16,7 +16,7 @@ export class DocumentNotFoundError extends ApplicationFailure {
     constructor(message: string, public ids?: string[]) {
         super(
             message,
-            "DocumentNotFoundError",
+            "DocumentNotFound",
             true, // non-retryable
         )
     }
@@ -53,4 +53,9 @@ export class WorkflowParamNotFound extends Error {
     }
 }
 
-export const WF_NON_RETRYABLE_ERRORS = ["NoDocumentFound", "ActivityParamNotFound", "WorkflowParamNotFound"];
+export const WF_NON_RETRYABLE_ERRORS = [
+    "NoDocumentFound",
+    "DocumentNotFound",
+    "ActivityParamNotFound",
+    "WorkflowParamNotFound",
+];
