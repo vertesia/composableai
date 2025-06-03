@@ -3,8 +3,8 @@ import { ErrorBox, Spinner, useIntersectionObserver } from "@vertesia/ui/core";
 import { useEffect, useRef, useState } from "react";
 import { VFacetsNav } from "../../../facets";
 import { ObjectsTable } from "../ObjectsTable";
-import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from "../search/SearchContext";
-import { DocumentSearchProvider } from "../search/SearchProvider";
+import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from "../search/DocumentSearchContext";
+import { DocumentSearchProvider } from "../search/DocumentSearchProvider";
 import { ContentDispositionButton } from "./ContentDispositionButton";
 
 const layout: ColumnLayout[] = [

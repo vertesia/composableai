@@ -5,7 +5,7 @@ import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, UploadIcon, XCircleIcon } from "lucide-react";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { FileUploadAction, FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
-import { UploadResult } from "./useUploadHandler";
+import { DocumentUploadResult } from "./useUploadHandler";
 
 
 /**
@@ -24,7 +24,7 @@ interface FileUploadStatus {
 /**
  * Props for the unified UploadModal component
  */
-interface UploadModalProps {
+interface DocumentUploadModalProps {
     /** Whether the modal is open */
     isOpen: boolean;
     /** Callback when the modal is closed */
@@ -40,7 +40,7 @@ interface UploadModalProps {
     /** Children to render in the modal */
     children?: ReactNode;
     /** Callback when upload is complete */
-    onUploadComplete?: (result: UploadResult) => void;
+    onUploadComplete?: (result: DocumentUploadResult) => void;
     /** Hide the file selection step and proceed directly to type selection */
     hideFileSelection?: boolean;
     /** Show only the type selection, used for type change operations */
@@ -55,7 +55,7 @@ interface UploadModalProps {
  * 4. Upload with progress tracking
  * 5. Result display
  */
-export function UploadModal({
+export function DocumentUploadModal({
     isOpen,
     onClose,
     files: initialFiles,
@@ -66,7 +66,7 @@ export function UploadModal({
     onUploadComplete,
     hideFileSelection = false,
     showTypeSelectionOnly = false,
-}: UploadModalProps) {
+}: DocumentUploadModalProps) {
     const { client, typeRegistry } = useUserSession();
     const toast = useToast();
     const [files, setFiles] = useState<File[]>([]);
@@ -251,7 +251,7 @@ export function UploadModal({
         const filesToUpdate = processedFiles.filter((f) => f.action === FileUploadAction.UPDATE);
         const filesToCreate = processedFiles.filter((f) => f.action === FileUploadAction.CREATE);
 
-        const result: UploadResult = {
+        const result: DocumentUploadResult = {
             success: true,
             objectIds: [],
             uploadedFiles: [],
@@ -862,7 +862,7 @@ export function UploadModal({
                     <Button
                         onClick={() => {
                             // Create minimal result with the selected type (or null)
-                            const result: UploadResult = {
+                            const result: DocumentUploadResult = {
                                 success: true,
                                 objectIds: [],
                                 uploadedFiles: [

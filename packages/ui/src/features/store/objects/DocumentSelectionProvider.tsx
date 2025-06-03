@@ -1,7 +1,7 @@
 import { ContentObjectItem } from "@vertesia/common";
 import { createContext, useContext, useEffect, useState } from "react";
 
-export class ObjectSelection {
+export class DocumentSelection {
     /**
      * The collection id to which the selected objects belong to.
      */
@@ -9,7 +9,7 @@ export class ObjectSelection {
 
     singleSelection = false;
 
-    constructor(public object: ContentObjectItem | undefined, collectionId: string | undefined, public objects: Record<string, ContentObjectItem>, private setState: (selection: ObjectSelection) => void) {
+    constructor(public object: ContentObjectItem | undefined, collectionId: string | undefined, public objects: Record<string, ContentObjectItem>, private setState: (selection: DocumentSelection) => void) {
         this.singleSelection = Object.keys(this.objects).length === 0;
         this.collectionId = collectionId;
     }
@@ -35,7 +35,7 @@ export class ObjectSelection {
     }
 
     clone() {
-        return new ObjectSelection(this.object, this.collectionId, this.objects, this.setState);
+        return new DocumentSelection(this.object, this.collectionId, this.objects, this.setState);
     }
 
     add(object: ContentObjectItem) {
@@ -68,32 +68,32 @@ export class ObjectSelection {
     }
 }
 
-const SelectionContext = createContext<ObjectSelection>(undefined as any);
+const DocumentSelectionContext = createContext<DocumentSelection>(undefined as any);
 
-export function useObjectSelection() {
-    const selection = useContext(SelectionContext);
+export function useDocumentSelection() {
+    const selection = useContext(DocumentSelectionContext);
     if (!selection) {
         throw new Error("useObjectSelection must be used within a ObjectSelectionProvider");
     }
     return selection;
 }
 
-export function useOptionalObjectSelection() {
-    return useContext(SelectionContext);
+export function useOptionalDocumentSelection() {
+    return useContext(DocumentSelectionContext);
 }
 
-interface ObjectSelectionProviderProps {
+interface DocumentSelectionProviderProps {
     children: React.ReactNode;
     collectionId?: string;
     value?: ContentObjectItem; // initial selection if any (for single selection purpose)
 }
-export function ObjectSelectionProvider({ value, collectionId, children }: ObjectSelectionProviderProps) {
-    const [selection, setSelection] = useState<ObjectSelection>();
+export function DocumentSelectionProvider({ value, collectionId, children }: DocumentSelectionProviderProps) {
+    const [selection, setSelection] = useState<DocumentSelection>();
     useEffect(() => {
-        const selection = new ObjectSelection(value, collectionId, {}, setSelection);
+        const selection = new DocumentSelection(value, collectionId, {}, setSelection);
         setSelection(selection);
     }, [value]);
     return selection && (
-        <SelectionContext.Provider value={selection}>{children}</SelectionContext.Provider>
+        <DocumentSelectionContext.Provider value={selection}>{children}</DocumentSelectionContext.Provider>
     )
 }

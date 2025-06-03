@@ -33,14 +33,14 @@ export interface ExtendedColumnLayout extends Omit<ColumnLayout, 'field'> {
     render?: (item: ContentObjectItem) => React.ReactNode;
 }
 
-export class TableColumn {
+export class DocumentTableColumn {
     renderer: (value: any, index: number) => React.ReactNode = defaultRenderer;
     path: string[];
     fallbackPath?: string[];
     constructor(public layout: ExtendedColumnLayout) {
         this.path = splitPath(layout.field || '');
         this.fallbackPath = layout.fallback ? splitPath(layout.fallback) : undefined;
-        
+
         // If there's a custom render function, use it
         if (layout.render) {
             this.renderer = (_value: any, _index: number) => null; // Placeholder, we'll use render directly

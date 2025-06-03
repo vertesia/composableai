@@ -6,12 +6,12 @@ import { ContentObjectItem } from '@vertesia/common'
 import { Card, CardContent, Separator, VTooltip } from "@vertesia/ui/core"
 import { useNavigate } from "@vertesia/ui/router"
 import { useUserSession } from "@vertesia/ui/session"
-import { ObjectSelection } from '../ObjectSelectionProvider'
+import { DocumentSelection } from '../DocumentSelectionProvider'
 
 interface DocumentIconProps {
     document: ContentObjectItem
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
-    selection: ObjectSelection;
+    selection: DocumentSelection;
 
 }
 export function DocumentIcon({ selection, document, onSelectionChange }: Readonly<DocumentIconProps>) {

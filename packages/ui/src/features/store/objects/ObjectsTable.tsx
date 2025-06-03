@@ -3,11 +3,11 @@ import { Spinner, useToast } from "@vertesia/ui/core";
 import { DropZone } from '@vertesia/ui/widgets';
 import clsx from "clsx";
 import { ChangeEvent, useMemo, useState } from "react";
-import { ObjectSelection, useOptionalObjectSelection } from "./ObjectSelectionProvider";
-import { ExtendedColumnLayout, TableColumn } from "./layout/TableColumn";
+import { DocumentSelection, useOptionalDocumentSelection } from "./DocumentSelectionProvider";
+import { ExtendedColumnLayout, DocumentTableColumn } from "./layout/DocumentTableColumn";
 import { DocumentGridView, DocumentTableView } from "./layout/documentLayout";
-import { useDocumentSearch } from "./search/SearchContext";
-import { FileWithMetadata, UploadModal, useSmartFileUploadProcessing } from "./upload";
+import { useDocumentSearch } from "./search/DocumentSearchContext";
+import { FileWithMetadata, DocumentUploadModal, useSmartFileUploadProcessing } from "./upload";
 
 const defaultLayout: ExtendedColumnLayout[] = [
     { name: "ID", field: "id", type: "string?slice=-7" },
@@ -230,7 +230,7 @@ function ObjectTableWithDropZone({
             </div>
 
             {/* New unified UploadModal */}
-            <UploadModal
+            <DocumentUploadModal
                 isOpen={typeSelectionOpen && files.length > 0}
                 onClose={() => {
                     // Reset state variables and close the modal
@@ -300,7 +300,7 @@ interface ObjectsTableProps {
     isLoading: boolean;
     layout?: ExtendedColumnLayout[];
     onRowClick?: (object: ContentObjectItem) => void;
-    onSelectionChange?: (selection: ObjectSelection) => void;
+    onSelectionChange?: (selection: DocumentSelection) => void;
     highlightRow?: (item: ContentObjectItem) => boolean;
     rowActions?: (item: ContentObjectItem) => React.ReactNode[];
     isGridView?: boolean;
@@ -313,7 +313,7 @@ function ObjectsTableImpl({
     onSelectionChange,
     isGridView,
 }: ObjectsTableProps) {
-    const selection = useOptionalObjectSelection();
+    const selection = useOptionalDocumentSelection();
 
     const _onSelectionChange = (object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => {
         if (selection) {
@@ -363,7 +363,7 @@ function ObjectsTableImpl({
     const columns = useMemo(() => {
         // avoid rendering empty layouts
         const actualLayout = layout.length > 0 ? layout : defaultLayout;
-        return actualLayout.map((col) => new TableColumn(col));
+        return actualLayout.map((col) => new DocumentTableColumn(col));
     }, [layout]);
 
     return isGridView ? (
@@ -389,7 +389,7 @@ function ObjectsTableImpl({
     );
 }
 
-function findPreviousSelected(objects: ContentObjectItem[], index: number, selection: ObjectSelection) {
+function findPreviousSelected(objects: ContentObjectItem[], index: number, selection: DocumentSelection) {
     for (let i = index - 1; i >= 0; i--) {
         if (selection.isSelected(objects[i].id)) {
             return i;
@@ -398,7 +398,7 @@ function findPreviousSelected(objects: ContentObjectItem[], index: number, selec
     return -1;
 }
 
-function findNextSelected(objects: ContentObjectItem[], index: number, selection: ObjectSelection) {
+function findNextSelected(objects: ContentObjectItem[], index: number, selection: DocumentSelection) {
     const length = objects.length;
     for (let i = index + 1; i < length; i++) {
         if (selection.isSelected(objects[i].id)) {

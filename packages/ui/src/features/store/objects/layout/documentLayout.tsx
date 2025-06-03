@@ -3,8 +3,8 @@ import { ContentObjectItem, ColumnLayout } from "@vertesia/common";
 import clsx from "clsx";
 import { ChangeEvent } from "react";
 import { DocumentIcon } from "../components/DocumentIcon";
-import { ObjectSelection } from "../ObjectSelectionProvider";
-import { TableColumn } from "./TableColumn";
+import { DocumentSelection } from "../DocumentSelectionProvider";
+import { DocumentTableColumn } from "./DocumentTableColumn";
 
 interface ViewProps {
     objects: ContentObjectItem[];
@@ -12,9 +12,9 @@ interface ViewProps {
     layout?: ColumnLayout[];
     onRowClick?: (object: ContentObjectItem) => void;
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
-    selection: ObjectSelection;
+    selection: DocumentSelection;
     toggleAll?: (ev: ChangeEvent<HTMLInputElement>) => void;
-    columns: TableColumn[];
+    columns: DocumentTableColumn[];
 }
 
 export function DocumentTableView({ objects, selection, isLoading, onRowClick, columns, toggleAll, onSelectionChange }: ViewProps) {

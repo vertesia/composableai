@@ -1,6 +1,6 @@
 export * from "./components";
 export * from "./layout";
-export * from "./ObjectSelectionProvider";
+export * from "./DocumentSelectionProvider";
 export * from "./ObjectsTable";
 export * from "./search";
 export * from "./upload";

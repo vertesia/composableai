@@ -1,6 +1,6 @@
 import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import { useDocumentSearch } from "../search/SearchContext";
+import { useDocumentSearch } from "../search/DocumentSearchContext";
 import { FileUploadAction, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
 
 
@@ -17,7 +17,7 @@ export interface UploadHandlerOptions {
 /**
  * Result of the upload process
  */
-export interface UploadResult {
+export interface DocumentUploadResult {
     /** Whether the upload was successful overall */
     success: boolean;
     /** IDs of all processed objects (both newly uploaded and existing) */
@@ -54,7 +54,7 @@ interface UploadedFileInfo {
  * @param options Configuration options for the upload handler
  * @returns Upload handler function that takes files and type, and returns upload results
  */
-export function useUploadHandler(options: UploadHandlerOptions | ((objectIds: string[]) => Promise<void>)) {
+export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objectIds: string[]) => Promise<void>)) {
     // Handle both object and legacy function format for backward compatibility
     const onUploadDone = typeof options === "function" ? options : options.onUploadDone;
     const { client, project: projectRef, store } = useUserSession();
@@ -62,9 +62,9 @@ export function useUploadHandler(options: UploadHandlerOptions | ((objectIds: st
     const toast = useToast();
     const { checkDocumentProcessing } = useSmartFileUploadProcessing();
 
-    return async (files: File[], type: string | null, collectionId?: string): Promise<UploadResult> => {
+    return async (files: File[], type: string | null, collectionId?: string): Promise<DocumentUploadResult> => {
         // Initialize result object
-        const result: UploadResult = {
+        const result: DocumentUploadResult = {
             success: false,
             objectIds: [],
             uploadedFiles: [],

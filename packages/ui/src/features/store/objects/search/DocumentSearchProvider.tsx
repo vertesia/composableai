@@ -1,7 +1,7 @@
 import { useUserSession } from "@vertesia/ui/session";
 import { FacetSpec, SupportedEmbeddingTypes } from "@vertesia/common";
 import React, { useMemo } from "react";
-import { DocumentSearch, SearchContext } from "./SearchContext";
+import { DocumentSearch, SearchContext } from "./DocumentSearchContext";
 
 interface DocumentSearchProviderProps {
     children: React.ReactNode;
