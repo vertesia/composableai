@@ -2,7 +2,7 @@ import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
 import { ErrorBox, Spinner, useIntersectionObserver } from "@vertesia/ui/core";
 import { useEffect, useRef, useState } from "react";
 import { VFacetsNav } from "../../../facets";
-import { ObjectsTable } from "../ObjectsTable";
+import { DocumentTable } from "../DocumentTable";
 import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from "../search/DocumentSearchContext";
 import { DocumentSearchProvider } from "../search/DocumentSearchProvider";
 import { ContentDispositionButton } from "./ContentDispositionButton";
@@ -59,7 +59,7 @@ function SelectDocumentImpl({ onRowClick }: SelectDocumentImplProps) {
                 <VFacetsNav facets={facets} search={facetSearch} textSearch="Filter content" />
                 <ContentDispositionButton onUpdate={setIsGridView} />
             </div>
-            <ObjectsTable objects={objects || []} isLoading={false} layout={layout} onRowClick={onRowClick} isGridView={isGridView} />
+            <DocumentTable objects={objects || []} isLoading={false} layout={layout} onRowClick={onRowClick} isGridView={isGridView} />
             <div ref={loadMoreRef} className='mt-10' />
             {
                 isLoading && <div className='flex justify-center'><Spinner size='xl' /></div>

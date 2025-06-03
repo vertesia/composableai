@@ -17,13 +17,13 @@ const defaultLayout: ExtendedColumnLayout[] = [
     { name: "Updated At", field: "updated_at", type: "date" },
 ];
 
-interface ObjectTableProps extends ObjectsTableProps {
+interface DocumentTableProps extends DocumentTableImplProps {
     isGridView?: boolean;
     onUpload?: (files: File[], type: string | null, collectionId?: string) => Promise<unknown>; // if defined, accept drag drop to upload
     collectionId?: string; // Important: Add collection ID to ensure uploads go to the right collection
 }
 
-export function ObjectsTable({ isGridView = false, onUpload, collectionId, ...others }: ObjectTableProps) {
+export function DocumentTable({ isGridView = false, onUpload, collectionId, ...others }: DocumentTableProps) {
     if (onUpload) {
         return (
             <ObjectTableWithDropZone
@@ -34,11 +34,11 @@ export function ObjectsTable({ isGridView = false, onUpload, collectionId, ...ot
             />
         );
     } else {
-        return <ObjectsTableImpl {...others} isGridView={isGridView} />;
+        return <DocumentTableImpl {...others} isGridView={isGridView} />;
     }
 }
 
-interface ObjectTableWithDropZoneProps extends ObjectTableProps {
+interface ObjectTableWithDropZoneProps extends DocumentTableProps {
     isGridView?: boolean;
     onUpload: (files: File[], type: string | null, collectionId?: string) => Promise<unknown>;
     collectionId?: string;
@@ -211,7 +211,7 @@ function ObjectTableWithDropZone({
             </div>
 
             {/* The actual table */}
-            <ObjectsTableImpl {...others} isGridView={isGridView} />
+            <DocumentTableImpl {...others} isGridView={isGridView} />
 
             {/* Overlay the table with a drop zone */}
             <div className={clsx("absolute inset-0 pointer-events-none", isDragging ? "z-40" : "-z-10")}>
@@ -295,7 +295,7 @@ function ObjectTableWithDropZone({
     );
 }
 
-interface ObjectsTableProps {
+interface DocumentTableImplProps {
     objects: ContentObjectItem[];
     isLoading: boolean;
     layout?: ExtendedColumnLayout[];
@@ -305,14 +305,14 @@ interface ObjectsTableProps {
     rowActions?: (item: ContentObjectItem) => React.ReactNode[];
     isGridView?: boolean;
 }
-function ObjectsTableImpl({
+function DocumentTableImpl({
     objects,
     layout = defaultLayout,
     isLoading,
     onRowClick,
     onSelectionChange,
     isGridView,
-}: ObjectsTableProps) {
+}: DocumentTableImplProps) {
     const selection = useOptionalDocumentSelection();
 
     const _onSelectionChange = (object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => {
