@@ -1,24 +1,18 @@
-import { FormItem } from "@vertesia/ui/core";
-import { GenericPageNavHeader } from "@vertesia/ui/features";
-import { useUserSession } from "@vertesia/ui/session";
+import { CreateCollectionPayload } from "@vertesia/common";
 import {
-    Button,
-    VModal,
+    Button, FormItem, Input, Styles,
+    Switch, useFlag, useToast, VModal,
     VModalBody,
     VModalFooter,
-    VModalTitle,
-    Styles,
-    Switch,
-    useToast,
-    Input,
+    VModalTitle
 } from "@vertesia/ui/core";
-import { useFlag } from "@vertesia/ui/core";
 import { FullHeightLayout } from "@vertesia/ui/layout";
 import { useNavigate } from "@vertesia/ui/router";
-import { CreateCollectionPayload } from "@vertesia/common";
+import { useUserSession } from "@vertesia/ui/session";
 import { useState } from "react";
+import { GenericPageNavHeader } from "../../layout";
+import { SelectContentType } from "../../store";
 import { CollectionsTable } from "./CollectionsTable";
-import { SelectContentType } from "@vertesia/ui/features";
 
 interface CollectionsViewProps { }
 export function CollectionsView({ }: CollectionsViewProps) {

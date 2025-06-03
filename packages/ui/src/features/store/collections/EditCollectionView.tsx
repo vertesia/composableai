@@ -1,15 +1,11 @@
-import { FormItem } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
 import { json } from "@codemirror/lang-json";
-import { CodeMirrorEditor, EditorApi } from "@vertesia/ui/widgets";
-import { Button, ErrorBox, Input, Styles, useToast } from "@vertesia/ui/core";
-import { useFetch } from "@vertesia/ui/core";
-import { GeneratedForm, ManagedObject } from "@vertesia/ui/widgets";
 import { Collection, CreateCollectionPayload } from "@vertesia/common";
+import { Button, ErrorBox, FormItem, Input, Styles, useFetch, useToast } from "@vertesia/ui/core";
+import { useUserSession } from "@vertesia/ui/session";
+import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject } from "@vertesia/ui/widgets";
 import { basicSetup } from "codemirror";
 import { useMemo, useRef, useState } from "react";
-import { SelectContentType } from "@vertesia/ui/features";
-import { stringifyTableLayout } from "@vertesia/ui/features";
+import { SelectContentType, stringifyTableLayout } from "../../store";
 
 const extensions = [basicSetup, json()];
 
@@ -163,10 +159,10 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                     defaultValue={metadata.allowed_types || null}
                     onChange={(v) => {
                         if (Array.isArray(v)) {
-                                setField("allowed_types", v.map(type => type.id));
-                            } else {
-                                setField("allowed_types", v ? [v.id] : []);
-                            }
+                            setField("allowed_types", v.map(type => type.id));
+                        } else {
+                            setField("allowed_types", v ? [v.id] : []);
+                        }
                     }}
                     isClearable multiple
                 />

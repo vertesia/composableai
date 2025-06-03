@@ -4,7 +4,7 @@ import { useToast } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from '@vertesia/ui/session';
 
-import { useDocumentSearch } from '@vertesia/ui/features';
+import { useDocumentSearch } from '../../../../store';
 import { useObjectsActionContext } from '../ObjectsActionContext';
 import { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
 import ConfirmAction from './ConfirmAction';

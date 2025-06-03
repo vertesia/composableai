@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react";
 
 import { ColumnLayout, ContentObject, ContentObjectItem, VectorSearchQuery } from '@vertesia/common';
 import { Button, Divider, ErrorBox, SidePanel, Spinner, useDebounce, useIntersectionObserver, useToast } from '@vertesia/ui/core';
-import { VFacetsNav } from "@vertesia/ui/features";
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
 import { Download, RefreshCw, SquareArrowOutUpRight } from 'lucide-react';
+import { VFacetsNav } from "../../facets";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 
-import { ContentDispositionButton, DocumentTable, useDocumentSearch, useDocumentUploadHandler, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from "@vertesia/ui/features";
+import { ContentDispositionButton, DocumentTable, useDocumentSearch, useDocumentUploadHandler, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from "../../store";
 import { ContentOverview } from './components/ContentOverview';
 import { useDownloadDocument } from './components/useDownloadObject';
 

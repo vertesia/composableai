@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 
-import { useDocumentSearch } from '@vertesia/ui/features';
+import { useDocumentSearch } from '../../search';
 import { useObjectsActionContext } from '../ObjectsActionContext';
 import { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
 import ConfirmAction from './ConfirmAction';

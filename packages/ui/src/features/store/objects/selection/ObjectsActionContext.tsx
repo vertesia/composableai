@@ -1,10 +1,9 @@
 import { createContext, ReactNode, useContext, useEffect, useMemo } from 'react';
 
+import { ErrorBox, useFetch, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { ErrorBox, useToast } from '@vertesia/ui/core';
-import { useFetch } from '@vertesia/ui/core';
 
-import { useDocumentSelection, useDocumentSearch } from '@vertesia/ui/features';
+import { useDocumentSearch, useDocumentSelection } from '../../../store';
 import { AddToCollectionAction } from './actions/AddToCollectionAction';
 import { ChangeTypeAction } from './actions/ChangeTypeAction';
 import { DeleteObjectsAction } from './actions/DeleteObjectsAction';
