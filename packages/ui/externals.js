@@ -28,6 +28,7 @@ export const EXTERNALS = [
     "class-variance-authority",
     "cmdk",
     "lodash-es",
+    "ts-md5",
     "motion",
     /^motion\/.*/,
     "react-day-picker",

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 
-import { GenericPageNavHeader } from "@vertesia/ui/features";
-import { ContentObjectTypesSearch } from './ContentObjectTypesSearch';
-import { ObjectTypeSearchProvider } from './search/ObjectTypeSearchProvider';
-import { useUserSession } from '@vertesia/ui/session';
 import { Button, useToast } from '@vertesia/ui/core';
 import { FullHeightLayout } from '@vertesia/ui/layout';
+import { useUserSession } from '@vertesia/ui/session';
+import { GenericPageNavHeader } from "../../layout";
+import { ContentObjectTypesSearch } from './ContentObjectTypesSearch';
+import { ObjectTypeSearchProvider } from './search/ObjectTypeSearchProvider';
 
 import { CreateOrUpdateTypeModal, CreateOrUpdateTypePayload } from './CreateOrUpdateTypeModal';
 
