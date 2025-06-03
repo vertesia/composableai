@@ -583,8 +583,8 @@ importers:
         specifier: ^7.0.15
         version: 7.0.15
       '@vertesia/api-fetch-client':
-        specifier: ^0.60.0
-        version: 0.60.0
+        specifier: workspace:*
+        version: link:../api-fetch-client
       '@vertesia/client':
         specifier: workspace:*
         version: link:../client
@@ -2740,9 +2740,6 @@ packages:
     resolution: {integrity: sha512-hHKFx+opG5BA3/owMXon8ypwSotBGTdblG6oda/iOu9+OEYnk0cxD2uIcGyGT8jCK578kV+xMrNxqbn8Zjlpgw==}
     cpu: [x64]
     os: [win32]
-
-  '@vertesia/api-fetch-client@0.60.0':
-    resolution: {integrity: sha512-Jb+QynYyAWZQsoeEIW1vJQokBcMa96QTHkGMST7T5+92+URBcAT8Ks6lYLvgiUUc05GG4f2RAoFsjDlhTeHThw==}
 
   '@vertesia/converters@0.42.2':
     resolution: {integrity: sha512-92QP+9XFSkFLvxX5MlC8HEbhU+CwWiqmBILrhvVxiAauYSA5VhbWIp9xOwhvs/nbC4otZyTDbi/SivAtpmsw/g==}
@@ -8266,10 +8263,6 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.7.8':
     optional: true
-
-  '@vertesia/api-fetch-client@0.60.0':
-    dependencies:
-      eventsource-parser: 1.1.2
 
   '@vertesia/converters@0.42.2':
     dependencies:
