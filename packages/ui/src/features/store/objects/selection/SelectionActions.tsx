@@ -2,8 +2,8 @@ import { Button, Popover, PopoverContent, PopoverTrigger, SelectList } from '@ve
 import clsx from 'clsx';
 import { EllipsisVertical, X } from 'lucide-react';
 
-import { DocumentSelection, DocumentUploadModal, useDocumentSelection } from "@vertesia/ui/features";
 import { useState } from "react";
+import { DocumentSelection, DocumentUploadModal, useDocumentSelection } from "../../../store";
 import { ExportPropertiesAction } from "./actions/ExportPropertiesAction";
 import { StartWorkflowAction } from "./actions/StartWorkflowComponent";
 import { ObjectsActionContextProvider, useObjectsActionContext } from "./ObjectsActionContext";

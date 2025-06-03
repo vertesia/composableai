@@ -1,7 +1,7 @@
 import { useToast } from "@vertesia/ui/core";
-import { SelectContentTypeModal } from "@vertesia/ui/features";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
+import { SelectContentTypeModal } from "../../../../store";
 import { useObjectsActionCallback } from "../ObjectsActionContext";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 

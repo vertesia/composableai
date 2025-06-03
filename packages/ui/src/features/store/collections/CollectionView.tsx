@@ -1,9 +1,11 @@
 import { Collection, FacetSpec } from "@vertesia/common";
 import { ErrorBox, Spinner, useFetch, VTabs, VTabsBar, VTabsPanel } from "@vertesia/ui/core";
-import { DocumentSearchProvider, GenericPageNavHeader, DocumentSelectionProvider, PanelErrorBoundary } from "@vertesia/ui/features";
 import { FullHeightLayout } from "@vertesia/ui/layout";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
+import { PanelErrorBoundary } from "../../errors";
+import { GenericPageNavHeader } from "../../layout";
+import { DocumentSearchProvider, DocumentSelectionProvider } from "../../store";
 import { SelectionActions, UploadObjectsButton } from "../objects/selection/SelectionActions";
 import { BrowseCollectionView } from "./BrowseCollectionView";
 import { EditCollectionView } from "./EditCollectionView";

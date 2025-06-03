@@ -32,6 +32,7 @@ export default [
             ...pluginReact.configs.recommended.rules,
             ...pluginReactHooks.configs.recommended.rules,
             'react/react-in-jsx-scope': 'off', // React 17+
+            'react/prop-types': 'off', // not needed with TypeScript
         },
         settings: {
             react: {
