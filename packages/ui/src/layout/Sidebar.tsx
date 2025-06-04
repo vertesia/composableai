@@ -84,13 +84,23 @@ export interface SidebarItemProps {
     tools?: React.ReactNode
     className?: string;
     id?: string; //HTML ID of the element
+    external?: boolean; //If true, the link will open in a new tab
 }
-export function SidebarItem({ className, tools, children, icon: Icon, href, current, onClick }: SidebarItemProps) {
+export function SidebarItem({ external, className, tools, children, icon: Icon, href, current, onClick }: SidebarItemProps) {
     const { toggleMobile } = useSidebarToggle();
     const _closeSideBar = () => {
         setTimeout(() => {
             toggleMobile(false)
         }, 100);
+    }
+    const onClickWrapper = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+        if (external) {
+            window.open(href, '_blank');
+            event.preventDefault(); // Prevent default link behavior
+            event.stopPropagation(); // Stop the event from propagating
+        } else if (onClick) {
+            onClick(event);
+        }
     }
     return (
         <li>
@@ -98,7 +108,7 @@ export function SidebarItem({ className, tools, children, icon: Icon, href, curr
                 <SidebarTooltip text={children as string}>
                     <a
                         href={href}
-                        onClick={onClick}
+                        onClick={onClickWrapper}
                         className={clsx(
                             current
                                 ? 'bg-sidebar-accent text-sidebar-accent-foreground'
