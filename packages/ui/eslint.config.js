@@ -98,7 +98,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../widgets/*', '../router/*', '../session/*', '../features/*', '../layout/*'] },
+                { patterns: ['../widgets/*', '../router/*', '../session/*', '../features/*', '../layout/*', '../env/*'] },
             ],
         },
     },
@@ -107,7 +107,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../widgets/*', '../router/*', '../core/*', '../features/*', '../layout/*'] },
+                { patterns: ['../widgets/*', '../router/*', '../core/*', '../features/*', '../layout/*', '../env/*'] },
             ],
         },
     },
@@ -116,7 +116,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../widgets/*', '../session/*', '../features/*', '../layout/*'] },
+                { patterns: ['../core/*', '../widgets/*', '../session/*', '../features/*', '../layout/*', '../env/*'] },
             ],
         },
     },
@@ -125,7 +125,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../router/*', '../session/*', '../features/*', '../layout/*'] },
+                { patterns: ['../core/*', '../router/*', '../session/*', '../features/*', '../layout/*', '../env/*'] },
             ],
         },
     },
@@ -134,7 +134,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../layout/*'] },
+                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../layout/*', '../env/*'] },
             ],
         },
     },
@@ -143,7 +143,16 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../features/*'] },
+                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../features/*', '../env/*'] },
+            ],
+        },
+    },
+    {
+        files: ['src/env/**/*'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../features/*', '../layout/*'] },
             ],
         },
     },
