@@ -35,7 +35,6 @@ export const EXTERNALS = [
     "monaco-editor",
     "motion",
     /^motion\/.*/,
-    "react-day-picker",
     "tailwind-merge",
     "debounce",
     "fast-xml-parser",
