@@ -1,8 +1,18 @@
+import { ToolDefinition } from "@llumiverse/common";
+
 /**
  * A vertesia plugin manifest
  */
-export interface PluginManifest {
+export interface PluginManifest<MetaT = any> {
     id: string;
+    /**
+     * The kind of the plugin.
+     */
+    kind: "ui" | "tool";
+    /**
+     * A metadata field which can be used for each kind of plugin to store additional data
+     */
+    metadata?: MetaT;
     src: string;
     name: string;
     version: string;
@@ -17,10 +27,24 @@ export interface PluginManifest {
      * It will be loaded in a new tab.
      * If external is false the plugin will be loaded as a page of the host application and it will share the same layout.
      * Default is false.
+     * This is only usefull for UI plugins.
      */
     external?: boolean;
     /**
      * The default is "beta".
      */
     status?: "beta" | "stable" | "deprecated" | "hidden";
+}
+
+export interface UIPluginManifest extends PluginManifest {
+    kind: "ui";
+    metadata: never;
+}
+
+export interface ToolPluginManifest extends PluginManifest {
+    kind: "tool";
+    /**
+     * The definitions of the exported tools
+     */
+    metadata: ToolDefinition[];
 }
