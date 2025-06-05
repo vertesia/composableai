@@ -1,9 +1,11 @@
 import dayjs from "dayjs";
-import React from "react";
+import React, { useState } from "react";
 import DatePicker from "react-date-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "../popover";
 import { Filter, FilterGroup } from "./types";
 
-type Value = Date | null;
+type ValuePiece = Date | null;
+type Value = ValuePiece | [ValuePiece, ValuePiece];
 
 interface DateFilterProps {
   selectedView: string | null;
@@ -24,7 +26,10 @@ export default function DateFilter({
   handleClose,
   filterGroups,
 }: DateFilterProps) {
-  const handleDateSelect = (date: Value) => {
+  const [open, setOpen] = useState(false);
+
+  const handleDateChange = (value: Value) => {
+    const date = Array.isArray(value) ? value[0] : value;
     setSelectedDate(date || undefined);
     if (date) {
       const selectedGroup = filterGroups.find(g => g.name === selectedView);
@@ -48,18 +53,30 @@ export default function DateFilter({
         } as Filter,
       ]);
 
+      setOpen(false);
       handleClose();
     }
   };
 
   return (
-    <div className="p-2">
-      <DatePicker
-        value={selectedDate}
-        onChange={handleDateSelect}
-        calendarIcon={false}
-        className="react-date-picker--sm"
-      />
-    </div>
+    <Popover _open={open} onOpenChange={setOpen}>
+      <PopoverTrigger className="w-full p-2 text-left hover:bg-muted/50 rounded-sm">
+        <div className="flex gap-1.5 items-center">
+          {selectedDate ? (
+            dayjs(selectedDate).format("MMM D, YYYY")
+          ) : (
+            <span>Pick a date</span>
+          )}
+        </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <DatePicker
+          value={selectedDate}
+          onChange={handleDateChange}
+          calendarIcon={false}
+          className="p-2"
+        />
+      </PopoverContent>
+    </Popover>
   );
 }
