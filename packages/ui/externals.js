@@ -53,6 +53,7 @@ export const EXTERNALS = [
     "dayjs",
     /^dayjs\/.*/,
     "react-error-boundary",
+    "react-date-picker",
     /^@vertesia\/ui\/.*/,
     "@floating-ui/dom",
     "@floating-ui/react",

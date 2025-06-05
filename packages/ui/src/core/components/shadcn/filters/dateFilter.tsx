@@ -1,7 +1,9 @@
 import dayjs from "dayjs";
 import React from "react";
-import { Calendar } from "../calendar";
+import DatePicker from "react-date-picker";
 import { Filter, FilterGroup } from "./types";
+
+type Value = Date | null;
 
 interface DateFilterProps {
   selectedView: string | null;
@@ -22,8 +24,8 @@ export default function DateFilter({
   handleClose,
   filterGroups,
 }: DateFilterProps) {
-  const handleDateSelect = (date: Date | undefined) => {
-    setSelectedDate(date);
+  const handleDateSelect = (date: Value) => {
+    setSelectedDate(date || undefined);
     if (date) {
       const selectedGroup = filterGroups.find(g => g.name === selectedView);
       
@@ -46,18 +48,17 @@ export default function DateFilter({
         } as Filter,
       ]);
 
-            handleClose();
-        }
-    };
+      handleClose();
+    }
+  };
 
   return (
     <div className="p-2">
-      <Calendar
-        mode="single"
-        defaultMonth={selectedDate}
-        selected={selectedDate}
-        onSelect={handleDateSelect}
-        size="sm"
+      <DatePicker
+        value={selectedDate}
+        onChange={handleDateSelect}
+        calendarIcon={false}
+        className="react-date-picker--sm"
       />
     </div>
   );
