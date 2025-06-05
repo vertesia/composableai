@@ -26,7 +26,7 @@ export default function DateFilter({
   handleClose,
   filterGroups,
 }: DateFilterProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
   const handleDateChange = (value: Value) => {
     const date = Array.isArray(value) ? value[0] : value;
