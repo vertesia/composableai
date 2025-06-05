@@ -58,9 +58,9 @@ export async function convertPdfToStructuredText(payload: DSLActivityExecutionPa
         throw new NoDocumentFound(`Error fetching source ${object.content.source}`);
     }
 
-
-    const awsConfig = (await client.projects.integrations.retrieve(client.project!, SupportedIntegrations.aws)) as AwsConfiguration;
-    const credentials = await getS3AWSCredentials(awsConfig, payload.auth_token, client.project!);
+    const project = await client.getProject();
+    const awsConfig = (await client.projects.integrations.retrieve(project!.id, SupportedIntegrations.aws)) as AwsConfiguration;
+    const credentials = await getS3AWSCredentials(awsConfig, payload.auth_token, project!.id);
 
     const processor = new TextractProcessor({
         fileKey: objectId,
