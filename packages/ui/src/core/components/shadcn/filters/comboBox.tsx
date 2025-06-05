@@ -175,14 +175,15 @@ export const DateCombobox = ({
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
-                    mode="single"
                     className="p-0"
-                    defaultMonth={selectedDate}
-                    selected={selectedDate}
-                    onSelect={(date) => {
+                    value={selectedDate}
+                    onChange={(date) => {
                         if (date) {
-                            setFilterValues([dayjs(date).format("YYYY-MM-DD")]);
-                            setOpen(false);
+                            const actualDate = Array.isArray(date) ? date[0] : date;
+                            if (actualDate) {
+                                setFilterValues([dayjs(actualDate).format("YYYY-MM-DD")]);
+                                setOpen(false);
+                            }
                         }
                     }}
                 />
