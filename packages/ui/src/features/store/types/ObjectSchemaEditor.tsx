@@ -85,9 +85,9 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate }: ObjectSchemaE
     };
 
     return (
-        <div className="mx-2 my-2 rounded-md border border-solid shadow-md border-spacing-2">
-            <div className="flex items-center rounded-t-md border-b gap-x-2 py-2 px-4">
-                <div className="text-lg font-semibold">Schema Editor</div>
+        <div className="mx-2 my-2 rounded-2xl border border-solid shadow-md border-spacing-2">
+            <div className="flex items-center rounded-t-md border-b gap-x-2 py-2 pl-4 pr-2">
+                <div className="text-base font-semibold">Schema Editor</div>
                 <div>
                     <Button variant="outline" size="sm" onClick={handleOnSave}>
                         {

@@ -154,7 +154,7 @@ function AddPropertyButton({ parent }: AddPropertyButtonProps) {
         parent.reloadTree();
     }
     return (
-        <Button variant="outline" onClick={add}>
+        <Button variant="ghost" onClick={add}>
             <Plus className='size-4' />Add property
         </Button>
     )
