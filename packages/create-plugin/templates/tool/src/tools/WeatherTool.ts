@@ -1,8 +1,13 @@
 import type { Tool, ToolFunctionParams } from "@vertesia/agent-sdk";
+
+interface WeatherToolParams {
+    location: string;
+}
+
 export const WeatherTool = {
     name: "weather",
     description: "Get the current weather for a given location.",
-    parameters: {
+    input_schema: {
         type: "object",
         properties: {
             location: {
@@ -12,9 +17,9 @@ export const WeatherTool = {
         },
         required: ["location"]
     },
-    run: async (params: ToolFunctionParams) => {
-        const { location } = params;
+    run: async (params: ToolFunctionParams<WeatherToolParams>) => {
+        const { location } = params.input;
         // Simulate fetching weather data
         return `The current weather in ${location} is sunny with a temperature of 75°F.`;
     }
-} satisfies Tool;
+} satisfies Tool<WeatherToolParams>;

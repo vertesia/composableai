@@ -5,7 +5,7 @@ const app = new Hono();
 
 app.post('/', async (c) => {
     const data = await c.req.json();
-    const r = await registry.execute(c.req.body())
+    const r = await registry.execute(data)
     return c.json({
         response: r
     })

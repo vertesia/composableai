@@ -3,19 +3,19 @@ import { Tool, ToolExecutionPayload, ToolFunctionParams } from "./types.js";
 
 export class ToolRegistry {
 
-    registry: Record<string, Tool> = {};
+    registry: Record<string, Tool<any>> = {};
 
-    constructor(tools: Tool[] = []) {
+    constructor(tools: Tool<any>[] = []) {
         for (const tool of tools) {
             this.registry[tool.name] = tool;
         }
     }
 
-    getTool(name: string): Tool | undefined {
+    getTool<ParamsT extends Record<string, any>>(name: string): Tool<ParamsT> | undefined {
         return this.registry[name];
     }
 
-    runTool(name: string, params: ToolFunctionParams): Promise<any> {
+    runTool<ParamsT extends Record<string, any>>(name: string, params: ToolFunctionParams<ParamsT>): Promise<any> {
         const tool = this.registry[name];
         if (!tool) {
             throw new ToolNotFoundError(name);
@@ -23,13 +23,12 @@ export class ToolRegistry {
         return tool.run(params);
     }
 
-    // Implementation
-    registerTool(tool: Tool): void {
+    registerTool<ParamsT extends Record<string, any>>(tool: Tool<ParamsT>): void {
         this.registry[tool.name] = tool;
     }
 
-    execute(postData: string | ToolExecutionPayload) {
-        let payload: ToolExecutionPayload;
+    execute<ParamsT extends Record<string, any>>(postData: string | ToolExecutionPayload<ParamsT>) {
+        let payload: ToolExecutionPayload<ParamsT>;
         if (typeof postData === "string") {
             try {
                 payload = JSON.parse(postData);
@@ -51,7 +50,7 @@ export class ToolRegistry {
                 apikey: payload.context.apikey
             }),
             vars: payload.vars,
-            input: payload.tool_input || null
+            input: payload.tool_input || {}
         });
     }
 
