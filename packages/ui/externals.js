@@ -28,9 +28,13 @@ export const EXTERNALS = [
     "class-variance-authority",
     "cmdk",
     "lodash-es",
+    "ts-md5",
+    "react-markdown",
+    "remark-gfm",
+    "@monaco-editor/react",
+    "monaco-editor",
     "motion",
     /^motion\/.*/,
-    "react-day-picker",
     "tailwind-merge",
     "debounce",
     "fast-xml-parser",
@@ -46,8 +50,12 @@ export const EXTERNALS = [
     "@vertesia/json",
     "ajv",
     "dayjs",
+    /^dayjs\/.*/,
     "react-error-boundary",
+    "react-date-picker",
     /^@vertesia\/ui\/.*/,
+    "@floating-ui/dom",
+    "@floating-ui/react",
 ];
 
 // Put here exceptions - deps that shuld be inlined

@@ -2,7 +2,6 @@ import React, { Dispatch, SetStateAction, useEffect } from "react";
 import { cn } from "../../libs/utils";
 import { Button, Popover, PopoverTrigger, PopoverContent, Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "../index";
 import { ListFilter } from "lucide-react";
-import { DateRange } from "react-day-picker";
 
 import { Filter, FilterGroup } from "./types";
 import Filters from "./filters";
@@ -22,7 +21,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
   const [selectedView, setSelectedView] = React.useState<string | null>(null);
   const [commandInput, setCommandInput] = React.useState("");
   const commandInputRef = React.useRef<HTMLInputElement>(null);
-  const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
   const [textValue, setTextValue] = React.useState("");
 
   const handleSelect = (groupName: string) => {
@@ -69,7 +68,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
     setTimeout(() => {
       setSelectedView(null);
       setCommandInput("");
-      setDateRange(undefined);
+      setSelectedDate(undefined);
     }, 200);
   };
 
@@ -109,8 +108,8 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
         return (
           <DateFilter
             selectedView={selectedView}
-            dateRange={dateRange}
-            setDateRange={setDateRange}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
             setFilters={setFilters}
             filters={filters}
             handleClose={handleClose}
@@ -145,24 +144,16 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
   const searchParams = url.searchParams;
   useEffect(() => {
     try {
-      const urlSafeFilters = filters.map(filter => {
-        const safeValue = Array.isArray(filter.value)
-          ? filter.value.map(item => ({
-            value: item.value
-          }))
-          : filter.value;
-
-        return {
-          name: filter.name,
-          type: filter.type,
-          value: safeValue,
-          placeholder: filter.placeholder
-        };
-      });
-
       const params = new URLSearchParams(searchParams.toString());
       if (filters.length > 0) {
-        params.set('filters', encodeURIComponent(JSON.stringify(urlSafeFilters)));
+        // Convert filters to simple format with URL-safe encoding: filterName:value,value;filterName2:value
+        const filterString = filters.map(filter => {
+          const values = Array.isArray(filter.value) 
+            ? filter.value.map(item => encodeURIComponent(item.value || '')).join(',')
+            : encodeURIComponent(filter.value || '');
+          return `${encodeURIComponent(filter.name)}:${values}`;
+        }).join(';');
+        params.set('filters', filterString);
       } else {
         params.delete('filters');
       }
@@ -178,35 +169,50 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
     const filtersParam = searchParams.get('filters');
     if (filtersParam) {
       try {
-        const parsedFilters = JSON.parse(decodeURIComponent(filtersParam));
-
-        const hydratedFilters = parsedFilters.map((filter: any) => {
-
-          if (Array.isArray(filter.value)) {
-            const group = filterGroups.find(g => g.name === filter.name);
-            console.log("group", group);
-
-            const valuesWithLabels = filter.value.map((item: any) => {
-              const matchingOption = group?.options?.find(opt => opt.value === item.value);
-
+        // Parse simple format with URL-safe decoding: filterName:value,value;filterName2:value
+        const filterPairs = filtersParam.split(';');
+        const parsedFilters = filterPairs.map(pair => {
+          const [encodedName, valuesString] = pair.split(':');
+          const name = decodeURIComponent(encodedName);
+          const values = valuesString.split(',').map(encodedValue => decodeURIComponent(encodedValue));
+          
+          const group = filterGroups.find(g => g.name === name);
+          console.log("group", group);
+          
+          const filterOptions = values.map(value => {
+            if (group?.type === 'text') {
+              return { value, label: value };
+            } else {
+              // Try to find option with label, or use labelRenderer, or fallback to value
+              const matchingOption = group?.options?.find(opt => opt.value === value);
+              let label = value;
+              
+              if (matchingOption?.label) {
+                label = String(matchingOption.label);
+              } else if (matchingOption?.labelRenderer) {
+                label = String(matchingOption.labelRenderer(value));
+              } else if (group?.labelRenderer) {
+                label = String(group.labelRenderer(value));
+              }
+              
               return {
-                value: item.value,
-                label: matchingOption?.label || item.value
+                value,
+                label
               };
-            });
-
-            console.log("valuesWithLabels", valuesWithLabels);
-
-            return {
-              ...filter,
-              value: valuesWithLabels
-            };
-          }
-
-          return filter;
+            }
+          });
+          
+          console.log("valuesWithLabels", filterOptions);
+          
+          return {
+            name,
+            type: group?.type || 'select',
+            placeholder: group?.placeholder,
+            value: filterOptions
+          };
         });
 
-        setFilters(hydratedFilters);
+        setFilters(parsedFilters);
       } catch (error) {
         console.error("Failed to parse filters from URL:", error);
       }
