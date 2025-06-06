@@ -1,7 +1,8 @@
 import { log } from "@temporalio/activity";
 import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
-import { ActivityParamNotFound, NoDocumentFound } from "../../errors.js";
+import { ActivityParamNotFoundError, DocumentNotFoundError } from "../../errors.js";
+
 interface CreateOrUpdateObjectFromInteractionRunParams {
     /**
      * The execution run object to use. Required.
@@ -47,21 +48,21 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
     const objectTypeName = params.object_type;
 
     if (!runId) {
-        throw new ActivityParamNotFound("run_id", payload.activity);
+        throw new ActivityParamNotFoundError("run_id", payload.activity);
     }
     if (!objectTypeName && !params.update_existing_id) {
-        throw new ActivityParamNotFound("object_type", payload.activity);
+        throw new ActivityParamNotFoundError("object_type", payload.activity);
     }
 
     log.info("Creating document from interaction result", { runId, objectTypeName });
 
     const run = await client.runs.retrieve(runId).catch((e) => {
-        throw new NoDocumentFound(`Error fetching run ${runId}: ${e.message}`);
+        throw new DocumentNotFoundError(`Error fetching run ${runId}: ${e.message}`);
     });
 
     const type = objectTypeName ?
         await client.types.getTypeByName(objectTypeName).catch((e) => {
-            throw new NoDocumentFound(`Error fetching type ${objectTypeName}: ${e.message}`);
+            throw new DocumentNotFoundError(`Error fetching type ${objectTypeName}: ${e.message}`);
         })
         : undefined;
 

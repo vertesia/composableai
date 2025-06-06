@@ -6,7 +6,7 @@ import {
     Project,
     WorkflowExecutionPayload,
 } from "@vertesia/common";
-import { NoDocumentFound, WorkflowParamNotFound } from "../../errors.js";
+import { DocumentNotFoundError, WorkflowParamNotFoundError } from "../../errors.js";
 import { getProjectFromToken } from "../../utils/auth.js";
 import { getVertesiaClient } from "../../utils/client.js";
 import { Vars } from "../vars.js";
@@ -38,7 +38,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
         const objectId = this.payload.objectIds && this.payload.objectIds[0];
         if (!objectId) {
             log.error("No objectId found in payload");
-            throw new WorkflowParamNotFound(
+            throw new WorkflowParamNotFoundError(
                 "objectIds[0]",
                 (this.payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload).workflow,
             );
@@ -54,7 +54,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
         const runId = activityInfo().workflowExecution.runId;
         if (!runId) {
             log.error("No runId found in activityInfo");
-            throw new WorkflowParamNotFound(
+            throw new WorkflowParamNotFoundError(
                 "runId",
                 (this.payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload).workflow,
             );
@@ -66,7 +66,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
         const workflowId = activityInfo().workflowExecution.workflowId;
         if (!workflowId) {
             log.error("No workflowId found in activityInfo");
-            throw new WorkflowParamNotFound(
+            throw new WorkflowParamNotFoundError(
                 "workflowId",
                 (this.payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload).workflow,
             );
@@ -127,7 +127,7 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
                         vars.setValue(key, result);
                     }
                 } else if (fetchSpec.on_not_found === "throw") {
-                    throw new NoDocumentFound("No documents found for: " + JSON.stringify(fetchSpec));
+                    throw new DocumentNotFoundError("No documents found for: " + JSON.stringify(fetchSpec));
                 } else {
                     vars.setValue(key, null);
                 }

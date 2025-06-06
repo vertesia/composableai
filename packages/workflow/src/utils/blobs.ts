@@ -1,10 +1,10 @@
 import { VertesiaClient } from "@vertesia/client";
 import crypto from "crypto";
 import { createWriteStream } from "fs";
-import tmp from "tmp";
-import { NoDocumentFound } from "../errors.js";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
+import tmp from "tmp";
+import { DocumentNotFoundError } from "../errors.js";
 
 tmp.setGracefulCleanup();
 
@@ -14,7 +14,7 @@ export async function fetchBlobAsStream(client: VertesiaClient, blobUri: string)
     } catch (err: any) {
         if (err.message.includes("not found")) {
             //TODO improve error handling with a fetch fail error class in the client
-            throw new NoDocumentFound(`Failed to download blob ${blobUri}: ${err.message}`, []);
+            throw new DocumentNotFoundError(`Failed to download blob ${blobUri}: ${err.message}`, []);
         } else {
             throw new Error(`Failed to download blob ${blobUri}: ${err.message}`);
         }
