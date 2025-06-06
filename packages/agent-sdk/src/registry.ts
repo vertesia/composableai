@@ -1,44 +1,31 @@
 import { VertesiaClient } from "@vertesia/client";
-import { ToolExecutionPayload, ToolFn, ToolFunctionParams } from "./types.js";
+import { Tool, ToolExecutionPayload, ToolFunctionParams } from "./types.js";
 
 export class ToolRegistry {
 
-    registry: Record<string, ToolFn> = {};
+    registry: Record<string, Tool> = {};
 
-    constructor(tools: ToolFn[] = []) {
+    constructor(tools: Tool[] = []) {
         for (const tool of tools) {
             this.registry[tool.name] = tool;
         }
     }
 
-    getTool(name: string): ToolFn | undefined {
+    getTool(name: string): Tool | undefined {
         return this.registry[name];
     }
 
     runTool(name: string, params: ToolFunctionParams): Promise<any> {
-        const toolFn = this.registry[name];
-        if (!toolFn) {
+        const tool = this.registry[name];
+        if (!tool) {
             throw new ToolNotFoundError(name);
         }
-        return toolFn(params);
+        return tool.run(params);
     }
 
-    // Overload signatures
-    registerTool(name: string, tool: ToolFn): void;
-    registerTool(tool: ToolFn): void;
-
     // Implementation
-    registerTool(...args: [string, ToolFn] | [ToolFn]): void {
-        if (args.length === 1) {
-            const tool = args[0];
-            if (typeof tool !== "function") {
-                throw new Error("Tool must be a function");
-            }
-            this.registry[tool.name] = tool;
-        } else {
-            const [name, tool] = args;
-            this.registry[name] = tool;
-        }
+    registerTool(tool: Tool): void {
+        this.registry[tool.name] = tool;
     }
 
     execute(postData: string | ToolExecutionPayload) {
@@ -53,11 +40,11 @@ export class ToolRegistry {
             payload = postData;
         }
 
-        const toolFn = this.registry[payload.tool_name]
-        if (toolFn === undefined) {
+        const tool = this.registry[payload.tool_name]
+        if (tool === undefined) {
             throw new ToolNotFoundError(payload.tool_name);
         }
-        return toolFn({
+        return tool.run({
             client: new VertesiaClient({
                 serverUrl: payload.context.serverUrl,
                 storeUrl: payload.context.storeUrl,
