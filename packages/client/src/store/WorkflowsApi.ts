@@ -43,6 +43,10 @@ export class WorkflowsApi extends ApiTopic {
         return this.get(`/runs/${workflowId}/${runId}`, { query });
     }
 
+    getRunInteractions(workflowId: string, runId: string): Promise<{ workflow_id: string; run_id: string; interactions: any }> {
+        return this.get(`/runs/${workflowId}/${runId}/interactions`);
+    }
+
     terminate(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
         return this.post(`/runs/${workflowId}/${runId}/actions/terminate`, { payload: { reason } });
     }
