@@ -1,5 +1,5 @@
 import { VertesiaClient } from "@vertesia/client"
-import { ToolDefinition } from "../../../llumiverse/common/lib/types";
+import { ToolDefinition } from "@llumiverse/common";
 
 export interface ToolExecutionPayload {
     context: {
@@ -23,3 +23,5 @@ export type ToolFn = (params: ToolFunctionParams) => Promise<any>;
 export interface Tool extends ToolDefinition {
     run: ToolFn;
 }
+
+export type { ToolDefinition };

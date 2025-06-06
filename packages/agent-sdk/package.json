@@ -28,6 +28,7 @@
         "outDir": "lib"
     },
     "dependencies": {
+        "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*"
     }

@@ -1,6 +1,6 @@
 import { JSONObject, ToolDefinition, ToolUse } from "@llumiverse/common";
-import { AsyncConversationExecutionPayload } from "./interaction";
-import { WorkflowExecutionBaseParams } from "./store";
+import { AsyncConversationExecutionPayload } from "./interaction.js";
+import { WorkflowExecutionBaseParams } from "./store/index.js";
 
 /**
  * A vertesia plugin manifest
