@@ -228,6 +228,7 @@ export interface WorkflowRun {
      *  - For non-DSL workflows, the vertesia_type is the name of the Temporal Workflow Type.
      */
     vertesia_workflow_type?: string;
+    interactions?: any[];
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
