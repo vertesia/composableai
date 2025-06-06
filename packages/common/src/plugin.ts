@@ -1,4 +1,6 @@
-import { ToolDefinition } from "@llumiverse/common";
+import { JSONObject, ToolDefinition, ToolUse } from "@llumiverse/common";
+import { AsyncConversationExecutionPayload } from "./interaction";
+import { WorkflowExecutionBaseParams } from "./store";
 
 /**
  * A vertesia plugin manifest
@@ -47,4 +49,10 @@ export interface ToolPluginManifest extends PluginManifest {
      * The definitions of the exported tools
      */
     metadata: ToolDefinition[];
+}
+
+export interface PluginToolContext<ParamsT = JSONObject> {
+    payload: WorkflowExecutionBaseParams<AsyncConversationExecutionPayload>;
+    tool_use: ToolUse<ParamsT>; //params?
+    plugin: string; // plugin id
 }

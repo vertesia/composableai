@@ -47,6 +47,25 @@ importers:
         specifier: ^3.0.9
         version: 3.2.0(@types/debug@4.1.12)(@types/node@22.15.29)(terser@5.40.0)(tsx@3.14.0)(yaml@2.8.0)
 
+  packages/agent-sdk:
+    dependencies:
+      '@vertesia/client':
+        specifier: ^0.61.0
+        version: 0.61.0
+      '@vertesia/common':
+        specifier: workspace:*
+        version: link:../common
+    devDependencies:
+      ts-dual-module:
+        specifier: ^0.6.3
+        version: 0.6.3
+      typescript:
+        specifier: ^5.0.2
+        version: 5.8.3
+      vitest:
+        specifier: ^3.0.9
+        version: 3.2.0(@types/debug@4.1.12)(@types/node@22.15.29)(terser@5.40.0)(tsx@3.14.0)(yaml@2.8.0)
+
   packages/api-fetch-client:
     dependencies:
       eventsource-parser:
@@ -1532,6 +1551,9 @@ packages:
   '@lezer/lr@1.4.2':
     resolution: {integrity: sha512-pu0K1jCIdnQ12aWNaAVU5bzi7Bd1w54J3ECgANPmYLtQKP0HBj2cE/5coBD66MT10xbtIuUr7tg0Shbsvk0mDA==}
 
+  '@llumiverse/common@0.18.0':
+    resolution: {integrity: sha512-n51tlyra1WdCBCxf4rjG02MXPvHmno7bx1ZfHtT/6zxG1vreKpuTJQ5I7Lg4tXwx2924+TQvRod1FgGsX0e+5w==}
+
   '@mapbox/node-pre-gyp@1.0.11':
     resolution: {integrity: sha512-Yhlar6v9WQgUp/He7BdgzOz8lqMQ8sU+jkCq7Wx8Myc5YFJLbEe7lgui/V7G1qB1DJykHSGwreceSaD60Y0PUQ==}
     hasBin: true
@@ -2785,6 +2807,15 @@ packages:
     resolution: {integrity: sha512-hHKFx+opG5BA3/owMXon8ypwSotBGTdblG6oda/iOu9+OEYnk0cxD2uIcGyGT8jCK578kV+xMrNxqbn8Zjlpgw==}
     cpu: [x64]
     os: [win32]
+
+  '@vertesia/api-fetch-client@0.61.0':
+    resolution: {integrity: sha512-mA96g/tdag8VG+BaWPriLz83X4Q1+wk3Xwp3syotTuFsSOUxbMwK+tFbJ0WOig3vOzCdBD1ZWlYlZmDm88p3qQ==}
+
+  '@vertesia/client@0.61.0':
+    resolution: {integrity: sha512-cbNxoh5zx/jWoNZYv05bVdgaucI0iGgSImsBjukMETjetr44EO5OIifBciJRbGb0K3UbTQMS1mVd6XbCTTHegw==}
+
+  '@vertesia/common@0.61.0':
+    resolution: {integrity: sha512-vxbpyzLN0iFVy/BO+owprWeXIU1opTh74AsFBK7xmfCwBBfwowWC9GTKNYtMIXlcSfiU//JJuWgdUgr7oUCQkg==}
 
   '@vertesia/converters@0.42.2':
     resolution: {integrity: sha512-92QP+9XFSkFLvxX5MlC8HEbhU+CwWiqmBILrhvVxiAauYSA5VhbWIp9xOwhvs/nbC4otZyTDbi/SivAtpmsw/g==}
@@ -7291,6 +7322,8 @@ snapshots:
     dependencies:
       '@lezer/common': 1.2.3
 
+  '@llumiverse/common@0.18.0': {}
+
   '@mapbox/node-pre-gyp@1.0.11':
     dependencies:
       detect-libc: 2.0.4
@@ -8678,6 +8711,23 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.7.8':
     optional: true
+
+  '@vertesia/api-fetch-client@0.61.0':
+    dependencies:
+      eventsource-parser: 1.1.2
+
+  '@vertesia/client@0.61.0':
+    dependencies:
+      '@llumiverse/common': 0.18.0
+      '@vertesia/api-fetch-client': 0.61.0
+      '@vertesia/common': 0.61.0
+      eventsource: 3.0.7
+
+  '@vertesia/common@0.61.0':
+    dependencies:
+      '@llumiverse/common': 0.18.0
+      ajv: 8.17.1
+      json-schema: 0.4.0
 
   '@vertesia/converters@0.42.2':
     dependencies:

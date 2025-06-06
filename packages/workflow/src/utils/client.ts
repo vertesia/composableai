@@ -8,7 +8,10 @@ import { WorkflowParamNotFound } from "../errors.js";
 
 
 export function getVertesiaClient(payload: WorkflowExecutionBaseParams) {
+    return new VertesiaClient(getVertesiaClientOptions(payload));
+}
 
+export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams) {
     if (!payload.auth_token) {
         throw new WorkflowParamNotFound("Authentication Token is missing from WorkflowExecutionPayload.authToken");
     }
@@ -21,12 +24,9 @@ export function getVertesiaClient(payload: WorkflowExecutionBaseParams) {
         throw new WorkflowParamNotFound("Content Store URL is missing from WorkflowExecutionPayload.servers.storeUrl");
     }
 
-    const client = new VertesiaClient({
+    return {
         serverUrl: payload.config.studio_url,
         storeUrl: payload.config.store_url,
         apikey: payload.auth_token
-    });
-
-    return client;
-
+    };
 }
