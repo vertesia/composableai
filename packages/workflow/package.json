@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/workflow",
-    "version": "0.61.0",
+    "version": "0.62.0",
     "type": "module",
     "description": "Composable prompts workflow dsl",
     "main": "./lib/esm/index.js",
