@@ -2,8 +2,7 @@ import clsx from 'clsx';
 import { ChangeEvent, ComponentType, KeyboardEvent, useEffect, useRef, useState } from 'react';
 
 import { SquarePen, Trash2 } from 'lucide-react';
-import { Button, Styles } from '@vertesia/ui/core';
-import { useClickOutside, useFlag } from '@vertesia/ui/core';
+import { Button, Styles, useClickOutside, useFlag } from '@vertesia/ui/core';
 
 const VIEW_BOX = "block text-sm sm:leading-6 rounded-md border-0 py-1.5 px-4"
 const VIEW_BOX_HOVER = `${VIEW_BOX} hover:shadow-xs hover:ring-1 hover:ring-inset hover:ring-ring`

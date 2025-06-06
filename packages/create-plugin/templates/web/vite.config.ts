@@ -10,6 +10,7 @@ const EXTERNALS = [
   'react/jsx-runtime',
   'react-dom/client',
   '@vertesia/ui',
+  /^@vertesia\/ui\/.*/,
   // add any other external dependencies here
 ];
 

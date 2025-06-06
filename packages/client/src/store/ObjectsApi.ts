@@ -319,6 +319,16 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${id}/revisions`);
     }
 
+    /**
+     * Retrieves all collections that contain a specific object
+     *
+     * @param id The ID of the object
+     * @returns Array of collections containing this object (both static and dynamic)
+     */
+    getCollections(id: string): Promise<any[]> {
+        return this.get(`/${id}/collections`);
+    }
+
     delete(id: string): Promise<{ id: string }> {
         return this.del(`/${id}`);
     }

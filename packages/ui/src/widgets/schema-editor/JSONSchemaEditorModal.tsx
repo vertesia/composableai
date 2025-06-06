@@ -1,7 +1,6 @@
 import { json } from "@codemirror/lang-json";
 import { CodeMirrorEditor, EditorApi } from "../codemirror";
-import { Button, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
-import { useToast } from "@vertesia/ui/core";
+import { Button, VModal, VModalBody, VModalFooter, VModalTitle, useToast } from "@vertesia/ui/core";
 import { basicSetup } from "codemirror";
 import { useMemo, useRef } from "react";
 import { ManagedSchema } from "./ManagedSchema.js";

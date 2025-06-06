@@ -3,3 +3,7 @@ export * from "./json-view/index.js";
 export * from "./schema-editor/index.js";
 export * from "./form/index.js";
 export * from "./codemirror/index.js";
+export * from "./properties/index.js";
+export * from "./popover/index.js";
+export * from "./upload/index.js";
+export * from "./Progress.js"

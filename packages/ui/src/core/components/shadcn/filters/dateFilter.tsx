@@ -1,66 +1,82 @@
 import dayjs from "dayjs";
-import React from "react";
-import { DateRange } from "react-day-picker";
-import { Calendar } from "../calendar";
+import React, { useState } from "react";
+import DatePicker from "react-date-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "../popover";
 import { Filter, FilterGroup } from "./types";
 
+type ValuePiece = Date | null;
+type Value = ValuePiece | [ValuePiece, ValuePiece];
+
 interface DateFilterProps {
-    selectedView: string | null;
-    dateRange: DateRange | undefined;
-    setDateRange: React.Dispatch<React.SetStateAction<DateRange | undefined>>;
-    setFilters: React.Dispatch<React.SetStateAction<Filter[]>>;
-    filters: Filter[];
-    handleClose: () => void;
-    filterGroups: FilterGroup[];
+  selectedView: string | null;
+  selectedDate: Date | undefined;
+  setSelectedDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
+  setFilters: React.Dispatch<React.SetStateAction<Filter[]>>;
+  filters: Filter[];
+  handleClose: () => void;
+  filterGroups: FilterGroup[];
 }
 
 export default function DateFilter({
-    selectedView,
-    dateRange,
-    setDateRange,
-    setFilters,
-    filters,
-    handleClose,
-    filterGroups,
+  selectedView,
+  selectedDate,
+  setSelectedDate,
+  setFilters,
+  filters,
+  handleClose,
+  filterGroups,
 }: DateFilterProps) {
-    const handleDateRangeSelect = (range: DateRange | undefined) => {
-        setDateRange(range);
-        if (range?.from && range?.to) {
-            const selectedGroup = filterGroups.find(
-                (g) => g.name === selectedView,
-            );
-            setFilters([
-                ...filters,
-                {
-                    name: selectedView || "",
-                    value: [
-                        {
-                            value: dayjs(range.from!).format("yyyy-MM-dd"),
-                            label: dayjs(range.from!).format("LLL dd, y"),
-                        },
-                        {
-                            value: dayjs(range.to!).format("yyyy-MM-dd"),
-                            label: dayjs(range.to!).format("LLL dd, y"),
-                        },
-                    ],
-                    type: selectedGroup?.type || "date",
-                } as Filter,
-            ]);
+  const [open, setOpen] = useState(true);
 
-            handleClose();
-        }
-    };
+  const handleDateChange = (value: Value) => {
+    const date = Array.isArray(value) ? value[0] : value;
+    setSelectedDate(date || undefined);
+    if (date) {
+      const selectedGroup = filterGroups.find(g => g.name === selectedView);
+      
+      // Set date to start of day (00:00)
+      const selectedDateStart = new Date(date);
+      selectedDateStart.setHours(0, 0, 0, 0);
+      
+      setFilters([
+        ...filters,
+        {
+          name: selectedView || "",
+          placeholder: selectedGroup?.placeholder,
+          value: [
+            {
+              value: selectedDateStart.toISOString(),
+              label: dayjs(selectedDateStart).format("LLL dd, y"),
+            }
+          ],
+          type: selectedGroup?.type || "date",
+        } as Filter,
+      ]);
 
-    return (
-        <div className="p-2">
-            <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={dateRange?.from}
-                selected={dateRange}
-                onSelect={handleDateRangeSelect}
-                size="sm"
-            />
+      setOpen(false);
+      handleClose();
+    }
+  };
+
+  return (
+    <Popover _open={open} onOpenChange={setOpen}>
+      <PopoverTrigger className="w-full p-2 text-left hover:bg-muted/50 rounded-sm">
+        <div className="flex gap-1.5 items-center">
+          {selectedDate ? (
+            dayjs(selectedDate).format("MMM D, YYYY")
+          ) : (
+            <span>Pick a date</span>
+          )}
         </div>
-    );
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <DatePicker
+          value={selectedDate}
+          onChange={handleDateChange}
+          calendarIcon={false}
+          className="p-2"
+        />
+      </PopoverContent>
+    </Popover>
+  );
 }

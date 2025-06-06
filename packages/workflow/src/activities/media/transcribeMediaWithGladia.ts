@@ -1,6 +1,6 @@
 import { DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations } from "@vertesia/common";
 import { activityInfo, CompleteAsyncError, log } from "@temporalio/activity";
-import { FetchClient } from "api-fetch-client";
+import { FetchClient } from "@vertesia/api-fetch-client";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { NoDocumentFound } from "../../errors.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../index.js";

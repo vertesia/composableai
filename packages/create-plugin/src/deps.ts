@@ -2,7 +2,6 @@ import { runCommand } from "./utils.js";
 
 const DEV_DEPS: string[] = [
     "@vertesia/plugin-builder",
-    "@vertesia/ui",
     "@eslint/js",
     "@tailwindcss/vite",
     "@types/node",
@@ -23,6 +22,7 @@ const DEV_DEPS: string[] = [
 ];
 
 const RUNTIME_DEPS: string[] = [
+    "@vertesia/common",
     "@vertesia/ui",
 ]
 
