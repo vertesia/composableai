@@ -16,7 +16,7 @@ import type { AwsCredentialIdentityProvider } from "@smithy/types";
 import { log } from "@temporalio/activity";
 import { TextractProcessor } from "../../conversion/TextractProcessor.js";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
-import { NoDocumentFound } from "../../errors.js";
+import { DocumentNotFoundError } from "../../errors.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
 import { fetchBlobAsBuffer, md5 } from "../../utils/blobs.js";
 import { countTokens } from "../../utils/tokens.js";
@@ -49,13 +49,13 @@ export async function convertPdfToStructuredText(payload: DSLActivityExecutionPa
     }
 
     if (!object.content?.source) {
-        throw new NoDocumentFound(`No source found for object ${objectId}`);
+        throw new DocumentNotFoundError(`No source found for object ${objectId}`);
     }
 
     const pdfUrl = await client.store.objects.getContentSource(objectId).then(res => res.source);
 
     if (!pdfUrl) {
-        throw new NoDocumentFound(`Error fetching source ${object.content.source}`);
+        throw new DocumentNotFoundError(`Error fetching source ${object.content.source}`);
     }
 
 
@@ -123,10 +123,10 @@ export async function getS3AWSCredentials(awsConfig: AwsConfiguration, composabl
 
     // fetch s3 role ARN
     if (!awsConfig || !awsConfig.enabled) {
-        throw new NoDocumentFound("AWS integration is not enabled for this project");
+        throw new DocumentNotFoundError("AWS integration is not enabled for this project");
     }
     if (!awsConfig.s3_role_arn) {
-        throw new NoDocumentFound("S3 Role ARN is not defined in AWS project integration");
+        throw new DocumentNotFoundError("S3 Role ARN is not defined in AWS project integration");
     }
 
     log.info("Getting AWS credentials for Textract", { projectId, composableAuthToken, roleArn: awsConfig.s3_role_arn });

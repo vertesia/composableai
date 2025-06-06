@@ -5,14 +5,14 @@ import {
     DSLActivityExecutionPayload,
     DSLActivitySpec,
 } from "@vertesia/common";
+import { markdownWithMarkitdown } from "../conversion/markitdown.js";
 import { mutoolPdfToText } from "../conversion/mutool.js";
 import { markdownWithPandoc } from "../conversion/pandoc.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { NoDocumentFound } from "../errors.js";
+import { DocumentNotFoundError } from "../errors.js";
 import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
 import { fetchBlobAsBuffer, md5 } from "../utils/blobs.js";
 import { countTokens } from "../utils/tokens.js";
-import { markdownWithMarkitdown } from "../conversion/markitdown.js";
 
 //@ts-ignore
 const JSON: DSLActivitySpec = {
@@ -39,7 +39,7 @@ export async function extractDocumentText(
     const doc = r[0] as ContentObject;
     if (!doc) {
         log.error(`Document ${objectId} not found`);
-        throw new NoDocumentFound(`Document ${objectId} not found`, payload.objectIds);
+        throw new DocumentNotFoundError(`Document ${objectId} not found`, payload.objectIds);
     }
 
     log.info(`Extracting text for object ${doc.id}`);
