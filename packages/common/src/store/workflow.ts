@@ -1,3 +1,5 @@
+import { InteractionRef } from "../interaction.js";
+
 export enum ContentEventName {
     create = "create",
     change_type = "change_type",
@@ -228,7 +230,7 @@ export interface WorkflowRun {
      *  - For non-DSL workflows, the vertesia_type is the name of the Temporal Workflow Type.
      */
     vertesia_workflow_type?: string;
-    interactions?: any[];
+    interactions?: InteractionRef[];
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
