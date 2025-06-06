@@ -38,8 +38,9 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
     }
 
-    getRunDetails(runId: string, workflowId: string): Promise<WorkflowRunWithDetails> {
-        return this.get(`/runs/${workflowId}/${runId}`);
+    getRunDetails(runId: string, workflowId: string, includeHistory: boolean = false): Promise<WorkflowRunWithDetails> {
+        const query = { include_history: includeHistory };
+        return this.get(`/runs/${workflowId}/${runId}`, { query });
     }
 
     terminate(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
@@ -116,31 +117,31 @@ export class WorkflowsApi extends ApiTopic {
                     const EventSourceImpl = await EventSourceProvider();
                     const client = this.client as VertesiaClient;
                     const streamUrl = new URL(client.workflows.baseUrl + "/runs/" + runId + "/stream");
-    
+
                     // Use the timestamp of the last received message for reconnection
                     if (lastMessageTimestamp > 0) {
                         streamUrl.searchParams.set("since", lastMessageTimestamp.toString());
                     }
-    
+
                     const bearerToken = client._auth ? await client._auth() : undefined;
                     if (!bearerToken) {
                         reject(new Error("No auth token available"));
                         return;
                     }
-    
+
                     const token = bearerToken.split(" ")[1];
                     streamUrl.searchParams.set("access_token", token);
 
                     if (isReconnect) {
                         console.log(`Reconnecting to SSE stream for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
                     }
-    
+
                     const sse = new EventSourceImpl(streamUrl.href);
                     currentSse = sse;
-    
+
                     // Prevent Node from exiting prematurely
-                    interval = setInterval(() => {}, 1000);
-    
+                    interval = setInterval(() => { }, 1000);
+
                     sse.onopen = () => {
                         if (isReconnect) {
                             console.log(`Successfully reconnected to SSE stream for run ${runId}`);
@@ -154,17 +155,17 @@ export class WorkflowsApi extends ApiTopic {
                             console.log("Received comment or heartbeat; ignoring it.: ", ev.data);
                             return;
                         }
-    
+
                         try {
                             const message = JSON.parse(ev.data) as AgentMessage;
-                            
+
                             // Update last message timestamp for reconnection
                             if (message.timestamp) {
                                 lastMessageTimestamp = Math.max(lastMessageTimestamp, message.timestamp);
                             }
 
                             if (onMessage) onMessage(message, exit);
-    
+
                             // Only close the stream when the main workstream completes
                             if (message.type === AgentMessageType.COMPLETE && (!message.workstream_id || message.workstream_id === 'main')) {
                                 console.log("Closing stream due to COMPLETE message from main workstream");
@@ -180,7 +181,7 @@ export class WorkflowsApi extends ApiTopic {
                             console.error("Failed to parse SSE message:", err, ev.data);
                         }
                     };
-    
+
                     sse.onerror = (err: any) => {
                         if (isClosed) return;
 
@@ -191,7 +192,7 @@ export class WorkflowsApi extends ApiTopic {
                         if (reconnectAttempts < maxReconnectAttempts) {
                             const delay = calculateBackoffDelay(reconnectAttempts);
                             console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
-                            
+
                             reconnectAttempts++;
                             setTimeout(() => {
                                 if (!isClosed) {
@@ -219,7 +220,7 @@ export class WorkflowsApi extends ApiTopic {
                     }
                 }
             };
-            
+
             // Start the async setup process
             setupStream(false);
 
