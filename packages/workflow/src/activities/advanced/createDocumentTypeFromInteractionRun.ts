@@ -2,7 +2,7 @@ import { CreateContentObjectTypePayload, DSLActivityExecutionPayload, DSLActivit
 import { log } from "@temporalio/activity";
 import { projectResult } from "../../dsl/projections.js";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
-import { ActivityParamNotFound } from "../../errors.js";
+import { ActivityParamNotFoundError } from "../../errors.js";
 
 
 export interface CreateDocumentTypeFromInteractionRunParams {
@@ -25,7 +25,7 @@ export async function createDocumentTypeFromInteractionRun(payload: DSLActivityE
     const { params, client } = await setupActivity<CreateDocumentTypeFromInteractionRunParams>(payload);
 
     if (!params.run) {
-        throw new ActivityParamNotFound("run", payload.activity);
+        throw new ActivityParamNotFoundError("run", payload.activity);
     }
 
     const genTypeRes = params.run.result;
