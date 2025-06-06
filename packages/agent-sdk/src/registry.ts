@@ -11,6 +11,14 @@ export class ToolRegistry {
         }
     }
 
+    getDefinitions() {
+        return Object.values(this.registry).map(tool => ({
+            name: tool.name,
+            description: tool.description,
+            input_schema: tool.input_schema
+        }));
+    }
+
     getTool<ParamsT extends Record<string, any>>(name: string): Tool<ParamsT> | undefined {
         return this.registry[name];
     }

@@ -11,4 +11,8 @@ app.post('/', async (c) => {
     })
 })
 
+app.get('/', (c) => {
+    return c.json(registry.getDefinitions())
+});
+
 export { app }
