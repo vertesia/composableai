@@ -34,11 +34,11 @@ export class ToolTemplateInit extends TemplateInit {
 
     getDevDependencies(): string[] {
         return [
+            "@hono/vite-dev-server",
             "@types/node",
             "esbuild",
             "typescript",
             "vite",
-            "vite-plugin-node",
         ]
     }
 

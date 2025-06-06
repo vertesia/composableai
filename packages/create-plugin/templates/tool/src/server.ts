@@ -15,4 +15,4 @@ app.get('/', (c) => {
     return c.json(registry.getDefinitions())
 });
 
-export { app }
+export default app;

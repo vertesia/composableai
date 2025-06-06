@@ -1,18 +1,10 @@
-import { defineConfig } from 'vite'
-import { VitePluginNode } from 'vite-plugin-node'
+import { defineConfig } from 'vite';
+import devServer from '@hono/vite-dev-server';
 
 export default defineConfig({
     plugins: [
-        VitePluginNode({
-            adapter: 'hono',
-            appPath: './src/server.ts',
-            exportName: 'app', // default is 'app', you can also export your app as "app" instead of calling listen()
-            tsCompiler: 'esbuild',
+        devServer({
+            entry: 'src/server.ts', // Adjust the path to your server entry file
         }),
     ],
-    server: {
-        watch: {
-            usePolling: true,
-        },
-    },
-})
+});
