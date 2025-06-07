@@ -219,6 +219,7 @@ export interface WorkflowRun {
     run_id?: string;
     workflow_id?: string;
     initiated_by?: string;
+    input?: any;
     result?: any;
     raw?: any;
     /**
