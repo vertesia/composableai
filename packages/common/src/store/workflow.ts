@@ -195,6 +195,16 @@ interface WorkflowRunEvent {
         startedEventId?: string;
     };
 
+    childWorkflow?: {
+        workflowId?: string,
+        workflowType?: string,
+        runId?: string,
+        scheduledEventId?: string,
+        startedEventId?: string,
+        input?: any,
+        result?: any,
+    };
+
     error?: {
         message?: string;
         source?: string;
