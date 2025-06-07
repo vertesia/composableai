@@ -1,7 +1,7 @@
 {
-    "name": "@vertesia/converters",
+    "name": "@vertesia/agent-sdk",
     "version": "0.63.0",
-    "description": "Image and content converters",
+    "description": "Agent SDK - utilities for building agent tools",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -11,7 +11,7 @@
     "license": "Apache-2.0",
     "scripts": {
         "test": "vitest run",
-        "build": "pnpm exec tsmod build --esm",
+        "build": "pnpm exec tsmod build",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "exports": {
@@ -20,16 +20,16 @@
         "require": "./lib/cjs/index.js"
     },
     "devDependencies": {
-        "@types/tmp": "^0.2.6",
         "ts-dual-module": "^0.6.3",
         "typescript": "^5.0.2",
         "vitest": "^3.0.9"
     },
-    "dependencies": {
-        "sharp": "^0.33.5",
-        "tmp": "^0.2.3"
-    },
     "ts_dual_module": {
         "outDir": "lib"
+    },
+    "dependencies": {
+        "@llumiverse/common": "workspace:*",
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*"
     }
 }
