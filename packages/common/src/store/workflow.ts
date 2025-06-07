@@ -231,6 +231,7 @@ export interface WorkflowRun {
     initiated_by?: string;
     input?: any;
     result?: any;
+    error?:any,
     raw?: any;
     /**
      * The Vertesia Workflow Type of this Workflow Run.
