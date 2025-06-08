@@ -205,6 +205,15 @@ interface WorkflowRunEvent {
         result?: any,
     };
 
+    signal?: {
+        signalName?: string,
+        input?: any,
+        sender?: {
+            workflowId?: string,
+            runId?: string
+        }
+    }
+
     error?: {
         message?: string;
         source?: string;
