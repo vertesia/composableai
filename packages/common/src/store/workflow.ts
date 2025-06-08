@@ -216,7 +216,8 @@ interface WorkflowRunEvent {
         recipient?: {
             workflowId?: string,
             runId?: string 
-        }
+        },
+        initiatedEventId?: string,
     }
 
     error?: {
