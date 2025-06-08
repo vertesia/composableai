@@ -206,11 +206,16 @@ interface WorkflowRunEvent {
     };
 
     signal?: {
+        direction: "receiving" | "sending";
         signalName?: string,
         input?: any,
         sender?: {
             workflowId?: string,
             runId?: string
+        }
+        recipient?: {
+            workflowId?: string,
+            runId?: string 
         }
     }
 
