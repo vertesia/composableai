@@ -1,9 +1,10 @@
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { ExecutionEnvironmentRef, Interaction, JSONSchema, mergePromptsSchema, PopulatedInteraction } from "@vertesia/common";
+import { ExecutionEnvironmentRef, Interaction, mergePromptsSchema, PopulatedInteraction } from "@vertesia/common";
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import type { JSONSchema4 } from "json-schema";
 import { supportsToolUse } from "@llumiverse/common";
 
 export interface ConversationWorkflowPayload {
@@ -19,10 +20,10 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     _start: boolean = false;
 
     payload: ConversationWorkflowPayload;
-    interactionParamsSchema?: JSONSchema | null;
+    private _interactionParamsSchema?: JSONSchema4 | null;
     private _inputValidator?: {
         validate: ValidateFunction;
-        schema: JSONSchema;
+        schema: JSONSchema4;
     };
 
     constructor(public vertesia: VertesiaClient, public updateState: (data: PayloadBuilder) => void) {
@@ -33,12 +34,13 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     }
 
     onStateChanged() {
-        this.updateState(this.clone());
+        const newInstance = this.clone();
+        this.updateState(newInstance);
     }
 
     clone() {
         const builder = new PayloadBuilder(this.vertesia, this.updateState);
-        builder.interactionParamsSchema = this.interactionParamsSchema;
+        builder._interactionParamsSchema = this._interactionParamsSchema;
         builder.payload = this.payload;
         builder._interactive = this._interactive;
         builder._inputValidator = this._inputValidator;
@@ -62,7 +64,7 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     set interaction(interaction: Interaction | undefined) {
         if (interaction?.id !== this.payload.interaction?.id) {
             this.payload.interaction = interaction;
-            this.interactionParamsSchema = mergePromptsSchema(this.interaction as PopulatedInteraction) as JSONSchema;
+            this._interactionParamsSchema = mergePromptsSchema(this.interaction as PopulatedInteraction) as JSONSchema4;
             // Reset the validator when schema changes
             this._inputValidator = undefined;
             if (interaction) {
@@ -139,6 +141,17 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         return this._start;
     }
 
+    get interactionParamsSchema(): JSONSchema4 | null | undefined {
+        return this._interactionParamsSchema;
+    }
+
+    set interactionParamsSchema(schema: JSONSchema4 | null | undefined) {
+        if (this._interactionParamsSchema !== schema) {
+            this._interactionParamsSchema = schema;
+            this.onStateChanged();
+        }
+    }
+
     reset() {
         this._start = false;
         this._interactive = true;
@@ -149,7 +162,7 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
             environment: undefined,
             prompt_data: undefined
         };
-        this.interactionParamsSchema = null;
+        this._interactionParamsSchema = null;
         this._inputValidator = undefined;
 
         this.onStateChanged();
@@ -161,16 +174,16 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     }
 
     validateInput(): { isValid: boolean; errorMessage?: string } {
-        if (!this.interactionParamsSchema) {
+        if (!this._interactionParamsSchema) {
             return { isValid: true };
         }
 
         // If schema has changed or validator not initialized, recompile
-        if (!this._inputValidator || this._inputValidator.schema !== this.interactionParamsSchema) {
+        if (!this._inputValidator || this._inputValidator.schema !== this._interactionParamsSchema) {
             const ajv = new Ajv({ strict: false });
             this._inputValidator = {
-                validate: ajv.compile(this.interactionParamsSchema),
-                schema: this.interactionParamsSchema
+                validate: ajv.compile(this._interactionParamsSchema),
+                schema: this._interactionParamsSchema
             };
         }
 

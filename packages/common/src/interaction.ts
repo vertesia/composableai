@@ -366,6 +366,11 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
 
     /** In child execution workflow, this is the curent task_id */
     task_id?: string;
+
+    /**
+     * Schema for validating interaction parameters
+     */
+    interactionParamsSchema?: JSONSchema4;
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
