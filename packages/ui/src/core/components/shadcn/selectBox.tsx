@@ -179,7 +179,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                         className,
                         border && 'border border-border',
                         'flex flex-row gap-2 items-center justify-between p-2 rounded-md group relative',
-                        !disabled && "cursor-pointer hover:bg-muted"
+                        !disabled ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed text-muted",
                     )}
                 >
                     <div
