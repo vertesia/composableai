@@ -437,8 +437,8 @@ importers:
         specifier: ^2.2.2
         version: 2.2.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@llumiverse/common':
-        specifier: ^0.18.0
-        version: 0.18.0
+        specifier: workspace:*
+        version: link:../../llumiverse/common
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.52.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1558,9 +1558,6 @@ packages:
 
   '@lezer/lr@1.4.2':
     resolution: {integrity: sha512-pu0K1jCIdnQ12aWNaAVU5bzi7Bd1w54J3ECgANPmYLtQKP0HBj2cE/5coBD66MT10xbtIuUr7tg0Shbsvk0mDA==}
-
-  '@llumiverse/common@0.18.0':
-    resolution: {integrity: sha512-n51tlyra1WdCBCxf4rjG02MXPvHmno7bx1ZfHtT/6zxG1vreKpuTJQ5I7Lg4tXwx2924+TQvRod1FgGsX0e+5w==}
 
   '@mapbox/node-pre-gyp@1.0.11':
     resolution: {integrity: sha512-Yhlar6v9WQgUp/He7BdgzOz8lqMQ8sU+jkCq7Wx8Myc5YFJLbEe7lgui/V7G1qB1DJykHSGwreceSaD60Y0PUQ==}
@@ -7320,8 +7317,6 @@ snapshots:
   '@lezer/lr@1.4.2':
     dependencies:
       '@lezer/common': 1.2.3
-
-  '@llumiverse/common@0.18.0': {}
 
   '@mapbox/node-pre-gyp@1.0.11':
     dependencies:
