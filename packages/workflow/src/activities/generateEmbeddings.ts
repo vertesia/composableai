@@ -10,7 +10,7 @@ import {
     SupportedEmbeddingTypes,
 } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { NoDocumentFound } from "../errors.js";
+import { DocumentNotFoundError } from "../errors.js";
 import { fetchBlobAsBase64, md5 } from "../utils/blobs.js";
 import { DocPart, getContentParts } from "../utils/chunks.js";
 import { countTokens } from "../utils/tokens.js";
@@ -59,16 +59,16 @@ export async function generateEmbeddings(
     const projectData = await fetchProject();
     const config = projectData?.configuration.embeddings[type];
     if (!projectData) {
-        throw new NoDocumentFound("Project not found", [payload.project_id]);
+        throw new DocumentNotFoundError("Project not found", [payload.project_id]);
     }
     if (!config) {
-        throw new NoDocumentFound("Embeddings configuration not found", [
+        throw new DocumentNotFoundError("Embeddings configuration not found", [
             objectId,
         ]);
     }
 
     if (!projectData) {
-        throw new NoDocumentFound("Project not found", [payload.project_id]);
+        throw new DocumentNotFoundError("Project not found", [payload.project_id]);
     }
 
     if (!projectData?.configuration.embeddings[type]?.enabled) {
@@ -100,11 +100,11 @@ export async function generateEmbeddings(
     );
 
     if (!document) {
-        throw new NoDocumentFound("Document not found", [objectId]);
+        throw new DocumentNotFoundError("Document not found", [objectId]);
     }
 
     if (!document.content) {
-        throw new NoDocumentFound("Document content not found", [objectId]);
+        throw new DocumentNotFoundError("Document content not found", [objectId]);
     }
 
     let res;
@@ -413,12 +413,12 @@ async function generateImageEmbeddings({
         !resRnd.renditions ||
         !resRnd.renditions.length
     ) {
-        throw new NoDocumentFound("Rendition retrieval failed", [document.id]);
+        throw new DocumentNotFoundError("Rendition retrieval failed", [document.id]);
     }
 
     const renditions = resRnd.renditions;
     if (!renditions?.length) {
-        throw new NoDocumentFound("No source found in rendition", [
+        throw new DocumentNotFoundError("No source found in rendition", [
             document.id,
         ]);
     }

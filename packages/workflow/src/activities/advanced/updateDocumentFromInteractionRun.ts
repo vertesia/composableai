@@ -1,6 +1,6 @@
 import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
-import { ActivityParamNotFound } from "../../errors.js";
+import { ActivityParamNotFoundError } from "../../errors.js";
 
 
 export interface UpdateDocumentFromInteractionRunParams {
@@ -19,7 +19,7 @@ export async function updateDocumentFromInteractionRun(payload: DSLActivityExecu
     const { params, client, objectId } = await setupActivity<UpdateDocumentFromInteractionRunParams>(payload);
 
     if (!params.run) {
-        throw new ActivityParamNotFound("run", payload.activity);
+        throw new ActivityParamNotFoundError("run", payload.activity);
     }
 
     const docProps = params.run.result;

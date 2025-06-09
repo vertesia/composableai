@@ -1,5 +1,5 @@
 import { AbstractFetchClient } from "@vertesia/api-fetch-client";
-import { AuthTokenResponse } from "@vertesia/common";
+import { AuthTokenPayload, AuthTokenResponse } from "@vertesia/common";
 import AccountApi from "./AccountApi.js";
 import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";
@@ -8,6 +8,7 @@ import CommandsApi from "./CommandsApi.js";
 import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
+import PluginsApi from "./PluginsApi.js";
 import ProjectsApi from "./ProjectsApi.js";
 import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
@@ -15,7 +16,6 @@ import { RunsApi } from "./RunsApi.js";
 import { ZenoClient } from "./store/client.js";
 import TrainingApi from "./TrainingApi.js";
 import UsersApi from "./UsersApi.js";
-import PluginsApi from "./PluginsApi.js";
 
 /**
  * 1 min threshold constant in ms
@@ -98,6 +98,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         if (opts.apikey) {
             this.withApiKey(opts.apikey);
         }
+        //TODO: this is no more used, remove in next major version
         if (opts.projectId) {
             this.headers["x-project-id"] = opts.projectId;
         }
@@ -105,7 +106,6 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.onResponse = opts.onResponse;
         this.sessionTags = opts.sessionTags;
     }
-
 
     /**
      * Overwrite to keep store and composable clients synchronized on the auth callback
@@ -143,9 +143,19 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this._jwt || null;
     }
 
-    async getDecodedJWT() {
+    async getDecodedJWT(): Promise<AuthTokenPayload | null> {
         const jwt = await this.getRawJWT();
         return jwt ? decodeJWT(jwt) : null;
+    }
+
+    async getProject() {
+        const jwt = await this.getDecodedJWT();
+        return jwt?.project || null;
+    }
+
+    async getAccount() {
+        const jwt = await this.getDecodedJWT();
+        return jwt?.account || null;
     }
 
     /**
@@ -177,17 +187,6 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.baseUrl;
     }
 
-    set project(projectId: string | null) {
-        if (projectId) {
-            this.headers["x-project-id"] = projectId;
-        } else {
-            delete this.headers["x-project-id"];
-        }
-    }
-
-    get project() {
-        return this.headers["x-project-id"] || null;
-    }
 
     /**
      *
