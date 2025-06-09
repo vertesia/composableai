@@ -195,6 +195,31 @@ interface WorkflowRunEvent {
         startedEventId?: string;
     };
 
+    childWorkflow?: {
+        workflowId?: string,
+        workflowType?: string,
+        runId?: string,
+        scheduledEventId?: string,
+        startedEventId?: string,
+        input?: any,
+        result?: any,
+    };
+
+    signal?: {
+        direction: "receiving" | "sending";
+        signalName?: string,
+        input?: any,
+        sender?: {
+            workflowId?: string,
+            runId?: string
+        }
+        recipient?: {
+            workflowId?: string,
+            runId?: string 
+        },
+        initiatedEventId?: string,
+    }
+
     error?: {
         message?: string;
         source?: string;
@@ -219,7 +244,9 @@ export interface WorkflowRun {
     run_id?: string;
     workflow_id?: string;
     initiated_by?: string;
+    input?: any;
     result?: any;
+    error?:any,
     raw?: any;
     /**
      * The Vertesia Workflow Type of this Workflow Run.
@@ -235,6 +262,14 @@ export interface WorkflowRunWithDetails extends WorkflowRun {
     memo?: {
         [key: string]: any;
     } | null;
+    pendingActivities?: {
+        activityId?: string;
+        activityType?: string;
+        attempt: number;
+        maximumAttempts: number;
+        lastFailure?: string;
+        lastStartedTime?: number;
+    }[];
 }
 export interface ListWorkflowRunsResponse {
     runs: WorkflowRun[];
