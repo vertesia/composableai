@@ -262,6 +262,14 @@ export interface WorkflowRunWithDetails extends WorkflowRun {
     memo?: {
         [key: string]: any;
     } | null;
+    pendingActivities?: {
+        activityId?: string;
+        activityType?: string;
+        attempt: number;
+        maximumAttempts: number;
+        lastFailure?: string;
+        lastStartedTime?: number;
+    }[];
 }
 export interface ListWorkflowRunsResponse {
     runs: WorkflowRun[];
