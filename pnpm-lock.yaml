@@ -499,6 +499,9 @@ importers:
       firebase:
         specifier: ^10.12.2
         version: 10.14.1
+      json-schema:
+        specifier: ^0.4.0
+        version: 0.4.0
       jwt-decode:
         specifier: ^4.0.0
         version: 4.0.0
@@ -551,6 +554,9 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.1
         version: 16.0.1(rollup@4.41.1)
+      '@types/json-schema':
+        specifier: ^7.0.15
+        version: 7.0.15
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
