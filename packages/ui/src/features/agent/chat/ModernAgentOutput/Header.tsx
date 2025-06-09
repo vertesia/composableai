@@ -148,11 +148,6 @@ function MoreDropdown({
         }
     };
 
-    const startNewAgent = () => {
-        builder.reset();
-        resetWorkflow?.();
-    }
-
     const openUrl = (url: string) => {
         window.open(url, "_blank");
         return url;
@@ -215,11 +210,6 @@ function MoreDropdown({
                                     }}>
                                         <XIcon className="size-3.5 mr-2 text-destructive" /> Cancel Workflow
                                     </CommandItem>
-                                    {!isModal && (
-                                        <CommandItem className="text-xs" onSelect={startNewAgent}>
-                                            <Plus className="size-3.5 mr-2 text-muted" /> Start a new Agent
-                                        </CommandItem>
-                                    )}
                                 </CommandGroup>
                             </CommandList>
                         </Command>
