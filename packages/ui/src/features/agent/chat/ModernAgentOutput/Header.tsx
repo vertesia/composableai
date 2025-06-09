@@ -8,7 +8,6 @@ import {
     DownloadCloudIcon,
     ExternalLink,
     MoreVertical,
-    Plus,
     XIcon,
 } from "lucide-react";
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
