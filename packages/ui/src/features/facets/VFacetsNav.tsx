@@ -1,6 +1,8 @@
 import { Filter as BaseFilter, FilterBar, FilterGroup } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { useState } from 'react';
+import { VEnvironmentFacet } from './VEnvironmentFacet';
+import { VInteractionFacet } from './VInteractionFacet';
 import { VStringFacet } from './VStringFacet';
 import { VTypeFacet } from './VTypeFacet';
 import { VUserFacet } from './VUserFacet';
@@ -67,23 +69,63 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
         customFilterGroups.push(initiatedByFilterGroup);
     }
 
-    if (facets.start) {
-        customFilterGroups.push({
-            name: 'start',
-            placeholder: 'Date after',
-            type: 'date' as const,
-            options: []
+    /** Run table */
+    if (facets.interactions) {
+        const interactionFilterGroup = VInteractionFacet({
+            buckets: facets.interactions || [],
+            name: 'Interactions'
         });
+        customFilterGroups.push(interactionFilterGroup);
     }
 
-    if (facets.end) {
-        customFilterGroups.push({
-            name: 'end',
-            placeholder: 'Date before',
-            type: 'date' as const,
-            options: []
+    if (facets.environments) {
+        const environmentFilterGroup = VEnvironmentFacet({
+            buckets: facets.environments || [],
+            name: 'Environments'
         });
+        customFilterGroups.push(environmentFilterGroup);
     }
+
+    if (facets.models) {
+        const modelFilterGroup = VStringFacet({
+            search,
+            buckets: facets.models || [],
+            name: 'Model'
+        });
+        customFilterGroups.push(modelFilterGroup);
+    }
+
+    if (facets.statuses) {
+        const statusFilterGroup = VStringFacet({
+            search,
+            buckets: facets.statuses || [],
+            name: 'Status'
+        });
+        customFilterGroups.push(statusFilterGroup);
+    }
+
+    if (facets.finish_reason) {
+        const processedFinishReason = facets.finish_reason.map((bucket: any) => ({
+            ...bucket,
+            _id: bucket._id === null ? 'none' : bucket._id
+        }));
+        
+        const finishReasonFilterGroup = VStringFacet({
+            search,
+            buckets: processedFinishReason,
+            name: 'Finish_reason'
+        });
+        customFilterGroups.push(finishReasonFilterGroup);
+    }
+
+    if (facets.created_by) {
+        const createdByFilterGroup = VUserFacet({
+            buckets: facets.created_by || [],
+            name: 'Created_by'
+        });
+        customFilterGroups.push(createdByFilterGroup);
+    }
+    /** Run table */
 
     // if (facets.tags) {
     //     customFilterGroups.push({
@@ -95,6 +137,26 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
     //         }))
     //     });
     // }
+
+
+    // Add date filters for runs context
+    if (facets.hasOwnProperty('start') || search.facetSpecs?.some((spec: any) => spec.name === 'start')) {
+        customFilterGroups.push({
+            name: 'start',
+            placeholder: 'Date after',
+            type: 'date' as const,
+            options: []
+        });
+    }
+
+    if (facets.hasOwnProperty('end') || search.facetSpecs?.some((spec: any) => spec.name === 'end')) {
+        customFilterGroups.push({
+            name: 'end',
+            placeholder: 'Date before',
+            type: 'date' as const,
+            options: []
+        });
+    }
 
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
 
