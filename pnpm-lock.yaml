@@ -437,9 +437,6 @@ importers:
       '@headlessui/react':
         specifier: ^2.2.2
         version: 2.2.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@llumiverse/common':
-        specifier: workspace:*
-        version: link:../../llumiverse/common
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.52.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
