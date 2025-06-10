@@ -12,6 +12,7 @@ overrides:
   cross-spawn@<6.0.6: ^6.0.6
   esbuild@<0.25.0: ^0.25.0
   koa@>=2.0.0 <2.15.4: ^2.15.4
+  undici@>=6.0.0 < 6.21.2: ^6.21.2
   vite: ^6.3.5
 
 importers:
@@ -5641,8 +5642,8 @@ packages:
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
-  undici@6.19.7:
-    resolution: {integrity: sha512-HR3W/bMGPSr90i8AAp2C4DM3wChFdJPLrWYpIS++LxS8K+W535qftjt+4MyjNYHeWabMj1nvtmLIi7l++iq91A==}
+  undici@6.21.3:
+    resolution: {integrity: sha512-gBLkYIlEnSp8pFbT64yFgGE6UIB9tAkhukC23PmMDCe5Nd+cRqKxSjw5y54MK2AZMgZfJWMaNE4nYUHgi1XEOw==}
     engines: {node: '>=18.17'}
 
   unified@11.0.5:
@@ -6828,7 +6829,7 @@ snapshots:
       '@firebase/component': 0.6.9
       '@firebase/util': 1.10.0
       tslib: 2.8.1
-      undici: 6.19.7
+      undici: 6.21.3
     transitivePeerDependencies:
       - '@firebase/app'
       - '@firebase/app-types'
@@ -6848,7 +6849,7 @@ snapshots:
       '@firebase/logger': 0.4.2
       '@firebase/util': 1.10.0
       tslib: 2.8.1
-      undici: 6.19.7
+      undici: 6.21.3
 
   '@firebase/component@0.6.9':
     dependencies:
@@ -6915,7 +6916,7 @@ snapshots:
       '@grpc/grpc-js': 1.9.15
       '@grpc/proto-loader': 0.7.15
       tslib: 2.8.1
-      undici: 6.19.7
+      undici: 6.21.3
 
   '@firebase/functions-compat@0.3.14(@firebase/app-compat@0.2.43)(@firebase/app@0.10.13)':
     dependencies:
@@ -6939,7 +6940,7 @@ snapshots:
       '@firebase/messaging-interop-types': 0.2.2
       '@firebase/util': 1.10.0
       tslib: 2.8.1
-      undici: 6.19.7
+      undici: 6.21.3
 
   '@firebase/installations-compat@0.2.9(@firebase/app-compat@0.2.43)(@firebase/app-types@0.9.2)(@firebase/app@0.10.13)':
     dependencies:
@@ -7060,7 +7061,7 @@ snapshots:
       '@firebase/component': 0.6.9
       '@firebase/util': 1.10.0
       tslib: 2.8.1
-      undici: 6.19.7
+      undici: 6.21.3
 
   '@firebase/util@1.10.0':
     dependencies:
@@ -12179,7 +12180,7 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici@6.19.7: {}
+  undici@6.21.3: {}
 
   unified@11.0.5:
     dependencies:
