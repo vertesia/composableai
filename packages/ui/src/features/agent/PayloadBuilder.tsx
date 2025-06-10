@@ -1,11 +1,10 @@
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { ExecutionEnvironmentRef, Interaction, mergePromptsSchema, PopulatedInteraction } from "@vertesia/common";
+import { ExecutionEnvironmentRef, Interaction, mergePromptsSchema, PopulatedInteraction, supportsToolUse } from "@vertesia/common";
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import type { JSONSchema4 } from "json-schema";
-import { supportsToolUse } from "@llumiverse/common";
 
 export interface ConversationWorkflowPayload {
     interaction?: Interaction | undefined;
