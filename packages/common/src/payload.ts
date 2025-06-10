@@ -6,8 +6,7 @@ import {
     ObjectTypeSearchQuery,
     PromptSearchQuery,
     RunSearchQuery,
-    SimpleSearchQuery,
-    VectorSearchQuery,
+    SimpleSearchQuery
 } from "./query.js";
 
 export interface SearchPayload {
@@ -49,8 +48,7 @@ export interface ComputeInteractionFacetPayload extends ComputeFacetPayload {
 }
 
 export interface ComputeObjectFacetPayload extends ComputeFacetPayload {
-    query?: ObjectSearchQuery;
-    vector?: VectorSearchQuery;
+    query?: ComplexSearchQuery;
 }
 
 export interface ComputePromptFacetPayload extends ComputeFacetPayload {

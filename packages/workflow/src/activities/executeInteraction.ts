@@ -12,7 +12,7 @@ import {
 } from "@vertesia/common";
 import { projectResult } from "../dsl/projections.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { ActivityParamInvalid, ActivityParamNotFound } from "../errors.js";
+import { ActivityParamInvalidError, ActivityParamNotFoundError } from "../errors.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 
 //Example:
@@ -130,7 +130,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
 
     if (!interactionName) {
         log.error("Missing interactionName", { params });
-        throw new ActivityParamNotFound("interactionName", payload.activity);
+        throw new ActivityParamNotFoundError("interactionName", payload.activity);
     }
 
     if (params.truncate) {
@@ -157,10 +157,10 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         log.error("Failed to execute interaction", { error });
         if (error.message.includes("Failed to validate merged prompt schema")) {
             //issue with the input data, don't retry
-            throw new ActivityParamInvalid("prompt_data", payload.activity, error.message);
+            throw new ActivityParamInvalidError("prompt_data", payload.activity, error.message);
         } else if (error.message.includes("modelId: Path `modelId` is required")) {
             //issue with the input data, don't retry
-            throw new ActivityParamInvalid("model", payload.activity, error.message);
+            throw new ActivityParamInvalidError("model", payload.activity, error.message);
         } else {
             throw error;
         }

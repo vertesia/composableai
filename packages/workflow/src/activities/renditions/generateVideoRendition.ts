@@ -6,7 +6,7 @@ import os from "os";
 import path from "path";
 import { promisify } from "util";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
-import { NoDocumentFound, WorkflowParamNotFound } from "../../errors.js";
+import { DocumentNotFoundError, WorkflowParamNotFoundError } from "../../errors.js";
 import { saveBlobToTempFile } from "../../utils/blobs.js";
 import {
     ImageRenditionParams,
@@ -136,7 +136,7 @@ export async function generateVideoRendition(
     const inputObject = await client.objects.retrieve(objectId).catch((err) => {
         log.error(`Failed to retrieve document ${objectId}`, { err });
         if (err.message.includes("not found")) {
-            throw new NoDocumentFound(`Document ${objectId} not found`, [
+            throw new DocumentNotFoundError(`Document ${objectId} not found`, [
                 objectId,
             ]);
         }
@@ -145,12 +145,12 @@ export async function generateVideoRendition(
 
     if (!params.format) {
         log.error(`Format not found`);
-        throw new WorkflowParamNotFound(`format`);
+        throw new WorkflowParamNotFoundError(`format`);
     }
 
     if (!inputObject.content?.source) {
         log.error(`Document ${objectId} has no source`);
-        throw new NoDocumentFound(`Document ${objectId} has no source`, [
+        throw new DocumentNotFoundError(`Document ${objectId} has no source`, [
             objectId,
         ]);
     }
@@ -162,7 +162,7 @@ export async function generateVideoRendition(
         log.error(
             `Document ${objectId} is not a video: ${inputObject.content.type}`,
         );
-        throw new NoDocumentFound(
+        throw new DocumentNotFoundError(
             `Document ${objectId} is not a video: ${inputObject.content.type}`,
             [objectId],
         );
