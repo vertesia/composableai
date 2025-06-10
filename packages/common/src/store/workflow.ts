@@ -1,3 +1,6 @@
+import { JSONSchema4 } from "json-schema";
+import { InteractionRef } from "../interaction.js";
+
 export enum ContentEventName {
     create = "create",
     change_type = "change_type",
@@ -255,6 +258,10 @@ export interface WorkflowRun {
      *  - For non-DSL workflows, the vertesia_type is the name of the Temporal Workflow Type.
      */
     vertesia_workflow_type?: string;
+    /**
+     * An interaction is used to start the agent, the data is stored on temporal "vars"
+     */
+    interactions?: InteractionRef[];
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
@@ -273,6 +280,23 @@ export interface WorkflowRunWithDetails extends WorkflowRun {
 }
 export interface ListWorkflowRunsResponse {
     runs: WorkflowRun[];
+}
+
+export interface ListWorkflowInteractionsResponse {
+    workflow_id: string,
+    run_id: string,
+    interaction: WorkflowInteraction
+}
+
+export interface WorkflowInteraction {
+    type: string,
+    model: string,
+    tools: [],
+    interaction: string,
+    environment: string,
+    prompt_data: JSONSchema4,
+    interactive: boolean,
+    interactionParamsSchema?: JSONSchema4
 }
 
 export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, "config"> {
