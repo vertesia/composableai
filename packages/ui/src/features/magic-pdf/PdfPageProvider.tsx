@@ -83,14 +83,14 @@ function getBasePath(objectId: string) {
     return `${ADVANCED_PROCESSING_PREFIX}/${objectId}`;
 }
 
-function getPageImagePath(objectId: string, pageNumber: number, ext = ".jpeg") {
+function getPageImagePath(objectId: string, pageNumber: number, ext = ".jpg") {
     return `${getBasePath(objectId)}/pages/page-${pageNumber}${ext}`;
 }
 
 function getPageAnnotatedImagePath(
     objectId: string,
     pageNumber: number,
-    ext = ".jpeg",
+    ext = ".jpg",
 ) {
     return `${getBasePath(objectId)}/pages/page-${pageNumber}-annotated${ext}`;
 }
@@ -98,7 +98,7 @@ function getPageAnnotatedImagePath(
 function getPageInstrumentedImagePath(
     objectId: string,
     pageNumber: number,
-    ext = ".jpeg",
+    ext = ".jpg",
 ) {
     return `${getBasePath(objectId)}/pages/page-${pageNumber}.instrumented${ext}`;
 }
