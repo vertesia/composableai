@@ -1,5 +1,5 @@
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { ExecutionEnvironmentRef, Interaction, mergePromptsSchema, PopulatedInteraction } from "@vertesia/common";
+import { ExecutionEnvironmentRef, Interaction, mergePromptsSchema, PopulatedInteraction, supportsToolUse } from "@vertesia/common";
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
@@ -67,17 +67,18 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
             // Reset the validator when schema changes
             this._inputValidator = undefined;
             if (interaction) {
-                if (interaction.model) {
-                    this.payload.model = interaction.model;
-                } else {
-                    this.payload.model = undefined;
-                }
                 if (interaction.environment) {
                     if (typeof interaction.environment === 'string') {
                         this.vertesia.environments.retrieve(interaction.environment).then((environment) => this.environment = environment);
                     } else {
                         this.payload.environment = interaction.environment;
                     }
+                }
+                if (interaction.model) {
+                    this.payload.model = interaction.model;
+                } else {
+                    this.payload.model = this.environment?.default_model && supportsToolUse(this.environment.default_model, this.environment.provider)
+                        ? this.environment.default_model : undefined;
                 }
             }
             this.onStateChanged();
@@ -90,6 +91,9 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     set environment(environment: ExecutionEnvironmentRef | undefined) {
         if (environment?.id !== this.payload.environment?.id) {
             this.payload.environment = environment;
+            this.payload.model = environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
+                ? environment.default_model : undefined;
+
             this.onStateChanged();
         }
     }
