@@ -140,7 +140,7 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
 
 
     // Add date filters for runs context
-    if (facets.hasOwnProperty('start') || search.facetSpecs?.some((spec: any) => spec.name === 'start')) {
+    if ('start' in facets || search.facetSpecs?.some((spec: any) => spec.name === 'start')) {
         customFilterGroups.push({
             name: 'start',
             placeholder: 'Date after',
@@ -149,7 +149,7 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
         });
     }
 
-    if (facets.hasOwnProperty('end') || search.facetSpecs?.some((spec: any) => spec.name === 'end')) {
+    if ('end' in facets || search.facetSpecs?.some((spec: any) => spec.name === 'end')) {
         customFilterGroups.push({
             name: 'end',
             placeholder: 'Date before',
