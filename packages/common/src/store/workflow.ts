@@ -1,3 +1,6 @@
+import { JSONSchema4 } from "json-schema";
+import { InteractionRef } from "../interaction.js";
+
 export enum ContentEventName {
     create = "create",
     change_type = "change_type",
@@ -195,6 +198,31 @@ interface WorkflowRunEvent {
         startedEventId?: string;
     };
 
+    childWorkflow?: {
+        workflowId?: string,
+        workflowType?: string,
+        runId?: string,
+        scheduledEventId?: string,
+        startedEventId?: string,
+        input?: any,
+        result?: any,
+    };
+
+    signal?: {
+        direction: "receiving" | "sending";
+        signalName?: string,
+        input?: any,
+        sender?: {
+            workflowId?: string,
+            runId?: string
+        }
+        recipient?: {
+            workflowId?: string,
+            runId?: string 
+        },
+        initiatedEventId?: string,
+    }
+
     error?: {
         message?: string;
         source?: string;
@@ -219,7 +247,9 @@ export interface WorkflowRun {
     run_id?: string;
     workflow_id?: string;
     initiated_by?: string;
+    input?: any;
     result?: any;
+    error?:any,
     raw?: any;
     /**
      * The Vertesia Workflow Type of this Workflow Run.
@@ -228,6 +258,10 @@ export interface WorkflowRun {
      *  - For non-DSL workflows, the vertesia_type is the name of the Temporal Workflow Type.
      */
     vertesia_workflow_type?: string;
+    /**
+     * An interaction is used to start the agent, the data is stored on temporal "vars"
+     */
+    interactions?: InteractionRef[];
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
@@ -235,9 +269,34 @@ export interface WorkflowRunWithDetails extends WorkflowRun {
     memo?: {
         [key: string]: any;
     } | null;
+    pendingActivities?: {
+        activityId?: string;
+        activityType?: string;
+        attempt: number;
+        maximumAttempts: number;
+        lastFailure?: string;
+        lastStartedTime?: number;
+    }[];
 }
 export interface ListWorkflowRunsResponse {
     runs: WorkflowRun[];
+}
+
+export interface ListWorkflowInteractionsResponse {
+    workflow_id: string,
+    run_id: string,
+    interaction: WorkflowInteraction
+}
+
+export interface WorkflowInteraction {
+    type: string,
+    model: string,
+    tools: [],
+    interaction: string,
+    environment: string,
+    prompt_data: JSONSchema4,
+    interactive: boolean,
+    interactionParamsSchema?: JSONSchema4
 }
 
 export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, "config"> {

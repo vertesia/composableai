@@ -7,6 +7,7 @@ import {
     DSLWorkflowDefinition,
     DSLWorkflowSpec,
     ExecuteWorkflowPayload,
+    ListWorkflowInteractionsResponse,
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
     WorkflowDefinitionRef,
@@ -41,6 +42,10 @@ export class WorkflowsApi extends ApiTopic {
     getRunDetails(runId: string, workflowId: string, includeHistory: boolean = false): Promise<WorkflowRunWithDetails> {
         const query = { include_history: includeHistory };
         return this.get(`/runs/${workflowId}/${runId}`, { query });
+    }
+
+    getRunInteraction(workflowId: string, runId: string): Promise<ListWorkflowInteractionsResponse> {
+        return this.get(`/runs/${workflowId}/${runId}/interaction`);
     }
 
     terminate(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {

@@ -81,11 +81,11 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate }: TableLayoutEdi
 
 
     return (
-        <div className="mx-2 my-2 rounded-md border border-solid shadow-xs">
-            <div className="flex items-center rounded-t-md gap-x-2 bg-gray-50 dark:bg-slate-800 py-2 px-2">
-                <div className="text-lg font-semibold ">Table Layout Editor</div>
+        <div className="mx-2 my-2 rounded-2xl border border-solid shadow-xs">
+            <div className="flex items-center rounded-t-md border-b gap-x-2 py-2 pl-4 pr-2">
+                <div className="text-base font-semibold ">Table Layout Editor</div>
                 <div className="ml-auto flex gap-x-2">
-                    <Button isLoading={isUpdating} variant="secondary" onClick={onSave}>Save Changes</Button>
+                    <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>Save Changes</Button>
                 </div>
             </div>
             <div className="px-4 py-2">

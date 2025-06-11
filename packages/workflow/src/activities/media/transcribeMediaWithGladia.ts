@@ -2,7 +2,7 @@ import { DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, Supp
 import { activityInfo, CompleteAsyncError, log } from "@temporalio/activity";
 import { FetchClient } from "@vertesia/api-fetch-client";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
-import { NoDocumentFound } from "../../errors.js";
+import { DocumentNotFoundError } from "../../errors.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../index.js";
 
 
@@ -27,7 +27,7 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
 
     const gladiaConfig = await client.projects.integrations.retrieve(payload.project_id, SupportedIntegrations.gladia) as GladiaConfiguration | undefined;
     if (!gladiaConfig || !gladiaConfig.enabled) {
-        throw new NoDocumentFound("Gladia integration not enabled");
+        throw new DocumentNotFoundError("Gladia integration not enabled");
     }
 
     const object = await client.objects.retrieve(objectId, "+text");
@@ -39,13 +39,13 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
     }
 
     if (!object.content?.source) {
-        throw new NoDocumentFound(`No source found for object ${objectId}`);
+        throw new DocumentNotFoundError(`No source found for object ${objectId}`);
     }
 
     const mediaUrl = await client.store.objects.getContentSource(objectId).then(res => res.source);
 
     if (!mediaUrl) {
-        throw new NoDocumentFound(`Error fetching source ${object.content.source}`);
+        throw new DocumentNotFoundError(`Error fetching source ${object.content.source}`);
     }
 
     const taskToken = Buffer.from(activityInfo().taskToken).toString('base64url');
