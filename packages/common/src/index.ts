@@ -24,3 +24,4 @@ export * from './utils/auth.js';
 export * from './utils/schemas.js';
 export * from './json-schema.js';
 export * from './json.js';
+export * from './model_utility.js';

@@ -1,6 +1,6 @@
 import fs from "fs";
 
-interface PackageJson {
+export interface PackageJson {
     name: string;
     version: string;
     description: string;

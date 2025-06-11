@@ -1,0 +1,79 @@
+import { PackageJson } from "./Package.js";
+import { TemplateInit, UserOptions } from "./TemplateInit.js";
+
+
+export class WebTemplateInit extends TemplateInit {
+    constructor(options: UserOptions) {
+        super(options);
+    }
+
+    getVars(): Record<string, any> {
+        return {
+            plugin_title: this.pluginName.title,
+            PluginComponent: this.pluginName.pascalCase + "Plugin",
+        }
+    }
+
+    getPackageJson(): PackageJson {
+        const answer = this.options;
+        return {
+            name: answer.plugin_name,
+            version: answer.plugin_version || '1.0.0',
+            description: answer.plugin_description || '',
+            type: 'module',
+            main: `dist/${answer.plugin_name}.js`,
+            module: `dist/${answer.plugin_name}.js`,
+            types: "dist/index.d.ts",
+            files: [
+                "dist"
+            ],
+            scripts: {
+                "dev": "vite",
+                "build": "vite build",
+                "lint": "eslint .",
+                "preview": "vite preview"
+            },
+            peerDependencies: {
+                "react": "^19.0.0",
+                "react-dom": "^19.0.0"
+            },
+            plugin: {
+                title: this.pluginName.title,
+                publisher: this.pluginName.scope || "vertesia",
+                external: false,
+                status: "beta",
+            }
+        };
+    }
+
+    getDevDependencies(): string[] {
+        return [
+            "@vertesia/plugin-builder",
+            "@eslint/js",
+            "@tailwindcss/vite",
+            "@types/node",
+            "@types/react",
+            "@types/react-dom",
+            "@vitejs/plugin-react",
+            "eslint",
+            "eslint-plugin-react-hooks",
+            "eslint-plugin-react-refresh",
+            "globals",
+            "react",
+            "react-dom",
+            "tailwindcss",
+            "typescript",
+            "typescript-eslint",
+            "vite",
+            "vite-plugin-dts",
+        ]
+    }
+
+    getRuntimeDependencies(): string[] {
+        return [
+            "@vertesia/common",
+            "@vertesia/ui",
+        ]
+    }
+
+}

@@ -21,10 +21,10 @@ import {
     WorkflowExecutionPayload
 } from "@vertesia/common";
 import ms, { StringValue } from 'ms';
-import { ActivityParamInvalid, ActivityParamNotFound, NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
-import { Vars } from "./vars.js";
 import { HandleDslErrorParams } from "../activities/handleError.js";
 import * as activities from "../activities/index.js";
+import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from "../errors.js";
+import { Vars } from "./vars.js";
 
 interface BaseActivityPayload extends WorkflowExecutionPayload {
     workflow_name: string;
@@ -43,7 +43,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
 
     const definition = payload.workflow;
     if (!definition) {
-        throw new WorkflowParamNotFound("workflow");
+        throw new WorkflowParamNotFoundError("workflow");
     }
     // the base payload will be used to create the activities payload
     const basePayload: BaseActivityPayload = {
@@ -61,12 +61,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
             backoffCoefficient: 2,
             maximumAttempts: 10,
             maximumInterval: 100 * 30 * 1000, //ms
-            nonRetryableErrorTypes: [
-                NoDocumentFound.name,
-                ActivityParamNotFound.name,
-                WorkflowParamNotFound.name,
-                ActivityParamInvalid.name,
-            ],
+            nonRetryableErrorTypes: WF_NON_RETRYABLE_ERRORS,
         },
     };
     log.debug("Global activity options", {

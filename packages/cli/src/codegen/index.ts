@@ -2,10 +2,10 @@ import { Command } from "commander";
 import { getClient } from "../client.js";
 import { CodeBuilder } from "./CodeBuilder.js";
 
-export default function runExport(program: Command, interactionName: string | undefined, options: Record<string, any>) {
+export default async function runExport(program: Command, interactionName: string | undefined, options: Record<string, any>) {
     const client = getClient(program);
-
-    if (!client.project) {
+    const project = await client.getProject();
+    if (!project) {
         console.error('No project id specified');
         process.exit(1);
     }
@@ -18,14 +18,15 @@ export default function runExport(program: Command, interactionName: string | un
         tags: tags,
         versions: options.all ? [] : versions,
     }
-    client.interactions.export(payload).then((interactions) => {
+    try {
+        const interactions = await client.interactions.export(payload);
         new CodeBuilder().build(interactions, {
             dir: options.dir,
-            project: client.project!,
+            project: project.id,
             exportVersion: options.export || undefined,
         });
-    }).catch((error) => {
+    } catch (error: any) {
         console.error('Failed to export interactions:', error.message || error);
         process.exit(1);
-    })
+    }
 }

@@ -1,7 +1,7 @@
 import { log } from "@temporalio/activity";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { WorkflowParamNotFound } from "../errors.js";
+import { WorkflowParamNotFoundError } from "../errors.js";
 
 export interface NotifyWebhookParams {
     target_url: string; //URL to send the notification to
@@ -21,7 +21,7 @@ export async function notifyWebhook(payload: DSLActivityExecutionPayload<NotifyW
     const { params } = await setupActivity<NotifyWebhookParams>(payload);
     const { target_url, method, payload: requestPayload, headers } = params
 
-    if (!target_url) throw new WorkflowParamNotFound('target_url');
+    if (!target_url) throw new WorkflowParamNotFoundError('target_url');
 
     const body = method === 'POST' ? JSON.stringify({
         ...requestPayload,
