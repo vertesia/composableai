@@ -43,6 +43,7 @@ export enum AccessControlledResource {
     environment = "environment",
     account = "account",
     interaction = "interaction",
+    app = "application",
 }
 
 
