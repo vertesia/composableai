@@ -38,8 +38,6 @@ export function DocumentIcon({ selection, document, onSelectionChange }: Readonl
         retrieveRendition(client, document, setRenditionUrl, setRenditionAlt)
     }, [document])
 
-    console.log("renditionUrl", document)
-
     return (
         <Card className="relative flex flex-col border h-fit" onClick={handleNavigateToDocument}>
             {
