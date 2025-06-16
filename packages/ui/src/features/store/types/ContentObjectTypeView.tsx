@@ -130,6 +130,7 @@ function MetadataView({ objectType }: MetadataViewProps) {
     return (
         <PropertiesView className='w-full' properties={[
             { name: "Id", value: objectType.id },
+            { name: "Description", value: objectType.description ?? ""},
             { name: "Name", value: objectType.name },
             { name: "Is Chunkable", value: <ChunkableSwitch objectType={objectType} /> },
             { name: "Strict Mode", value: <StrictModeSwitch objectType={objectType} /> },
