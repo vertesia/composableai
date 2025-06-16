@@ -1,6 +1,6 @@
 import { CreateCollectionPayload } from "@vertesia/common";
 import { useToast, VModalBody, FormItem, Styles, VModalFooter, Input, Switch, Button } from "@vertesia/ui/core";
-import { SelectContentType } from "@vertesia/ui/features/store/types";
+import { SelectContentType } from "../types/SelectContentType";
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { useState } from "react";
