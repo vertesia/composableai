@@ -1,49 +1,9 @@
 import { CreateCollectionPayload } from "@vertesia/common";
-import {
-    Button, FormItem, Input, Styles,
-    Switch, useFlag, useToast, VModal,
-    VModalBody,
-    VModalFooter,
-    VModalTitle
-} from "@vertesia/ui/core";
-import { FullHeightLayout } from "@vertesia/ui/layout";
+import { useToast, VModalBody, FormItem, Styles, VModalFooter, Input, Switch, Button } from "@vertesia/ui/core";
+import { SelectContentType } from "@vertesia/ui/features/store/types";
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { useState } from "react";
-import { GenericPageNavHeader } from "../../layout";
-import { SelectContentType } from "../../store";
-import { CollectionsTable } from "./CollectionsTable";
-
-interface CollectionsViewProps { }
-export function CollectionsView({ }: CollectionsViewProps) {
-    const actions = [<CreateCollectionButton key="create" />];
-    return (
-        <FullHeightLayout>
-            <GenericPageNavHeader
-                title="Collections"
-                breadcrumbs={[<span key="0">Collections</span>]}
-                description="Group objects together using a collection"
-                actions={actions}
-            />
-            <FullHeightLayout.Body>
-                <CollectionsTable />
-            </FullHeightLayout.Body>
-        </FullHeightLayout>
-    );
-}
-
-function CreateCollectionButton() {
-    const { on, off, isOn } = useFlag();
-    return (
-        <div>
-            <VModal onClose={off} isOpen={isOn}>
-                <VModalTitle>Create a Collection</VModalTitle>
-                <CreateCollectionForm onClose={off} />
-            </VModal>
-            <Button onClick={on}>Create Collection</Button>
-        </div>
-    );
-}
 
 interface CreateCollectionFormProps {
     onClose: () => void;
