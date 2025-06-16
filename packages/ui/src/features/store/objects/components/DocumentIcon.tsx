@@ -40,7 +40,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
     }, [document])
 
     return (
-        <Card className="relative flex flex-col border h-fit" onClick={(e) => onRowClick ? onRowClick(document) : handleNavigateToDocument()}>
+        <Card className="relative flex flex-col border h-fit" onClick={() => onRowClick ? onRowClick(document) : handleNavigateToDocument()}>
             {
                 selection && (
                     <div
