@@ -3,7 +3,9 @@ import clsx from 'clsx';
 import { EllipsisVertical, X } from 'lucide-react';
 
 import { useState } from "react";
-import { DocumentSelection, DocumentUploadModal, useDocumentSelection } from "../../../store";
+import { useDocumentSelection } from "../DocumentSelectionProvider";
+import { DocumentUploadModal } from "../upload/DocumentUploadModal";
+import { DocumentSelection } from "../../../store";
 import { ExportPropertiesAction } from "./actions/ExportPropertiesAction";
 import { StartWorkflowAction } from "./actions/StartWorkflowComponent";
 import { ObjectsActionContextProvider, useObjectsActionContext } from "./ObjectsActionContext";

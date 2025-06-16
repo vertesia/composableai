@@ -3,25 +3,57 @@ import { createContext, ReactNode, useContext, useEffect, useMemo } from 'react'
 import { ErrorBox, useFetch, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 
-import { useDocumentSearch, useDocumentSelection } from '../../../store';
-import { AddToCollectionAction } from './actions/AddToCollectionAction';
-import { ChangeTypeAction } from './actions/ChangeTypeAction';
-import { DeleteObjectsAction } from './actions/DeleteObjectsAction';
-import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
-import { RemoveFromCollectionAction } from './actions/RemoveFromCollectionAction';
-import { StartWorkflowAction, StartWorkflowComponent } from './actions/StartWorkflowComponent';
+import { useDocumentSearch } from '../search/DocumentSearchContext';
+import { useDocumentSelection } from '../DocumentSelectionProvider';
 import { ObjectsActionParams, ObjectsActionSpec } from './ObjectsActionSpec';
 
 export type ObjectsActionCallback = (params: ObjectsActionParams) => Promise<unknown>;
 
 export class ObjectsActionContext {
     allActions: ObjectsActionSpec[] = [
-        ExportPropertiesAction,
-        ChangeTypeAction,
-        StartWorkflowAction,
-        AddToCollectionAction,
-        DeleteObjectsAction,
-        RemoveFromCollectionAction,
+        {
+            id: 'exportProperties',
+            name: 'Export Properties',
+            description: 'Export properties of selected objects',
+            confirm: false,
+            component: undefined as any, // Will be set by ActionsRenderer
+        },
+        {
+            id: 'changeType',
+            name: 'Change Type',
+            description: 'Change the type of selected objects',
+            confirm: false,
+            component: undefined as any, // Will be set by ActionsRenderer
+        },
+        {
+            id: 'startWorkflow',
+            name: 'Start Workflow',
+            description: 'Start a workflow with selected objects',
+            confirm: false,
+            isWorkflow: true,
+            component: undefined as any, // Will be set by ActionsRenderer
+        },
+        {
+            id: 'addToCollection',
+            name: 'Add to Collection',
+            description: 'Add selected objects to a collection',
+            confirm: false,
+            component: undefined as any, // Will be set by ActionsRenderer
+        },
+        {
+            id: 'delete',
+            name: 'Delete',
+            description: 'Delete selected objects',
+            confirm: true,
+            component: undefined as any, // Will be set by ActionsRenderer
+        },
+        {
+            id: 'removeFromCollection',
+            name: 'Remove from Collection',
+            description: 'Remove selected objects from collection',
+            confirm: true,
+            component: undefined as any, // Will be set by ActionsRenderer
+        },
     ];
     wfRules: ObjectsActionSpec[] = [];
     callbacks: Record<string, ObjectsActionCallback> = {};
@@ -52,7 +84,7 @@ export class ObjectsActionContext {
                     description: rule.description,
                     confirm: false,
                     isWorkflow: true,
-                    component: StartWorkflowComponent
+                    component: undefined as any
                 }
             )).sort((a, b) => a.name.localeCompare(b.name));
         });
@@ -120,7 +152,7 @@ export function ObjectsActionContextProvider({ children }: ObjectsActionContextP
                     description: rule.description,
                     confirm: false,
                     isWorkflow: true,
-                    component: StartWorkflowComponent
+                    component: undefined as any
                 }
             )).sort((a, b) => a.name.localeCompare(b.name));
         });
@@ -141,32 +173,12 @@ export function ObjectsActionContextProvider({ children }: ObjectsActionContextP
     return (
         context && (
             <ObjectsActionContextReact.Provider value={context}>
-                <Actions />
                 {children}
             </ObjectsActionContextReact.Provider>
         )
     )
 }
 
-interface ActionsProps {
-}
-function Actions({ }: ActionsProps) {
-    const context = useObjectsActionContext();
-
-    const selection = context.params.selection;
-    const objectId = selection.getObjectId();
-    const objectIds = selection.isSingleSelection() && objectId ? [objectId] : selection.getObjectIds();
-
-    return (
-        <div style={{ display: 'none' }}>
-            {
-                context.allActions.map(action => (
-                    <action.component key={action.id} action={action} objectIds={objectIds} collectionId={selection.collectionId} />
-                ))
-            }
-        </div>
-    )
-}
 
 export function useObjectsActionContext() {
     const ctx = useContext(ObjectsActionContextReact);

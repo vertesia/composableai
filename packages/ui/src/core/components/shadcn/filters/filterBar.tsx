@@ -1,6 +1,8 @@
 import React, { Dispatch, SetStateAction, useEffect } from "react";
 import { cn } from "../../libs/utils";
-import { Button, Popover, PopoverTrigger, PopoverContent, Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "../index";
+import { Button } from "../button";
+import { Popover, PopoverTrigger, PopoverContent } from "../popover";
+import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "../command";
 import { ListFilter } from "lucide-react";
 
 import { Filter, FilterGroup } from "./types";
