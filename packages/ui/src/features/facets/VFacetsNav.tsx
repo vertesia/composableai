@@ -115,6 +115,7 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
                 switch (filterName) {
                     case 'name':
                         search.query.search_term = filterValue;
+                        search.query.name = filterValue;
                         break;
                     case 'user':
                         search.query.initiated_by = filterValue === 'Unknown User' ? 'unknown' : filterValue;
