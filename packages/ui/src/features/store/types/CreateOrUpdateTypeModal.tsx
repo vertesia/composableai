@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Button, Input, Modal, ModalBody, ModalFooter, ModalTitle, Switch, useToast } from '@vertesia/ui/core';
+import { Button, Input, Modal, ModalBody, ModalFooter, ModalTitle, Switch, useToast, Textarea } from '@vertesia/ui/core';
 
 export interface CreateOrUpdateTypePayload {
     name: string;
@@ -48,7 +48,7 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-muted">Description</label>
-                        <Input value={description} onChange={setDescription} />
+                        <Textarea value={description} onChange={setDescription} />
                     </div>
                     <div className="flex items-center justify-between">
                         <label className="block text-sm font-medium text-muted-foreground">Strict Mode</label>
