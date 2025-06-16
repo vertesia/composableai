@@ -12,9 +12,10 @@ interface DocumentIconProps {
     document: ContentObjectItem
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
     selection: DocumentSelection;
+    onRowClick?: (object: ContentObjectItem) => void;
 
 }
-export function DocumentIcon({ selection, document, onSelectionChange }: Readonly<DocumentIconProps>) {
+export function DocumentIcon({ selection, document, onSelectionChange, onRowClick }: Readonly<DocumentIconProps>) {
     const { client } = useUserSession()
     const navigate = useNavigate()
 
@@ -39,7 +40,7 @@ export function DocumentIcon({ selection, document, onSelectionChange }: Readonl
     }, [document])
 
     return (
-        <Card className="relative flex flex-col border h-fit" onClick={handleNavigateToDocument}>
+        <Card className="relative flex flex-col border h-fit" onClick={(e) => onRowClick ? onRowClick(document) : handleNavigateToDocument()}>
             {
                 selection && (
                     <div

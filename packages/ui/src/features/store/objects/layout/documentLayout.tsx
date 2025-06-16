@@ -52,7 +52,7 @@ export function DocumentTableView({ objects, selection, isLoading, onRowClick, c
     )
 }
 
-export function DocumentGridView({ objects, selection, isLoading, onSelectionChange }: ViewProps) {
+export function DocumentGridView({ objects, selection, isLoading, onSelectionChange, onRowClick }: ViewProps) {
 
     return (
         <>
@@ -61,7 +61,7 @@ export function DocumentGridView({ objects, selection, isLoading, onSelectionCha
             </div>
             <div className="w-full gap-2 grid lg:grid-cols-6">
                 {objects.map((document) => (
-                    <DocumentIcon key={document.id} document={document} selection={selection} onSelectionChange={onSelectionChange} />
+                    <DocumentIcon key={document.id} document={document} selection={selection} onSelectionChange={onSelectionChange} onRowClick={onRowClick} />
                 ))}
             </div>
         </>
