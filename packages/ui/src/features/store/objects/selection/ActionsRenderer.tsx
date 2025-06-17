@@ -21,14 +21,14 @@ export function ActionsRenderer() {
             'removeFromCollection': RemoveFromCollectionActionComponent,
         };
 
-        context.allActions.forEach(action => {
+        context.allActions?.forEach(action => {
             if (componentMap[action.id]) {
                 action.component = componentMap[action.id];
             }
         });
 
         // Also set components for workflow rules
-        context.wfRules.forEach(rule => {
+        context.wfRules?.forEach(rule => {
             if (rule.isWorkflow) {
                 rule.component = StartWorkflowComponent;
             }
@@ -42,12 +42,12 @@ export function ActionsRenderer() {
     return (
         <div style={{ display: 'none' }}>
             {
-                context.allActions.map(action => (
+                context.allActions?.map(action => (
                     action.component ? <action.component key={action.id} action={action} objectIds={objectIds} collectionId={selection.collectionId} /> : null
                 ))
             }
             {
-                context.wfRules.map(rule => (
+                context.wfRules?.map(rule => (
                     rule.component ? <rule.component key={rule.id} action={rule} objectIds={objectIds} collectionId={selection.collectionId} /> : null
                 ))
             }
