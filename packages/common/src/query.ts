@@ -35,8 +35,10 @@ export interface SimpleSearchQuery {
 }
 
 export interface ObjectSearchQuery extends SimpleSearchQuery {
-    created_at?: DateRange;
-    updated_at?: DateRange;
+    createdFrom?: string;
+    createdTo?: string;
+    updatedFrom?: string;
+    updatedTo?: string;
     location?: string;
     parent?: string;
     similarTo?: string;
@@ -90,9 +92,4 @@ export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {
 export interface ComplexSearchQuery extends ObjectSearchQuery {
     vector?: VectorSearchQuery;
     match?: Record<string, any>;
-}
-
-export interface DateRange {
-    from?: string;
-    to?: string;
 }
