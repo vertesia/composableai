@@ -181,6 +181,16 @@ export interface ListWorkflowRunsPayload {
     query?: string;
 
     type?: string;
+
+    /**
+     * The maximum number of results to return per page.
+     */
+    pageSize?: number;
+
+    /**
+     * The page token for Temporal pagination.
+     */
+    nextPageToken?: string;
 }
 
 interface WorkflowRunEvent {
@@ -280,6 +290,8 @@ export interface WorkflowRunWithDetails extends WorkflowRun {
 }
 export interface ListWorkflowRunsResponse {
     runs: WorkflowRun[];
+    nextPageToken?: string;
+    hasMore?: boolean;
 }
 
 export interface ListWorkflowInteractionsResponse {
