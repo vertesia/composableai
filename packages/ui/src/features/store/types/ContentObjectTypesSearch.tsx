@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ContentObjectTypesTable } from './ContentObjectTypesTable';
 import { useWatchSearchResult } from './search/ObjectTypeSearchContext';
 import { useUserSession } from '@vertesia/ui/session';
-import { EmptyCollection, ErrorBox, Input, SelectBox, useToast } from '@vertesia/ui/core';
-import { useDebounce, useIntersectionObserver } from '@vertesia/ui/core';
+import { EmptyCollection, ErrorBox, Input, SelectBox, useToast, useDebounce, useIntersectionObserver } from '@vertesia/ui/core';
 
 import { CreateOrUpdateTypeModal, CreateOrUpdateTypePayload } from './CreateOrUpdateTypeModal';
 
