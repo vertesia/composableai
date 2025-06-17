@@ -3,8 +3,8 @@ import { ExecutionEnvironmentRef, Interaction, mergePromptsSchema, PopulatedInte
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
-import React, { createContext, useContext, useEffect, useState } from "react";
 import type { JSONSchema4 } from "json-schema";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 export interface ConversationWorkflowPayload {
     interaction?: Interaction | undefined;
@@ -16,6 +16,7 @@ export interface ConversationWorkflowPayload {
 
 export class PayloadBuilder implements ConversationWorkflowPayload {
     _interactive: boolean = true;
+    _debug_mode: boolean = false;
     _start: boolean = false;
 
     payload: ConversationWorkflowPayload;
@@ -42,6 +43,7 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         builder._interactionParamsSchema = this._interactionParamsSchema;
         builder.payload = this.payload;
         builder._interactive = this._interactive;
+        builder._debug_mode = this._debug_mode;
         builder._inputValidator = this._inputValidator;
         builder._start = this._start;
         return builder;
@@ -50,9 +52,21 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     get interactive() {
         return this._interactive;
     }
+
     set interactive(interactive: boolean) {
         if (interactive !== this._interactive) {
             this._interactive = interactive;
+            this.onStateChanged();
+        }
+    }
+
+    get debug_mode() {
+        return this._debug_mode;
+    }
+
+    set debug_mode(debug_mode: boolean) {
+        if (debug_mode !== this._debug_mode) {
+            this._debug_mode = debug_mode;
             this.onStateChanged();
         }
     }
@@ -154,6 +168,7 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     reset() {
         this._start = false;
         this._interactive = true;
+        this._debug_mode = false;
         this.payload = {
             model: '',
             tools: [],
