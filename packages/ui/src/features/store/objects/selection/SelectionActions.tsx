@@ -3,12 +3,10 @@ import clsx from 'clsx';
 import { EllipsisVertical, X } from 'lucide-react';
 
 import { useState } from "react";
-import { useDocumentSelection, DocumentSelection } from "../DocumentSelectionProvider";
-import { DocumentUploadModal } from "../upload/DocumentUploadModal";
+import { DocumentSelection, DocumentUploadModal, useDocumentSelection } from "../../../store";
 import { ExportPropertiesAction } from "./actions/ExportPropertiesAction";
 import { StartWorkflowAction } from "./actions/StartWorkflowComponent";
 import { ObjectsActionContextProvider, useObjectsActionContext } from "./ObjectsActionContext";
-import { ActionsRenderer } from "./ActionsRenderer";
 import { ObjectsActionSpec } from "./ObjectsActionSpec";
 
 export function SelectionActions() {
@@ -25,7 +23,6 @@ export function SelectionActions() {
 
     return (
         <ObjectsActionContextProvider>
-            <ActionsRenderer />
             <div className="flex items-center gap-x-2">
                 {hasSelection && !hasSingleSelection &&
                     <div className="flex items-center gap-x-1 shrink-0">
