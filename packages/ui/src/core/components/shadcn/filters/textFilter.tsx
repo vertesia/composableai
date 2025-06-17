@@ -1,5 +1,6 @@
 import React from "react";
-import { Button, Input } from "../index";
+import { Button } from "../button";
+import { Input } from "../input";
 import { Filter, FilterGroup } from "./types";
 
 interface TextFilterProps {

@@ -11,6 +11,7 @@ export interface ObjectsActionSpec {
     component: ActionComponentType;
     hideInList?: boolean;
     destructive?: boolean;
+    isWorkflow?: boolean;
 }
 
 export interface ObjectsActionParams {

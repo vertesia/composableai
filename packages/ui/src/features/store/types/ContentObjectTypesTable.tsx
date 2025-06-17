@@ -20,6 +20,7 @@ export function ContentObjectTypesTable({ objects, isLoading }: ContentObjectTyp
                     <tr>
                         <th>Name</th>
                         <th>Is Chunkable?</th>
+                        <th>Is Strict?</th>
                         <th>Updated At</th>
                     </tr>
                 </thead>
@@ -28,6 +29,7 @@ export function ContentObjectTypesTable({ objects, isLoading }: ContentObjectTyp
                         <tr key={obj.id} onClick={() => navigate(`/types/${obj.id}`)} className='cursor-pointer hover:bg-muted'>
                             <td>{obj.name}</td>
                             <td>{obj.is_chunkable ? 'Yes' : 'No'}</td>
+                            <td>{obj.strict_mode ? 'Yes' : 'No'}</td>
                             <td>{dayjs(obj.updated_at).fromNow()}</td>
                         </tr>
                     ))}

@@ -1,7 +1,6 @@
 import { useUserSession } from "@vertesia/ui/session";
 import { ApiKey, ApiKeyTypes, PrincipalType, User } from "@vertesia/common";
-import { Avatar, Table, Popover, PopoverContent, PopoverTrigger } from "@vertesia/ui/core";
-import { useFetch } from "@vertesia/ui/core";
+import { Avatar, Table, Popover, PopoverContent, PopoverTrigger, useFetch } from "@vertesia/ui/core";
 import { ReactNode } from "react";
 
 //TODO use a real cache

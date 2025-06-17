@@ -4,8 +4,7 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { useUserSession } from '@vertesia/ui/session';
 import { ContentObjectItem } from '@vertesia/common';
 import { ChevronsUpDown, X } from 'lucide-react';
-import { Button, Styles } from '@vertesia/ui/core';
-import { useFlag } from '@vertesia/ui/core';
+import { Button, Styles, useFlag } from '@vertesia/ui/core';
 import { Node } from '@vertesia/ui/widgets';
 
 import { SelectDocumentModal } from './SelectDocumentModal';

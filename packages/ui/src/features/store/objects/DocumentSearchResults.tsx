@@ -8,7 +8,10 @@ import { Download, RefreshCw, SquareArrowOutUpRight } from 'lucide-react';
 import { VFacetsNav } from "../../facets";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 
-import { ContentDispositionButton, DocumentTable, useDocumentSearch, useDocumentUploadHandler, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from "../../store";
+import { ContentDispositionButton } from './components/ContentDispositionButton';
+import { DocumentTable } from './DocumentTable';
+import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from './search/DocumentSearchContext';
+import { useDocumentUploadHandler } from './upload/useUploadHandler';
 import { ContentOverview } from './components/ContentOverview';
 import { useDownloadDocument } from './components/useDownloadObject';
 

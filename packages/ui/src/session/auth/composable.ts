@@ -4,7 +4,7 @@
 import { AuthTokenPayload } from "@vertesia/common";
 import { jwtDecode } from "jwt-decode";
 import { Env } from '@vertesia/ui/env';
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../UserSession';
+import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
 import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
 
 let AUTH_TOKEN_RAW: string | undefined;

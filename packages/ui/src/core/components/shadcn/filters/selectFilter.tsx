@@ -1,5 +1,5 @@
 import React from "react";
-import { CommandItem, CommandEmpty } from "../index";
+import { CommandItem, CommandEmpty } from "../command";
 import { Filter, FilterGroup, FilterGroupOption } from "./types";
 import { DynamicLabel } from "./DynamicLabel";
 
