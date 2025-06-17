@@ -106,6 +106,10 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
         }
         setFilters(newFilters);
 
+        // Reset the actual query before reapplying filters. Otherwise the removed filters remain.
+        // Design should be improved to avoid this hack
+        search.query = {};
+
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name.toLowerCase();
