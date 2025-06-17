@@ -2,6 +2,12 @@ import { ToolDefinition } from "@llumiverse/common";
 
 export interface AppManifestData {
     /**
+     * The name of the app, used as the id in the system.
+     * Must be in kebab case (e.g. my-app).
+     */
+    name: string;
+
+    /**
      * Which account is ownning the app.
      * The property is defined only for customer apps.
      * THis is always undefined for vertesia apps.
