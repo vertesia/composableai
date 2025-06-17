@@ -35,11 +35,17 @@ export interface SimpleSearchQuery {
 }
 
 export interface ObjectSearchQuery extends SimpleSearchQuery {
+    createdFrom?: string;
+    createdTo?: string;
+    updatedFrom?: string;
+    updatedTo?: string;
     location?: string;
     parent?: string;
     similarTo?: string;
     embeddingType?: SupportedEmbeddingTypes;
     type?: string;
+    types?: string[];
+    statuses?: string[];
 }
 
 export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
