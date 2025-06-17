@@ -7,9 +7,9 @@ import {
     ModalTitle,
     Input,
     RadioGroup,
-    RadioOptionAdapter
+    RadioOptionAdapter,
+    FormItem
 } from '@vertesia/ui/core';
-import { FormItem } from '@vertesia/ui/core';
 
 export interface SaveVersionConfirmModalProps {
     isOpen: boolean;

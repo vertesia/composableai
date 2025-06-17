@@ -3,9 +3,8 @@ import { useMemo, useRef, useState } from 'react';
 
 import { useUserSession } from '@vertesia/ui/session';
 import { json } from '@codemirror/lang-json';
-import { CodeMirrorEditor, EditorApi } from '@vertesia/ui/widgets';
+import { CodeMirrorEditor, EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
 import { Button, useToast } from '@vertesia/ui/core';
-import { SchemaEditor, useSchema } from '@vertesia/ui/widgets';
 import { ContentObjectType } from '@vertesia/common';
 
 const CODE_MIRROR_EXTENSIONS = [basicSetup, json()];

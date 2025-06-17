@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import DatePicker from "react-date-picker"
 
