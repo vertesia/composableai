@@ -404,7 +404,7 @@ interface ResumeConversationPayload {
 export interface ToolResultsPayload extends ResumeConversationPayload {
     results: {
         tool_use_id: string;
-        content: string;
+        content: object | string;
         files?: string[];
     }[];
 }
