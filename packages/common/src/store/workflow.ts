@@ -290,8 +290,8 @@ export interface WorkflowRunWithDetails extends WorkflowRun {
 }
 export interface ListWorkflowRunsResponse {
     runs: WorkflowRun[];
-    nextPageToken?: string;
-    hasMore?: boolean;
+    next_page_token?: string;
+    has_more?: boolean;
 }
 
 export interface ListWorkflowInteractionsResponse {
