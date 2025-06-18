@@ -1,5 +1,5 @@
 import { Permission } from "@vertesia/common";
-import { Button, ButtonProps } from "@vertesia/ui/core";
+import { Button, ButtonProps } from "@vertesia/ui/core/components/shadcn/button";
 import { useUserPermissions } from "./UserPermissionsProvider";
 
 interface SecureButtonProps extends ButtonProps {
