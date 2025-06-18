@@ -12,10 +12,12 @@ import { PropertiesEditorModal } from "./PropertiesEditorModal";
 interface ContentOverviewProps {
     object: ContentObject;
     loadText?: boolean;
+    refetch: () => Promise<unknown>;
 }
 export function ContentOverview({
     object,
     loadText,
+    refetch,
 }: ContentOverviewProps) {
     const { client, store } = useUserSession();
     const [isLoadingText, setIsLoadingText] = useState(false);
@@ -386,6 +388,7 @@ export function ContentOverview({
                 isOpen={isPropertiesModalOpen}
                 onClose={handleClosePropertiesModal}
                 object={object}
+                refetch={refetch}
             />
         </div>
     );
