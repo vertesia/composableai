@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react';
 import { SharedState, useWatchSharedState } from '@vertesia/ui/core';
 import { ComputeFacetsResponse, ZenoClient } from '@vertesia/client';
 import { ComplexSearchQuery, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
+import { SearchInterface } from '@vertesia/ui/features'
 
 interface DocumentSearchResult {
     objects: ContentObjectItem[],
@@ -11,7 +12,7 @@ interface DocumentSearchResult {
 }
 
 
-export class DocumentSearch {
+export class DocumentSearch implements SearchInterface {
 
     collectionId?: string;
     facets = new SharedState<ComputeFacetsResponse>({});
@@ -49,13 +50,15 @@ export class DocumentSearch {
         this.search();
     }
 
-    clearFilters() {
+    clearFilters(autoSearch: boolean = true) {
         const parent = this.query.parent;
         this.query = {
             parent
         };
 
-        this.search();
+        if (autoSearch) {
+            this.search();
+        }
     }
 
     getFacetBuckets(name: string): FacetBucket[] {

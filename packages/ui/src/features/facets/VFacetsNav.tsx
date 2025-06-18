@@ -5,9 +5,18 @@ import { VStringFacet } from './VStringFacet';
 import { VTypeFacet } from './VTypeFacet';
 import { VUserFacet } from './VUserFacet';
 
+export interface SearchInterface {
+    getFilterValue(name: string): any;
+    setFilterValue(name: string, value: any): void;
+    clearFilters(autoSearch?: boolean): void;
+    search(): Promise<boolean | undefined>;
+    readonly isRunning: boolean;
+    query: Record<string, any>;
+}
+
 interface FacetsNavProps {
     facets: any;
-    search: any;
+    search: SearchInterface;
     textSearch?: string;
 }
 export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) {
@@ -107,8 +116,7 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
         setFilters(newFilters);
 
         // Reset the actual query before reapplying filters. Otherwise the removed filters remain.
-        // Design should be improved to avoid this hack
-        search.query = {};
+        search.clearFilters(false);
 
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
@@ -125,7 +133,7 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
                         search.query.initiated_by = filterValue === 'Unknown User' ? 'unknown' : filterValue;
                         break;
                     default:
-                        (search.query as any)[filterName] = filterValue;
+                        search.query[filterName] = filterValue;
                         break;
                 }
             }
