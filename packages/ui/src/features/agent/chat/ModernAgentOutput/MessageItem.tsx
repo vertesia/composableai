@@ -529,7 +529,7 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                     <div className="mt-2">
                         <button
                             onClick={() => setShowDetails(!showDetails)}
-                            className="text-xs text-muted hover:text-gray-700 dark:text-gray-400 dark:hover:text-muted/30 flex items-center"
+                            className="text-xs text-muted flex items-center"
                         >
                             {showDetails ? "Hide" : "Show"} details
                             <svg
@@ -544,11 +544,11 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                         </button>
 
                         {showDetails && (
-                            <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded text-sm">
+                            <div className="mt-2 p-2 bg-muted border border-mixer-muted/40 rounded text-sm">
                                 {typeof message.details === "string" ? (
                                     renderContent(message.details)
                                 ) : (
-                                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700 ">
+                                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted ">
                                         {JSON.stringify(message.details, null, 2)}
                                     </pre>
                                 )}
