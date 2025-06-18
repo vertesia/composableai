@@ -40,7 +40,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
                         }
                     </div>
                 </div>
-                <div className="flex gap-x-4 shrink-0">{actions}</div>
+                <div className="flex gap-x-2 shrink-0">{actions}</div>
             </div>
             {children && <div className="w-full flex items-center">{children}</div>}
         </div>
