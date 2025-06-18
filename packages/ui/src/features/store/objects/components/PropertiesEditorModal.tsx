@@ -22,7 +22,7 @@ export interface PropertiesEditorModalProps {
     isOpen: boolean;
     onClose: () => void;
     object: ContentObject;
-    refetch: () => Promise<unknown>;
+    refetch?: () => Promise<unknown>;
 }
 
 export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: PropertiesEditorModalProps) {
@@ -170,8 +170,11 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                     description: 'The object properties have been updated successfully.',
                     duration: 2000
                 });
-                await refetch();
-
+                
+                if (refetch) {
+                    await refetch();
+                }
+                
                 setShowConfirmation(false);
                 onClose();
             }

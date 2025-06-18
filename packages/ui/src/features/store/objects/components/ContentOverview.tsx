@@ -12,7 +12,7 @@ import { PropertiesEditorModal } from "./PropertiesEditorModal";
 interface ContentOverviewProps {
     object: ContentObject;
     loadText?: boolean;
-    refetch: () => Promise<unknown>;
+    refetch?: () => Promise<unknown>;
 }
 export function ContentOverview({
     object,
