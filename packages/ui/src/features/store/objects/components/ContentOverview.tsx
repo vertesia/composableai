@@ -303,64 +303,29 @@ export function ContentOverview({
                     {text ? (
                         <div className="border shadow-xs rounded-xs max-w-7xl">
                             {seemsMarkdown ? (
-                                <div className="prose prose-sm max-w-none prose-p:bg-transparent prose-p:my-0 prose-pre:bg-gray-800 dark:prose-pre:bg-gray-900 prose-pre:my-2 prose-code:bg-gray-200/70 dark:prose-code:bg-gray-700/50 prose-headings:bg-transparent prose-li:bg-transparent dark:prose-invert dark:text-gray-100">
+                                <div className="vprose prose-sm p-1">
                                     <Markdown
                                         remarkPlugins={[remarkGfm]}
                                         components={{
-                                            a: ({
-                                                node,
-                                                ...props
-                                            }: {
-                                                node?: any;
-                                                href?: string;
-                                                children?: React.ReactNode;
-                                            }) => {
+                                            a: ({ node, ...props }: { node?: any; href?: string; children?: React.ReactNode }) => {
                                                 const href = props.href || "";
-                                                if (
-                                                    href.startsWith(
-                                                        "/store/objects/",
-                                                    )
-                                                ) {
+                                                if (href.startsWith("/store/objects/")) {
                                                     return (
                                                         <Link
                                                             href={href}
-                                                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                                            className="text-info"
                                                         >
                                                             {props.children}
                                                         </Link>
                                                     );
                                                 }
-                                                return (
-                                                    <a
-                                                        {...props}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                    />
-                                                );
+                                                return <a {...props} target="_blank" rel="noopener noreferrer" />;
                                             },
-                                            p: ({
-                                                node,
-                                                ...props
-                                            }: {
-                                                node?: any;
-                                                children?: React.ReactNode;
-                                            }) => (
-                                                <p
-                                                    {...props}
-                                                    className="my-0 text-gray-800 dark:text-gray-100"
-                                                />
+                                            p: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                <p {...props} className={`my-0`} />
                                             ),
-                                            pre: ({
-                                                node,
-                                                ...props
-                                            }: {
-                                                node?: any;
-                                                children?: React.ReactNode;
-                                            }) => (
-                                                <pre
-                                                    {...props}
-                                                    className="my-2 bg-gray-800 dark:bg-gray-900 p-2 rounded text-gray-100"
-                                                />
+                                            pre: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                <pre {...props} className={`my-2 p-2 rounded`} />
                                             ),
                                             code: ({
                                                 node,
@@ -372,71 +337,32 @@ export function ContentOverview({
                                                 className?: string;
                                                 children?: React.ReactNode;
                                             }) => {
-                                                const match =
-                                                    /language-(\w+)/.exec(
-                                                        className || "",
-                                                    );
+                                                const match = /language-(\w+)/.exec(className || "");
                                                 const isInline = !match;
                                                 return (
                                                     <code
                                                         {...props}
                                                         className={
                                                             isInline
-                                                                ? "px-1.5 py-0.5 rounded text-muted bg-gray-200/70 dark:bg-gray-700/50"
-                                                                : "text-gray-100"
+                                                                ? `px-1.5 py-0.5 rounded`
+                                                                : "text-muted"
                                                         }
                                                     >
                                                         {children}
                                                     </code>
                                                 );
                                             },
-                                            h1: ({
-                                                node,
-                                                ...props
-                                            }: {
-                                                node?: any;
-                                                children?: React.ReactNode;
-                                            }) => (
-                                                <h1
-                                                    {...props}
-                                                    className="text-gray-900 dark:text-gray-50 font-bold text-2xl my-2"
-                                                />
+                                            h1: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                <h1 {...props} className={`font-bold text-2xl my-2`} />
                                             ),
-                                            h2: ({
-                                                node,
-                                                ...props
-                                            }: {
-                                                node?: any;
-                                                children?: React.ReactNode;
-                                            }) => (
-                                                <h2
-                                                    {...props}
-                                                    className="text-gray-900 dark:text-gray-50 font-bold text-xl my-2"
-                                                />
+                                            h2: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                <h2 {...props} className={`font-bold text-xl my-2`} />
                                             ),
-                                            h3: ({
-                                                node,
-                                                ...props
-                                            }: {
-                                                node?: any;
-                                                children?: React.ReactNode;
-                                            }) => (
-                                                <h3
-                                                    {...props}
-                                                    className="text-gray-900 dark:text-gray-50 font-bold text-lg my-2"
-                                                />
+                                            h3: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                <h3 {...props} className={`font-bold text-lg my-2`} />
                                             ),
-                                            li: ({
-                                                node,
-                                                ...props
-                                            }: {
-                                                node?: any;
-                                                children?: React.ReactNode;
-                                            }) => (
-                                                <li
-                                                    {...props}
-                                                    className="text-gray-800 dark:text-gray-100"
-                                                />
+                                            li: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                <li {...props} />
                                             ),
                                         }}
                                     >
