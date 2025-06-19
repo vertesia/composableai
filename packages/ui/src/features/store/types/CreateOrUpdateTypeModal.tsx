@@ -50,13 +50,6 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
                         <label className="block text-sm font-medium text-muted">Description</label>
                         <Textarea value={description} onChange={setDescription} />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <label className="block text-sm font-medium text-muted-foreground">Strict Mode</label>
-                        <Switch value={strictMode} onChange={setStrictMode} />
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                        When enabled, objects will be validated against the schema at generation and save time.
-                    </div>
                 </div>
             </ModalBody>
             <ModalFooter>
