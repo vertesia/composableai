@@ -1,5 +1,33 @@
 import { ToolDefinition } from "@llumiverse/common";
 
+export interface AppUIConfig {
+    /**
+     * The source URL of the app. The src can be a template which contain
+     * a variable named `buildId` which will be replaced with the current build id.
+     * For example: `/plugins/vertesia-review-center-${buildId}`
+     */
+    src: string;
+    /**
+     * Whether the app should be loaded as part of the host layout
+     * or in a new tab.
+     */
+    external?: boolean;
+}
+export interface AppAgentConfig {
+    /**
+     * The source URL of the agent plugin.
+     * The src can be a template which contain a bvariable named `toolRegistryUrl` which will be replaced by
+     * the tool registry URL rehistered on the running platform.
+     * Example: `${toolRegistryUrl}/csv`
+     */
+    src: string;
+    /**
+     * The definitions of the tools exported by the app.
+     * The definition can also be fetched form `GET src`
+     */
+    tools: ToolDefinition[];
+}
+
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -18,7 +46,7 @@ export interface AppManifestData {
      * Whether the app is private to the owner account.
      * If true the account property must be defined.
      */
-    private: boolean;
+    private?: boolean;
 
     title: string;
     description: string;
@@ -32,30 +60,9 @@ export interface AppManifestData {
 
     status: "beta" | "stable" | "deprecated" | "hidden"
 
+    ui?: AppUIConfig
 
-    ui?: {
-        /**
-         * The source URL of the app.
-         */
-        src: string;
-        /**
-         * Whether the app should be loaded as part of the host layout
-         * or in a new tab.
-         */
-        external?: boolean;
-    }
-
-    agent?: {
-        /**
-         * The source URL of the agent plugin.
-         */
-        src: string;
-        /**
-         * The definitions of the tools exported by the app.
-         * The definition can also be fetched form `GET src`
-         */
-        tools: ToolDefinition[];
-    }
+    agent?: AppAgentConfig
 }
 export interface AppManifest extends AppManifestData {
     id: string;
