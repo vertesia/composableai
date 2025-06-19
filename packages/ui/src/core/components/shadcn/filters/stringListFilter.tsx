@@ -42,6 +42,7 @@ export default function StringListFilter({
           value={tags} 
           onChange={setTags} 
           placeholder={selectedGroup?.placeholder || `Add ${selectedView}...`}
+          autoFocus
         />
       </div>
       <div className="flex gap-2 justify-end">
