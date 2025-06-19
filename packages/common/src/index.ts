@@ -5,6 +5,7 @@ export * from './apps.js';
 export * from './common.js';
 export * from './environment.js';
 export * from "./facets.js";
+export * from './group.js';
 export * from './integrations.js';
 export * from './interaction.js';
 export * from './json-schema.js';

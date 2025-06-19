@@ -17,7 +17,7 @@ export function Switch({ value, onChange, size = 'md', children, className }: Sw
     const sizeClass = sizes[size];
     return (
         <UISwitch checked={value} onChange={() => onChange(!value)} className={`flex items-center ${className} hover:cursor-pointer`}>
-            <div className={`${value ? 'bg-primary' : 'bg-muted'} relative inline-flex ${sizeClass[0]} items-center rounded-full`}>
+            <div className={`${value ? 'bg-primary' : 'bg-muted/50'} relative inline-flex ${sizeClass[0]} items-center rounded-full border-1`}>
                 <span
                     className={`${value ? sizeClass[2] : 'translate-x-1'
                         } inline-block ${sizeClass[1]} transform rounded-full bg-white transition`}

@@ -33,5 +33,6 @@ export * from "./utils/client.js";
 export * from "./utils/memory.js";
 export * from "./utils/tokens.js";
 export * from "./utils/renditions.js";
+export * from "./utils/storage.js";
 
 export * from "./conversion/image.js";
