@@ -187,7 +187,6 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
                 }
             }
         });
-        console.log('search.query', search.query);
 
         search.search();
     };

@@ -199,8 +199,6 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
           const values = valuesString.split(',').map(encodedValue => decodeURIComponent(encodedValue));
           
           const group = filterGroups.find(g => g.name === name);
-          console.log("group", group);
-          
           let filterValue;
           
           if (group?.type === 'stringList') {
@@ -229,8 +227,6 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
               };
             });
           }
-          
-          console.log("filterValue", filterValue);
           
           return {
             name,
