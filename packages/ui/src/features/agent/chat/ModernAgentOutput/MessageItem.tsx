@@ -1,5 +1,5 @@
 import { AgentMessage, AgentMessageType } from "@vertesia/common";
-import { Button, useToast } from "@vertesia/ui/core";
+import { Badge, Button, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import dayjs from "dayjs";
@@ -483,28 +483,27 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                     <div className={showPulsatingCircle ? "animate-fadeIn" : ""}>
                         {getMessageIcon()}
                     </div>
-                    <span className="text-xs font-medium text-gray-700 ">{messageStyles.sender}</span>
+                    <span className="text-xs font-medium text-muted ">{messageStyles.sender}</span>
 
                     {/* Show workstream badge next to sender for better organization */}
                     {workstreamId !== "main" && workstreamId !== "all" && (
-                        <span className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full text-[10px] font-mono text-muted dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                        <Badge variant="default" className="text-xs text-muted">
                             {workstreamId}
-                        </span>
+                        </Badge>
                     )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400 dark:text-muted">
+                    <span className="text-xs text-muted">
                         {dayjs(message.timestamp).format("HH:mm:ss")}
                     </span>
                     <Button
-                        variant="ghost"
-                        size="xs"
+                        variant="ghost" size="xs"
                         onClick={copyToClipboard}
-                        className="text-gray-400 hover:text-muted dark:text-muted dark:hover:text-muted/30"
+                        className="text-muted"
                         title="Copy message"
                     >
-                        <CopyIcon className="h-3 w-3" />
+                        <CopyIcon className="size-3" />
                     </Button>
                 </div>
             </div>
@@ -529,7 +528,7 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                     <div className="mt-2">
                         <button
                             onClick={() => setShowDetails(!showDetails)}
-                            className="text-xs text-muted hover:text-gray-700 dark:text-gray-400 dark:hover:text-muted/30 flex items-center"
+                            className="text-xs text-muted flex items-center"
                         >
                             {showDetails ? "Hide" : "Show"} details
                             <svg
@@ -544,11 +543,11 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                         </button>
 
                         {showDetails && (
-                            <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded text-sm">
+                            <div className="mt-2 p-2 bg-muted border border-mixer-muted/40 rounded text-sm">
                                 {typeof message.details === "string" ? (
                                     renderContent(message.details)
                                 ) : (
-                                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700 ">
+                                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted ">
                                         {JSON.stringify(message.details, null, 2)}
                                     </pre>
                                 )}
