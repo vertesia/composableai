@@ -22,9 +22,10 @@ export interface PropertiesEditorModalProps {
     isOpen: boolean;
     onClose: () => void;
     object: ContentObject;
+    refetch?: () => Promise<unknown>;
 }
 
-export function PropertiesEditorModal({ isOpen, onClose, object }: PropertiesEditorModalProps) {
+export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: PropertiesEditorModalProps) {
     const { client, store } = useUserSession();
     const toast = useToast();
     const navigate = useNavigate();
@@ -169,8 +170,11 @@ export function PropertiesEditorModal({ isOpen, onClose, object }: PropertiesEdi
                     description: 'The object properties have been updated successfully.',
                     duration: 2000
                 });
-
-                // Close modals
+                
+                if (refetch) {
+                    await refetch();
+                }
+                
                 setShowConfirmation(false);
                 onClose();
             }

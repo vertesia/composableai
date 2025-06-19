@@ -367,10 +367,8 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /** In child execution workflow, this is the curent task_id */
     task_id?: string;
 
-    /**
-     * Schema for validating interaction parameters
-     */
-    interactionParamsSchema?: JSONSchema4;
+    /** Whether to enable debug mode */
+    debug_mode?: boolean;
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
@@ -398,15 +396,21 @@ interface ResumeConversationPayload {
     tools: ToolDefinition[]; // the tools to be used
 }
 
+
+export interface ToolResultContent {
+    content: string;
+    files?: string[];
+}
+
+export interface ToolResult extends ToolResultContent {
+    tool_use_id: string;
+}
+
 /**
  * The payload to sent the tool responses back to the target LLM
  */
 export interface ToolResultsPayload extends ResumeConversationPayload {
-    results: {
-        tool_use_id: string;
-        content: string;
-        files?: string[];
-    }[];
+    results: ToolResult[];
 }
 
 export interface UserMessagePayload extends ResumeConversationPayload {

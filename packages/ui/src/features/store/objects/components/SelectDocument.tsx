@@ -33,9 +33,11 @@ export function SelectDocument({ onChange }: SelectDocumentProps) {
 interface SelectDocumentImplProps {
     onRowClick: (selected: ContentObjectItem) => void;
 }
+const LAST_DISPLAYED_VIEW = 'vertesia.content_store.lastDisplayedView'
+
 function SelectDocumentImpl({ onRowClick }: SelectDocumentImplProps) {
     const [isReady, setIsReady] = useState(false);
-    const [isGridView, setIsGridView] = useState(localStorage.getItem('lastDisplayedView') === 'grid');
+    const [isGridView, setIsGridView] = useState(localStorage.getItem(LAST_DISPLAYED_VIEW) === 'grid');
     const { search, isLoading, error, objects } = useWatchDocumentSearchResult();
 
     const loadMoreRef = useRef<HTMLDivElement>(null);

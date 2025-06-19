@@ -4,12 +4,12 @@ import { useToast } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from '@vertesia/ui/session';
 
-import { useDocumentSearch } from '../../../../store';
+import { useDocumentSearch } from '../../search/DocumentSearchContext';
 import { useObjectsActionContext } from '../ObjectsActionContext';
 import { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
 import ConfirmAction from './ConfirmAction';
 
-function DeleteObjectsActionComponent({ action, objectIds, children }: ActionComponentTypeProps) {
+export function DeleteObjectsActionComponent({ action, objectIds, children }: ActionComponentTypeProps) {
     const ctx = useObjectsActionContext();
 
     const toast = useToast();

@@ -8,7 +8,7 @@ import { useObjectsActionContext } from '../ObjectsActionContext';
 import { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
 import ConfirmAction from './ConfirmAction';
 
-function RemoveFromCollectionActionComponent({ action, objectIds, collectionId }: ActionComponentTypeProps) {
+export function RemoveFromCollectionActionComponent({ action, objectIds, collectionId }: ActionComponentTypeProps) {
     const ctx = useObjectsActionContext();
 
     const toast = useToast();

@@ -9,8 +9,8 @@ import { getComposableToken } from './auth/composable';
 import { getFirebaseAuth } from './auth/firebase';
 import { TypeRegistry } from './TypeRegistry';
 
-export const LastSelectedAccountId_KEY = 'composableai.lastSelectedAccountId';
-export const LastSelectedProjectId_KEY = 'composableai.lastSelectedProjectId';
+import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
+export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
 
 class UserSession {
