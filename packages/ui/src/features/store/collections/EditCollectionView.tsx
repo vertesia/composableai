@@ -5,7 +5,7 @@ import { useUserSession } from "@vertesia/ui/session";
 import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject } from "@vertesia/ui/widgets";
 import { basicSetup } from "codemirror";
 import { useMemo, useRef, useState } from "react";
-import { SelectContentType, stringifyTableLayout } from "../../store";
+import { SelectContentType, stringifyTableLayout } from "../types";
 
 const extensions = [basicSetup, json()];
 

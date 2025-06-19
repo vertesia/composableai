@@ -2,9 +2,9 @@ import { activityInfo, log } from "@temporalio/activity";
 import { ApplicationFailure } from "@temporalio/workflow";
 import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
+import mime from "mime";
 import { basename } from "path";
 import { Readable } from "stream";
-import mime from "mime";
 import { fetchBlobAsBuffer } from "../utils/blobs.js";
 
 

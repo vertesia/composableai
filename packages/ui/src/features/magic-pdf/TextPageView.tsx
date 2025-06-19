@@ -1,5 +1,4 @@
-import { JSONCode } from "@vertesia/ui/widgets";
-import { Theme, XMLViewer } from '@vertesia/ui/widgets';
+import { JSONCode, Theme, XMLViewer } from '@vertesia/ui/widgets';
 import { useEffect, useLayoutEffect, useState } from "react";
 import { usePdfPagesInfo } from "./PdfPageProvider";
 import { ViewType } from "./types";

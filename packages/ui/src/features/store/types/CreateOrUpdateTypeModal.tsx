@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Button, Input, Modal, ModalBody, ModalFooter, ModalTitle, Switch, useToast } from '@vertesia/ui/core';
+import { Button, Input, Modal, ModalBody, ModalFooter, ModalTitle, useToast, Textarea } from '@vertesia/ui/core';
 
 export interface CreateOrUpdateTypePayload {
     name: string;
@@ -48,14 +48,7 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-muted">Description</label>
-                        <Input value={description} onChange={setDescription} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <label className="block text-sm font-medium text-muted-foreground">Strict Mode</label>
-                        <Switch value={strictMode} onChange={setStrictMode} />
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                        When enabled, objects will be validated against the schema at generation and save time.
+                        <Textarea value={description} onChange={setDescription} />
                     </div>
                 </div>
             </ModalBody>

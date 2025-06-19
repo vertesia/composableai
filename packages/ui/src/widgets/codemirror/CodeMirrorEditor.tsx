@@ -30,8 +30,8 @@ const customTheme = EditorView.theme({
     ".cm-gutters": { backgroundColor: "transparent", color: "#ddd" },
     ".cm-focused": { outline: "none" },
     ".cm-cursor": {
-        borderLeft: "2px solid #000",
-        borderLeftColor: "#000",
+        borderLeft: "2px solid #808080",
+        borderLeftColor: "#808080",
         animation: "blink 1.2s step-start infinite"
     },
     "@keyframes blink": { "50%": { opacity: 0 } }

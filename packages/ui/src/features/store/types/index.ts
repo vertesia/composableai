@@ -1,7 +1,5 @@
 export * from "./ContentObjectTypesSearch";
 export * from "./ContentObjectTypesTable";
-export * from "./ContentObjectTypesView";
-export * from "./ContentObjectTypeView";
 export * from "./CreateOrUpdateTypeModal";
 export * from "./ObjectSchemaEditor";
 export * from "./search";
