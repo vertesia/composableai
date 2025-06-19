@@ -118,7 +118,7 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
             ...bucket,
             _id: bucket._id === null ? 'none' : bucket._id
         }));
-        
+
         const finishReasonFilterGroup = VStringFacet({
             search,
             buckets: processedFinishReason,
@@ -134,38 +134,18 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
         });
         customFilterGroups.push(createdByFilterGroup);
     }
+    
+    if (facets.tags) {
+        customFilterGroups.push({
+            name: 'Tags',
+            type: 'stringList',
+            options: facets.tags.map((tag: string) => ({
+                label: tag,
+                value: tag
+            }))
+        });
+    }
     /** Run table */
-
-    // if (facets.tags) {
-    //     customFilterGroups.push({
-    //         name: 'Tags',
-    //         type: 'text',
-    //         options: facets.tags.map((tag: string) => ({
-    //             label: tag,
-    //             value: tag
-    //         }))
-    //     });
-    // }
-
-
-    // Add date filters for runs context
-    if ('start' in facets || search.facetSpecs?.some((spec: any) => spec.name === 'start')) {
-        customFilterGroups.push({
-            name: 'start',
-            placeholder: 'Date after',
-            type: 'date' as const,
-            options: []
-        });
-    }
-
-    if ('end' in facets || search.facetSpecs?.some((spec: any) => spec.name === 'end')) {
-        customFilterGroups.push({
-            name: 'end',
-            placeholder: 'Date before',
-            type: 'date' as const,
-            options: []
-        });
-    }
 
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
 
@@ -183,7 +163,11 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name.toLowerCase();
-                const filterValue = filter.value[0].value;
+                const filterValue = filter.type === 'stringList' 
+                    ? filter.value.map(v => typeof v === 'string' ? v : v.value) 
+                    : Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object' 
+                        ? filter.value[0].value 
+                        : filter.value;
 
                 // Map filter names to the expected field names
                 switch (filterName) {
@@ -203,6 +187,7 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
                 }
             }
         });
+        console.log('search.query', search.query);
 
         search.search();
     };
