@@ -10,16 +10,18 @@ interface EnrichedFacetBucket extends FacetBucket {
 interface InteractionFacetProps {
     buckets: EnrichedFacetBucket[];
     name: string;
+    placeholder?: string;
 }
 
-export function VInteractionFacet({ buckets, name }: InteractionFacetProps): FilterGroup {
+export function VInteractionFacet({ buckets, name, placeholder }: InteractionFacetProps): FilterGroup {
     const options = buckets.map((bucket) => ({
         label: `(${bucket.count})`,
         value: bucket._id
     }));
 
     const filterGroup: FilterGroup = {
-        name: name.charAt(0).toUpperCase() + name.slice(1),
+        name: name,
+        placeholder: placeholder || `${name.charAt(0).toUpperCase() + name.slice(1)}`,
         options: options,
         type: "select",
         labelRenderer: (interactionId: string) => {

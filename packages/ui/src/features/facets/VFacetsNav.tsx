@@ -82,7 +82,8 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
     if (facets.interactions) {
         const interactionFilterGroup = VInteractionFacet({
             buckets: facets.interactions || [],
-            name: 'Interactions'
+            name: 'interaction',
+            placeholder: 'Interactions',
         });
         customFilterGroups.push(interactionFilterGroup);
     }
@@ -122,7 +123,8 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
         const finishReasonFilterGroup = VStringFacet({
             search,
             buckets: processedFinishReason,
-            name: 'Finish_reason'
+            name: 'finish_reason',
+            placeholder: 'Finish Reason'
         });
         customFilterGroups.push(finishReasonFilterGroup);
     }
@@ -130,7 +132,8 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
     if (facets.created_by) {
         const createdByFilterGroup = VUserFacet({
             buckets: facets.created_by || [],
-            name: 'Created_by'
+            name: 'created_by',
+            placeholder: 'Created By'
         });
         customFilterGroups.push(createdByFilterGroup);
     }
@@ -169,17 +172,10 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
                         ? filter.value[0].value 
                         : filter.value;
 
-                // Map filter names to the expected field names
                 switch (filterName) {
                     case 'name':
                         search.query.search_term = filterValue;
                         search.query.name = filterValue;
-                        break;
-                    case 'user':
-                        search.query.initiated_by = filterValue === 'Unknown User' ? 'unknown' : filterValue;
-                        break;
-                    case 'interactions':
-                        search.query.interaction = filterValue;
                         break;
                     default:
                         search.query[filterName] = filterValue;
