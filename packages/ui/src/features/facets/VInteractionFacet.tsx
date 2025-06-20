@@ -50,10 +50,10 @@ export function VInteractionFacet({ buckets, name, placeholder }: InteractionFac
 
             return (
                 <div className="w-full flex items-center justify-between">
-                    <div className="flex flex-col min-w-0 flex-1">
+                    <div className="flex flex-row flex-wrap items-center gap-2 min-w-0 flex-1">
                         <span className="text-sm truncate">{displayName}</span>
                         {badgeText && (
-                            <Badge variant={badgeVariant} className="text-xs w-fit mt-1">
+                            <Badge variant={badgeVariant} className="text-xs w-fit">
                                 {badgeText}
                             </Badge>
                         )}
