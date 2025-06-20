@@ -5,6 +5,7 @@ import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { ImageRenditionFormat } from "@vertesia/common";
 import path from "path";
+import pLimit from 'p-limit';
 
 export interface ImageRenditionParams {
     max_hw: number; //maximum size of the longest side of the image
@@ -51,12 +52,16 @@ export async function uploadRenditionPages(
     objectId: string,
     files: string[],
     params: ImageRenditionParams,
+    concurrency?: number,
 ) {
     log.info(
         `Uploading rendition for ${objectId} with ${files.length} pages (max_hw: ${params.max_hw}, format: ${params.format})`,
         { files },
     );
-    const uploads = files.map(async (file, i) => {
+
+    const limit = pLimit(concurrency ?? 20);
+
+    const uploads = files.map((file, i) => limit(async () => {
         const filename = path.basename(file).split(".")[0];
         const pageId = getRenditionPagePath(objectId, params, filename);
         let resizedImagePath = null;
@@ -118,7 +123,7 @@ export async function uploadRenditionPages(
             });
             return Promise.reject(`Upload failed: ${err.message}`);
         }
-    });
+    }));
 
     return Promise.all(uploads);
 }
