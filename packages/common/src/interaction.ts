@@ -369,6 +369,13 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
 
     /** Whether to enable debug mode */
     debug_mode?: boolean;
+    
+    /** 
+     * If true, save the workflow output to a file instead of returning it directly.
+     * This helps keep temporal workflow memory space light for large outputs.
+     * The workflow will return the file path instead of the actual output.
+     */
+    save_output_to_file?: boolean;
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
