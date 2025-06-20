@@ -21,6 +21,8 @@ export enum Permission {
 
     api_key_create = "api_key:create",
     api_key_read = "api_key:read",
+    api_key_update = "api_key:update",
+    api_key_delete = "api_key:delete",
 
     account_read = "account:read",
     account_manage = "account:manage",
