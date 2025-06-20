@@ -28,7 +28,6 @@ export function SelectionActions() {
                     <div className="flex items-center gap-x-1 shrink-0">
                         <div className='text-sm nowrap'>{size} document{plural} selected</div>
                         <Button title="Clear selection" variant={"ghost"}
-                            className=" rounded-md p-2"
                             onClick={onClearSelection}>
                             <X className="size-4" />
                         </Button>
