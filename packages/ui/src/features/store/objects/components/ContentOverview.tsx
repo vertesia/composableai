@@ -146,7 +146,7 @@ export function ContentOverview({
     };
 
     const handleExportDocx = () => handleExportDocument("docx");
-    //const handleExportPdf = () => handleExportDocument("pdf");
+    const handleExportPdf = () => handleExportDocument("pdf");
 
     const content = object.content;
     const isImage =
@@ -296,6 +296,15 @@ export function ContentOverview({
                                     >
                                         <Download className="h-4 w-4" />
                                         DOCX
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleExportPdf}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        PDF
                                     </Button>
                                 </>
                             )}
