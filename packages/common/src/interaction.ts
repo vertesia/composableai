@@ -101,7 +101,7 @@ export const InteractionRefWithSchemaPopulate =
     `${InteractionRefPopulate} result_schema`;
 
 export interface InteractionRefWithSchema extends Omit<InteractionRef, "prompts"> {
-    result_schema?: JSONSchema4;
+    result_schema?: JSONSchema;
     prompts?: PromptSegmentDef<PromptTemplateRefWithSchema>[];
 }
 
@@ -369,8 +369,8 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
 
     /** Whether to enable debug mode */
     debug_mode?: boolean;
-    
-    /** 
+
+    /**
      * If true, save the workflow output to a file instead of returning it directly.
      * This helps keep temporal workflow memory space light for large outputs.
      * The workflow will return the file path instead of the actual output.

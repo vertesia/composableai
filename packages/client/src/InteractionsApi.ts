@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { AsyncExecutionPayload, ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionEndpointQuery, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload } from "@vertesia/common";
+import { AsyncExecutionPayload, ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 import { executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
 
@@ -35,7 +35,7 @@ export default class InteractionsApi extends ApiTopic {
      * Find interactions given a mongo match query.
      * You can also specify if prompts schemas are included in the result
      */
-    listEndpoints(payload: InteractionEndpointQuery): Promise<InteractionRef[]> {
+    listEndpoints(payload: InteractionEndpointQuery): Promise<InteractionRef[] | InteractionEndpoint[]> {
         return this.post("/endpoints", {
             payload
         });
