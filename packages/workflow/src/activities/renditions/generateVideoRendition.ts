@@ -154,6 +154,12 @@ export async function generateVideoRendition(
             objectId,
         ]);
     }
+    if (!inputObject.content?.etag) {
+        log.error(`Document ${objectId} has no etag`);
+        throw new DocumentNotFoundError(`Document ${objectId} has no etag`, [
+            objectId,
+        ]);
+    }
 
     if (
         !inputObject.content.type ||
@@ -274,7 +280,7 @@ export async function generateVideoRendition(
     // Update the final upload call to handle multiple thumbnails
     const uploaded = await uploadRenditionPages(
         client,
-        objectId,
+        inputObject.content.etag,
         renditionPages,
         params,
     );
