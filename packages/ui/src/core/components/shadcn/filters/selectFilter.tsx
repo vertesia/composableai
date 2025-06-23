@@ -1,6 +1,6 @@
 import React from "react";
 import { CommandItem, CommandEmpty } from "../command";
-import { Filter, FilterGroup, FilterGroupOption } from "./types";
+import { Filter, FilterGroup, FilterGroupOption, FilterOption } from "./types";
 import { DynamicLabel } from "./DynamicLabel";
 
 interface SelectFilterProps {
@@ -81,7 +81,7 @@ export default function SelectFilter({
                     const updatedFilters = [...prev];
                     updatedFilters[existingFilterIndex] = {
                       ...updatedFilters[existingFilterIndex],
-                      value: [...updatedFilters[existingFilterIndex].value, filterOption]
+                      value: [...(updatedFilters[existingFilterIndex].value as FilterOption[]), filterOption]
                     };
                     return updatedFilters;
                   } else {
