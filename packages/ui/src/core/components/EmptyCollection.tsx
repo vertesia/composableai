@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { Button } from "@vertesia/ui/core/components/shadcn/button";
+import { Button } from "@vertesia/ui/core";
 
 
 interface EmptyInteractionsProps {
@@ -13,7 +13,7 @@ export function EmptyCollection({ buttonLabel, title, children, onClick }: Empty
         <div className="flex items-center justify-center h-full text-center">
             <div className="py-12">
                 <svg
-                    className="mx-auto h-12 w-12"
+                    className="mx-auto size-12"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
