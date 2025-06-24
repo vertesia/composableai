@@ -23,6 +23,11 @@ export interface ComputeFacetPayload {
     query?: SimpleSearchQuery;
 }
 
+export interface ConversationSearchPayload {
+    start?: string;
+    end?: string;
+}
+
 export interface InteractionSearchPayload extends SearchPayload {
     query?: InteractionSearchQuery;
 }
