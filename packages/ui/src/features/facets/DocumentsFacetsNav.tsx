@@ -45,7 +45,8 @@ export function DocumentsFacetsNav({
         const statusFilterGroup = VStringFacet({
             search,
             buckets: facets.status || [],
-            name: 'Status'
+            name: 'Status',
+            type: 'multiSelect',
         });
         customFilterGroups.push(statusFilterGroup);
     }
@@ -75,12 +76,20 @@ export function DocumentsFacetsNav({
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name.toLowerCase();
-                const filterValue = filter.type === 'stringList'
-                    ? filter.value.map(v => typeof v === 'string' ? v : v.value)
-                    : Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
-                        ? filter.value[0].value
+                
+                let filterValue;
+                if (filter.type === 'multiSelect') {
+                    filterValue = Array.isArray(filter.value) 
+                        ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
+                        : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];
+                } else {
+                    filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
+                        ? (filter.value[0] as any).value
                         : filter.value;
-
+                }
+                
+                console.log(`Applying filter: ${filterName} with value:`, filterValue);
+                
                 if (filterName === 'name') {
                     search.query.search_term = filterValue;
                     search.query.name = filterValue;

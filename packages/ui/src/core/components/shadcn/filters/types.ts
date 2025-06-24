@@ -12,7 +12,7 @@ export interface FilterGroupOption {
 export interface FilterGroup {
   name: string;
   placeholder?: string;
-  type?: "select" | "date" | "text" | "stringList";
+  type?: "select" | "date" | "text" | "stringList" | "multiSelect";
   options?: FilterGroupOption[];
   allowCreate?: boolean;
   filterBy?: (value: string, searchText: string) => boolean;
@@ -23,7 +23,7 @@ export interface Filter {
   name: string;
   placeholder?: string;
   value: FilterOption[] | string[];
-  type?: "select" | "date" | "text" | "stringList";
+  type?: "select" | "date" | "text" | "stringList" | "multiSelect";
 }
 
 export enum FilterOperator {
