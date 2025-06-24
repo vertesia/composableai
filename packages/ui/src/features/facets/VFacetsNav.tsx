@@ -172,8 +172,6 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
                         ? filter.value[0].value 
                         : filter.value;
 
-                console.log(`Applying filter: ${filterName} with value:`, filterValue);
-                
                 switch (filterName) {
                     case 'name':
                         search.query.search_term = filterValue;
