@@ -5,7 +5,7 @@ import { Button, Divider, ErrorBox, SidePanel, Spinner, useDebounce, useIntersec
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
 import { Download, RefreshCw, SquareArrowOutUpRight } from 'lucide-react';
-import { VFacetsNav } from "../../facets";
+import { DocumentsFacetsNav } from "../../facets";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 
 import { ContentDispositionButton } from './components/ContentDispositionButton';
@@ -163,7 +163,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                     <ContentDispositionButton onUpdate={setIsGridView} />
                 </div>
             </div>
-            {allowFilter && <VFacetsNav facets={facets} search={facetSearch} textSearch={"Name or ID"} />}
+            {allowFilter && <DocumentsFacetsNav facets={facets} search={facetSearch} textSearch={"Name or ID"} />}
             <DocumentTable
                 objects={objects}
                 isLoading={!objects.length && isLoading}

@@ -9,3 +9,6 @@ export * from "./VFacetsNav";
 export { VStringFacet } from "./VStringFacet";
 export { VTypeFacet } from "./VTypeFacet";
 export { VUserFacet } from "./VUserFacet";
+export { RunsFacetsNav } from "./RunsFacetsNav";
+export { WorkflowExecutionsFacetsNav } from "./WorkflowExecutionsFacetsNav";
+export { DocumentsFacetsNav } from "./DocumentsFacetsNav";

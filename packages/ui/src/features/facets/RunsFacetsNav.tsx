@@ -6,34 +6,25 @@ import { VInteractionFacet } from './VInteractionFacet';
 import { VStringFacet } from './VStringFacet';
 import { VTypeFacet } from './VTypeFacet';
 import { VUserFacet } from './VUserFacet';
+import { SearchInterface } from './VFacetsNav';
 
-export interface SearchInterface {
-    getFilterValue(name: string): any;
-    setFilterValue(name: string, value: any): void;
-    clearFilters(autoSearch?: boolean): void;
-    search(): Promise<boolean | undefined>;
-    readonly isRunning: boolean;
-    query: Record<string, any>;
-}
-
-interface FacetsNavProps {
-    facets: any;
+interface RunsFacetsNavProps {
+    facets: {
+        type?: any[];
+        interactions?: any[];
+        environments?: any[];
+        models?: any[];
+        statuses?: any[];
+        finish_reason?: any[];
+        created_by?: any[];
+    };
     search: SearchInterface;
-    textSearch?: string;
 }
-export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) {
+
+export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const customFilterGroups: FilterGroup[] = [];
     const { typeRegistry } = useUserSession();
-
-    if (textSearch) {
-        customFilterGroups.push({
-            placeholder: textSearch,
-            name: 'name',
-            type: 'text',
-            options: [],
-        });
-    }
 
     if (facets.type) {
         const typeFilterGroup = VTypeFacet({
@@ -43,42 +34,6 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
         customFilterGroups.push(typeFilterGroup);
     }
 
-    if (facets.status) {
-        const statusFilterGroup = VStringFacet({
-            search,
-            buckets: facets.status || [],
-            name: 'Status'
-        });
-        customFilterGroups.push(statusFilterGroup);
-    }
-
-    if (facets.role) {
-        const roleFilterGroup = VStringFacet({
-            search,
-            buckets: facets.role || [],
-            name: 'Role'
-        });
-        customFilterGroups.push(roleFilterGroup);
-    }
-
-    if (facets.location) {
-        const locationFilterGroup = VStringFacet({
-            search,
-            buckets: facets.location || [],
-            name: 'Location'
-        });
-        customFilterGroups.push(locationFilterGroup);
-    }
-
-    if (facets.initiated_by) {
-        const initiatedByFilterGroup = VUserFacet({
-            buckets: facets.initiated_by || [],
-            name: 'User'
-        });
-        customFilterGroups.push(initiatedByFilterGroup);
-    }
-
-    /** Run table */
     if (facets.interactions) {
         const interactionFilterGroup = VInteractionFacet({
             buckets: facets.interactions || [],
@@ -137,21 +92,8 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
         });
         customFilterGroups.push(createdByFilterGroup);
     }
-    
-    if (facets.tags) {
-        customFilterGroups.push({
-            name: 'Tags',
-            type: 'stringList',
-            options: facets.tags.map((tag: string) => ({
-                label: tag,
-                value: tag
-            }))
-        });
-    }
-    /** Run table */
 
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
-
         const newFilters = typeof value === 'function' ? value(filters) : value;
         if (newFilters.length === 0) {
             search.clearFilters();
@@ -160,7 +102,6 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
         }
         setFilters(newFilters);
 
-        // Reset the actual query before reapplying filters. Otherwise the removed filters remain.
         search.clearFilters(false);
 
         newFilters.forEach(filter => {
@@ -172,17 +113,7 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
                         ? filter.value[0].value 
                         : filter.value;
 
-                console.log(`Applying filter: ${filterName} with value:`, filterValue);
-                
-                switch (filterName) {
-                    case 'name':
-                        search.query.search_term = filterValue;
-                        search.query.name = filterValue;
-                        break;
-                    default:
-                        search.query[filterName] = filterValue;
-                        break;
-                }
+                search.query[filterName] = filterValue;
             }
         });
 
@@ -195,5 +126,5 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
             filters={filters}
             setFilters={handleFilterChange}
         />
-    )
+    );
 }
