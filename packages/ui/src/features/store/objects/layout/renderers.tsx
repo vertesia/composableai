@@ -1,11 +1,10 @@
-import { NavLink, useNavigate } from "@vertesia/ui/router";
+import { useNavigate } from "@vertesia/ui/router";
 import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
 import RelativeTime from "dayjs/plugin/relativeTime";
 import { shortId } from "../../../utils";
 import { Button } from "@vertesia/ui/core/components/shadcn/button";
 import { EyeIcon } from "lucide-react";
-import { use } from "react";
 dayjs.extend(RelativeTime);
 dayjs.extend(LocalizedFormat);
 
@@ -94,7 +93,6 @@ const renderers: Record<string, (params?: URLSearchParams) => (value: any, index
     // value must be the object itself
     objectLink(params?: URLSearchParams) {
         let title = "title";
-        const navigate = useNavigate();
 
         //let underline = "hover";
         if (params) {
@@ -102,11 +100,13 @@ const renderers: Record<string, (params?: URLSearchParams) => (value: any, index
             //underline = params.get("underline") || "hover";
         }
 
-        const onClick = (value: string) => {
-            navigate(`/objects/${value}`);
-        }
-
         return (value: any, index: number) => {
+            const navigate = useNavigate();
+            
+            const onClick = (value: string) => {
+                navigate(`/objects/${value}`);
+            }
+
             return (
                 <td key={index} className="flex items-center gap-2">
                     {value.properties?.[title] || value.name || shortId(value.id)}
