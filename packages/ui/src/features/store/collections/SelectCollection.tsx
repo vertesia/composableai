@@ -1,5 +1,5 @@
 import { ErrorBox, useFetch, VSelectBox } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session/UserSession";
+import { useUserSession } from "@vertesia/ui/session";
 
 interface SelectCollectionProps {
     value?: string; // Collection ID
