@@ -31,7 +31,7 @@ export interface VectorSearchQuery {
 
 export interface SimpleSearchQuery {
     name?: string;
-    status?: string;
+    status?: string | string[];
 }
 
 export interface ObjectSearchQuery extends SimpleSearchQuery {
@@ -45,7 +45,6 @@ export interface ObjectSearchQuery extends SimpleSearchQuery {
     embeddingType?: SupportedEmbeddingTypes;
     type?: string;
     types?: string[];
-    statuses?: string[];
 }
 
 export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
