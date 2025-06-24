@@ -37,6 +37,7 @@ export function DocumentsFacetsNav({
         const typeFilterGroup = VTypeFacet({
             buckets: facets.type || [],
             typeRegistry: typeRegistry,
+            type: 'multiSelect'
         });
         customFilterGroups.push(typeFilterGroup);
     }
