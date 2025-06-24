@@ -17,23 +17,21 @@ interface DocumentsFacetsNavProps {
     textSearch?: string;
 }
 
-export function DocumentsFacetsNav({ 
-    facets, 
-    search, 
-    textSearch = 'Filter content' 
+export function DocumentsFacetsNav({
+    facets,
+    search,
+    textSearch = 'Filter content'
 }: DocumentsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const customFilterGroups: FilterGroup[] = [];
     const { typeRegistry } = useUserSession();
 
-    if (textSearch) {
-        customFilterGroups.push({
-            placeholder: textSearch,
-            name: 'name',
-            type: 'text',
-            options: [],
-        });
-    }
+    customFilterGroups.push({
+        placeholder: textSearch,
+        name: 'name',
+        type: 'text',
+        options: [],
+    });
 
     if (facets.type) {
         const typeFilterGroup = VTypeFacet({
@@ -52,24 +50,6 @@ export function DocumentsFacetsNav({
         customFilterGroups.push(statusFilterGroup);
     }
 
-    if (facets.role) {
-        const roleFilterGroup = VStringFacet({
-            search,
-            buckets: facets.role || [],
-            name: 'Role'
-        });
-        customFilterGroups.push(roleFilterGroup);
-    }
-
-    if (facets.location) {
-        const locationFilterGroup = VStringFacet({
-            search,
-            buckets: facets.location || [],
-            name: 'Location'
-        });
-        customFilterGroups.push(locationFilterGroup);
-    }
-    
     if (facets.tags) {
         customFilterGroups.push({
             name: 'Tags',
@@ -95,10 +75,10 @@ export function DocumentsFacetsNav({
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name.toLowerCase();
-                const filterValue = filter.type === 'stringList' 
-                    ? filter.value.map(v => typeof v === 'string' ? v : v.value) 
-                    : Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object' 
-                        ? filter.value[0].value 
+                const filterValue = filter.type === 'stringList'
+                    ? filter.value.map(v => typeof v === 'string' ? v : v.value)
+                    : Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
+                        ? filter.value[0].value
                         : filter.value;
 
                 if (filterName === 'name') {

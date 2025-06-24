@@ -1,10 +1,8 @@
 import { Filter as BaseFilter, FilterBar, FilterGroup } from '@vertesia/ui/core';
-import { useUserSession } from '@vertesia/ui/session';
 import { useState } from 'react';
 import { VEnvironmentFacet } from './VEnvironmentFacet';
 import { VInteractionFacet } from './VInteractionFacet';
 import { VStringFacet } from './VStringFacet';
-import { VTypeFacet } from './VTypeFacet';
 import { VUserFacet } from './VUserFacet';
 import { SearchInterface } from './VFacetsNav';
 
@@ -24,15 +22,6 @@ interface RunsFacetsNavProps {
 export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const customFilterGroups: FilterGroup[] = [];
-    const { typeRegistry } = useUserSession();
-
-    if (facets.type) {
-        const typeFilterGroup = VTypeFacet({
-            buckets: facets.type || [],
-            typeRegistry: typeRegistry,
-        });
-        customFilterGroups.push(typeFilterGroup);
-    }
 
     if (facets.interactions) {
         const interactionFilterGroup = VInteractionFacet({

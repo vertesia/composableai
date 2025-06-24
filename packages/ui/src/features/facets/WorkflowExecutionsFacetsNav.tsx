@@ -13,22 +13,20 @@ interface WorkflowExecutionsFacetsNavProps {
     textSearch?: string;
 }
 
-export function WorkflowExecutionsFacetsNav({ 
-    facets, 
-    search, 
-    textSearch = 'Search by Workflow or Run ID' 
+export function WorkflowExecutionsFacetsNav({
+    facets,
+    search,
+    textSearch = 'Search by Workflow or Run ID'
 }: WorkflowExecutionsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const customFilterGroups: FilterGroup[] = [];
 
-    if (textSearch) {
-        customFilterGroups.push({
-            placeholder: textSearch,
-            name: 'name',
-            type: 'text',
-            options: [],
-        });
-    }
+    customFilterGroups.push({
+        placeholder: textSearch,
+        name: 'name',
+        type: 'text',
+        options: [],
+    });
 
     if (facets.status) {
         const statusFilterGroup = VStringFacet({
@@ -61,10 +59,10 @@ export function WorkflowExecutionsFacetsNav({
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name.toLowerCase();
-                const filterValue = filter.type === 'stringList' 
-                    ? filter.value.map(v => typeof v === 'string' ? v : v.value) 
-                    : Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object' 
-                        ? filter.value[0].value 
+                const filterValue = filter.type === 'stringList'
+                    ? filter.value.map(v => typeof v === 'string' ? v : v.value)
+                    : Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
+                        ? filter.value[0].value
                         : filter.value;
 
                 if (filterName === 'name') {
