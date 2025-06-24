@@ -4,7 +4,7 @@ import { ColumnLayout, ContentObject, ContentObjectItem, VectorSearchQuery } fro
 import { Button, Divider, ErrorBox, SidePanel, Spinner, useDebounce, useIntersectionObserver, useToast } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
-import { Download, RefreshCw, SquareArrowOutUpRight } from 'lucide-react';
+import { Download, RefreshCw, Eye } from 'lucide-react';
 import { VFacetsNav } from "../../facets";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 
@@ -195,7 +195,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
         <SidePanel title={object.properties?.title || object.name} isOpen={true} onClose={onClose}>
             <div className="flex items-center gap-x-2">
                 <Button variant="ghost" size="sm" title="Open Object" onClick={() => navigate(`/objects/${object.id}`)}>
-                    <SquareArrowOutUpRight className="size-4" />
+                    <Eye className="size-4" />
                 </Button>
                 {object.content?.source && (
                     <Button variant="ghost" size="sm" title="Download" onClick={onDownload}>

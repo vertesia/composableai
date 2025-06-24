@@ -59,7 +59,9 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                 renditionUrl ? (
                     <img src={renditionUrl} alt={renditionAlt} className="w-auto h-48 object-cover rounded-t-xl" />
                 ) : (
-                    <div className="h-48 bg-gray-700 rounded-t-xl"></div>
+                    <div className="h-48 bg-gray-700 rounded-t-xl flex items-center justify-center text-muted">
+                        Preparing preview...
+                    </div>
                 )
             }
             <Separator className='bg-gray-200 h-[2px]' />
