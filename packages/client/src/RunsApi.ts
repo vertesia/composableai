@@ -2,6 +2,7 @@ import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     CheckpointConversationPayload,
     ComputeRunFacetPayload,
+    ConversationSearchPayload,
     ExecutionRun,
     ExecutionRunRef,
     FindPayload,
@@ -137,5 +138,15 @@ export class RunsApi extends ApiTopic {
         return this.post("/search", {
             payload,
         });
+    }
+
+    conversations(payload: ConversationSearchPayload): Promise<ExecutionRun[]> {
+        return this.post("/conversations/search", {
+            payload,
+        });
+    }
+
+    checkRunAccess(runId: string): Promise<boolean> {
+        return this.get(`/access/${runId}`);
     }
 }
