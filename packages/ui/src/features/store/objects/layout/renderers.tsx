@@ -94,10 +94,8 @@ const renderers: Record<string, (params?: URLSearchParams) => (value: any, index
     objectLink(params?: URLSearchParams) {
         let title = "title";
 
-        //let underline = "hover";
         if (params) {
             title = params.get("title") || "title";
-            //underline = params.get("underline") || "hover";
         }
 
         return (value: any, index: number) => {
@@ -110,8 +108,7 @@ const renderers: Record<string, (params?: URLSearchParams) => (value: any, index
             return (
                 <td key={index} className="flex items-center gap-2">
                     {value.properties?.[title] || value.name || shortId(value.id)}
-                    <Button variant="ghost" size="xs"
-                        title="Open Object"
+                    <Button variant="ghost" size="xs" title="Open Object"
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
