@@ -78,7 +78,7 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
         });
     }
 
-    const onCollectionChange = (collectionId: string | undefined, collection?: any) => {
+    const onCollectionChange = (collectionId: string | undefined) => {
         setSelectedCollectionId(collectionId);
     };
 
