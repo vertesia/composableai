@@ -141,7 +141,7 @@ export class RunsApi extends ApiTopic {
     }
 
     conversations(payload: ConversationSearchPayload): Promise<ExecutionRun[]> {
-        return this.post("/conversations", {
+        return this.post("/conversations/search", {
             payload,
         });
     }
