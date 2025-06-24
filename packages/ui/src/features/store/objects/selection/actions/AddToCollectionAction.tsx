@@ -55,7 +55,7 @@ interface AddToCollectionFormProps {
 function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
     const toast = useToast();
     const { client } = useUserSession();
-    const [selectedCol, setSelectedCol] = useState<any>();
+    const [selectedCollectionId, setSelectedCollectionId] = useState<string>();
     const onAddToCollection = ({ collectionId }: { collectionId: string }) => {
         if (!collectionId || !objectIds?.length) {
             return;
@@ -78,13 +78,17 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
         });
     }
 
+    const onCollectionChange = (collectionId: string | undefined, collection?: any) => {
+        setSelectedCollectionId(collectionId);
+    };
+
     return (
         <>
             <VModalBody>
-                <SelectCollection onChange={setSelectedCol} value={selectedCol} />
+                <SelectCollection onChange={onCollectionChange} value={selectedCollectionId} />
             </VModalBody>
             <VModalFooter>
-                <Button isDisabled={!selectedCol} onClick={() => selectedCol && onAddToCollection({ collectionId: selectedCol.id })}>
+                <Button isDisabled={!selectedCollectionId} onClick={() => selectedCollectionId && onAddToCollection({ collectionId: selectedCollectionId })}>
                     Add to Collection
                 </Button>
             </VModalFooter>
