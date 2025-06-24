@@ -17,6 +17,7 @@ export interface ConversationWorkflowPayload {
 export class PayloadBuilder implements ConversationWorkflowPayload {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
+    _collection: string | undefined;
     _start: boolean = false;
 
     payload: ConversationWorkflowPayload;
@@ -46,6 +47,7 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         builder._debug_mode = this._debug_mode;
         builder._inputValidator = this._inputValidator;
         builder._start = this._start;
+        builder._collection = this._collection;
         return builder;
     }
 
@@ -67,6 +69,17 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     set debug_mode(debug_mode: boolean) {
         if (debug_mode !== this._debug_mode) {
             this._debug_mode = debug_mode;
+            this.onStateChanged();
+        }
+    }
+
+    get collection() {
+        return this._collection;
+    }
+
+    set collection(collection: string | undefined) {
+        if (collection !== this._collection) {
+            this._collection = collection;
             this.onStateChanged();
         }
     }
@@ -169,6 +182,7 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         this._start = false;
         this._interactive = true;
         this._debug_mode = false;
+        this._collection = undefined;
         this.payload = {
             model: '',
             tools: [],
