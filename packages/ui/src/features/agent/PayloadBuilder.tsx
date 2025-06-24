@@ -84,6 +84,10 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         }
     }
 
+    get search_scope() {
+        return this._collection ? "collection" : undefined;
+    }
+
     get interaction() {
         return this.payload.interaction;
     }
