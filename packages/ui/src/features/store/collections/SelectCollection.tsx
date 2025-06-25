@@ -5,6 +5,7 @@ interface SelectCollectionProps {
     value?: string; // Collection ID
     onChange: (collectionId: string | undefined, collection?: any) => void;
     disabled?: boolean;
+    className?: string;
 }
 
 /**
@@ -13,7 +14,7 @@ interface SelectCollectionProps {
  * @param props - The properties for the component.
  * @returns A dropdown to select a collection.
  */
-export function SelectCollection({ onChange, value, disabled = false }: SelectCollectionProps) {
+export function SelectCollection({ onChange, value, disabled = false, className }: SelectCollectionProps) {
     const { client } = useUserSession();
     const { data: collections, error } = useFetch(() => client.store.collections.list({ dynamic: false }), []);
 
@@ -38,7 +39,7 @@ export function SelectCollection({ onChange, value, disabled = false }: SelectCo
             options={collections || []}
             optionLabel={(col: any) => col.name}
             by="id"
-            className="mb-4"
+            className={className}
             disabled={disabled}
         />
     );

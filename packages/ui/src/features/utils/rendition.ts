@@ -18,6 +18,7 @@ export async function retrieveRendition(
   doc: ContentObjectItem,
   setRenditionUrl: (url: string) => void,
   setRenditionAlt: (alt: string) => void,
+  setRenditionStatus: (status: string) => void,
 ) {
   if (
     !doc?.content?.type ||
@@ -27,9 +28,11 @@ export async function retrieveRendition(
       isPdf(doc.content.type)
     )
   ) {
+    setRenditionStatus("No preview available");
     return;
   }
 
+  setRenditionStatus("Preparing preview...");
   const currentTime = new Date().getTime() / 1000;
 
   const savedId = localStorage.getItem(
@@ -46,16 +49,27 @@ export async function retrieveRendition(
   ) {
     setRenditionUrl(savedId);
     setRenditionAlt(`${doc.name} Rendition`);
+    setRenditionStatus("ready");
     return savedId;
   }
 
+  setRenditionStatus("Preparing preview...");
   client.objects.getRendition(doc.id, RENDITION_OPTIONS).then((response) => {
     if (response.status === "generating") {
-      setTimeout(retrieveRendition, 60000);
+      setRenditionStatus("Preparing preview...");
+      setRenditionUrl("");
+      setRenditionAlt("");
+      setTimeout(() => retrieveRendition(client, doc, setRenditionUrl, setRenditionAlt, setRenditionStatus), 60000);
     } else if (response.status === "failed") {
+      setRenditionStatus("No preview available");
+      setRenditionUrl("");
+      setRenditionAlt("");
       return;
     } else {
       if (!response?.renditions?.length) {
+        setRenditionStatus("No preview available");
+        setRenditionUrl("");
+        setRenditionAlt("");
         return;
       }
       const rendition = response.renditions[0];
@@ -70,6 +84,14 @@ export async function retrieveRendition(
       );
       setRenditionUrl(rendition);
       setRenditionAlt(`${doc.name} Rendition`);
+      setRenditionStatus("ready");
+      console.log(`Rendition for document ${doc.id} retrieved successfully: ${rendition}`);
     }
+  }).catch((error) => {
+
+    setRenditionStatus("No preview available");
+    console.warn("Failed to retrieve rendition:", error);
+    setRenditionUrl("");
+    setRenditionAlt("");
   });
 }
