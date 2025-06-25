@@ -13,8 +13,7 @@ interface DocumentIconProps {
     document: ContentObjectItem
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
     selection: DocumentSelection;
-    onRowClick: (object: ContentObjectItem) => void;
-
+    onRowClick?: (object: ContentObjectItem) => void;
 }
 export function DocumentIcon({ selection, document, onSelectionChange, onRowClick }: Readonly<DocumentIconProps>) {
     const { client } = useUserSession()
@@ -38,7 +37,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
     }, [document])
 
     return (
-        <Card className="relative flex flex-col border h-fit" onClick={() => onRowClick(document)}>
+        <Card className="relative flex flex-col border h-fit" onClick={() => (onRowClick && onRowClick(document))}>
             {
                 selection && (
                     <div
