@@ -28,9 +28,11 @@ export async function retrieveRendition(
       isPdf(doc.content.type)
     )
   ) {
+    setRenditionStatus("No preview available");
     return;
   }
 
+  setRenditionStatus("Preparing preview...");
   const currentTime = new Date().getTime() / 1000;
 
   const savedId = localStorage.getItem(
@@ -47,15 +49,17 @@ export async function retrieveRendition(
   ) {
     setRenditionUrl(savedId);
     setRenditionAlt(`${doc.name} Rendition`);
+    setRenditionStatus("ready");
     return savedId;
   }
 
+  setRenditionStatus("Preparing preview...");
   client.objects.getRendition(doc.id, RENDITION_OPTIONS).then((response) => {
     if (response.status === "generating") {
       setRenditionStatus("Preparing preview...");
       setRenditionUrl("");
       setRenditionAlt("");
-      setTimeout(retrieveRendition, 60000);
+      setTimeout(() => retrieveRendition(client, doc, setRenditionUrl, setRenditionAlt, setRenditionStatus), 60000);
     } else if (response.status === "failed") {
       setRenditionStatus("No preview available");
       setRenditionUrl("");
@@ -81,6 +85,12 @@ export async function retrieveRendition(
       setRenditionUrl(rendition);
       setRenditionAlt(`${doc.name} Rendition`);
       setRenditionStatus("ready");
+      console.log(`Rendition for document ${doc.id} retrieved successfully: ${rendition}`);
     }
+  }).catch((error) => {
+    setRenditionStatus("No preview available");
+    console.warn(`Error retrieving rendition for document ${doc.id}:`, error);
+    setRenditionUrl("");
+    setRenditionAlt("");
   });
 }
