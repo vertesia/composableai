@@ -31,6 +31,11 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs`, { payload: { documentId, eventName, ruleId } });
     }
 
+    /** List conversations the users has access to */
+    listConversations(): Promise<ListWorkflowRunsResponse> {
+        return this.get(`/conversations`);
+    }
+
     searchRuns(payload: ListWorkflowRunsPayload): Promise<ListWorkflowRunsResponse> {
         return this.post(`/runs`, { payload: payload });
     }
