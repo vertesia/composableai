@@ -3,10 +3,11 @@ import { ChangeEvent, useEffect, useState } from 'react'
 import { retrieveRendition } from '../../../utils'
 
 import { ContentObjectItem } from '@vertesia/common'
-import { Card, CardContent, Separator, VTooltip } from "@vertesia/ui/core"
+import { Button, Card, CardContent, Separator, VTooltip } from "@vertesia/ui/core"
 import { useNavigate } from "@vertesia/ui/router"
 import { useUserSession } from "@vertesia/ui/session"
 import { DocumentSelection } from '../DocumentSelectionProvider'
+import { Eye } from 'lucide-react'
 
 interface DocumentIconProps {
     document: ContentObjectItem
@@ -54,6 +55,20 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                     </div>
                 )
             }
+
+            <div
+                className="absolute top-1 right-1 z-10 flex flex-col items-center"
+            >
+                <Button
+                    variant="ghost" size="sm" title="Open Object"
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        handleNavigateToDocument()
+                    }}
+                >
+                    <Eye className="size-4" />
+                </Button>
+            </div>
 
             {
                 renditionUrl ? (

@@ -106,7 +106,7 @@ const renderers: Record<string, (params?: URLSearchParams) => (value: any, index
             }
 
             return (
-                <td key={index} className="flex items-center gap-2">
+                <td key={index} className="flex items-center justify-between">
                     {value.properties?.[title] || value.name || shortId(value.id)}
                     <Button variant="ghost" size="xs" title="Open Object"
                         onClick={(e) => {
