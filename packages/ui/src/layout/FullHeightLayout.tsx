@@ -12,7 +12,7 @@ export function FullHeightLayout({ className, children }: FlexibleHeightLayoutPr
                 "flex flex-col",
                 "h-full",
                 "overflow-y-auto",
-                // "dark:bg-slate-900 text-slate-950 dark:text-slate-200",
+                "px-2",
                 className
             )}
         >
