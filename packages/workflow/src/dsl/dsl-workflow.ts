@@ -226,7 +226,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
     }
     const importParams = vars.createImportVars(activity.import);
     const executionPayload = dslActivityPayload(basePayload, activity, importParams);
-    log.info("Executing activity: " + activity.name, { payload: executionPayload });
+    log.info("Executing activity: " + activity.name, { account_id: executionPayload.account_id, project_id: executionPayload.project_id, workflow_name: executionPayload.workflow_name });
 
     let proxy = defaultProxy;
     if (activity.options) {
@@ -248,7 +248,6 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         //TODO execute in parallel
         log.info("Parallel execution not yet implemented");
     } else {
-        log.info("Executing activity: " + activity.name, { importParams });
         const result = await fn(executionPayload);
         if (activity.output) {
             vars.setValue(activity.output, result);
