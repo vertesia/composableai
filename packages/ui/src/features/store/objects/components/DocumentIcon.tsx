@@ -67,7 +67,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                         handleNavigateToDocument()
                     }}
                 >
-                    <Eye className="size-4" />
+                    <Eye className={`size-4 ${renditionStatus === 'ready' ? 'text-muted' : 'text-white'}`} />
                 </Button>
             </div>
 
