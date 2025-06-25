@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
 import RelativeTime from "dayjs/plugin/relativeTime";
 import { shortId } from "../../../utils";
-import { Button } from "@vertesia/ui/core/components/shadcn/button";
+import { Button } from "@vertesia/ui/core";
 import { EyeIcon } from "lucide-react";
 dayjs.extend(RelativeTime);
 dayjs.extend(LocalizedFormat);
