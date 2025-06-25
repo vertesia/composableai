@@ -22,9 +22,10 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
 
     const [renditionUrl, setRenditionUrl] = useState<string | undefined>(undefined)
     const [renditionAlt, setRenditionAlt] = useState<string | undefined>(undefined)
+    const [renditionStatus, setRenditionStatus] = useState<string | undefined>(undefined)
 
     const handleNavigateToDocument = () => {
-        navigate(`/objects/${document.id}`)
+        navigate(`/objects/${document.id}`, {isBasePathNested: true})
     }
 
     const handleSelect = (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +38,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
             return
         }
 
-        retrieveRendition(client, document, setRenditionUrl, setRenditionAlt)
+        retrieveRendition(client, document, setRenditionUrl, setRenditionAlt, setRenditionStatus)
     }, [document])
 
     return (
@@ -71,11 +72,11 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
             </div>
 
             {
-                renditionUrl ? (
+                (renditionUrl && renditionStatus == 'ready') ? (
                     <img src={renditionUrl} alt={renditionAlt} className="w-auto h-48 object-cover rounded-t-xl" />
                 ) : (
                     <div className="h-48 bg-gray-700 rounded-t-xl flex items-center justify-center text-muted">
-                        {/* Preparing preview... */}
+                        {renditionStatus || "Preparing preview..."}
                     </div>
                 )
             }
