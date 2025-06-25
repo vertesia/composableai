@@ -30,6 +30,13 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     project_id: string;
 
     /**
+     * The visibility of the workflow.
+     * - public: the workflow is visible to all users of the account.
+     * - private: the workflow is only visible to the user who created it.
+     */
+    visibility?: "public" | "private";
+
+    /**
      * The vars field is mainly used to pass the user input to the workflow.
      * The user input ar custom user options that can be used to configure the workflow.
      * You can see the user input as the arguments for a command line app.
@@ -130,13 +137,19 @@ export interface ExecuteWorkflowPayload {
      * Timeout for the workflow execution to complete, in seconds.
      */
     timeout?: number; //timeout in seconds
+
+    /**
+     * The visibility of the workflow.
+     * - public: the workflow is visible to all users of the account.
+     * - private: the workflow is only visible to the user who created it.
+     */
+    visibility?: "public" | "private";
 }
 
 export interface ListWorkflowRunsPayload {
     /**
      * The document ID passed to a workflow run.
      */
-
     document_id?: string;
 
     /**
@@ -173,6 +186,13 @@ export interface ListWorkflowRunsPayload {
      * The user or service account that initiated the workflow run.
      */
     initiated_by?: string;
+
+    /**
+     * The visibility of the workflow.
+     * - public: the workflow is visible to all users of the account.
+     * - private: the workflow is only visible to the user who created it.
+     */
+    visibility?: "public" | "private";
 
     /**
      * Lucene query string to search for the workflow runs.
@@ -228,7 +248,7 @@ interface WorkflowRunEvent {
         }
         recipient?: {
             workflowId?: string,
-            runId?: string 
+            runId?: string
         },
         initiatedEventId?: string,
     }
@@ -257,10 +277,11 @@ export interface WorkflowRun {
     run_id?: string;
     workflow_id?: string;
     initiated_by?: string;
+    visibility?: "public" | "private" | undefined;
     interaction_name?: string;
     input?: any;
     result?: any;
-    error?:any,
+    error?: any,
     raw?: any;
     /**
      * The Vertesia Workflow Type of this Workflow Run.
