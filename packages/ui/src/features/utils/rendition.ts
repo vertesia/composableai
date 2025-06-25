@@ -88,8 +88,9 @@ export async function retrieveRendition(
       console.log(`Rendition for document ${doc.id} retrieved successfully: ${rendition}`);
     }
   }).catch((error) => {
+
     setRenditionStatus("No preview available");
-    console.warn(`Error retrieving rendition for document ${doc.id}:`, error);
+    console.warn("Failed to retrieve rendition:", error);
     setRenditionUrl("");
     setRenditionAlt("");
   });
