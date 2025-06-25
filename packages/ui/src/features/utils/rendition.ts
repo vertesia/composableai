@@ -71,5 +71,7 @@ export async function retrieveRendition(
       setRenditionUrl(rendition);
       setRenditionAlt(`${doc.name} Rendition`);
     }
+  }).catch((error) => {
+    console.warn("Failed to retrieve rendition:", error);
   });
 }
