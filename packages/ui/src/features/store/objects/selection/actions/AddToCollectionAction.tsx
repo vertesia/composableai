@@ -1,7 +1,7 @@
-import { Button, ErrorBox, Portal, useFetch, useToast, VModal, VModalBody, VModalFooter, VModalTitle, VSelectBox } from "@vertesia/ui/core";
+import { Button, Portal, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
-import { CreateCollectionForm } from "../../../collections";
+import { CreateCollectionForm, SelectCollection } from "../../../collections";
 import { useObjectsActionCallback } from "../ObjectsActionContext";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
@@ -55,8 +55,7 @@ interface AddToCollectionFormProps {
 function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
     const toast = useToast();
     const { client } = useUserSession();
-    const [selectedCol, setSelectedCol] = useState<any>();
-    const { data: collections, error } = useFetch(() => client.store.collections.list({ dynamic: false }), []);
+    const [selectedCollectionId, setSelectedCollectionId] = useState<string>();
     const onAddToCollection = ({ collectionId }: { collectionId: string }) => {
         if (!collectionId || !objectIds?.length) {
             return;
@@ -78,28 +77,18 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
             });
         });
     }
-    if (error) {
-        return <ErrorBox title='Collection fetch failed'>{error.message}</ErrorBox>
-    }
+
+    const onCollectionChange = (collectionId: string | undefined) => {
+        setSelectedCollectionId(collectionId);
+    };
 
     return (
         <>
             <VModalBody>
-                <VSelectBox
-                    filterBy={"name"}
-                    value={selectedCol}
-                    onChange={(collection) => {
-                        setSelectedCol(collection);
-                    }}
-                    placeholder="Select a collection"
-                    options={collections || []}
-                    optionLabel={(col: any) => col.name}
-                    by="id"
-                    className="mb-4"
-                />
+                <SelectCollection onChange={onCollectionChange} value={selectedCollectionId} />
             </VModalBody>
             <VModalFooter>
-                <Button isDisabled={!selectedCol} onClick={() => selectedCol && onAddToCollection({ collectionId: selectedCol.id })}>
+                <Button isDisabled={!selectedCollectionId} onClick={() => selectedCollectionId && onAddToCollection({ collectionId: selectedCollectionId })}>
                     Add to Collection
                 </Button>
             </VModalFooter>

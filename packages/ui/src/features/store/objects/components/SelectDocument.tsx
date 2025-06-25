@@ -1,11 +1,12 @@
 import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
-import { ErrorBox, Spinner, useIntersectionObserver } from "@vertesia/ui/core";
+import { Button, ErrorBox, Spinner, useIntersectionObserver } from "@vertesia/ui/core";
 import { useEffect, useRef, useState } from "react";
 import { VFacetsNav } from "../../../facets";
 import { DocumentTable } from "../DocumentTable";
 import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from "../search/DocumentSearchContext";
 import { DocumentSearchProvider } from "../search/DocumentSearchProvider";
 import { ContentDispositionButton } from "./ContentDispositionButton";
+import { RefreshCw } from "lucide-react";
 
 const layout: ColumnLayout[] = [
     { "name": "Name", "field": "properties.title", "type": "string", "fallback": "name" },
@@ -41,15 +42,22 @@ function SelectDocumentImpl({ onRowClick }: SelectDocumentImplProps) {
     const { search, isLoading, error, objects } = useWatchDocumentSearchResult();
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
+
     useIntersectionObserver(loadMoreRef, () => {
         isReady && search.loadMore(true)
     }, { deps: [isReady] });
+
     useEffect(() => {
         search.search().then(() => setIsReady(true));
     }, []);
 
     const facets = useWatchDocumentSearchFacets();
     const facetSearch = useDocumentSearch();
+
+    const handleRefetch = () => {
+        setIsReady(false);
+        search.search().then(() => setIsReady(true));
+    }
 
     if (error) {
         return <ErrorBox title="Search failed">{error.message}</ErrorBox>
@@ -59,7 +67,12 @@ function SelectDocumentImpl({ onRowClick }: SelectDocumentImplProps) {
         <div>
             <div className="flex justify-between items-center mb-4">
                 <VFacetsNav facets={facets} search={facetSearch} textSearch="Filter content" />
-                <ContentDispositionButton onUpdate={setIsGridView} />
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={handleRefetch} alt="Refresh">
+                        <RefreshCw size={16} />
+                    </Button>
+                    <ContentDispositionButton onUpdate={setIsGridView} />
+                </div>
             </div>
             <DocumentTable objects={objects || []} isLoading={false} layout={layout} onRowClick={onRowClick} isGridView={isGridView} />
             <div ref={loadMoreRef} className='mt-10' />
