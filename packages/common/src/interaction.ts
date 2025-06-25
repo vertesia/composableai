@@ -570,13 +570,3 @@ export interface GenerateTestDataPayload {
 export interface ImprovePromptPayload {
     config: InteractionExecutionConfiguration;
 }
-
-export interface ConversationExecutionRunRef {
-    access: string
-    created_at: Date
-    name: string
-    run: ExecutionRunRef
-    run_id?: string
-    running: boolean
-    workflow_id?: string
-}
