@@ -4,7 +4,7 @@ import { retrieveRendition } from '../../../utils'
 
 import { ContentObjectItem } from '@vertesia/common'
 import { Button, Card, CardContent, Separator, VTooltip } from "@vertesia/ui/core"
-import { useNavigate } from "@vertesia/ui/router"
+import { NavLink } from "@vertesia/ui/router"
 import { useUserSession } from "@vertesia/ui/session"
 import { DocumentSelection } from '../DocumentSelectionProvider'
 import { Eye } from 'lucide-react'
@@ -13,20 +13,16 @@ interface DocumentIconProps {
     document: ContentObjectItem
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
     selection: DocumentSelection;
-    onRowClick?: (object: ContentObjectItem) => void;
+    onRowClick: (object: ContentObjectItem) => void;
 
 }
 export function DocumentIcon({ selection, document, onSelectionChange, onRowClick }: Readonly<DocumentIconProps>) {
     const { client } = useUserSession()
-    const navigate = useNavigate()
 
     const [renditionUrl, setRenditionUrl] = useState<string | undefined>(undefined)
     const [renditionAlt, setRenditionAlt] = useState<string | undefined>(undefined)
     const [renditionStatus, setRenditionStatus] = useState<string | undefined>(undefined)
 
-    const handleNavigateToDocument = () => {
-        navigate(`/objects/${document.id}`, {isBasePathNested: true})
-    }
 
     const handleSelect = (ev: React.ChangeEvent<HTMLInputElement>) => {
         ev.stopPropagation()
@@ -42,7 +38,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
     }, [document])
 
     return (
-        <Card className="relative flex flex-col border h-fit" onClick={() => onRowClick ? onRowClick(document) : handleNavigateToDocument()}>
+        <Card className="relative flex flex-col border h-fit" onClick={() => onRowClick(document)}>
             {
                 selection && (
                     <div
@@ -60,15 +56,16 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
             <div
                 className="absolute top-1 right-1 z-10 flex flex-col items-center"
             >
-                <Button
-                    variant="ghost" size="sm" title="Open Object"
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        handleNavigateToDocument()
-                    }}
+                <NavLink
+                    topLevelNav
+                    href={`/store/objects/${document.id}`}
                 >
-                    <Eye className={`size-4 ${renditionStatus === 'ready' ? 'text-muted' : 'text-white'}`} />
-                </Button>
+                    <Button
+                        variant="ghost" size="sm" title="Open Object"
+                    >
+                        <Eye className={`size-4 ${renditionStatus === 'ready' ? 'text-muted' : 'text-white'}`} />
+                    </Button>
+                </NavLink>
             </div>
 
             {
