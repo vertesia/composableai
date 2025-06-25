@@ -43,7 +43,7 @@ function SelectCollectionModal({ isOpen, onClose, objectIds }: SelectCollectionM
     return (
         <VModal isOpen={isOpen} onClose={onClose}>
             <VModalTitle>Add to a Collection</VModalTitle>
-            <AddToCollectionForm onClose={onClose} objectIds={objectIds} />
+            <AddToCollectionForm onClose={onClose} objectIds={objectIds}/>
         </VModal>
     )
 }
@@ -85,7 +85,7 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
     return (
         <>
             <VModalBody>
-                <SelectCollection onChange={onCollectionChange} value={selectedCollectionId} />
+                <SelectCollection onChange={onCollectionChange} value={selectedCollectionId}  className="mb-4"/>
             </VModalBody>
             <VModalFooter>
                 <Button isDisabled={!selectedCollectionId} onClick={() => selectedCollectionId && onAddToCollection({ collectionId: selectedCollectionId })}>
