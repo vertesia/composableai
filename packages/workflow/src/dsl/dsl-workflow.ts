@@ -77,8 +77,6 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
         objectId: payload.objectIds ? payload.objectIds[0] : undefined
     });
 
-    log.info("Executing workflow", { payload });
-
     // TODO(mhuang): remove patch when all workflows are migrated to v2
     //   It avoids breaking the ongoing workflow execution running in v1 and also allows us to
     //   deploy the new error handler in production.
@@ -221,7 +219,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         log.debug(`Workflow vars before executing activity ${activity.name}`, { vars: vars.resolve() });
     }
     if (activity.condition && !vars.match(activity.condition)) {
-        log.info("Activity skipped: condition not satisfied", activity.condition);
+        log.debug("Activity skipped: condition not satisfied", activity.condition);
         return;
     }
     const importParams = vars.createImportVars(activity.import);
