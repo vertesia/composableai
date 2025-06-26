@@ -254,7 +254,7 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                     components={{
                         a: ({ node, ...props }: { node?: any; href?: string; children?: React.ReactNode }) => {
                             const href = props.href || "";
-                            if (href.startsWith("/store/")) {
+                            if (href.includes("/store/objects")) {
                                 return (
                                     <NavLink
                                         href={href}
