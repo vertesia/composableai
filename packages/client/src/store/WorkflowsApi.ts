@@ -31,6 +31,11 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs`, { payload: { documentId, eventName, ruleId } });
     }
 
+    /** List conversations the users has access to */
+    listConversations(): Promise<ListWorkflowRunsResponse> {
+        return this.get(`/conversations`);
+    }
+
     searchRuns(payload: ListWorkflowRunsPayload): Promise<ListWorkflowRunsResponse> {
         return this.post(`/runs`, { payload: payload });
     }
@@ -70,14 +75,14 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs/${runId}/updates`, { payload: msg });
     }
 
-    retrieveMessages(runId: string, since?: number): Promise<AgentMessage[]> {
+    retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
         const query = {
             since,
         };
-        return this.get(`/runs/${runId}/updates`, { query });
+        return this.get(`/runs/${workflowId}/${runId}/updates`, { query });
     }
 
-    async streamMessages(runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
+    async streamMessages(workflowId: string, runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
         return new Promise<unknown>((resolve, reject) => {
             let reconnectAttempts = 0;
             let lastMessageTimestamp = since || 0;
@@ -121,7 +126,7 @@ export class WorkflowsApi extends ApiTopic {
                 try {
                     const EventSourceImpl = await EventSourceProvider();
                     const client = this.client as VertesiaClient;
-                    const streamUrl = new URL(client.workflows.baseUrl + "/runs/" + runId + "/stream");
+                    const streamUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/stream`);
 
                     // Use the timestamp of the last received message for reconnection
                     if (lastMessageTimestamp > 0) {

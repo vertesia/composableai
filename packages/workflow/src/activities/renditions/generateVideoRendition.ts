@@ -154,12 +154,6 @@ export async function generateVideoRendition(
             objectId,
         ]);
     }
-    if (!inputObject.content?.etag) {
-        log.error(`Document ${objectId} has no etag`);
-        throw new DocumentNotFoundError(`Document ${objectId} has no etag`, [
-            objectId,
-        ]);
-    }
 
     if (
         !inputObject.content.type ||
@@ -277,10 +271,15 @@ export async function generateVideoRendition(
         }
     }
 
+    if (!inputObject.content?.etag) {
+        log.warn(`Document ${objectId} has no etag, using object id as etag`);
+    }
+    const etag = inputObject.content.etag ?? inputObject.id;
+
     // Update the final upload call to handle multiple thumbnails
     const uploaded = await uploadRenditionPages(
         client,
-        inputObject.content.etag,
+        etag,
         renditionPages,
         params,
     );

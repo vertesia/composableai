@@ -49,7 +49,7 @@ export async function generateImageRendition(
         throw new DocumentNotFoundError(`Document ${objectId} not found`, [objectId]);
     }
 
-    if (!inputObject.content?.etag || !inputObject.content?.source) {
+    if (!inputObject.content?.source) {
         log.error(`Document ${objectId} has no etag or source`);
         throw new DocumentNotFoundError(`Document ${objectId} has no etag or source`, [objectId]);
     }
@@ -87,9 +87,16 @@ export async function generateImageRendition(
     log.info(`Image ${objectId} copied to ${imageFile}`);
     renditionPages.push(imageFile);
 
+
+    //IF no etag, log and use use object id as etag
+    if (!inputObject.content.etag) {
+        log.warn(`Document ${objectId} has no etag, using object id as etag`);
+    }
+    const contentEtag = inputObject.content.etag ?? inputObject.id;
+
     const uploaded = await uploadRenditionPages(
         client,
-        inputObject.content.etag,
+        contentEtag,
         [imageFile],
         params,
     );

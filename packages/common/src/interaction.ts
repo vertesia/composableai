@@ -322,8 +322,16 @@ interface AsyncExecutionPayloadBase {
     tags?: string[];
 }
 
+export type ConversationVisibility = 'private' | 'project';
+
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
     type: "conversation";
+
+    /** 
+    * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project 
+    * If not specified, the default is project
+    **/
+    visibility?: ConversationVisibility;
 
     /**
      * The tools to use, list of tool or function names.
@@ -369,6 +377,7 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
 
     /** Whether to enable debug mode */
     debug_mode?: boolean;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {

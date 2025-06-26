@@ -3,11 +3,12 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { useUserSession } from "@vertesia/ui/session";
-import { Button, Link, Spinner, useToast } from "@vertesia/ui/core";
+import { Button, Spinner, useToast } from "@vertesia/ui/core";
 import { JSONDisplay } from "@vertesia/ui/widgets";
 import { ContentObject, ImageRenditionFormat } from "@vertesia/common";
 import { Copy, Download, SquarePen } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
+import { NavLink } from "@vertesia/ui/router";
 
 interface ContentOverviewProps {
     object: ContentObject;
@@ -320,17 +321,18 @@ export function ContentOverview({
                                         components={{
                                             a: ({ node, ...props }: { node?: any; href?: string; children?: React.ReactNode }) => {
                                                 const href = props.href || "";
-                                                if (href.startsWith("/store/objects/")) {
+                                                if (href.includes("/store/objects/")) {
                                                     return (
-                                                        <Link
+                                                        <NavLink
+                                                            topLevelNav
                                                             href={href}
                                                             className="text-info"
                                                         >
                                                             {props.children}
-                                                        </Link>
+                                                        </NavLink>
                                                     );
                                                 }
-                                                return <a {...props} target="_blank" rel="noopener noreferrer" />;
+                                                return <a {...props} data-debug="test" target="_blank" rel="noopener noreferrer" />;
                                             },
                                             p: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
                                                 <p {...props} className={`my-0`} />
