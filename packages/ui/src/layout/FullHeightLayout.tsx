@@ -50,7 +50,7 @@ FullHeightLayout.Body = function Body({ className, children }: BodyProps) {
             className={clsx(
                 "grow overflow-auto",
                 "min-h-0",
-                "px-4 py-2",
+                "p-2",
                 className
             )}
         >
