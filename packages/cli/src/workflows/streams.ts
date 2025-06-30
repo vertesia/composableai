@@ -314,7 +314,7 @@ export async function streamRun(workflowId: string, runId: string, program: any,
     try {
         // Pass abort signal to streamMessages if the API supports it
         // Note: You might need to modify the client implementation to accept this parameter
-        await client.workflows.streamMessages(runId, onMessage, since);
+        await client.workflows.streamMessages(workflowId, runId, onMessage, since);
 
         if (!isTerminating) {
             if (spinner) spinner.stop();
@@ -427,10 +427,10 @@ function formatDetails(details: any): void {
                             typeof item === "string"
                                 ? chalk.green(`"${item}"`)
                                 : typeof item === "number"
-                                  ? chalk.yellow(item)
-                                  : typeof item === "boolean"
-                                    ? chalk.magenta(item)
-                                    : item;
+                                    ? chalk.yellow(item)
+                                    : typeof item === "boolean"
+                                        ? chalk.magenta(item)
+                                        : item;
                         console.log(`  ${displayValue}${i < details.length - 1 ? "," : ""}`);
                     });
                     console.log(chalk.cyan("]"));

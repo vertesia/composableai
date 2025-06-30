@@ -1,5 +1,5 @@
 import { CreateCollectionPayload } from "@vertesia/common";
-import { useToast, VModalBody, FormItem, Styles, VModalFooter, Input, Switch, Button } from "@vertesia/ui/core";
+import { useToast, VModalBody, FormItem, Styles, VModalFooter, Input, Switch, Button, VModal, VModalTitle } from "@vertesia/ui/core";
 import { SelectContentType } from "../types/SelectContentType";
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
@@ -122,5 +122,18 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                 </Button>
             </VModalFooter>
         </form >
+    );
+}
+
+interface CreateCollectionModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+export function CreateCollectionModal({ isOpen, onClose }: CreateCollectionModalProps) {
+    return (
+        <VModal onClose={onClose} isOpen={isOpen}>
+            <VModalTitle>Create a Collection</VModalTitle>
+            <CreateCollectionForm onClose={onClose} />
+        </VModal>
     );
 }

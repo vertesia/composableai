@@ -3,28 +3,25 @@ import { ChangeEvent, useEffect, useState } from 'react'
 import { retrieveRendition } from '../../../utils'
 
 import { ContentObjectItem } from '@vertesia/common'
-import { Card, CardContent, Separator, VTooltip } from "@vertesia/ui/core"
-import { useNavigate } from "@vertesia/ui/router"
+import { Button, Card, CardContent, Separator, VTooltip } from "@vertesia/ui/core"
+import { NavLink } from "@vertesia/ui/router"
 import { useUserSession } from "@vertesia/ui/session"
 import { DocumentSelection } from '../DocumentSelectionProvider'
+import { Eye } from 'lucide-react'
 
 interface DocumentIconProps {
     document: ContentObjectItem
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
     selection: DocumentSelection;
     onRowClick?: (object: ContentObjectItem) => void;
-
 }
 export function DocumentIcon({ selection, document, onSelectionChange, onRowClick }: Readonly<DocumentIconProps>) {
     const { client } = useUserSession()
-    const navigate = useNavigate()
 
     const [renditionUrl, setRenditionUrl] = useState<string | undefined>(undefined)
     const [renditionAlt, setRenditionAlt] = useState<string | undefined>(undefined)
+    const [renditionStatus, setRenditionStatus] = useState<string | undefined>(undefined)
 
-    const handleNavigateToDocument = () => {
-        navigate(`/objects/${document.id}`)
-    }
 
     const handleSelect = (ev: React.ChangeEvent<HTMLInputElement>) => {
         ev.stopPropagation()
@@ -36,11 +33,11 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
             return
         }
 
-        retrieveRendition(client, document, setRenditionUrl, setRenditionAlt)
+        retrieveRendition(client, document, setRenditionUrl, setRenditionAlt, setRenditionStatus)
     }, [document])
 
     return (
-        <Card className="relative flex flex-col border h-fit" onClick={() => onRowClick ? onRowClick(document) : handleNavigateToDocument()}>
+        <Card className="relative flex flex-col border h-fit" onClick={() => (onRowClick && onRowClick(document))}>
             {
                 selection && (
                     <div
@@ -55,11 +52,28 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                 )
             }
 
+            <div
+                className="absolute top-1 right-1 z-10 flex flex-col items-center"
+            >
+                <NavLink
+                    topLevelNav
+                    href={`/store/objects/${document.id}`}
+                >
+                    <Button
+                        variant="ghost" size="sm" title="Open Object"
+                    >
+                        <Eye className={`size-4 ${renditionStatus === 'ready' ? 'text-muted' : 'text-white'}`} />
+                    </Button>
+                </NavLink>
+            </div>
+
             {
-                renditionUrl ? (
+                (renditionUrl && renditionStatus == 'ready') ? (
                     <img src={renditionUrl} alt={renditionAlt} className="w-auto h-48 object-cover rounded-t-xl" />
                 ) : (
-                    <div className="h-48 bg-gray-700 rounded-t-xl"></div>
+                    <div className="h-48 bg-gray-700 rounded-t-xl flex items-center justify-center text-muted">
+                        {renditionStatus}
+                    </div>
                 )
             }
             <Separator className='bg-gray-200 h-[2px]' />

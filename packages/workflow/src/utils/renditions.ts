@@ -1,10 +1,10 @@
 import { log } from "@temporalio/activity";
-import { imageResizer } from "../conversion/image.js";
-import fs from "fs";
 import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { ImageRenditionFormat } from "@vertesia/common";
-import path from "path";
+import fs from "fs";
+import pLimit from 'p-limit';
+import { imageResizer } from "../conversion/image.js";
 
 export interface ImageRenditionParams {
     max_hw: number; //maximum size of the longest side of the image
@@ -19,10 +19,10 @@ export interface ImageRenditionParams {
  * @returns
  */
 export function getRenditionsPath(
-    objectId: string,
+    contentEtag: string,
     params: ImageRenditionParams,
 ) {
-    const path = `renditions/${objectId}/${params.max_hw}`;
+    const path = `renditions/${contentEtag}/${params.max_hw}`;
     return path;
 }
 
@@ -30,15 +30,15 @@ export function getRenditionsPath(
  * Get a specific page path for a rendition
  */
 export function getRenditionPagePath(
-    objectId: string,
+    contentEtag: string,
     params: ImageRenditionParams,
-    pageNumber: number | string = 1,
+    pageNumber: number | string = 0,
 ) {
-    //if number, pad to 5 char
+    //if number, pad to 4 char
     if (typeof pageNumber === "number") {
-        pageNumber = String(pageNumber).padStart(5, "0");
+        pageNumber = String(pageNumber).padStart(4, "0");
     }
-    const path = getRenditionsPath(objectId, params);
+    const path = getRenditionsPath(contentEtag, params);
     const pagePath = `${path}/${pageNumber}.${params.format}`;
     return pagePath;
 }
@@ -48,21 +48,24 @@ export function getRenditionPagePath(
  */
 export async function uploadRenditionPages(
     client: VertesiaClient,
-    objectId: string,
+    contentEtag: string,
     files: string[],
     params: ImageRenditionParams,
+    concurrency?: number,
 ) {
     log.info(
-        `Uploading rendition for ${objectId} with ${files.length} pages (max_hw: ${params.max_hw}, format: ${params.format})`,
+        `Uploading rendition for etag ${contentEtag} with ${files.length} pages (max_hw: ${params.max_hw}, format: ${params.format})`,
         { files },
     );
-    const uploads = files.map(async (file, i) => {
-        const filename = path.basename(file).split(".")[0];
-        const pageId = getRenditionPagePath(objectId, params, filename);
+
+    const limit = pLimit(concurrency ?? 20);
+
+    const uploads = files.map((file, i) => limit(async () => {
+        const pageId = getRenditionPagePath(contentEtag, params, i);
         let resizedImagePath = null;
 
         try {
-            log.info(`Resizing image for ${objectId} page ${i}`, {
+            log.info(`Resizing image for ${contentEtag} page ${i}`, {
                 file,
                 params,
             });
@@ -85,7 +88,7 @@ export async function uploadRenditionPages(
             );
 
             log.info(
-                `Uploading rendition for ${objectId} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`,
+                `Uploading rendition for ${contentEtag} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`,
                 {
                     resizedImagePath,
                     fileId,
@@ -98,7 +101,7 @@ export async function uploadRenditionPages(
                 .uploadFile(source)
                 .catch((err) => {
                     log.error(
-                        `Failed to upload rendition for ${objectId} page ${i}`,
+                        `Failed to upload rendition for ${contentEtag} page ${i}`,
                         {
                             error: err,
                             errorMessage: err.message,
@@ -107,18 +110,18 @@ export async function uploadRenditionPages(
                     );
                     return Promise.reject(`Upload failed: ${err.message}`);
                 });
-            log.info(`Rendition uploaded for ${objectId} page ${i}`, {
+            log.info(`Rendition uploaded for ${contentEtag} page ${i}`, {
                 result,
             });
 
             return result;
         } catch (err: any) {
-            log.error(`Failed to upload rendition for ${objectId} page ${i}`, {
+            log.error(`Failed to upload rendition for ${contentEtag} page ${i}`, {
                 error: err,
             });
             return Promise.reject(`Upload failed: ${err.message}`);
         }
-    });
+    }));
 
     return Promise.all(uploads);
 }
