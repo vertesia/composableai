@@ -1,6 +1,7 @@
 export * from './access-control.js';
 export * from './analytics.js';
 export * from './apikey.js';
+export * from './apps.js';
 export * from './common.js';
 export * from './environment.js';
 export * from "./facets.js";
@@ -26,4 +27,3 @@ export * from './transient-tokens.js';
 export * from './user.js';
 export * from './utils/auth.js';
 export * from './utils/schemas.js';
-

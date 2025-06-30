@@ -4,6 +4,7 @@ import AccountApi from "./AccountApi.js";
 import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";
 import { ApiKeysApi } from "./ApiKeysApi.js";
+import AppsApi from "./AppsApi.js";
 import CommandsApi from "./CommandsApi.js";
 import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
@@ -218,6 +219,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     iam = new IamApi(this);
     refs = new RefsApi(this);
     commands = new CommandsApi(this);
+    apps = new AppsApi(this);
     plugins = new PluginsApi(this);
 }
 
