@@ -37,6 +37,7 @@ export enum Permission {
     content_admin = "content:admin", //manage schemas, workflows, rules
 
     workflow_run = "workflow:run",
+    workflow_admin = "workflow:admin",
 }
 
 export enum AccessControlResourceType {
