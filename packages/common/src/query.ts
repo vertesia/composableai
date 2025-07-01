@@ -18,6 +18,7 @@ export interface RunListingFilters {
     fromDate?: string,
     toDate?: string,
     parent?: string | false,
+    workflowRunIds?: string[],
 }
 
 export interface VectorSearchQuery {
