@@ -22,12 +22,19 @@ export interface AppAgentConfig {
      */
     src: string;
     /**
+     * If true the src is a remote javascript module and will imported using import()
+     * otherwise the src is a tool endpoint and will be called using a POST request.
+     * The default is false. (i.e. the src is a tool endpoint).
+     */
+    import?: boolean;
+    /**
      * The definitions of the tools exported by the app.
      * The definition can also be fetched form `GET src`
      */
     tools: ToolDefinition[];
 }
 
+export type AppTargetEnv = "development" | "preview" | "production";
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -64,7 +71,13 @@ export interface AppManifestData {
 
     agent?: AppAgentConfig
 }
-export interface AppManifest extends AppManifestData {
+export interface AppManifestDataWithTargetEnv extends AppManifestData {
+    /**
+     * Where the app is intended to run.
+     */
+    target_env: AppTargetEnv;
+}
+export interface AppManifest extends AppManifestDataWithTargetEnv {
     id: string;
     created_at: string;
     updated_at: string;
@@ -80,12 +93,17 @@ export interface AppInstallation {
 }
 
 export interface AppInstallationWithManifest extends Omit<AppInstallation, 'manifest'> {
-    manifest_data: AppManifest; // the app manifest data
+    manifest: AppManifest; // the app manifest data
 }
 
 export interface AppInstallationPayload {
     app_id: string,
     settings?: Record<string, any>
+}
+
+export interface PublishAppPayload {
+    id: string; // the app id to publish
+    target_env: AppTargetEnv; // the target environment to publish the app to
 }
 
 export type AppInstallationKind = 'ui' | 'agent' | 'all';

@@ -9,7 +9,6 @@ import CommandsApi from "./CommandsApi.js";
 import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
-import PluginsApi from "./PluginsApi.js";
 import ProjectsApi from "./ProjectsApi.js";
 import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
@@ -220,7 +219,6 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     refs = new RefsApi(this);
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
-    plugins = new PluginsApi(this);
 }
 
 function isApiKey(apiKey: string) {
