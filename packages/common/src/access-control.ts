@@ -31,8 +31,7 @@ export enum Permission {
 
 
     content_read = "content:read",
-    content_create = "content:create",
-    content_update = "content:update",
+    content_write = "content:write",
     content_delete = "content:delete",
 
     content_admin = "content:admin", //manage schemas, workflows, rules
