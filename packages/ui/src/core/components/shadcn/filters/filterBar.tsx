@@ -150,7 +150,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
       if (filters.length > 0) {
         // Convert filters to simple format with URL-safe encoding: filterName:value,value;filterName2:value
         const filterString = filters.map(filter => {
-          const values = Array.isArray(filter.value) 
+          const values = Array.isArray(filter.value)
             ? filter.value.map(item => encodeURIComponent(item.value || '')).join(',')
             : encodeURIComponent(filter.value || '');
           return `${encodeURIComponent(filter.name)}:${values}`;
@@ -177,10 +177,10 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
           const [encodedName, valuesString] = pair.split(':');
           const name = decodeURIComponent(encodedName);
           const values = valuesString.split(',').map(encodedValue => decodeURIComponent(encodedValue));
-          
+
           const group = filterGroups.find(g => g.name === name);
           console.log("group", group);
-          
+
           const filterOptions = values.map(value => {
             if (group?.type === 'text') {
               return { value, label: value };
@@ -188,7 +188,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
               // Try to find option with label, or use labelRenderer, or fallback to value
               const matchingOption = group?.options?.find(opt => opt.value === value);
               let label = value;
-              
+
               if (matchingOption?.label) {
                 label = String(matchingOption.label);
               } else if (matchingOption?.labelRenderer) {
@@ -196,16 +196,16 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
               } else if (group?.labelRenderer) {
                 label = String(group.labelRenderer(value));
               }
-              
+
               return {
                 value,
                 label
               };
             }
           });
-          
+
           console.log("valuesWithLabels", filterOptions);
-          
+
           return {
             name,
             type: group?.type || 'select',
