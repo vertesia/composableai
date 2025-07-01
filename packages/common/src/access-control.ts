@@ -15,9 +15,9 @@ export enum Permission {
     run_read = "run:read",
     run_write = "run:write",
 
-    env_manage = "environment:manage",
+    env_admin = "environment:admin",
 
-    project_manage = "project:manage",
+    project_admin = "project:admin",
 
     api_key_create = "api_key:create",
     api_key_read = "api_key:read",
@@ -25,7 +25,7 @@ export enum Permission {
     api_key_delete = "api_key:delete",
 
     account_read = "account:read",
-    account_manage = "account:manage",
+    account_admin = "account:admin",
     manage_billing = "account:billing",
     account_member = "account:member",
 
