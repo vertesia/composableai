@@ -49,28 +49,32 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
     };
 
     return (
-        <div className={clsx(className, 'w-full space-x-1 space-y-1 p-2', Styles.INPUT)}>
+        <div className={clsx(className, 'w-full flex flex-wrap items-center gap-1 p-2', Styles.INPUT)}>
             {
                 value && value.length > 0 &&
                 (value.map((v, index) =>
-                    <Badge variant={"secondary"} key={index} onClick={() => _onClick(index)} style={{ whiteSpace: 'nowrap' }} className='cursor-pointer'>
-                        {v}
+                    <Badge
+                        variant={"secondary"}
+                        key={index}
+                        onClick={() => _onClick(index)}
+                        className='cursor-pointer'
+                        title={v}
+                    >
+                        <span className='break-all'>{v}</span>
                     </Badge>
                 ))
             }
-            <div>
-                <Input
-                    clearable={false}
-                    className='placeholder:text-muted-foreground px-1'
-                    variant='unstyled'
-                    type='text'
-                    value={text}
-                    onBlur={onBlur}
-                    onKeyDown={onKeyDown}
-                    onChange={setText}
-                    placeholder={!value || value.length === 0 ? placeholder : ''}
-                />
-            </div>
+            <Input
+                clearable={false}
+                className='placeholder:text-muted-foreground px-1 min-w-0 flex-shrink-0 min-w-[120px]'
+                variant='unstyled'
+                type='text'
+                value={text}
+                onBlur={onBlur}
+                onKeyDown={onKeyDown}
+                onChange={setText}
+                placeholder={!value || value.length === 0 ? placeholder : ''}
+            />
         </div>
     )
 }
