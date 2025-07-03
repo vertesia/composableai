@@ -23,7 +23,6 @@ interface EditCollectionViewProps {
     refetch: () => void;
 }
 export function EditCollectionView({ refetch, collection }: EditCollectionViewProps) {
-    console.log("EditCollectionView", collection);
     const typeId = collection.type?.id;
     const tableLayoutRef = useRef<EditorApi | undefined>(undefined);
     const toast = useToast();
