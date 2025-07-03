@@ -2,8 +2,8 @@ import { BaseObject } from "./common.js";
 import { ColumnLayout, ContentObjectTypeRef } from "./store.js";
 
 export enum CollectionStatus {
-    active = 'active',
-    archived = 'archived'
+    active = "active",
+    archived = "archived",
 }
 
 export interface CreateCollectionPayload {
@@ -16,13 +16,14 @@ export interface CreateCollectionPayload {
     properties?: Record<string, any>;
     parent?: string | null;
     table_layout?: ColumnLayout[] | null;
+    allowed_types?: string[];
 }
 
 export interface CollectionItem extends BaseObject {
     /**
      * A flag to indicate if the collection is dynamic or static.
      * If the collection is dynamic, the members are determined by a query using the query field.
-     * Id the collection is static, the members are explicitly defined jusing the members array.
+     * If the collection is static, the members are explicitly defined using the members array.
      */
     dynamic: boolean;
     status: CollectionStatus;
@@ -37,6 +38,11 @@ export interface CollectionItem extends BaseObject {
      * The layout defined in the type could serve as a fallback if not defined here.
      */
     table_layout?: ColumnLayout[];
+
+    /**
+     * The allowed types for the collection.
+     */
+    allowed_types?: string[];
 }
 
 export interface Collection extends CollectionItem {
@@ -59,4 +65,5 @@ export interface CollectionSearchPayload {
     status?: CollectionStatus;
     limit?: number;
     offset?: number;
+    name?: string;
 }

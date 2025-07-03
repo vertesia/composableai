@@ -6,10 +6,10 @@ import type {
     StatelessExecutionOptions,
     ToolDefinition,
     ToolUse,
-} from "@llumiverse/core";
-import { JSONSchema4 } from "json-schema";
+} from "@llumiverse/common";
+import type { JSONSchema4 } from "json-schema";
 
-import { ExecutionTokenUsage } from "@llumiverse/core";
+import { ExecutionTokenUsage } from "@llumiverse/common";
 
 import { ExecutionEnvironmentRef } from "./environment.js";
 import { ProjectRef } from "./project.js";
@@ -42,13 +42,13 @@ export interface InteractionEndpointQuery {
 
     /**
      * Filter by interaction endpoint name to include only the specified endpoints
-     * * If both includes and excludes are specified then omly the includes filter will be used.
+     * * If both includes and excludes are specified then only the includes filter will be used.
      */
     includes?: string[];
 
     /**
      * Filter by interaction endpoint name to excludes the specified endpoints.
-     * If both includes and excludes are specified then omly the includes filter will be used.
+     * If both includes and excludes are specified then only the includes filter will be used.
      */
     excludes?: string[];
 
@@ -97,6 +97,9 @@ export interface InteractionRef {
 export const InteractionRefPopulate =
     "id name endpoint parent description status version visibility tags updated_at prompts";
 
+export const InteractionRefWithSchemaPopulate =
+    `${InteractionRefPopulate} result_schema`;
+
 export interface InteractionRefWithSchema extends Omit<InteractionRef, "prompts"> {
     result_schema?: JSONSchema4;
     prompts?: PromptSegmentDef<PromptTemplateRefWithSchema>[];
@@ -104,7 +107,7 @@ export interface InteractionRefWithSchema extends Omit<InteractionRef, "prompts"
 
 export interface InteractionsExportPayload {
     /**
-     * The name of the interaction. If not spcified all the interactions in the current project will be exported
+     * The name of the interaction. If not specified all the interactions in the current project will be exported
      */
     name?: string;
     /*
@@ -239,7 +242,7 @@ export interface InteractionForkPayload {
 export interface InteractionExecutionPayload {
     /**
      * If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location.
-     * and the other proerties of the data will contain the memory pack mapping.
+     * and the other properties of the data will contain the memory pack mapping.
      */
     data?: Record<string, any> | `memory:${string}`;
     config?: InteractionExecutionConfiguration;
@@ -261,6 +264,11 @@ export interface InteractionExecutionPayload {
      * The tools to be used in the execution
      */
     tools?: ToolDefinition[];
+
+    /**
+     * The workflow related to this Interaction Run.
+     */
+    workflow?: ExecutionRunWorkflow;
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
@@ -314,13 +322,22 @@ interface AsyncExecutionPayloadBase {
     tags?: string[];
 }
 
+export type ConversationVisibility = 'private' | 'project';
+
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
     type: "conversation";
 
+    /** 
+    * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project 
+    * If not specified, the default is project
+    **/
+    visibility?: ConversationVisibility;
+
     /**
-     * The tools to use
+     * The tools to use, list of tool or function names.
+     * You can use + and - to add or remove from default, if no sign, then list replaces default
      */
-    tools?: ToolRef[];
+    tools?: string[];
 
     /**
      * The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used.
@@ -336,6 +353,31 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * Whether to disable the generation of interaction tools or not.
      */
     disable_interaction_tools?: boolean;
+
+    /**
+     * On which scope should the searched by applied, by the search_tool.
+     * Only supports collection scope or null for now.
+     */
+    search_scope?: string;
+
+    /**
+     * The collection in which this workflow is executing
+     */
+    collection_id?: string;
+
+    /**
+     * The token threshold in thousands (K) for creating checkpoints.
+     * If total tokens exceed this value, a checkpoint will be created.
+     * If not specified, default value of 150K tokens will be used.
+     */
+    checkpoint_tokens?: number;
+
+    /** In child execution workflow, this is the curent task_id */
+    task_id?: string;
+
+    /** Whether to enable debug mode */
+    debug_mode?: boolean;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
@@ -363,14 +405,21 @@ interface ResumeConversationPayload {
     tools: ToolDefinition[]; // the tools to be used
 }
 
+
+export interface ToolResultContent {
+    content: string;
+    files?: string[];
+}
+
+export interface ToolResult extends ToolResultContent {
+    tool_use_id: string;
+}
+
 /**
  * The payload to sent the tool responses back to the target LLM
  */
 export interface ToolResultsPayload extends ResumeConversationPayload {
-    results: {
-        tool_use_id: string;
-        content: string;
-    }[];
+    results: ToolResult[];
 }
 
 export interface UserMessagePayload extends ResumeConversationPayload {
@@ -413,7 +462,7 @@ export interface ExecutionRun<P = any, R = any> {
     /**
      * The parameters used to create the interaction.
      * If the parameters contains the special property "@memory" it will be used
-     * to locate a meory pack and the other properties will be used as the memory pack mapping.
+     * to locate a memory pack and the other properties will be used as the memory pack mapping.
      */
     parameters: P; //params used to create the interaction, only in varies on?
     tags?: string[];
@@ -440,6 +489,41 @@ export interface ExecutionRun<P = any, R = any> {
     output_modality: Modalities;
     created_by: string;
     updated_by: string;
+
+    /**
+     * The Vertesia Workflow related to this Interaction Run.
+     *
+     * This is only set when the interaction is executed as part of a workflow.
+     *
+     * @since 0.60.0
+     */
+    workflow?: ExecutionRunWorkflow;
+}
+
+export interface ExecutionRunWorkflow {
+    /**
+     * The Temporal Workflow Run ID related to this Interaction Run.
+     *
+     * A Run ID is a globally unique, platform-level identifier for a Workflow Execution.
+     *
+     * @example 01970d37-a890-70c0-9f44-1256d063e69a
+     * @see https://docs.temporal.io/workflow-execution/workflowid-runid
+     */
+    run_id: string;
+    /**
+     * The Temporal Workflow ID related to this Interaction Run.
+     *
+     * @example Standard Document Intake:6834841e4f828d4e36192796
+     * @see https://docs.temporal.io/workflow-execution/workflowid-runid
+     */
+    workflow_id: string;
+    /**
+     * The Temporal Activity Type used for executing this Interaction. Undefined if the interaction
+     * was not executed as part of a workflow (such as Agent Runner).
+     *
+     * @example generateDocumentProperties
+     */
+    activity_type?: string;
 }
 
 export interface InteractionExecutionResult<P = any, R = any> extends ExecutionRun<P, R> {

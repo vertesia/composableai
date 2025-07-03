@@ -49,40 +49,40 @@ export class Spinner {
     _prefix = '';
     _suffix = '';
     _restoreCursor = false;
-    
+
     // Signal handlers for proper cleanup
     private signalHandlers: { [key: string]: () => void } = {};
 
     constructor(name: 'dots' | 'bar' = 'dots', stream?: WriteStream) {
         this.data = spinners[name];
         this.log = new LogUpdate(stream);
-        
+
         // Set up interrupt handlers to ensure cleanup
         this.setupSignalHandlers();
     }
-    
+
     private setupSignalHandlers() {
         // Create signal handlers for proper cleanup
         const handleSignal = () => {
             this.done(false);
             // Avoid adding a newline since that's handled by the system usually
         };
-        
+
         // Store handlers so we can remove them later
         this.signalHandlers['SIGINT'] = handleSignal;
         this.signalHandlers['SIGTERM'] = handleSignal;
-        
+
         // Register handlers
         process.on('SIGINT', handleSignal);
         process.on('SIGTERM', handleSignal);
     }
-    
+
     private removeSignalHandlers() {
         // Remove all signal handlers
         Object.entries(this.signalHandlers).forEach(([signal, handler]) => {
             process.off(signal as NodeJS.Signals, handler);
         });
-        
+
         // Clear handlers
         this.signalHandlers = {};
     }
@@ -108,18 +108,18 @@ export class Spinner {
     start(shodHideCursor = true) {
         // Don't start if already running
         if (this.isRunning) return this;
-        
+
         this.isRunning = true;
-        
+
         if (shodHideCursor) {
             hideCursor(this.log.stream);
             this._restoreCursor = true;
         }
-        
+
         let i = 0;
         this.timer = setInterval(() => {
             if (!this.isRunning) return;
-            
+
             try {
                 const frames = this.data.frames;
                 this.log.print(this.prefix + frames[++i % frames.length] + this.suffix);
@@ -128,28 +128,28 @@ export class Spinner {
                 this.done(false);
             }
         }, this.data.interval);
-        
+
         return this;
     }
 
     done(replacement: boolean | string = '') {
         // Don't try to stop if already stopped
         if (!this.isRunning) return this;
-        
+
         this.isRunning = false;
-        
+
         if (this.timer) {
             clearInterval(this.timer);
             this.timer = undefined;
         }
-        
+
         try {
             this.log.clear();
-            
+
             if (this._prefix) {
                 this.log.stream.write(this._prefix);
             }
-            
+
             if (replacement === true) {
                 this.log.stream.write(ansiColors.green(ansiColors.symbols.check));
             } else if (replacement === false) {
@@ -157,13 +157,13 @@ export class Spinner {
             } else {
                 this.log.stream.write(replacement);
             }
-            
+
             if (this._suffix) {
                 this.log.stream.write(this._suffix);
             }
-            
+
             console.log(); // print a new line
-            
+
             if (this._restoreCursor) {
                 showCursor(this.log.stream);
                 this._restoreCursor = false;
@@ -176,10 +176,10 @@ export class Spinner {
                 // Last resort - ignore errors in error handler
             }
         }
-        
+
         // Remove signal handlers to avoid multiple handling
         this.removeSignalHandlers();
-        
+
         return this;
     }
 }
@@ -228,13 +228,13 @@ export function showCursor(stream: WriteStream = process.stdout) {
 
 export function hideCursor(stream: WriteStream = process.stdout) {
     if (!streamsToRestore.includes(stream)) {
-        restoreCursotOnExit();
+        restoreCursorOnExit();
         streamsToRestore.push(stream);
     }
     stream.write(ansiEscapes.cursorHide);
 }
 
-export function restoreCursotOnExit() {
+export function restoreCursorOnExit() {
     if (!restoreCursorIsRegistered) {
         restoreCursorIsRegistered = true;
         onExit(() => {

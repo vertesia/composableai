@@ -10,7 +10,7 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
 
     headers: Record<string, string>;
     _auth?: () => Promise<string>;
-    // callbacks usefull to log requests and responses
+    // callbacks useful to log requests and responses
     onRequest?: (req: Request) => void;
     onResponse?: (res: Response, req: Request) => void;
     // the last response. Can be used to inspect the response headers
@@ -28,7 +28,7 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
 
     /**
      * Install an auth callback. If the callback is undefined or null then remove the auth callback.
-     * @param authCb a fucntion returning a promise that resolves to the value to use for the authorization header
+     * @param authCb a function returning a promise that resolves to the value to use for the authorization header
      * @returns the client instance
      */
     withAuthCallback(authCb?: (() => Promise<string>) | null) {
@@ -85,7 +85,7 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
     }
 
     async handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined): Promise<any> {
-        this.response = res; // store last repsonse
+        this.response = res; // store last response
         this.onResponse && this.onResponse(res, req);
         return super.handleResponse(req, res, params);
     }

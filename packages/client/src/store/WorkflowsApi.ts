@@ -7,6 +7,7 @@ import {
     DSLWorkflowDefinition,
     DSLWorkflowSpec,
     ExecuteWorkflowPayload,
+    ListWorkflowInteractionsResponse,
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
     WorkflowDefinitionRef,
@@ -30,6 +31,11 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs`, { payload: { documentId, eventName, ruleId } });
     }
 
+    /** List conversations the users has access to */
+    listConversations(): Promise<ListWorkflowRunsResponse> {
+        return this.get(`/conversations`);
+    }
+
     searchRuns(payload: ListWorkflowRunsPayload): Promise<ListWorkflowRunsResponse> {
         return this.post(`/runs`, { payload: payload });
     }
@@ -38,8 +44,13 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
     }
 
-    getRunDetails(runId: string, workflowId: string): Promise<WorkflowRunWithDetails> {
-        return this.get(`/runs/${workflowId}/${runId}`);
+    getRunDetails(runId: string, workflowId: string, includeHistory: boolean = false): Promise<WorkflowRunWithDetails> {
+        const query = { include_history: includeHistory };
+        return this.get(`/runs/${workflowId}/${runId}`, { query });
+    }
+
+    getRunInteraction(workflowId: string, runId: string): Promise<ListWorkflowInteractionsResponse> {
+        return this.get(`/runs/${workflowId}/${runId}/interaction`);
     }
 
     terminate(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
@@ -57,90 +68,177 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/execute/${name}`, { payload });
     }
 
-    postMessage(runId: string, message: string, type?: AgentMessageType, details?: any): Promise<void> {
+    postMessage(runId: string, msg: AgentMessage): Promise<void> {
         if (!runId) {
             throw new Error("runId is required");
         }
-        const payload = {
-            message,
-            type,
-            details,
-        };
-        return this.post(`/runs/${runId}/updates`, { payload });
+        return this.post(`/runs/${runId}/updates`, { payload: msg });
     }
 
-    retrieveMessages(runId: string, since?: number): Promise<AgentMessage[]> {
+    retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
         const query = {
             since,
         };
-        return this.get(`/runs/${runId}/updates`, { query });
+        return this.get(`/runs/${workflowId}/${runId}/updates`, { query });
     }
 
-    streamMessages(runId: string, onMessage?: (message: AgentMessage) => void, since?: number): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const EventSourceImpl = await EventSourceProvider();
-                const client = this.client as VertesiaClient;
-                const streamUrl = new URL(client.workflows.baseUrl + "/runs/" + runId + "/stream");
+    async streamMessages(workflowId: string, runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
+        return new Promise<unknown>((resolve, reject) => {
+            let reconnectAttempts = 0;
+            let lastMessageTimestamp = since || 0;
+            let isClosed = false;
+            let currentSse: EventSource | null = null;
+            let interval: NodeJS.Timeout | null = null;
 
-                if (since) {
-                    streamUrl.searchParams.set("since", since.toString());
+            const maxReconnectAttempts = 10;
+            const baseDelay = 1000; // 1 second base delay
+            const maxDelay = 30000; // 30 seconds max delay
+
+            const calculateBackoffDelay = (attempts: number): number => {
+                const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+                // Add jitter to prevent thundering herd
+                const jitter = Math.random() * 0.1 * exponentialDelay;
+                return exponentialDelay + jitter;
+            };
+
+            const cleanup = () => {
+                if (interval) {
+                    clearInterval(interval);
+                    interval = null;
                 }
+                if (currentSse) {
+                    currentSse.close();
+                    currentSse = null;
+                }
+            };
 
-                const bearerToken = client._auth ? await client._auth() : undefined;
-                if (!bearerToken) return reject(new Error("No auth token available"));
+            const exit = (payload: unknown) => {
+                if (!isClosed) {
+                    isClosed = true;
+                    cleanup();
+                    resolve(payload);
+                }
+            };
 
-                const token = bearerToken.split(" ")[1];
-                streamUrl.searchParams.set("access_token", token);
+            const setupStream = async (isReconnect: boolean = false) => {
+                if (isClosed) return;
 
-                const sse = new EventSourceImpl(streamUrl.href);
-                let isClosed = false;
+                try {
+                    const EventSourceImpl = await EventSourceProvider();
+                    const client = this.client as VertesiaClient;
+                    const streamUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/stream`);
 
-                sse.onmessage = (ev: MessageEvent) => {
-                    if (!ev.data || ev.data.startsWith(":")) {
-                        console.log("Received comment or heartbeat; ignoring it.: ", ev.data);
+                    // Use the timestamp of the last received message for reconnection
+                    if (lastMessageTimestamp > 0) {
+                        streamUrl.searchParams.set("since", lastMessageTimestamp.toString());
+                    }
+
+                    const bearerToken = client._auth ? await client._auth() : undefined;
+                    if (!bearerToken) {
+                        reject(new Error("No auth token available"));
                         return;
                     }
 
-                    try {
-                        const message = JSON.parse(ev.data) as AgentMessage;
-                        if (onMessage) onMessage(message);
+                    const token = bearerToken.split(" ")[1];
+                    streamUrl.searchParams.set("access_token", token);
 
-                        if (message.type === AgentMessageType.COMPLETE) {
-                            sse.close();
-                            isClosed = true;
-                            resolve();
-                        }
-                    } catch (err) {
-                        console.error("Failed to parse SSE message:", err, ev.data);
+                    if (isReconnect) {
+                        console.log(`Reconnecting to SSE stream for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
                     }
-                };
 
-                sse.onerror = (err: any) => {
-                    if (!isClosed) {
-                        console.error("SSE stream error:", err);
-                        sse.close();
+                    const sse = new EventSourceImpl(streamUrl.href);
+                    currentSse = sse;
+
+                    // Prevent Node from exiting prematurely
+                    interval = setInterval(() => { }, 1000);
+
+                    sse.onopen = () => {
+                        if (isReconnect) {
+                            console.log(`Successfully reconnected to SSE stream for run ${runId}`);
+                        }
+                        // Reset reconnect attempts on successful connection
+                        reconnectAttempts = 0;
+                    };
+
+                    sse.onmessage = (ev: MessageEvent) => {
+                        if (!ev.data || ev.data.startsWith(":")) {
+                            console.log("Received comment or heartbeat; ignoring it.: ", ev.data);
+                            return;
+                        }
+
+                        try {
+                            const message = JSON.parse(ev.data) as AgentMessage;
+
+                            // Update last message timestamp for reconnection
+                            if (message.timestamp) {
+                                lastMessageTimestamp = Math.max(lastMessageTimestamp, message.timestamp);
+                            }
+
+                            if (onMessage) onMessage(message, exit);
+
+                            // Only close the stream when the main workstream completes
+                            if (message.type === AgentMessageType.COMPLETE && (!message.workstream_id || message.workstream_id === 'main')) {
+                                console.log("Closing stream due to COMPLETE message from main workstream");
+                                if (!isClosed) {
+                                    isClosed = true;
+                                    cleanup();
+                                    resolve(null);
+                                }
+                            } else if (message.type === AgentMessageType.COMPLETE) {
+                                console.log(`Received COMPLETE message from non-main workstream: ${message.workstream_id || 'unknown'}, keeping stream open`);
+                            }
+                        } catch (err) {
+                            console.error("Failed to parse SSE message:", err, ev.data);
+                        }
+                    };
+
+                    sse.onerror = (err: any) => {
+                        if (isClosed) return;
+
+                        console.warn(`SSE stream error for run ${runId}:`, err);
+                        cleanup();
+
+                        // Check if we should attempt reconnection
+                        if (reconnectAttempts < maxReconnectAttempts) {
+                            const delay = calculateBackoffDelay(reconnectAttempts);
+                            console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+
+                            reconnectAttempts++;
+                            setTimeout(() => {
+                                if (!isClosed) {
+                                    setupStream(true);
+                                }
+                            }, delay);
+                        } else {
+                            console.error(`Failed to reconnect to SSE stream for run ${runId} after ${maxReconnectAttempts} attempts`);
+                            isClosed = true;
+                            reject(new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`));
+                        }
+                    };
+                } catch (err) {
+                    console.error("Error setting up SSE stream:", err);
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        const delay = calculateBackoffDelay(reconnectAttempts);
+                        reconnectAttempts++;
+                        setTimeout(() => {
+                            if (!isClosed) {
+                                setupStream(true);
+                            }
+                        }, delay);
+                    } else {
                         reject(err);
                     }
-                };
+                }
+            };
 
-                // Prevent Node from exiting prematurely
-                const interval = setInterval(() => { }, 1000);
+            // Start the async setup process
+            setupStream(false);
 
-                // Cleanup when stream resolves
-                const cleanup = () => {
-                    clearInterval(interval);
-                };
-
-                // Attach cleanup
-                sse.addEventListener("close", () => {
-                    isClosed = true;
-                    cleanup();
-                    resolve();
-                });
-            } catch (err) {
-                reject(err);
-            }
+            // Return cleanup function for external cancellation
+            return () => {
+                isClosed = true;
+                cleanup();
+            };
         });
     }
 

@@ -12,6 +12,7 @@ import {
     FindPayload,
     GetFileUrlPayload,
     GetFileUrlResponse,
+    GetRenditionParams,
     GetRenditionResponse,
     GetUploadUrlPayload,
     ListWorkflowRunsResponse,
@@ -21,10 +22,11 @@ import {
 } from "@vertesia/common";
 
 import { StreamSource } from "../StreamSource.js";
-import { ZenoClient } from "./client.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
+import { ZenoClient } from "./client.js";
 
-export interface UploadContentObjectPayload extends Omit<CreateContentObjectPayload, "content"> {
+export interface UploadContentObjectPayload
+    extends Omit<CreateContentObjectPayload, "content"> {
     content?:
         | StreamSource
         | File
@@ -75,21 +77,37 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${objectId}/content-source`);
     }
 
-    list(payload: ObjectSearchPayload = {}): Promise<ContentObjectItem[]> {
+    /**
+     * List objects with revision filtering options
+     *
+     * @param payload Search/filter parameters
+     * @returns Matching content objects
+     */
+    list<T = any>(
+        payload: ObjectSearchPayload = {},
+    ): Promise<ContentObjectItem<T>[]> {
         const limit = payload.limit || 100;
         const offset = payload.offset || 0;
         const query = payload.query || ({} as ObjectSearchQuery);
+
+        // Add revision filtering options
+        const showAllRevisions = payload.all_revisions === true;
+        const revisionRoot = payload.from_root;
 
         return this.get("/", {
             query: {
                 limit,
                 offset,
                 ...query,
+                all_revisions: showAllRevisions ? "true" : undefined,
+                from_root: revisionRoot,
             },
         });
     }
 
-    computeFacets(query: ComputeObjectFacetPayload): Promise<ComputeFacetsResponse> {
+    computeFacets(
+        query: ComputeObjectFacetPayload,
+    ): Promise<ComputeFacetsResponse> {
         return this.post("/facets", {
             payload: query,
         });
@@ -99,12 +117,21 @@ export class ObjectsApi extends ApiTopic {
         path; //TODO
     }
 
+    /** Find object based on query */
     find(payload: FindPayload): Promise<ContentObject[]> {
         return this.post("/find", {
             payload,
         });
     }
 
+    /** Count number of objects matching this query */
+    count(payload: FindPayload): Promise<{ count: number }> {
+        return this.post("/count", {
+            payload,
+        });
+    }
+
+    /** Search object — different from find because allow full text search */
     search(payload: ComplexSearchPayload): Promise<ContentObjectItem[]> {
         return this.post("/search", {
             payload,
@@ -131,8 +158,6 @@ export class ObjectsApi extends ApiTopic {
             name: source.name,
             mime_type: source.type,
         });
-
-        console.log(`Uploading content to ${url}`, { id, mime_type, isStream, source });
 
         // upload the file content to the signed URL
         /*const res = await this.fetch(url, {
@@ -174,23 +199,38 @@ export class ObjectsApi extends ApiTopic {
                 throw err;
             });
 
+        //Etag need to be unquoted
+        //When a server returns an ETag header, it includes the quotes around the actual hash value.
+        //This is part of the HTTP specification (RFC 7232), which states that ETags should be
+        //enclosed in double quotes.
+        const etag = res.headers.get("etag")?.replace(/^"(.*)"$/, "$1");
+
         return {
             source: id,
             name: source.name,
             type: mime_type,
-            etag: res.headers.get("etag") ?? undefined,
+            etag,
         };
     }
 
-    async create(payload: UploadContentObjectPayload): Promise<ContentObject> {
+    async create(
+        payload: UploadContentObjectPayload,
+        options?: {
+            collection_id?: string;
+        },
+    ): Promise<ContentObject> {
         const createPayload: CreateContentObjectPayload = {
             ...payload,
         };
-        if (payload.content instanceof StreamSource || payload.content instanceof File) {
+        if (
+            payload.content instanceof StreamSource ||
+            payload.content instanceof File
+        ) {
             createPayload.content = await this.upload(payload.content);
         }
         return await this.post("/", {
             payload: createPayload,
+            query: options || {},
         });
     }
 
@@ -202,8 +242,13 @@ export class ObjectsApi extends ApiTopic {
      * @param payload
      * @returns
      */
-    async createFromExternalSource(uri: string, payload: CreateContentObjectPayload = {}): Promise<ContentObject> {
-        const metadata = await (this.client as ZenoClient).files.getMetadata(uri);
+    async createFromExternalSource(
+        uri: string,
+        payload: CreateContentObjectPayload = {},
+    ): Promise<ContentObject> {
+        const metadata = await (this.client as ZenoClient).files.getMetadata(
+            uri,
+        );
         const createPayload: CreateContentObjectPayload = {
             ...payload,
             content: {
@@ -218,10 +263,70 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    update(id: string, payload: Partial<CreateContentObjectPayload>): Promise<ContentObject> {
-        return this.put(`/${id}`, {
-            payload,
-        });
+    /**
+     * Updates an existing object or creates a new revision
+     * Handles file uploads similar to the create method
+     *
+     * @param id The ID of the object to update
+     * @param payload The changes to apply
+     * @param options Additional options
+     * @param options.createRevision Whether to create a new revision instead of updating in place
+     * @param options.revisionLabel Optional label for the revision (e.g., "v1.2")
+     * @returns The updated object or newly created revision
+     */
+    async update(
+        id: string,
+        payload: Partial<CreateContentObjectPayload>,
+        options?: {
+            createRevision?: boolean;
+            revisionLabel?: string;
+        },
+    ): Promise<ContentObject> {
+        const updatePayload: Partial<CreateContentObjectPayload> = {
+            ...payload,
+        };
+
+        // Handle file upload if content is provided as File or StreamSource
+        if (
+            payload.content instanceof StreamSource ||
+            payload.content instanceof File
+        ) {
+            updatePayload.content = await this.upload(payload.content);
+        }
+
+        if (options?.createRevision) {
+            return this.put(`/${id}`, {
+                payload: updatePayload,
+                headers: {
+                    "x-create-revision": "true",
+                    "x-revision-label": options.revisionLabel || "",
+                },
+            });
+        } else {
+            return this.put(`/${id}`, {
+                payload: updatePayload,
+            });
+        }
+    }
+
+    /**
+     * Retrieves all revisions of a content object
+     *
+     * @param id The ID of any revision in the object's history
+     * @returns Array of all revisions sharing the same root
+     */
+    getRevisions(id: string): Promise<ContentObjectItem[]> {
+        return this.get(`/${id}/revisions`);
+    }
+
+    /**
+     * Retrieves all collections that contain a specific object
+     *
+     * @param id The ID of the object
+     * @returns Array of collections containing this object (both static and dynamic)
+     */
+    getCollections(id: string): Promise<any[]> {
+        return this.get(`/${id}/collections`);
     }
 
     delete(id: string): Promise<{ id: string }> {
@@ -236,16 +341,24 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${documentId}/renditions`);
     }
 
-    getRendition(documentId: string, options: GetRenditionParams): Promise<GetRenditionResponse> {
+    getRendition(
+        documentId: string,
+        options: GetRenditionParams,
+    ): Promise<GetRenditionResponse> {
         const query = {
             max_hw: options.max_hw,
             generate_if_missing: options.generate_if_missing,
+            sign_url: options.sign_url,
         };
 
-        return this.get(`/${documentId}/renditions/${options.format}`, { query });
+        return this.get(`/${documentId}/renditions/${options.format}`, {
+            query,
+        });
     }
 
-    exportProperties(payload: ExportPropertiesPayload): Promise<ExportPropertiesResponse> {
+    exportProperties(
+        payload: ExportPropertiesPayload,
+    ): Promise<ExportPropertiesResponse> {
         return this.post("/export", {
             payload,
         });
@@ -260,10 +373,4 @@ export class ObjectsApi extends ApiTopic {
             payload,
         });
     }
-}
-
-interface GetRenditionParams {
-    format: string;
-    max_hw?: number;
-    generate_if_missing?: boolean;
 }

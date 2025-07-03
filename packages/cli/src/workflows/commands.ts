@@ -11,11 +11,11 @@ import { streamRun } from "./streams.js";
 export async function createWorkflowRule(program: Command, options: Record<string, any>) {
     const { name, on, run, inputType } = options;
     if (!name) {
-        console.log("A name for the worklow is required. Use --name argument");
+        console.log("A name for the workflow rule is required. Use --name argument");
         process.exit(1);
     }
     if (!on) {
-        console.log("An event to trigger the workflow is required. Use --on argument");
+        console.log("An event to trigger the workflow rule is required. Use --on argument");
         process.exit(1);
     }
     if (!run) {
@@ -32,14 +32,14 @@ export async function createWorkflowRule(program: Command, options: Record<strin
             object_type,
         },
     });
-    console.log("Created workflow", workflow.id);
+    console.log("Created workflow rule", workflow.id);
 }
 
 export async function createOrUpdateWorkflowRule(program: Command, options: Record<string, any>) {
     const { file, tags } = options;
 
     if (!file) {
-        console.log("A file with the workflow definition is required. Use --file argument");
+        console.log("A file with the workflow rule is required. Use --file argument");
         process.exit(1);
     }
 
@@ -54,18 +54,18 @@ export async function createOrUpdateWorkflowRule(program: Command, options: Reco
     console.log("Applied workflow rule", rule.id);
 }
 
-export async function deleteWorkflowRule(program: Command, objectId: string, _options: Record<string, any>) {
-    const res = await getClient(program).workflows.rules.delete(objectId);
-    console.log(res);
+export async function deleteWorkflowRule(program: Command, ruleId: string, _options: Record<string, any>) {
+    const res = await getClient(program).workflows.rules.delete(ruleId);
+    console.log("Workflow rule deleted", res);
 }
 
-export async function getWorkflowRule(program: Command, objectId: string, options: Record<string, any>) {
-    const res = await getClient(program).workflows.rules.retrieve(objectId);
+export async function getWorkflowRule(program: Command, ruleId: string, options: Record<string, any>) {
+    const res = await getClient(program).workflows.rules.retrieve(ruleId);
     const pretty = JSON.stringify(res, null, 2);
 
     if (options.file) {
         fs.writeFileSync(options.file, pretty);
-        console.log("Workflow definition saved to", options.file);
+        console.log("Workflow rule saved to", options.file);
     } else {
         console.log(pretty);
     }
@@ -129,7 +129,7 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
 }
 
 export async function executeWorkflowRule(program: Command, workflowId: string, options: Record<string, any>) {
-    console.log("Executing workflow", workflowId, options);
+    console.log("Executing workflow rule", workflowId, options);
     const { objectId, config, file } = options;
 
     let mergedConfig = config
@@ -152,7 +152,8 @@ export async function executeWorkflowRule(program: Command, workflowId: string, 
 
 export async function listWorkflowsRule(program: Command, _options: Record<string, any>) {
     const res = await getClient(program).workflows.rules.list();
-    console.log(res);
+    const pretty = JSON.stringify(res, null, 2);
+    console.log(pretty);
 }
 
 export async function transpileWorkflow(_program: Command, files: string[], options: Record<string, any>) {

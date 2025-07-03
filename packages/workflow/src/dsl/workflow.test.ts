@@ -60,6 +60,7 @@ describe('DSL Workflow', () => {
                 AccountId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
                 DocumentId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
                 ProjectId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
+                InitiatedBy: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
             },
         });
     });
@@ -92,7 +93,7 @@ describe('DSL Workflow', () => {
             auth_token: 'test',
             config: {
                 studio_url: process.env.CP_STUDIO_URL || "http://localhost:8081",
-                store_url: process.env.CP_STODRE_URL || "http://localhost:8082",
+                store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
                 activities,

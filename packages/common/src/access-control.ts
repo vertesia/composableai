@@ -21,6 +21,8 @@ export enum Permission {
 
     api_key_create = "api_key:create",
     api_key_read = "api_key:read",
+    api_key_update = "api_key:update",
+    api_key_delete = "api_key:delete",
 
     account_read = "account:read",
     account_manage = "account:manage",
@@ -38,19 +40,27 @@ export enum Permission {
     workflow_run = "workflow:run",
 }
 
-export enum AccessControlledResource {
+export enum AccessControlResourceType {
     project = "project",
     environment = "environment",
     account = "account",
     interaction = "interaction",
+    app = "application",
 }
+
+export enum AccessControlPrincipalType {
+    user = "user",
+    group = "group",
+}
+
 
 
 export interface AccessControlEntry {
     role: ProjectRoles;
+    resource_type: AccessControlResourceType;
     resource: string; //objectId
+    principal_type: AccessControlPrincipalType;
     principal: string; //objectId
-    type: AccessControlledResource;
     tags?: string[];
     expires_at?: string;
     created_at?: string;
@@ -72,6 +82,6 @@ export interface AcesQueryOptions {
     resource?: string
     principal?: string
     role?: string
-    type?: AccessControlledResource
+    type?: AccessControlResourceType
 
 }

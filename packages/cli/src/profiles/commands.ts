@@ -68,7 +68,7 @@ export function showActiveAuthToken() {
             console.log(config.current.apikey);
         }
     } else {
-        console.log('No profile is selected. Run `vertesia auth refresh` to refrehs the token');
+        console.log('No profile is selected. Run `vertesia auth refresh` to refresh the token');
     }
 }
 
@@ -185,7 +185,7 @@ async function selectProfile(message = "Select the profile") {
     return response.name as string;
 }
 
-export async function tryRrefreshToken() {
+export async function tryRefreshToken() {
     if (!config.current) {
         console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
         process.exit(1);

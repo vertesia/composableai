@@ -4,7 +4,7 @@ import { ExecutionEnvironment } from "@vertesia/common";
 import colors from "ansi-colors";
 
 
-export function listEnvirnments(program: Command, envId: string | undefined, options: Record<string, any>) {
+export function listEnvironments(program: Command, envId: string | undefined, options: Record<string, any>) {
     if (envId) {
         getClient(program).environments.retrieve(envId).then((env) => {
             printEnv(env, options);

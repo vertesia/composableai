@@ -4,7 +4,7 @@ import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import fs from 'fs';
 import { pdfExtractPages } from "../conversion/mutool.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { NoDocumentFound } from "../errors.js";
+import { DocumentNotFoundError } from "../errors.js";
 import { saveBlobToTempFile } from "../utils/blobs.js";
 
 interface CreatePdfDocumentFromSourceParams {
@@ -24,7 +24,7 @@ export interface CreatePdfDocumentFromSource extends DSLActivitySpec<CreatePdfDo
 
 
 /**
- * Create a new PDF by extrracting pages from a source PDF
+ * Create a new PDF by extracting pages from a source PDF
  * @returns
  */
 export async function createPdfDocumentFromSource(payload: DSLActivityExecutionPayload<CreatePdfDocumentFromSourceParams>) {
@@ -41,23 +41,23 @@ export async function createPdfDocumentFromSource(payload: DSLActivityExecutionP
 
     if (!inputObject) {
         log.error(`Document ${objectId} not found`);
-        throw new NoDocumentFound(`Document ${objectId} not found`, [objectId]);
+        throw new DocumentNotFoundError(`Document ${objectId} not found`, [objectId]);
     }
 
     if (!inputObject.content?.source) {
         log.error(`Document ${objectId} has no source`);
-        throw new NoDocumentFound(`Document ${objectId} has no source`, [objectId]);
+        throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
     }
 
     if (!inputObject.content.type || (!inputObject.content.type?.startsWith('application/pdf'))) {
         log.error(`Document ${objectId} is not an image`);
-        throw new NoDocumentFound(`Document ${objectId} is not an image or pdf: ${inputObject.content.type}`, [objectId]);
+        throw new DocumentNotFoundError(`Document ${objectId} is not an image or pdf: ${inputObject.content.type}`, [objectId]);
     }
 
     const targetType = await client.types.getTypeByName(params.target_object_type);
     if (!targetType) {
         log.error(`Type ${params.target_object_type} not found`);
-        throw new NoDocumentFound(`Type ${params.target_object_type} not found`);
+        throw new DocumentNotFoundError(`Type ${params.target_object_type} not found`);
     }
 
     const tmpFile = await saveBlobToTempFile(client, inputObject.content.source, ".pdf");

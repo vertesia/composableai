@@ -106,6 +106,7 @@ export interface Project {
     account: string;
     configuration: ProjectConfiguration;
     integrations: Map<string, any>;
+    plugins: string[];
     created_by: string,
     updated_by: string,
     created_at: Date;

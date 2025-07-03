@@ -21,10 +21,10 @@ import {
     WorkflowExecutionPayload
 } from "@vertesia/common";
 import ms, { StringValue } from 'ms';
-import { ActivityParamNotFound, NoDocumentFound, WorkflowParamNotFound } from "../errors.js";
-import { Vars } from "./vars.js";
 import { HandleDslErrorParams } from "../activities/handleError.js";
 import * as activities from "../activities/index.js";
+import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from "../errors.js";
+import { Vars } from "./vars.js";
 
 interface BaseActivityPayload extends WorkflowExecutionPayload {
     workflow_name: string;
@@ -43,9 +43,9 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
 
     const definition = payload.workflow;
     if (!definition) {
-        throw new WorkflowParamNotFound("workflow");
+        throw new WorkflowParamNotFoundError("workflow");
     }
-    // the base payload wiull be used to create the activities payload
+    // the base payload will be used to create the activities payload
     const basePayload: BaseActivityPayload = {
         ...payload,
         workflow_name: definition.name,
@@ -61,11 +61,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
             backoffCoefficient: 2,
             maximumAttempts: 10,
             maximumInterval: 100 * 30 * 1000, //ms
-            nonRetryableErrorTypes: [
-                NoDocumentFound.name,
-                ActivityParamNotFound.name,
-                WorkflowParamNotFound.name,
-            ],
+            nonRetryableErrorTypes: WF_NON_RETRYABLE_ERRORS,
         },
     };
     log.debug("Global activity options", {
@@ -73,7 +69,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     });
     const defaultProxy = proxyActivities(defaultOptions);
     log.debug("Default activity proxy is ready");
-    // merge default vars with the payload vars and add objectIds and obejctId
+    // merge default vars with the payload vars and add objectIds and objectId
     const vars = new Vars({
         ...definition.vars,
         ...payload.vars,
@@ -168,10 +164,14 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
             workflow: step.spec,
             vars: resolvedVars
         }],
+        memo: {
+            InitiatedBy: payload.initiated_by,
+        },
         searchAttributes: {
             AccountId: [payload.account_id],
             DocumentId: getDocumentIds(payload),
             ProjectId: [payload.project_id],
+            InitiatedBy: payload.initiated_by ? [payload.initiated_by] : [],
         },
     });
     if (step.output) {
@@ -186,7 +186,7 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
         Object.assign(resolvedVars, step.vars);
     }
     if (debug_mode) {
-        log.debug(`Workflow vars before excuting child workflow ${step.name}`, { vars: resolvedVars });
+        log.debug(`Workflow vars before executing child workflow ${step.name}`, { vars: resolvedVars });
     }
     const result = await executeChild(step.name, {
         ...step.options,
@@ -195,10 +195,14 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
             workflow: step.spec,
             vars: resolvedVars,
         }],
+        memo: {
+            InitiatedBy: payload.initiated_by,
+        },
         searchAttributes: {
             AccountId: [payload.account_id],
             DocumentId: getDocumentIds(payload),
             ProjectId: [payload.project_id],
+            InitiatedBy: payload.initiated_by ? [payload.initiated_by] : [],
         },
     });
 
@@ -217,7 +221,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         log.debug(`Workflow vars before executing activity ${activity.name}`, { vars: vars.resolve() });
     }
     if (activity.condition && !vars.match(activity.condition)) {
-        log.info("Activity skiped: condition not satisfied", activity.condition);
+        log.info("Activity skipped: condition not satisfied", activity.condition);
         return;
     }
     const importParams = vars.createImportVars(activity.import);

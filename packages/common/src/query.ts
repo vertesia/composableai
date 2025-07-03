@@ -3,14 +3,14 @@ import { SupportedEmbeddingTypes } from './project.js';
 
 export interface RunListingQueryOptions {
     project?: string;
-    interaction?: string;
+    interaction?: string | string[];
     limit?: number;
     offset?: number;
     filters?: RunListingFilters;
 }
 
 export interface RunListingFilters {
-    interaction?: string,
+    interaction?: string | string[],
     status?: ExecutionRunStatus,
     model?: string,
     environment?: string,
@@ -31,19 +31,24 @@ export interface VectorSearchQuery {
 
 export interface SimpleSearchQuery {
     name?: string;
-    status?: string;
+    status?: string | string[];
 }
 
 export interface ObjectSearchQuery extends SimpleSearchQuery {
+    createdFrom?: string;
+    createdTo?: string;
+    updatedFrom?: string;
+    updatedTo?: string;
     location?: string;
     parent?: string;
     similarTo?: string;
     embeddingType?: SupportedEmbeddingTypes;
     type?: string;
+    types?: string[];
 }
 
 export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
-    chunckable?: boolean;
+    chunkable?: boolean;
 }
 
 export interface PromptSearchQuery extends SimpleSearchQuery {
@@ -54,7 +59,7 @@ export interface PromptSearchQuery extends SimpleSearchQuery {
 export interface InteractionSearchQuery extends SimpleSearchQuery {
     prompt?: string;
     tags?: string[];
-    version?: number;
+    version?: string;
 }
 
 export interface RunSearchQuery extends SimpleSearchQuery {
@@ -85,4 +90,5 @@ export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {
 
 export interface ComplexSearchQuery extends ObjectSearchQuery {
     vector?: VectorSearchQuery;
+    match?: Record<string, any>;
 }

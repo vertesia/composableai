@@ -3,12 +3,12 @@ import { Command } from 'commander';
 import { registerAgentCommand } from './agent/index.js';
 import runExport from './codegen/index.js';
 import { genTestData } from './datagen/index.js';
-import { listEnvirnments } from './envs/index.js';
+import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
 import { getPublishMemoryAction } from './memory/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
-import { createProfile, deleteProfile, listProfiles, showActiveAuthToken, showProfile, tryRrefreshToken, updateCurrentProfile, updateProfile, useProfile } from './profiles/commands.js';
+import { createProfile, deleteProfile, listProfiles, showActiveAuthToken, showProfile, tryRefreshToken, updateCurrentProfile, updateProfile, useProfile } from './profiles/commands.js';
 import { getConfigFile } from './profiles/index.js';
 import { listProjects } from './projects/index.js';
 import runInteraction from './run/index.js';
@@ -49,7 +49,7 @@ authRoot.command("refresh")
 program.command("envs [envId]")
     .description("List the environments you have access to")
     .action((envId: string | undefined, options: Record<string, any>) => {
-        listEnvirnments(program, envId, options);
+        listEnvironments(program, envId, options);
     })
 program.command("interactions [interaction]")
     .description("List the interactions available in the current project")
@@ -76,7 +76,7 @@ program.command("datagen <interaction>")
     })
 program.command("codegen [interactionName]")
     .description("Generate code given an interaction name of for all the interactions in the project if no interaction is specified.")
-    .option('--versions [versions]', 'A comma separated list of version selectors to include. A version selector is either a version number or one of the "draft" or "latest" keywords. The default is "draft, latest"', "draft,latest")
+    .option('--versions [versions]', 'A comma separated list of version selectors to include. A version selector is either a version number or "draft". The default is "draft"', "draft")
     .option('-a, -all', 'When used, all the interaction versions will be exported')
     .option('-d, --dir [file]', 'The output directory if any. Default to "./interactions" if not specified.', './interactions')
     .option('-x, --export <version>', 'The version to export from index.ts. If not specified, the latest version will be exported or if no version is available, the draft version will be exported')
@@ -85,7 +85,7 @@ program.command("run <interaction>")
     .description("Run an interaction by full name. The full name is composed by an optional namespace, a required endpoint name and an optional tag or version. Examples: name, namespace:name, namespace:name@version")
     .option('-i, --input [file]', 'The input data if any. If no file path is specified it will read from stdin')
     .option('-o, --output [file]', 'The output file if any. If not specified it will print to stdout')
-    .option('-d, --data [json]', 'Inline data as a JSON string. If specified takes precendence over --input')
+    .option('-d, --data [json]', 'Inline data as a JSON string. If specified takes precedence over --input')
     .option('-T, --tags [tags]', 'A comma separated list of tags to add to the execution run')
     .option('-t, --temperature [temperature]', 'The temperature to use')
     .option('--max-tokens [max-tokens]', 'The maximum number of tokens to generate')
@@ -185,7 +185,7 @@ program.parseAsync(process.argv).catch(err => {
 
 process.on("unhandledRejection", (err: any) => {
     if (err.status === 401) { // token expired?
-        console.error("ERROROR", err);
-        tryRrefreshToken();
+        console.error("ERROR", err);
+        tryRefreshToken();
     }
 })

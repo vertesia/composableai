@@ -1,3 +1,4 @@
+import { UserGroupRef } from "./group.js";
 import { ProjectRef, ProjectRoles } from "./project.js";
 import { AccountRef } from "./user.js";
 
@@ -50,10 +51,15 @@ export interface AuthTokenPayload {
 
     type: PrincipalType
     account: AccountRef;
+
     account_roles: ProjectRoles[];
     accounts: AccountRef[];
+
     project?: ProjectRef;
     project_roles?: ProjectRoles[];
+
+    /** groups */
+    groups?: UserGroupRef[]; //group ids
 
     iss: string; //issuer
     aud: string; //audience
@@ -64,5 +70,5 @@ export interface AuthTokenPayload {
 export enum PrincipalType {
     User = "user",
     ApiKey = "apikey",
-    ServiceAcount = "service_account",
+    ServiceAccount = "service_account",
 }

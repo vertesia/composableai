@@ -87,7 +87,7 @@ const steps2: DSLWorkflowStep[] = [
 // ========== test env setup ==========
 
 
-describe('DSL Workflow with chld workflows', () => {
+describe('DSL Workflow with child workflows', () => {
 
     let testEnv: TestWorkflowEnvironment;
 
@@ -100,6 +100,7 @@ describe('DSL Workflow with chld workflows', () => {
                 AccountId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
                 DocumentId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
                 ProjectId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
+                InitiatedBy: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
             },
         });
     });
@@ -132,7 +133,7 @@ describe('DSL Workflow with chld workflows', () => {
             auth_token: 'test',
             config: {
                 studio_url: process.env.CP_STUDIO_URL || "http://localhost:8081",
-                store_url: process.env.CP_STODRE_URL || "http://localhost:8082",
+                store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
                 steps: steps1,
@@ -177,7 +178,7 @@ describe('DSL Workflow with chld workflows', () => {
             auth_token: 'test',
             config: {
                 studio_url: process.env.CP_STUDIO_URL || "http://localhost:8081",
-                store_url: process.env.CP_STODRE_URL || "http://localhost:8082",
+                store_url: process.env.CP_STORE_URL || "http://localhost:8082",
             },
             workflow: {
                 steps: steps2,

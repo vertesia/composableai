@@ -1,10 +1,21 @@
-import { FacetSpec } from './facets.js';
-import { ComplexSearchQuery, InteractionSearchQuery, ObjectSearchQuery, ObjectTypeSearchQuery, PromptSearchQuery, RunSearchQuery, SimpleSearchQuery, VectorSearchQuery } from './query.js';
+import { FacetSpec } from "./facets.js";
+import {
+    ComplexSearchQuery,
+    InteractionSearchQuery,
+    ObjectSearchQuery,
+    ObjectTypeSearchQuery,
+    PromptSearchQuery,
+    RunSearchQuery,
+    SimpleSearchQuery
+} from "./query.js";
 
 export interface SearchPayload {
     query?: SimpleSearchQuery;
     limit?: number;
     offset?: number;
+    select?: string;
+    all_revisions?: boolean;
+    from_root?: string;
 }
 
 export interface ComputeFacetPayload {
@@ -37,8 +48,7 @@ export interface ComputeInteractionFacetPayload extends ComputeFacetPayload {
 }
 
 export interface ComputeObjectFacetPayload extends ComputeFacetPayload {
-    query?: ObjectSearchQuery;
-    vector?: VectorSearchQuery;
+    query?: ComplexSearchQuery;
 }
 
 export interface ComputePromptFacetPayload extends ComputeFacetPayload {

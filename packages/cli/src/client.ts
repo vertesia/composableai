@@ -6,7 +6,7 @@ import { config, Profile } from "./profiles/index.js";
 let _client: VertesiaClient | undefined;
 //TODO remove program?
 export function getClient(_program?: Command) {
-    //TODO use program -p ioption to get the profile?
+    //TODO use program -p option to get the profile?
     if (!_client) {
         _client = createClient(config.current);
     }

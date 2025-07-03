@@ -3,6 +3,8 @@ export interface FindPayload {
     offset?: number;
     limit?: number;
     select?: string;
+    all_revisions?: boolean;
+    from_root?: string;
 }
 
 

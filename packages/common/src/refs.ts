@@ -5,7 +5,8 @@ export enum ResolvableRefType {
     environment = "Environment",
     user = "User",
     account = "Account",
-    interaction = "Interaction"
+    interaction = "Interaction",
+    userGroup = "UserGroup"
 }
 
 export interface ResolvableRef {

@@ -1,13 +1,13 @@
 import { Command } from "commander";
 import { resolve } from "path";
 import { getClient } from "../client.js";
-import { Spinner, restoreCursotOnExit } from "../utils/console.js";
+import { Spinner, restoreCursorOnExit } from "../utils/console.js";
 import { writeJsonFile } from "../utils/stdio.js";
 import { ConfigModes } from "@vertesia/common";
-import { TextFallbackOptions } from "../../../../llumiverse/core/src/options.js";
+import { TextFallbackOptions } from "@llumiverse/common";
 
 function convertConfigMode(raw_config_mode: any): ConfigModes | undefined {
-    const configStr: string =  typeof raw_config_mode === 'string' ? raw_config_mode.toUpperCase() : "";
+    const configStr: string = typeof raw_config_mode === 'string' ? raw_config_mode.toUpperCase() : "";
     return Object.values(ConfigModes).includes(configStr as ConfigModes) ? configStr as ConfigModes : undefined;
 }
 
@@ -17,30 +17,30 @@ export function genTestData(program: Command, interactionId: string, options: Re
     const output = options.output || undefined;
     const spinner = new Spinner('dots');
     spinner.prefix = "Generating data. Please be patient ";
-    
+
     // Create abort controller for handling interruption
     const abortController = new AbortController();
     const { signal } = abortController;
-    
+
     // Set up cleanup function
     const cleanup = () => {
         spinner.done(false);
         console.log("\nData generation interrupted");
         process.exit(0);
     };
-    
+
     // Set up signal handlers
     const handleSignal = () => {
         abortController.abort();
         cleanup();
     };
-    
+
     process.on('SIGINT', handleSignal);
     process.on('SIGTERM', handleSignal);
-    
+
     spinner.start();
 
-   //TODO: Support for other modalities, like images
+    //TODO: Support for other modalities, like images
     const model_options: TextFallbackOptions = {
         _option_id: "text-fallback",
         temperature: typeof options.temperature === 'string' ? parseFloat(options.temperature) : undefined,
@@ -51,7 +51,7 @@ export function genTestData(program: Command, interactionId: string, options: Re
         frequency_penalty: typeof options.frequencyPenalty === 'string' ? parseFloat(options.frequencyPenalty) : undefined,
         stop_sequence: options.stopSequence ? options.stopSequence.trim().split(/\s*,\s*/) : undefined,
     };
-    
+
     getClient(program).interactions.generateTestData(interactionId, {
         count,
         message,
@@ -67,7 +67,7 @@ export function genTestData(program: Command, interactionId: string, options: Re
         // Remove signal handlers
         process.off('SIGINT', handleSignal);
         process.off('SIGTERM', handleSignal);
-        
+
         spinner.done();
         if (output) {
             const file = resolve(output);
@@ -80,15 +80,15 @@ export function genTestData(program: Command, interactionId: string, options: Re
         // Remove signal handlers
         process.off('SIGINT', handleSignal);
         process.off('SIGTERM', handleSignal);
-        
+
         // Don't show error if aborted
         if (signal.aborted) {
             return;
         }
-        
+
         spinner.done(false);
         console.log('Failed to generate data:', err.message);
     });
 }
 
-restoreCursotOnExit();
+restoreCursorOnExit();
