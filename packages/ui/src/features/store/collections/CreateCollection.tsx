@@ -102,19 +102,21 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                         isClearable
                     />
                 </FormItem>
-                <FormItem label="Allowed Content Types" className="mt-4">
-                    <SelectContentType
-                        defaultValue={payload.allowed_types || null}
-                        onChange={(v) => {
-                            if (Array.isArray(v)) {
-                                setPayloadProp("allowed_types", v.map(type => type.id));
-                            } else {
-                                setPayloadProp("allowed_types", v ? [v.id] : []);
-                            }
-                        }}
-                        isClearable multiple
-                    />
-                </FormItem>
+                { !payload.dynamic &&
+                    <FormItem label="Allowed Content Types" className="mt-4">
+                        <SelectContentType
+                            defaultValue={payload.allowed_types || null}
+                            onChange={(v) => {
+                                if (Array.isArray(v)) {
+                                    setPayloadProp("allowed_types", v.map(type => type.id));
+                                } else {
+                                    setPayloadProp("allowed_types", v ? [v.id] : []);
+                                }
+                            }}
+                            isClearable multiple
+                        />
+                    </FormItem>
+                }
             </VModalBody>
             <VModalFooter>
                 <Button isDisabled={isProcessing} onClick={onCreate}>
