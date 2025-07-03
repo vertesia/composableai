@@ -103,7 +103,7 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                     />
                 </FormItem>
                 { !payload.dynamic &&
-                    <FormItem label="Allowed Content Types" className="mt-4">
+                    <FormItem label="Allowed Content Types" className="mt-4" description="This defines what content types can be added to this collection. If not set, all content types are allowed.">
                         <SelectContentType
                             defaultValue={payload.allowed_types || null}
                             onChange={(v) => {

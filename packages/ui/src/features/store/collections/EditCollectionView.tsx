@@ -156,7 +156,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             </FormItem>
             {
                 !collection.dynamic &&
-                <FormItem label="Allowed Content Types">
+                <FormItem label="Allowed Content Types" description="This defines what content types can be added to this collection. If not set, all content types are allowed.">
                     <SelectContentType
                         defaultValue={metadata.allowed_types || null}
                         onChange={(v) => {
