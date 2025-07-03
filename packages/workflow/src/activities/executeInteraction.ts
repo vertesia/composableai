@@ -193,7 +193,7 @@ export async function executeInteractionFromActivity(
         if (info.attempt > 1) {
             log.info("Retrying, searching for previous run", { prev_run_id: runId });
             const payload: RunSearchPayload = {
-                query: { workflow_run_id: runId },
+                query: { workflow_run_ids: [runId] },
                 limit: 1,
             };
             const previousRun = await client.runs.search(payload).then((res) => {
