@@ -78,7 +78,7 @@ export interface RunSearchQuery extends SimpleSearchQuery {
     end?: string;
     finish_reason?: string;
     created_by?: string;
-    workflow_run_id?: string;
+    workflow_run_ids?: string[];
 }
 
 export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {
