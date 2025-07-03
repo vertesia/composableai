@@ -228,7 +228,7 @@ interface WorkflowRunEvent {
         }
         recipient?: {
             workflowId?: string,
-            runId?: string 
+            runId?: string
         },
         initiatedEventId?: string,
     }
@@ -260,7 +260,7 @@ export interface WorkflowRun {
     interaction_name?: string;
     input?: any;
     result?: any;
-    error?:any,
+    error?: any,
     raw?: any;
     /**
      * The Vertesia Workflow Type of this Workflow Run.
