@@ -177,7 +177,7 @@ export async function executeInteractionFromActivity(
     const userTags = params.tags;
     const info = activityInfo();
     const runId = info.workflowExecution.runId;
-    let tags = ["workflow"]; //TODO use wf:wfName
+    let tags = ["workflow"];
     if (userTags) {
         tags = tags.concat(userTags);
     }
