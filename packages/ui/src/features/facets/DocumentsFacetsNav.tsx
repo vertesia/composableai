@@ -37,7 +37,8 @@ export function DocumentsFacetsNav({
         const typeFilterGroup = VTypeFacet({
             buckets: facets.type || [],
             typeRegistry: typeRegistry,
-            type: 'multiSelect'
+            type: 'select',
+            multiple: true
         });
         customFilterGroups.push(typeFilterGroup);
     }
@@ -47,7 +48,8 @@ export function DocumentsFacetsNav({
             search,
             buckets: facets.status || [],
             name: 'Status',
-            type: 'multiSelect',
+            type: 'select',
+            multiple: true
         });
         customFilterGroups.push(statusFilterGroup);
     }
@@ -79,7 +81,7 @@ export function DocumentsFacetsNav({
                 const filterName = filter.name.toLowerCase();
                 
                 let filterValue;
-                if (filter.type === 'multiSelect') {
+                if (filter.multiple) {
                     filterValue = Array.isArray(filter.value) 
                         ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
                         : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];

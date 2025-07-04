@@ -232,7 +232,8 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
             name,
             type: group?.type || 'select',
             placeholder: group?.placeholder,
-            value: filterValue
+            value: filterValue,
+            multiple: group?.multiple || false
           };
         });
 

@@ -4,10 +4,11 @@ import { FilterGroup } from "@vertesia/ui/core";
 interface VTypeFacetProps {
     buckets: FacetBucket[];
     typeRegistry: any;
-    type?: 'select' | 'multiSelect';
+    type?: 'select';
+    multiple?: boolean;
 }
 
-export function VTypeFacet({ buckets, typeRegistry, type = 'select' }: VTypeFacetProps) {
+export function VTypeFacet({ buckets, typeRegistry, type = 'select', multiple = false }: VTypeFacetProps) {
     // Create a map for quick lookups of type names and counts
     const typeDataMap = new Map();
     buckets.forEach((bucket) => {
@@ -40,8 +41,9 @@ export function VTypeFacet({ buckets, typeRegistry, type = 'select' }: VTypeFace
     });
 
     const customFilterGroups: FilterGroup = {
-        name: 'Types', // todo: update back to 'type' after zeno is updated
+        name: 'Types',
         type: type,
+        multiple: multiple,
         options: options,
         labelRenderer: (typeId: string) => {
             const typeData = typeDataMap.get(typeId);
