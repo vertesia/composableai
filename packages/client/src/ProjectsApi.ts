@@ -26,14 +26,6 @@ export default class ProjectsApi extends ApiTopic {
         });
     }
 
-    listPlugins(projectId: string): Promise<string[]> {
-        return this.get(`/${projectId}/plugins`);
-    }
-
-    setPlugins(projectId: string, pluginIds: string[]): Promise<{ count: number }> {
-        return this.post(`/${projectId}/plugins`, { payload: { plugins: pluginIds } });
-    }
-
     integrations: IntegrationsConfigurationApi = new IntegrationsConfigurationApi(this);
 
 }
