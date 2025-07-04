@@ -6,12 +6,12 @@ import clsx from "clsx";
 import { useState } from "react";
 import SignInModal from "./SignInModal";
 import InfoList from "./UserInfo";
-interface UserMenuProps {
+interface UserSessionMenuProps {
     name?: string
     picture?: string;
     user?: AuthTokenPayload;
 }
-export function UserNavAvatar({ }: UserMenuProps) {
+export function UserSessionMenu({ }: UserSessionMenuProps) {
     const { user, isLoading } = useUserSession();
     const [showModal, setShowModal] = useState(false)
 
@@ -26,17 +26,17 @@ export function UserNavAvatar({ }: UserMenuProps) {
         return (
 
             <div className="px-3">
-                <AvatarInfoProp asMenuTrigger />
+                <UserSessionPopup asMenuTrigger />
             </div>
         )
     }
 }
 
-interface AvatarInfoPropProps {
+interface UserSessionPopupProps {
     asMenuTrigger?: boolean
     className?: string
 }
-function AvatarInfoProp({ className, asMenuTrigger = false }: AvatarInfoPropProps) {
+function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopupProps) {
     const session = useUserSession();
     const { user } = session;
     if (!session || !user) return null;
