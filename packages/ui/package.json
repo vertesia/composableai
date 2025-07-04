@@ -123,6 +123,10 @@
         "./features": {
             "types": "./lib/types/features/index.d.ts",
             "default": "./lib/esm/features/index.js"
+        },
+        "./shell": {
+            "types": "./lib/types/shell/index.d.ts",
+            "default": "./lib/esm/shell/index.js"
         }
     },
     "types": "./lib/index.d.ts",
@@ -154,6 +158,9 @@
             ],
             "form": [
                 "./lib/types/form/index.d.ts"
+            ],
+            "shell": [
+                "./lib/types/shell/index.d.ts"
             ]
         }
     }
