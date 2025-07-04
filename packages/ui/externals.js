@@ -56,7 +56,8 @@ export const EXTERNALS = [
     /^@vertesia\/ui\/.*/,
     "@floating-ui/dom",
     "@floating-ui/react",
-    "json-schema"
+    "json-schema",
+    "react-calendar"
 ];
 
 // Put here exceptions - deps that shuld be inlined

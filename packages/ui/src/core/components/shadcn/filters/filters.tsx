@@ -22,15 +22,17 @@ function generateComboboxOptions(
             return (
                 <DateCombobox
                     filterValues={Array.isArray(filter.value) && typeof filter.value[0] === 'object' ? filter.value.map((v: any) => v.value || '') : []}
+                    isRange={filter.multiple}
                     setFilterValues={(filterValues) => {
                         setFilters((prev) =>
                             prev.map((f) =>
                                 f === filter ? {
                                     ...f,
-                                    value: filterValues.length > 0 ? [{
-                                        value: filterValues[0],
-                                        label: dayjs(filterValues[0]).format("LLL dd, y"),
-                                    }] : []
+                                    value: filterValues.length > 0 ? 
+                                        filterValues.map(dateValue => ({
+                                            value: dateValue,
+                                            label: dayjs(dateValue).format("LLL dd, y"),
+                                        })) : []
                                 } : f
                             )
                         );

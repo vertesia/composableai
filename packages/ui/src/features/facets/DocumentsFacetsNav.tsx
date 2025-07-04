@@ -65,6 +65,22 @@ export function DocumentsFacetsNav({
         });
     }
 
+    customFilterGroups.push({
+        name: 'created_at',
+        placeholder: 'Created Date',
+        type: 'date',
+        multiple: true,
+        options: []
+    });
+
+    customFilterGroups.push({
+        name: 'updated_at',
+        placeholder: 'Updated Date',
+        type: 'date',
+        multiple: true,
+        options: []
+    });
+
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
         const newFilters = typeof value === 'function' ? value(filters) : value;
         if (newFilters.length === 0) {
@@ -81,7 +97,27 @@ export function DocumentsFacetsNav({
                 const filterName = filter.name.toLowerCase();
                 
                 let filterValue;
-                if (filter.multiple) {
+                if (filter.type === 'date' && filter.multiple) {
+                    // Handle date range filters
+                    if (Array.isArray(filter.value) && filter.value.length > 0) {
+                        if (filter.value.length === 1) {
+                            // Single date - use as both start and end
+                            const dateValue = typeof filter.value[0] === 'object' ? (filter.value[0] as any).value : filter.value[0];
+                            filterValue = {
+                                gte: dateValue,
+                                lte: dateValue
+                            };
+                        } else if (filter.value.length === 2) {
+                            // Date range - start and end dates
+                            const startDate = typeof filter.value[0] === 'object' ? (filter.value[0] as any).value : filter.value[0];
+                            const endDate = typeof filter.value[1] === 'object' ? (filter.value[1] as any).value : filter.value[1];
+                            filterValue = {
+                                gte: startDate,
+                                lte: endDate
+                            };
+                        }
+                    }
+                } else if (filter.multiple) {
                     filterValue = Array.isArray(filter.value) 
                         ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
                         : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];
