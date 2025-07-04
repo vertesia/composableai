@@ -320,6 +320,11 @@ interface AsyncExecutionPayloadBase {
      * Optional tags to add to the execution run
      */
     tags?: string[];
+
+    /**
+     * A list of notification endpoints to notify when the execution is finished.
+     */
+    notify_endpoints?: string[];
 }
 
 export type ConversationVisibility = 'private' | 'project';
