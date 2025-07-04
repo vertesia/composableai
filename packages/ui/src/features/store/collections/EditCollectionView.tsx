@@ -154,19 +154,22 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                     isClearable
                 />
             </FormItem>
-            <FormItem label="Allowed Content Types">
-                <SelectContentType
-                    defaultValue={metadata.allowed_types || null}
-                    onChange={(v) => {
-                        if (Array.isArray(v)) {
-                            setField("allowed_types", v.map(type => type.id));
-                        } else {
-                            setField("allowed_types", v ? [v.id] : []);
-                        }
-                    }}
-                    isClearable multiple
-                />
-            </FormItem>
+            {
+                !collection.dynamic &&
+                <FormItem label="Allowed Content Types" description="This defines what content types can be added to this collection. If not set, all content types are allowed.">
+                    <SelectContentType
+                        defaultValue={metadata.allowed_types || null}
+                        onChange={(v) => {
+                            if (Array.isArray(v)) {
+                                setField("allowed_types", v.map(type => type.id));
+                            } else {
+                                setField("allowed_types", v ? [v.id] : []);
+                            }
+                        }}
+                        isClearable multiple
+                    />
+                </FormItem>
+            }
             <Button size="lg" className="w-min my-4" isDisabled={isUpdating} onClick={onSubmit}>
                 Save Metadata
             </Button>
