@@ -118,8 +118,14 @@ const getOrCreatePool = async (
   }
 
   if (pool) {
-    console.log("Workload Identity Pool already exists. Skipping creation.");
-    return pool;
+    if (pool.state === "ACTIVE") {
+      console.log("Workload Identity Pool already exists. Skipping creation.");
+      return pool;
+    } else {
+      throw new Error(
+        `Workload Identity Pool ${poolName} is ${pool.state}. Please check the pool state.`,
+      );
+    }
   } else {
     const { data } = await gcp.request({
       url: `https://iam.googleapis.com/v1/projects/${projectId}/locations/global/workloadIdentityPools`,
