@@ -157,7 +157,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                 <CodeMirrorEditor className="border-1 rounded-md border-border"
                     value={tableLayoutValue} extensions={extensions} editorRef={tableLayoutRef} />
             </FormItem>
-            <FormItem label="Type" description="Select a content type to assign custom properties and data for the collection.">
+            <FormItem label="Type" description="Select a content type to assign custom properties and data to the collection.">
                 <SelectContentType
                     defaultValue={metadata.type || null}
                     onChange={(v) => {
