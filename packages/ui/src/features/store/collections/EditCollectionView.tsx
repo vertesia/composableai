@@ -128,35 +128,9 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                     onChange={(e) => setField("description", e.target.value)}
                 />
             </FormItem>
-            {collection.dynamic && (
-                <FormItem label="Query" description="Define the query to fetch dynamic content for this collection.">
-                    <textarea
-                        className={Styles.INPUT}
-                        value={metadata.query}
-                        onChange={(e) => setField("query", e.target.value)}
-                    />
-                </FormItem>
-            )}
-            <FormItem label="Table Layout" description="Define how the collection should be displayed in tables.">
-                <CodeMirrorEditor className="border-1 rounded-md border-border"
-                    value={tableLayoutValue} extensions={extensions} editorRef={tableLayoutRef} />
-            </FormItem>
-            <FormItem label="Type">
-                <SelectContentType
-                    defaultValue={metadata.type || null}
-                    onChange={(v) => {
-                        if (Array.isArray(v)) {
-                            setField("type", v.length > 0 ? v[0].id : null);
-                        } else {
-                            setField("type", v?.id || null);
-                        }
-                    }}
-                    isClearable
-                />
-            </FormItem>
             {
                 !collection.dynamic &&
-                <FormItem label="Allowed Content Types" description="This defines what content types can be added to this collection. If not set, all content types are allowed.">
+                <FormItem label="Allowed Content Types" description="Select which content types can be added to the collection. If not set, then all content types are allowed.">
                     <SelectContentType
                         defaultValue={metadata.allowed_types || null}
                         onChange={(v) => {
@@ -170,6 +144,32 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                     />
                 </FormItem>
             }
+            {collection.dynamic && (
+                <FormItem label="Query" description="Define the query to dynamically fetch content for the collection.">
+                    <textarea
+                        className={Styles.INPUT}
+                        value={metadata.query}
+                        onChange={(e) => setField("query", e.target.value)}
+                    />
+                </FormItem>
+            )}
+            <FormItem label="Table Layout" description="Define a custom layout for displaying the collection in tables.">
+                <CodeMirrorEditor className="border-1 rounded-md border-border"
+                    value={tableLayoutValue} extensions={extensions} editorRef={tableLayoutRef} />
+            </FormItem>
+            <FormItem label="Type" description="Select a content type to assign custom properties and data for the collection.">
+                <SelectContentType
+                    defaultValue={metadata.type || null}
+                    onChange={(v) => {
+                        if (Array.isArray(v)) {
+                            setField("type", v.length > 0 ? v[0].id : null);
+                        } else {
+                            setField("type", v?.id || null);
+                        }
+                    }}
+                    isClearable
+                />
+            </FormItem>
             <Button size="lg" className="w-min my-4" isDisabled={isUpdating} onClick={onSubmit}>
                 Save Metadata
             </Button>
