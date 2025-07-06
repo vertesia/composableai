@@ -86,24 +86,11 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                         onChange={(ev) => setPayloadProp("description", ev.target.value)}
                     />
                 </FormItem>
-                <FormItem label="Dynamic Collection" className="mt-2" direction="row" description="Dynamic Collection is based on a query vs. users manully adding content.">
+                <FormItem label="Dynamic Collection" className="mt-2" direction="row" description="Dynamically fetch content for the collection based on a query. If not enabled, then content must be added by users or agents.">
                     <Switch value={payload.dynamic || false} onChange={(value) => setPayloadProp("dynamic", value)} />
                 </FormItem>
-                <FormItem label="Type" className="mt-2" description="This is optional and drives what properties are used to describe a collection">
-                    <SelectContentType
-                        defaultValue={payload.type || null}
-                        onChange={(v) => {
-                            if (Array.isArray(v)) {
-                                setPayloadProp("type", v.length > 0 ? v[0].id : null);
-                            } else {
-                                setPayloadProp("type", v?.id || null);
-                            }
-                        }}
-                        isClearable
-                    />
-                </FormItem>
                 { !payload.dynamic &&
-                    <FormItem label="Allowed Content Types" className="mt-4" description="This defines what content types can be added to this collection. If not set, all content types are allowed.">
+                    <FormItem label="Allowed Content Types" className="mt-4" description="Optionally select which content types can be added to the collection. If not set, then all content types are allowed.">
                         <SelectContentType
                             defaultValue={payload.allowed_types || null}
                             onChange={(v) => {
@@ -117,6 +104,19 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                         />
                     </FormItem>
                 }
+                <FormItem label="Type" className="mt-2" description="Optionally select a content type to assign custom properties and data to the collection.">
+                    <SelectContentType
+                        defaultValue={payload.type || null}
+                        onChange={(v) => {
+                            if (Array.isArray(v)) {
+                                setPayloadProp("type", v.length > 0 ? v[0].id : null);
+                            } else {
+                                setPayloadProp("type", v?.id || null);
+                            }
+                        }}
+                        isClearable
+                    />
+                </FormItem>
             </VModalBody>
             <VModalFooter>
                 <Button isDisabled={isProcessing} onClick={onCreate}>
