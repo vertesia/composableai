@@ -202,6 +202,7 @@ async function generateNewType(
   log.info("Generated schema for type", genTypeRes.result.metadata_schema);
   const typeData: CreateContentObjectTypePayload = {
     name: genTypeRes.result.document_type,
+    description: genTypeRes.result.document_type_description,
     object_schema: genTypeRes.result.metadata_schema,
     is_chunkable: genTypeRes.result.is_chunkable,
     table_layout: genTypeRes.result.table_layout,

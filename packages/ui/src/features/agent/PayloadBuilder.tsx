@@ -17,7 +17,9 @@ export interface ConversationWorkflowPayload {
 export class PayloadBuilder implements ConversationWorkflowPayload {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
+    _collection: string | undefined;
     _start: boolean = false;
+    _preserveRunValues: boolean = false;
 
     payload: ConversationWorkflowPayload;
     private _interactionParamsSchema?: JSONSchema4 | null;
@@ -46,6 +48,8 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         builder._debug_mode = this._debug_mode;
         builder._inputValidator = this._inputValidator;
         builder._start = this._start;
+        builder._collection = this._collection;
+        builder._preserveRunValues = this._preserveRunValues;
         return builder;
     }
 
@@ -71,6 +75,21 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         }
     }
 
+    get collection() {
+        return this._collection;
+    }
+
+    set collection(collection: string | undefined) {
+        if (collection !== this._collection) {
+            this._collection = collection;
+            this.onStateChanged();
+        }
+    }
+
+    get search_scope() {
+        return this._collection ? "collection" : undefined;
+    }
+
     get interaction() {
         return this.payload.interaction;
     }
@@ -80,7 +99,7 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
             this._interactionParamsSchema = mergePromptsSchema(this.interaction as PopulatedInteraction) as JSONSchema4;
             // Reset the validator when schema changes
             this._inputValidator = undefined;
-            if (interaction) {
+            if (interaction && !this._preserveRunValues) {
                 if (interaction.environment) {
                     if (typeof interaction.environment === 'string') {
                         this.vertesia.environments.retrieve(interaction.environment).then((environment) => this.environment = environment);
@@ -105,8 +124,10 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     set environment(environment: ExecutionEnvironmentRef | undefined) {
         if (environment?.id !== this.payload.environment?.id) {
             this.payload.environment = environment;
-            this.payload.model = environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
-                ? environment.default_model : undefined;
+            if (!this._preserveRunValues) {
+                this.payload.model = environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
+                    ? environment.default_model : undefined;
+            }
 
             this.onStateChanged();
         }
@@ -154,6 +175,14 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         return this._start;
     }
 
+    get preserveRunValues(): boolean {
+        return this._preserveRunValues;
+    }
+
+    set preserveRunValues(value: boolean) {
+        this._preserveRunValues = value;
+    }
+
     get interactionParamsSchema(): JSONSchema4 | null | undefined {
         return this._interactionParamsSchema;
     }
@@ -169,6 +198,8 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         this._start = false;
         this._interactive = true;
         this._debug_mode = false;
+        this._collection = undefined;
+        this._preserveRunValues = false;
         this.payload = {
             model: '',
             tools: [],
@@ -178,6 +209,8 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         };
         this._interactionParamsSchema = null;
         this._inputValidator = undefined;
+        this.model = undefined;
+        this.environment = undefined;
 
         this.onStateChanged();
 
