@@ -148,10 +148,30 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         search.search().then(() => setIsReady(true));
     };
 
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('filters')) {
-        urlParams.delete('filters');
-        window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+    const url = new URL(window.location.href);
+    const filtersParam = url.searchParams.get('filters');
+
+    if (filtersParam) {
+        try {
+            const filterPairs = filtersParam.split(';');
+            const validFilterPairs = filterPairs.filter(pair => {
+                const [encodedName] = pair.split(':');
+                const name = decodeURIComponent(encodedName);
+                return name !== 'start' && name !== 'end';
+            });
+
+            if (validFilterPairs.length !== filterPairs.length) {
+                const newFiltersParam = validFilterPairs.length > 0 ? validFilterPairs.join(';') : '';
+                if (newFiltersParam) {
+                    url.searchParams.set('filters', newFiltersParam);
+                } else {
+                    url.searchParams.delete('filters');
+                }
+                window.history.replaceState({}, '', url.toString());
+            }
+        } catch (error) {
+            console.error("Failed to clean start/end filters from URL:", error);
+        }
     }
 
     return (
