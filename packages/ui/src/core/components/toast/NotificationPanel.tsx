@@ -11,10 +11,10 @@ const icons = {
 }
 
 const colors = {
-    success: 'text-green-600',
-    error: 'text-red-600',
-    warning: 'text-yellow-600',
-    info: 'text-blue-600'
+    success: 'text-success',
+    error: 'text-destructive',
+    warning: 'text-attention',
+    info: 'text-info'
 }
 
 interface NotificationPanelProps {
@@ -47,7 +47,7 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
     }, [data.duration])
 
     const Icon = icons[data.status] || Info;
-    const color = colors[data.status] || 'text-blue-600';
+    const color = colors[data.status] || 'text-info';
 
     // Global notification live region, render this permanently at the end of the document
     return (
@@ -69,8 +69,8 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div 
-                        className="pointer-events-auto w-full max-w-md overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-800 dark:ring-gray-700"
+                    <div
+                        className="pointer-events-auto w-full max-w-md overflow-hidden rounded-lg bg-muted shadow-lg ring-1 ring-border"
                         onMouseEnter={clearCurrentTimeout}
                         onMouseLeave={resetTimeout}
                     >
@@ -80,9 +80,9 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                                     <Icon className={`size-6 ${color}`} aria-hidden="true" />
                                 </div>
                                 <div className="ml-3 flex-1 pt-0.5 min-w-0">
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">{data.title}</p>
+                                    <p className="text-sm font-semibold text-foreground break-words">{data.title}</p>
                                     {data.description && (
-                                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-300 break-words whitespace-pre-wrap leading-relaxed">
+                                        <p className="mt-2 text-sm text-muted break-words whitespace-pre-wrap leading-relaxed">
                                             {data.description}
                                         </p>
                                     )}
@@ -90,7 +90,7 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                                 <div className="ml-4 flex shrink-0">
                                     <button
                                         type="button"
-                                        className="inline-flex rounded-md bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                                        className="inline-flex rounded-md bg-muted text-muted hover:text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
                                         onClick={() => setShow(false)}
                                     >
                                         <span className="sr-only">Close</span>
