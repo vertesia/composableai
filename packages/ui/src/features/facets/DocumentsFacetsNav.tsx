@@ -127,8 +127,6 @@ export function DocumentsFacetsNav({
                         : filter.value;
                 }
                 
-                console.log(`Applying filter: ${filterName} with value:`, filterValue);
-                
                 if (filterName === 'name') {
                     search.query.search_term = filterValue;
                     search.query.name = filterValue;
