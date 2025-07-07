@@ -1,6 +1,6 @@
 import { Transition } from "@headlessui/react"
 import { CircleCheck, AlertTriangle, Info, CircleX, X } from "lucide-react"
-import { Fragment, useEffect, useState } from "react"
+import { Fragment, useEffect, useState, useRef } from "react"
 import { ToastProps } from "./ToastProps.js"
 
 const icons = {
@@ -23,20 +23,28 @@ interface NotificationPanelProps {
 }
 export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
     const [show, setShow] = useState(true)
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    const resetTimeout = () => {
+        if (timeoutRef.current) {
+            globalThis.clearTimeout(timeoutRef.current)
+        }
+        if (data.duration) {
+            timeoutRef.current = setTimeout(() => setShow(false), data.duration)
+        }
+    }
+
+    const clearCurrentTimeout = () => {
+        if (timeoutRef.current) {
+            globalThis.clearTimeout(timeoutRef.current)
+            timeoutRef.current = null
+        }
+    }
 
     useEffect(() => {
-        let timeoutId: any;
-        if (data.duration) {
-            timeoutId = setTimeout(() => {
-                setShow(false)
-            }, data.duration);
-        }
-        return () => {
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
-        }
-    }, [])
+        resetTimeout()
+        return clearCurrentTimeout
+    }, [data.duration])
 
     const Icon = icons[data.status] || Info;
     const color = colors[data.status] || 'text-blue-600';
@@ -63,6 +71,8 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                 >
                     <div 
                         className="pointer-events-auto w-full max-w-md overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-800 dark:ring-gray-700"
+                        onMouseEnter={clearCurrentTimeout}
+                        onMouseLeave={resetTimeout}
                     >
                         <div className="p-5">
                             <div className="flex items-start">
