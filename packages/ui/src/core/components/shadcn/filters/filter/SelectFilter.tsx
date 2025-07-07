@@ -119,6 +119,7 @@ export default function SelectFilter({
       <div className="flex items-center p-1.5 text-xs text-muted">
         <span>{groupTitle}</span>
       </div>
+      <div className="max-h-50 overflow-y-auto">
       {options.map((option: FilterGroupOption) => {
         const isSelected = selectedOptions.some(opt => opt.value === option.value);
 
@@ -140,6 +141,7 @@ export default function SelectFilter({
           </CommandItem>
         );
       })}
+      </div>
       {selectedGroup?.multiple && (
         <div className="p-2 border-t">
           <div className="flex gap-2 justify-end">

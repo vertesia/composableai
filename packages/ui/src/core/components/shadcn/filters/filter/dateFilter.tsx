@@ -162,7 +162,7 @@ export default function DateFilter({
           {getDisplayText()}
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0" align="start" side="bottom" alignOffset={-4} sideOffset={6}>
         <div className="p-2">
           {isDateRange ? (
             <>
