@@ -1,6 +1,6 @@
 import { Transition } from "@headlessui/react"
 import { CircleCheck, AlertTriangle, Info, CircleX, X } from "lucide-react"
-import { Fragment, useEffect, useState } from "react"
+import { Fragment, useEffect, useState, useRef } from "react"
 import { ToastProps } from "./ToastProps.js"
 
 const icons = {
@@ -23,20 +23,28 @@ interface NotificationPanelProps {
 }
 export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
     const [show, setShow] = useState(true)
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    const resetTimeout = () => {
+        if (timeoutRef.current) {
+            globalThis.clearTimeout(timeoutRef.current)
+        }
+        if (data.duration) {
+            timeoutRef.current = setTimeout(() => setShow(false), data.duration)
+        }
+    }
+
+    const clearCurrentTimeout = () => {
+        if (timeoutRef.current) {
+            globalThis.clearTimeout(timeoutRef.current)
+            timeoutRef.current = null
+        }
+    }
 
     useEffect(() => {
-        let timeoutId: any;
-        if (data.duration) {
-            timeoutId = setTimeout(() => {
-                setShow(false)
-            }, data.duration);
-        }
-        return () => {
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
-        }
-    }, [])
+        resetTimeout()
+        return clearCurrentTimeout
+    }, [data.duration])
 
     const Icon = icons[data.status] || Info;
     const color = colors[data.status] || 'text-blue-600';
@@ -61,20 +69,28 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5">
-                        <div className="p-4">
+                    <div 
+                        className="pointer-events-auto w-full max-w-md overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-800 dark:ring-gray-700"
+                        onMouseEnter={clearCurrentTimeout}
+                        onMouseLeave={resetTimeout}
+                    >
+                        <div className="p-5">
                             <div className="flex items-start">
                                 <div className="shrink-0">
                                     <Icon className={`size-6 ${color}`} aria-hidden="true" />
                                 </div>
-                                <div className="ml-3 w-0 flex-1 pt-0.5">
-                                    <p className="text-sm font-medium text-gray-900">{data.title}</p>
-                                    <p className="mt-1 text-sm text-gray-500">{data.description}</p>
+                                <div className="ml-3 flex-1 pt-0.5 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">{data.title}</p>
+                                    {data.description && (
+                                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-300 break-words whitespace-pre-wrap leading-relaxed">
+                                            {data.description}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="ml-4 flex shrink-0">
                                     <button
                                         type="button"
-                                        className="inline-flex rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                        className="inline-flex rounded-md bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                                         onClick={() => setShow(false)}
                                     >
                                         <span className="sr-only">Close</span>
