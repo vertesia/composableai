@@ -82,6 +82,22 @@ export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
         customFilterGroups.push(createdByFilterGroup);
     }
 
+    const dateAfterFilterGroup = {
+        name: 'start',
+        placeholder: 'Date After',
+        type: 'date' as const,
+        multiple: false
+    };
+    customFilterGroups.push(dateAfterFilterGroup);
+
+    const dateBeforeFilterGroup = {
+        name: 'end',
+        placeholder: 'Date Before',
+        type: 'date' as const,
+        multiple: false
+    };
+    customFilterGroups.push(dateBeforeFilterGroup);
+
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
         const newFilters = typeof value === 'function' ? value(filters) : value;
         if (newFilters.length === 0) {

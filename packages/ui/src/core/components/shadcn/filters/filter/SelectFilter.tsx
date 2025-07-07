@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { CommandItem, CommandEmpty } from "../command";
-import { Button } from "../button";
-import { Filter, FilterGroup, FilterGroupOption, FilterOption } from "./types";
-import { DynamicLabel } from "./DynamicLabel";
+import { CommandItem, CommandEmpty } from "../../command";
+import { Button } from "../../button";
+import { Filter, FilterGroup, FilterGroupOption, FilterOption } from "../types";
+import { DynamicLabel } from "../DynamicLabel";
 
 interface SelectFilterProps {
   selectedView: string | null;
@@ -92,7 +92,7 @@ export default function SelectFilter({
       // For single selection, apply immediately
       setFilters((prev: Filter[]) => {
         const existingFilterIndex = prev.findIndex(f => f.name === selectedView);
-        
+
         if (existingFilterIndex >= 0) {
           const updatedFilters = [...prev];
           updatedFilters[existingFilterIndex] = {
@@ -120,27 +120,26 @@ export default function SelectFilter({
         <span>{groupTitle}</span>
       </div>
       {options.map((option: FilterGroupOption) => {
-          const isSelected = selectedOptions.some(opt => opt.value === option.value);
-          
-          return (
-            <CommandItem
-              key={option.value || `option-${Math.random()}`}
-              className={`group flex gap-2 items-center w-full hover:bg-muted ${
-                selectedGroup?.multiple && isSelected ? 'bg-muted' : ''
+        const isSelected = selectedOptions.some(opt => opt.value === option.value);
+
+        return (
+          <CommandItem
+            key={option.value || `option-${Math.random()}`}
+            className={`group flex gap-2 items-center w-full hover:bg-muted ${selectedGroup?.multiple && isSelected ? 'bg-muted' : ''
               }`}
-              onSelect={() => handleOptionToggle(option)}
-            >
-              <DynamicLabel
-                value={option.value || ''}
-                labelRenderer={option.labelRenderer || selectedGroup?.labelRenderer}
-                fallbackLabel={option.label}
-              />
-              {selectedGroup?.multiple && isSelected && (
-                <span className="ml-auto text-xs text-success">✓</span>
-              )}
-            </CommandItem>
-          );
-        })}
+            onSelect={() => handleOptionToggle(option)}
+          >
+            <DynamicLabel
+              value={option.value || ''}
+              labelRenderer={option.labelRenderer || selectedGroup?.labelRenderer}
+              fallbackLabel={option.label}
+            />
+            {selectedGroup?.multiple && isSelected && (
+              <span className="ml-auto text-xs text-success">✓</span>
+            )}
+          </CommandItem>
+        );
+      })}
       {selectedGroup?.multiple && (
         <div className="p-2 border-t">
           <div className="flex gap-2 justify-end">

@@ -148,6 +148,12 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         search.search().then(() => setIsReady(true));
     };
 
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('filters')) {
+        urlParams.delete('filters');
+        window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+    }
+
     return (
         <div className="flex flex-col gap-y-2">
             <OverviewDrawer object={selectedObject} onClose={() => setSelectedObject(null)} />

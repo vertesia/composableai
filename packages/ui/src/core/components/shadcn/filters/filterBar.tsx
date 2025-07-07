@@ -8,10 +8,10 @@ import { ListFilter } from "lucide-react";
 import { Filter, FilterGroup } from "./types";
 import Filters from "./filters";
 
-import TextFilter from "./textFilter";
-import DateFilter from "./dateFilter";
-import SelectFilter from "./selectFilter";
-import StringListFilter from "./stringListFilter";
+import TextFilter from "./filter/TextFilter";
+import DateFilter from "./filter/dateFilter";
+import SelectFilter from "./filter/SelectFilter";
+import StringListFilter from "./filter/StringListFilter";
 
 interface FilterBarProps {
   filters: Filter[];
@@ -42,7 +42,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
             return filter.name === group.name;
           }
           return filter.name === group.name &&
-            (Array.isArray(filter.value) && typeof filter.value[0] === 'string' 
+            (Array.isArray(filter.value) && typeof filter.value[0] === 'string'
               ? filter.value.some(val => val === option.value)
               : filter.value.some(val => (val as any).value === option.value));
         })
@@ -197,10 +197,10 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
           const [encodedName, valuesString] = pair.split(':');
           const name = decodeURIComponent(encodedName);
           const values = valuesString.split(',').map(encodedValue => decodeURIComponent(encodedValue));
-          
+
           const group = filterGroups.find(g => g.name === name);
           let filterValue;
-          
+
           if (group?.type === 'stringList') {
             // For stringList, return direct string array
             filterValue = values;
@@ -212,7 +212,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
             filterValue = values.map(value => {
               const matchingOption = group?.options?.find(opt => opt.value === value);
               let label = value;
-              
+
               if (matchingOption?.label) {
                 label = String(matchingOption.label);
               } else if (matchingOption?.labelRenderer) {
@@ -220,14 +220,14 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
               } else if (group?.labelRenderer) {
                 label = String(group.labelRenderer(value));
               }
-              
+
               return {
                 value,
                 label
               };
             });
           }
-          
+
           return {
             name,
             type: group?.type || 'select',

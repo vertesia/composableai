@@ -1,10 +1,10 @@
 import dayjs from "dayjs";
 import React, { useState } from "react";
-import DatePicker from "react-date-picker";
 import Calendar from "react-calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "../popover";
-import { Button } from "../button";
-import { Filter, FilterGroup } from "./types";
+import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
+import { Button } from "../../button";
+import { Filter, FilterGroup } from "../types";
+import { calendarStyles } from "../filter-styles";
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -31,7 +31,7 @@ export default function DateFilter({
   const [open, setOpen] = useState(true);
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [localDateRange, setLocalDateRange] = useState<[Date | null, Date | null]>([null, null]);
-  
+
   const selectedGroup = filterGroups.find(g => g.name === selectedView);
   const isDateRange = selectedGroup?.multiple;
 
@@ -66,7 +66,7 @@ export default function DateFilter({
         // Set date to start of day (00:00)
         const selectedDateStart = new Date(date);
         selectedDateStart.setHours(0, 0, 0, 0);
-        
+
         setFilters([
           ...filters,
           {
@@ -93,25 +93,25 @@ export default function DateFilter({
     if (dateRange[0]) {
       const startDate = new Date(dateRange[0]);
       const endDate = dateRange[1] ? new Date(dateRange[1]) : new Date(dateRange[0]);
-      
+
       // Set start date to beginning of day
       startDate.setHours(0, 0, 0, 0);
       // Set end date to end of day
       endDate.setHours(23, 59, 59, 999);
-      
+
       const filterValue = [];
       filterValue.push({
         value: startDate.toISOString(),
         label: dayjs(startDate).format("LLL dd, y"),
       });
-      
+
       if (dateRange[1] && dateRange[0].getTime() !== dateRange[1].getTime()) {
         filterValue.push({
           value: endDate.toISOString(),
           label: dayjs(endDate).format("LLL dd, y"),
         });
       }
-      
+
       setFilters([
         ...filters,
         {
@@ -167,34 +167,7 @@ export default function DateFilter({
           {isDateRange ? (
             <>
               <div className="calendar-wrapper">
-                <style>{`
-                  .calendar-wrapper .react-calendar__navigation {
-                    display: flex !important;
-                    justify-content: space-between !important;
-                    align-items: center !important;
-                    gap: 8px !important;
-                    padding: 8px !important;
-                  }
-                  .calendar-wrapper .react-calendar__navigation__label {
-                    flex: 1 !important;
-                    text-align: center !important;
-                    font-weight: 500 !important;
-                  }
-                  .calendar-wrapper .react-calendar__navigation__arrow {
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    min-width: 32px !important;
-                    height: 32px !important;
-                    border-radius: 4px !important;
-                    border: 1px solid hsl(var(--border)) !important;
-                    background: hsl(var(--background)) !important;
-                    color: hsl(var(--foreground)) !important;
-                  }
-                  .calendar-wrapper .react-calendar__navigation__arrow:hover {
-                    background: hsl(var(--muted)) !important;
-                  }
-                `}</style>
+                <style>{calendarStyles}</style>
                 <Calendar
                   key={`${effectiveDateRange[0]?.getTime()}-${effectiveDateRange[1]?.getTime()}`}
                   value={effectiveDateRange}
@@ -203,44 +176,44 @@ export default function DateFilter({
                   returnValue="range"
                   maxDate={maxDate}
                   className="mb-2 border-0"
-                tileClassName={({ date, view }) => {
-                  if (view === 'month') {
-                    const currentDate = date.getTime();
-                    const today = new Date();
-                    today.setHours(23, 59, 59, 999);
-                    
-                    // Check if date is disabled (future date)
-                    if (currentDate > today.getTime()) {
-                      return 'text-muted/20 cursor-not-allowed';
-                    }
-                    
-                    // Handle selected date styling
-                    if (effectiveDateRange[0]) {
-                      const startDate = effectiveDateRange[0].getTime();
-                      
-                      if (effectiveDateRange[1]) {
-                        // Both dates selected
-                        const endDate = effectiveDateRange[1].getTime();
-                        
-                        if (currentDate === startDate) {
-                          return 'bg-primary text-primary-foreground rounded-l-md font-semibold';
-                        }
-                        if (currentDate === endDate) {
-                          return 'bg-primary text-primary-foreground rounded-r-md font-semibold';
-                        }
-                        if (currentDate > startDate && currentDate < endDate) {
-                          return 'bg-primary/20 text-primary font-medium';
-                        }
-                      } else {
-                        // Only start date selected
-                        if (currentDate === startDate) {
-                          return 'bg-primary text-primary-foreground rounded-md font-semibold';
+                  tileClassName={({ date, view }) => {
+                    if (view === 'month') {
+                      const currentDate = date.getTime();
+                      const today = new Date();
+                      today.setHours(23, 59, 59, 999);
+
+                      // Check if date is disabled (future date)
+                      if (currentDate > today.getTime()) {
+                        return 'text-muted/20 cursor-not-allowed';
+                      }
+
+                      // Handle selected date styling
+                      if (effectiveDateRange[0]) {
+                        const startDate = effectiveDateRange[0].getTime();
+
+                        if (effectiveDateRange[1]) {
+                          // Both dates selected
+                          const endDate = effectiveDateRange[1].getTime();
+
+                          if (currentDate === startDate) {
+                            return 'bg-primary text-primary-foreground rounded-l-md font-semibold';
+                          }
+                          if (currentDate === endDate) {
+                            return 'bg-primary text-primary-foreground rounded-r-md font-semibold';
+                          }
+                          if (currentDate > startDate && currentDate < endDate) {
+                            return 'bg-primary/20 text-primary font-medium';
+                          }
+                        } else {
+                          // Only start date selected
+                          if (currentDate === startDate) {
+                            return 'bg-primary text-primary-foreground rounded-md font-semibold';
+                          }
                         }
                       }
                     }
-                  }
-                  return '';
-                }}
+                    return '';
+                  }}
                 />
               </div>
               <div className="border-t pt-2">
@@ -255,13 +228,36 @@ export default function DateFilter({
               </div>
             </>
           ) : (
-            <DatePicker
-              value={selectedDate}
-              onChange={handleDateChange}
-              calendarIcon={false}
-              maxDate={maxDate}
-              className="mb-2"
-            />
+            <>
+              <div className="calendar-wrapper">
+                <style>{calendarStyles}</style>
+                <Calendar
+                  value={selectedDate}
+                  onChange={handleDateChange}
+                  selectRange={false}
+                  maxDate={maxDate}
+                  className="mb-2 border-0"
+                  tileClassName={({ date, view }) => {
+                    if (view === 'month') {
+                      const currentDate = date.getTime();
+                      const today = new Date();
+                      today.setHours(23, 59, 59, 999);
+
+                      // Check if date is disabled (future date)
+                      if (currentDate > today.getTime()) {
+                        return 'text-muted/20 cursor-not-allowed';
+                      }
+
+                      // Handle selected date styling
+                      if (selectedDate && currentDate === selectedDate.getTime()) {
+                        return 'bg-primary text-primary-foreground rounded-md font-semibold';
+                      }
+                    }
+                    return '';
+                  }}
+                />
+              </div>
+            </>
           )}
         </div>
       </PopoverContent>
