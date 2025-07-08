@@ -31,6 +31,8 @@ export const calendarStyles = `
 
 .calendar-wrapper .react-calendar__tile {
   cursor: pointer !important;
+  width: 0.5rem !important;
+  font-size: 0.875rem !important;
 }
 
 .calendar-wrapper .react-calendar__tile:hover,
@@ -71,4 +73,15 @@ export const calendarStyles = `
   background: transparent !important;
 }
 
+
+.calendar-wrapper .react-calendar__month-view__weekdays {
+  font-size: 0.75rem !important;
+}
+
+.calendar-wrapper .react-calendar__month-view__weekdays__weekday {
+  width: 0.75rem !important;
+  font-size: 0.75rem !important;
+  text-align: center !important;
+}
+  
 `;
