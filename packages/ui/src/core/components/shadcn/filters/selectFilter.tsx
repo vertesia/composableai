@@ -17,10 +17,12 @@ export default function SelectFilter({
   setFilters,
   handleClose,
   filterGroups,
-}: SelectFilterProps) {
+}: Readonly<SelectFilterProps>) {
   const getFilteredOptions = (groupName: string) => {
     const group = filterGroups.find(g => g.name === groupName);
-    if (!group) return [];
+    if (!group) {
+      return [];
+    }
 
     let filteredOptions = group.options || [];
 
@@ -30,12 +32,10 @@ export default function SelectFilter({
 
     if (group.filterBy) {
       const filterLc = commandInput.toLowerCase();
-      const results = filteredOptions.filter(option => {
+      return filteredOptions.filter(option => {
         if (option.value === undefined) return false;
-        const result = group.filterBy!(option.value, filterLc);
-        return result;
+        return group.filterBy!(option.value, filterLc);
       });
-      return results;
     }
 
     const filterLc = commandInput.toLowerCase();
@@ -45,66 +45,71 @@ export default function SelectFilter({
     });
   };
 
-  if (!selectedView) return null;
+  const handleOptionSelect = (option: FilterGroupOption) => {
+    const selectedGroup = filterGroups.find(g => g.name === selectedView);
+
+    setFilters((prev: Filter[]) => {
+      const existingFilterIndex = prev.findIndex(f => f.name === selectedView);
+
+      const filterOption = {
+        value: option.value,
+        label: option.label
+      };
+
+      if (existingFilterIndex >= 0) {
+        const updatedFilters = [...prev];
+        updatedFilters[existingFilterIndex] = {
+          ...updatedFilters[existingFilterIndex],
+          value: [...updatedFilters[existingFilterIndex].value, filterOption]
+        };
+        return updatedFilters;
+      } else {
+        return [...prev, {
+          name: selectedView || "",
+          placeholder: selectedGroup?.placeholder || "",
+          value: [filterOption],
+          type: selectedGroup?.type || "select",
+        }];
+      }
+    });
+
+    handleClose();
+  };
+
+  if (!selectedView) {
+    return null;
+  }
 
   const options = getFilteredOptions(selectedView);
+  const selectedGroup = filterGroups.find(group => group.name === selectedView);
+  const groupTitle = selectedGroup?.placeholder || selectedGroup?.name;
 
   if (options.length === 0) {
     return <CommandEmpty>No matching options</CommandEmpty>;
   }
-
-  const groupTitle = filterGroups.find(group => group.name === selectedView)?.placeholder || filterGroups.find(group => group.name === selectedView)?.name;
 
   return (
     <>
       <div className="flex items-center p-1.5 text-xs text-muted">
         <span>{groupTitle}</span>
       </div>
-      {options.map((option: FilterGroupOption) => {
-          const selectedGroup = filterGroups.find(g => g.name === selectedView);
-
-          return (
+      <div className="max-h-64 overflow-y-auto overflow-x-hidden">
+        {
+          options.map((option: FilterGroupOption) => (
             <CommandItem
               key={option.value || `option-${Math.random()}`}
               className="group flex gap-2 items-center w-full hover:bg-muted"
-              onSelect={() => {
-                setFilters((prev: Filter[]) => {
-                  const existingFilterIndex = prev.findIndex(f => f.name === selectedView);
-
-                  // Create filter option with value and label for storage
-                  const filterOption = {
-                    value: option.value,
-                    label: option.label
-                  };
-
-                  if (existingFilterIndex >= 0) {
-                    const updatedFilters = [...prev];
-                    updatedFilters[existingFilterIndex] = {
-                      ...updatedFilters[existingFilterIndex],
-                      value: [...updatedFilters[existingFilterIndex].value, filterOption]
-                    };
-                    return updatedFilters;
-                  } else {
-                    return [...prev, {
-                      name: selectedView || "",
-                      placeholder: selectedGroup?.placeholder || "",
-                      value: [filterOption],
-                      type: selectedGroup?.type || "select",
-                    }];
-                  }
-                });
-
-                handleClose();
-              }}
+              onSelect={() => handleOptionSelect(option)}
             >
-              <DynamicLabel
+              {<DynamicLabel
                 value={option.value || ''}
                 labelRenderer={option.labelRenderer || selectedGroup?.labelRenderer}
                 fallbackLabel={option.label}
-              />
+              />}
             </CommandItem>
-          );
-        })}
+          ))
+        }
+      </div>
     </>
   );
 }
