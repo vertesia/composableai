@@ -86,7 +86,7 @@ export const SelectionCombobox = ({
                                                 setOpen(false);
                                             }}
                                         >
-                                            <Checkbox checked={true} />
+                                            <input type="checkbox" checked={true} onChange={() => {}} />
                                             <DynamicLabel
                                                 value={value.value || ''}
                                                 labelRenderer={labelRenderer}

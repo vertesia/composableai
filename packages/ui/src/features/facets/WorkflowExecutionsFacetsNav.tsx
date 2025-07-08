@@ -75,12 +75,22 @@ export function WorkflowExecutionsFacetsNav({
 
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
-                const filterName = filter.name.toLowerCase();
-                const filterValue = filter.type === 'stringList'
-                    ? filter.value.map(v => typeof v === 'string' ? v : v.value)
-                    : Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
-                        ? filter.value[0].value
-                        : filter.value;
+                const filterName = filter.name;
+                let filterValue;
+                if (filter.type === 'stringList') {
+                    filterValue = filter.value.map(v => typeof v === 'string' ? v : v.value);
+                } else if (filter.multiple) {
+                    filterValue = Array.isArray(filter.value) 
+                        ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
+                        : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];
+                } else {
+                    // Single value - don't wrap in array
+                    filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
+                        ? (filter.value[0] as any).value
+                        : Array.isArray(filter.value) && filter.value[0] 
+                            ? filter.value[0]
+                            : filter.value;
+                }
 
                 if (filterName === 'name') {
                     search.query.search_term = filterValue;
