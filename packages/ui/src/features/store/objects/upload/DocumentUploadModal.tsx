@@ -155,21 +155,25 @@ export function DocumentUploadModal({
     // Reset state when modal opens/closes
     useEffect(() => {
         if (isOpen) {
+            // Always reset state first
+            setProcessedFiles([]);
+            setProcessingDone(false);
+            setSelectedType(null);
+            setFileStatuses([]);
+            setIsUploading(false);
+            setUploadComplete(false);
+            setOverallProgress(0);
+            setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
+            setResult(null);
+            setTitle(title);
+            setDescription("");
+            
             // Set initial files if provided
             if (initialFiles && initialFiles.length > 0) {
                 setFiles(initialFiles);
                 processFiles(initialFiles);
             } else {
-                // Reset state
                 setFiles([]);
-                setProcessedFiles([]);
-                setProcessingDone(false);
-                setSelectedType(null);
-                setFileStatuses([]);
-                setIsUploading(false);
-                setUploadComplete(false);
-                setOverallProgress(0);
-                setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
             }
 
             // Create a new key to ensure the modal is fresh
@@ -189,6 +193,10 @@ export function DocumentUploadModal({
         setUploadComplete(false);
         setOverallProgress(0);
         setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
+        setResult(null);
+        setTitle(title);
+        setDescription("");
+        setModalKey(Date.now());
 
         // Call the provided onClose function
         onClose();
