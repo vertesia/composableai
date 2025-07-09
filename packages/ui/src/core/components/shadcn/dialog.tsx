@@ -84,22 +84,31 @@ export const VModalTitle = ({
     children,
     show = true,
     className,
+    description,
     ...props
-}: React.HTMLAttributes<HTMLHeadingElement> & { show?: boolean }) => {
+}: React.HTMLAttributes<HTMLHeadingElement> & { show?: boolean; description?: string }) => {
     if (!show) {
         return (
             <VisuallyHidden>
                 <DialogTitle>{children}</DialogTitle>
+                {description && <DialogDescription>{description}</DialogDescription>}
             </VisuallyHidden>
         )
     }
     return (
-        <DialogTitle
-            className={cn("text-lg font-semibold leading-6 tracking-tight py-2", className)}
-            {...props}
-        >
-            {children}
-        </DialogTitle>
+        <>
+            <DialogTitle
+                className={cn("text-lg font-semibold leading-6 tracking-tight", { 'py-2': !description }, className)}
+                {...props}
+            >
+                {children}
+                {description && (
+                    <DialogDescription className="text-sm !font-normal text-muted-foreground pb-2">
+                        {description}
+                    </DialogDescription>
+                )}
+            </DialogTitle>
+        </>
     );
 };
 
