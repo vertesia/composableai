@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useState } from "react";
-import { InputList } from "../../index";
-import { Button } from "../button";
-import { Filter, FilterGroup } from "./types";
+import { InputList } from "../../../index";
+import { Button } from "../../button";
+import { Filter, FilterGroup } from "../types";
 
 interface StringListFilterProps {
   selectedView: string;
@@ -17,7 +17,7 @@ export default function StringListFilter({
   filterGroups,
 }: StringListFilterProps) {
   const [tags, setTags] = useState<string[]>([]);
-  
+
   const selectedGroup = filterGroups.find(g => g.name === selectedView);
 
   const handleApply = () => {
@@ -38,9 +38,9 @@ export default function StringListFilter({
   return (
     <div className="p-2 space-y-3">
       <div className="space-y-2">
-        <InputList 
-          value={tags} 
-          onChange={setTags} 
+        <InputList
+          value={tags}
+          onChange={setTags}
           placeholder={selectedGroup?.placeholder || `Add ${selectedView}...`}
           autoFocus
         />

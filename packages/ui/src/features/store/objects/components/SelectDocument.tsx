@@ -1,7 +1,7 @@
 import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
 import { Button, ErrorBox, Spinner, useIntersectionObserver } from "@vertesia/ui/core";
 import { useEffect, useRef, useState } from "react";
-import { VFacetsNav } from "../../../facets";
+import { DocumentsFacetsNav } from "../../../facets";
 import { DocumentTable } from "../DocumentTable";
 import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from "../search/DocumentSearchContext";
 import { DocumentSearchProvider } from "../search/DocumentSearchProvider";
@@ -66,7 +66,7 @@ function SelectDocumentImpl({ onRowClick }: SelectDocumentImplProps) {
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                <VFacetsNav facets={facets} search={facetSearch} textSearch="Filter content" />
+                <DocumentsFacetsNav facets={facets} search={facetSearch} textSearch="Filter content" />
                 <div className="flex items-center gap-2">
                     <Button variant="outline" onClick={handleRefetch} alt="Refresh">
                         <RefreshCw size={16} />

@@ -523,6 +523,9 @@ importers:
       react:
         specifier: 19.1.0
         version: 19.1.0
+      react-calendar:
+        specifier: ^6.0.0
+        version: 6.0.0(@types/react@19.1.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react-date-picker:
         specifier: ^11.0.0
         version: 11.0.0(@types/react-dom@19.1.5(@types/react@19.1.6))(@types/react@19.1.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -2915,6 +2918,9 @@ packages:
   '@wojtekmaj/date-utils@1.5.1':
     resolution: {integrity: sha512-+i7+JmNiE/3c9FKxzWFi2IjRJ+KzZl1QPu6QNrsgaa2MuBgXvUy4gA1TVzf/JMdIIloB76xSKikTWuyYAIVLww==}
 
+  '@wojtekmaj/date-utils@2.0.2':
+    resolution: {integrity: sha512-Do66mSlSNifFFuo3l9gNKfRMSFi26CRuQMsDJuuKO/ekrDWuTTtE4ZQxoFCUOG+NgxnpSeBq/k5TY8ZseEzLpA==}
+
   '@xtuc/ieee754@1.2.0':
     resolution: {integrity: sha512-DX8nKgqcGwsc0eJSqYt5lwP4DH5FlHnmuWWBRy7X0NcaGR0ZtuyeESgMwTYVEtxmsNGY+qit4QYT/MIYTOTPeA==}
 
@@ -3910,6 +3916,9 @@ packages:
   get-user-locale@2.3.2:
     resolution: {integrity: sha512-O2GWvQkhnbDoWFUJfaBlDIKUEdND8ATpBXD6KXcbhxlfktyD/d8w6mkzM/IlQEqGZAMz/PW6j6Hv53BiigKLUQ==}
 
+  get-user-locale@3.0.0:
+    resolution: {integrity: sha512-iJfHSmdYV39UUBw7Jq6GJzeJxUr4U+S03qdhVuDsR9gCEnfbqLy9gYDJFBJQL1riqolFUKQvx36mEkp2iGgJ3g==}
+
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
     engines: {node: '>= 6'}
@@ -4543,6 +4552,10 @@ packages:
     resolution: {integrity: sha512-NgYhCOWgovOXSzvYgUW0LQ7Qy72rWQMGGFJDoWg4G30RHd3z77VbYdtJ4fembJXBy8pMIUA31XNAupobOQlwdg==}
     engines: {node: '>= 4.0.0'}
 
+  memoize@10.1.0:
+    resolution: {integrity: sha512-MMbFhJzh4Jlg/poq1si90XRlTZRDHVqdlz2mPyGJ6kqMpyHUyVpDd5gpFAvVehW64+RA1eKE9Yt8aSLY7w2Kgg==}
+    engines: {node: '>=18'}
+
   memoizee@0.4.17:
     resolution: {integrity: sha512-DGqD7Hjpi/1or4F/aYAspXKNm5Yili0QDAFAY4QYvpqpgiY6+1jOfqpmByzjxbWd/T9mChbCArXAbDAsTm5oXA==}
     engines: {node: '>=0.12'}
@@ -4995,6 +5008,16 @@ packages:
 
   react-calendar@5.1.0:
     resolution: {integrity: sha512-09o/rQHPZGEi658IXAJtWfra1N69D1eFnuJ3FQm9qUVzlzNnos1+GWgGiUeSs22QOpNm32aoVFOimq0p3Ug9Eg==}
+    peerDependencies:
+      '@types/react': 19.1.6
+      react: 19.1.0
+      react-dom: 19.1.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  react-calendar@6.0.0:
+    resolution: {integrity: sha512-6wqaki3Us0DNDjZDr0DYIzhSFprNoy4FdPT9Pjy5aD2hJJVjtJwmdMT9VmrTUo949nlk35BOxehThxX62RkuRQ==}
     peerDependencies:
       '@types/react': 19.1.6
       react: 19.1.0
@@ -8883,6 +8906,8 @@ snapshots:
 
   '@wojtekmaj/date-utils@1.5.1': {}
 
+  '@wojtekmaj/date-utils@2.0.2': {}
+
   '@xtuc/ieee754@1.2.0': {}
 
   '@xtuc/long@4.2.2': {}
@@ -10047,6 +10072,10 @@ snapshots:
     dependencies:
       mem: 8.1.1
 
+  get-user-locale@3.0.0:
+    dependencies:
+      memoize: 10.1.0
+
   glob-parent@5.1.2:
     dependencies:
       is-glob: 4.0.3
@@ -10841,6 +10870,10 @@ snapshots:
       tree-dump: 1.0.3(tslib@2.8.1)
       tslib: 2.8.1
 
+  memoize@10.1.0:
+    dependencies:
+      mimic-function: 5.0.1
+
   memoizee@0.4.17:
     dependencies:
       d: 1.0.2
@@ -11410,6 +11443,17 @@ snapshots:
       '@wojtekmaj/date-utils': 1.5.1
       clsx: 2.1.1
       get-user-locale: 2.3.2
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      warning: 4.0.3
+    optionalDependencies:
+      '@types/react': 19.1.6
+
+  react-calendar@6.0.0(@types/react@19.1.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      '@wojtekmaj/date-utils': 2.0.2
+      clsx: 2.1.1
+      get-user-locale: 3.0.0
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
       warning: 4.0.3

@@ -8,10 +8,10 @@ import { ListFilter } from "lucide-react";
 import { Filter, FilterGroup } from "./types";
 import Filters from "./filters";
 
-import TextFilter from "./textFilter";
-import DateFilter from "./dateFilter";
-import SelectFilter from "./selectFilter";
-import StringListFilter from "./stringListFilter";
+import TextFilter from "./filter/TextFilter";
+import DateFilter from "./filter/dateFilter";
+import SelectFilter from "./filter/SelectFilter";
+import StringListFilter from "./filter/StringListFilter";
 
 interface FilterBarProps {
   filters: Filter[];
@@ -42,7 +42,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
             return filter.name === group.name;
           }
           return filter.name === group.name &&
-            (Array.isArray(filter.value) && typeof filter.value[0] === 'string' 
+            (Array.isArray(filter.value) && typeof filter.value[0] === 'string'
               ? filter.value.some(val => val === option.value)
               : filter.value.some(val => (val as any).value === option.value));
         })
@@ -161,15 +161,26 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
     try {
       const params = new URLSearchParams(searchParams.toString());
       if (filters.length > 0) {
-        // Convert filters to simple format with URL-safe encoding: filterName:value,value;filterName2:value
+        // Convert filters to format with array indicators: filterName:value,value;filterName2:value
+        // Arrays are prefixed with []: filterName:[value1,value2]
         const filterString = filters.map(filter => {
           let values;
           if (filter.type === 'stringList' && Array.isArray(filter.value) && typeof filter.value[0] === 'string') {
-            // Handle stringList with direct string array
-            values = (filter.value as string[]).map(item => encodeURIComponent(item)).join(',');
+            // Handle stringList with direct string array - always array format
+            values = `[${(filter.value as string[]).map(item => encodeURIComponent(item)).join(',')}]`;
           } else if (Array.isArray(filter.value)) {
-            // Handle other types with FilterOption array
-            values = filter.value.map((item: any) => encodeURIComponent(item.value || '')).join(',');
+            if (filter.multiple || filter.value.length > 1) {
+              // Handle multiple values - use array format
+              values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || '')).join(',')}]`;
+            } else {
+              // Single value in array - don't use array format
+              const firstValue = filter.value[0];
+              if (typeof firstValue === 'string') {
+                values = encodeURIComponent(firstValue);
+              } else {
+                values = encodeURIComponent(firstValue?.value || '');
+              }
+            }
           } else {
             values = encodeURIComponent(filter.value || '');
           }
@@ -191,28 +202,39 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
     const filtersParam = searchParams.get('filters');
     if (filtersParam) {
       try {
-        // Parse simple format with URL-safe decoding: filterName:value,value;filterName2:value
+        // Parse format with array indicators: filterName:value or filterName:[value1,value2]
         const filterPairs = filtersParam.split(';');
         const parsedFilters = filterPairs.map(pair => {
           const [encodedName, valuesString] = pair.split(':');
           const name = decodeURIComponent(encodedName);
-          const values = valuesString.split(',').map(encodedValue => decodeURIComponent(encodedValue));
           
+          let values: string[];
+          // Check if it's an array format [value1,value2]
+          if (valuesString.startsWith('[') && valuesString.endsWith(']')) {
+            // Array format - remove brackets and split by comma
+            const arrayContent = valuesString.slice(1, -1); // Remove [ and ]
+            values = arrayContent ? arrayContent.split(',').map(encodedValue => decodeURIComponent(encodedValue)) : [];
+          } else {
+            // Single value format
+            values = [decodeURIComponent(valuesString)];
+          }
+
           const group = filterGroups.find(g => g.name === name);
           let filterValue;
-          
+
           if (group?.type === 'stringList') {
             // For stringList, return direct string array
             filterValue = values;
           } else if (group?.type === 'text') {
-            // For text, return FilterOption array
-            filterValue = values.map(value => ({ value, label: value }));
+            // For text, return FilterOption array (single value for text inputs)
+            filterValue = values.length === 1 ? [{ value: values[0], label: values[0] }] : 
+                         values.map(value => ({ value, label: value }));
           } else {
             // For other types, find options with labels
             filterValue = values.map(value => {
               const matchingOption = group?.options?.find(opt => opt.value === value);
               let label = value;
-              
+
               if (matchingOption?.label) {
                 label = String(matchingOption.label);
               } else if (matchingOption?.labelRenderer) {
@@ -220,19 +242,20 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
               } else if (group?.labelRenderer) {
                 label = String(group.labelRenderer(value));
               }
-              
+
               return {
                 value,
                 label
               };
             });
           }
-          
+
           return {
             name,
             type: group?.type || 'select',
             placeholder: group?.placeholder,
-            value: filterValue
+            value: filterValue,
+            multiple: group?.multiple || false
           };
         });
 

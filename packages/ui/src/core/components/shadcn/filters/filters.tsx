@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import { Button } from "../button";
 
-import { DateCombobox, SelectionCombobox, TextCombobox, StringListCombobox } from "./comboBox";
+import { DateCombobox, SelectionCombobox, TextCombobox, StringListCombobox } from "./comboBox/comboBox";
 import { Filter, FilterGroup, FilterOption } from "./types";
 import dayjs from "dayjs";
 
@@ -22,15 +22,17 @@ function generateComboboxOptions(
             return (
                 <DateCombobox
                     filterValues={Array.isArray(filter.value) && typeof filter.value[0] === 'object' ? filter.value.map((v: any) => v.value || '') : []}
+                    isRange={filter.multiple}
                     setFilterValues={(filterValues) => {
                         setFilters((prev) =>
                             prev.map((f) =>
                                 f === filter ? {
                                     ...f,
-                                    value: filterValues.length > 0 ? [{
-                                        value: filterValues[0],
-                                        label: dayjs(filterValues[0]).format("LLL dd, y"),
-                                    }] : []
+                                    value: filterValues.length > 0 ?
+                                        filterValues.map(dateValue => ({
+                                            value: dateValue,
+                                            label: dayjs(dateValue).format("LLL dd, y"),
+                                        })) : []
                                 } : f
                             )
                         );

@@ -5,7 +5,7 @@ import { Button, Divider, ErrorBox, SidePanel, Spinner, useDebounce, useIntersec
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
 import { Download, RefreshCw, Eye } from 'lucide-react';
-import { VFacetsNav } from "../../facets";
+import { DocumentsFacetsNav } from "../../facets";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 
 import { ContentDispositionButton } from './components/ContentDispositionButton';
@@ -148,6 +148,32 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         search.search().then(() => setIsReady(true));
     };
 
+    const url = new URL(window.location.href);
+    const filtersParam = url.searchParams.get('filters');
+
+    if (filtersParam) {
+        try {
+            const filterPairs = filtersParam.split(';');
+            const validFilterPairs = filterPairs.filter(pair => {
+                const [encodedName] = pair.split(':');
+                const name = decodeURIComponent(encodedName);
+                return name !== 'start' && name !== 'end';
+            });
+
+            if (validFilterPairs.length !== filterPairs.length) {
+                const newFiltersParam = validFilterPairs.length > 0 ? validFilterPairs.join(';') : '';
+                if (newFiltersParam) {
+                    url.searchParams.set('filters', newFiltersParam);
+                } else {
+                    url.searchParams.delete('filters');
+                }
+                window.history.replaceState({}, '', url.toString());
+            }
+        } catch (error) {
+            console.error("Failed to clean start/end filters from URL:", error);
+        }
+    }
+
     return (
         <div className="flex flex-col gap-y-2">
             <OverviewDrawer object={selectedObject} onClose={() => setSelectedObject(null)} />
@@ -163,7 +189,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                     <ContentDispositionButton onUpdate={setIsGridView} />
                 </div>
             </div>
-            {allowFilter && <VFacetsNav facets={facets} search={facetSearch} textSearch={"Name or ID"} />}
+            {allowFilter && <DocumentsFacetsNav facets={facets} search={facetSearch} textSearch={"Name or ID"} />}
             <DocumentTable
                 objects={objects}
                 isLoading={!objects.length && isLoading}
