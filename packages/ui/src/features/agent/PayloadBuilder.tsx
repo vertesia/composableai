@@ -13,7 +13,7 @@ export interface ConversationWorkflowPayload {
         model?: string;
     }
     data?: JSONObject | undefined,
-    toolNames: string[],
+    tool_names: string[],
 }
 
 export class PayloadBuilder implements ConversationWorkflowPayload {
@@ -35,7 +35,7 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
             config: {
                 model: '',
             },
-            toolNames: [],
+            tool_names: [],
         }
     }
 
@@ -147,11 +147,11 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         }
     }
 
-    get toolNames() {
-        return this.payload.toolNames;
+    get tool_names() {
+        return this.payload.tool_names;
     }
-    set toolNames(tools: string[]) {
-        this.payload.toolNames = tools;
+    set tool_names(tools: string[]) {
+        this.payload.tool_names = tools;
         this.onStateChanged();
     }
 
@@ -213,7 +213,7 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
                 environment: undefined,
                 model: '',
             },
-            toolNames: [],
+            tool_names: [],
             interaction: undefined,
             data: undefined
         };
