@@ -137,8 +137,12 @@ function UserAvatar({ userId, showTitle = false, size = "md" }: UserAvatarProps)
         return <AvatarPlaceholder />
     }
 
+    const description = (
+        <div className="truncate" title={user.email}>{user.email}</div>
+    )
+
     return (
-        <UserPopoverPanel title={user.name || user.email || user.username || "unknown"} description={user.email}>
+        <UserPopoverPanel title={user.name || user.email || user.username || "unknown"} description={description}>
             <div className="flex flex-row items-center gap-2">
                 <Avatar src={user.picture} name={user.name} color="bg-indigo-500" size={size} />
                 {showTitle && <div className="text-sm font-semibold pl-2">{user.name || user.email || user.username || "unknown"}</div>}
@@ -166,18 +170,18 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
     const title = isPublic ? "Public Key" : "Private Key";
     const avatar = <Avatar name={isPublic ? "PK" : "SK"} color="bg-pink-500" size={size} />;
     const description = (
-        <Table className="dark:bg-gray-800 dark:text-gray-200">
+        <Table className="dark:bg-gray-800 dark:text-gray-200 table-fixed w-full">
             <tr>
-                <td className="font-semibold">Key:</td>
-                <td>{data?.name}</td>
+                <td className="font-semibold w-20">Key:</td>
+                <td className="truncate max-w-0">{data?.name}</td>
             </tr>
             <tr>
-                <td className="font-semibold">Account:</td>
-                <td>{data?.account}</td>
+                <td className="font-semibold w-20">Account:</td>
+                <td className="truncate max-w-0">{data?.account}</td>
             </tr>
             <tr>
-                <td className="font-semibold">Project:</td>
-                <td>{data?.project}</td>
+                <td className="font-semibold w-20">Project:</td>
+                <td className="truncate max-w-0">{data?.project}</td>
             </tr>
         </Table>
     );
@@ -186,7 +190,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
         <UserPopoverPanel title={title} description={description}>
             <div className="flex flex-row items-center gap-2">
                 {avatar}
-                {showTitle && <div className="text-sm font-semibold pl-2">{data?.name || data?.account || data?.project || "unknown"}</div>}
+                {showTitle && <div className="text-sm font-semibold">{data?.name || data?.account || data?.project || "unknown"}</div>}
             </div>
         </UserPopoverPanel >
     )
@@ -206,7 +210,7 @@ function UserPopoverPanel({ title, description, children }: UserPopoverPanelProp
             <PopoverContent align="center" sideOffset={8} side="right">
                 <div className="flex flex-col gap-1 rounded-md shadow-md p-2">
                     <div className='text-md font-semibold'>{title}</div>
-                    <div>{description}</div>
+                    {description}
                 </div>
             </PopoverContent>
         </Popover>

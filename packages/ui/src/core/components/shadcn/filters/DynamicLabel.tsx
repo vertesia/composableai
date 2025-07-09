@@ -5,8 +5,7 @@ interface DynamicLabelProps {
   labelRenderer?: (value: string) => React.ReactNode | Promise<React.ReactNode>;
   fallbackLabel?: React.ReactNode;
 }
-
-export function DynamicLabel({ value, labelRenderer, fallbackLabel }: DynamicLabelProps) {
+export function DynamicLabel({ value, labelRenderer, fallbackLabel }: Readonly<DynamicLabelProps>) {
   const [label, setLabel] = useState<React.ReactNode>(fallbackLabel || value);
   const [isLoading, setIsLoading] = useState(false);
 
