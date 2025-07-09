@@ -19,6 +19,7 @@ export enum Permission {
 
     project_admin = "project:admin",
     project_integration_read = "project:integration_read",
+    project_settings_write = "project:settings_write",
 
     api_key_create = "api_key:create",
     api_key_read = "api_key:read",
