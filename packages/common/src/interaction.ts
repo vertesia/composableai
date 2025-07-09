@@ -285,6 +285,11 @@ export type ToolRef = string | { name: string; description: string };
 
 interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayload,"toolDefinitions" | "stream"> {
     type: "conversation" | "interaction";
+
+    /**
+     * An array of endpoint URLs to be notified upon execution
+     */
+    notify_endpoints: string[];
 }
 
 export type ConversationVisibility = 'private' | 'project';
