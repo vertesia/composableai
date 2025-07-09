@@ -263,7 +263,7 @@ export interface InteractionExecutionPayload {
     /**
      * The tools to be used in the execution
      */
-    toolDefinitions?: ToolDefinition[];
+    tool_definitions?: ToolDefinition[];
 
     /**
      * The workflow related to this Interaction Run.
@@ -302,7 +302,7 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * The tools to use, list of tool or function names.
      * You can use + and - to add or remove from default, if no sign, then list replaces default
      */
-    toolNames?: string[];
+    tool_names?: string[];
 
     /**
      * The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used.
