@@ -1,4 +1,4 @@
-import { Filter as BaseFilter, FilterBar, FilterGroup } from '@vertesia/ui/core';
+import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { useState } from 'react';
 import { VEnvironmentFacet } from './VEnvironmentFacet';
@@ -188,10 +188,16 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
     };
 
     return (
-        <FilterBar
+        <FilterProvider
             filterGroups={customFilterGroups}
             filters={filters}
             setFilters={handleFilterChange}
-        />
+        >
+            <div className="flex gap-2 items-center">
+                <FilterBtn />
+                <FilterBar />
+                <FilterClear />
+            </div>
+        </FilterProvider>
     )
 }

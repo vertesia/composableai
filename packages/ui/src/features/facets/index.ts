@@ -9,6 +9,6 @@ export { VStringFacet } from "./VStringFacet";
 export { VTypeFacet } from "./VTypeFacet";
 export { VUserFacet } from "./VUserFacet";
 
-export { RunsFacetsNav } from "./RunsFacetsNav";
-export { WorkflowExecutionsFacetsNav } from "./WorkflowExecutionsFacetsNav";
-export { DocumentsFacetsNav } from "./DocumentsFacetsNav";
+export { RunsFacetsNav, useRunsFilterGroups, useRunsFilterHandler } from "./RunsFacetsNav";
+export { WorkflowExecutionsFacetsNav, useWorkflowExecutionsFilterGroups, useWorkflowExecutionsFilterHandler } from "./WorkflowExecutionsFacetsNav";
+export { DocumentsFacetsNav, useDocumentFilterGroups, useDocumentFilterHandler } from "./DocumentsFacetsNav";

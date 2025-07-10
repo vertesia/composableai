@@ -1,4 +1,4 @@
-import { Filter as BaseFilter, FilterBar, FilterGroup } from '@vertesia/ui/core';
+import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useState } from 'react';
 import { VStringFacet } from './VStringFacet';
 import { VUserFacet } from './VUserFacet';
@@ -13,12 +13,8 @@ interface WorkflowExecutionsFacetsNavProps {
     textSearch?: string;
 }
 
-export function WorkflowExecutionsFacetsNav({
-    facets,
-    search,
-    textSearch = 'Search by Workflow or Run ID'
-}: WorkflowExecutionsFacetsNavProps) {
-    const [filters, setFilters] = useState<BaseFilter[]>([]);
+// Hook to create filter groups for workflow executions
+export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFacetsNavProps['facets'], textSearch = 'Search by Workflow or Run ID'): FilterGroup[] {
     const customFilterGroups: FilterGroup[] = [];
 
     customFilterGroups.push({
@@ -30,7 +26,7 @@ export function WorkflowExecutionsFacetsNav({
 
     if (facets.status) {
         const statusFilterGroup = VStringFacet({
-            search,
+            search: null as any, // This will be provided by the search context
             buckets: facets.status || [],
             name: 'Status'
         });
@@ -61,15 +57,16 @@ export function WorkflowExecutionsFacetsNav({
     };
     customFilterGroups.push(dateBeforeFilterGroup);
 
+    return customFilterGroups;
+}
 
-    const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
-        const newFilters = typeof value === 'function' ? value(filters) : value;
+// Hook to create filter change handler for workflow executions
+export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
+    return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
             search.clearFilters();
-            setFilters([]);
             return;
         }
-        setFilters(newFilters);
 
         search.clearFilters(false);
 
@@ -103,12 +100,35 @@ export function WorkflowExecutionsFacetsNav({
 
         search.search();
     };
+}
+
+// Legacy component for backward compatibility
+export function WorkflowExecutionsFacetsNav({
+    facets,
+    search,
+    textSearch = 'Search by Workflow or Run ID'
+}: WorkflowExecutionsFacetsNavProps) {
+    const [filters, setFilters] = useState<BaseFilter[]>([]);
+    const filterGroups = useWorkflowExecutionsFilterGroups(facets, textSearch);
+    const handleFilterLogic = useWorkflowExecutionsFilterHandler(search);
+
+    const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
+        const newFilters = typeof value === 'function' ? value(filters) : value;
+        setFilters(newFilters);
+        handleFilterLogic(newFilters);
+    };
 
     return (
-        <FilterBar
-            filterGroups={customFilterGroups}
+        <FilterProvider
+            filterGroups={filterGroups}
             filters={filters}
             setFilters={handleFilterChange}
-        />
+        >
+            <div className="flex gap-2 items-center">
+                <FilterBtn />
+                <FilterBar />
+                <FilterClear />
+            </div>
+        </FilterProvider>
     );
 }

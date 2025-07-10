@@ -1,4 +1,4 @@
-import { Filter as BaseFilter, FilterBar, FilterGroup } from '@vertesia/ui/core';
+import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useState } from 'react';
 import { VEnvironmentFacet } from './VEnvironmentFacet';
 import { VInteractionFacet } from './VInteractionFacet';
@@ -19,8 +19,8 @@ interface RunsFacetsNavProps {
     search: SearchInterface;
 }
 
-export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
-    const [filters, setFilters] = useState<BaseFilter[]>([]);
+// Hook to create filter groups for runs
+export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): FilterGroup[] {
     const customFilterGroups: FilterGroup[] = [];
 
     if (facets.interactions) {
@@ -42,7 +42,7 @@ export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
 
     if (facets.models) {
         const modelFilterGroup = VStringFacet({
-            search,
+            search: null as any, // This will be provided by the search context
             buckets: facets.models || [],
             name: 'Model'
         });
@@ -51,7 +51,7 @@ export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
 
     if (facets.statuses) {
         const statusFilterGroup = VStringFacet({
-            search,
+            search: null as any, // This will be provided by the search context
             buckets: facets.statuses || [],
             name: 'Status'
         });
@@ -65,7 +65,7 @@ export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
         }));
 
         const finishReasonFilterGroup = VStringFacet({
-            search,
+            search: null as any, // This will be provided by the search context
             buckets: processedFinishReason,
             name: 'finish_reason',
             placeholder: 'Finish Reason'
@@ -98,14 +98,16 @@ export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
     };
     customFilterGroups.push(dateBeforeFilterGroup);
 
-    const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
-        const newFilters = typeof value === 'function' ? value(filters) : value;
+    return customFilterGroups;
+}
+
+// Hook to create filter change handler for runs
+export function useRunsFilterHandler(search: SearchInterface) {
+    return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
             search.clearFilters();
-            setFilters([]);
             return;
         }
-        setFilters(newFilters);
 
         search.clearFilters(false);
 
@@ -134,12 +136,31 @@ export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
 
         search.search();
     };
+}
+
+// Legacy component for backward compatibility
+export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
+    const [filters, setFilters] = useState<BaseFilter[]>([]);
+    const filterGroups = useRunsFilterGroups(facets);
+    const handleFilterLogic = useRunsFilterHandler(search);
+
+    const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
+        const newFilters = typeof value === 'function' ? value(filters) : value;
+        setFilters(newFilters);
+        handleFilterLogic(newFilters);
+    };
 
     return (
-        <FilterBar
-            filterGroups={customFilterGroups}
+        <FilterProvider
+            filterGroups={filterGroups}
             filters={filters}
             setFilters={handleFilterChange}
-        />
+        >
+            <div className="flex gap-2 items-center">
+                <FilterBtn />
+                <FilterBar />
+                <FilterClear />
+            </div>
+        </FilterProvider>
     );
 }

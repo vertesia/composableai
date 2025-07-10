@@ -1,4 +1,4 @@
-import { Filter as BaseFilter, FilterBar, FilterGroup } from '@vertesia/ui/core';
+import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { useState } from 'react';
 import { VStringFacet } from './VStringFacet';
@@ -17,14 +17,10 @@ interface DocumentsFacetsNavProps {
     textSearch?: string;
 }
 
-export function DocumentsFacetsNav({
-    facets,
-    search,
-    textSearch = 'Filter content'
-}: DocumentsFacetsNavProps) {
-    const [filters, setFilters] = useState<BaseFilter[]>([]);
-    const customFilterGroups: FilterGroup[] = [];
+// Hook to create filter groups for documents
+export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'], textSearch = 'Filter content'): FilterGroup[] {
     const { typeRegistry } = useUserSession();
+    const customFilterGroups: FilterGroup[] = [];
 
     customFilterGroups.push({
         placeholder: textSearch,
@@ -45,7 +41,7 @@ export function DocumentsFacetsNav({
 
     if (facets.status) {
         const statusFilterGroup = VStringFacet({
-            search,
+            search: null as any, // This will be provided by the search context
             buckets: facets.status || [],
             name: 'Status',
             type: 'select',
@@ -81,14 +77,16 @@ export function DocumentsFacetsNav({
         options: []
     });
 
-    const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
-        const newFilters = typeof value === 'function' ? value(filters) : value;
+    return customFilterGroups;
+}
+
+// Hook to create filter change handler for documents
+export function useDocumentFilterHandler(search: SearchInterface) {
+    return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
             search.clearFilters();
-            setFilters([]);
             return;
         }
-        setFilters(newFilters);
 
         search.clearFilters(false);
 
@@ -141,12 +139,35 @@ export function DocumentsFacetsNav({
 
         search.search();
     };
+}
+
+// Legacy component for backward compatibility
+export function DocumentsFacetsNav({
+    facets,
+    search,
+    textSearch = 'Filter content'
+}: DocumentsFacetsNavProps) {
+    const [filters, setFilters] = useState<BaseFilter[]>([]);
+    const filterGroups = useDocumentFilterGroups(facets, textSearch);
+    const handleFilterLogic = useDocumentFilterHandler(search);
+
+    const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
+        const newFilters = typeof value === 'function' ? value(filters) : value;
+        setFilters(newFilters);
+        handleFilterLogic(newFilters);
+    };
 
     return (
-        <FilterBar
-            filterGroups={customFilterGroups}
+        <FilterProvider
+            filterGroups={filterGroups}
             filters={filters}
             setFilters={handleFilterChange}
-        />
+        >
+            <div className="flex gap-2 items-center">
+                <FilterBtn />
+                <FilterBar />
+                <FilterClear />
+            </div>
+        </FilterProvider>
     );
 }
