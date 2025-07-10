@@ -151,7 +151,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     };
 
     // Use DocumentsFacetsNav hooks for cleaner organization
-    const filterGroups = useDocumentFilterGroups(facets, "Name or ID");
+    const filterGroups = useDocumentFilterGroups(facets);
     const handleFilterLogic = useDocumentFilterHandler(facetSearch);
 
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
