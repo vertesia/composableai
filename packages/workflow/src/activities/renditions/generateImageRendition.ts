@@ -27,7 +27,7 @@ export async function generateImageRendition(
     // Fix: Use maxHeightWidth if max_hw is not provided
     const params = {
         ...originParams,
-        max_hw: originParams.max_hw || (originParams as any).maxHeightWidth || 1024, // Default to 1024 if both are missing
+        max_hw: originParams.max_hw || (originParams as any).maxHeightWidth || 1596, // Default to 1596 if both are missing
         format: originParams.format || (originParams as any).format_output || "png", // Default to png if format is missing
     };
 
