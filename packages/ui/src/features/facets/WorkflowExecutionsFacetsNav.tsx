@@ -10,15 +10,14 @@ interface WorkflowExecutionsFacetsNavProps {
         initiated_by?: any[];
     };
     search: SearchInterface;
-    textSearch?: string;
 }
 
 // Hook to create filter groups for workflow executions
-export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFacetsNavProps['facets'], textSearch = 'Search by Workflow or Run ID'): FilterGroup[] {
+export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFacetsNavProps['facets']): FilterGroup[] {
     const customFilterGroups: FilterGroup[] = [];
 
     customFilterGroups.push({
-        placeholder: textSearch,
+        placeholder: 'Search by Workflow or Run ID',
         name: 'name',
         type: 'text',
         options: [],
@@ -106,10 +105,9 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
 export function WorkflowExecutionsFacetsNav({
     facets,
     search,
-    textSearch = 'Search by Workflow or Run ID'
 }: WorkflowExecutionsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
-    const filterGroups = useWorkflowExecutionsFilterGroups(facets, textSearch);
+    const filterGroups = useWorkflowExecutionsFilterGroups(facets);
     const handleFilterLogic = useWorkflowExecutionsFilterHandler(search);
 
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {

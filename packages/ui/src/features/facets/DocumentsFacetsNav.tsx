@@ -14,16 +14,15 @@ interface DocumentsFacetsNavProps {
         tags?: string[];
     };
     search: SearchInterface;
-    textSearch?: string;
 }
 
 // Hook to create filter groups for documents
-export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'], textSearch = 'Filter content'): FilterGroup[] {
+export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets']): FilterGroup[] {
     const { typeRegistry } = useUserSession();
     const customFilterGroups: FilterGroup[] = [];
 
     customFilterGroups.push({
-        placeholder: textSearch,
+        placeholder: 'Name or ID',
         name: 'name',
         type: 'text',
         options: [],
@@ -145,10 +144,9 @@ export function useDocumentFilterHandler(search: SearchInterface) {
 export function DocumentsFacetsNav({
     facets,
     search,
-    textSearch = 'Filter content'
 }: DocumentsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
-    const filterGroups = useDocumentFilterGroups(facets, textSearch);
+    const filterGroups = useDocumentFilterGroups(facets);
     const handleFilterLogic = useDocumentFilterHandler(search);
 
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
