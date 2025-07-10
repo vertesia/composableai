@@ -150,7 +150,7 @@ export default function SelectFilter({
             <Button variant="ghost" size="sm" onClick={handleClose}>
               Cancel
             </Button>
-            <Button variant="outline" size="sm" onClick={handleApply} disabled={selectedOptions.length === 0}>
+            <Button size="sm" onClick={handleApply} disabled={selectedOptions.length === 0}>
               Apply
             </Button>
           </div>
