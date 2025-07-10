@@ -32,9 +32,11 @@ export function createUserFilterGroup({ buckets, name, placeholder }: UserFacetP
             // For known users, render UserInfo with count
             const bucket = buckets.find(b => b._id === userRef);
             return (
-                <div className="flex items-center justify-between w-full">
-                    <UserInfo userRef={userRef} showTitle={true} size="sm" />
-                    <span className="text-muted-foreground ml-2">({bucket?.count || 0})</span>
+                <div className="flex items-center w-full gap-2">
+                    <div className="flex-1 min-w-0 flex items-center truncate">
+                        <UserInfo userRef={userRef} showTitle={true} size="sm" />
+                    </div>
+                    <span className="text-muted-foreground flex-shrink-0">({bucket?.count || 0})</span>
                 </div>
             );
         },

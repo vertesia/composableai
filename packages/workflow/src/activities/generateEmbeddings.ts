@@ -158,9 +158,6 @@ async function generateTextEmbeddings(
     { document, client, type, config }: ExecuteGenerateEmbeddingsParams,
     parts?: DocPart[],
 ) {
-    // if (!force && document.embeddings[type]?.etag === (document.text_etag ?? md5(document.text))) {
-    //     return { id: objectId, status: "skipped", message: "embeddings already generated" }
-    // }
 
     if (!document) {
         return { status: "error", message: "document is null or undefined" };

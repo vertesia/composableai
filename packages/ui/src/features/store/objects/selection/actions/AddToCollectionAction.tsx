@@ -1,4 +1,4 @@
-import { Button, Portal, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
+import { Button, DialogDescription, Heading, Portal, useToast, VModal, VModalBody, VModalFooter, VModalTitle, VTabs, VTabsBar, VTabsPanel } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
 import { CreateCollectionForm, SelectCollection } from "../../../collections";
@@ -42,8 +42,13 @@ interface SelectCollectionModalProps {
 function SelectCollectionModal({ isOpen, onClose, objectIds }: SelectCollectionModalProps) {
     return (
         <VModal isOpen={isOpen} onClose={onClose}>
-            <VModalTitle>Add to a Collection</VModalTitle>
-            <AddToCollectionForm onClose={onClose} objectIds={objectIds}/>
+            <VModalTitle className="flex flex-col">
+                Add to a Collection
+            </VModalTitle>
+            <DialogDescription>
+                Add the selected objects to an existing collection or create a new one.
+            </DialogDescription>
+            <AddToCollectionForm onClose={onClose} objectIds={objectIds} />
         </VModal>
     )
 }
@@ -82,22 +87,38 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
         setSelectedCollectionId(collectionId);
     };
 
+    const tabs = [
+        {
+            name: 'select',
+            label: 'Select Collection',
+            content: (
+                <div className="p-4">
+                    <Heading level={5}>Choose from existing collections</Heading>
+                    <VModalBody>
+                        <SelectCollection onChange={onCollectionChange} value={selectedCollectionId} className="mb-4" />
+                    </VModalBody>
+                    <VModalFooter>
+                        <Button isDisabled={!selectedCollectionId} onClick={() => selectedCollectionId && onAddToCollection({ collectionId: selectedCollectionId })}>
+                            Add to Collection
+                        </Button>
+                    </VModalFooter>
+                </div>
+            )
+        },
+        {
+            name: 'create',
+            label: 'Create new',
+            content:
+                <div className="p-4">
+                    <CreateCollectionForm onClose={onClose} onAddToCollection={(id: string) => onAddToCollection({ collectionId: id })} redirect={false} />
+                </div>
+        }
+    ];
+
     return (
-        <>
-            <VModalBody>
-                <SelectCollection onChange={onCollectionChange} value={selectedCollectionId}  className="mb-4"/>
-            </VModalBody>
-            <VModalFooter>
-                <Button isDisabled={!selectedCollectionId} onClick={() => selectedCollectionId && onAddToCollection({ collectionId: selectedCollectionId })}>
-                    Add to Collection
-                </Button>
-            </VModalFooter>
-            <div className="flex items-center flex-row w-full text-muted">
-                <hr className="w-full" />
-                <div className="px-2 text-xs">OR</div>
-                <hr className="w-full" />
-            </div>
-            <CreateCollectionForm onClose={onClose} onAddToCollection={(id: string) => onAddToCollection({ collectionId: id })} redirect={false} />
-        </>
+        <VTabs defaultValue="select" tabs={tabs} fullWidth>
+            <VTabsBar />
+            <VTabsPanel />
+        </VTabs>
     )
 }
