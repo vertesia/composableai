@@ -66,7 +66,7 @@ function SelectDocumentImpl({ onRowClick }: SelectDocumentImplProps) {
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                <DocumentsFacetsNav facets={facets} search={facetSearch} textSearch="Filter content" />
+                <DocumentsFacetsNav facets={facets} search={facetSearch} />
                 <div className="flex items-center gap-2">
                     <Button variant="outline" onClick={handleRefetch} alt="Refresh">
                         <RefreshCw size={16} />

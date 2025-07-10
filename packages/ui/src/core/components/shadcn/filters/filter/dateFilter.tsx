@@ -1,7 +1,6 @@
 import dayjs from "dayjs";
 import React, { useState } from "react";
 import Calendar from "react-calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
 import { Button } from "../../button";
 import { Filter, FilterGroup } from "../types";
 import { calendarStyles } from "../filter-styles";
@@ -28,7 +27,6 @@ export default function DateFilter({
   handleClose,
   filterGroups,
 }: DateFilterProps) {
-  const [open, setOpen] = useState(true);
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [localDateRange, setLocalDateRange] = useState<[Date | null, Date | null]>([null, null]);
 
@@ -83,7 +81,6 @@ export default function DateFilter({
           } as Filter,
         ]);
 
-        setOpen(false);
         handleClose();
       }
     }
@@ -123,7 +120,6 @@ export default function DateFilter({
         } as Filter,
       ]);
 
-      setOpen(false);
       handleClose();
     }
   };
@@ -148,7 +144,7 @@ export default function DateFilter({
           </span>
         );
       } else {
-        return <span className="text-muted">Select date range</span>;
+        return <span className="text-muted text-xs">{selectedGroup?.placeholder || selectedGroup?.name || selectedView || "Select date range"}</span>;
       }
     } else {
       return selectedDate ? dayjs(selectedDate).format("MMMM DD, YYYY") : "Pick a date";
@@ -156,111 +152,105 @@ export default function DateFilter({
   };
 
   return (
-    <Popover _open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="w-full p-2 text-left hover:bg-muted/50 rounded-sm">
-        <div className="flex gap-1.5 items-center min-h-[20px]">
-          {getDisplayText()}
-        </div>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start" side="bottom" alignOffset={-4} sideOffset={6}>
-        <div className="p-2">
-          {isDateRange ? (
-            <>
-              <div className="calendar-wrapper">
-                <style>{calendarStyles}</style>
-                <Calendar
-                  key={`${effectiveDateRange[0]?.getTime()}-${effectiveDateRange[1]?.getTime()}`}
-                  value={effectiveDateRange}
-                  onChange={handleDateChange}
-                  selectRange={true}
-                  returnValue="range"
-                  maxDate={maxDate}
-                  className="mb-2 border-0"
-                  tileClassName={({ date, view }) => {
-                    if (view === 'month') {
-                      const currentDate = date.getTime();
-                      const today = new Date();
-                      today.setHours(23, 59, 59, 999);
+    <div className="p-2">
+      {isDateRange ? (
+        <>
+          <div>
+            {getDisplayText()}
+          </div>
+          <div className="calendar-wrapper">
+            <style>{calendarStyles}</style>
+            <Calendar
+              key={`${effectiveDateRange[0]?.getTime()}-${effectiveDateRange[1]?.getTime()}`}
+              value={effectiveDateRange}
+              onChange={handleDateChange}
+              selectRange={true}
+              returnValue="range"
+              maxDate={maxDate}
+              className="mb-2 border-0"
+              tileClassName={({ date, view }) => {
+                if (view === 'month') {
+                  const currentDate = date.getTime();
+                  const today = new Date();
+                  today.setHours(23, 59, 59, 999);
 
-                      // Check if date is disabled (future date)
-                      if (currentDate > today.getTime()) {
-                        return 'text-muted/20 cursor-not-allowed';
+                  // Check if date is disabled (future date)
+                  if (currentDate > today.getTime()) {
+                    return 'text-muted/20 cursor-not-allowed';
+                  }
+
+                  // Handle selected date styling
+                  if (effectiveDateRange[0]) {
+                    const startDate = effectiveDateRange[0].getTime();
+
+                    if (effectiveDateRange[1]) {
+                      // Both dates selected
+                      const endDate = effectiveDateRange[1].getTime();
+
+                      if (currentDate === startDate) {
+                        return 'bg-primary text-primary-foreground rounded-l-md font-semibold';
                       }
-
-                      // Handle selected date styling
-                      if (effectiveDateRange[0]) {
-                        const startDate = effectiveDateRange[0].getTime();
-
-                        if (effectiveDateRange[1]) {
-                          // Both dates selected
-                          const endDate = effectiveDateRange[1].getTime();
-
-                          if (currentDate === startDate) {
-                            return 'bg-primary text-primary-foreground rounded-l-md font-semibold';
-                          }
-                          if (currentDate === endDate) {
-                            return 'bg-primary text-primary-foreground rounded-r-md font-semibold';
-                          }
-                          if (currentDate > startDate && currentDate < endDate) {
-                            return 'bg-primary/20 text-primary font-medium';
-                          }
-                        } else {
-                          // Only start date selected
-                          if (currentDate === startDate) {
-                            return 'bg-primary text-primary-foreground rounded-md font-semibold';
-                          }
-                        }
+                      if (currentDate === endDate) {
+                        return 'bg-primary text-primary-foreground rounded-r-md font-semibold';
                       }
-                    }
-                    return '';
-                  }}
-                />
-              </div>
-              <div className="border-t pt-2">
-                <div className="flex gap-2 justify-end">
-                  <Button variant="ghost" size="sm" onClick={handleClose}>
-                    Cancel
-                  </Button>
-                  <Button size="sm" onClick={handleApplyDateRange} disabled={!effectiveDateRange[0]}>
-                    Apply
-                  </Button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="calendar-wrapper">
-                <style>{calendarStyles}</style>
-                <Calendar
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                  selectRange={false}
-                  maxDate={maxDate}
-                  className="mb-2 border-0"
-                  tileClassName={({ date, view }) => {
-                    if (view === 'month') {
-                      const currentDate = date.getTime();
-                      const today = new Date();
-                      today.setHours(23, 59, 59, 999);
-
-                      // Check if date is disabled (future date)
-                      if (currentDate > today.getTime()) {
-                        return 'text-muted/20 cursor-not-allowed';
+                      if (currentDate > startDate && currentDate < endDate) {
+                        return 'bg-primary/20 text-primary font-medium';
                       }
-
-                      // Handle selected date styling
-                      if (selectedDate && currentDate === selectedDate.getTime()) {
+                    } else {
+                      // Only start date selected
+                      if (currentDate === startDate) {
                         return 'bg-primary text-primary-foreground rounded-md font-semibold';
                       }
                     }
-                    return '';
-                  }}
-                />
-              </div>
-            </>
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
+                  }
+                }
+                return '';
+              }}
+            />
+          </div>
+          <div className="border-t pt-2">
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" size="sm" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleApplyDateRange} disabled={!effectiveDateRange[0]}>
+                Apply
+              </Button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="calendar-wrapper">
+            <style>{calendarStyles}</style>
+            <Calendar
+              value={selectedDate}
+              onChange={handleDateChange}
+              selectRange={false}
+              maxDate={maxDate}
+              className="mb-2 border-0"
+              tileClassName={({ date, view }) => {
+                if (view === 'month') {
+                  const currentDate = date.getTime();
+                  const today = new Date();
+                  today.setHours(23, 59, 59, 999);
+
+                  // Check if date is disabled (future date)
+                  if (currentDate > today.getTime()) {
+                    return 'text-muted/20 cursor-not-allowed';
+                  }
+
+                  // Handle selected date styling
+                  if (selectedDate && currentDate === selectedDate.getTime()) {
+                    return 'bg-primary text-primary-foreground rounded-md font-semibold';
+                  }
+                }
+                return '';
+              }}
+            />
+          </div>
+        </>
+      )}
+    </div>
   );
 }

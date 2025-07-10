@@ -13,152 +13,23 @@ import DateFilter from "./filter/dateFilter";
 import SelectFilter from "./filter/SelectFilter";
 import StringListFilter from "./filter/StringListFilter";
 
-interface FilterBarProps {
+const FilterContext = React.createContext<{
   filters: Filter[];
   setFilters: Dispatch<SetStateAction<Filter[]>>;
   filterGroups: FilterGroup[];
+}>({} as any);
+
+interface FilterProviderProps {
+  filters: Filter[];
+  setFilters: Dispatch<SetStateAction<Filter[]>>;
+  filterGroups: FilterGroup[];
+  children: React.ReactNode;
 }
 
-export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps) {
-  const [open, setOpen] = React.useState(false);
-  const [selectedView, setSelectedView] = React.useState<string | null>(null);
-  const [commandInput, setCommandInput] = React.useState("");
-  const commandInputRef = React.useRef<HTMLInputElement>(null);
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
-  const [textValue, setTextValue] = React.useState("");
-
-  const handleSelect = (groupName: string) => {
-    setSelectedView(groupName);
-    setCommandInput("");
-    commandInputRef.current?.focus();
-  };
-
-  const getAvailableFilterGroups = () => {
-    let options = filterGroups.map(group => ({
-      ...group,
-      options: (group.options ?? []).filter(option =>
-        !filters.some(filter => {
-          if (filter.type === "date") {
-            return filter.name === group.name;
-          }
-          return filter.name === group.name &&
-            (Array.isArray(filter.value) && typeof filter.value[0] === 'string'
-              ? filter.value.some(val => val === option.value)
-              : filter.value.some(val => (val as any).value === option.value));
-        })
-      )
-    })).filter(group =>
-      ((group.options ?? []).length > 0) ||
-      (group.type === "date" && !filters.some(filter => filter.name === group.name)) ||
-      (group.type === "text" && !filters.some(filter => filter.name === group.name)) ||
-      (group.type === "stringList" && !filters.some(filter => filter.name === group.name))
-    );
-
-    if (options.length === 0) {
-      return <CommandEmpty>No available filters</CommandEmpty>;
-    }
-
-    return options.map((group: FilterGroup, index: number) => (
-      <CommandItem
-        key={index}
-        onSelect={() => handleSelect(group.name)}
-        className="group flex gap-2 items-center hover:bg-muted"
-      >
-        <span>{group.placeholder ?? group.name}</span>
-      </CommandItem>
-    ));
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setTimeout(() => {
-      setSelectedView(null);
-      setCommandInput("");
-      setSelectedDate(undefined);
-    }, 200);
-  };
-
-  const handleOpen = (open: boolean) => {
-    setOpen(open);
-    if (!open) {
-      setTimeout(() => {
-        setSelectedView(null);
-        setCommandInput("");
-        setTextValue("");
-      }, 200);
-    }
-  };
-
-  const ButtonClearFilter = () => {
-    return (
-      <div className="flex gap-2 items-center">
-        <Button
-          variant="outline"
-          size="xs"
-          className="transition group"
-          onClick={() => setFilters([])}
-        >
-          Clear All
-        </Button>
-      </div>
-    );
-  };
-
-  const renderFilterOptions = () => {
-    if (!selectedView) {
-      return null;
-    }
-
-    const selectedGroupType = filterGroups.find(g => g.name === selectedView)?.type;
-
-    switch (selectedGroupType) {
-      case "date":
-        return (
-          <DateFilter
-            selectedView={selectedView}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            setFilters={setFilters}
-            filters={filters}
-            handleClose={handleClose}
-            filterGroups={filterGroups}
-          />
-        );
-      case "text":
-        return (
-          <TextFilter
-            selectedView={selectedView}
-            textValue={textValue}
-            setTextValue={setTextValue}
-            setFilters={setFilters}
-            handleClose={handleClose}
-            filterGroups={filterGroups}
-          />
-        );
-      case "stringList":
-        return (
-          <StringListFilter
-            selectedView={selectedView}
-            setFilters={setFilters}
-            handleClose={handleClose}
-            filterGroups={filterGroups}
-          />
-        );
-      default:
-        return (
-          <SelectFilter
-            selectedView={selectedView}
-            commandInput={commandInput}
-            setFilters={setFilters}
-            handleClose={handleClose}
-            filterGroups={filterGroups}
-          />
-        );
-    }
-  };
-
+const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterProviderProps) => {
   const url = new URL(window.location.href);
   const searchParams = url.searchParams;
+  
   useEffect(() => {
     try {
       const params = new URLSearchParams(searchParams.toString());
@@ -269,50 +140,209 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
   }, []);
 
   return (
-    <div className="flex gap-2 flex-wrap justify-start w-full items-center">
-      <div className="flex gap-2 items-center">
-        <Popover _open={open} onOpenChange={handleOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              size="md"
-              className={cn(
-                "transition group flex gap-1.5",
-              )}
-            >
-              <ListFilter className="size-4 shrink-0 transition-all text-muted" />
-              {"Filter"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[300px] p-0" align="start">
-            <Command>
-              {
-                filterGroups.find(group => group.name === selectedView)?.type === "select" && (
-                  <CommandInput
-                    placeholder={selectedView ? `Filter by ${selectedView}` : "Filter..."}
-                    className="h-9 ring-0"
-                    value={commandInput}
-                    onValueChange={(value) => {
-                      setCommandInput(value);
-                    }}
-                    ref={commandInputRef}
-                    autoFocus={true}
-                  />
-                )
-              }
-              <CommandList className="max-h-[300px] overflow-y-auto">
-                <CommandGroup>
-                  {!selectedView ? getAvailableFilterGroups() : renderFilterOptions()}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
+    <FilterContext.Provider value={{ filters, setFilters, filterGroups }}>
+      {children}
+    </FilterContext.Provider>
+  );
+};
+
+const FilterBtn = ({ className }: { className?: string }) => {
+  const { filters, setFilters, filterGroups } = React.useContext(FilterContext);
+  const [open, setOpen] = React.useState(false);
+  const [selectedView, setSelectedView] = React.useState<string | null>(null);
+  const [commandInput, setCommandInput] = React.useState("");
+  const commandInputRef = React.useRef<HTMLInputElement>(null);
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
+  const [textValue, setTextValue] = React.useState("");
+
+  const handleSelect = (groupName: string) => {
+    setSelectedView(groupName);
+    setCommandInput("");
+    commandInputRef.current?.focus();
+  };
+
+  const getAvailableFilterGroups = () => {
+    let options = filterGroups.map(group => ({
+      ...group,
+      options: (group.options ?? []).filter(option =>
+        !filters.some(filter => {
+          if (filter.type === "date") {
+            return filter.name === group.name;
+          }
+          return filter.name === group.name &&
+            (Array.isArray(filter.value) && typeof filter.value[0] === 'string'
+              ? filter.value.some(val => val === option.value)
+              : filter.value.some(val => (val as any).value === option.value));
+        })
+      )
+    })).filter(group =>
+      ((group.options ?? []).length > 0) ||
+      (group.type === "date" && !filters.some(filter => filter.name === group.name)) ||
+      (group.type === "text" && !filters.some(filter => filter.name === group.name)) ||
+      (group.type === "stringList" && !filters.some(filter => filter.name === group.name))
+    );
+
+    if (options.length === 0) {
+      return <CommandEmpty>No available filters</CommandEmpty>;
+    }
+
+    return options.map((group: FilterGroup, index: number) => (
+      <CommandItem
+        key={index}
+        onSelect={() => handleSelect(group.name)}
+        className="group flex gap-2 items-center hover:bg-muted"
+      >
+        <span>{group.placeholder ?? group.name}</span>
+      </CommandItem>
+    ));
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setTimeout(() => {
+      setSelectedView(null);
+      setCommandInput("");
+      setSelectedDate(undefined);
+    }, 200);
+  };
+
+  const handleOpen = (open: boolean) => {
+    setOpen(open);
+    if (!open) {
+      setTimeout(() => {
+        setSelectedView(null);
+        setCommandInput("");
+        setTextValue("");
+      }, 200);
+    }
+  };
+
+  const renderFilterOptions = () => {
+    if (!selectedView) {
+      return null;
+    }
+
+    const selectedGroupType = filterGroups.find(g => g.name === selectedView)?.type;
+
+    switch (selectedGroupType) {
+      case "date":
+        return (
+          <DateFilter
+            selectedView={selectedView}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            setFilters={setFilters}
+            filters={filters}
+            handleClose={handleClose}
+            filterGroups={filterGroups}
+          />
+        );
+      case "text":
+        return (
+          <TextFilter
+            selectedView={selectedView}
+            textValue={textValue}
+            setTextValue={setTextValue}
+            setFilters={setFilters}
+            handleClose={handleClose}
+            filterGroups={filterGroups}
+          />
+        );
+      case "stringList":
+        return (
+          <StringListFilter
+            selectedView={selectedView}
+            setFilters={setFilters}
+            handleClose={handleClose}
+            filterGroups={filterGroups}
+          />
+        );
+      default:
+        return (
+          <SelectFilter
+            selectedView={selectedView}
+            commandInput={commandInput}
+            setFilters={setFilters}
+            handleClose={handleClose}
+            filterGroups={filterGroups}
+          />
+        );
+    }
+  };
+
+  return (
+    <Popover _open={open} onOpenChange={handleOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          size="md"
+          className={cn(
+            "transition group flex gap-1.5",
+            className
+          )}
+        >
+          <ListFilter className="size-4 shrink-0 transition-all text-muted" />
+          {"Filter"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] p-0" align="start">
+        <Command>
+          {
+            filterGroups.find(group => group.name === selectedView)?.type === "select" && (
+              <CommandInput
+                placeholder={selectedView ? `Filter by ${selectedView}` : "Filter..."}
+                className="h-9 ring-0"
+                value={commandInput}
+                onValueChange={(value) => {
+                  setCommandInput(value);
+                }}
+                ref={commandInputRef}
+                autoFocus={true}
+              />
+            )
+          }
+          <CommandList className="max-h-[300px] overflow-y-auto">
+            <CommandGroup>
+              {!selectedView ? getAvailableFilterGroups() : renderFilterOptions()}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+const FilterBar = ({ className }: { className?: string }) => {
+  const { filters, setFilters, filterGroups } = React.useContext(FilterContext);
+  
+  return (
+    <div className={cn(className)}>
       <Filters filters={filters} setFilters={setFilters} filterGroups={filterGroups} />
-      {filters.filter((filter) => filter.value?.length > 0).length > 0 && <ButtonClearFilter />}
     </div>
   );
-}
+};
+
+const FilterClear = ({ className }: { className?: string }) => {
+  const { filters, setFilters } = React.useContext(FilterContext);
+  
+  const hasActiveFilters = filters.filter((filter) => filter.value?.length > 0).length > 0;
+  
+  if (!hasActiveFilters) {
+    return null;
+  }
+  
+  return (
+    <Button
+      variant="outline"
+      size="xs"
+      className={cn("transition group", className)}
+      onClick={() => setFilters([])}
+    >
+      Clear All
+    </Button>
+  );
+};
+
+export { FilterProvider, FilterBtn, FilterBar, FilterClear };

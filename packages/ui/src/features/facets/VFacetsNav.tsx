@@ -1,11 +1,5 @@
-import { Filter as BaseFilter, FilterBar, FilterGroup } from '@vertesia/ui/core';
-import { useUserSession } from '@vertesia/ui/session';
+import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useState } from 'react';
-import { VEnvironmentFacet } from './VEnvironmentFacet';
-import { VInteractionFacet } from './VInteractionFacet';
-import { VStringFacet } from './VStringFacet';
-import { VTypeFacet } from './VTypeFacet';
-import { VUserFacet } from './VUserFacet';
 
 export interface SearchInterface {
     getFilterValue(name: string): any;
@@ -21,10 +15,9 @@ interface FacetsNavProps {
     search: SearchInterface;
     textSearch?: string;
 }
-export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) {
+export function VFacetsNav({ search, textSearch = '' }: FacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const customFilterGroups: FilterGroup[] = [];
-    const { typeRegistry } = useUserSession();
 
     if (textSearch) {
         customFilterGroups.push({
@@ -34,121 +27,6 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
             options: [],
         });
     }
-
-    if (facets.type) {
-        const typeFilterGroup = VTypeFacet({
-            buckets: facets.type || [],
-            typeRegistry: typeRegistry,
-        });
-        customFilterGroups.push(typeFilterGroup);
-    }
-
-    if (facets.status) {
-        const statusFilterGroup = VStringFacet({
-            search,
-            buckets: facets.status || [],
-            name: 'Status'
-        });
-        customFilterGroups.push(statusFilterGroup);
-    }
-
-    if (facets.role) {
-        const roleFilterGroup = VStringFacet({
-            search,
-            buckets: facets.role || [],
-            name: 'Role'
-        });
-        customFilterGroups.push(roleFilterGroup);
-    }
-
-    if (facets.location) {
-        const locationFilterGroup = VStringFacet({
-            search,
-            buckets: facets.location || [],
-            name: 'Location'
-        });
-        customFilterGroups.push(locationFilterGroup);
-    }
-
-    if (facets.initiated_by) {
-        const initiatedByFilterGroup = VUserFacet({
-            buckets: facets.initiated_by || [],
-            name: 'User'
-        });
-        customFilterGroups.push(initiatedByFilterGroup);
-    }
-
-    /** Run table */
-    if (facets.interactions) {
-        const interactionFilterGroup = VInteractionFacet({
-            buckets: facets.interactions || [],
-            name: 'interaction',
-            placeholder: 'Interactions',
-        });
-        customFilterGroups.push(interactionFilterGroup);
-    }
-
-    if (facets.environments) {
-        const environmentFilterGroup = VEnvironmentFacet({
-            buckets: facets.environments || [],
-            name: 'Environments'
-        });
-        customFilterGroups.push(environmentFilterGroup);
-    }
-
-    if (facets.models) {
-        const modelFilterGroup = VStringFacet({
-            search,
-            buckets: facets.models || [],
-            name: 'Model'
-        });
-        customFilterGroups.push(modelFilterGroup);
-    }
-
-    if (facets.statuses) {
-        const statusFilterGroup = VStringFacet({
-            search,
-            buckets: facets.statuses || [],
-            name: 'Status'
-        });
-        customFilterGroups.push(statusFilterGroup);
-    }
-
-    if (facets.finish_reason) {
-        const processedFinishReason = facets.finish_reason.map((bucket: any) => ({
-            ...bucket,
-            _id: bucket._id === null ? 'none' : bucket._id
-        }));
-
-        const finishReasonFilterGroup = VStringFacet({
-            search,
-            buckets: processedFinishReason,
-            name: 'finish_reason',
-            placeholder: 'Finish Reason'
-        });
-        customFilterGroups.push(finishReasonFilterGroup);
-    }
-
-    if (facets.created_by) {
-        const createdByFilterGroup = VUserFacet({
-            buckets: facets.created_by || [],
-            name: 'created_by',
-            placeholder: 'Created By'
-        });
-        customFilterGroups.push(createdByFilterGroup);
-    }
-    
-    if (facets.tags) {
-        customFilterGroups.push({
-            name: 'Tags',
-            type: 'stringList',
-            options: facets.tags.map((tag: string) => ({
-                label: tag,
-                value: tag
-            }))
-        });
-    }
-    /** Run table */
 
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
 
@@ -188,10 +66,16 @@ export function VFacetsNav({ facets, search, textSearch = '' }: FacetsNavProps) 
     };
 
     return (
-        <FilterBar
+        <FilterProvider
             filterGroups={customFilterGroups}
             filters={filters}
             setFilters={handleFilterChange}
-        />
+        >
+            <div className="flex gap-2 items-center">
+                <FilterBtn />
+                <FilterBar />
+                <FilterClear />
+            </div>
+        </FilterProvider>
     )
 }

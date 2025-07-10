@@ -18,12 +18,13 @@ export default function SelectFilter({
   setFilters,
   handleClose,
   filterGroups,
-}: SelectFilterProps) {
+}: Readonly<SelectFilterProps>) {
   const [selectedOptions, setSelectedOptions] = useState<FilterOption[]>([]);
   const getFilteredOptions = (groupName: string) => {
     const group = filterGroups.find(g => g.name === groupName);
-    if (!group) return [];
-
+    if (!group) {
+      return [];
+    }
     let filteredOptions = group.options || [];
 
     if (!commandInput.trim()) {
@@ -34,8 +35,7 @@ export default function SelectFilter({
       const filterLc = commandInput.toLowerCase();
       const results = filteredOptions.filter(option => {
         if (option.value === undefined) return false;
-        const result = group.filterBy!(option.value, filterLc);
-        return result;
+        return group.filterBy!(option.value, filterLc);
       });
       return results;
     }
@@ -47,7 +47,9 @@ export default function SelectFilter({
     });
   };
 
-  if (!selectedView) return null;
+  if (!selectedView) {
+    return null;
+  }
 
   const options = getFilteredOptions(selectedView);
   const selectedGroup = filterGroups.find(g => g.name === selectedView);
@@ -120,27 +122,27 @@ export default function SelectFilter({
         <span>{groupTitle}</span>
       </div>
       <div className="max-h-50 overflow-y-auto">
-      {options.map((option: FilterGroupOption) => {
-        const isSelected = selectedOptions.some(opt => opt.value === option.value);
+        {options.map((option: FilterGroupOption) => {
+          const isSelected = selectedOptions.some(opt => opt.value === option.value);
 
-        return (
-          <CommandItem
-            key={option.value || `option-${Math.random()}`}
-            className={`group flex gap-2 items-center w-full hover:bg-muted ${selectedGroup?.multiple && isSelected ? 'bg-muted' : ''
-              }`}
-            onSelect={() => handleOptionToggle(option)}
-          >
-            <DynamicLabel
-              value={option.value || ''}
-              labelRenderer={option.labelRenderer || selectedGroup?.labelRenderer}
-              fallbackLabel={option.label}
-            />
-            {selectedGroup?.multiple && isSelected && (
-              <span className="ml-auto text-xs text-success">✓</span>
-            )}
-          </CommandItem>
-        );
-      })}
+          return (
+            <CommandItem
+              key={option.value || `option-${Math.random()}`}
+              className={`group flex gap-2 items-center w-full hover:bg-muted ${selectedGroup?.multiple && isSelected ? 'bg-muted' : ''
+                }`}
+              onSelect={() => handleOptionToggle(option)}
+            >
+              <DynamicLabel
+                value={option.value || ''}
+                labelRenderer={option.labelRenderer || selectedGroup?.labelRenderer}
+                fallbackLabel={option.label}
+              />
+              {selectedGroup?.multiple && isSelected && (
+                <span className="ml-auto text-xs text-success">✓</span>
+              )}
+            </CommandItem>
+          );
+        })}
       </div>
       {selectedGroup?.multiple && (
         <div className="p-2 border-t">

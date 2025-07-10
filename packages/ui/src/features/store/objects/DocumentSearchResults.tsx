@@ -5,7 +5,8 @@ import { Button, Divider, ErrorBox, SidePanel, Spinner, useDebounce, useIntersec
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
 import { Download, RefreshCw, Eye } from 'lucide-react';
-import { DocumentsFacetsNav } from "../../facets";
+import { FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter } from '@vertesia/ui/core';
+import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 
 import { ContentDispositionButton } from './components/ContentDispositionButton';
@@ -97,6 +98,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const [refreshTrigger, _setRefreshTrigger] = useState(0);
     const [loaded, setLoaded] = useState(0);
     const [isGridView, setIsGridView] = useState(localStorage.getItem(ContentDispositionButton.LAST_DISPLAYED_VIEW) === "grid");
+    const [filters, setFilters] = useState<BaseFilter[]>([]);
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
     useIntersectionObserver(loadMoreRef, () => {
@@ -148,6 +150,16 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         search.search().then(() => setIsReady(true));
     };
 
+    // Use DocumentsFacetsNav hooks for cleaner organization
+    const filterGroups = useDocumentFilterGroups(facets);
+    const handleFilterLogic = useDocumentFilterHandler(facetSearch);
+
+    const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
+        const newFilters = typeof value === 'function' ? value(filters) : value;
+        setFilters(newFilters);
+        handleFilterLogic(newFilters);
+    };
+
     const url = new URL(window.location.href);
     const filtersParam = url.searchParams.get('filters');
 
@@ -180,16 +192,47 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             {
                 error && <ErrorBox title="Error">{error.message}</ErrorBox>
             }
-            <div className="flex flex-row gap-4 items-center justify-between w-full">
-                {
-                    allowSearch && <VectorSearchWidget onChange={setVQuery} isLoading={isLoading} refresh={refreshTrigger} />
-                }
-                <div className="flex gap-1 items-center">
-                    <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
-                    <ContentDispositionButton onUpdate={setIsGridView} />
-                </div>
-            </div>
-            {allowFilter && <DocumentsFacetsNav facets={facets} search={facetSearch} textSearch={"Name or ID"} />}
+            {
+                allowFilter && (
+                    <FilterProvider
+                        filterGroups={filterGroups}
+                        filters={filters}
+                        setFilters={handleFilterChange}
+                    >
+                        <div className="flex flex-row gap-4 items-center justify-between w-full">
+                            <div className="flex gap-2 items-center w-2/3">
+                                {
+                                    allowSearch && <VectorSearchWidget onChange={setVQuery} isLoading={isLoading} refresh={refreshTrigger} className="w-wull" />
+                                }
+                                <FilterBtn />
+                            </div>
+                            <div className="flex gap-1 items-center">
+                                <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                                <ContentDispositionButton onUpdate={setIsGridView} />
+                            </div>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                            <FilterBar />
+                            <FilterClear />
+                        </div>
+                    </FilterProvider>
+                )
+            }
+            {
+                !allowFilter && (
+                    <div className="flex flex-row gap-4 items-center justify-between w-full">
+                        <div className="flex gap-2 items-center w-2/3">
+                            {
+                                allowSearch && <VectorSearchWidget onChange={setVQuery} isLoading={isLoading} refresh={refreshTrigger} />
+                            }
+                        </div>
+                        <div className="flex gap-1 items-center">
+                            <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                            <ContentDispositionButton onUpdate={setIsGridView} />
+                        </div>
+                    </div>
+                )
+            }
             <DocumentTable
                 objects={objects}
                 isLoading={!objects.length && isLoading}
