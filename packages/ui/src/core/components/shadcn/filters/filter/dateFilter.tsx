@@ -27,7 +27,6 @@ export default function DateFilter({
   handleClose,
   filterGroups,
 }: DateFilterProps) {
-  const [open, setOpen] = useState(true);
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [localDateRange, setLocalDateRange] = useState<[Date | null, Date | null]>([null, null]);
 
@@ -82,7 +81,6 @@ export default function DateFilter({
           } as Filter,
         ]);
 
-        setOpen(false);
         handleClose();
       }
     }
@@ -122,7 +120,6 @@ export default function DateFilter({
         } as Filter,
       ]);
 
-      setOpen(false);
       handleClose();
     }
   };
