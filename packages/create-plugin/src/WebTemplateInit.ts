@@ -28,8 +28,10 @@ export class WebTemplateInit extends TemplateInit {
                 "dist"
             ],
             scripts: {
-                "dev": "vite",
-                "build": "vite build",
+                "dev": "vite dev",
+                "build:app": "vite build --mode app",
+                "build:lib": "vite build --mode lib",
+                "build": "vite build --mode app && vite build --mode lib",
                 "lint": "eslint .",
                 "preview": "vite preview"
             },
@@ -48,13 +50,14 @@ export class WebTemplateInit extends TemplateInit {
 
     getDevDependencies(): string[] {
         return [
-            "@vertesia/plugin-builder",
             "@eslint/js",
+            "@vertesia/plugin-builder",
+            "@vitejs/plugin-basic-ssl",
+            "@vitejs/plugin-react",
             "@tailwindcss/vite",
             "@types/node",
             "@types/react",
             "@types/react-dom",
-            "@vitejs/plugin-react",
             "eslint",
             "eslint-plugin-react-hooks",
             "eslint-plugin-react-refresh",
@@ -65,7 +68,6 @@ export class WebTemplateInit extends TemplateInit {
             "typescript",
             "typescript-eslint",
             "vite",
-            "vite-plugin-dts",
         ]
     }
 

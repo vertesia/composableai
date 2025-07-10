@@ -12,7 +12,7 @@ export function FullHeightLayout({ className, children }: FlexibleHeightLayoutPr
                 "flex flex-col",
                 "h-full",
                 "overflow-y-auto",
-                // "dark:bg-slate-900 text-slate-950 dark:text-slate-200",
+                "px-2",
                 className
             )}
         >
@@ -50,7 +50,7 @@ FullHeightLayout.Body = function Body({ className, children }: BodyProps) {
             className={clsx(
                 "grow overflow-auto",
                 "min-h-0",
-                "px-4 py-2",
+                "p-2",
                 className
             )}
         >
