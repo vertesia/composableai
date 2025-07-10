@@ -50,17 +50,19 @@ export default function TextFilter({
         onKeyDown={(e) => e.key === "Enter" && handleTextFilterAdd()}
         placeholder="Enter text..."
       />
-      <div className="flex gap-2 justify-end">
-        <Button variant="ghost" size="sm" onClick={handleClose}>
-          Cancel
-        </Button>
-        <Button
-          size="sm"
-          onClick={handleTextFilterAdd}
-          disabled={!textValue.trim()}
-        >
-          Apply
-        </Button>
+      <div className="mt-2 p-2 border-t">
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" size="sm" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleTextFilterAdd}
+            disabled={!textValue.trim()}
+          >
+            Apply
+          </Button>
+        </div>
       </div>
     </div>
   );
