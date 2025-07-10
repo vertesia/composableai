@@ -51,15 +51,27 @@ export const TextCombobox = ({
                         onKeyDown={handleKeyDown}
                         placeholder="Enter text..."
                     />
-                    <Button
-                        size="sm" variant={"outline"}
-                        onClick={() => {
-                            setFilterValue(inputValue);
-                            setOpen(false);
-                        }}
-                    >
-                        Apply
-                    </Button>
+                    <div className="flex gap-2 justify-end">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                                setInputValue(filterValue);
+                                setOpen(false);
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            size="sm"
+                            onClick={() => {
+                                setFilterValue(inputValue);
+                                setOpen(false);
+                            }}
+                        >
+                            Apply
+                        </Button>
+                    </div>
                 </div>
             </PopoverContent>
         </Popover>

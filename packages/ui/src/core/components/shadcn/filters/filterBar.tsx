@@ -13,12 +13,6 @@ import DateFilter from "./filter/dateFilter";
 import SelectFilter from "./filter/SelectFilter";
 import StringListFilter from "./filter/StringListFilter";
 
-interface FilterBarProps {
-  filters: Filter[];
-  setFilters: Dispatch<SetStateAction<Filter[]>>;
-  filterGroups: FilterGroup[];
-}
-
 const FilterContext = React.createContext<{
   filters: Filter[];
   setFilters: Dispatch<SetStateAction<Filter[]>>;

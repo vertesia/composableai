@@ -158,7 +158,13 @@ export const DateCombobox = ({
                                 <div className="border-t pt-2">
                                     <div className="flex gap-2 justify-end">
                                         <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
-                                            Close
+                                            Cancel
+                                        </Button>
+                                        <Button 
+                                            size="sm" 
+                                            onClick={() => setOpen(false)}
+                                        >
+                                            Apply
                                         </Button>
                                     </div>
                                 </div>
