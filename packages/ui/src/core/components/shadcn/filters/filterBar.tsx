@@ -105,7 +105,9 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
   };
 
   const renderFilterOptions = () => {
-    if (!selectedView) return null;
+    if (!selectedView) {
+      return null;
+    }
 
     const selectedGroupType = filterGroups.find(g => g.name === selectedView)?.type;
 
@@ -272,7 +274,7 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
         <Popover _open={open} onOpenChange={handleOpen}>
           <PopoverTrigger asChild>
             <Button
-              variant="ghost"
+              variant="outline"
               role="combobox"
               aria-expanded={open}
               size="md"
@@ -286,19 +288,20 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
           </PopoverTrigger>
           <PopoverContent className="w-[300px] p-0" align="start">
             <Command>
-              {filterGroups.find(group => group.name === selectedView)?.type === "select" ? (
-                <CommandInput
-                  placeholder={selectedView ? `Filter by ${selectedView}` : "Filter..."}
-                  className="h-9 ring-0"
-                  value={commandInput}
-                  onValueChange={(value) => {
-                    setCommandInput(value);
-                  }}
-                  ref={commandInputRef}
-                  autoFocus={true}
-                />
-              ) : null}
-
+              {
+                filterGroups.find(group => group.name === selectedView)?.type === "select" && (
+                  <CommandInput
+                    placeholder={selectedView ? `Filter by ${selectedView}` : "Filter..."}
+                    className="h-9 ring-0"
+                    value={commandInput}
+                    onValueChange={(value) => {
+                      setCommandInput(value);
+                    }}
+                    ref={commandInputRef}
+                    autoFocus={true}
+                  />
+                )
+              }
               <CommandList className="max-h-[300px] overflow-y-auto">
                 <CommandGroup>
                   {!selectedView ? getAvailableFilterGroups() : renderFilterOptions()}

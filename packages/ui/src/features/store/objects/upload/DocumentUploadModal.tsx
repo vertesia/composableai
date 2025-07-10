@@ -1,8 +1,8 @@
 import { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
-import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, useToast } from "@vertesia/ui/core";
+import { Button, MessageBox, VModal, VModalBody, VModalFooter, VModalTitle, VSelectBox, Spinner, useToast, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
-import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, UploadIcon, XCircleIcon } from "lucide-react";
+import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { FileUploadAction, FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
 import { DocumentUploadResult } from "./useUploadHandler";
@@ -79,6 +79,9 @@ export function DocumentUploadModal({
     const [overallProgress, setOverallProgress] = useState(0);
     const [modalKey, setModalKey] = useState(Date.now());
     const [collectionData, setCollectionData] = useState<Collection | DynamicCollection | undefined>(undefined);
+    const [result, setResult] = useState<DocumentUploadResult | null>(null);
+    const [_title, setTitle] = useState(title);
+    const [_description, setDescription] = useState("");
 
     // Fetch collection details if a collectionId is provided
     useEffect(() => {
@@ -86,17 +89,37 @@ export function DocumentUploadModal({
         client.store.collections.retrieve(collectionId).then(setCollectionData);
     }, [collectionId]);
 
+    // Update title and description based on current state
+    useEffect(() => {
+        if (isUploading) {
+            setTitle("Uploading Files");
+            setDescription(`${Math.round(overallProgress)}% complete`);
+        } else if (uploadComplete) {
+            setTitle("Upload Complete");
+            setDescription("");
+        } else if (processingDone) {
+            setTitle("File Analysis Results");
+            setDescription(`${files.length} file${files.length !== 1 ? "s" : ""}`);
+        } else if (files.length > 0) {
+            setTitle(title);
+            setDescription("Checking for duplicates and updates");
+        } else {
+            setTitle(title);
+            setDescription("");
+        }
+    }, [isUploading, uploadComplete, processingDone, title, overallProgress, files.length]);
+
     // Helper function to render collection and folder information
     const renderLocationInfo = () => {
         if (!collectionData && !selectedFolder) return null;
 
         return (
-            <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-100">
-                <div className="flex items-center text-blue-700">
-                    <FolderIcon className="h-5 w-5 mr-2" />
+            <div className="mb-4 p-3 bg-primary rounded-md border border-primary">
+                <div className="flex items-center text-primary">
+                    <FolderIcon className="size-5 mr-2" />
                     <span className="font-medium">Upload Location:</span>
                 </div>
-                <div className="ml-7 text-sm text-blue-700 mt-1">
+                <div className="ml-7 text-sm text-primary mt-1">
                     {collectionData && (
                         <div className="flex items-center">
                             <span className="mr-1">Collection:</span>
@@ -132,21 +155,25 @@ export function DocumentUploadModal({
     // Reset state when modal opens/closes
     useEffect(() => {
         if (isOpen) {
+            // Always reset state first
+            setProcessedFiles([]);
+            setProcessingDone(false);
+            setSelectedType(null);
+            setFileStatuses([]);
+            setIsUploading(false);
+            setUploadComplete(false);
+            setOverallProgress(0);
+            setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
+            setResult(null);
+            setTitle(title);
+            setDescription("");
+            
             // Set initial files if provided
             if (initialFiles && initialFiles.length > 0) {
                 setFiles(initialFiles);
                 processFiles(initialFiles);
             } else {
-                // Reset state
                 setFiles([]);
-                setProcessedFiles([]);
-                setProcessingDone(false);
-                setSelectedType(null);
-                setFileStatuses([]);
-                setIsUploading(false);
-                setUploadComplete(false);
-                setOverallProgress(0);
-                setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
             }
 
             // Create a new key to ensure the modal is fresh
@@ -166,6 +193,10 @@ export function DocumentUploadModal({
         setUploadComplete(false);
         setOverallProgress(0);
         setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
+        setResult(null);
+        setTitle(title);
+        setDescription("");
+        setModalKey(Date.now());
 
         // Call the provided onClose function
         onClose();
@@ -511,11 +542,48 @@ export function DocumentUploadModal({
             status: failedCount > 0 ? "warning" : "success",
             duration: 5000,
         });
+        setResult(result);
+    };
 
-        // Call the uploadComplete callback if provided
-        if (onUploadComplete) {
-            onUploadComplete(result);
-        }
+    const typeSelection = () => {
+        return (
+            <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">
+                    Content Type <span className="text-muted font-normal">(Optional)</span>
+                    <VTooltip
+                        description="Select a content type to apply to the uploaded files. If left empty, Vertesia will automatically detect the type based on file content."
+                        placement="top" size="xs"
+                    >
+                        <Info className="size-3 ml-2" />
+                    </VTooltip>
+                </label>
+                <VSelectBox
+                    options={types}
+                    value={selectedType}
+                    optionLabel={(type) => (type ? type.name : "Select a content type")}
+                    placeholder="Select a content type or leave empty for automatic detection"
+                    onChange={(selected) => setSelectedType(selected === undefined ? null : selected)}
+                    filterBy="name"
+                    isClearable
+                />
+                {selectedType ? (
+                    <></>
+                ) : (
+                    <div className="p-2 rounded-md">
+                        <div className="flex items-center text-attention">
+                            <CheckCircleIcon className="size-4 mr-1" />
+                            Automatic Type Detection
+                            <VTooltip
+                                description="Vertesia will analyze the content and select the most appropriate type. This is recommended for most uploads and ensures optimal processing."
+                                placement="top" size="xs"
+                            >
+                                <Info className="size-3 ml-2" />
+                            </VTooltip>
+                        </div>
+                    </div>
+                )}
+            </div>
+        )
     };
 
     // Determine what content to show based on the current state
@@ -523,67 +591,22 @@ export function DocumentUploadModal({
         // When showing only type selection, skip directly to the type selection UI
         if (showTypeSelectionOnly) {
             return (
-                <ModalBody className="p-6">
+                <VModalBody>
                     {children}
 
                     {/* Collection and folder information if available */}
                     {renderLocationInfo()}
 
                     {/* Type selection */}
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium mb-2">
-                            Content Type <span className="text-gray-500 font-normal">(Optional)</span>
-                        </label>
-                        <SelectBox
-                            options={types}
-                            value={selectedType}
-                            optionLabel={(type) => (type ? type.name : "Select a content type")}
-                            placeholder="Select a content type or leave empty for automatic detection"
-                            onChange={(selected) => setSelectedType(selected === undefined ? null : selected)}
-                            filterBy="name"
-                            isClearable
-                        />
-
-                        <div className="mt-2 text-sm text-blue-600 flex items-center">
-                            <CheckCircleIcon className="h-4 w-4 mr-1" />
-                            <span>
-                                <strong>Type selection is optional.</strong> Leave empty to let Vertesia choose the
-                                appropriate type
-                            </span>
-                        </div>
-                    </div>
-
-                    {selectedType ? (
-                        <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md mb-4">
-                            <div className="font-medium">{selectedType.name}</div>
-                            {selectedType.description && <div className="mt-1">{selectedType.description}</div>}
-                        </div>
-                    ) : (
-                        <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded-md mb-4">
-                            <div className="font-medium flex items-center">
-                                <CheckCircleIcon className="h-5 w-5 mr-1" />
-                                Automatic Type Detection
-                            </div>
-                            <div className="mt-1">
-                                <p>
-                                    <strong>
-                                        Vertesia will analyze the content and select the most appropriate type.
-                                    </strong>
-                                </p>
-                                <p className="mt-1">
-                                    This is recommended for most uploads and ensures optimal processing.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-                </ModalBody>
+                    {typeSelection()}
+                </VModalBody>
             );
         }
 
-        // Step 1: File selection
+        // Step 1: File selection #todo: update styles
         if (files.length === 0 && !hideFileSelection) {
             return (
-                <ModalBody className="flex flex-col items-center justify-center p-8">
+                <VModalBody className="flex flex-col items-center justify-center p-8">
                     {/* Collection and folder information if available */}
                     {renderLocationInfo()}
 
@@ -594,22 +617,19 @@ export function DocumentUploadModal({
                         className="w-full h-64"
                     />
                     {children}
-                </ModalBody>
+                </VModalBody>
             );
         }
 
         // Step 2: File processing and type selection
         if (!isUploading && !uploadComplete) {
             return (
-                <ModalBody className="p-6">
+                <VModalBody>
                     {!processingDone ? (
                         // File processing in progress
-                        <div className="flex flex-col items-center justify-center py-8">
+                        <div className="flex flex-col items-center justify-center py-4">
                             <Spinner size="lg" className="mb-4" />
                             <div className="text-lg font-medium">Analyzing files...</div>
-                            <div className="text-sm text-muted mt-2">
-                                Checking for duplicates and updates
-                            </div>
                         </div>
                     ) : (
                         // Processing complete, show type selection
@@ -618,33 +638,26 @@ export function DocumentUploadModal({
                             {renderLocationInfo()}
 
                             <div className="mb-4">
-                                <div className="flex justify-between items-center mb-2">
-                                    <div className="text-lg font-medium">File Analysis Results</div>
-                                    <div className="text-sm text-muted">
-                                        {files.length} file{files.length !== 1 ? "s" : ""}
-                                    </div>
-                                </div>
-
                                 {/* File statistics */}
-                                <div className="bg-color-muted/10 p-4 rounded-md mb-4">
+                                <div className="p-4 rounded-md mb-4">
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="flex flex-col items-center">
-                                            <div className="flex items-center">
-                                                <UploadIcon className="h-5 w-5 text-blue-500 mr-2" />
+                                            <div className="flex items-center gap-2">
+                                                <UploadIcon className="size-5 text-primary" />
                                                 <span className="font-medium">New</span>
                                             </div>
                                             <div className="text-2xl font-semibold">{processingStats.toCreate}</div>
                                         </div>
                                         <div className="flex flex-col items-center">
-                                            <div className="flex items-center">
-                                                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircleIcon className="size-5 text-success" />
                                                 <span className="font-medium">Update</span>
                                             </div>
                                             <div className="text-2xl font-semibold">{processingStats.toUpdate}</div>
                                         </div>
                                         <div className="flex flex-col items-center">
-                                            <div className="flex items-center">
-                                                <AlertCircleIcon className="h-5 w-5 text-yellow-500 mr-2" />
+                                            <div className="flex items-center gap-2">
+                                                <AlertCircleIcon className="size-5 text-mixer-attention/40" />
                                                 <span className="font-medium">Skip</span>
                                             </div>
                                             <div className="text-2xl font-semibold">{processingStats.toSkip}</div>
@@ -654,120 +667,51 @@ export function DocumentUploadModal({
                             </div>
 
                             {/* Type selection */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium mb-2">
-                                    Content Type <span className="text-gray-500 font-normal">(Optional)</span>
-                                </label>
-                                <SelectBox
-                                    options={types}
-                                    value={selectedType}
-                                    optionLabel={(type) => (type ? type.name : "Select a content type")}
-                                    placeholder="Select a content type or leave empty for automatic detection"
-                                    onChange={(selected) => setSelectedType(selected === undefined ? null : selected)}
-                                    filterBy="name"
-                                    isClearable
-                                />
+                            {typeSelection()}
 
-                                <div className="mt-2 text-sm text-blue-600 flex items-center">
-                                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                            <MessageBox
+                                className="mb-4"
+                                status="info"
+                            >
+                                {processingStats.toCreate + processingStats.toUpdate > 0 ? (
+                                    <div className="space-y-1">
+                                        <p>
+                                            {processingStats.toCreate + processingStats.toUpdate} file{processingStats.toCreate + processingStats.toUpdate > 1 ? "s are" : " is"} ready
+                                            to process
+                                        </p>
+                                        <p>
+                                            {processingStats.toSkip > 0 &&
+                                                `${processingStats.toSkip} file${processingStats.toSkip > 1 ? "s are" : " is"} already in the system and will be skipped.`}
+                                        </p>
+                                    </div>
+                                ) : processingStats.toSkip > 0 ? (
                                     <span>
-                                        <strong>Type selection is optional.</strong> Leave empty to let Vertesia choose
-                                        the appropriate type
+                                        All {processingStats.toSkip} file(s) already exist in the system and
+                                        will be skipped. You can proceed to view the results.
                                     </span>
-                                </div>
-                            </div>
+                                ) : (
+                                    <span>No files to process.</span>
+                                )}
+                            </MessageBox>
 
-                            {selectedType ? (
-                                <div className="p-4 bg-gray-50 rounded-md border border-gray-100 mb-4">
-                                    <div className="font-medium mb-2">Files to process with selected type:</div>
-                                    <div className="text-sm">
-                                        {processingStats.toCreate + processingStats.toUpdate > 0 ? (
-                                            <div className="space-y-1">
-                                                <p>
-                                                    {processingStats.toCreate + processingStats.toUpdate} file(s) ready
-                                                    to process
-                                                    {processingStats.toSkip > 0 &&
-                                                        ` (${processingStats.toSkip} will be skipped as they already exist)`}
-                                                </p>
-                                                <p className="text-green-600">
-                                                    Files will be uploaded with type:{" "}
-                                                    <strong>{selectedType.name}</strong>
-                                                </p>
-                                                {selectedType.description && (
-                                                    <p className="text-gray-500 mt-1">{selectedType.description}</p>
-                                                )}
-                                            </div>
-                                        ) : processingStats.toSkip > 0 ? (
-                                            <span>
-                                                All {processingStats.toSkip} file(s) already exist in the system and
-                                                will be skipped. You can proceed to view the results.
-                                            </span>
-                                        ) : (
-                                            <span>No files to process.</span>
-                                        )}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="p-4 bg-blue-50 rounded-md border border-blue-100 mb-4">
-                                    <div className="font-medium mb-2 flex items-center text-blue-700">
-                                        <CheckCircleIcon className="h-5 w-5 mr-1" />
-                                        Automatic Type Detection
-                                    </div>
-                                    <div className="text-sm text-blue-700">
-                                        {processingStats.toCreate + processingStats.toUpdate > 0 ? (
-                                            <div className="space-y-1">
-                                                <p>
-                                                    {processingStats.toCreate + processingStats.toUpdate} file(s) ready
-                                                    to process
-                                                    {processingStats.toSkip > 0 &&
-                                                        ` (${processingStats.toSkip} will be skipped as they already exist)`}
-                                                </p>
-                                                <p className="mt-2">
-                                                    <strong>
-                                                        Vertesia will analyze each file and select the most appropriate
-                                                        type.
-                                                    </strong>
-                                                </p>
-                                                <p className="mt-1">
-                                                    This is recommended for most uploads and ensures optimal processing.
-                                                </p>
-                                            </div>
-                                        ) : processingStats.toSkip > 0 ? (
-                                            <span>
-                                                All {processingStats.toSkip} file(s) already exist in the system and
-                                                will be skipped. You can proceed to view the results.
-                                            </span>
-                                        ) : (
-                                            <span>No files to process.</span>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
                         </>
                     )}
-                </ModalBody>
+                </VModalBody>
             );
         }
 
-        // Step 3: Upload in progress
+        // Step 3: Upload in progress #todo: update styles
         if (isUploading) {
             return (
-                <ModalBody className="p-6">
+                <VModalBody>
                     {/* Collection and folder information if available */}
                     {renderLocationInfo()}
 
                     <div className="mb-4">
-                        <div className="flex justify-between items-center mb-2">
-                            <div className="text-lg font-medium">Uploading Files</div>
-                            <div className="text-sm text-muted">
-                                {Math.round(overallProgress)}% complete
-                            </div>
-                        </div>
-
                         {/* Progress bar */}
-                        <div className="h-2 bg-color-muted/20 rounded-full overflow-hidden">
+                        <div className="h-2 bg-muted/20 rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-color-primary rounded-full"
+                                className="h-full bg-primary rounded-full"
                                 style={{ width: `${overallProgress}%` }}
                             />
                         </div>
@@ -778,17 +722,17 @@ export function DocumentUploadModal({
                         {fileStatuses.map((fileStatus, index) => (
                             <div
                                 key={`${fileStatus.file.name}-${index}`}
-                                className="flex items-center py-2 border-b border-color-border last:border-b-0"
+                                className="flex items-center py-2 border-b border-border last:border-b-0"
                             >
                                 <div className="mr-3">
                                     {fileStatus.status === "pending" && (
-                                        <FileIcon className="h-5 w-5 text-muted" />
+                                        <FileIcon className="size-5 text-muted" />
                                     )}
                                     {fileStatus.status === "uploading" && <Spinner size="sm" />}
                                     {fileStatus.status === "success" && (
-                                        <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                                        <CheckCircleIcon className="size-5 text-success" />
                                     )}
-                                    {fileStatus.status === "error" && <XCircleIcon className="h-5 w-5 text-red-500" />}
+                                    {fileStatus.status === "error" && <XCircleIcon className="size-5 text-destructive" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="truncate font-medium">{fileStatus.file.name}</div>
@@ -807,16 +751,14 @@ export function DocumentUploadModal({
                             </div>
                         ))}
                     </div>
-                </ModalBody>
+                </VModalBody>
             );
         }
 
         // Step 4: Upload complete, show results
         return (
-            <ModalBody className="p-6">
+            <VModalBody>
                 <div className="mb-4">
-                    <div className="text-lg font-medium mb-2">Upload Complete</div>
-
                     {/* Collection and folder information if available */}
                     {renderLocationInfo()}
 
@@ -847,7 +789,7 @@ export function DocumentUploadModal({
                         collection={collectionData?.name}
                     />
                 </div>
-            </ModalBody>
+            </VModalBody>
         );
     };
 
@@ -855,7 +797,7 @@ export function DocumentUploadModal({
         // Type-selection-only mode
         if (showTypeSelectionOnly) {
             return (
-                <ModalFooter>
+                <VModalFooter>
                     <Button variant="ghost" onClick={handleClose}>
                         Cancel
                     </Button>
@@ -884,18 +826,18 @@ export function DocumentUploadModal({
                     >
                         {selectedType ? `Use ${selectedType.name}` : "Use Automatic Type Detection"}
                     </Button>
-                </ModalFooter>
+                </VModalFooter>
             );
         }
 
         // File selection step - only show cancel
         if (files.length === 0 && !hideFileSelection) {
             return (
-                <ModalFooter>
+                <VModalFooter>
                     <Button variant="ghost" onClick={handleClose}>
                         Cancel
                     </Button>
-                </ModalFooter>
+                </VModalFooter>
             );
         }
 
@@ -905,39 +847,36 @@ export function DocumentUploadModal({
             const canUpload = processingDone;
 
             return (
-                <ModalFooter>
+                <VModalFooter>
                     <Button variant="ghost" onClick={handleClose}>
                         Cancel
                     </Button>
                     <Button
                         disabled={!canUpload}
                         onClick={handleUpload}
-                        className={!selectedType ? "bg-blue-600 hover:bg-blue-700" : ""}
                     >
                         {processingStats.toCreate + processingStats.toUpdate > 0
-                            ? selectedType
-                                ? `Upload with ${selectedType.name}`
-                                : "Upload with Automatic Type Detection"
+                            ? "Upload"
                             : "Continue"}
                     </Button>
-                </ModalFooter>
+                </VModalFooter>
             );
         }
 
         // Upload in progress - can't cancel
         if (isUploading) {
             return (
-                <ModalFooter>
+                <VModalFooter>
                     <Button variant="ghost" disabled>
                         Uploading...
                     </Button>
-                </ModalFooter>
+                </VModalFooter>
             );
         }
 
         // Upload complete - close or upload more
         return (
-            <ModalFooter>
+            <VModalFooter>
                 <Button
                     variant="ghost"
                     onClick={() => {
@@ -955,16 +894,23 @@ export function DocumentUploadModal({
                 >
                     Upload More
                 </Button>
-                <Button onClick={handleClose}>Close</Button>
-            </ModalFooter>
+                <Button onClick={() => {
+                    if (onUploadComplete && result) {
+                        onUploadComplete(result);
+                    }
+                    handleClose();
+                }}>
+                    Close
+                </Button>
+            </VModalFooter>
         );
     };
 
     return (
-        <Modal key={modalKey} isOpen={isOpen} onClose={handleClose} className="w-full max-w-3xl mx-auto">
-            <ModalTitle>{title}</ModalTitle>
+        <VModal key={modalKey} isOpen={isOpen} onClose={handleClose} className="mx-auto">
+            <VModalTitle description={_description}>{_title}</VModalTitle>
             {renderModalContent()}
             {renderModalFooter()}
-        </Modal>
+        </VModal>
     );
 }
