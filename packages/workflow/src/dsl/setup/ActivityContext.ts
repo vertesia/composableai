@@ -74,7 +74,7 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
         return workflowId;
     }
 
-    get task_id() {
+    get taskId() {
         return this.payload.task_id || "main"; // Default to 'main' if not provided
     }
 
