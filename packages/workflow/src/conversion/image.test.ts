@@ -20,7 +20,7 @@ const execAsync = promisify(exec);
 
 describe("ImageMagick image resizing", () => {
     test("should resize an image to a maximum height or width using ImageMagick", async () => {
-        const max_hw = 1024;
+        const max_hw = 1596;
         const format = "jpeg";
         const inputImagePath = path.join(__dirname, "../../fixtures", "cat-picture.jpg");
 
@@ -48,7 +48,7 @@ describe("ImageMagick image resizing", () => {
     });
 
     test("should throw an error for non-existent input file", async () => {
-        const max_hw = 1024;
+        const max_hw = 1596;
         const format = "jpeg";
         const nonExistentPath = path.join(__dirname, "non-existent-image.jpg");
 
@@ -60,7 +60,7 @@ describe("ImageMagick image resizing", () => {
     });
 
     test("should throw error with empty format", async () => {
-        const max_hw = 1024;
+        const max_hw = 1596;
         const format = "";
         const inputImagePath = path.join(__dirname, "../../fixtures", "cat-picture.jpg");
 
