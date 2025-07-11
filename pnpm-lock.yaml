@@ -63,6 +63,12 @@ importers:
       '@vertesia/common':
         specifier: workspace:*
         version: link:../common
+      hono:
+        specifier: ^4.8.4
+        version: 4.8.4
+      jose:
+        specifier: ^6.0.11
+        version: 6.0.11
     devDependencies:
       ts-dual-module:
         specifier: ^0.6.3
@@ -4015,6 +4021,10 @@ packages:
     resolution: {integrity: sha512-trFMIq3PATiFRiQmNNeHtsrkwYRByIXUbYNbotiY9RLVfMkdwZdd2eQ38mGt7BRiCKBaj1DyBAIHmm7mmXPuuw==}
     engines: {node: '>=10.0.0'}
 
+  hono@4.8.4:
+    resolution: {integrity: sha512-KOIBp1+iUs0HrKztM4EHiB2UtzZDTBihDtOF5K6+WaJjCPeaW4Q92R8j63jOhvJI5+tZSMuKD9REVEXXY9illg==}
+    engines: {node: '>=16.9.0'}
+
   html-url-attributes@3.0.1:
     resolution: {integrity: sha512-ol6UPyBWqsrO6EJySPz2O7ZSr856WDrEzM5zMqp+FJJLGMW35cLYmmZnl0vztAZxRUoNZJFTCohfjuIJ8I4QBQ==}
 
@@ -4298,6 +4308,9 @@ packages:
   jest-worker@27.5.1:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
+
+  jose@6.0.11:
+    resolution: {integrity: sha512-QxG7EaliDARm1O1S8BGakqncGT9s25bKL1WSf6/oa17Tkqwi8D2ZNglqCF+DsYF88/rV66Q/Q2mFAy697E1DUg==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -10171,6 +10184,8 @@ snapshots:
 
   heap-js@2.6.0: {}
 
+  hono@4.8.4: {}
+
   html-url-attributes@3.0.1: {}
 
   http-assert@1.5.0:
@@ -10452,6 +10467,8 @@ snapshots:
       '@types/node': 22.15.29
       merge-stream: 2.0.0
       supports-color: 8.1.1
+
+  jose@6.0.11: {}
 
   js-tokens@4.0.0: {}
 

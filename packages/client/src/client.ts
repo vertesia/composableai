@@ -62,6 +62,29 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      */
     sessionTags?: string | string[];
 
+
+    /**
+     * Create a client from the given token. 
+     * If you already have the decoded token you can pass it as the second argument to avoid decodinf it again.
+     * 
+     * @param token the raw JWT token
+     * @param payload the decoded JWT token as an AuthTokenPayload - optional
+     */
+    static async fromAuthToken(token: string, payload?: AuthTokenPayload) {
+        if (!payload) {
+            payload = decodeJWT(token);
+        }
+        const endpoints = decodeEndpoints(payload!.endpoints);
+        return await new VertesiaClient({
+            serverUrl: endpoints.studio,
+            storeUrl: endpoints.store
+        }).withApiKey(token);
+    }
+
+    static decodeEndpoints() {
+
+    }
+
     constructor(
         opts: VertesiaClientProps = {
             site: 'api.vertesia.io',
@@ -259,5 +282,31 @@ function base64UrlDecode(input: string): string {
         return new TextDecoder().decode(bytes);
     } else {
         throw new Error('No base64 decoder available');
+    }
+}
+
+export function decodeEndpoints(endpoints: string | Record<string, string> | undefined): Record<string, string> {
+    if (!endpoints) {
+        return getEndpointsFromDomain("api.vertesia.io")
+    }
+    if (typeof endpoints === "string") {
+        return getEndpointsFromDomain(endpoints);
+    } else {
+        return endpoints;
+    }
+}
+
+function getEndpointsFromDomain(domain: string) {
+    if (domain === "local") {
+        return {
+            studio: `http://localhost:8091`,
+            store: `http://localhost:8092`,
+        }
+    } else {
+        const url = `https://${domain}`;
+        return {
+            studio: url,
+            store: url,
+        }
     }
 }

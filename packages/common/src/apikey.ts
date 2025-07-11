@@ -61,6 +61,16 @@ export interface AuthTokenPayload {
     /** groups */
     groups?: UserGroupRef[]; //group ids
 
+    /**
+     * API endpoints information to be used with this token.
+     * Either a n API domain like 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api-staging.vertesia.io' | 'local'
+     * or explicit studio and store URLs.
+     */
+    endpoints?: string | {
+        studio: string,
+        store: string
+    }
+
     iss: string; //issuer
     aud: string; //audience
     exp: number; //expires in (EPOC seconds)
