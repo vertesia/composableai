@@ -4,11 +4,11 @@ import AccountApi from "./AccountApi.js";
 import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";
 import { ApiKeysApi } from "./ApiKeysApi.js";
+import AppsApi from "./AppsApi.js";
 import CommandsApi from "./CommandsApi.js";
 import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
-import PluginsApi from "./PluginsApi.js";
 import ProjectsApi from "./ProjectsApi.js";
 import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
@@ -61,6 +61,29 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      * The session name will be sent when executing an interaction as a tag
      */
     sessionTags?: string | string[];
+
+
+    /**
+     * Create a client from the given token. 
+     * If you already have the decoded token you can pass it as the second argument to avoid decodinf it again.
+     * 
+     * @param token the raw JWT token
+     * @param payload the decoded JWT token as an AuthTokenPayload - optional
+     */
+    static async fromAuthToken(token: string, payload?: AuthTokenPayload) {
+        if (!payload) {
+            payload = decodeJWT(token);
+        }
+        const endpoints = decodeEndpoints(payload!.endpoints);
+        return await new VertesiaClient({
+            serverUrl: endpoints.studio,
+            storeUrl: endpoints.store
+        }).withApiKey(token);
+    }
+
+    static decodeEndpoints() {
+
+    }
 
     constructor(
         opts: VertesiaClientProps = {
@@ -218,7 +241,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     iam = new IamApi(this);
     refs = new RefsApi(this);
     commands = new CommandsApi(this);
-    plugins = new PluginsApi(this);
+    apps = new AppsApi(this);
 }
 
 function isApiKey(apiKey: string) {
@@ -236,7 +259,7 @@ function isTokenExpired(token: string | null) {
     return (currentTime <= exp * 1000 - EXPIRATION_THRESHOLD);
 }
 
-function decodeJWT(jwt: string) {
+export function decodeJWT(jwt: string): AuthTokenPayload {
     const payloadBase64 = jwt.split('.')[1];
     const decodedJson = base64UrlDecode(payloadBase64);
     return JSON.parse(decodedJson)
@@ -259,5 +282,31 @@ function base64UrlDecode(input: string): string {
         return new TextDecoder().decode(bytes);
     } else {
         throw new Error('No base64 decoder available');
+    }
+}
+
+export function decodeEndpoints(endpoints: string | Record<string, string> | undefined): Record<string, string> {
+    if (!endpoints) {
+        return getEndpointsFromDomain("api.vertesia.io")
+    }
+    if (typeof endpoints === "string") {
+        return getEndpointsFromDomain(endpoints);
+    } else {
+        return endpoints;
+    }
+}
+
+function getEndpointsFromDomain(domain: string) {
+    if (domain === "local") {
+        return {
+            studio: `http://localhost:8091`,
+            store: `http://localhost:8092`,
+        }
+    } else {
+        const url = `https://${domain}`;
+        return {
+            studio: url,
+            store: url,
+        }
     }
 }

@@ -42,5 +42,12 @@
     "lib",
     "test"
   ],
-  "references": []
+  "references": [
+    {
+      "path": "../client"
+    },
+    {
+      "path": "../common"
+    }
+  ]
 }
