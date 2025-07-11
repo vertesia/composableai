@@ -48,6 +48,8 @@ export interface DSLActivityExecutionPayload<ParamsT extends Record<string, any>
     params: ParamsT;
     workflow_name: string;
     debug_mode?: boolean;
+    /** If part of a larger agentic workflow, task id of this task */
+    task_id?: string;
 }
 
 

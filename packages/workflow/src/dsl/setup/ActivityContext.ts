@@ -74,6 +74,10 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
         return workflowId;
     }
 
+    get task_id() {
+        return this.payload.task_id || "main"; // Default to 'main' if not provided
+    }
+
     fetchProject() {
         if (!this._project) {
             this._project = _fetchProject(this.client, this.payload);
