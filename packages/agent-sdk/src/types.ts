@@ -65,4 +65,14 @@ export interface Tool<ParamsT extends Record<string, any>> extends ToolDefinitio
     run: ToolFn<ParamsT>;
 }
 
+/**
+ * The interface that should be return when requesting a collection endpoint using a GET 
+ */
+export interface ToolCollectionDefinition {
+    title: string;
+    description: string;
+    src: string;
+    tools: ToolDefinition[];
+}
+
 export type { ToolDefinition };

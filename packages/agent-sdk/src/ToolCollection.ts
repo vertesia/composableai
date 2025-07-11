@@ -1,10 +1,10 @@
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { authorize } from "./auth.js";
-import { ToolsRegistry } from "./ToolsRegistry.js";
+import { ToolRegistry } from "./ToolRegistry.js";
 import type { Tool, ToolDefinition, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
 
-export interface ToolsCollecionProperties {
+export interface ToolCollecionProperties {
     /**
      * A kebab case collection name. Must only contains alphanumeric and dash characters,
      * The name can be used to generate the path where the collection is exposed.
@@ -34,7 +34,7 @@ export interface ToolsCollecionProperties {
 /**
  * Implements a tools colection endpoint
  */
-export class ToolsCollection implements Iterable<Tool<any>> {
+export class ToolCollection implements Iterable<Tool<any>> {
 
     /**
      * A kebab case collection name. Must only contains alphanumeric and dash characters,
@@ -58,16 +58,16 @@ export class ToolsCollection implements Iterable<Tool<any>> {
     /**
      * The tool registry
      */
-    tools: ToolsRegistry;
+    tools: ToolRegistry;
 
     constructor({
         name, title, icon, description, tools
-    }: ToolsCollecionProperties) {
+    }: ToolCollecionProperties) {
         this.name = name;
         this.title = title || kebabCaseToTitle(name);
         this.icon = icon;
         this.description = description;
-        this.tools = new ToolsRegistry(tools);
+        this.tools = new ToolRegistry(tools);
     }
 
     [Symbol.iterator](): Iterator<Tool<any>> {

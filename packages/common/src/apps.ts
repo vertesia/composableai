@@ -1,4 +1,3 @@
-import { ToolDefinition } from "@llumiverse/common";
 
 export interface AppUIConfig {
     /**
@@ -12,26 +11,6 @@ export interface AppUIConfig {
      * or in a new tab.
      */
     external?: boolean;
-}
-export interface AppAgentConfig {
-    /**
-     * The source URL of the agent plugin.
-     * The src can be a template which contain a bvariable named `toolRegistryUrl` which will be replaced by
-     * the tool registry URL rehistered on the running platform.
-     * Example: `${toolRegistryUrl}/csv`
-     */
-    src: string;
-    /**
-     * If true the src is a remote javascript module and will imported using import()
-     * otherwise the src is a tool endpoint and will be called using a POST request.
-     * The default is false. (i.e. the src is a tool endpoint).
-     */
-    import?: boolean;
-    /**
-     * The definitions of the tools exported by the app.
-     * The definition can also be fetched form `GET src`
-     */
-    tools: ToolDefinition[];
 }
 
 export type AppTargetEnv = "development" | "preview" | "production";
@@ -69,7 +48,12 @@ export interface AppManifestData {
 
     ui?: AppUIConfig
 
-    agent?: AppAgentConfig
+    /**
+     * A list of tool collections endpoints to be used by this app.
+     * A tools collection endpoint is an URL which may end with a `?import` query string.
+     * If the `?import` query string is used the tool will be imported as a javascript module and not executed through a POST on the collections endpoint.
+     */
+    tool_collections?: string[]
 }
 export interface AppManifestDataWithTargetEnv extends AppManifestData {
     /**
@@ -106,4 +90,4 @@ export interface PublishAppPayload {
     target_env: AppTargetEnv; // the target environment to publish the app to
 }
 
-export type AppInstallationKind = 'ui' | 'agent' | 'all';
+export type AppInstallationKind = 'ui' | 'tools' | 'all';

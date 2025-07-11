@@ -1,6 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import { Tool, ToolDefinition, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult } from "./types.js";
-export class ToolsRegistry {
+export class ToolRegistry {
 
     registry: Record<string, Tool<any>> = {};
 

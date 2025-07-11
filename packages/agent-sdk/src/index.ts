@@ -1,3 +1,3 @@
-export * from "./ToolsCollection.js";
-export * from "./ToolsRegistry.js";
+export * from "./ToolCollection.js";
+export * from "./ToolRegistry.js";
 export * from "./types.js";
