@@ -259,7 +259,7 @@ function isTokenExpired(token: string | null) {
     return (currentTime <= exp * 1000 - EXPIRATION_THRESHOLD);
 }
 
-function decodeJWT(jwt: string) {
+export function decodeJWT(jwt: string): AuthTokenPayload {
     const payloadBase64 = jwt.split('.')[1];
     const decodedJson = base64UrlDecode(payloadBase64);
     return JSON.parse(decodedJson)

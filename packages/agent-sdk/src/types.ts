@@ -1,6 +1,6 @@
 import type { ToolDefinition, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
-import { AuthTokenPayload } from "@vertesia/common";
+import { AuthTokenPayload, ToolResult, ToolResultContent } from "@vertesia/common";
 
 export interface ToolExecutionContext {
     /**
@@ -18,30 +18,37 @@ export interface ToolExecutionContext {
     getClient: () => Promise<VertesiaClient>;
 }
 
-export interface ToolExecutionResult {
-    /**
-     * The execution result. Can be null if no result should be returned.
-     */
-    result: any;
+export interface ToolExecutionResult extends ToolResultContent {
     /**
      * Medata can be used to return more info on the tool execution like stats or user messages.
      */
     metadata?: Record<string, any>;
-    /**
-     * If an error occurs
-     */
-    error?: {
-        code: number,
-        message: string,
-        data?: any,
-    }
 }
 
-export interface ToolExecutionResponse extends ToolExecutionResult {
+export interface ToolExecutionResponse extends ToolExecutionResult, ToolResult {
     /**
      * The tool use id of the tool use request. For traceability.
      */
     tool_use_id: string;
+}
+
+export interface ToolExecutionResponseError {
+    /**
+     * The tool use id of the tool use request. For traceability.
+     */
+    tool_use_id: string;
+    /**
+     * The http status code
+     */
+    status: number;
+    /**
+     * the error message
+     */
+    error: string;
+    /**
+     * Additional context information
+     */
+    data?: Record<string, any>;
 }
 
 export interface ToolExecutionPayload<ParamsT extends Record<string, any>> {

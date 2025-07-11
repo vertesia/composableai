@@ -2,7 +2,7 @@ import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { authorize } from "./auth.js";
 import { ToolsRegistry } from "./ToolsRegistry.js";
-import type { Tool, ToolDefinition, ToolExecutionPayload, ToolExecutionResponse } from "./types.js";
+import type { Tool, ToolDefinition, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
 
 export interface ToolsCollecionProperties {
     /**
@@ -100,14 +100,12 @@ export class ToolsCollection implements Iterable<Tool<any>> {
                 tool_use_id: payload.tool_use.id
             } satisfies ToolExecutionResponse);
         } catch (err: any) { // HTTPException ?
+            const status = err.status || 500;
             return ctx.json({
                 tool_use_id: payload?.tool_use.id || "undefined",
-                result: null,
-                error: {
-                    message: err.message || "Error executing tool",
-                    code: err.status || 500
-                }
-            } satisfies ToolExecutionResponse)
+                error: err.message || "Error executing tool",
+                status
+            } satisfies ToolExecutionResponseError, status)
         }
     }
 
