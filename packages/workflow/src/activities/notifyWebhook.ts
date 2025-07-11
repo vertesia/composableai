@@ -25,7 +25,6 @@ export async function notifyWebhook(payload: DSLActivityExecutionPayload<NotifyW
 
     const body = method === 'POST' ? JSON.stringify({
         ...requestPayload,
-        ...params
     }) : undefined
 
     log.info(`Notifying webhook at ${target_url}`);

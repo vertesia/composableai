@@ -4,7 +4,6 @@ import { AccountRef } from "./user.js";
 
 
 export enum ApiKeyTypes {
-    public = 'pk',
     secret = 'sk'
 }
 export interface ApiKey {

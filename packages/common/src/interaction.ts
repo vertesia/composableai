@@ -263,7 +263,7 @@ export interface InteractionExecutionPayload {
     /**
      * The tools to be used in the execution
      */
-    tools?: ToolDefinition[];
+    tool_definitions?: ToolDefinition[];
 
     /**
      * The workflow related to this Interaction Run.
@@ -283,43 +283,13 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
 // ================= async execution payloads ====================
 export type ToolRef = string | { name: string; description: string };
 
-interface AsyncExecutionPayloadBase {
+interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayload,"toolDefinitions" | "stream"> {
     type: "conversation" | "interaction";
 
     /**
-     * The interaction endpoint to execute to start the conversation.
+     * An array of endpoint URLs to be notified upon execution
      */
-    interaction: string;
-
-    /**
-     * The environment ID to use.
-     */
-    environment?: string;
-
-    /**
-     * The model to use
-     */
-    model?: string;
-
-    /**
-     * The options to use on the first execution
-     */
-    model_options?: ModelOptions;
-
-    /**
-     * The initial prompt input data
-     */
-    prompt_data?: Record<string, any>;
-
-    /**
-     * Optional result schema
-     */
-    result_schema?: JSONSchema;
-
-    /**
-     * Optional tags to add to the execution run
-     */
-    tags?: string[];
+    notify_endpoints?: string[];
 }
 
 export type ConversationVisibility = 'private' | 'project';
@@ -337,7 +307,7 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * The tools to use, list of tool or function names.
      * You can use + and - to add or remove from default, if no sign, then list replaces default
      */
-    tools?: string[];
+    tool_names?: string[];
 
     /**
      * The maximum number of iterations in case of a conversation. If <=0 the default of 20 will be used.
@@ -382,11 +352,6 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
     type: "interaction";
-
-    /**
-     * The tools to use
-     */
-    tools?: ToolDefinition[];
 
     /**
      * Only used for non conversation workflows to include the error on next retry.

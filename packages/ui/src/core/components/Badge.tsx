@@ -101,14 +101,18 @@ export function DotBadge({
       className={cn(dotBadgeVariants({ variant }), className)}
       {...props}
     >
-      <svg
-        className={cn(dotVariants({ variant }), dotClassName)}
-        viewBox="0 0 6 6"
-        aria-hidden="true"
-      >
-        <circle cx={3} cy={3} r={3} />
-      </svg>
-      {children}
+      <div className="flex-shrink-0">
+        <svg
+          className={cn(dotVariants({ variant }), dotClassName)}
+          viewBox="0 0 6 6"
+          aria-hidden="true"
+        >
+          <circle cx={3} cy={3} r={3} />
+        </svg>
+      </div>
+      <span className="truncate">
+        {children}
+      </span>
     </span>
   );
 }

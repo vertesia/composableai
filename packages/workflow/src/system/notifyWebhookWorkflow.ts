@@ -1,6 +1,6 @@
 
 import { log } from "@temporalio/workflow";
-import { ContentEventName, WorkflowExecutionPayload } from "@vertesia/common";
+import { WorkflowExecutionPayload } from "@vertesia/common";
 import * as activities from "../activities/notifyWebhook.js";
 import { dslProxyActivities } from "../dsl/dslProxyActivities.js";
 import { WF_NON_RETRYABLE_ERRORS } from "../errors.js";
@@ -18,13 +18,19 @@ const {
     },
 });
 
+export interface NotifyWebhookWorfklowParams {
+    endpoints: string[],
+    data: Record<string, any>
+}
 
-export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload): Promise<any> {
+
+export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload<NotifyWebhookWorfklowParams>): Promise<any> {
 
     const { objectIds, vars } = payload;
     const notifications = [];
-    const endpoints = vars?.webhooks || [];
-    const eventName = vars.event || ContentEventName.workflow_finished;
+    const endpoints = vars.endpoints ?? (vars as any).webhooks ?? [];
+    const data = vars.data ?? (vars as any).webhook_data ?? undefined;
+    const eventName = payload.event;
 
     if (!endpoints.length) {
         log.info(`No webhooks to notify`);
@@ -38,8 +44,7 @@ export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload): 
             payload: {
                 object_ids: objectIds,
                 event: eventName,
-                data: vars.webhook_data ?? undefined,
-                vars
+                data
             }
         }).then(res => {
             log.info(`Webhook notified at ${ep} with response code: ${res.status}`, { res });

@@ -107,8 +107,8 @@ export function VectorSearchWidget({ onChange, isLoading, refresh }: VectorSearc
     };
 
     return (
-        <div className="flex gap-1 items-center w-full">
-            <Input placeholder="Type what you are looking for" value={searchText} onChange={setSearchText} onKeyDown={handleKeyPress} />
+        <div className="flex gap-1 items-center w-1/2">
+            <Input placeholder="Type what you are looking for, or select a filter" value={searchText} onChange={setSearchText} onKeyDown={handleKeyPress} />
             <Button variant="secondary" isLoading={isLoading} onClick={() => fireSearch("text")} isDisabled={!isReady} alt="semantic search">Search</Button>
         </div>
     );

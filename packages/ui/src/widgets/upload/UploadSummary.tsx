@@ -54,13 +54,12 @@ export function UploadSummary({ files, className = "", location, collection }: U
     const totalCount = files.length;
     
     return (
-        <div className={`flex flex-col py-6 ${className}`}>
+        <div className={`flex flex-col py-2 ${className}`}>
             <div className="flex items-center mb-4">
-                <div className="w-12 h-12 mr-4 rounded-full bg-color-success/10 flex items-center justify-center">
-                    <CheckCircleIcon className="h-6 w-6 text-color-success" />
+                <div className="size-8 mr-4 rounded-full bg-success/10 flex items-center justify-center">
+                    <CheckCircleIcon className="size-4 text-success" />
                 </div>
                 <div>
-                    <p className="text-lg font-medium text-color-success">Upload Complete</p>
                     <p className="text-muted">
                         {totalCount} file{totalCount !== 1 ? "s" : ""} processed
                         {collection ? ` in collection '${collection}'` : ""}
