@@ -111,7 +111,7 @@ export async function imageResizer(
         }
 
         // Add JPEG shrink-on-load optimization
-        args.push("-define", `jpeg:size=${max_hw * 2}x${max_hw * 2}`);
+        args.push("-define", `jpeg:size=${max_hw * 3}x${max_hw * 3}`);
 
         // Resize operation
         args.push("-resize", `${max_hw}x${max_hw}>`);
