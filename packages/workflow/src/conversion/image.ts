@@ -7,12 +7,12 @@ const execFile = promisify(execFileCallback);
 
 /**
  * Resizes an image to a maximum height or width using ImageMagick
- * with progressive loading when supported and proper colorspace correction
+ * with progressive loading when supported and colorspace correction
  * @param inputPath Input file path
  * @param max_hw Maximum height or width
  * @param format Output format
  * @param progressive Enable progressive loading for supported formats (defaults to true)
- * @param colorspaceCorrection Enable linear colorspace correction for better quality (defaults to true), not recommended for Q8 image magick.
+ * @param colorspaceCorrection Enable colorspace correction (defaults to true), not recommended for Q8 image magick.
  * @param colorspace Colorspace to use for processing ('RGB', 'LAB', 'LUV', 'sigmoidal') (defaults to 'RGB')
  * @returns Path to the resized image
  */
@@ -24,7 +24,7 @@ export async function imageResizer(
     colorspaceCorrection: boolean = true,
     colorspace: 'RGB' | 'LAB' | 'LUV' | 'sigmoidal' = 'RGB'
 ): Promise<string> {
-    log.info(`[image-resizer] Resizing image: ${inputPath} to max_hw: ${max_hw}, format: ${format}, progressive: ${progressive}, colorspace: ${colorspace}`);
+    log.info(`[image-resizer] Resizing image: ${inputPath} to max_hw: ${max_hw}, format: ${format}, progressive: ${progressive}, colorspaceCorrection: ${colorspaceCorrection ? colorspace : 'disabled'}`);
 
     const allowedFormats = ["jpg", "jpeg", "png", "webp"];
 
