@@ -1,9 +1,9 @@
 name: code-sync
 
 on:
-  push:
-    branches:
-      - preview
+#   push:
+#     branches:
+#       - preview
   workflow_dispatch: # mainly for testing
     inputs:
       from_branch:
@@ -24,8 +24,6 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    outputs:
-      sync_ref: ${{ steps.sync.outputs.SYNC_REF }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,43 +35,31 @@ jobs:
       - name: Code Sync
         id: sync
         run: |
-          export SOURCE_STUDIO_REF="${{ env.FROM_BRANCH }}"
-          export SOURCE_STUDIO_SHA="$(git rev-parse 'origin/${{ env.FROM_BRANCH }}')"
-          export SOURCE_STUDIO_MSG="$(git log --format="%cd: %s by %an" --date=short -1 $SOURCE_STUDIO_SHA)"
-
-          export SOURCE_COMPOSABLEAI_REF="preview"
-          export SOURCE_COMPOSABLEAI_SHA="$(git ls-tree --format='%(objectname)' $SOURCE_STUDIO_SHA composableai)"
-          export SOURCE_COMPOSABLEAI_MSG="$(git -C composableai log --format="%cd: %s by %an" --date=short -1 $SOURCE_COMPOSABLEAI_SHA)"
+          export SOURCE_COMPOSABLEAI_REF="${{ env.FROM_BRANCH }}"
+          export SOURCE_COMPOSABLEAI_SHA="$(git rev-parse 'origin/${{ env.FROM_BRANCH }}')"
+          export SOURCE_COMPOSABLEAI_MSG="$(git log --format="%cd: %s by %an" --date=short -1 $SOURCE_COMPOSABLEAI_SHA)"
 
           export SOURCE_LLUMIVERSE_REF="main"
-          export SOURCE_LLUMIVERSE_SHA="$(git -C composableai ls-tree --format='%(objectname)' $SOURCE_COMPOSABLEAI_SHA llumiverse)"
-          export SOURCE_LLUMIVERSE_MSG="$(git -C composableai/llumiverse log --format="%cd: %s by %an" --date=short -1 $SOURCE_LLUMIVERSE_SHA)"
-
-          export TARGET_STUDIO_REF="main"
-          export TARGET_STUDIO_SHA="$(git rev-parse origin/main)"
-          export TARGET_STUDIO_MSG="$(git log --format="%cd: %s by %an" --date=short -1 $TARGET_STUDIO_SHA)"
+          export SOURCE_LLUMIVERSE_SHA="$(git ls-tree --format='%(objectname)' $SOURCE_COMPOSABLEAI_SHA llumiverse)"
+          export SOURCE_LLUMIVERSE_MSG="$(git -C llumiverse log --format="%cd: %s by %an" --date=short -1 $SOURCE_LLUMIVERSE_SHA)"
 
           export TARGET_COMPOSABLEAI_REF="main"
-          export TARGET_COMPOSABLEAI_SHA="$(git ls-tree --format='%(objectname)' $TARGET_STUDIO_SHA composableai)"
-          export TARGET_COMPOSABLEAI_MSG="$(git -C composableai log --format="%cd: %s by %an" --date=short -1 $TARGET_COMPOSABLEAI_SHA)"
+          export TARGET_COMPOSABLEAI_SHA="$(git rev-parse origin/main)"
+          export TARGET_COMPOSABLEAI_MSG="$(git log --format="%cd: %s by %an" --date=short -1 $TARGET_COMPOSABLEAI_SHA)"
 
           export TARGET_LLUMIVERSE_REF="main"
-          export TARGET_LLUMIVERSE_SHA="$(git -C composableai ls-tree --format='%(objectname)' $TARGET_COMPOSABLEAI_SHA llumiverse)"
-          export TARGET_LLUMIVERSE_MSG="$(git -C composableai/llumiverse log --format="%cd: %s by %an" --date=short -1 $TARGET_LLUMIVERSE_SHA)"
+          export TARGET_LLUMIVERSE_SHA="$(git ls-tree --format='%(objectname)' $TARGET_COMPOSABLEAI_SHA llumiverse)"
+          export TARGET_LLUMIVERSE_MSG="$(git -C llumiverse log --format="%cd: %s by %an" --date=short -1 $TARGET_LLUMIVERSE_SHA)"
 
-          export TEMP_BRANCH="sync-${SOURCE_STUDIO_SHA::7}"
+          export TEMP_BRANCH="sync-${SOURCE_COMPOSABLEAI_SHA::7}"
 
           cat << EOF >> $GITHUB_STEP_SUMMARY
           Type   | Item                | Value
           :----- | :------------------ | :---------------
-          Source | studio commit       | ${SOURCE_STUDIO_MSG}
-          Source | studio ref          | \`${SOURCE_STUDIO_REF}\`       ([\`${SOURCE_STUDIO_SHA}\`](https://github.com/vertesia/studio/commit/${SOURCE_STUDIO_SHA}))
           Source | composableai commit | ${SOURCE_COMPOSABLEAI_MSG}
           Source | composableai ref    | \`${SOURCE_COMPOSABLEAI_REF}\` ([\`${SOURCE_COMPOSABLEAI_SHA}\`](https://github.com/vertesia/composableai/commit/${SOURCE_COMPOSABLEAI_SHA}))
           Source | llumiverse commit   | ${SOURCE_LLUMIVERSE_MSG}
           Source | llumiverse ref      | \`${SOURCE_LLUMIVERSE_REF}\`   ([\`${SOURCE_LLUMIVERSE_SHA}\`](https://github.com/vertesia/llumiverse/commit/${SOURCE_LLUMIVERSE_SHA}))
-          Target | studio commit       | ${TARGET_STUDIO_MSG}
-          Target | studio ref          | \`${TARGET_STUDIO_REF}\`       ([\`${TARGET_STUDIO_SHA}\`](https://github.com/vertesia/studio/commit/${TARGET_STUDIO_SHA}))
           Target | composableai commit | ${TARGET_COMPOSABLEAI_MSG}
           Target | composableai ref    | \`${TARGET_COMPOSABLEAI_REF}\` ([\`${TARGET_COMPOSABLEAI_SHA}\`](https://github.com/vertesia/composableai/commit/${TARGET_COMPOSABLEAI_SHA}))
           Target | llumiverse commit   | ${TARGET_LLUMIVERSE_MSG}
