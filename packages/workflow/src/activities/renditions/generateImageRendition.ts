@@ -49,11 +49,6 @@ export async function generateImageRendition(
         throw new DocumentNotFoundError(`Document ${objectId} not found`, [objectId]);
     }
 
-    if (!inputObject.content?.source) {
-        log.error(`Document ${objectId} has no etag or source`);
-        throw new DocumentNotFoundError(`Document ${objectId} has no etag or source`, [objectId]);
-    }
-
     if (!params.format) {
         log.error(`Format not found`);
         throw new WorkflowParamNotFoundError(`format`);
