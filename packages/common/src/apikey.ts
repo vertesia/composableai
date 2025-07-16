@@ -57,6 +57,12 @@ export interface AuthTokenPayload {
     project?: ProjectRef;
     project_roles?: ProjectRoles[];
 
+    /**
+     * The roles of the user in the application it has access
+     * The key is the unique app name (kebab-case) and the value a list of roles.
+     */
+    apps_roles: Record<string, string[]>,
+
     /** groups */
     groups?: UserGroupRef[]; //group ids
 

@@ -1,4 +1,9 @@
 
+export interface AppRef {
+    id: string;
+    name: string;
+}
+
 export interface AppUIConfig {
     /**
      * The source URL of the app. The src can be a template which contain
