@@ -55,13 +55,7 @@ export interface AppManifestData {
      */
     tool_collections?: string[]
 }
-export interface AppManifestDataWithTargetEnv extends AppManifestData {
-    /**
-     * Where the app is intended to run.
-     */
-    target_env: AppTargetEnv;
-}
-export interface AppManifest extends AppManifestDataWithTargetEnv {
+export interface AppManifest extends AppManifestData {
     id: string;
     created_at: string;
     updated_at: string;
