@@ -18,6 +18,7 @@ export interface RunListingFilters {
     fromDate?: string,
     toDate?: string,
     parent?: string | false,
+    workflow_run_ids?: string[],
 }
 
 export interface VectorSearchQuery {
@@ -31,15 +32,20 @@ export interface VectorSearchQuery {
 
 export interface SimpleSearchQuery {
     name?: string;
-    status?: string;
+    status?: string | string[];
 }
 
 export interface ObjectSearchQuery extends SimpleSearchQuery {
+    createdFrom?: string;
+    createdTo?: string;
+    updatedFrom?: string;
+    updatedTo?: string;
     location?: string;
     parent?: string;
     similarTo?: string;
     embeddingType?: SupportedEmbeddingTypes;
     type?: string;
+    types?: string[];
 }
 
 export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
@@ -72,6 +78,7 @@ export interface RunSearchQuery extends SimpleSearchQuery {
     end?: string;
     finish_reason?: string;
     created_by?: string;
+    workflow_run_ids?: string[];
 }
 
 export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {

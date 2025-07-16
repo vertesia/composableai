@@ -44,9 +44,16 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
             case AgentMessageType.COMPLETE:
                 return {
                     ...baseStyle,
-                    containerClass: "bg-white border-l-4 border-l-green-500 shadow-sm",
+                    containerClass: "bg-white border-l-4 border-l-success shadow-sm",
                     iconComponent: <CheckCircle className="size-4 text-success" />,
                     sender: "Completed",
+                };
+            case AgentMessageType.TERMINATED:
+                return {
+                    ...baseStyle,
+                    containerClass: "bg-white border-l-4 border-l-attention shadow-sm",
+                    iconComponent: <CheckCircle className="size-4 text-attention" />,
+                    sender: "Terminated",
                 };
             case AgentMessageType.QUESTION:
                 return {
@@ -377,6 +384,8 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                 return "border-l-success bg-success";
             case AgentMessageType.PLAN:
                 return "border-l-attention bg-attention";
+            case AgentMessageType.TERMINATED:
+                return "border-l-muted bg-muted";
             default:
                 return "border-l-indigo-500 dark:border-l-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10";
         }
@@ -436,6 +445,8 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                     <Bot className={`size-4 ${iconColor}`} />
                 );
             case AgentMessageType.COMPLETE:
+                return <CheckCircle className={`size-4 ${iconColor}`} />;
+            case AgentMessageType.TERMINATED:
                 return <CheckCircle className={`size-4 ${iconColor}`} />;
             case AgentMessageType.IDLE:
                 return <Clock className={`size-4 ${iconColor}`} />;

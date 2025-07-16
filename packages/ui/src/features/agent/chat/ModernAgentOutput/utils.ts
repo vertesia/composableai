@@ -17,6 +17,14 @@ export function insertMessageInTimeline(arr: AgentMessage[], m: AgentMessage) {
  * This function checks the main workstream status to determine if the conversation is complete
  * For multi-workstream scenarios, we keep streaming until the main workstream is complete
  */
+
+export const DONE_STATES = [
+    AgentMessageType.COMPLETE,
+    AgentMessageType.IDLE,
+    AgentMessageType.REQUEST_INPUT,
+    AgentMessageType.TERMINATED,
+];
+
 export function isInProgress(messages: AgentMessage[]) {
     if (!messages.length) return true;
 
@@ -46,7 +54,7 @@ export function isInProgress(messages: AgentMessage[]) {
         console.log(`[isInProgress] Last message type in only workstream: ${lastMessage.type}`);
 
         // Check if this single workstream is completed
-        if (![AgentMessageType.COMPLETE, AgentMessageType.IDLE, AgentMessageType.REQUEST_INPUT].includes(
+        if (!DONE_STATES.includes(
             lastMessage.type
         )) {
             console.log("[isInProgress] Only workstream is still in progress");
@@ -71,7 +79,7 @@ export function isInProgress(messages: AgentMessage[]) {
         const lastMainMessage = mainWorkstreamMsgs[mainWorkstreamMsgs.length - 1];
         console.log(`[isInProgress] Last message type in main workstream: ${lastMainMessage.type}`);
 
-        if (![AgentMessageType.COMPLETE, AgentMessageType.IDLE, AgentMessageType.REQUEST_INPUT].includes(
+        if (!DONE_STATES.includes(
             lastMainMessage.type
         )) {
             console.log("[isInProgress] Main workstream is still in progress");
@@ -89,7 +97,7 @@ export function isInProgress(messages: AgentMessage[]) {
     for (const [workstreamId, msgs] of workstreamMessages.entries()) {
         if (msgs.length > 0) {
             const lastMessage = msgs[msgs.length - 1];
-            if (![AgentMessageType.COMPLETE, AgentMessageType.IDLE, AgentMessageType.REQUEST_INPUT].includes(
+            if (!DONE_STATES.includes(
                 lastMessage.type
             )) {
                 console.log(`[isInProgress] Workstream ${workstreamId} is still active`);
@@ -168,7 +176,7 @@ export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, "p
             );
 
             if (hasCompleteMessage ||
-                [AgentMessageType.COMPLETE, AgentMessageType.IDLE, AgentMessageType.REQUEST_INPUT].includes(lastMessage.type)) {
+                DONE_STATES.includes(lastMessage.type)) {
                 console.log(`[getWorkstreamStatusMap] Marking workstream ${workstreamId} as completed`);
                 statusMap.set(workstreamId, "completed");
             } else {

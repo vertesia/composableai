@@ -1,5 +1,6 @@
 import { AccessControlEntry, ACECreatePayload, AcesQueryOptions, Permission, ProjectRoles } from "@vertesia/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { GroupsApi } from "./GroupsApi.js";
 
 
 export interface FilterOption {
@@ -17,6 +18,7 @@ export class IamApi extends ApiTopic {
 
     aces = new AcesApi(this)
     roles = new RolesApi(this)
+    groups = new GroupsApi(this)
 }
 
 export class RolesApi extends ApiTopic {

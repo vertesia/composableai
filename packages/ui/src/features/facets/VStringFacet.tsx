@@ -5,30 +5,37 @@ import { FilterGroup } from '@vertesia/ui/core';
 interface StringFacetProps {
     buckets: FacetBucket[];
     name: string;
+    placeholder?: string;
+    type?: 'select';
+    multiple?: boolean;
 }
 
-export function createStringFilterGroup({ buckets, name }: StringFacetProps): FilterGroup {
+export function createStringFilterGroup({ buckets, name, placeholder, type = 'select', multiple = false }: StringFacetProps): FilterGroup {
     const options = buckets.map((bucket) => ({
         label: facetOptionLabel(bucket),
         value: bucket._id
     }));
 
     const filterGroup: FilterGroup = {
-        name: name.charAt(0).toUpperCase() + name.slice(1),
+        name: name,
         options: options,
-        type: "select"
-
+        type: type,
+        multiple: multiple,
+        placeholder: `${placeholder ?? `${name.charAt(0).toUpperCase() + name.slice(1)}`}`,
+        ...({ allowCreate: false })
     };
 
     return filterGroup;
 }
 
-export function VStringFacet({ buckets, name, }: {
+export function VStringFacet({ buckets, name, placeholder, type, multiple }: {
     search: any;
     buckets: FacetBucket[];
     name: string;
     placeholder?: string;
     className?: string;
+    type?: 'select';
+    multiple?: boolean;
 }) {
-    return createStringFilterGroup({ buckets, name });
+    return createStringFilterGroup({ buckets, name, placeholder, type, multiple });
 }
