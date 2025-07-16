@@ -41,7 +41,6 @@ export interface AppManifestData {
 
     title: string;
     description: string;
-    version: string;
     publisher: string;
 
     /**
