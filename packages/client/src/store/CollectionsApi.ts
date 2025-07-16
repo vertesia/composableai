@@ -17,8 +17,6 @@ export class CollectionsApi extends ApiTopic {
     list(payload: CollectionSearchPayload = {}): Promise<CollectionItem[]> {
         return this.get("/", {
             query: {
-                limit: 100,
-                offset: 0,
                 ...payload
             }
         });

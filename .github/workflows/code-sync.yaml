@@ -1,0 +1,68 @@
+name: code-sync
+
+on:
+#   push:
+#     branches:
+#       - preview
+  workflow_dispatch: # mainly for testing
+    inputs:
+      from_branch:
+        description: "From which branch to sync code with main"
+        required: true
+        default: "preview"
+      from_sha:
+        description: "From which commit SHA to sync code with main"
+        required: false
+        default: ""
+
+env:
+  FROM_BRANCH: ${{ inputs.from_branch || github.ref_name }}
+
+permissions:
+  contents: write # required for pushing changes to the repository
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all because we need to access info from different branches
+          fetch-tags: false
+          submodules: recursive
+
+      - name: Code Sync
+        id: sync
+        run: |
+          export SOURCE_COMPOSABLEAI_REF="${{ env.FROM_BRANCH }}"
+          export SOURCE_COMPOSABLEAI_SHA="$(git rev-parse 'origin/${{ env.FROM_BRANCH }}')"
+          export SOURCE_COMPOSABLEAI_MSG="$(git log --format="%cd: %s by %an" --date=short -1 $SOURCE_COMPOSABLEAI_SHA)"
+
+          export SOURCE_LLUMIVERSE_REF="main"
+          export SOURCE_LLUMIVERSE_SHA="$(git ls-tree --format='%(objectname)' $SOURCE_COMPOSABLEAI_SHA llumiverse)"
+          export SOURCE_LLUMIVERSE_MSG="$(git -C llumiverse log --format="%cd: %s by %an" --date=short -1 $SOURCE_LLUMIVERSE_SHA)"
+
+          export TARGET_COMPOSABLEAI_REF="main"
+          export TARGET_COMPOSABLEAI_SHA="$(git rev-parse origin/main)"
+          export TARGET_COMPOSABLEAI_MSG="$(git log --format="%cd: %s by %an" --date=short -1 $TARGET_COMPOSABLEAI_SHA)"
+
+          export TARGET_LLUMIVERSE_REF="main"
+          export TARGET_LLUMIVERSE_SHA="$(git ls-tree --format='%(objectname)' $TARGET_COMPOSABLEAI_SHA llumiverse)"
+          export TARGET_LLUMIVERSE_MSG="$(git -C llumiverse log --format="%cd: %s by %an" --date=short -1 $TARGET_LLUMIVERSE_SHA)"
+
+          export TEMP_BRANCH="sync-${SOURCE_COMPOSABLEAI_SHA::7}"
+
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          Type   | Item                | Value
+          :----- | :------------------ | :---------------
+          Source | composableai commit | ${SOURCE_COMPOSABLEAI_MSG}
+          Source | composableai ref    | \`${SOURCE_COMPOSABLEAI_REF}\` ([\`${SOURCE_COMPOSABLEAI_SHA}\`](https://github.com/vertesia/composableai/commit/${SOURCE_COMPOSABLEAI_SHA}))
+          Source | llumiverse commit   | ${SOURCE_LLUMIVERSE_MSG}
+          Source | llumiverse ref      | \`${SOURCE_LLUMIVERSE_REF}\`   ([\`${SOURCE_LLUMIVERSE_SHA}\`](https://github.com/vertesia/llumiverse/commit/${SOURCE_LLUMIVERSE_SHA}))
+          Target | composableai commit | ${TARGET_COMPOSABLEAI_MSG}
+          Target | composableai ref    | \`${TARGET_COMPOSABLEAI_REF}\` ([\`${TARGET_COMPOSABLEAI_SHA}\`](https://github.com/vertesia/composableai/commit/${TARGET_COMPOSABLEAI_SHA}))
+          Target | llumiverse commit   | ${TARGET_LLUMIVERSE_MSG}
+          Target | llumiverse ref      | \`${TARGET_LLUMIVERSE_REF}\`   ([\`${TARGET_LLUMIVERSE_SHA}\`](https://github.com/vertesia/llumiverse/commit/${TARGET_LLUMIVERSE_SHA}))
+          Other  | Temporary branch    | \`${TEMP_BRANCH}\`
+          EOF
