@@ -1,9 +1,9 @@
 name: code-sync
 
 on:
-#   push:
-#     branches:
-#       - preview
+  push:
+    branches:
+      - preview
   workflow_dispatch: # mainly for testing
     inputs:
       from_branch:
