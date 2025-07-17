@@ -1,4 +1,4 @@
-# Composable Prompts SDK
+# Vertesia SDK
 
 This is the JavaScript SDK for [Composable Prompts Studio](https://app.composableprompts.com).
 
