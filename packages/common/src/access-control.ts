@@ -44,6 +44,7 @@ export enum Permission {
 
 export enum AccessControlResourceType {
     project = "project",
+    projects = "projects",
     environment = "environment",
     account = "account",
     interaction = "interaction",
@@ -80,7 +81,7 @@ export interface ACEUpdatePayload extends Partial<ACECreatePayload> {
 
 export interface AcesQueryOptions {
 
-    level?: 'resource' | 'project' | 'account'
+    level?: 'resource' | 'project' | 'projects' | 'account'
     resource?: string
     principal?: string
     role?: string

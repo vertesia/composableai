@@ -2,6 +2,7 @@
 
 export enum ResolvableRefType {
     project = "Project",
+    projects = "Projects",
     environment = "Environment",
     user = "User",
     account = "Account",
