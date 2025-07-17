@@ -72,7 +72,7 @@ export default class AppsApi extends ApiTopic {
      * @param projectId - the id of the project to get the installed apps for
      * @param kind - the kind of app installations to filter by (e.g., 'agent', 'tool', etc.)
      */
-    getInstalledAppsForProject(projectId?: string, kind?: AppInstallationKind): Promise<AppInstallation[]> {
+    getInstalledAppsForProject(projectId?: string, kind?: AppInstallationKind): Promise<AppInstallationWithManifest[]> {
         return this.get(`/installations/${projectId}`, {
             query: {
                 kind,
