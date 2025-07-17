@@ -398,7 +398,6 @@ async function generateImageEmbeddings({
 
     const resRnd = await client.store.objects.getRendition(document.id, {
         format: ImageRenditionFormat.jpeg,
-        max_hw: 1024,
         generate_if_missing: true,
         sign_url: true,
     });

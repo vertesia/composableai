@@ -1,17 +1,10 @@
 import { useRef, useState } from "react";
-// import { AnimatePresence, motion } from "motion/react";
-import dayjs from "dayjs";
-import { Calendar } from "../calendar";
-
-import { Button } from "../button";
-import { Checkbox } from "../checkbox";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "../command";
-import { Input } from "../input";
-import { Popover, PopoverContent, PopoverTrigger } from "../popover";
-import { AnimateChangeInHeight } from "./animateChangeInHeight";
-import { FilterGroupOption, FilterOption } from "./types";
-import { DynamicLabel } from "./DynamicLabel";
-
+import { Checkbox } from "../../checkbox";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "../../command";
+import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
+import { AnimateChangeInHeight } from "../animateChangeInHeight";
+import { FilterGroupOption, FilterOption } from "../types";
+import { DynamicLabel } from "../DynamicLabel";
 
 export const SelectionCombobox = ({
     filterType,
@@ -32,6 +25,7 @@ export const SelectionCombobox = ({
     const nonSelectedFilterValues = options?.filter(
         (option) => !filterValues.some(filter => filter.value === option.value)
     );
+
     return (
         <Popover
             _open={open}
@@ -92,7 +86,7 @@ export const SelectionCombobox = ({
                                                 setOpen(false);
                                             }}
                                         >
-                                            <Checkbox checked={true} />
+                                            <input type="checkbox" checked={true} onChange={() => {}} />
                                             <DynamicLabel
                                                 value={value.value || ''}
                                                 labelRenderer={labelRenderer}
@@ -145,111 +139,6 @@ export const SelectionCombobox = ({
                         </CommandList>
                     </Command>
                 </AnimateChangeInHeight>
-            </PopoverContent>
-        </Popover>
-    );
-};
-
-export const DateCombobox = ({
-    filterValues,
-    setFilterValues,
-}: {
-    filterValues: string[];
-    setFilterValues: (values: string[]) => void;
-}) => {
-    const [open, setOpen] = useState(false);
-    const selectedDate = filterValues[0] ? new Date(filterValues[0]) : undefined;
-
-    return (
-        <Popover _open={open} onOpenChange={setOpen}>
-            <PopoverTrigger
-                className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition"
-            >
-                <div className="flex gap-1.5 items-center">
-                    {selectedDate ? (
-                        dayjs(selectedDate).format("MMM D, YYYY")
-                    ) : (
-                        <span>Pick a date</span>
-                    )}
-                </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                    className="p-0"
-                    value={selectedDate}
-                    onChange={(date) => {
-                        if (date) {
-                            const actualDate = Array.isArray(date) ? date[0] : date;
-                            if (actualDate) {
-                                setFilterValues([dayjs(actualDate).format("YYYY-MM-DD")]);
-                                setOpen(false);
-                            }
-                        }
-                    }}
-                />
-            </PopoverContent>
-        </Popover>
-    );
-};
-
-export const TextCombobox = ({
-    filterType,
-    filterValue,
-    setFilterValue,
-}: {
-    filterType: string;
-    filterValue: string;
-    setFilterValue: (value: string) => void;
-}) => {
-    const [open, setOpen] = useState(false);
-    const [inputValue, setInputValue] = useState(filterValue);
-
-    const handleKeyDown = (event: React.KeyboardEvent) => {
-        if (event.key === "Enter") {
-            setFilterValue(inputValue);
-            setOpen(false);
-        }
-    };
-
-    return (
-        <Popover
-            _open={open}
-            onOpenChange={(open) => {
-                setOpen(open);
-                if (!open && inputValue !== filterValue) {
-                    setInputValue(filterValue);
-                }
-            }}
-        >
-            <PopoverTrigger
-                className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition"
-            >
-                <div className="flex gap-1.5 items-center">
-                    {filterValue || "Enter text..."}
-                </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-3">
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center p-1.5 text-xs text-muted">
-                        <span>{filterType}</span>
-                    </div>
-                    <Input autoFocus
-                        type="text" size={"sm"}
-                        value={inputValue}
-                        onChange={setInputValue}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Enter text..."
-                    />
-                    <Button
-                        size="sm" variant={"outline"}
-                        onClick={() => {
-                            setFilterValue(inputValue);
-                            setOpen(false);
-                        }}
-                    >
-                        Apply
-                    </Button>
-                </div>
             </PopoverContent>
         </Popover>
     );
