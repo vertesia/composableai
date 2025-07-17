@@ -83,7 +83,6 @@ export function ContentOverview({
             // Request document rendition from the server
             const response = await client.objects.getRendition(object.id, {
                 format: format as any, // We're extending the format type
-                max_hw: 1024, // Not used for document exports but required by API
                 generate_if_missing: true,
                 sign_url: true,
             });
@@ -172,7 +171,6 @@ export function ContentOverview({
         if (isImage) {
             client.objects
                 .getRendition(object.id, {
-                    max_hw: 1024,
                     format: ImageRenditionFormat.jpeg,
                     generate_if_missing: false,
                     sign_url: true,

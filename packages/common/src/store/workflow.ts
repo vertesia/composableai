@@ -376,6 +376,7 @@ export enum AgentMessageType {
     QUESTION = "question",
     REQUEST_INPUT = "request_input",
     IDLE = "idle",
+    TERMINATED = "terminated",
 }
 
 export interface PlanTask {

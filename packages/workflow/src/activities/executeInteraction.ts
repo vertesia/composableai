@@ -177,7 +177,7 @@ export async function executeInteractionFromActivity(
     const userTags = params.tags;
     const info = activityInfo();
     const runId = info.workflowExecution.runId;
-    let tags = ["workflow", `tmpRunId:${runId}`]; //TODO use wf:wfName
+    let tags = ["workflow"];
     if (userTags) {
         tags = tags.concat(userTags);
     }
@@ -191,9 +191,9 @@ export async function executeInteractionFromActivity(
     if (params.include_previous_error) {
         //retrieve last failed run if any
         if (info.attempt > 1) {
-            log.info("Retrying, searching for previous run", { tags: ["tmpRunId:" + runId] });
+            log.info("Retrying, searching for previous run", { prev_run_id: runId });
             const payload: RunSearchPayload = {
-                query: { tags: ["tmpRunId:" + info.workflowExecution.runId] },
+                query: { workflow_run_ids: [runId] },
                 limit: 1,
             };
             const previousRun = await client.runs.search(payload).then((res) => {

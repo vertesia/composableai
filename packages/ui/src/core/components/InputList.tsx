@@ -12,8 +12,9 @@ interface InputListProps {
     allowSpaces?: boolean;
     delimiters?: string; // space and , by default
     placeholder?: string;
+    autoFocus?: boolean;
 }
-export function InputList({ value = [], onChange, className, delimiters = ", ", placeholder }: InputListProps) {
+export function InputList({ value = [], onChange, className, delimiters = ", ", placeholder, autoFocus }: InputListProps) {
     const [text, setText] = useState<string>('');
 
     const onBlur = (ev: any) => {
@@ -74,6 +75,7 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
                 onKeyDown={onKeyDown}
                 onChange={setText}
                 placeholder={!value || value.length === 0 ? placeholder : ''}
+                autoFocus={autoFocus}
             />
         </div>
     )
