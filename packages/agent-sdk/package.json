@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/agent-sdk",
-    "version": "0.67.0",
+    "version": "0.68.0",
     "description": "Agent SDK - utilities for building agent tools",
     "type": "module",
     "types": "./lib/types/index.d.ts",
