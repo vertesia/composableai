@@ -16,7 +16,7 @@ interface SelectCollectionProps {
  */
 export function SelectCollection({ onChange, value, disabled = false, className }: SelectCollectionProps) {
     const { client } = useUserSession();
-    const { data: collections, error } = useFetch(() => client.store.collections.list({ dynamic: false }), []);
+    const { data: collections, error } = useFetch(() => client.store.collections.search({ dynamic: false }), []);
 
     if (error) {
         return <ErrorBox title='Collection fetch failed'>{error.message}</ErrorBox>

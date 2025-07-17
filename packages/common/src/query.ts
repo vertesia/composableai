@@ -1,5 +1,6 @@
 import { ExecutionRunStatus } from './interaction.js';
 import { SupportedEmbeddingTypes } from './project.js';
+import { CollectionSearchPayload } from './store/collections.js';
 
 export interface RunListingQueryOptions {
     project?: string;
@@ -85,5 +86,9 @@ export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {
 
 export interface ComplexSearchQuery extends ObjectSearchQuery {
     vector?: VectorSearchQuery;
+    match?: Record<string, any>;
+}
+
+export interface ComplexCollectionSearchQuery extends CollectionSearchPayload {
     match?: Record<string, any>;
 }
