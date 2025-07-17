@@ -16,8 +16,8 @@ export function CollectionsTable({ }: CollectionsTableProps) {
     const [collectionToDelete, setCollectionToDelete] = useState<string | undefined>();
     const [isLoading, setIsLoading] = useState(true);
 
-    const { data: collections, error, refetch } = useFetch(() => client.store.collections.list(), []);
-    
+    const { data: collections, error, refetch } = useFetch(() => client.store.collections.search({}), []);
+
     // Update loading state when data is fetched
     useEffect(() => {
         if (collections || error) {
@@ -31,7 +31,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
 
     const deleteCollection = async () => {
         if (!collectionToDelete) return;
-        
+
         try {
             await client.store.collections.delete(collectionToDelete);
             toast({
@@ -77,8 +77,8 @@ export function CollectionsTable({ }: CollectionsTableProps) {
                                 <td>{c.type?.name || "-"}</td>
                                 <td>{dayjs(c.created_at).fromNow()}</td>
                                 <td className="text-right">
-                                    <Button 
-                                        variant="destructive" 
+                                    <Button
+                                        variant="destructive"
                                         size="sm"
                                         onClick={() => setCollectionToDelete(c.id)}
                                     >
@@ -90,7 +90,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
                     }
                 </TBody>
             </Table>}
-            
+
             <ConfirmModal
                 isOpen={!!collectionToDelete}
                 title="Delete Collection"
