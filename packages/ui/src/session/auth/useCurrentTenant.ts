@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useUserSession } from "@vertesia/ui/session";
-import { useTenantManagement } from './useTenantManagement';
 
 interface TenantConfig {
     tenantKey: string;
@@ -13,40 +12,62 @@ interface TenantConfig {
 
 export function useCurrentTenant() {
     const { user } = useUserSession();
-    const { listTenants, isLoading, error } = useTenantManagement();
     const [currentTenant, setCurrentTenant] = useState<TenantConfig | null>(null);
-    const [isLoadingTenant, setIsLoadingTenant] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const loadCurrentTenant = async () => {
             if (!user?.email) {
                 setCurrentTenant(null);
-                setIsLoadingTenant(false);
+                setIsLoading(false);
                 return;
             }
 
             try {
-                const result = await listTenants();
-                if (result.success && result.tenants) {
-                    const userEmailDomain = user.email.split('@')[1];
-                    const matchingTenant = result.tenants.find(tenant => 
-                        tenant.domain.includes(userEmailDomain)
-                    );
-                    setCurrentTenant(matchingTenant || null);
+                const response = await fetch('/api/resolve-tenant', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        tenantEmail: user.email
+                    })
+                });
+
+                if (response.ok) {
+                    const tenantData = await response.json();
+                    if (tenantData) {
+                        // Convert the resolved tenant data to our TenantConfig format
+                        setCurrentTenant({
+                            tenantKey: tenantData.name || 'unknown',
+                            name: tenantData.label || tenantData.name || 'Unknown',
+                            domain: [user.email.split('@')[1]], // Use the user's domain
+                            firebaseTenantId: tenantData.firebaseTenantId,
+                            provider: tenantData.provider,
+                            logo: tenantData.logo
+                        });
+                    } else {
+                        setCurrentTenant(null);
+                    }
+                } else {
+                    setCurrentTenant(null);
                 }
             } catch (error) {
                 console.error('Error loading current tenant:', error);
+                setError('Failed to load tenant configuration');
+                setCurrentTenant(null);
             } finally {
-                setIsLoadingTenant(false);
+                setIsLoading(false);
             }
         };
 
         loadCurrentTenant();
-    }, [user?.email, listTenants]);
+    }, [user?.email]);
 
     return {
         currentTenant,
-        isLoading: isLoadingTenant || isLoading,
+        isLoading,
         error
     };
 }
