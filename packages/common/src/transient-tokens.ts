@@ -25,7 +25,7 @@ export interface UserInviteTokenData {
     email: string;
     role: ProjectRoles;
     account: AccountRef;
-    projects: string;
+    projects: [string];
     projectsRef?: ProjectRef;
     invitedBy: { name: string, email: string; };
 }
