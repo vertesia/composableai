@@ -70,8 +70,8 @@ export interface NavigateOptions {
 
 function getElementHrefAsUrl(elem: HTMLElement) {
     if (elem && elem.tagName.toLowerCase() === 'a') {
-        const href = (elem as HTMLAnchorElement).href;
-        if (href != null) {
+        const href = (elem as HTMLAnchorElement)?.href.trim();
+        if (typeof href === 'string' && href.length > 0) {
             return new URL(href);
         }
     }

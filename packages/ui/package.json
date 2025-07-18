@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/ui",
-    "version": "0.65.0",
+    "version": "0.69.0",
     "description": "Vertesia UI components and and hooks",
     "type": "module",
     "main": "./lib/index.js",
@@ -50,31 +50,32 @@
         "debounce": "^2.2.0",
         "fast-xml-parser": "^5.2.3",
         "firebase": "^10.12.2",
+        "json-schema": "^0.4.0",
         "jwt-decode": "^4.0.0",
         "lodash-es": "^4.17.21",
         "lucide-react": "^0.511.0",
         "monaco-editor": "^0.52.2",
         "motion": "^12.12.1",
         "react": "^19.1.0",
+        "react-calendar": "^6.0.0",
         "react-date-picker": "^11.0.0",
         "react-dom": "^19.1.0",
         "react-error-boundary": "^6.0.0",
         "react-markdown": "^10.1.0",
         "remark-gfm": "^4.0.1",
         "tailwind-merge": "^3.3.0",
-        "ts-md5": "^1.3.1",
-        "json-schema": "^0.4.0"
+        "ts-md5": "^1.3.1"
     },
     "devDependencies": {
         "@eslint/js": "^9.27.0",
         "@rollup/plugin-commonjs": "^28.0.3",
         "@rollup/plugin-json": "^6.1.0",
         "@rollup/plugin-node-resolve": "^16.0.1",
+        "@types/json-schema": "^7.0.15",
         "@types/lodash-es": "^4.17.12",
         "@types/node": "^22.15.21",
         "@types/react": "^19.1.0",
         "@types/react-dom": "^19.1.1",
-        "@types/json-schema": "^7.0.15",
         "eslint": "^9.27.0",
         "eslint-import-resolver-typescript": "^4.3.5",
         "eslint-plugin-import": "^2.31.0",
@@ -123,6 +124,10 @@
         "./features": {
             "types": "./lib/types/features/index.d.ts",
             "default": "./lib/esm/features/index.js"
+        },
+        "./shell": {
+            "types": "./lib/types/shell/index.d.ts",
+            "default": "./lib/esm/shell/index.js"
         }
     },
     "types": "./lib/index.d.ts",
@@ -154,6 +159,9 @@
             ],
             "form": [
                 "./lib/types/form/index.d.ts"
+            ],
+            "shell": [
+                "./lib/types/shell/index.d.ts"
             ]
         }
     }
