@@ -70,12 +70,12 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     /**
      * Whether to route resource intensive tasks to a heavy load queue. Managed by the application.
      */
-    enable_heavy_task_routing?: boolean;
+    _enable_heavy_task_routing?: boolean;
 
     /**
      * The suffix to append to the task queue name for heavy load routing. Managed by the application.
      */
-    heavy_task_queue_suffix?: string;
+    _heavy_task_queue_suffix?: string;
 }
 
 export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {
