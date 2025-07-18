@@ -17,6 +17,8 @@ export enum ProjectRoles {
     reader = "reader", // can only read (browse)
     billing = "billing", // can only manage billings
     member = "member", // can only access, but no specific permissions
+    app_user = "app_user", // can access and perform read/write operations in the context of an app
+    app_reader = "app_reader", // can access and perform read operations in the context of an app
 }
 
 export function isRoleIncludedIn(role: string, includingRole: string) {

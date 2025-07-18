@@ -1,27 +1,78 @@
-import { VertesiaClient } from "@vertesia/client"
-import { ToolDefinition } from "@llumiverse/common";
+import type { ToolDefinition, ToolUse } from "@llumiverse/common";
+import { VertesiaClient } from "@vertesia/client";
+import { AuthTokenPayload, ToolResult, ToolResultContent } from "@vertesia/common";
+
+export interface ToolExecutionContext {
+    /**
+     * The raw JWT token to the tool execution request
+     */
+    token: string;
+    /**
+     * The decoded JWT token
+     */
+    payload: AuthTokenPayload;
+    /**
+     * Vertesia client factory using the current auth token.
+     * @returns a vertesia client instance
+     */
+    getClient: () => Promise<VertesiaClient>;
+}
+
+export interface ToolExecutionResult extends ToolResultContent {
+    /**
+     * Medata can be used to return more info on the tool execution like stats or user messages.
+     */
+    metadata?: Record<string, any>;
+}
+
+export interface ToolExecutionResponse extends ToolExecutionResult, ToolResult {
+    /**
+     * The tool use id of the tool use request. For traceability.
+     */
+    tool_use_id: string;
+}
+
+export interface ToolExecutionResponseError {
+    /**
+     * The tool use id of the tool use request. For traceability.
+     */
+    tool_use_id: string;
+    /**
+     * The http status code
+     */
+    status: number;
+    /**
+     * the error message
+     */
+    error: string;
+    /**
+     * Additional context information
+     */
+    data?: Record<string, any>;
+}
 
 export interface ToolExecutionPayload<ParamsT extends Record<string, any>> {
-    context: {
-        serverUrl: string,
-        storeUrl: string,
-        apikey: string
-    }
-    vars: Record<string, any>,
-    tool_input: ParamsT,
-    tool_name: string,
+    tool_use: ToolUse<ParamsT>,
+    /**
+     * Optional metadata related to the current execution request
+     */
+    metadata?: Record<string, any>,
 }
 
-export interface ToolFunctionParams<ParamsT extends Record<string, any>> {
-    client: VertesiaClient,
-    vars: Record<string, any>,
-    input: ParamsT,
-}
-
-export type ToolFn<ParamsT extends Record<string, any>> = (params: ToolFunctionParams<ParamsT>) => Promise<any>;
+export type ToolFn<ParamsT extends Record<string, any>> = (payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext) => Promise<ToolExecutionResult>;
 
 export interface Tool<ParamsT extends Record<string, any>> extends ToolDefinition {
     run: ToolFn<ParamsT>;
+}
+
+/**
+ * The interface that should be return when requesting a collection endpoint using a GET 
+ */
+export interface ToolCollectionDefinition {
+    title: string;
+    description: string;
+    src: string;
+    tools: ToolDefinition[];
 }
 
 export type { ToolDefinition };
