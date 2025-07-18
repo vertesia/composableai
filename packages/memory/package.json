@@ -23,8 +23,8 @@
         "vitest": "^3.1.1"
     },
     "dependencies": {
-        "@vertesia/converters": "^0.42.2",
-        "@vertesia/json": "^0.42.2",
+        "@vertesia/converters": "workspace:*",
+        "@vertesia/json": "workspace:*",
         "glob": "^11.0.0",
         "micromatch": "^4.0.8",
         "tar-stream": "^3.1.7"
