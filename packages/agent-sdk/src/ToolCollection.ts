@@ -4,7 +4,7 @@ import { authorize } from "./auth.js";
 import { ToolRegistry } from "./ToolRegistry.js";
 import type { Tool, ToolDefinition, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
 
-export interface ToolCollecionProperties {
+export interface ToolCollectionProperties {
     /**
      * A kebab case collection name. Must only contains alphanumeric and dash characters,
      * The name can be used to generate the path where the collection is exposed.
@@ -62,7 +62,7 @@ export class ToolCollection implements Iterable<Tool<any>> {
 
     constructor({
         name, title, icon, description, tools
-    }: ToolCollecionProperties) {
+    }: ToolCollectionProperties) {
         this.name = name;
         this.title = title || kebabCaseToTitle(name);
         this.icon = icon;
