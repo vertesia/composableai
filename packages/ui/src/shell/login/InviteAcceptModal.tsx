@@ -1,5 +1,5 @@
 import { TransientToken, UserInviteTokenData } from "@vertesia/common"
-import { Button, Modal, ModalBody, ModalTitle } from "@vertesia/ui/core"
+import { Button, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core"
 import { useEffect, useState } from "react"
 import { useUserSession } from "@vertesia/ui/session"
 
@@ -47,31 +47,37 @@ export function InviteAcceptModal() {
         }
     }
 
-    const inviteList = invites.map(invite => (
-        <div key={invite.id} className="flex flex-row w-full justify-between border rounded-sm px-2 py-2 ">
+    const inviteList = invites.map(invite => {
+        if (!invite.data.account) {
+            console.warn("Invite has no account data", invite);
+            return null; // Skip rendering this invite
+        }
+
+        return (<div key={invite.id} className="flex flex-row w-full justify-between border rounded-sm px-2 py-2 ">
             <div className="flex flex-col">
-                <div className="w-full font-semibold">{invite.data.account.name}</div>
+                <div className="w-full font-semibold">{invite.data.account.name ?? invite.data.account}</div>
+                {invite.data.project && <div className="w-full text-base">- {invite.data.project.name}</div>}
                 <div className="text-xs">Role: {invite.data.role}</div>
                 <div className="text-xs">by {invite.data.invitedBy.name}</div>
             </div>
             <div className="flex flex-col gap-4">
                 <Button size={'xs'} onClick={() => accept(invite)}>Accept</Button> <Button size={'xs'} variant="secondary" onClick={() => reject(invite)}>Reject</Button>
             </div>
-        </div>
-    ))
+        </div>)
+    })
 
     return (
         <div>
-            <Modal isOpen={showModal} onClose={closeModal}>
-                <ModalTitle>Review Invites</ModalTitle>
-                <ModalBody>
+            <VModal isOpen={showModal} onClose={closeModal}>
+                <VModalTitle>Review Invites</VModalTitle>
+                <VModalBody>
                     <div className="text-sm pb-4">
                         You have received the following invites to join other accounts.
                         Please review and accept or declined them.
                     </div>
                     {inviteList}
-                </ModalBody>
-            </Modal>
+                </VModalBody>
+            </VModal>
         </div>
     )
 
