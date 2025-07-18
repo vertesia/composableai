@@ -40,7 +40,7 @@
   ],
   "references": [
     {
-      "path": "../memory-core/tsconfig.json"
+      "path": "../memory/tsconfig.json"
     }
   ]
 }
