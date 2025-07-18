@@ -1,4 +1,4 @@
-import { ProjectRoles, ProjectRef } from "./project.js";
+import { ProjectRef, ProjectRoles } from "./project.js";
 import { AccountRef } from "./user.js";
 
 
@@ -25,7 +25,6 @@ export interface UserInviteTokenData {
     email: string;
     role: ProjectRoles;
     account: AccountRef;
-    project: string;
-    projectRef?: ProjectRef;
+    project: ProjectRef;
     invitedBy: { name: string, email: string; };
 }
