@@ -23,4 +23,4 @@ export interface UserGroupRef {
     tags?: string[];
 }
 
-export const UserGroupRefPopulate = 'id name tags';
+export const UserGroupRefPopulate = 'id name tags description';

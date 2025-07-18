@@ -25,4 +25,5 @@ export interface ResourceRef {
     id: string
     name: string
     type: string
+    description?: string
 }

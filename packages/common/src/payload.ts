@@ -1,5 +1,6 @@
 import { FacetSpec } from "./facets.js";
 import {
+    ComplexCollectionSearchQuery,
     ComplexSearchQuery,
     InteractionSearchQuery,
     ObjectSearchQuery,
@@ -41,6 +42,10 @@ export interface PromptSearchPayload extends SearchPayload {
 
 export interface RunSearchPayload extends SearchPayload {
     query?: RunSearchQuery;
+}
+
+export interface ComputeCollectionFacetPayload extends Omit<ComputeFacetPayload, 'query'> {
+    query?: ComplexCollectionSearchQuery;
 }
 
 export interface ComputeInteractionFacetPayload extends ComputeFacetPayload {

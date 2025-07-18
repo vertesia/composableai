@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/cli",
-    "version": "0.67.0",
+    "version": "0.69.0",
     "description": "Code generation for the interaction defined with Composable AI Studio",
     "type": "module",
     "bin": {

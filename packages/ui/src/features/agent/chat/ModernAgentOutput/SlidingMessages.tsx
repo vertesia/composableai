@@ -27,7 +27,8 @@ function isPermanentMessage(message: AgentMessage): boolean {
         message.type === AgentMessageType.QUESTION ||
         message.type === AgentMessageType.COMPLETE ||
         message.type === AgentMessageType.IDLE ||
-        message.type === AgentMessageType.REQUEST_INPUT
+        message.type === AgentMessageType.REQUEST_INPUT || 
+        message.type === AgentMessageType.TERMINATED
     );
 }
 
