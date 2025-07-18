@@ -51,7 +51,7 @@ export function InviteAcceptModal() {
         <div key={invite.id} className="flex flex-row w-full justify-between border rounded-sm px-2 py-2 ">
             <div className="flex flex-col">
                 <div className="w-full font-semibold">{invite.data.account.name}</div>
-                {invite.data.projectsRef && <div className="w-full text-base">- {invite.data.projectsRef.name}</div>}
+                {invite.data.projectRef && <div className="w-full text-base">- {invite.data.projectRef.name}</div>}
                 <div className="text-xs">Role: {invite.data.role}</div>
                 <div className="text-xs">by {invite.data.invitedBy.name}</div>
             </div>
