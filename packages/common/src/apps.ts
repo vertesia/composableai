@@ -18,7 +18,6 @@ export interface AppUIConfig {
     external?: boolean;
 }
 
-export type AppTargetEnv = "development" | "preview" | "production";
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -81,11 +80,6 @@ export interface AppInstallationWithManifest extends Omit<AppInstallation, 'mani
 export interface AppInstallationPayload {
     app_id: string,
     settings?: Record<string, any>
-}
-
-export interface PublishAppPayload {
-    id: string; // the app id to publish
-    target_env: AppTargetEnv; // the target environment to publish the app to
 }
 
 export type AppInstallationKind = 'ui' | 'tools' | 'all';

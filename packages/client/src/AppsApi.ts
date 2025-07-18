@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import type { AppInstallation, AppInstallationKind, AppInstallationPayload, AppInstallationWithManifest, AppManifest, AppManifestData, PublishAppPayload } from "@vertesia/common";
+import type { AppInstallation, AppInstallationKind, AppInstallationPayload, AppInstallationWithManifest, AppManifest, AppManifestData } from "@vertesia/common";
 
 export default class AppsApi extends ApiTopic {
 
@@ -43,15 +43,6 @@ export default class AppsApi extends ApiTopic {
      */
     uninstall(installationId: string) {
         return this.del(`/install/${installationId}`);
-    }
-
-    /**
-     * Publish an existing app to a different environment.
-     * @param payload
-     * @returns
-     */
-    publish(payload: PublishAppPayload): Promise<AppManifest> {
-        return this.post('/publish', { payload });
     }
 
     /**
