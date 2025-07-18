@@ -378,6 +378,81 @@ importers:
         specifier: ^3.0.9
         version: 3.2.0(@types/debug@4.1.12)(@types/node@22.15.29)(terser@5.40.0)(tsx@3.14.0)(yaml@2.8.0)
 
+  packages/memory-cli:
+    dependencies:
+      '@vertesia/memory':
+        specifier: workspace:*
+        version: link:../memory-core
+      '@vertesia/memory-commands':
+        specifier: workspace:*
+        version: link:../memory-commands
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.5.1
+        version: 22.15.29
+      typescript:
+        specifier: ^5.0.2
+        version: 5.8.3
+      vitest:
+        specifier: ^3.1.1
+        version: 3.2.0(@types/debug@4.1.12)(@types/node@22.15.29)(terser@5.40.0)(tsx@3.14.0)(yaml@2.8.0)
+
+  packages/memory-commands:
+    dependencies:
+      '@vertesia/memory':
+        specifier: workspace:*
+        version: link:../memory-core
+      typescript:
+        specifier: ^5.6.3
+        version: 5.8.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.5.1
+        version: 22.15.29
+      ts-dual-module:
+        specifier: ^0.6.3
+        version: 0.6.3
+      vitest:
+        specifier: ^3.1.1
+        version: 3.2.0(@types/debug@4.1.12)(@types/node@22.15.29)(terser@5.40.0)(tsx@3.14.0)(yaml@2.8.0)
+
+  packages/memory-core:
+    dependencies:
+      '@vertesia/converters':
+        specifier: ^0.42.2
+        version: 0.42.2
+      '@vertesia/json':
+        specifier: ^0.42.2
+        version: 0.42.2
+      glob:
+        specifier: ^11.0.0
+        version: 11.0.2
+      micromatch:
+        specifier: ^4.0.8
+        version: 4.0.8
+      tar-stream:
+        specifier: ^3.1.7
+        version: 3.1.7
+    devDependencies:
+      '@types/micromatch':
+        specifier: ^4.0.9
+        version: 4.0.9
+      '@types/node':
+        specifier: ^22.5.1
+        version: 22.15.29
+      '@types/tar-stream':
+        specifier: ^3.1.3
+        version: 3.1.4
+      ts-dual-module:
+        specifier: ^0.6.3
+        version: 0.6.3
+      vitest:
+        specifier: ^3.1.1
+        version: 3.2.0(@types/debug@4.1.12)(@types/node@22.15.29)(terser@5.40.0)(tsx@3.14.0)(yaml@2.8.0)
+
   packages/plugin-builder:
     dependencies:
       '@adobe/css-tools':
@@ -2543,6 +2618,9 @@ packages:
   '@types/body-parser@1.19.5':
     resolution: {integrity: sha512-fB3Zu92ucau0iQ0JMCFQE7b/dv8Ot07NI3KaZIkIUNXq82k4eBAqUaneXfleGY9JWskeS9y+u0nXMyspcuQrCg==}
 
+  '@types/braces@3.0.5':
+    resolution: {integrity: sha512-SQFof9H+LXeWNz8wDe7oN5zu7ket0qwMu5vZubW4GCJ8Kkeh6nBWUz87+KTz/G3Kqsrp0j/W253XJb3KMEeg3w==}
+
   '@types/chai@5.2.2':
     resolution: {integrity: sha512-8kB30R7Hwqf40JPiKhVzodJs2Qc1ZJ5zuT3uzw5Hq/dhNCl3G3l83jfpdI1e20BP348+fV7VIL/+FxaXkqBmWg==}
 
@@ -2621,6 +2699,9 @@ packages:
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
 
+  '@types/micromatch@4.0.9':
+    resolution: {integrity: sha512-7V+8ncr22h4UoYRLnLXSpTxjQrNUXtWHGeMPRJt1nULXI57G9bIcpyrHlmrQ7QK24EyyuXvYcSSWAM8GA9nqCg==}
+
   '@types/mime@1.3.5':
     resolution: {integrity: sha512-/pyBZWSLD2n0dcHE3hq8s8ZvcETHtEuF+3E7XVt0Ig2nvsVQXdghHVcEkIWjy9A0wKfTn97a/PSDYohKIlnP/w==}
 
@@ -2664,6 +2745,9 @@ packages:
 
   '@types/serve-static@1.15.7':
     resolution: {integrity: sha512-W8Ym+h8nhuRwaKPaDw34QUkwsGi6Rc4yYqvKFo5rm2FUEhCFbzVWrxXUxuKK8TASjWsysJY0nsmNCGhCOIsrOw==}
+
+  '@types/tar-stream@3.1.4':
+    resolution: {integrity: sha512-921gW0+g29mCJX0fRvqeHzBlE/XclDaAG0Ousy1LCghsOhvaKacDeRGEVzQP9IPfKn8Vysy7FEXAIxycpc/CMg==}
 
   '@types/tinycolor2@1.4.6':
     resolution: {integrity: sha512-iEN8J0BoMnsWBqjVbWH/c0G0Hh7O21lpR2/+PrvAVgWdzL7eexIFm4JN/Wn10PTcmNdtS6U67r499mlWMXOxNw==}
@@ -8443,6 +8527,8 @@ snapshots:
       '@types/connect': 3.4.38
       '@types/node': 22.15.29
 
+  '@types/braces@3.0.5': {}
+
   '@types/chai@5.2.2':
     dependencies:
       '@types/deep-eql': 4.0.2
@@ -8546,6 +8632,10 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
 
+  '@types/micromatch@4.0.9':
+    dependencies:
+      '@types/braces': 3.0.5
+
   '@types/mime@1.3.5': {}
 
   '@types/minimatch@5.1.2': {}
@@ -8588,6 +8678,10 @@ snapshots:
       '@types/http-errors': 2.0.4
       '@types/node': 22.15.29
       '@types/send': 0.17.4
+
+  '@types/tar-stream@3.1.4':
+    dependencies:
+      '@types/node': 22.15.29
 
   '@types/tinycolor2@1.4.6': {}
 
