@@ -68,6 +68,7 @@ export class WebTemplateInit extends TemplateInit {
             "typescript",
             "typescript-eslint",
             "vite",
+            "vite-plugin-serve-static"
         ]
     }
 
