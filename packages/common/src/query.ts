@@ -1,6 +1,11 @@
 import { ExecutionRunStatus } from './interaction.js';
-import { SupportedEmbeddingTypes } from './project.js';
 import { CollectionSearchPayload } from './store/collections.js';
+
+export interface EmbeddingSearchConfig {
+    text?: boolean;
+    image?: boolean;
+    properties?: boolean;
+}
 
 export interface RunListingQueryOptions {
     project?: string;
@@ -28,12 +33,14 @@ export interface VectorSearchQuery {
     text?: string;
     image?: string;
     threshold?: number;
-    type: SupportedEmbeddingTypes
+    types: EmbeddingSearchConfig
 }
 
 export interface SimpleSearchQuery {
     name?: string;
     status?: string | string[];
+    limit?: number;
+    offset?: number;
 }
 
 export interface ObjectSearchQuery extends SimpleSearchQuery {
@@ -43,10 +50,10 @@ export interface ObjectSearchQuery extends SimpleSearchQuery {
     updatedTo?: string;
     location?: string;
     parent?: string;
-    similarTo?: string;
-    embeddingType?: SupportedEmbeddingTypes;
     type?: string;
     types?: string[];
+    all_revisions?: boolean;
+    from_root?: string;
 }
 
 export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
