@@ -42,7 +42,7 @@ export function useCurrentTenant() {
                         setCurrentTenant({
                             tenantKey: tenantData.name || 'unknown',
                             name: tenantData.label || tenantData.name || 'Unknown',
-                            domain: [user.email.split('@')[1]], // Use the user's domain
+                            domain: tenantData.domain || [],
                             firebaseTenantId: tenantData.firebaseTenantId,
                             provider: tenantData.provider,
                             logo: tenantData.logo
