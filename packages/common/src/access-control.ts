@@ -45,7 +45,6 @@ export enum Permission {
 
 export enum AccessControlResourceType {
     project = "project",
-    projects = "projects",
     environment = "environment",
     account = "account",
     interaction = "interaction",
