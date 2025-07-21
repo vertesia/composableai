@@ -1,11 +1,8 @@
 import { ExecutionRunStatus } from './interaction.js';
 import { CollectionSearchPayload } from './store/collections.js';
+import { SupportedEmbeddingTypes } from "./project";
 
-export interface EmbeddingSearchConfig {
-    text?: boolean;
-    image?: boolean;
-    properties?: boolean;
-}
+export type EmbeddingSearchConfig = Partial<Record<SupportedEmbeddingTypes, boolean>>;
 
 export interface RunListingQueryOptions {
     project?: string;
@@ -27,6 +24,9 @@ export interface RunListingFilters {
     workflow_run_ids?: string[],
 }
 
+export type scoreAggregationTypes = 'rrf' | 'rsf' | 'sum';
+export type dynamicScalingTypes = 'off' | 'on' | 'smart';
+
 export interface VectorSearchQuery {
     objectId?: string;
     values?: number[];
@@ -34,9 +34,8 @@ export interface VectorSearchQuery {
     image?: string;
     threshold?: number;
     embeddingSearchTypes: EmbeddingSearchConfig;
-    // Hybrid/compound search extensions (all optional, with sensible defaults)
-    dynamicScaling?: 'off' | 'on' | 'smart'; // default: 'off'
-    scoreAggregation?: 'rrf' | 'rsf' | 'sum'; // default: 'rrf'
+    dynamicScaling?: dynamicScalingTypes;
+    scoreAggregation?: scoreAggregationTypes
 }
 
 export interface SimpleSearchQuery {
