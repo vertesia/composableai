@@ -14,15 +14,22 @@ export function InviteAcceptModal() {
     useEffect(() => {
         client.account.listInvites().then(invites => {
             if (invites.length > 0) {
-                console.log("Got invites - showing modal")
-                setInvites(invites)
-                /*toast({
-                    status: 'info',
-                    title: 'You have pending invites',
-                    description: 'Click the button on the top right to review them.'
-                })*/
+                // Filter out legacy invites that do not have account data
+                const notLegacyInvites = invites.filter(i => i.data.account);
+                if (notLegacyInvites.length === 0) {
+                    console.log("No valid invites found, closing modal")
+                    return;
+                }
+                // If we have valid invites, show the modal
+                console.log("Found valid invites", notLegacyInvites.length)
                 setShowModal(true);
+                setInvites(notLegacyInvites);
+            } else {
+                console.log("No invites found, closing modal")
+                setShowModal(false);
             }
+        }).catch(err => {
+            console.error("Error fetching invites", err);
         })
     }, [account?.id])
 
@@ -32,8 +39,11 @@ export function InviteAcceptModal() {
         await client.account.acceptInvite(invite.id);
         await session.fetchAccounts();
         const remainingInvites = invites.filter(i => i.id !== invite.id)
-        setInvites(remainingInvites)
-        if (remainingInvites.length === 0) {
+
+        const notLegacyInvites = remainingInvites.filter(i => i.data.account);
+        if (notLegacyInvites.length > 0) {
+            setInvites(notLegacyInvites);
+        } else {
             closeModal();
         }
     }
