@@ -2,17 +2,15 @@ import { VertesiaShell } from '@vertesia/ui/shell'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import ${ PluginComponent } from './plugin'
 // initialize dev environment
 import { RouterProvider } from '@vertesia/ui/router'
+import { App } from './app'
 import "./env"
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <VertesiaShell>
-      <RouterProvider routes={[]}>
-        <${ PluginComponent} slot="page" />
-      </RouterProvider>
+      <RouterProvider routes={[{ path: "*", Component: App }]} />
     </VertesiaShell>
   </StrictMode>,
 )

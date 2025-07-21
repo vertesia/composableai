@@ -21,6 +21,11 @@ const EXTERNALS = [
 ];
 
 /**
+ * if you want to debug vertesia ui sources define a relative path to the vertesia ui package root
+ */
+const VERTESIA_UI_PATH = ""
+
+/**
  * Vite configuration to build the plugin as a library or as a standalone application or to run the application in dev mode.
  * Use `vite build --mode lib` to build a library (plugin)
  * Use `vite build` or `vite build --mode app`to build a standalone application
@@ -96,5 +101,15 @@ function defineAppConfig(): UserConfig {
                 }
             }
         },
+        resolve: {
+            // For debug support in vertesia ui sources - link to the vertesia/ui location
+            alias: VERTESIA_UI_PATH ? {
+                "@vertesia/ui/*": resolve(`${VERTESIA_UI_PATH}/src/*/index.ts`)
+            } : undefined
+        }
     }
+}
+
+function resolve(path: string) {
+    return new URL(path, import.meta.url).pathname
 }
