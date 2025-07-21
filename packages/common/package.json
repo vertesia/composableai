@@ -5,7 +5,8 @@
     "types": "./lib/types/index.d.ts",
     "files": [
         "lib",
-        "src"
+        "src",
+        "tsconfig.dist.json"
     ],
     "scripts": {
         "test": "vitest run",

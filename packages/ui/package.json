@@ -6,7 +6,8 @@
     "main": "./lib/index.js",
     "files": [
         "lib",
-        "src"
+        "src",
+        "tsconfig.dist.json"
     ],
     "license": "Apache-2.0",
     "homepage": "https://docs.vertesiahq.com",
