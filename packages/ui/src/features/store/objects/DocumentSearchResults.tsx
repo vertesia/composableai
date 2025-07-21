@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 
 import { ColumnLayout, ContentObject, ContentObjectItem, VectorSearchQuery } from '@vertesia/common';
-import { Button, Divider, ErrorBox, SidePanel, Spinner, useDebounce, useIntersectionObserver, useToast } from '@vertesia/ui/core';
+import {
+    Button, Divider, ErrorBox, SidePanel, Spinner, useDebounce, useIntersectionObserver, useToast,
+    FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter
+ } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
 import { Download, RefreshCw, Eye } from 'lucide-react';
-import { FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter } from '@vertesia/ui/core';
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
-
 import { ContentDispositionButton } from './components/ContentDispositionButton';
 import { DocumentTable } from './DocumentTable';
 import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from './search/DocumentSearchContext';
