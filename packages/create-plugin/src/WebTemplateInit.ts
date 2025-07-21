@@ -55,6 +55,7 @@ export class WebTemplateInit extends TemplateInit {
             "@vitejs/plugin-basic-ssl",
             "@vitejs/plugin-react",
             "@tailwindcss/vite",
+            "@tailwindcss/forms",
             "@types/node",
             "@types/react",
             "@types/react-dom",
