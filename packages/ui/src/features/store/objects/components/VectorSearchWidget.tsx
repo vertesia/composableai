@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { ProjectConfiguration, SupportedEmbeddingTypes, VectorSearchQuery } from '@vertesia/common';
+import { ProjectConfiguration, VectorSearchQuery } from '@vertesia/common';
 import { Button, Input, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 
@@ -62,7 +62,9 @@ export function VectorSearchWidget({ onChange, isLoading, refresh }: VectorSearc
 
         const query: VectorSearchQuery = {
             values: response.values,
-            type: SupportedEmbeddingTypes.text
+            types: {
+                text: true
+            }
         };
 
         return query;
@@ -81,7 +83,9 @@ export function VectorSearchWidget({ onChange, isLoading, refresh }: VectorSearc
 
         const query: VectorSearchQuery = {
             values: response.values,
-            type: SupportedEmbeddingTypes.image
+            types: {
+                image: true
+            }
         };
 
         return query;
