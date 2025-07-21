@@ -90,17 +90,13 @@ export class ObjectsApi extends ApiTopic {
         const offset = payload.offset || 0;
         const query = payload.query || ({} as ObjectSearchQuery);
 
-        // Add revision filtering options
-        const showAllRevisions = payload.all_revisions === true;
-        const revisionRoot = payload.from_root;
-
         return this.get("/", {
             query: {
                 limit,
                 offset,
                 ...query,
-                all_revisions: showAllRevisions ? "true" : undefined,
-                from_root: revisionRoot,
+                all_revisions: payload.all_revisions,
+                from_root: payload.from_root || undefined,
             },
         });
     }
