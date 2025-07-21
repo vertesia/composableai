@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/agent-sdk",
-    "version": "0.67.0",
+    "version": "0.69.0",
     "description": "Agent SDK - utilities for building agent tools",
     "type": "module",
     "types": "./lib/types/index.d.ts",
@@ -27,9 +27,13 @@
     "ts_dual_module": {
         "outDir": "lib"
     },
+    "peerDependencies": {
+        "hono": "^4.0.0"
+    },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
-        "@vertesia/common": "workspace:*"
+        "@vertesia/common": "workspace:*",
+        "jose": "^6.0.11"
     }
 }

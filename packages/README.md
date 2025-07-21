@@ -1,6 +1,6 @@
-# Composable Prompts SDK
+# Vertesia SDK
 
-This is the JavaScript SDK for [Composable Prompts Studio](https://app.composableprompts.com).
+This is the JavaScript SDK for [Vertesia Studio](https://cloud.vertesia.io).
 
 The library provides a client to connect to the studio and the tools needed to manage prompts, interactions, and other studio objects. For a [complete documentation](https://docs.composableprompts.com/) of the Composable Prompts Studio, click here.
 

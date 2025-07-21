@@ -18,7 +18,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [isOpen, setOpen] = useState(false);
 
-    const { data: collections, error, refetch } = useFetch(() => client.store.collections.list(), []);
+    const { data: collections, error, refetch } = useFetch(() => client.store.collections.search({}), []);
 
     // Update loading state when data is fetched
     useEffect(() => {
@@ -57,7 +57,8 @@ export function CollectionsTable({ }: CollectionsTableProps) {
 
     return (
         <>
-            {collections &&
+            {
+                collections &&
                 (collections.length > 0 ?
                     (<Table className="w-full">
                         <thead>

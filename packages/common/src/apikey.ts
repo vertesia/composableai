@@ -57,8 +57,24 @@ export interface AuthTokenPayload {
     project?: ProjectRef;
     project_roles?: ProjectRoles[];
 
+    /**
+     * The roles of the user in the application it has access
+     * The key is the unique app name (kebab-case) and the value a list of roles.
+     */
+    apps_roles: Record<string, string[]>,
+
     /** groups */
     groups?: UserGroupRef[]; //group ids
+
+    /**
+     * API endpoints information to be used with this token.
+     * Either a n API domain like 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api-staging.vertesia.io' | 'local'
+     * or explicit studio and store URLs.
+     */
+    endpoints?: string | {
+        studio: string,
+        store: string
+    }
 
     iss: string; //issuer
     aud: string; //audience

@@ -3,6 +3,7 @@ import { vertesiaPluginBuilder } from '@vertesia/plugin-builder';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type ConfigEnv, type UserConfig } from 'vite';
+import serveStatic from "vite-plugin-serve-static";
 
 /**
  * List of external dependencies that should not be bundled when
@@ -77,7 +78,14 @@ function defineAppConfig(): UserConfig {
             tailwindcss(),
             react(),
             // we need to use https for the firebase authentication to work
-            basicSsl()
+            basicSsl(),
+            // serve lib/plugin.js content in dev mode
+            serveStatic([
+                {
+                    pattern: new RegExp("/plugin.js"),
+                    resolve: "./lib/plugin.js"
+                }
+            ]),
         ],
         // for authentication with Firebase
         server: {
