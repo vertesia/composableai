@@ -50,7 +50,7 @@ export default class AccountApi extends ApiTopic {
     }
     /**
      * Fetch Invites for specific account or project
-     * @param type Type of the invitation, either "project" or "account"
+     * @param type Filter for the type of invitation, either "project" or "account"
      * @param id ID of the project or organization to fetch invitations for
      * @returns UserInviteTokenData[]
      * */
