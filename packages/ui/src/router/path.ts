@@ -20,8 +20,11 @@ export function joinPath(path1: string, path2: string) {
 }
 
 export function getPathSegments(path: string) {
-    if (path === '' || path === '/') {
+    if (path === '') {
         return [];
+    }
+    if (path === '/') {
+        return [''];
     }
     let s = 0, e = path.length;
     if (path.startsWith('./')) {
