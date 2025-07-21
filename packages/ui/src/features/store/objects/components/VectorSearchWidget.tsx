@@ -62,7 +62,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh }: VectorSearc
 
         const query: VectorSearchQuery = {
             values: response.values,
-            types: {
+            embeddingSearchTypes: {
                 text: true
             }
         };
@@ -83,7 +83,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh }: VectorSearc
 
         const query: VectorSearchQuery = {
             values: response.values,
-            types: {
+            embeddingSearchTypes: {
                 image: true
             }
         };

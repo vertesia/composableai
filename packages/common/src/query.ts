@@ -33,10 +33,10 @@ export interface VectorSearchQuery {
     text?: string;
     image?: string;
     threshold?: number;
-    types: EmbeddingSearchConfig;
+    embeddingSearchTypes: EmbeddingSearchConfig;
     // Hybrid/compound search extensions (all optional, with sensible defaults)
     dynamicScaling?: 'off' | 'on' | 'smart'; // default: 'off'
-    scoreAggregation?: 'rrf' | 'relative' | 'sum'; // default: 'rrf'
+    scoreAggregation?: 'rrf' | 'rsf' | 'sum'; // default: 'rrf'
 }
 
 export interface SimpleSearchQuery {
