@@ -1,6 +1,6 @@
 import { ExecutionRunStatus } from './interaction.js';
 import { CollectionSearchPayload } from './store/collections.js';
-import { SupportedEmbeddingTypes } from "./project";
+import { SupportedEmbeddingTypes } from "./project.js";
 
 export type EmbeddingSearchConfig = Partial<Record<SupportedEmbeddingTypes, boolean>>;
 
