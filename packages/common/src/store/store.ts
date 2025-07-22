@@ -17,9 +17,16 @@ export interface Embedding {
     etag?: string; // the etag of the text used for the embedding
 }
 
+export interface TextSections {
+    description: string; // the description of the text part
+    first_line_index: number;
+    last_line_index: number; 
+}
+
 export interface ContentObject<T = any> extends ContentObjectItem<T> {
     text?: string; // the text representation of the object
     text_etag?: string;
+    text_sections?: TextSections[]; // the list of text parts with their description and line indexes
     embeddings: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
     parts?: string[]; // the list of objectId of the parts of the object
     parts_etag?: string; // the etag of the text used for the parts list
