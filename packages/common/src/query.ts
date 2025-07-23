@@ -24,8 +24,8 @@ export interface RunListingFilters {
     workflow_run_ids?: string[],
 }
 
-export type scoreAggregationTypes = 'rrf' | 'rsf' | 'sum';
-export type dynamicScalingTypes = 'off' | 'on' | 'smart';
+export type scoreAggregationTypes = 'rrf' | 'rsf' | 'smart';
+export type dynamicScalingTypes = 'off' | 'on'; // Ignored when scoreAggregation is 'smart'
 
 export interface VectorSearchQuery {
     objectId?: string;
