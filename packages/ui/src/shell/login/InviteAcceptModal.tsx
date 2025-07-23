@@ -68,7 +68,7 @@ export function InviteAcceptModal() {
                 <div className="w-full font-semibold">{invite.data.account.name ?? invite.data.account}</div>
                 {invite.data.project && <div className="w-full text-base">- {invite.data.project.name}</div>}
                 <div className="text-xs">Role: {invite.data.role}</div>
-                <div className="text-xs">by {invite.data.invitedBy.name}</div>
+                <div className="text-xs">by {invite.data.invited_by.name}</div>
             </div>
             <div className="flex flex-col gap-4">
                 <Button size={'xs'} onClick={() => accept(invite)}>Accept</Button> <Button size={'xs'} variant="secondary" onClick={() => reject(invite)}>Reject</Button>

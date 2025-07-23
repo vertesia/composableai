@@ -51,11 +51,10 @@ export default class AccountApi extends ApiTopic {
     /**
      * Fetch Invites for specific account or project
      * @param type Filter for the type of invitation, either "project" or "account"
-     * @param id ID of the project or organization to fetch invitations for
      * @returns UserInviteTokenData[]
      * */
-    listInvitation(id: string, type: "project" | "account" = "project"): Promise<TransientToken<UserInviteTokenData>[]> {
-        return this.get(`/invites/${type}/${id}`);
+    listInvitation(type: "project" | "account" = "project"): Promise<TransientToken<UserInviteTokenData>[]> {
+        return this.get(`/invites/${type}`);
     }
 
     /**
