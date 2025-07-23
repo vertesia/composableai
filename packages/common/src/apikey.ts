@@ -60,8 +60,9 @@ export interface AuthTokenPayload {
     /**
      * The roles of the user in the application it has access
      * The key is the unique app name (kebab-case) and the value a list of roles.
+     * A user can have multpile roles if it inhertis them from multiple group.
      */
-    apps_roles: Record<string, string[]>,
+    app_roles: Record<string, string[]>,
 
     /**
      * The user ID (if any) attached to the token.
