@@ -86,7 +86,6 @@ export const AppRefPopulate = "id name";
 export interface InviteUserRequestPayload {
     email: string;
     role: ProjectRoles;
-    project: string;
 }
 
 export interface InviteUserResponsePayload {
