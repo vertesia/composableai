@@ -81,7 +81,7 @@ export interface ACEUpdatePayload extends Partial<ACECreatePayload> {
 
 export interface AcesQueryOptions {
 
-    level?: 'resource' | 'project' | 'account'
+    level?: 'resource' | 'project' | 'projects' | 'account'
     resource?: string
     principal?: string
     role?: string

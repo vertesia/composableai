@@ -63,6 +63,13 @@ export interface AuthTokenPayload {
      */
     apps_roles: Record<string, string[]>,
 
+    /**
+     * The user ID (if any) attached to the token.
+     * This is set when the token is a user token or an agent token running as a user.
+     * Not set for impersonating tokens like project tokens.
+     */
+    user_id?: string;
+
     /** groups */
     groups?: UserGroupRef[]; //group ids
 
