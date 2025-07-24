@@ -1,6 +1,10 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import type { AppInstallation, AppInstallationKind, AppInstallationPayload, AppInstallationWithManifest, AppManifest, AppManifestData } from "@vertesia/common";
 
+export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
+    manifest: null,
+}
+
 export default class AppsApi extends ApiTopic {
 
     constructor(parent: ClientBase) {
@@ -57,25 +61,22 @@ export default class AppsApi extends ApiTopic {
         });
     }
 
-
     /**
-     * Get the apps installed for the given project.
-     * @param projectId - the id of the project to get the installed apps for
-     * @param kind - the kind of app installations to filter by (e.g., 'agent', 'tool', etc.)
+     * This operation will return an array of all the found AppInstallations in the current project
+     * including orphaned installations
+     * This requires project admin since access is not checked on the insytallations.
+     * For a user level list of available installations (with user permission check) use getInstalledApps
+     * @returns 
      */
-    getInstalledAppsForProject(projectId?: string, kind?: AppInstallationKind): Promise<AppInstallationWithManifest[]> {
-        return this.get(`/installations/${projectId}`, {
-            query: {
-                kind,
-            }
-        });
+    getAllAppInstallations(): Promise<(AppInstallationWithManifest | OrphanedAppInstallation)[]> {
+        return this.get('/installations/all');
     }
 
     /**
      * List the app installations of the current project.
      */
     listInstallations(): Promise<AppInstallation[]> {
-        return this.get('/installation-refs');
+        return this.get('/installations/refs');
     }
 
 
