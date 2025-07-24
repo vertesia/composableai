@@ -1,5 +1,5 @@
 import { log } from "@temporalio/activity";
-import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import { DocumentMetadata, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
 
@@ -56,7 +56,9 @@ export async function identifyTextSections(
     }
 
     await client.objects.update(doc.id, {
-        text_sections: parts,
+        metadata: {
+            sections: parts
+        } as DocumentMetadata
     });
 
     return { status: "completed" };
