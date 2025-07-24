@@ -1,12 +1,13 @@
 {
     "name": "@vertesia/ui",
-    "version": "0.69.0",
+    "version": "0.71.0",
     "description": "Vertesia UI components and and hooks",
     "type": "module",
     "main": "./lib/index.js",
     "files": [
         "lib",
-        "src"
+        "src",
+        "tsconfig.dist.json"
     ],
     "license": "Apache-2.0",
     "homepage": "https://docs.vertesiahq.com",

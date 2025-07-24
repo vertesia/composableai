@@ -1,11 +1,12 @@
 {
     "name": "@vertesia/client",
-    "version": "0.69.0",
+    "version": "0.71.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
         "lib",
-        "src"
+        "src",
+        "tsconfig.dist.json"
     ],
     "license": "Apache-2.0",
     "scripts": {

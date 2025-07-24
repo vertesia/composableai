@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/workflow",
-    "version": "0.69.0",
+    "version": "0.71.0",
     "type": "module",
     "description": "Composable prompts workflow dsl",
     "main": "./lib/esm/index.js",
@@ -45,7 +45,7 @@
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "@vertesia/memory": "^0.43.0",
+        "@vertesia/memory": "workspace:*",
         "fast-deep-equal": "^3.1.3",
         "jsonwebtoken": "^9.0.2",
         "mime": "^4.0.0",

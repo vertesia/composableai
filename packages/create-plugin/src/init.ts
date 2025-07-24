@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { copyTree } from "./copy.js";
 import { hasBin } from "./hasBin.js";
 import { Package } from "./Package.js";
-import { ToolTemplateInit } from "./ToolTemplateInit.js";
+//import { ToolTemplateInit } from "./ToolTemplateInit.js";
 import { WebTemplateInit } from "./WebTemplateInit.js";
 
 const { prompt } = enquirer;
@@ -51,19 +51,23 @@ export async function init(dirName?: string | undefined) {
         message: "Package description",
         initial: '',
     },
-    {
-        name: 'template',
-        type: 'select',
-        message: "Template to use",
-        initial: 0,
-        choices: [
-            { message: 'Web plugin', name: 'web' },
-            { message: 'Agent tool', name: 'tool' },
-        ]
-    },
+        // {
+        //     name: 'template',
+        //     type: 'select',
+        //     message: "Template to use",
+        //     initial: 0,
+        //     choices: [
+        //         { message: 'Web plugin', name: 'web' },
+        //         { message: 'Agent tool', name: 'tool' },
+        //     ]
+        // },
     ]);
 
-    const templateInit = answer.template === 'web' ? new WebTemplateInit(answer) : new ToolTemplateInit(answer);
+    //const templateName = answer.template;
+    const templateName = "web";
+
+    //const templateInit = templateName === 'web' ? new WebTemplateInit(answer) : new ToolTemplateInit(answer);
+    const templateInit = new WebTemplateInit(answer);
     const pluginName = templateInit.pluginName;
 
     let dir: string;
@@ -82,7 +86,7 @@ export async function init(dirName?: string | undefined) {
     }
     // copy template to current directory and process template files
     const templsDir = resolve(fileURLToPath(import.meta.url), '../../templates');
-    if (answer.template === 'web') {
+    if (templateName === 'web') {
         await copyTree(join(templsDir, "web"), dir, templateProps);
     } else if (answer.template === 'tool') {
         await copyTree(join(templsDir, "tool"), dir, templateProps);
