@@ -57,6 +57,7 @@ export async function identifyTextSections(
 
     await client.objects.update(doc.id, {
         metadata: {
+            type: "document",
             sections: parts
         } as DocumentMetadata
     });
