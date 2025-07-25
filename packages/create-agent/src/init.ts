@@ -86,12 +86,14 @@ export async function init(dirName?: string | undefined) {
         types: 'lib/index.d.ts',
         scripts: {
             "clean": "rimraf ./lib tsconfig.tsbuildinfo",
-            "build": "${npm_package_vertesia_pm} run clean && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
+            "build": "$npm_package_config_pm run clean && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
             "start": "node lib/main.js",
             "connect": `${VERTESIA_CLI} agent connect`,
         },
+        config: {
+            pm: cmd
+        },
         vertesia: {
-            pm: cmd,
             image: {
                 repository: "us-docker.pkg.dev/dengenlabs/us.gcr.io",
                 organization: answer.agent_org,
