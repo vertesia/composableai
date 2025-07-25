@@ -92,6 +92,17 @@ export enum SupportedEmbeddingTypes {
     properties = "properties"
 }
 
+export enum FullTextType {
+    full_text = "full_text"
+}
+
+export type SearchTypes = SupportedEmbeddingTypes | FullTextType;
+
+export const SearchTypes = {
+    ...SupportedEmbeddingTypes,
+    ...FullTextType
+} as const;
+
 export interface ProjectConfigurationEmbeddings {
     environment: string;
     enabled: boolean;
