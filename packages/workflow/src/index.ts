@@ -18,6 +18,7 @@ export * from "./activities/executeInteraction.js";
 export * from "./activities/extractDocumentText.js";
 export * from "./activities/generateDocumentProperties.js";
 export * from "./activities/generateEmbeddings.js";
+export * from "./activities/identifyTextSections.js";
 export * from "./activities/renditions/generateImageRendition.js";
 export * from "./activities/renditions/generateVideoRendition.js";
 export * from "./activities/generateOrAssignContentType.js";
