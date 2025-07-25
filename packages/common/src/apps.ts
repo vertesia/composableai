@@ -1,9 +1,4 @@
 
-export interface AppRef {
-    id: string;
-    name: string;
-}
-
 export interface AppUIConfig {
     /**
      * The source URL of the app. The src can be a template which contain
@@ -26,17 +21,10 @@ export interface AppManifestData {
     name: string;
 
     /**
-     * Which account is ownning the app.
-     * The property is defined only for customer apps.
-     * THis is always undefined for vertesia apps.
-     */
-    account?: string;
-
-    /**
      * Whether the app is private to the owner account.
      * If true the account property must be defined.
      */
-    private?: boolean;
+    private: boolean;
 
     title: string;
     description: string;
@@ -60,6 +48,7 @@ export interface AppManifestData {
 }
 export interface AppManifest extends AppManifestData {
     id: string;
+    account: string;
     created_at: string;
     updated_at: string;
 }
