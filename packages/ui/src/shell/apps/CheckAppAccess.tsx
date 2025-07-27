@@ -1,4 +1,3 @@
-import { ProjectRoles } from "@vertesia/common";
 import { ErrorBox } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { ReactNode, useEffect, useState } from "react";
@@ -10,9 +9,7 @@ export function CheckAppAccess({ name, children }: { name: string, children: Rea
 
     useEffect(() => {
         if (authToken) {
-            const appRoles = authToken.app_roles[name];
-            const hasAccess = appRoles.includes(ProjectRoles.app_user) || appRoles.includes(ProjectRoles.app_reader);
-            setHasAccess(hasAccess);
+            setHasAccess(authToken.apps?.includes(name) || false);
         }
     }, [authToken])
 
