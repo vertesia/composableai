@@ -35,7 +35,7 @@ export interface AppManifestData {
      */
     icon?: string;
 
-    status: "beta" | "stable" | "deprecated" | "hidden"
+    status: "beta" | "stable" | "deprecated"
 
     ui?: AppUIConfig
 
