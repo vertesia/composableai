@@ -41,6 +41,11 @@ export enum Permission {
 
     workflow_run = "workflow:run",
     workflow_admin = "workflow:admin",
+
+    /**
+     * whether the user has access to Sutdio App.
+     */
+    studio_access = "studio:access",
 }
 
 export enum AccessControlResourceType {

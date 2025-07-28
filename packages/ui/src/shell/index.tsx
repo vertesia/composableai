@@ -4,3 +4,4 @@ export * from "./login/TerminalLogin";
 export * from "./login/UserSessionMenu";
 export * from "./utils";
 export * from './VertesiaShell';
+export * from "./apps/index";

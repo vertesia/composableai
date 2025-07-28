@@ -58,10 +58,9 @@ export interface AuthTokenPayload {
     project_roles?: ProjectRoles[];
 
     /**
-     * The roles of the user in the application it has access
-     * The key is the unique app name (kebab-case) and the value a list of roles.
+     * The app names enabled for this token. Defaults to an empty array if no apps are enabled.
      */
-    apps_roles: Record<string, string[]>,
+    apps: string[];
 
     /**
      * The user ID (if any) attached to the token.
