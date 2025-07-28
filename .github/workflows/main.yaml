@@ -1,6 +1,11 @@
 name: composable
+
 on:
   - push
+
+permissions:
+  contents: read
+
 jobs:
   composableai-build:
     runs-on: ubuntu-latest
