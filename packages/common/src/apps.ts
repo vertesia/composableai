@@ -7,10 +7,11 @@ export interface AppUIConfig {
      */
     src: string;
     /**
-     * Whether the app should be loaded as part of the host layout
-     * or in a new tab.
+     * The isolation strategy. If not specified it defaults to shadow 
+     * - shadow - use Shadow DOM to fully isolate the plugin from the host.
+     * - css - use CSS processing (like prefixing or other isolation techniques). Ligther but plugins may conflict with the host
      */
-    external?: boolean;
+    isolation?: "shadow" | "css";
 }
 
 export interface AppManifestData {
