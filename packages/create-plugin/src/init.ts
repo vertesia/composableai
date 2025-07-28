@@ -51,6 +51,16 @@ export async function init(dirName?: string | undefined) {
         message: "Package description",
         initial: '',
     },
+    {
+        name: "isolation",
+        type: "select",
+        message: "Isolation strategy",
+        initial: 0,
+        choices: [
+            { message: "Shadow DOM", name: "shadow", hint: "Shadow DOM will be used to fully isolate the plugin." },
+            { message: "CSS-only isolation", name: "css", hint: "Injects Tailwind utilities into host DOM; not fully isolated. Lighter but may generate conflicts" }
+        ]
+    }
         // {
         //     name: 'template',
         //     type: 'select',
