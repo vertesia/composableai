@@ -21,107 +21,106 @@ jobs:
       - run: pnpm install
       - run: pnpm -r build
 
-  # api-fetch-client-test:
-  #   runs-on: ubuntu-latest
-  #   needs: composableai-build
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         submodules: true
-  #     - uses: pnpm/action-setup@v4
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22
-  #         cache: "pnpm"
-  #     - run: pnpm install
-  #     - run: npm --prefix packages/api-fetch-client test
+  api-fetch-client-test:
+    runs-on: ubuntu-latest
+    needs: composableai-build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - run: pnpm install
+      - run: npm --prefix packages/api-fetch-client test
 
-  # client-test:
-  #   runs-on: ubuntu-latest
-  #   needs: composableai-build
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         submodules: true
-  #     - uses: pnpm/action-setup@v4
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22
-  #         cache: "pnpm"
-  #     - run: pnpm install
-  #     - run: pnpm build
-  #     - run: pnpm --prefix packages/client test
+  client-test:
+    runs-on: ubuntu-latest
+    needs: composableai-build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm --prefix packages/client test
 
-  # converters-test:
-  #   runs-on: ubuntu-latest
-  #   needs: composableai-build
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         submodules: true
-  #     - uses: pnpm/action-setup@v4
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22
-  #         cache: "pnpm"
-  #     - name: Install pandoc
-  #       uses: pandoc/actions/setup@main
-  #     - name: Install mutool
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y mupdf-tools
-  #       shell: bash
-  #     - run: pnpm install
-  #     - run: npm --prefix packages/converters test
+  converters-test:
+    runs-on: ubuntu-latest
+    needs: composableai-build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Install pandoc
+        uses: pandoc/actions/setup@main
+      - name: Install mutool
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mupdf-tools
+        shell: bash
+      - run: pnpm install
+      - run: npm --prefix packages/converters test
 
-  # json-test:
-  #   runs-on: ubuntu-latest
-  #   needs: composableai-build
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         submodules: true
-  #     - uses: pnpm/action-setup@v4
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22
-  #         cache: "pnpm"
-  #     - run: pnpm install
-  #     - run: npm --prefix packages/json test
+  json-test:
+    runs-on: ubuntu-latest
+    needs: composableai-build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - run: pnpm install
+      - run: npm --prefix packages/json test
 
-  # workflow-test:
-  #   runs-on: ubuntu-latest
-  #   needs: composableai-build
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         submodules: true
-  #     - uses: pnpm/action-setup@v4
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22
-  #         cache: "pnpm"
-  #     - name: Install pandoc
-  #       uses: pandoc/actions/setup@main
-  #     - name: Install mutool
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get install -y imagemagick mupdf-tools
-  #       shell: bash
-  #     - run: pnpm install
-  #     - run: pnpm build
-  #     - run: npm --prefix packages/workflow test
+  workflow-test:
+    runs-on: ubuntu-latest
+    needs: composableai-build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Install pandoc
+        uses: pandoc/actions/setup@main
+      - name: Install mutool
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick mupdf-tools
+        shell: bash
+      - run: pnpm install
+      - run: pnpm build
+      - run: npm --prefix packages/workflow test
 
   notify-repo-studio:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/repo-dispatch')
-    # needs:
-    #   - composableai-build
-    #   - api-fetch-client-test
-    #   - client-test
-    #   - converters-test
-    #   - json-test
-    #   - workflow-test
+    needs:
+      - api-fetch-client-test
+      - client-test
+      - converters-test
+      - json-test
+      - workflow-test
     steps:
       - name: Notify repository vertesia/studio
         run: |
