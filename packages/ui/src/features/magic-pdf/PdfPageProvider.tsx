@@ -143,7 +143,7 @@ function getLayoutJsonPath(objectId: string, pageNumber: number) {
 }
 
 function getMarkdownPath(objectId: string, pageNumber: number) {
-    return `${getBasePath(objectId)}/pages/page-${pageNumber}.mpx:ConvertPageToMarkdown.txt`;
+    return `${getBasePath(objectId)}/pages/page-${pageNumber}.md`;
 }
 
 export function getResourceUrl(
