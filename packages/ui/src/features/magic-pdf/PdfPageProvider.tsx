@@ -13,6 +13,7 @@ const ADVANCED_PROCESSING_PREFIX = "magic-pdf";
 interface PdfPagesInfo {
     count: number;
     urls: string[];
+    originalUrls: string[];
     annotatedUrls: string[];
     instrumentedUrls: string[];
     layoutProvider: PageLayoutProvider;
@@ -138,6 +139,14 @@ function getPageInstrumentedImagePath(
     return `${getBasePath(objectId)}/pages/page-${pageNumber}.instrumented${ext}`;
 }
 
+function getPageOriginalImagePath(
+    objectId: string,
+    pageNumber: number,
+    ext = ".jpg",
+) {
+    return `${getBasePath(objectId)}/pages/page-${pageNumber}.original${ext}`;
+}
+
 function getLayoutJsonPath(objectId: string, pageNumber: number) {
     return `${getBasePath(objectId)}/pages/page-${pageNumber}.layout.json`;
 }
@@ -183,6 +192,16 @@ function getInstrumentedImageUrlForPage(
 ): Promise<GetFileUrlResponse> {
     return vertesia.files.getDownloadUrl(
         getPageInstrumentedImagePath(objectId, pageNumber),
+    );
+}
+
+function getOriginalImageUrlForPage(
+    vertesia: VertesiaClient,
+    objectId: string,
+    pageNumber: number,
+): Promise<GetFileUrlResponse> {
+    return vertesia.files.getDownloadUrl(
+        getPageOriginalImagePath(objectId, pageNumber),
     );
 }
 
@@ -235,6 +254,14 @@ async function getPdfPagesInfo(
         instrumentedImageUrlPromises,
     );
 
+    const originalImageUrlPromises: Promise<GetFileUrlResponse>[] = [];
+    for (let i = 0; i < page_count; i++) {
+        originalImageUrlPromises.push(
+            getOriginalImageUrlForPage(vertesia, object.id, i + 1),
+        );
+    }
+    const originalImageUrls = await Promise.all(originalImageUrlPromises);
+
     const layoutProvider = new PageLayoutProvider(page_count);
     await layoutProvider.loadUrls(vertesia, object.id);
 
@@ -246,6 +273,7 @@ async function getPdfPagesInfo(
     return {
         count: page_count,
         urls: imageUrls.map((r) => r.url),
+        originalUrls: originalImageUrls.map((r) => r.url),
         annotatedUrls: annotatedImageUrls.map((r) => r.url),
         instrumentedUrls: instrumentedImageUrls.map((r) => r.url),
         layoutProvider,

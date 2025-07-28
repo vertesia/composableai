@@ -70,7 +70,7 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
     return (
         <>
             <div ref={left} className={`absolute top-0 left-0 bottom-0 w-[50%] bg-gray-100 dark:bg-slate-800 flex items-stretch justify-stretch py-2`}>
-                <PageSlider className="flex-1" currentPage={pageNumber} onChange={setPageNumber} />
+                <PageSlider className="flex-1" currentPage={pageNumber} onChange={setPageNumber} object={object} />
                 <div ref={handler} className='w-[2px] p-[2px] m-0 bg-slate-300 cursor-ew-resize'></div>
             </div>
             <div ref={right} className={`absolute top-0 left-[50%] right-0 bottom-0 flex items-stretch justify-stretch overflow-auto p-2`}>
