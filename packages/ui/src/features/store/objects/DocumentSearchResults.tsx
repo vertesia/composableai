@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ColumnLayout, ContentObject, ContentObjectItem, VectorSearchQuery } from '@vertesia/common';
+import { ColumnLayout, ContentObject, ContentObjectItem, ComplexSearchQuery } from '@vertesia/common';
 import {
     Button, Divider, ErrorBox, SidePanel, Spinner, useIntersectionObserver, useToast,
     FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter
@@ -112,9 +112,9 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
 
 
     // Handler for vector search widget
-    const handleVectorSearch = (query?: VectorSearchQuery) => {
-        if (query) {
-            search.query.vector = query;
+    const handleVectorSearch = (query?: ComplexSearchQuery) => {
+        if (query && query.vector) {
+            search.query.vector = query.vector;
             if (!actualLayout.find((c) => c.name === "Search Score")) {
                 const layout = [
                     ...actualLayout,

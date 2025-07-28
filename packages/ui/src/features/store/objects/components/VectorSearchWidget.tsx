@@ -1,22 +1,23 @@
 import { useEffect, useState } from 'react';
 
-import { ProjectConfiguration, VectorSearchQuery, EmbeddingSearchConfig, SupportedEmbeddingTypes } from '@vertesia/common';
-import { Button, Input, useToast, Modal, ModalTitle, ModalBody, ModalFooter, Checkbox } from '@vertesia/ui/core';
+import { ProjectConfiguration, ComplexSearchQuery, SupportedEmbeddingTypes, SearchTypes } from '@vertesia/common';
+import { Button, Input, useToast, Modal, ModalTitle, ModalBody, ModalFooter, Checkbox, NumberInput } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { Settings } from 'lucide-react';
 
 interface VectorSearchWidgetProps {
-    onChange: (query?: VectorSearchQuery) => void;
+    onChange: (query?: ComplexSearchQuery) => void;
     className?: string;
     status?: boolean;
     isLoading?: boolean;
     refresh: number;
-    embeddingTypes?: SupportedEmbeddingTypes[];
+    searchTypes?: (keyof typeof SearchTypes)[];
 }
 
-const allTypes = Object.values(SupportedEmbeddingTypes);
+const allTypes = Object.values(SearchTypes);
+const embeddingTypes = Object.values(SupportedEmbeddingTypes);
 
-export function VectorSearchWidget({ onChange, isLoading, refresh, embeddingTypes }: VectorSearchWidgetProps) {
+export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }: VectorSearchWidgetProps) {
     const { client, project } = useUserSession();
     const toast = useToast();
 
@@ -27,13 +28,21 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, embeddingType
 
     const [showSettings, setShowSettings] = useState(false);
     // Default to all types, or use prop if provided
-    const [selectedTypes, setSelectedTypes] = useState<SupportedEmbeddingTypes[]>(embeddingTypes || allTypes);
+    const [selectedTypes, setSelectedTypes] = useState<(keyof typeof SearchTypes)[]>(searchTypes || allTypes);
+    const [limit, setLimit] = useState<number>(100);
     useEffect(() => {
-        if (embeddingTypes) setSelectedTypes(embeddingTypes);
-    }, [embeddingTypes]);
+        if (searchTypes) setSelectedTypes(searchTypes);
+    }, [searchTypes]);
 
-    // Always derive embeddingSearchTypes from selectedTypes
-    const embeddingSearchTypes: EmbeddingSearchConfig = selectedTypes.reduce((acc, type) => ({ ...acc, [type]: true }), {} as EmbeddingSearchConfig);
+    // Always derive embeddingSearchTypes and fullText from selectedTypes
+    const embeddingSearchTypes: Record<string, boolean> = {};
+    let fullTextEnabled = false;
+    selectedTypes.forEach(type => {
+        if (type === SearchTypes.full_text) fullTextEnabled = true;
+        if (embeddingTypes.includes(type as SupportedEmbeddingTypes)) {
+            embeddingSearchTypes[type] = true;
+        }
+    });
 
     useEffect(() => {
         setSearchText(undefined);
@@ -61,9 +70,13 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, embeddingType
 
     const fireSearch = () => {
         if (!isReady || !searchText) return;
-        const query: VectorSearchQuery = {
-            text: searchText,
-            embeddingSearchTypes,
+        const query: ComplexSearchQuery = {
+            vector: {
+                text: searchText,
+                embeddingSearchTypes,
+                fullText: fullTextEnabled,
+            },
+            limit: limit
         };
         onChange(query);
         setStatus("Searching...");
@@ -75,8 +88,8 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, embeddingType
         }
     };
 
-    // Modal state for embedding type selection
-    const handleCheckboxChange = (type: SupportedEmbeddingTypes) => (checked: boolean) => {
+    // Modal state for search type selection
+    const handleCheckboxChange = (type: keyof typeof SearchTypes) => (checked: boolean) => {
         if (checked) {
             setSelectedTypes(prev => Array.from(new Set([...prev, type])));
         } else {
@@ -89,10 +102,18 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, embeddingType
             <Input placeholder="Type what you are looking for, or select a filter" value={searchText} onChange={setSearchText} onKeyDown={handleKeyPress} />
             <Button variant="ghost" onClick={() => setShowSettings(true)} alt="Semantic search settings" className="ml-1"><Settings size={18} /></Button>
             <Modal isOpen={showSettings} onClose={() => setShowSettings(false)}>
-                <ModalTitle>Embedding Types</ModalTitle>
+                <ModalTitle>Search Types</ModalTitle>
                 <ModalBody>
                     <div className="flex flex-col gap-2">
-                        {allTypes.map(type => (
+                        <label className="flex items-center gap-2">
+                            <Checkbox
+                                checked={selectedTypes.includes(SearchTypes.full_text)}
+                                onCheckedChange={handleCheckboxChange(SearchTypes.full_text)}
+                            />
+                            <span>Full Text</span>
+                        </label>
+                        <div className="font-semibold mt-2 mb-1">Embeddings</div>
+                        {embeddingTypes.map(type => (
                             <label key={type} className="flex items-center gap-2">
                                 <Checkbox
                                     checked={selectedTypes.includes(type)}
@@ -101,6 +122,10 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, embeddingType
                                 <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
                             </label>
                         ))}
+                        <div className="mt-3">
+                            <span className="mr-2">Limit</span>
+                            <NumberInput type="number" min={1} value={limit} onChange={v => setLimit(Number(v) || 1)} style={{ width: 80 }} />
+                        </div>
                     </div>
                 </ModalBody>
                 <ModalFooter>
