@@ -4,6 +4,7 @@ import { ProjectRoles } from "./project.js";
 export interface UserWithAccounts extends User {
     accounts: AccountRef[];
 }
+
 export interface User {
     id: string;
     externalId: string;
@@ -15,6 +16,7 @@ export interface User {
     phone?: string;
     sign_in_provider?: string;
     last_selected_account?: string;
+    source?: 'firebase' | 'scim';
 }
 
 export interface UserRef {
@@ -33,7 +35,7 @@ export enum Datacenters {
 
 export enum BillingMethod {
     stripe = 'stripe',
-    invoice ='invoice'
+    invoice = 'invoice'
 }
 
 
@@ -79,11 +81,10 @@ export interface AccountRef {
 }
 export const AccountRefPopulate = "id name";
 
-
 export interface InviteUserRequestPayload {
     email: string;
     role: ProjectRoles;
-    projects?: string[];
+    project: string;
 }
 
 export interface InviteUserResponsePayload {

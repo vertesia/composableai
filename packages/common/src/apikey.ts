@@ -1,9 +1,9 @@
+import { UserGroupRef } from "./group.js";
 import { ProjectRef, ProjectRoles } from "./project.js";
 import { AccountRef } from "./user.js";
 
 
 export enum ApiKeyTypes {
-    public = 'pk',
     secret = 'sk'
 }
 export interface ApiKey {
@@ -50,10 +50,37 @@ export interface AuthTokenPayload {
 
     type: PrincipalType
     account: AccountRef;
+
     account_roles: ProjectRoles[];
     accounts: AccountRef[];
+
     project?: ProjectRef;
     project_roles?: ProjectRoles[];
+
+    /**
+     * The app names enabled for this token. Defaults to an empty array if no apps are enabled.
+     */
+    apps: string[];
+
+    /**
+     * The user ID (if any) attached to the token.
+     * This is set when the token is a user token or an agent token running as a user.
+     * Not set for impersonating tokens like project tokens.
+     */
+    user_id?: string;
+
+    /** groups */
+    groups?: UserGroupRef[]; //group ids
+
+    /**
+     * API endpoints information to be used with this token.
+     * Either a n API domain like 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api-staging.vertesia.io' | 'local'
+     * or explicit studio and store URLs.
+     */
+    endpoints?: string | {
+        studio: string,
+        store: string
+    }
 
     iss: string; //issuer
     aud: string; //audience

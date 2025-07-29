@@ -2,8 +2,8 @@ import { X } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import { Button } from "../button";
 
-import { DateCombobox, SelectionCombobox, TextCombobox } from "./comboBox";
-import { Filter, FilterGroup } from "./types";
+import { DateCombobox, SelectionCombobox, TextCombobox, StringListCombobox } from "./comboBox/comboBox";
+import { Filter, FilterGroup, FilterOption } from "./types";
 import dayjs from "dayjs";
 
 interface FiltersProps {
@@ -21,16 +21,18 @@ function generateComboboxOptions(
         case "date":
             return (
                 <DateCombobox
-                    filterValues={filter.value.map(v => v.value || '')}
+                    filterValues={Array.isArray(filter.value) && typeof filter.value[0] === 'object' ? filter.value.map((v: any) => v.value || '') : []}
+                    isRange={filter.multiple}
                     setFilterValues={(filterValues) => {
                         setFilters((prev) =>
                             prev.map((f) =>
                                 f === filter ? {
                                     ...f,
-                                    value: filterValues.length > 0 ? [{
-                                        value: filterValues[0],
-                                        label: dayjs(filterValues[0]).format("LLL dd, y"),
-                                    }] : []
+                                    value: filterValues.length > 0 ?
+                                        filterValues.map(dateValue => ({
+                                            value: dateValue,
+                                            label: dayjs(dateValue).format("LLL dd, y"),
+                                        })) : []
                                 } : f
                             )
                         );
@@ -41,20 +43,36 @@ function generateComboboxOptions(
             return (
                 <TextCombobox
                     filterType={filter.placeholder || filter.name}
-                    filterValue={filter.value[0]?.value || ""}
+                    filterValue={Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object' ? filter.value[0].value || "" : ""}
                     setFilterValue={(textValue) => {
                         setFilters((prev) =>
                             prev.map((f) =>
                                 f === filter
                                     ? {
-                                          ...f,
-                                          value: [
-                                              {
-                                                  value: textValue,
-                                                  label: textValue,
-                                              },
-                                          ],
-                                      }
+                                        ...f,
+                                        value: [
+                                            {
+                                                value: textValue,
+                                                label: textValue,
+                                            },
+                                        ],
+                                    }
+                                    : f,
+                            ),
+                        );
+                    }}
+                />
+            );
+        case "stringList":
+            return (
+                <StringListCombobox
+                    filterType={filter.placeholder || filter.name}
+                    filterValues={Array.isArray(filter.value) && typeof filter.value[0] === 'string' ? filter.value as string[] : []}
+                    setFilterValues={(values) => {
+                        setFilters((prev) =>
+                            prev.map((f) =>
+                                f === filter
+                                    ? { ...f, value: values }
                                     : f,
                             ),
                         );
@@ -67,7 +85,7 @@ function generateComboboxOptions(
             return (
                 <SelectionCombobox
                     filterType={filter.placeholder || filter.name}
-                    filterValues={filter.value}
+                    filterValues={Array.isArray(filter.value) && typeof filter.value[0] === 'object' ? filter.value as FilterOption[] : []}
                     setFilterValues={(filterValues) => {
                         setFilters((prev) =>
                             prev.map((f) =>
@@ -95,7 +113,7 @@ export default function Filters({
             {filters
                 .filter((filter) => filter.value?.length > 0)
                 .map((filter) => (
-                    <div className="flex gap-[1px] items-center text-sm" key={filter.name + '-' + (filter.type == 'date' ? 'date' : filter.value.map(v => v.value).join(','))}>
+                    <div className="flex gap-[1px] items-center text-sm" key={filter.name + '-' + (filter.type == 'date' ? 'date' : filter.type === 'stringList' && typeof filter.value[0] === 'string' ? (filter.value as string[]).join(',') : Array.isArray(filter.value) ? filter.value.map((v: any) => v.value).join(',') : '')}>
                         <div className="flex gap-1.5 shrink-0 rounded-l bg-muted p-1.5 h-8 items-center">
                             {filter.placeholder || filter.name}
                         </div>

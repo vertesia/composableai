@@ -81,6 +81,12 @@ export interface VideoMetadata extends TemporalMediaMetadata {
     dimensions?: Dimensions;
 }
 
+export interface TextSection {
+    description: string; // the description of the section
+    first_line_index: number;
+    last_line_index: number; 
+}
+
 export interface DocumentMetadata extends ContentMetadata {
     type: "document";
     page_count?: number;
@@ -93,6 +99,7 @@ export interface DocumentMetadata extends ContentMetadata {
         zone_count: number;
         needs_ocr_count?: number;
     };
+    sections?: TextSection[]; // List of sections with descriptions and line indexes
 }
 
 export interface Transcript {

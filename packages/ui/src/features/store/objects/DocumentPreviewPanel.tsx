@@ -102,7 +102,6 @@ export function DocumentPreviewPanel({
     try {
       // Try to get a rendition first
       const rendition = await client.objects.getRendition(obj.id, {
-        max_hw: 1024,
         format: ImageRenditionFormat.jpeg,
         generate_if_missing: false,
       });

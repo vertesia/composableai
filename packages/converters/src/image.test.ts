@@ -6,7 +6,7 @@ import { createImageTransformer } from './image';
 
 
 test('should resize an image to a maximum height or width', async () => {
-  const max_hw = 1024;
+  const max_hw = 1596;
   const format: keyof sharp.FormatEnum = 'jpeg';
   const imageFile = fs.readFileSync(path.join(__dirname, '../fixtures', 'cat-picture.jpg'));
 

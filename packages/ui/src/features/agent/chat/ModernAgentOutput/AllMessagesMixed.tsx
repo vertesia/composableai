@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import InlineSlidingPlanPanel from "./InlineSlidingPlanPanel";
 import MessageItem from "./MessageItem";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { getWorkstreamId } from "./utils";
+import { DONE_STATES, getWorkstreamId } from "./utils";
 
 interface AllMessagesMixedProps {
     messages: AgentMessage[];
@@ -115,7 +115,8 @@ export default function AllMessagesMixed({
                 statusMap.set(workstreamId, [
                     AgentMessageType.COMPLETE,
                     AgentMessageType.IDLE,
-                    AgentMessageType.REQUEST_INPUT
+                    AgentMessageType.REQUEST_INPUT,
+                    AgentMessageType.TERMINATED
                 ].includes(lastMessage.type));
             }
         }
@@ -171,7 +172,7 @@ export default function AllMessagesMixed({
                             // Find if this is the latest non-completion message
                             const isLatestNonCompletionMessage = !isCompleted &&
                                 index === displayMessages.length - 1 &&
-                                ![AgentMessageType.COMPLETE, AgentMessageType.IDLE, AgentMessageType.REQUEST_INPUT].includes(message.type);
+                                !DONE_STATES.includes(message.type);
 
                             return (
                                 <MessageItem
@@ -186,12 +187,12 @@ export default function AllMessagesMixed({
                         <>
                             {/* Get all messages to display in sliding view */}
                             {(() => {
-                                // First get all permanent messages (ANSWER, QUESTION, COMPLETE, REQUEST_INPUT)
+                                // First get all permanent messages (ANSWER, QUESTION, COMPLETE, REQUEST_INPUT, TERMINATED)
                                 const permanentMessages = displayMessages.filter(msg =>
                                     msg.type === AgentMessageType.ANSWER ||
                                     msg.type === AgentMessageType.QUESTION ||
                                     msg.type === AgentMessageType.COMPLETE ||
-                                    msg.type === AgentMessageType.REQUEST_INPUT
+                                    msg.type === AgentMessageType.TERMINATED
                                 );
 
                                 // Then get the latest thinking message if not completed
@@ -224,7 +225,7 @@ export default function AllMessagesMixed({
                                 return allMessages.map((message, index) => {
                                     const isLatestMessage = !isCompleted &&
                                         index === allMessages.length - 1 &&
-                                        ![AgentMessageType.COMPLETE, AgentMessageType.IDLE, AgentMessageType.REQUEST_INPUT].includes(message.type);
+                                        !DONE_STATES.includes(message.type);
 
                                     return (
                                         <MessageItem

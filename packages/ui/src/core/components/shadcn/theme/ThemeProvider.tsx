@@ -20,6 +20,8 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
+export { ThemeProviderContext }
+
 export function ThemeProvider({
   children,
   defaultTheme = "system",

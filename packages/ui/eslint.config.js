@@ -98,7 +98,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../widgets/*', '../router/*', '../session/*', '../features/*', '../layout/*', '../env/*'] },
+                { patterns: ['../widgets/*', '../router/*', '../session/*', '../features/*', '../layout/*', '../env/*', '../shell/*'] },
             ],
         },
     },
@@ -107,7 +107,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../widgets/*', '../router/*', '../core/*', '../features/*', '../layout/*', '../env/*'] },
+                { patterns: ['../widgets/*', '../router/*', '../core/*', '../features/*', '../layout/*', '../env/*', '../shell/*'] },
             ],
         },
     },
@@ -116,7 +116,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../widgets/*', '../session/*', '../features/*', '../layout/*', '../env/*'] },
+                { patterns: ['../core/*', '../widgets/*', '../session/*', '../features/*', '../layout/*', '../env/*', '../shell/*'] },
             ],
         },
     },
@@ -125,7 +125,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../router/*', '../session/*', '../features/*', '../layout/*', '../env/*'] },
+                { patterns: ['../core/*', '../router/*', '../session/*', '../features/*', '../layout/*', '../env/*', '../shell/*'] },
             ],
         },
     },
@@ -134,7 +134,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../layout/*', '../env/*'] },
+                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../layout/*', '../env/*', '../shell/*'] },
             ],
         },
     },
@@ -143,7 +143,7 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../features/*', '../env/*'] },
+                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../features/*', '../env/*', '../shell/*'] },
             ],
         },
     },
@@ -152,7 +152,16 @@ export default [
         rules: {
             'no-restricted-imports': [
                 'error',
-                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../features/*', '../layout/*'] },
+                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../features/*', '../layout/*', '../shell/*'] },
+            ],
+        },
+    },
+    {
+        files: ['src/shell/**/*'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                { patterns: ['../core/*', '../session/*', '../router/*', '../widgets/*', '../features/*', '../layout/*', '../env/*'] },
             ],
         },
     },
