@@ -13,6 +13,7 @@ interface RunsFacetsNavProps {
         environments?: any[];
         models?: any[];
         statuses?: any[];
+        tags?: any[];
         finish_reason?: any[];
         created_by?: any[];
     };
@@ -35,16 +36,25 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
     if (facets.environments) {
         const environmentFilterGroup = VEnvironmentFacet({
             buckets: facets.environments || [],
-            name: 'Environments'
+            name: 'environments',
         });
         customFilterGroups.push(environmentFilterGroup);
     }
+
+    // Add tags filter as stringList type (allows custom input)
+    const tagsFilterGroup = {
+        name: 'tags',
+        placeholder: 'Filter by tags...',
+        type: 'stringList' as const,
+        multiple: true
+    };
+    customFilterGroups.push(tagsFilterGroup);
 
     if (facets.models) {
         const modelFilterGroup = VStringFacet({
             search: null as any, // This will be provided by the search context
             buckets: facets.models || [],
-            name: 'Model'
+            name: 'model'
         });
         customFilterGroups.push(modelFilterGroup);
     }
@@ -53,7 +63,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
         const statusFilterGroup = VStringFacet({
             search: null as any, // This will be provided by the search context
             buckets: facets.statuses || [],
-            name: 'Status'
+            name: 'status'
         });
         customFilterGroups.push(statusFilterGroup);
     }
