@@ -13,7 +13,7 @@ overrides:
   brace-expansion@>=2.0.0 <3.0.0: ^2.0.2
   cross-spawn@<6.0.6: ^6.0.6
   esbuild@<0.25.0: ^0.25.0
-  koa@>=2.0.0 <2.15.4: ^2.15.4
+  koa@>=2.0.0 <2.16.2: ^2.16.2
   undici@>=6.0.0 < 6.21.2: ^6.21.2
   vite: ^6.3.5
 
@@ -99,8 +99,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.10
       koa:
-        specifier: ^2.16.1
-        version: 2.16.1
+        specifier: ^2.16.2
+        version: 2.16.2
       mocha:
         specifier: ^10.2.0
         version: 10.8.2
@@ -4394,8 +4394,8 @@ packages:
     resolution: {integrity: sha512-tmcyQ/wXXuxpDxyNXv5yNNkdAMdFRqwtegBXUaowiQzUKqJehttS0x2j0eOZDQAyloAth5w6wwBImnFzkUz3pQ==}
     engines: {node: '>= 8'}
 
-  koa@2.16.1:
-    resolution: {integrity: sha512-umfX9d3iuSxTQP4pnzLOz0HKnPg0FaUUIKcye2lOiz3KPu1Y3M3xlz76dISdFPQs37P9eJz1wUpcTS6KDPn9fA==}
+  koa@2.16.2:
+    resolution: {integrity: sha512-+CCssgnrWKx9aI3OeZwroa/ckG4JICxvIFnSiOUyl2Uv+UTI+xIw0FfFrWS7cQFpoePpr9o8csss7KzsTzNL8Q==}
     engines: {node: ^4.8.4 || ^6.10.1 || ^7.10.1 || >= 8.1.4}
 
   levn@0.4.1:
@@ -7244,7 +7244,7 @@ snapshots:
 
   '@koa-stack/router@0.9.0':
     dependencies:
-      koa: 2.16.1
+      koa: 2.16.2
       koa-send: 5.0.1
       path-to-regexp: 6.3.0
       statuses: 2.0.1
@@ -10370,7 +10370,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  koa@2.16.1:
+  koa@2.16.2:
     dependencies:
       accepts: 1.3.8
       cache-content-type: 1.0.1
