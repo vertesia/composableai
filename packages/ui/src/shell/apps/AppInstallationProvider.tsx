@@ -1,5 +1,5 @@
 import { AppInstallationWithManifest } from "@vertesia/common";
-import { createContext, ReactNode } from "react";
+import { createContext, ReactNode, useContext } from "react";
 
 
 export const AppInstallationContext = createContext<AppInstallationWithManifest | null>(null);
@@ -11,3 +11,12 @@ export function AppInstallationProvider({ installation, children }: { installati
         </AppInstallationContext.Provider>
     )
 }
+
+/**
+ * Get the current app installation obejct when called in an app context otheriwse returns null
+ */
+export function useAppInstallation() {
+    return useContext(AppInstallationContext);
+}
+
+
