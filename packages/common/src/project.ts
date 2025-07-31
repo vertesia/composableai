@@ -20,6 +20,12 @@ export enum ProjectRoles {
     app_member = "app_member", // used to mark an user have access to an application. does not provide any permission on its own
 }
 
+export enum AccountRoles {
+    owner = "owner", // all permissions
+    admin = "admin", // all permissions
+    member = "member", // can only access, but no specific permissions
+}
+
 export function isRoleIncludedIn(role: string, includingRole: string) {
     switch (includingRole) {
         case ProjectRoles.owner:
