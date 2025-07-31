@@ -55,11 +55,16 @@ export async function identifyTextSections(
         return;
     }
 
+    const existingMetadata = doc.metadata as DocumentMetadata | undefined;
+    const updatedMetadata: DocumentMetadata = {
+        type: "document",
+        ...existingMetadata,
+        generation_runs: existingMetadata?.generation_runs ?? [],
+        sections: parts
+    };
+
     await client.objects.update(doc.id, {
-        metadata: {
-            type: "document",
-            sections: parts
-        } as DocumentMetadata
+        metadata: updatedMetadata,
     });
 
     return { status: "completed" };
