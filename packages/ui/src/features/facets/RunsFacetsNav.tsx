@@ -44,7 +44,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
     // Add tags filter as stringList type (allows custom input)
     const tagsFilterGroup = {
         name: 'tags',
-        placeholder: 'Tags...',
+        placeholder: 'Tags',
         type: 'stringList' as const,
         multiple: true
     };
