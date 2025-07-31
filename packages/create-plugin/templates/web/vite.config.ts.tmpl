@@ -26,6 +26,12 @@ const EXTERNALS = [
 const VERTESIA_UI_PATH = ""
 
 /**
+ * Set to true to extract the css utility layer and inject it in the plugin js file.
+ * If you use shadow dom isolation for the plugin you must set this to false.
+ */
+const inlineCss = ${ inlineCss };
+
+/**
  * Vite configuration to build the plugin as a library or as a standalone application or to run the application in dev mode.
  * Use `vite build --mode lib` to build a library (plugin)
  * Use `vite build` or `vite build --mode app`to build a standalone application
@@ -53,7 +59,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
         plugins: [
             tailwindcss(),
             react(),
-            vertesiaPluginBuilder(),
+            vertesiaPluginBuilder({ inlineCss })
         ],
         build: {
             outDir: 'lib', // the plugin will be generated in the `lib` directory
@@ -87,9 +93,9 @@ function defineAppConfig(): UserConfig {
             // serve lib/plugin.js content in dev mode
             serveStatic([
                 {
-                    pattern: new RegExp("/plugin.js"),
-                    resolve: "./lib/plugin.js"
-                }
+                    pattern: new RegExp("/plugin.(js|css)"),
+                    resolve: (groups: string[]) => `./lib/plugin.${groups[1]}`
+                },
             ]),
         ],
         // for authentication with Firebase

@@ -11,6 +11,7 @@ export class WebTemplateInit extends TemplateInit {
         return {
             plugin_title: this.pluginName.title,
             PluginComponent: this.pluginName.pascalCase + "Plugin",
+            inlineCss: this.options.isolation === "css"
         }
     }
 
