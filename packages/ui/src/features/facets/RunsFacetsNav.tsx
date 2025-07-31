@@ -115,11 +115,13 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 export function useRunsFilterHandler(search: SearchInterface) {
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
-            search.clearFilters();
+            // Clear filters without applying defaults - user wants to remove all filters
+            search.clearFilters(true, false);
             return;
         }
 
-        search.clearFilters(false);
+        // Clear all filters first without defaults, then apply new ones
+        search.clearFilters(false, false);
 
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
