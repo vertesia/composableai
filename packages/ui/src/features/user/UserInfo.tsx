@@ -180,7 +180,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
             </tr>
             <tr>
                 <td className="font-semibold w-20">Project:</td>
-                <td className="truncate max-w-0">{data?.project}</td>
+                <td className="truncate max-w-0">{data?.project.name}</td>
             </tr>
         </Table>
     );
@@ -189,7 +189,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
         <UserPopoverPanel title={title} description={description}>
             <div className="flex flex-row items-center gap-2">
                 {avatar}
-                {showTitle && <div className="text-sm font-semibold">{data?.name || data?.account || data?.project || "unknown"}</div>}
+                {showTitle && <div className="text-sm font-semibold">{data?.name || data?.account || data?.project.name || "unknown"}</div>}
             </div>
         </UserPopoverPanel >
     )
