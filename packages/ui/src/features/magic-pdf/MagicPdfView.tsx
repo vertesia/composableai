@@ -1,4 +1,4 @@
-import { ContentObject } from "@vertesia/common";
+import { ContentObject, DocumentMetadata } from "@vertesia/common";
 import { ErrorBox, useFetch } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { X } from "lucide-react";
@@ -39,8 +39,27 @@ interface _MagicPdfViewProps {
     onClose?: () => void;
 }
 function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
-    const [viewType, setViewType] = useState<ViewType>("xml");
+    const getInitialViewType = (): ViewType => {
+        if (object.metadata?.type === "document") {
+            const docMetadata = object.metadata as DocumentMetadata;
+            const processorType = docMetadata.content_processor?.type;
+            if (processorType === "markdown") return "markdown";
+            if (processorType === "xml") return "xml";
+        }
+        return "xml"; // default
+    };
+    
+    const getProcessorType = (): string => {
+        if (object.metadata?.type === "document") {
+            const docMetadata = object.metadata as DocumentMetadata;
+            return docMetadata.content_processor?.type || "xml";
+        }
+        return "xml"; // default
+    };
+    
+    const [viewType, setViewType] = useState<ViewType>(getInitialViewType());
     const [pageNumber, setPageNumber] = useState(1);
+    const processorType = getProcessorType();
     const handler = useRef<HTMLDivElement>(null);
     const left = useRef<HTMLDivElement>(null);
     const right = useRef<HTMLDivElement>(null);
@@ -51,14 +70,14 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
     return (
         <>
             <div ref={left} className={`absolute top-0 left-0 bottom-0 w-[50%] bg-gray-100 dark:bg-slate-800 flex items-stretch justify-stretch py-2`}>
-                <PageSlider className="flex-1" currentPage={pageNumber} onChange={setPageNumber} />
+                <PageSlider className="flex-1" currentPage={pageNumber} onChange={setPageNumber} object={object} />
                 <div ref={handler} className='w-[2px] p-[2px] m-0 bg-slate-300 cursor-ew-resize'></div>
             </div>
             <div ref={right} className={`absolute top-0 left-[50%] right-0 bottom-0 flex items-stretch justify-stretch overflow-auto p-2`}>
                 <TextPageView pageNumber={pageNumber} viewType={viewType} />
             </div>
             <DownloadPopover object={object} />
-            <ContentSwitcher type={viewType} onSwitch={setViewType} />
+            {processorType === "xml" && <ContentSwitcher type={viewType} onSwitch={setViewType} />}
             {!!onClose &&
                 <div className="absolute top-6 right-7 w-9 h-9 cursor-pointer text-red-400 border-red-400 hover:border-red-500 hover:text-red-500 border-2 rounded-full shadow-xs flex items-center justify-center"
                     onClick={onClose}>
@@ -80,6 +99,8 @@ function ContentSwitcher({ type = "xml", onSwitch }: ContentSwitcherProps) {
         if (type === "xml") {
             onSwitch("json");
         } else if (type === "json") {
+            onSwitch("markdown");
+        } else if (type === "markdown") {
             onSwitch("xml");
         }
     }
@@ -87,7 +108,8 @@ function ContentSwitcher({ type = "xml", onSwitch }: ContentSwitcherProps) {
         <div className="absolute bottom-[16px] right-[20px] w-[36px] h-[36px] cursor-pointer text-indigo-400 border-indigo-400 hover:border-indigo-500 hover:text-indigo-500 border-2 rounded-full shadow-xs flex items-center justify-center"
             onClick={_onSwitch}>
             {type === "xml" && JSON}
-            {type === "json" && XML}
+            {type === "json" && MARKDOWN}
+            {type === "markdown" && XML}
         </div>
     )
 
@@ -99,4 +121,8 @@ const JSON = <svg width="16px" height="16px" viewBox="0 0 16 16" xmlns="http://w
 
 const XML = <svg width="16px" height="16px" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
     <path d="M4.708 5.578L2.061 8.224l2.647 2.646-.708.708-3-3V7.87l3-3 .708.708zm7-.708L11 5.578l2.647 2.646L11 10.87l.708.708 3-3V7.87l-3-3zM4.908 13l.894.448 5-10L9.908 3l-5 10z" />
+</svg>
+
+const MARKDOWN = <svg width="16px" height="16px" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+    <path d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15v-7.7C16 3.52 15.48 3 14.85 3zM9 11H7.5L5.5 9l-1 1.5H3V5h1.5l1 2 2-2H9v6zm2.99.5L9.5 8H11V5h1v3h1.5l-2.51 3.5z"/>
 </svg>
