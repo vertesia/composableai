@@ -13,9 +13,11 @@ const ADVANCED_PROCESSING_PREFIX = "magic-pdf";
 interface PdfPagesInfo {
     count: number;
     urls: string[];
+    originalUrls: string[];
     annotatedUrls: string[];
     instrumentedUrls: string[];
     layoutProvider: PageLayoutProvider;
+    markdownProvider: PageMarkdownProvider;
     xml: string;
     xmlPages: string[];
 }
@@ -45,6 +47,40 @@ class PageLayoutProvider {
                 } else {
                     throw new Error(
                         "Failed to fetch json layout: " + r.statusText,
+                    );
+                }
+            });
+            this.cache[index] = content;
+        }
+        return content;
+    }
+}
+
+class PageMarkdownProvider {
+    markdownUrls: string[] = [];
+    cache: string[];
+    constructor(public totalPages: number) {
+        this.cache = new Array<string>(totalPages);
+    }
+    async loadUrls(vertesia: VertesiaClient, objectId: string) {
+        const markdownPromises: Promise<GetFileUrlResponse>[] = [];
+        for (let i = 0; i < this.totalPages; i++) {
+            markdownPromises.push(getMarkdownUrlForPage(vertesia, objectId, i + 1));
+        }
+        const markdownUrls = await Promise.all(markdownPromises);
+        this.markdownUrls = markdownUrls.map((r) => r.url);
+    }
+    async getPageMarkdown(page: number) {
+        const index = page - 1;
+        let content = this.cache[index];
+        if (content === undefined) {
+            const url = this.markdownUrls[index];
+            content = await fetch(url, { method: "GET" }).then((r) => {
+                if (r.ok) {
+                    return r.text();
+                } else {
+                    throw new Error(
+                        "Failed to fetch markdown: " + r.statusText,
                     );
                 }
             });
@@ -103,8 +139,20 @@ function getPageInstrumentedImagePath(
     return `${getBasePath(objectId)}/pages/page-${pageNumber}.instrumented${ext}`;
 }
 
+function getPageOriginalImagePath(
+    objectId: string,
+    pageNumber: number,
+    ext = ".jpg",
+) {
+    return `${getBasePath(objectId)}/pages/page-${pageNumber}.original${ext}`;
+}
+
 function getLayoutJsonPath(objectId: string, pageNumber: number) {
     return `${getBasePath(objectId)}/pages/page-${pageNumber}.layout.json`;
+}
+
+function getMarkdownPath(objectId: string, pageNumber: number) {
+    return `${getBasePath(objectId)}/pages/page-${pageNumber}.md`;
 }
 
 export function getResourceUrl(
@@ -147,6 +195,16 @@ function getInstrumentedImageUrlForPage(
     );
 }
 
+function getOriginalImageUrlForPage(
+    vertesia: VertesiaClient,
+    objectId: string,
+    pageNumber: number,
+): Promise<GetFileUrlResponse> {
+    return vertesia.files.getDownloadUrl(
+        getPageOriginalImagePath(objectId, pageNumber),
+    );
+}
+
 function getLayoutUrlForPage(
     vertesia: VertesiaClient,
     objectId: string,
@@ -154,6 +212,16 @@ function getLayoutUrlForPage(
 ): Promise<GetFileUrlResponse> {
     return vertesia.files.getDownloadUrl(
         getLayoutJsonPath(objectId, pageNumber),
+    );
+}
+
+function getMarkdownUrlForPage(
+    vertesia: VertesiaClient,
+    objectId: string,
+    pageNumber: number,
+): Promise<GetFileUrlResponse> {
+    return vertesia.files.getDownloadUrl(
+        getMarkdownPath(objectId, pageNumber),
     );
 }
 
@@ -186,17 +254,30 @@ async function getPdfPagesInfo(
         instrumentedImageUrlPromises,
     );
 
+    const originalImageUrlPromises: Promise<GetFileUrlResponse>[] = [];
+    for (let i = 0; i < page_count; i++) {
+        originalImageUrlPromises.push(
+            getOriginalImageUrlForPage(vertesia, object.id, i + 1),
+        );
+    }
+    const originalImageUrls = await Promise.all(originalImageUrlPromises);
+
     const layoutProvider = new PageLayoutProvider(page_count);
     await layoutProvider.loadUrls(vertesia, object.id);
+
+    const markdownProvider = new PageMarkdownProvider(page_count);
+    await markdownProvider.loadUrls(vertesia, object.id);
 
     const xml = object.text ? cleanXml(object.text) : "";
 
     return {
         count: page_count,
         urls: imageUrls.map((r) => r.url),
+        originalUrls: originalImageUrls.map((r) => r.url),
         annotatedUrls: annotatedImageUrls.map((r) => r.url),
         instrumentedUrls: instrumentedImageUrls.map((r) => r.url),
         layoutProvider,
+        markdownProvider,
         xml,
         xmlPages: object.text ? extractXmlPages(xml) : [],
     };
