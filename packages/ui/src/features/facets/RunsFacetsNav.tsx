@@ -13,6 +13,7 @@ interface RunsFacetsNavProps {
         environments?: any[];
         models?: any[];
         statuses?: any[];
+        tags?: any[];
         finish_reason?: any[];
         created_by?: any[];
     };
@@ -35,16 +36,25 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
     if (facets.environments) {
         const environmentFilterGroup = VEnvironmentFacet({
             buckets: facets.environments || [],
-            name: 'Environments'
+            name: 'environments',
         });
         customFilterGroups.push(environmentFilterGroup);
     }
+
+    // Add tags filter as stringList type (allows custom input)
+    const tagsFilterGroup = {
+        name: 'tags',
+        placeholder: 'Tags',
+        type: 'stringList' as const,
+        multiple: true
+    };
+    customFilterGroups.push(tagsFilterGroup);
 
     if (facets.models) {
         const modelFilterGroup = VStringFacet({
             search: null as any, // This will be provided by the search context
             buckets: facets.models || [],
-            name: 'Model'
+            name: 'model'
         });
         customFilterGroups.push(modelFilterGroup);
     }
@@ -53,7 +63,7 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
         const statusFilterGroup = VStringFacet({
             search: null as any, // This will be provided by the search context
             buckets: facets.statuses || [],
-            name: 'Status'
+            name: 'status'
         });
         customFilterGroups.push(statusFilterGroup);
     }
@@ -105,11 +115,13 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
 export function useRunsFilterHandler(search: SearchInterface) {
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
-            search.clearFilters();
+            // Clear filters without applying defaults - user wants to remove all filters
+            search.clearFilters(true, false);
             return;
         }
 
-        search.clearFilters(false);
+        // Clear all filters first without defaults, then apply new ones
+        search.clearFilters(false, false);
 
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {

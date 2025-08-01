@@ -1,3 +1,4 @@
+import { DocumentMetadata } from "@vertesia/common";
 import { Center } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { AtSignIcon, ChevronsDown, ChevronsUp, ImageIcon, InfoIcon } from "lucide-react";
@@ -6,7 +7,8 @@ import { usePdfPagesInfo } from "./PdfPageProvider";
 
 enum ImageType {
     default,
-    instrumented,
+    original,
+    instrumented, 
     annotated,
 }
 
@@ -14,11 +16,25 @@ interface PageSliderProps {
     currentPage: number;
     onChange: (pageNumber: number) => void;
     className?: string;
+    object: any; // ContentObject type
 }
-export function PageSlider({ className, currentPage, onChange }: PageSliderProps) {
-    const [imageType, setImageType] = useState<ImageType>(ImageType.default);
+export function PageSlider({ className, currentPage, onChange, object }: PageSliderProps) {
+    const getProcessorType = (): string => {
+        if (object.metadata?.type === "document") {
+            const docMetadata = object.metadata as DocumentMetadata;
+            return docMetadata.content_processor?.type || "xml";
+        }
+        return "xml"; // default
+    };
+    
+    const getDefaultImageType = (): ImageType => {
+        const processorType = getProcessorType();
+        return processorType === "markdown" ? ImageType.original : ImageType.default;
+    };
+    
+    const [imageType, setImageType] = useState<ImageType>(getDefaultImageType());
     const ref = useRef<HTMLDivElement>(null);
-    const { urls, annotatedUrls, instrumentedUrls } = usePdfPagesInfo();
+    const { urls, originalUrls, annotatedUrls, instrumentedUrls } = usePdfPagesInfo();
     const goPrev = () => {
         if (currentPage > 1) {
             onChange(currentPage - 1);
@@ -46,7 +62,8 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
     }
 
     const actualUrls = imageType === ImageType.instrumented ? instrumentedUrls :
-        (imageType === ImageType.annotated ? annotatedUrls : urls);
+        (imageType === ImageType.annotated ? annotatedUrls : 
+        (imageType === ImageType.original ? originalUrls : urls));
 
     return (
         <div ref={ref} className={clsx('flex flex-col items-stretch gap-y-2', className)}>
@@ -56,15 +73,28 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
                     <ChevronsUp className='w-5 h-5' />
                 </button>
                 <div className="absolute right-3 flex gap-x-1">
-                    <button className={getRadioButtonClass(ImageType.default, imageType)}
-                        onClick={() => setImageType(ImageType.default)}
-                    ><ImageIcon className="w-5 h-5 mt-1" /></button>
-                    <button className={getRadioButtonClass(ImageType.instrumented, imageType)}
-                        onClick={() => setImageType(ImageType.instrumented)}
-                    ><InfoIcon className="w-5 h-5 mt-1" /></button>
-                    <button className={getRadioButtonClass(ImageType.annotated, imageType)}
-                        onClick={() => setImageType(ImageType.annotated)}
-                    ><AtSignIcon className="w-5 h-5 mt-1" /></button>
+                    {getProcessorType() === "markdown" ? (
+                        <>
+                            <button className={getRadioButtonClass(ImageType.original, imageType)}
+                                onClick={() => setImageType(ImageType.original)}
+                            ><ImageIcon className="w-5 h-5 mt-1" /></button>
+                            <button className={getRadioButtonClass(ImageType.instrumented, imageType)}
+                                onClick={() => setImageType(ImageType.instrumented)}
+                            ><InfoIcon className="w-5 h-5 mt-1" /></button>
+                        </>
+                    ) : (
+                        <>
+                            <button className={getRadioButtonClass(ImageType.default, imageType)}
+                                onClick={() => setImageType(ImageType.default)}
+                            ><ImageIcon className="w-5 h-5 mt-1" /></button>
+                            <button className={getRadioButtonClass(ImageType.instrumented, imageType)}
+                                onClick={() => setImageType(ImageType.instrumented)}
+                            ><InfoIcon className="w-5 h-5 mt-1" /></button>
+                            <button className={getRadioButtonClass(ImageType.annotated, imageType)}
+                                onClick={() => setImageType(ImageType.annotated)}
+                            ><AtSignIcon className="w-5 h-5 mt-1" /></button>
+                        </>
+                    )}
                 </div>
             </div>
             <div className='flex flex-col items-center gap-2 flex-1 overflow-y-auto px-2'>

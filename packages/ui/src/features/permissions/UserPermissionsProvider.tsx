@@ -62,6 +62,7 @@ export class UserPermissions {
 }
 
 const UserPermissionsContext = createContext<UserPermissions | undefined>(undefined)
+export { UserPermissionsContext }
 
 export function useUserPermissions() {
     const perms = useContext(UserPermissionsContext);

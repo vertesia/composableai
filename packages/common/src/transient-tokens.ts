@@ -1,5 +1,5 @@
 import { ProjectRef, ProjectRoles } from "./project.js";
-import { AccountRef } from "./user.js";
+import { AccountRef, UserRef } from "./user.js";
 
 
 export enum TransientTokenType {
@@ -26,5 +26,5 @@ export interface UserInviteTokenData {
     role: ProjectRoles;
     account: AccountRef;
     project: ProjectRef;
-    invitedBy: { name: string, email: string; };
+    invited_by: UserRef;
 }
