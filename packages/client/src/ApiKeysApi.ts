@@ -13,8 +13,8 @@ export class ApiKeysApi extends ApiTopic {
      * List all keys for account without values
      * @returns ApiKey[]
      */
-    list(): Promise<ApiKey[]> {
-        return this.get('/');
+    list(level: 'account' | 'project' = 'account'): Promise<ApiKey[]> {
+        return this.get('/', { query: { level } });
     }
 
     /**

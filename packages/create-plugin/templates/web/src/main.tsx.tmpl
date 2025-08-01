@@ -1,4 +1,4 @@
-import { VertesiaShell } from '@vertesia/ui/shell'
+import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
@@ -8,9 +8,11 @@ import { App } from './app'
 import "./env"
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <VertesiaShell>
-      <RouterProvider routes={[{ path: "*", Component: App }]} />
-    </VertesiaShell>
-  </StrictMode>,
+    <StrictMode>
+        <VertesiaShell>
+            <StandaloneApp name=""> {/* <---- put the app name here */}
+                <RouterProvider routes={[{ path: "*", Component: App }]} />
+            </StandaloneApp>
+        </VertesiaShell>
+    </StrictMode>,
 )
