@@ -13,7 +13,7 @@ export interface ApiKey {
     role: ProjectRoles;
     maskedValue?: string; //masked value
     account: string; // the account id
-    project: string; // the project id if any
+    project: ProjectRef; // the project id if any
     enabled: boolean;
     created_by: string,
     updated_by: string,
