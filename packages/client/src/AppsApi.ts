@@ -113,5 +113,13 @@ export default class AppsApi extends ApiTopic {
         return this.get('/installations/refs');
     }
 
+    updateInstallationSettings(settingsPayload: AppInstallationPayload): Promise<AppInstallationWithManifest> {
+        return this.put(`/installations/settings/${settingsPayload.app_id}`, {
+            payload: {
+                app_id: settingsPayload.app_id,
+                settings: settingsPayload.settings
+            } satisfies AppInstallationPayload
+        });
+    }
 
 }
