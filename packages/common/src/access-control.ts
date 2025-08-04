@@ -4,7 +4,7 @@
  * Access control interfaces
  */
 
-import { AccountRoles, ProjectRoles } from "./project.js";
+import { ProjectRoles, AccountRoles } from "./project.js";
 
 export enum Permission {
     int_read = "interaction:read",

@@ -21,9 +21,9 @@ export enum ProjectRoles {
 }
 
 export enum AccountRoles {
-    owner = "owner", // all permissions
-    admin = "admin", // all permissions
-    member = "member", // can only access, but no specific permissions
+    owner = ProjectRoles.owner,
+    admin = ProjectRoles.admin,
+    member = ProjectRoles.member,
 }
 
 export function isRoleIncludedIn(role: string, includingRole: string) {
