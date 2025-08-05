@@ -16,8 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownRenderer } from "@vertesia/ui/widgets";
 
 interface DocumentPreviewPanelProps {
   objectId: string | null;
@@ -233,7 +232,7 @@ export function DocumentPreviewPanel({
                   <div className="shadow rounded-md p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                     {seemsMarkdown ? (
                       <div className="prose prose-sm max-w-none prose-p:my-2 prose-pre:bg-gray-800 prose-pre:my-2 prose-headings:text-indigo-700 dark:prose-invert dark:prose-headings:text-indigo-300">
-                        <Markdown remarkPlugins={[remarkGfm]}>{text}</Markdown>
+                        <MarkdownRenderer>{text}</MarkdownRenderer>
                       </div>
                     ) : (
                       <pre className="text-wrap whitespace-pre-wrap dark:text-gray-200">

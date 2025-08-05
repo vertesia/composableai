@@ -31,6 +31,7 @@ export const EXTERNALS = [
     "ts-md5",
     "react-markdown",
     "remark-gfm",
+    "unist-util-visit",
     "@monaco-editor/react",
     "monaco-editor",
     "motion",
