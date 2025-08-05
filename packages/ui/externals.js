@@ -58,7 +58,8 @@ export const EXTERNALS = [
     "@floating-ui/react",
     "json-schema",
     "react-calendar",
-    "framer-motion"
+    "framer-motion",
+    /^framer-motion\/.*/
 ];
 
 // Put here exceptions - deps that shuld be inlined
