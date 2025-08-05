@@ -26,6 +26,12 @@ export enum AccountRoles {
     member = ProjectRoles.member,
 }
 
+export type AllRoles = ProjectRoles | AccountRoles;
+
+export function toProjectRole(role: AllRoles): ProjectRoles {
+    return role as ProjectRoles;
+}
+
 export function isRoleIncludedIn(role: string, includingRole: string) {
     switch (includingRole) {
         case ProjectRoles.owner:
