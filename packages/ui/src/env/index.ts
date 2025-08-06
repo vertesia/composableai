@@ -13,7 +13,7 @@ export interface EnvProps {
         zeno: string,
         studio: string,
     },
-    firebase: {
+    firebase?: {
         apiKey: string,
         authDomain: string,
         projectId: string,
