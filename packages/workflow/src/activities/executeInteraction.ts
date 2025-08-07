@@ -183,7 +183,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         return projectResult(payload, params, res, {
             runId: res.id,
             status: res.status,
-            result: res,
+            result: res.result,
         });
 
     } catch (error: any) {
