@@ -77,6 +77,7 @@ export interface InteractionEndpoint {
     visibility?: InteractionVisibility;
     version: number;
     tags: string[];
+    output_modality?: Modalities;
     result_schema?: JSONSchema;
     params_schema?: JSONSchema;
 }
