@@ -24,6 +24,7 @@ export interface ContentObject<T = any> extends ContentObjectItem<T> {
     parts?: string[]; // the list of objectId of the parts of the object
     parts_etag?: string; // the etag of the text used for the parts list
     transcript?: Transcript;
+    security?: Record<string, string[]>; // Security field for granular permissions
 }
 
 export type ContentNature =

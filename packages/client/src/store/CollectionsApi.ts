@@ -95,4 +95,20 @@ export class CollectionsApi extends ApiTopic {
         return this.del(`/${id}`);
     }
 
+    /**
+     * Update collection permissions and propagate to member objects
+     * @param collectionId - The collection ID
+     * @param permissions - Map of permission types to principal arrays
+     * @returns Object with collection id, updated security, and number of objects updated
+     */
+    updatePermissions(collectionId: string, permissions: Record<string, string[]>): Promise<{
+        id: string;
+        security: Record<string, string[]>;
+        objectsUpdated: number;
+    }> {
+        return this.put(`/${collectionId}/permissions`, {
+            payload: permissions
+        });
+    }
+
 }
