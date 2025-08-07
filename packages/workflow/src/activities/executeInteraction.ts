@@ -1,6 +1,7 @@
-import { ModelOptions } from "@llumiverse/common";
+import { Modalities, ModelOptions } from "@llumiverse/common";
 import { activityInfo, log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
+import { NodeStreamSource } from "@vertesia/client/node";
 import {
     DSLActivityExecutionPayload,
     DSLActivitySpec,
@@ -14,6 +15,7 @@ import { projectResult } from "../dsl/projections.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { ActivityParamInvalidError, ActivityParamNotFoundError } from "../errors.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
+import { Readable } from "stream";
 
 //Example:
 //@ts-ignore
@@ -148,11 +150,42 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             prompt_data,
             payload.debug_mode,
         );
+        
+        // Handle image uploads if the result contains base64 images
+        if (res.output_modality === Modalities.image) {
+            const images = res.result.images;
+            const uploadedImages = await Promise.all(
+                images.map((image: string, index: number) => {
+                    // Extract base64 data and create buffer
+                    const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, "");
+                    const buffer = Buffer.from(base64Data, 'base64');
+                    
+                    // Generate filename
+                    const { runId } = activityInfo().workflowExecution;
+                    const { activityId } = activityInfo();
+                    const filename = `generated-image-${runId}-${activityId}-${index}.png`;
+                
+                    // Create a readable stream from the buffer
+                    const stream = Readable.from(buffer);
+                    
+                    const source = new NodeStreamSource(
+                        stream,
+                        filename,
+                        "image/png",
+                    );
+                    
+                    return client.files.uploadFile(source);
+                })
+            );
+            res.result.images = uploadedImages;
+        }
+
         return projectResult(payload, params, res, {
             runId: res.id,
             status: res.status,
-            result: res.result,
+            result: res,
         });
+
     } catch (error: any) {
         log.error("Failed to execute interaction", { error });
         if (error.message.includes("Failed to validate merged prompt schema")) {
