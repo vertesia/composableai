@@ -1,6 +1,8 @@
 import { ExecutionRunStatus } from './interaction.js';
-import { SupportedEmbeddingTypes } from './project.js';
 import { CollectionSearchPayload } from './store/collections.js';
+import { SupportedEmbeddingTypes } from "./project.js";
+
+export type EmbeddingSearchConfig = Partial<Record<SupportedEmbeddingTypes, boolean>>;
 
 export interface RunListingQueryOptions {
     project?: string;
@@ -22,18 +24,25 @@ export interface RunListingFilters {
     workflow_run_ids?: string[],
 }
 
+export type scoreAggregationTypes = 'rrf' | 'rsf' | 'smart';
+export type dynamicScalingTypes = 'off' | 'on'; // Ignored when scoreAggregation is 'smart'
+
 export interface VectorSearchQuery {
     objectId?: string;
     values?: number[];
     text?: string;
     image?: string;
-    threshold?: number;
-    type: SupportedEmbeddingTypes
+    embeddingSearchTypes: EmbeddingSearchConfig;
+    fullText?: boolean;
+    dynamicScaling?: dynamicScalingTypes;
+    scoreAggregation?: scoreAggregationTypes;
 }
 
 export interface SimpleSearchQuery {
     name?: string;
     status?: string | string[];
+    limit?: number;
+    offset?: number;
 }
 
 export interface ObjectSearchQuery extends SimpleSearchQuery {
@@ -43,10 +52,10 @@ export interface ObjectSearchQuery extends SimpleSearchQuery {
     updatedTo?: string;
     location?: string;
     parent?: string;
-    similarTo?: string;
-    embeddingType?: SupportedEmbeddingTypes;
     type?: string;
     types?: string[];
+    all_revisions?: boolean;
+    from_root?: string;
 }
 
 export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
