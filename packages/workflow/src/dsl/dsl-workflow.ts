@@ -59,7 +59,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
         retry: {
             initialInterval: '10s',
             backoffCoefficient: 2,
-            maximumAttempts: 10,
+            maximumAttempts: 15,
             maximumInterval: 100 * 30 * 1000, //ms
             nonRetryableErrorTypes: WF_NON_RETRYABLE_ERRORS,
         },
