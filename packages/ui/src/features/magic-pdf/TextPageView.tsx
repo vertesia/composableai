@@ -1,7 +1,5 @@
-import { JSONCode, Theme, XMLViewer } from '@vertesia/ui/widgets';
+import { JSONCode, Theme, XMLViewer, MarkdownRenderer } from '@vertesia/ui/widgets';
 import { useEffect, useLayoutEffect, useState } from "react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { usePdfPagesInfo } from "./PdfPageProvider";
 import { ViewType } from "./types";
 
@@ -15,6 +13,7 @@ const darkTheme: Theme = {
     commentColor: "#BEBEBE",
     cdataColor: "#33CC66",
 }
+
 
 interface TextPageViewProps {
     pageNumber: number;
@@ -86,7 +85,7 @@ function MarkdownPageView({ pageNumber }: MarkdownPageViewProps) {
     }, [pageNumber]);
     return (
         <div className="px-4 py-2 prose prose-sm max-w-none dark:prose-invert">
-            {content ? <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown> : <div>No markdown content available</div>}
+            {content ? <MarkdownRenderer>{content}</MarkdownRenderer> : <div>No markdown content available</div>}
         </div>
     )
 }
