@@ -13,6 +13,7 @@ export enum ProjectRoles {
     project_admin = "project_admin", // all permissions but manage_account, manage_billing
     developer = "developer", // all permissions but manage_account, manage_billing, manage_roles, delete
     application = "application", // executor + request_pk
+    consumer = "consumer", // required permissions for users of micro apps
     executor = "executor", // can only read and execute interactions
     reader = "reader", // can only read (browse)
     billing = "billing", // can only manage billings
