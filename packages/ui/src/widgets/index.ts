@@ -1,6 +1,7 @@
 export * from "./codemirror/index.js";
 export * from "./form/index.js";
 export * from "./json-view/index.js";
+export * from "./markdown/index.js";
 export * from "./popover/index.js";
 export * from "./Progress.js";
 export * from "./properties/index.js";
