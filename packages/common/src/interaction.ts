@@ -373,6 +373,7 @@ interface ResumeConversationPayload {
 
 export interface ToolResultContent {
     content: string;
+    is_error: boolean;
     files?: string[];
 }
 
