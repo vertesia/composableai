@@ -10,16 +10,17 @@ interface SidePanelProps {
     onClose: () => void;
     children: React.ReactNode;
     title?: string;
+    panelWidth?: number;
 }
-export function SidePanel({ isOpen, title, onClose, children }: SidePanelProps) {
-    const [panelWidth, setPanelWidth] = useState(768);
+export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768 }: SidePanelProps) {
+    const [_panelWidth, setPanelWidth] = useState(panelWidth);
 
     const handleDragStart = (e: React.MouseEvent) => {
         e.preventDefault();
 
         let isDragging = true;
         const startX = e.pageX;
-        const startWidth = panelWidth;
+        const startWidth = _panelWidth;
 
         const handleMouseMove = (e: MouseEvent) => {
             if (isDragging) {
@@ -58,7 +59,7 @@ export function SidePanel({ isOpen, title, onClose, children }: SidePanelProps) 
                             >
                                 <DialogPanel
                                     className="pointer-events-auto border-l"
-                                    style={{ width: `${panelWidth}px` }}
+                                    style={{ width: `${_panelWidth}px` }}
                                 >
                                     <div className="relative flex h-full">
                                         {/* Drag Handle */}
@@ -67,7 +68,7 @@ export function SidePanel({ isOpen, title, onClose, children }: SidePanelProps) 
                                             onMouseDown={handleDragStart}
                                         />
                                         <div className="flex-1 flex flex-col overflow-y-scroll gap-4 bg-background py-6 shadow-xl">
-                                            <div className="px-4 sm:px-6">
+                                            <div className="px-2 sm:px-4">
                                                 <div className="flex items-start justify-between">
                                                     <DialogTitle className="w-full text-base font-semibold leading-6">
                                                         <div className="text-2xl">{title ?? ""}</div>
@@ -77,7 +78,7 @@ export function SidePanel({ isOpen, title, onClose, children }: SidePanelProps) 
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="px-4 sm:px-6">
+                                            <div className="px-2 sm:px-4">
                                                 {children}
                                             </div>
                                         </div>
