@@ -1,7 +1,7 @@
 
 
-import { useState, Fragment } from 'react';
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Button } from './shadcn/button';
 
@@ -11,8 +11,9 @@ interface SidePanelProps {
     children: React.ReactNode;
     title?: string;
     panelWidth?: number;
+    backdrop?: boolean;
 }
-export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768 }: SidePanelProps) {
+export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, backdrop = false }: SidePanelProps) {
     const [_panelWidth, setPanelWidth] = useState(panelWidth);
 
     const handleDragStart = (e: React.MouseEvent) => {
@@ -41,25 +42,30 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768 }
     };
 
     return (
-        <Transition show={isOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-10" onClose={onClose}>
-                <div className="fixed inset-y-0 right-0" />
-                <div className="fixed inset-y-0 right-0 overflow-hidden">
-                    <div className="absolute inset-0 overflow-hidden">
-                        <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16">
-                            <TransitionChild
-                                as={Fragment}
-                                enter="transform transition ease-in-out duration-500 sm:duration-700"
-                                enterFrom="translate-x-full"
-                                enterTo="translate-x-0"
-                                leave="transform transition ease-in-out duration-500 sm:duration-700"
-                                leaveFrom="translate-x-0"
-                                leaveTo="translate-x-full"
-                                unmount={true}
-                            >
-                                <DialogPanel
+        <AnimatePresence>
+            {isOpen && (
+                <div className="relative z-10">
+                    {/* Backdrop */}
+                    {backdrop && (
+                        <motion.div
+                            className="fixed inset-0 bg-black bg-opacity-50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                        />
+                    )}
+                    
+                    <div className="fixed inset-y-0 right-0 overflow-hidden">
+                        <div className="absolute inset-0 overflow-hidden">
+                            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16">
+                                <motion.div
                                     className="pointer-events-auto border-l"
                                     style={{ width: `${_panelWidth}px` }}
+                                    initial={{ x: "100%" }}
+                                    animate={{ x: 0 }}
+                                    exit={{ x: "100%" }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                 >
                                     <div className="relative flex h-full">
                                         {/* Drag Handle */}
@@ -70,9 +76,9 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768 }
                                         <div className="flex-1 flex flex-col overflow-y-scroll gap-4 bg-background py-6 shadow-xl">
                                             <div className="px-2 sm:px-4">
                                                 <div className="flex items-start justify-between">
-                                                    <DialogTitle className="w-full text-base font-semibold leading-6">
+                                                    <h2 className="w-full text-base font-semibold leading-6">
                                                         <div className="text-2xl">{title ?? ""}</div>
-                                                    </DialogTitle>
+                                                    </h2>
                                                     <div className="ml-3 flex h-7 items-center">
                                                         <CloseButton onClose={onClose} />
                                                     </div>
@@ -83,13 +89,13 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768 }
                                             </div>
                                         </div>
                                     </div>
-                                </DialogPanel>
-                            </TransitionChild>
+                                </motion.div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </Dialog>
-        </Transition>
+            )}
+        </AnimatePresence>
     );
 }
 
