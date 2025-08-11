@@ -20,18 +20,6 @@ export enum ProjectRoles {
     app_member = "app_member", // used to mark an user have access to an application. does not provide any permission on its own
 }
 
-export enum AccountRoles {
-    owner = ProjectRoles.owner,
-    admin = ProjectRoles.admin,
-    member = ProjectRoles.member,
-}
-
-export type AllRoles = ProjectRoles | AccountRoles;
-
-export function toProjectRole(role: AllRoles): ProjectRoles {
-    return role as ProjectRoles;
-}
-
 export function isRoleIncludedIn(role: string, includingRole: string) {
     switch (includingRole) {
         case ProjectRoles.owner:
