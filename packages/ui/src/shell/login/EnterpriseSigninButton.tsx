@@ -6,6 +6,9 @@ import { useState } from "react";
 
 
 function getProvider(redirectTo?: string) {
+    if (!Env.firebase) {
+        throw new Error("Firebase configuration is not available in the environment");
+    }
     const providerType = Env.firebase.providerType;
     switch (providerType) {
         case "oidc":
