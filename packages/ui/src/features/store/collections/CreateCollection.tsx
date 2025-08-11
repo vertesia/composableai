@@ -74,7 +74,7 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
     };
 
     return (
-        <form>
+        <form onSubmit={(e) => e.preventDefault()}>
             <VModalBody>
                 <FormItem label="Name" required>
                     <Input type="text" value={payload.name || ""} onChange={(value) => setPayloadProp("name", value)} />
