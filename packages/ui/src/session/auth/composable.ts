@@ -134,7 +134,7 @@ export async function fetchComposableTokenFromFirebaseToken(accountId?: string, 
     return fetchComposableToken(getFirebaseAuthToken, accountId, projectId, ttl);
 }
 
-export async function getComposableToken(accountId?: string, projectId?: string, initToken?: string, forceRefresh = false): Promise<ComposableTokenResponse> {
+export async function getComposableToken(accountId?: string, projectId?: string, initToken?: string, forceRefresh = false, useInternalAuth = false): Promise<ComposableTokenResponse> {
 
     const selectedAccount = accountId ?? localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined
     const selectedProject = projectId ?? localStorage.getItem(LastSelectedProjectId_KEY + '-' + selectedAccount) ?? undefined
@@ -145,11 +145,11 @@ export async function getComposableToken(accountId?: string, projectId?: string,
     }
 
     //token is close to expire, refresh it
-    if (getFirebaseAuth().currentUser) {
+    if (!useInternalAuth && getFirebaseAuth().currentUser) {
         //we have a firebase user, get the token from there
         AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
     } else if (initToken || AUTH_TOKEN_RAW) {
-        //we have a token already and no firebase user, refresh it
+        // we have a token already and no firebase user, refresh it
         AUTH_TOKEN_RAW = await fetchComposableToken(() => Promise.resolve(initToken ?? AUTH_TOKEN_RAW), selectedAccount, selectedProject);
     }
 

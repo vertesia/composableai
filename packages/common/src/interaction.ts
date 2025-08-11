@@ -77,6 +77,7 @@ export interface InteractionEndpoint {
     visibility?: InteractionVisibility;
     version: number;
     tags: string[];
+    output_modality?: Modalities;
     result_schema?: JSONSchema;
     params_schema?: JSONSchema;
 }
@@ -373,6 +374,7 @@ interface ResumeConversationPayload {
 
 export interface ToolResultContent {
     content: string;
+    is_error: boolean;
     files?: string[];
 }
 

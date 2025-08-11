@@ -44,10 +44,6 @@ export function useAuthState() {
             reason = undefined; // No errors
         }
 
-        // Clear stored state regardless of outcome
-        sessionStorage.removeItem(AUTH_STATE_KEY);
-        sessionStorage.removeItem(STATE_EXPIRY_KEY);
-
         return reason;
     }, []);
 
