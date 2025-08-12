@@ -44,15 +44,58 @@ const VTabs = ({
   responsive = false,
   variant = "tabs"
 }: TabsProps) => {
-  const currentValue = typeof current === 'function' ? current() : current || defaultValue;
-
-  const [value, setValue] = React.useState(currentValue);
-
-  React.useEffect(() => {
+  // Initialize value
+  const [value, setValue] = React.useState(() => {
+    // First check if current is provided
+    const currentValue = typeof current === 'function' ? current() : current;
     if (currentValue) {
+      return currentValue;
+    }
+
+    // Then check hash
+    const hash = window.location.hash;
+    const currentTab = hash ? hash.substring(1) : undefined;
+    
+    // Check if the tab from hash exists in tabs
+    if (currentTab && tabs.some(tab => tab.name === currentTab)) {
+      return currentTab;
+    }
+    
+    // Fall back to default or first tab
+    return defaultValue || tabs[0]?.name;
+  });
+
+  // Update when current prop changes (but don't create a loop)
+  React.useEffect(() => {
+    const currentValue = typeof current === 'function' ? current() : current;
+    if (currentValue && currentValue !== value) {
       setValue(currentValue);
     }
-  }, [currentValue]);
+  }, [current]);
+
+  // Listen to hash changes only when there's no current prop being controlled externally
+  React.useEffect(() => {
+    if (current) return; // Skip hash handling if controlled by parent
+
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      const currentTab = hash ? hash.substring(1) : undefined;
+      
+      // Only update if the tab exists in tabs
+      if (currentTab && tabs.some(tab => tab.name === currentTab)) {
+        setValue(currentTab);
+      } else if (!hash && defaultValue) {
+        // If no hash, fall back to default
+        setValue(defaultValue);
+      }
+    };
+
+    // Check initial hash
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [current, tabs, defaultValue]);
 
   const handleValueChange = (newValue: string) => {
     setValue(newValue);
@@ -68,7 +111,7 @@ const VTabs = ({
   return (
     <TabsContext.Provider value={{ tabs, size: fullWidth ? tabs.length : 0, current: value, setTab, responsive: responsive, variant }}>
       <TabsPrimitive.Root
-        defaultValue={tabs[0]?.name}
+        defaultValue={value || tabs[0]?.name}
         value={value}
         onValueChange={handleValueChange}
         className={className}
