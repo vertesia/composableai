@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 
 import { SharedState, useWatchSharedState } from '@vertesia/ui/core';
 import { ComputeFacetsResponse, ZenoClient } from '@vertesia/client';
-import { ComplexSearchQuery, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
+import { ComplexSearchPayload, ComplexSearchQuery, ComputeObjectFacetPayload, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
 import { SearchInterface } from '@vertesia/ui/features'
 
 interface DocumentSearchResult {
@@ -85,30 +85,24 @@ export class DocumentSearch implements SearchInterface {
         }
     }
 
-    _searchRequest(query: ComplexSearchQuery, limit: number, offset: number) {
+    _searchRequest(query: ComplexSearchQuery, limit: number, offset: number, includeFacets: boolean = true) {
+        const payload: ComplexSearchPayload = {
+            limit,
+            offset,
+            query,
+            facets: includeFacets ? this.facetSpecs : undefined
+        };
+
         return this.collectionId ?
-            this.client.collections.searchMembers(this.collectionId, {
-                limit,
-                offset,
-                query
-            })
-            : this.client.objects.search({
-                limit,
-                offset,
-                query
-            });
+            this.client.collections.searchMembers(this.collectionId, payload)
+            : this.client.objects.search(payload);
     }
 
     _facetsRequest() {
+        const payload: ComputeObjectFacetPayload = { facets: this.facetSpecs, query: this.query }
         return this.collectionId ?
-            this.client.collections.computeFacets(this.collectionId, {
-                facets: this.facetSpecs,
-                query: this.query
-            })
-            : this.client.objects.computeFacets({
-                facets: this.facetSpecs,
-                query: this.query
-            });
+            this.client.collections.computeFacets(this.collectionId, payload)
+            : this.client.objects.computeFacets(payload);
     }
 
     computeFacets(_query: ObjectSearchQuery) {
@@ -117,7 +111,7 @@ export class DocumentSearch implements SearchInterface {
         });
     }
 
-    _search(loadMore = false) {
+    _search(loadMore = false, noFacets = false) {
         if (this.isRunning) { // avoid searching when a search is pending
             return Promise.resolve(false);
         }
@@ -126,12 +120,22 @@ export class DocumentSearch implements SearchInterface {
             objects: loadMore ? this.objects : [],
         }
         const limit = this.limit;
-        const offset = this.objects.length;
-        return this._searchRequest(this.query, limit, offset).then(async (res) => {
+        const offset = loadMore ? this.objects.length : 0;
+        return this._searchRequest(this.query, limit, offset, !noFacets).then(async (res) => {
+            // Handle the new format with results and facets
+            const results = (res as any).results || [];
+            const facets = (res as any).facets || {};
+
             this.result.value = {
                 isLoading: false,
-                objects: this.objects.concat(res)
+                objects: loadMore ? this.objects.concat(results) : results
             }
+
+            // Update facets if they were requested and returned
+            if (!noFacets && facets && Object.keys(facets).length > 0) {
+                this.facets.value = facets;
+            }
+
             return true;
         }).catch((err) => {
             this.result.value = {
@@ -145,16 +149,16 @@ export class DocumentSearch implements SearchInterface {
 
     search(noFacets = false) {
         if (this.isRunning) return Promise.resolve(false);
-        !noFacets && this.computeFacets(this.query);
-        return this._search(false);
+        return this._search(false, noFacets);
     }
 
     loadMore(noFacets = false) {
         if (this.isRunning) return Promise.resolve(false);
-        if (this.objects.length === 0) {
-            !noFacets && this.computeFacets(this.query);
+        if (this.query.vector) return Promise.resolve(false); //Load more not supported on vector queries
+        if (this.objects.length > 0) {
+            noFacets = true; //Only reload facets on loadMore if there are no results.
         }
-        return this._search(true);
+        return this._search(true, noFacets);
     }
 }
 
