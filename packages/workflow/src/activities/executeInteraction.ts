@@ -197,7 +197,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         } else if (error.message.includes("modelId: Path `modelId` is required")) {
             log.error("Model ID validation failed", { 
                 error,
-                "@metadata": { "error.code": "validation_error" }
+                "error.code": "validation_error"
             });
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError("Model ID is required", payload.activity, error.message);
