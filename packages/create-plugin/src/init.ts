@@ -95,11 +95,11 @@ export async function init(dirName?: string | undefined) {
         context: templateInit.getVars()
     }
     // copy template to current directory and process template files
-    const templsDir = resolve(fileURLToPath(import.meta.url), '../../templates');
+    const templateDir = resolve(fileURLToPath(import.meta.url), '../../templates');
     if (templateName === 'web') {
-        await copyTree(join(templsDir, "web"), dir, templateProps);
+        await copyTree(join(templateDir, "web"), dir, templateProps);
     } else if (answer.template === 'tool') {
-        await copyTree(join(templsDir, "tool"), dir, templateProps);
+        await copyTree(join(templateDir, "tool"), dir, templateProps);
     } else {
         throw new Error("Invalid template type");
     }

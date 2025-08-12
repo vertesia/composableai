@@ -106,9 +106,9 @@ async function readTarIndex(fd: FileHandle) {
             if (indexDataEnd > size - 1024) {
                 throw new Error('Invalid index data offsets: [' + indexDataOffset + ':' + indexDataEnd + ']');
             }
-            const dataBbuffer = Buffer.alloc(indexSize);
-            await fd.read(dataBbuffer, 0, indexSize, indexDataOffset);
-            const indexContent = dataBbuffer.toString('utf-8');
+            const dataBuffer = Buffer.alloc(indexSize);
+            await fd.read(dataBuffer, 0, indexSize, indexDataOffset);
+            const indexContent = dataBuffer.toString('utf-8');
             return new TarIndex(fd, indexContent);
         }
         offset -= 512;

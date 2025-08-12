@@ -8,7 +8,7 @@ import url from 'url';
 export function setupMemoCommand(command: Command, publish?: (file: string, name: string) => Promise<string>) {
     const buildCmd = new Command("build").description("Build a memory pack from a recipe script.");
     buildCmd.allowUnknownOption()
-        .option('-i, --indent <spaces>', 'The number of spaces to indent the JSON result. A identation of 2 is used by default.')
+        .option('-i, --indent <spaces>', 'The number of spaces to indent the JSON result. A indentation of 2 is used by default.')
         .option('-q, --quiet', 'Do not log anything to the console.')
         .option('-z, --gzip', 'Compress the output file using gzip.')
         .option('-o, --out <file>', 'The output file. Defaults to "memory.tar".')
@@ -23,7 +23,7 @@ export function setupMemoCommand(command: Command, publish?: (file: string, name
 
     const exportCmd = new Command("export").description("Export a JSON object from the memory pack given a mapping.");
     exportCmd.option('--map <mapping>', 'The mapping to use. An inline JSON object or a path to a JSOn file prefixed with @')
-        .option('-i, --indent <spaces>', 'The number of spaces to indent the JSON result. No identation is done by default.')
+        .option('-i, --indent <spaces>', 'The number of spaces to indent the JSON result. No indentation is done by default.')
         .argument('<pack>', 'The uncompressed memory pack to use (i.e. a .tar file).')
         .action((arg: string, options: Record<string, any>, command: Command) => {
             exportAction(command, arg, options).catch((err: Error) => {
@@ -60,7 +60,7 @@ function parseArgs(args: string[]) {
     let script: string | undefined;
     const vars: Record<string, any> = {};
     let lastKey: string | undefined;
-    let lastCommitedOption: string | undefined;
+    let lastCommittedOption: string | undefined;
     for (const arg of args) {
         if (arg.startsWith('--var-')) {
             if (lastKey) {
@@ -69,22 +69,22 @@ function parseArgs(args: string[]) {
             lastKey = arg.substring(6);
         } else if (lastKey) {
             vars[lastKey] = arg;
-            lastCommitedOption = lastKey;
+            lastCommittedOption = lastKey;
             lastKey = undefined;
         } else if (script) {
-            console.error(`Ambigous command line arguments. Multiple recipe scripts found: ${script}, ${arg}`);
+            console.error(`Ambiguous command line arguments. Multiple recipe scripts found: ${script}, ${arg}`);
             process.exit(1);
         } else {
             script = arg;
         }
     }
     if (!script) {
-        if (!lastCommitedOption) {
-            console.error("Ambigous command line arguments. No recipe script was found.");
+        if (!lastCommittedOption) {
+            console.error("Ambiguous command line arguments. No recipe script was found.");
             process.exit(1);
         } else {
-            script = vars[lastCommitedOption];
-            vars[lastCommitedOption] = true;
+            script = vars[lastCommittedOption];
+            vars[lastCommittedOption] = true;
         }
     }
     return { script, vars };

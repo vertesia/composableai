@@ -34,7 +34,7 @@ function copyOne(builder: Builder, source: ContentSource, toPath: string, option
             if (source instanceof FileSource) {
                 type = source.extname ? source.extname.slice(1) : source.extname;
             } else {
-                throw new Error("source type for extractText must be spefcified");
+                throw new Error("source type for extractText must be specified");
             }
         }
         switch (type) {
