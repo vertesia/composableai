@@ -128,7 +128,7 @@ export class ObjectsApi extends ApiTopic {
     }
 
     /** Search object — different from find because allow full text search */
-    search(payload: ComplexSearchPayload): Promise<ContentObjectItem[]> {
+    search(payload: ComplexSearchPayload): Promise<{ result: ContentObjectItem[], facets: ComputeFacetsResponse }> {
         return this.post("/search", {
             payload,
         });

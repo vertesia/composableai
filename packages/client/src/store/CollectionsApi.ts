@@ -78,7 +78,7 @@ export class CollectionsApi extends ApiTopic {
         });
     }
 
-    searchMembers(collectionId: string, payload: ComplexSearchPayload): Promise<ContentObjectItem[]> {
+    searchMembers(collectionId: string, payload: ComplexSearchPayload): Promise<{ result: ContentObjectItem[], facets: ComputeFacetsResponse } > {
         return this.post(`/${collectionId}/search`, { payload });
     }
 
