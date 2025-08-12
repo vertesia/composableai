@@ -10,8 +10,7 @@ import {
     SimpleSearchQuery
 } from "./query.js";
 
-export interface SearchPayload {
-    query?: SimpleSearchQuery;
+export interface SearchPayload extends ComputeFacetPayload {
     limit?: number;
     offset?: number;
     select?: string;

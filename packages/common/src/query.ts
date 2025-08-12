@@ -32,7 +32,7 @@ export interface VectorSearchQuery {
     values?: number[];
     text?: string;
     image?: string;
-    embeddingSearchTypes: EmbeddingSearchConfig;
+    embeddingSearchTypes?: EmbeddingSearchConfig;
     fullText?: boolean;
     dynamicScaling?: dynamicScalingTypes;
     scoreAggregation?: scoreAggregationTypes;
