@@ -137,9 +137,9 @@ export function useSmartFileUploadProcessing() {
                 const payload: ComplexSearchPayload = {query: {match: query}, select: undefined}
 
                 if (limitToCollectionId) {
-                    res = await client.store.collections.searchMembers(limitToCollectionId, payload);
+                    res = (await client.store.collections.searchMembers(limitToCollectionId, payload)).result;
                 } else {
-                    res = await client.store.objects.search(payload);
+                    res = (await client.store.objects.search(payload)).result;
                 }
 
                 for (const doc of res) {
@@ -174,7 +174,7 @@ export function useSmartFileUploadProcessing() {
                                 match: query,
                             },
                             select: undefined,
-                        });
+                        }).then((response) => response.result);
                         queries.push(res);
                     } else {
                         const res = client.store.objects.find({
