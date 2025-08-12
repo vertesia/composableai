@@ -68,7 +68,7 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
         /**
          * the depth of nested parent workflows
          */
-        run_depth: number;
+        run_depth?: number;
     };
 
     /**
