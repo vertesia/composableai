@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { ColumnLayout, ContentObject, ContentObjectItem, ComplexSearchQuery } from '@vertesia/common';
 import {
+   
     Button, Divider, ErrorBox, SidePanel, Spinner, useIntersectionObserver, useToast,
     FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter
 } from '@vertesia/ui/core';

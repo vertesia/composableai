@@ -11,17 +11,17 @@ changes.diff:0,256
 metadata.json:1024,52
 ```
 
-A memory pack contains at least one file: `metadata.json`. This file is a JSON object containing random  properties and is required even if the memory is not defininf any metadata properties. In that case an empty JSON object `{}` should be put in the metadata file.
+A memory pack contains at least one file: `metadata.json`. This file is a JSON object containing random  properties and is required even if the memory is not defining any metadata properties. In that case an empty JSON object `{}` should be put in the metadata file.
 
 
 
 ## Memory file implementation
 
-The packages in this repository are provinding an implementation of the memory file for javascript and some tooling to build and test memory files.
+The packages in this repository are providing an implementation of the memory file for javascript and some tooling to build and test memory files.
 
 ## [@vertesia/memory](packages/core)
 
-This is the core library implementing the memory pack and providing an API to programatically create ans use memory packs.
+This is the core library implementing the memory pack and providing an API to programmatically create ans use memory packs.
 
 ### Installation:
 
@@ -43,7 +43,7 @@ npm install -g @vertesia/memory-cli
 
 The package install an application named `memo`.
 
-Use `memo help` to seee the list of commands.
+Use `memo help` to see the list of commands.
 
 ## [@vertesia/memory-commands](packages/commands)
 
@@ -54,7 +54,7 @@ This package must only be imported from the recipe file. It provides a list of t
 A recipe is a typescript file that is used to build a memory pack.
 The recipe can contain any javascript code but it must use the builtin commands to create the memory TAR file.
 
-A memory tpack recipe has the following structure:
+A memory pack recipe has the following structure:
 
 ```js
 import { copy, ... other commands ... } from "@vertesia/memory-commands";
@@ -63,7 +63,7 @@ import { copy, ... other commands ... } from "@vertesia/memory-commands";
 await from("path/to/memory.tar")
 
 /** then you can build the memory tar content using builtin commands
- * You can either use the bult-in commands or `exec` to run a shell command
+ * You can either use the built-in commands or `exec` to run a shell command
  */
 
 // ... Your commands here ...
@@ -80,7 +80,7 @@ export default {
 
 ## Memory Pack Commands.
 
-The only dependency you need to import in your recipe ts file is the `@becmposable/memory-commands` package. This package contains all the buil-in commands which are grouped in two categories: execution commands and content loading commands:
+The only dependency you need to import in your recipe ts file is the `@becomposable/memory-commands` package. This package contains all the built-in commands which are grouped in two categories: execution commands and content loading commands:
 
 ### Context commands
 1. **vars** - Get the build user variables
@@ -96,7 +96,7 @@ The only dependency you need to import in your recipe ts file is the `@becmposab
 
 ### Content loading commands
 
-These commands can be used to fetch content from files. The result is returned as a variable which will only fetch the content when used. All these commands supports globs as argument to fretch content from multiple files. When a glob is used the result will alwaysbe an array of variables.
+These commands can be used to fetch content from files. The result is returned as a variable which will only fetch the content when used. All these commands supports globs as argument to fetch content from multiple files. When a glob is used the result will always be an array of variables.
 1. **content** - fetch the text content from a text file.
 2. **json** - fetch a JSON object from a json file.
 3. **pdf** - extract the text content from a PDF file.
@@ -110,7 +110,7 @@ These commands can be used to fetch content from files. The result is returned a
 A command that returns the user variables which were specified when invoking the memory pack build.
 These variables can be used to parametrize the recipe. When using the `memo` cli application (i.e. `@vertesia/memory-cli`) you can pass vars to the recipe by using command line parameters which starts with a `--var-` prefix.
 
-**Example:** `--var-language fr` will produce a property `language` whith a value of `'fr'`.
+**Example:** `--var-language fr` will produce a property `language` with a value of `'fr'`.
 
 **Usage:**
 ```js
@@ -148,7 +148,7 @@ Get the instance of the builder which is used to build the current recipe ts fil
 
 **Signature:** `from (location: string, options?: FromOptions): void`
 
-The from command load an existing memory pack tar as a source of the current pack being built. You can filter which files and metadata properties will be included from the soruce tar by specifying a `files` filter and a metadata properties `projection`.
+The from command load an existing memory pack tar as a source of the current pack being built. You can filter which files and metadata properties will be included from the source tar by specifying a `files` filter and a metadata properties `projection`.
 
 The `from` command is an asynchronous operation so you need to `await` for its completion.
 
@@ -160,7 +160,7 @@ The shape of the `FromOptions` is:
     projection?: Record<string, boolean | 0 | 1>;
 }
 ```
-The `files` filter is an array of globs as supported by the [micromatch](https://www.npmjs.com/package/micromatch) library. You can either include files using globs expressions or fiels by prepending the glob expression with an `!` character.
+The `files` filter is an array of globs as supported by the [micromatch](https://www.npmjs.com/package/micromatch) library. You can either include files using globs expressions or files by prepending the glob expression with an `!` character.
 
 The `projection` is an object which map keys to a truthy or falsy value. You can either use false or true to exclude or include properties not both.
 
@@ -190,7 +190,7 @@ The memory pack built above will contain all the `images/*.png` files from the s
 
 Execute a shell command. You can execute a pipe of shell commands or use stdout redirection at the end of the command:
 
-The `exec` command is asynchronous so you need to use await when incoking it. If no output redirection is specified then the output will be returned as a string from the `exec()` function
+The `exec` command is asynchronous so you need to use await when invoking it. If no output redirection is specified then the output will be returned as a string from the `exec()` function
 
 **Example:**
 
@@ -212,7 +212,7 @@ It may be either a `string` or a `ContentSource` object. ContentSource objects a
 If location is a string it will be expected to point to a file path or to a glob expression.
 If a glob expression is used the the `copy` operation will copy the content of all the matching files. You can, in that case, specify a path rewrite expression as the `path` argument.
 
-Youn can transform the file content when copying it to the tar by using the `options` argument. The shape of the options is:
+You can transform the file content when copying it to the tar by using the `options` argument. The shape of the options is:
 
 ```ts
 export interface CopyOptions {
@@ -224,7 +224,7 @@ export interface CopyOptions {
 }
 ```
 
-You can convert images by specfying a max height or widtth and / or an output image format. For documents like pdf or docx you can specify `extractText: "pdf" | "docx" | boolean`. If true is specified the type of text extraction will be guessed from the file extension.
+You can convert images by specifying a max height or width and / or an output image format. For documents like pdf or docx you can specify `extractText: "pdf" | "docx" | boolean`. If true is specified the type of text extraction will be guessed from the file extension.
 
 **Example:**
 
@@ -236,14 +236,14 @@ copy(`${wd}/out.txt`, 'out.txt');
 copy('./my-project/src/**/*.ts', './my-project/src!sources/*')
 ```
 
-The rewrite expression in the example above `./my-project/src!sources/*` means: strip the prefix `./my-project/src` fromt he copied file and prefix the remaining od the path with the value `sources/`.
+The rewrite expression in the example above `./my-project/src!sources/*` means: strip the prefix `./my-project/src` from the copied file and prefix the remaining od the path with the value `sources/`.
 
 #### Path rewrite expressions
 
 A path rewrite expression is composed of two parts:
-1. an optional prefix separated by a `!` charcater from the rest of the path. If present this prefix will be removed from the matched path.
-If no prefix is specified then the entrie directory part of the matched path will be removed.
-2. A mandatory suffix which is describing how to rewrite the matched path. The suffix may contain either a wildcard `*` which will be replaced with the matched path (without the removed prefix), either a combination of the followinf variables:
+1. an optional prefix separated by a `!` character from the rest of the path. If present this prefix will be removed from the matched path.
+If no prefix is specified then the entire directory part of the matched path will be removed.
+2. A mandatory suffix which is describing how to rewrite the matched path. The suffix may contain either a wildcard `*` which will be replaced with the matched path (without the removed prefix), either a combination of the following variables:
     * `%n` - the file name without the extension
     * `%e` - the extension
     * `%f` - the file name including the extension
@@ -253,18 +253,18 @@ If no prefix is specified then the entrie directory part of the matched path wil
 **Examples:**
 
 ```js
-// copy all .ts files flatened in the sources directory (the directory structure is not preserved)
+// copy all .ts files flattened in the sources directory (the directory structure is not preserved)
 copy("work/docs/project1/src/**/*.ts", "sources/*")
 // copy all .ts files  in the sources directory and recreate the subdirectories structure inside src/
 copy("work/docs/project1/src/**/*.ts", "work/docs/project1/src!sources/*")
 // Remove the work/ prefix and preserver the same subdirectories structure including images/
 // and replace the file extension with .png
 copy("work/images/**/*.png", "work!%d/%n.jpeg")
-// Copy all images inaide a images/ folder without preserving subdirectories and append the index of the image
+// Copy all images inside a images/ folder without preserving subdirectories and append the index of the image
 copy("work/images/**/*.png", "images/%n-%i.%e")
 ```
 
-In the last example for the mnatched files: `work/images/header/home.png` and `work/images/footer/logo.png` the result will be: `images/home-0.png`, `images/logo-1.png`
+In the last example for the matched files: `work/images/header/home.png` and `work/images/footer/logo.png` the result will be: `images/home-0.png`, `images/logo-1.png`
 
 ### copyText
 
@@ -331,8 +331,8 @@ await build("./some/recipe.ts", { out: `${wd}}/child-memory`});
 
 **Signature:** `content (location: string, encoding?: BufferEncoding): ContentObject | ContentObject[]`
 
-If the location is a glob expression then an arry of `ContentObject` is returned. A `ContentObject` implements `ContentSource` so it can be used as the location argument of the copy operation.
-The actual cotnent of a file is only fetched (and trasformed) only when the ContentObject is used: either a method of the object is used, either it is assigned to a value of a metadata property.
+If the location is a glob expression then an array of `ContentObject` is returned. A `ContentObject` implements `ContentSource` so it can be used as the location argument of the copy operation.
+The actual content of a file is only fetched (and transformed) only when the ContentObject is used: either a method of the object is used, either it is assigned to a value of a metadata property.
 
 The `content` command simply load the content of the given file(s) as a text using an optional encoding. The default encoding is "utf-8".
 
@@ -360,7 +360,7 @@ export default {
 }
 ```
 
-In the example above the PDF text will be extracted from the pdf and ibjected as the textContent property ion the memory pack metadata.
+In the example above the PDF text will be extracted from the pdf and injected as the textContent property ion the memory pack metadata.
 
 ### docx
 

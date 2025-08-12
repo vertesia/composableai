@@ -7,6 +7,6 @@ interface CenterProps {
 }
 export function Center({ className, children }: CenterProps) {
     return (
-        <div className={clsx('flex items-ceter justify-center', className)}>{children}</div>
+        <div className={clsx('flex items-center justify-center', className)}>{children}</div>
     )
 }
