@@ -190,7 +190,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         if (error.message.includes("Failed to validate merged prompt schema")) {
             log.error("Failed to validate merged prompt schema", { 
                 error, 
-                "@metadata": { "error.code": "validation_error" }
+                "error.code": "validation_error"
             });
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError("Failed to validate merged prompt schema", payload.activity, error.message);
