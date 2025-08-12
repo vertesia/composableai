@@ -1,7 +1,7 @@
 import { basename, dirname, extname, join } from "path";
 
 /**
- * The path argumentmay is the empty string when mapping streams or buffers not related to a file system file.
+ * The path argument is the empty string when mapping streams or buffers not related to a file system file.
  */
 export type PathMapperFn = ((path: string, index: number) => string);
 
@@ -132,7 +132,7 @@ export class Path {
         return this._extname;
     }
     /**
-     * The directory portion of the path. Doesn'r include the trailing slash.
+     * The directory portion of the path. Doesn't include the trailing slash.
      * If no directory is present, returns an empty string.
      */
     get dirname(): string {
