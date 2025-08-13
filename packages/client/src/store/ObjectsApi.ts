@@ -50,6 +50,11 @@ export interface ComputeFacetsResponse {
     total?: { count: number }[];
 }
 
+export interface SearchResponse {
+    results: ContentObjectItem[];
+    facets: ComputeFacetsResponse;
+}
+
 export class ObjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/objects");
@@ -128,7 +133,7 @@ export class ObjectsApi extends ApiTopic {
     }
 
     /** Search object — different from find because allow full text search */
-    search(payload: ComplexSearchPayload): Promise<{ result: ContentObjectItem[], facets: ComputeFacetsResponse }> {
+    search(payload: ComplexSearchPayload): Promise<SearchResponse> {
         return this.post("/search", {
             payload,
         });
