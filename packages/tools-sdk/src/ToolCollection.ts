@@ -32,7 +32,7 @@ export interface ToolCollectionProperties {
 }
 
 /**
- * Implements a tools colection endpoint
+ * Implements a tools collection endpoint
  */
 export class ToolCollection implements Iterable<Tool<any>> {
 

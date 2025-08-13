@@ -77,6 +77,7 @@ export interface InteractionEndpoint {
     visibility?: InteractionVisibility;
     version: number;
     tags: string[];
+    output_modality?: Modalities;
     result_schema?: JSONSchema;
     params_schema?: JSONSchema;
 }
@@ -348,6 +349,9 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /** Whether to enable debug mode */
     debug_mode?: boolean;
 
+    /** Maximum depth for nested conversations to prevent infinite recursion (default: 5) */
+    max_nested_conversation_depth?: number;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
@@ -373,6 +377,7 @@ interface ResumeConversationPayload {
 
 export interface ToolResultContent {
     content: string;
+    is_error: boolean;
     files?: string[];
 }
 

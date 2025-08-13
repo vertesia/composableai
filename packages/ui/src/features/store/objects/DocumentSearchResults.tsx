@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 
 import { ColumnLayout, ContentObject, ContentObjectItem, VectorSearchQuery } from '@vertesia/common';
-import { Button, Divider, ErrorBox, SidePanel, Spinner, useDebounce, useIntersectionObserver, useToast } from '@vertesia/ui/core';
+import {
+    Button, Divider, ErrorBox, SidePanel, Spinner, useDebounce, useIntersectionObserver, useToast,
+    FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter
+ } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
 import { Download, RefreshCw, Eye } from 'lucide-react';
-import { FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter } from '@vertesia/ui/core';
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 
@@ -202,7 +204,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                         <div className="flex flex-row gap-4 items-center justify-between w-full">
                             <div className="flex gap-2 items-center w-2/3">
                                 {
-                                    allowSearch && <VectorSearchWidget onChange={setVQuery} isLoading={isLoading} refresh={refreshTrigger} className="w-wull" />
+                                    allowSearch && <VectorSearchWidget onChange={setVQuery} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
                                 }
                                 <FilterBtn />
                             </div>

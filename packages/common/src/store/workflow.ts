@@ -65,6 +65,10 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     parent?: {
         run_id: string;
         workflow_id: string;
+        /**
+         * the depth of nested parent workflows
+         */
+        run_depth?: number;
     };
 
     /**

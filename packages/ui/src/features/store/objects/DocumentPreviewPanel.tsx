@@ -5,7 +5,7 @@ import {
 import { Button, Spinner, useToast } from "@vertesia/ui/core";
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
-import { JSONDisplay } from "@vertesia/ui/widgets";
+import { JSONDisplay, MarkdownRenderer } from "@vertesia/ui/widgets";
 import {
   ChevronRight,
   Download,
@@ -16,7 +16,6 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { MarkdownRenderer } from "@vertesia/ui/widgets";
 
 interface DocumentPreviewPanelProps {
   objectId: string | null;
