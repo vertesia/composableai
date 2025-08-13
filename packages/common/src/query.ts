@@ -1,6 +1,6 @@
 import { ExecutionRunStatus } from './interaction.js';
 import { CollectionSearchPayload } from './store/collections.js';
-import { SupportedEmbeddingTypes } from "./project.js";
+import { SearchTypes, SupportedEmbeddingTypes } from "./project.js";
 
 export type EmbeddingSearchConfig = Partial<Record<SupportedEmbeddingTypes, boolean>>;
 
@@ -33,6 +33,7 @@ export interface VectorSearchQuery {
     text?: string;
     image?: string;
     embeddingSearchTypes?: EmbeddingSearchConfig;
+    weights?: Record<SearchTypes, number>
     fullText?: boolean;
     dynamicScaling?: dynamicScalingTypes;
     scoreAggregation?: scoreAggregationTypes;
@@ -108,3 +109,23 @@ export interface ComplexSearchQuery extends ObjectSearchQuery {
 export interface ComplexCollectionSearchQuery extends CollectionSearchPayload {
     match?: Record<string, any>;
 }
+
+/*
+export interface ComplexSearchQuery extends ObjectSearchQuery {
+    vector?: VectorSearchQuery;
+    fullText?: string;  // If present, do full text search
+    match?: Record<string, any>;
+    weights?: Record<SearchTypes, number>;  // Move weights to top level
+    dynamicScaling?: dynamicScalingTypes;   // Move to top level
+    scoreAggregation?: scoreAggregationTypes; // Move to top level
+}
+
+export interface VectorSearchQuery {
+    objectId?: string;
+    values?: number[];
+    text?: string;  // Only for vector embedding generation
+    image?: string;
+    embeddingSearchTypes?: EmbeddingSearchConfig;
+    // Remove: weights, fullText, dynamicScaling, scoreAggregation
+}
+*/
