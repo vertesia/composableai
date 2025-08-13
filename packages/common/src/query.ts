@@ -25,7 +25,7 @@ export interface RunListingFilters {
 }
 
 export type scoreAggregationTypes = 'rrf' | 'rsf' | 'smart';
-export type dynamicScalingTypes = 'off' | 'on'; // Ignored when scoreAggregation is 'smart'
+export type dynamicScalingTypes = 'off' | 'on';
 
 export interface VectorSearchQuery {
     objectId?: string;
@@ -35,7 +35,20 @@ export interface VectorSearchQuery {
     embeddingSearchTypes?: EmbeddingSearchConfig;
     weights?: Record<SearchTypes, number>
     fullText?: boolean;
+
+    /**
+     * dynamicScaling rescales the weights when a particular search type is not present in the results, per object.
+     * e.g. Weights of 5,3,2 will be treated as 0,3,2 if the first search type is not present in the results.
+     * Ignored when scoreAggregation is 'smart'
+     * Default is 'on'
+    */
     dynamicScaling?: dynamicScalingTypes;
+
+    /**
+     * rrf: Reciprocal Rank Fusion
+     * rsf: Reciprocal Score Fusion
+     * smart: Our own algorithm (default and recommended)
+     */
     scoreAggregation?: scoreAggregationTypes;
 }
 
