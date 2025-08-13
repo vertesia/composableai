@@ -36,7 +36,9 @@ export enum Permission {
     content_read = "content:read",
     content_write = "content:write",
     content_delete = "content:delete",
-    content_admin = "content:admin", //manage schemas and see all collections
+    content_admin = "content:admin", //manage schemas
+    content_superadmin = "content:superadmin", // list all objects and collections
+
 
     workflow_run = "workflow:run",
     workflow_admin = "workflow:admin",
