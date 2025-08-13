@@ -123,8 +123,8 @@ export class DocumentSearch implements SearchInterface {
         const offset = loadMore ? this.objects.length : 0;
         return this._searchRequest(this.query, limit, offset, !noFacets).then(async (res) => {
             // Handle the new format with results and facets
-            const results = (res as any).results || [];
-            const facets = (res as any).facets || {};
+            const results = res.results || [];
+            const facets = res.facets || {};
 
             this.result.value = {
                 isLoading: false,
