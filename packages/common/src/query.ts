@@ -1,6 +1,8 @@
 import { ExecutionRunStatus } from './interaction.js';
-import { SupportedEmbeddingTypes } from './project.js';
 import { CollectionSearchPayload } from './store/collections.js';
+import { SearchTypes, SupportedEmbeddingTypes } from "./project.js";
+
+export type EmbeddingSearchConfig = Partial<Record<SupportedEmbeddingTypes, boolean>>;
 
 export interface RunListingQueryOptions {
     project?: string;
@@ -22,18 +24,22 @@ export interface RunListingFilters {
     workflow_run_ids?: string[],
 }
 
+export type scoreAggregationTypes = 'rrf' | 'rsf' | 'smart';
+export type dynamicScalingTypes = 'off' | 'on';
+
 export interface VectorSearchQuery {
     objectId?: string;
     values?: number[];
     text?: string;
     image?: string;
-    threshold?: number;
-    type: SupportedEmbeddingTypes
+    config?: EmbeddingSearchConfig;
 }
 
 export interface SimpleSearchQuery {
     name?: string;
     status?: string | string[];
+    limit?: number;
+    offset?: number;
 }
 
 export interface ObjectSearchQuery extends SimpleSearchQuery {
@@ -43,10 +49,10 @@ export interface ObjectSearchQuery extends SimpleSearchQuery {
     updatedTo?: string;
     location?: string;
     parent?: string;
-    similarTo?: string;
-    embeddingType?: SupportedEmbeddingTypes;
     type?: string;
     types?: string[];
+    all_revisions?: boolean;
+    from_root?: string;
 }
 
 export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
@@ -91,8 +97,34 @@ export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {
     status?: string;
 }
 
+/**
+ * ComplexSearchQuery is used for full-text search and vector embedding search.
+ */
 export interface ComplexSearchQuery extends ObjectSearchQuery {
     vector?: VectorSearchQuery;
+
+    /**
+     * If present, do a full text search.
+     */
+    fullText?: string;
+
+    weights?: Record<SearchTypes, number>;
+
+    /**
+     * dynamicScaling rescales the weights when a particular search type is not present in the results, per object.
+     * e.g. Weights of 5,3,2 will be treated as 0,3,2 if the first search type is not present in the results.
+     * Ignored when scoreAggregation is 'smart'
+     * Default is 'on'
+    */
+    dynamic_scaling?: dynamicScalingTypes;   // Move to top level
+
+    /**
+     * rrf: Reciprocal Rank Fusion
+     * rsf: Reciprocal Score Fusion
+     * smart: Our own algorithm (default and recommended)
+     */
+    score_aggregation?: scoreAggregationTypes;
+
     match?: Record<string, any>;
 }
 
