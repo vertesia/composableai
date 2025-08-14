@@ -1,16 +1,15 @@
-import { useEffect, useRef, useState } from "react";
-
-import { ColumnLayout, ContentObject, ContentObjectItem, VectorSearchQuery } from '@vertesia/common';
+import { useRef, useState } from "react";
+import { ColumnLayout, ContentObject, ContentObjectItem, ComplexSearchQuery } from '@vertesia/common';
 import {
-    Button, Divider, ErrorBox, SidePanel, Spinner, useDebounce, useIntersectionObserver, useToast,
+   
+    Button, Divider, ErrorBox, SidePanel, Spinner, useIntersectionObserver, useToast,
     FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter
- } from '@vertesia/ui/core';
+} from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
 import { Download, RefreshCw, Eye } from 'lucide-react';
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
-
 import { ContentDispositionButton } from './components/ContentDispositionButton';
 import { DocumentTable } from './DocumentTable';
 import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from './search/DocumentSearchContext';
@@ -92,7 +91,6 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const [selectedObject, setSelectedObject] = useState<ContentObjectItem | null>(null);
     const { typeRegistry } = useUserSession();
     const { search, isLoading, error, objects } = useWatchDocumentSearchResult();
-    const [vQuery, setVQuery] = useState<VectorSearchQuery | undefined>(undefined);
     const [actualLayout, setActualLayout] = useState<ColumnLayout[]>(
         typeRegistry ? layout || getTableLayout(typeRegistry, search.query.type) : defaultLayout,
     );
@@ -113,26 +111,20 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         }
     }, { deps: [isReady, objects.length] });
 
-    useEffect(() => {
-        search.search().then(() => setIsReady(true));
-    }, []);
 
-    //TODO _setSearchTerm state not used
-    const [searchTerm, _setSearchTerm] = useState("");
-    const debounceValue = useDebounce(searchTerm, 500);
-    useEffect(() => {
-        search.query.name = searchTerm;
-        search.search().then(() => setIsReady(true));
-    }, [debounceValue]);
-
-    useEffect(() => {
-        if (vQuery) {
-            search.query.vector = vQuery;
-            if (!actualLayout.find((c) => c.name === "Vector Similarity")) {
+    // Handler for vector search widget
+    const handleVectorSearch = (query?: ComplexSearchQuery) => {
+        if (query && query.vector) {
+            search.query.vector = query.vector;
+            search.query.fullText = query.fullText;
+            search.query.weights = query.weights;
+            search.query.score_aggregation = query.score_aggregation;
+            search.query.dynamic_scaling = query.dynamic_scaling;
+            if (!actualLayout.find((c) => c.name === "Search Score")) {
                 const layout = [
                     ...actualLayout,
                     {
-                        name: "Vector Similarity",
+                        name: "Search Score",
                         field: "score",
                     } satisfies ColumnLayout,
                 ];
@@ -143,7 +135,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             delete search.query.vector;
             search.search().then(() => setIsReady(true));
         }
-    }, [vQuery?.values]);
+    };
 
     const facets = useWatchDocumentSearchFacets();
     const facetSearch = useDocumentSearch();
@@ -204,7 +196,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                         <div className="flex flex-row gap-4 items-center justify-between w-full">
                             <div className="flex gap-2 items-center w-2/3">
                                 {
-                                    allowSearch && <VectorSearchWidget onChange={setVQuery} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
+                                    allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
                                 }
                                 <FilterBtn />
                             </div>
@@ -225,7 +217,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                     <div className="flex flex-row gap-4 items-center justify-between w-full">
                         <div className="flex gap-2 items-center w-2/3">
                             {
-                                allowSearch && <VectorSearchWidget onChange={setVQuery} isLoading={isLoading} refresh={refreshTrigger} />
+                                allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} />
                             }
                         </div>
                         <div className="flex gap-1 items-center">
