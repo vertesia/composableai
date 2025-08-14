@@ -32,24 +32,7 @@ export interface VectorSearchQuery {
     values?: number[];
     text?: string;
     image?: string;
-    embeddingSearchTypes?: EmbeddingSearchConfig;
-    weights?: Record<SearchTypes, number>
-    fullText?: boolean;
-
-    /**
-     * dynamicScaling rescales the weights when a particular search type is not present in the results, per object.
-     * e.g. Weights of 5,3,2 will be treated as 0,3,2 if the first search type is not present in the results.
-     * Ignored when scoreAggregation is 'smart'
-     * Default is 'on'
-    */
-    dynamicScaling?: dynamicScalingTypes;
-
-    /**
-     * rrf: Reciprocal Rank Fusion
-     * rsf: Reciprocal Score Fusion
-     * smart: Our own algorithm (default and recommended)
-     */
-    scoreAggregation?: scoreAggregationTypes;
+    config?: EmbeddingSearchConfig;
 }
 
 export interface SimpleSearchQuery {
@@ -114,31 +97,37 @@ export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {
     status?: string;
 }
 
+/**
+ * ComplexSearchQuery is used for full-text search and vector embedding search.
+ */
 export interface ComplexSearchQuery extends ObjectSearchQuery {
     vector?: VectorSearchQuery;
+
+    /**
+     * If present, do a full text search.
+     */
+    fullText?: string;
+
+    weights?: Record<SearchTypes, number>;
+
+    /**
+     * dynamicScaling rescales the weights when a particular search type is not present in the results, per object.
+     * e.g. Weights of 5,3,2 will be treated as 0,3,2 if the first search type is not present in the results.
+     * Ignored when scoreAggregation is 'smart'
+     * Default is 'on'
+    */
+    dynamic_scaling?: dynamicScalingTypes;   // Move to top level
+
+    /**
+     * rrf: Reciprocal Rank Fusion
+     * rsf: Reciprocal Score Fusion
+     * smart: Our own algorithm (default and recommended)
+     */
+    score_aggregation?: scoreAggregationTypes;
+
     match?: Record<string, any>;
 }
 
 export interface ComplexCollectionSearchQuery extends CollectionSearchPayload {
     match?: Record<string, any>;
 }
-
-/*
-export interface ComplexSearchQuery extends ObjectSearchQuery {
-    vector?: VectorSearchQuery;
-    fullText?: string;  // If present, do full text search
-    match?: Record<string, any>;
-    weights?: Record<SearchTypes, number>;  // Move weights to top level
-    dynamicScaling?: dynamicScalingTypes;   // Move to top level
-    scoreAggregation?: scoreAggregationTypes; // Move to top level
-}
-
-export interface VectorSearchQuery {
-    objectId?: string;
-    values?: number[];
-    text?: string;  // Only for vector embedding generation
-    image?: string;
-    embeddingSearchTypes?: EmbeddingSearchConfig;
-    // Remove: weights, fullText, dynamicScaling, scoreAggregation
-}
-*/

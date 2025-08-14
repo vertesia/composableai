@@ -73,9 +73,9 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
         const query: ComplexSearchQuery = {
             vector: {
                 text: searchText,
-                embeddingSearchTypes,
-                fullText: fullTextEnabled,
+                config: embeddingSearchTypes,
             },
+            fullText: fullTextEnabled ? searchText : undefined,
             limit: limit
         };
         onChange(query);
