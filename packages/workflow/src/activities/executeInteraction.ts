@@ -187,14 +187,22 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         });
 
     } catch (error: any) {
-        log.error("Failed to execute interaction", { error });
         if (error.message.includes("Failed to validate merged prompt schema")) {
+            log.error("Failed to validate merged prompt schema", { 
+                error, 
+                "error.code": "validation_error"
+            });
             //issue with the input data, don't retry
-            throw new ActivityParamInvalidError("prompt_data", payload.activity, error.message);
+            throw new ActivityParamInvalidError("Failed to validate merged prompt schema", payload.activity, error.message);
         } else if (error.message.includes("modelId: Path `modelId` is required")) {
+            log.error("Model ID validation failed", { 
+                error,
+                "error.code": "validation_error"
+            });
             //issue with the input data, don't retry
-            throw new ActivityParamInvalidError("model", payload.activity, error.message);
+            throw new ActivityParamInvalidError("Model ID is required", payload.activity, error.message);
         } else {
+            log.error("Failed to execute interaction", { error });
             throw error;
         }
     }
