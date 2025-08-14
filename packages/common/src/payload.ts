@@ -11,6 +11,7 @@ import {
 } from "./query.js";
 
 export interface SearchPayload {
+    facets?: FacetSpec[];
     query?: SimpleSearchQuery;
     limit?: number;
     offset?: number;

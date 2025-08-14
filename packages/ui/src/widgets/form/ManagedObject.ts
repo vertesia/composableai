@@ -237,7 +237,7 @@ export class ManagedListProperty extends Node<ArrayPropertySchema, JSONSchemaArr
         }
         if (Array.isArray(value) && index >= 0 && index < value.length) {
             value.splice(index, 1);
-            // TODO trigger onCHnage only if this item isn't transient
+            // TODO trigger onChange only if this item isn't transient
             this.onChange(this);
         }
     }

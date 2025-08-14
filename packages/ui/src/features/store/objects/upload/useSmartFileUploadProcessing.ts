@@ -1,4 +1,4 @@
-import { ContentObjectItem } from "@vertesia/common";
+import { ComplexSearchPayload, ContentObjectItem } from "@vertesia/common";
 import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Md5 } from "ts-md5";
@@ -134,18 +134,12 @@ export function useSmartFileUploadProcessing() {
 
                 let res: ContentObjectItem[];
 
+                const payload: ComplexSearchPayload = {query: {match: query}, select: undefined}
+
                 if (limitToCollectionId) {
-                    res = await client.store.collections.searchMembers(limitToCollectionId, {
-                        query: {
-                            match: query,
-                        },
-                        select: undefined,
-                    });
+                    res = (await client.store.collections.searchMembers(limitToCollectionId, payload)).results;
                 } else {
-                    res = await client.store.objects.search({
-                        query: { match: query },
-                        select: undefined,
-                    });
+                    res = (await client.store.objects.search(payload)).results;
                 }
 
                 for (const doc of res) {
@@ -180,7 +174,7 @@ export function useSmartFileUploadProcessing() {
                                 match: query,
                             },
                             select: undefined,
-                        });
+                        }).then((response) => response.results);
                         queries.push(res);
                     } else {
                         const res = client.store.objects.find({

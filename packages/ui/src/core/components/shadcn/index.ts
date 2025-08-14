@@ -1,6 +1,6 @@
 import ModeToggle from './theme/ThemeSwitcher';
-import { ThemeProvider } from './theme/ThemeProvider';
-export { ModeToggle, ThemeProvider };
+import { ThemeProvider, ThemeProviderContext } from './theme/ThemeProvider';
+export { ModeToggle, ThemeProvider, ThemeProviderContext };
 
 export * from './button';
 export * from './card';

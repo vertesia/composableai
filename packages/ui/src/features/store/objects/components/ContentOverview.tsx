@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, Spinner, useToast } from "@vertesia/ui/core";
-import { JSONDisplay } from "@vertesia/ui/widgets";
+import { JSONDisplay, MarkdownRenderer } from "@vertesia/ui/widgets";
 import { ContentObject, ImageRenditionFormat } from "@vertesia/common";
 import { Copy, Download, SquarePen } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
@@ -83,7 +81,6 @@ export function ContentOverview({
             // Request document rendition from the server
             const response = await client.objects.getRendition(object.id, {
                 format: format as any, // We're extending the format type
-                max_hw: 1024, // Not used for document exports but required by API
                 generate_if_missing: true,
                 sign_url: true,
             });
@@ -172,7 +169,6 @@ export function ContentOverview({
         if (isImage) {
             client.objects
                 .getRendition(object.id, {
-                    max_hw: 1024,
                     format: ImageRenditionFormat.jpeg,
                     generate_if_missing: false,
                     sign_url: true,
@@ -316,8 +312,7 @@ export function ContentOverview({
                         <div className="border shadow-xs rounded-xs max-w-7xl">
                             {seemsMarkdown ? (
                                 <div className="vprose prose-sm p-1">
-                                    <Markdown
-                                        remarkPlugins={[remarkGfm]}
+                                    <MarkdownRenderer
                                         components={{
                                             a: ({ node, ...props }: { node?: any; href?: string; children?: React.ReactNode }) => {
                                                 const href = props.href || "";
@@ -380,7 +375,7 @@ export function ContentOverview({
                                         }}
                                     >
                                         {text}
-                                    </Markdown>
+                                    </MarkdownRenderer>
                                 </div>
                             ) : (
                                 <pre className="text-wrap bg-muted text-muted p-2">

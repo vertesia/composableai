@@ -4,13 +4,15 @@ import { Plugin } from "vite";
 import { extractTailwindUtilitiesLayer } from "./parse-css.js";
 
 interface VertesiaPluginBuilderOptions {
+    inlineCss?: boolean,
     cssVar?: string;
     // the input file. defaults to src/index.css
     input?: string;
-    // the output file name. Defaults to index.css
+    // the output file name. Defaults to plugin.css
     output?: string;
 }
 export function vertesiaPluginBuilder({
+    inlineCss,
     cssVar,
     input,
     output,
@@ -50,6 +52,7 @@ export function vertesiaPluginBuilder({
             delete bundle['virtual-vertesia-plugin-css-entry.js'];
         },
         writeBundle(this, options, bundle) {
+            if (!inlineCss) return;
             // Look for the generated CSS file in the output directory
             const keys = Object.keys(bundle).filter(k => k === output);
             if (keys.length === 1) {

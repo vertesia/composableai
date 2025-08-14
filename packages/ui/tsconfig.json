@@ -12,6 +12,7 @@
     ],
     "rootDir": "./src",
     "declarationDir": "./lib/types", // must be specified otherwise vscode generate files in src
+    "declarationMap": true,
     "outDir": "./lib/esm",
     "sourceMap": true,
     "forceConsistentCasingInFileNames": true,

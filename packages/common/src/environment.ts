@@ -1,133 +1,54 @@
-import type { AIModel, TextFallbackOptions } from "@llumiverse/common";
+import type { AIModel, ProviderParams, TextFallbackOptions } from "@llumiverse/common";
+import { ProviderList, Providers } from "@llumiverse/common";
 
-
-export enum SupportedProviders {
-    // from llumiverse
-    openai = 'openai',
-    azure_openai = 'azure_openai',
-    huggingface_ie = 'huggingface_ie',
-    replicate = 'replicate',
-    bedrock = 'bedrock',
-    vertexai = 'vertexai',
-    togetherai = 'togetherai',
-    mistralai = 'mistralai',
-    groq = 'groq',
-    watsonx = 'watsonx',
-    // from studio
+// Virtual providers from studio
+export enum CustomProviders {
     virtual_lb = 'virtual_lb',
     virtual_mediator = 'virtual_mediator',
     test = 'test'
 }
 
-export interface SupportedProviderParams {
+export type SupportedProviders = Providers | CustomProviders;
+
+export const SupportedProviders = {
+    ...Providers,
+    ...CustomProviders
+} as const;
+
+export interface SupportedProviderParams extends Omit<ProviderParams, 'id'> {
     id: SupportedProviders;
-    name: string;
-    requiresApiKey: boolean;
-    requiresEndpointUrl: boolean;
-    endpointPlaceholder?: string;
-    supportSearch?: boolean;
 }
 
-export const SupportedProvidersList: Record<SupportedProviders, SupportedProviderParams> = {
-    'openai':
+export const CustomProvidersList: Record<CustomProviders, SupportedProviderParams> = {
+    virtual_lb:
     {
-        id: SupportedProviders.openai,
-        name: "OpenAI",
-        requiresApiKey: true,
-        requiresEndpointUrl: false,
-        supportSearch: false,
-    },
-    'azure_openai':
-    {
-        id: SupportedProviders.azure_openai,
-        name: "Azure OpenAI",
-        requiresApiKey: false,
-        requiresEndpointUrl: true,
-        supportSearch: false,
-    },
-    'huggingface_ie':
-    {
-        id: SupportedProviders.huggingface_ie,
-        name: "HuggingFace Inference Endpoint",
-        requiresApiKey: true,
-        requiresEndpointUrl: true,
-    },
-    'replicate':
-    {
-        id: SupportedProviders.replicate,
-        name: "Repicate",
-        requiresApiKey: true,
-        requiresEndpointUrl: false,
-        supportSearch: true,
-    },
-    'bedrock':
-    {
-        id: SupportedProviders.bedrock,
-        name: "AWS Bedrock",
-        requiresApiKey: false,
-        requiresEndpointUrl: false,
-        endpointPlaceholder: "region name (eg. us-east-1)",
-        supportSearch: false,
-    },
-    vertexai: {
-        id: SupportedProviders.vertexai,
-        name: "Google Vertex AI",
-        requiresApiKey: false,
-        requiresEndpointUrl: false,
-        supportSearch: false,
-    },
-    togetherai: {
-        id: SupportedProviders.togetherai,
-        name: "Together AI",
-        requiresApiKey: false,
-        requiresEndpointUrl: false,
-        supportSearch: false,
-    },
-    mistralai: {
-        id: SupportedProviders.mistralai,
-        name: "Mistral AI",
-        requiresApiKey: false,
-        requiresEndpointUrl: false,
-        supportSearch: false,
-    },
-    groq: {
-        id: SupportedProviders.groq,
-        name: "Groq Cloud",
-        requiresApiKey: false,
-        requiresEndpointUrl: false,
-        supportSearch: false,
-    },
-    watsonx: {
-        id: SupportedProviders.watsonx,
-        name: "IBM WatsonX",
-        requiresApiKey: true,
-        requiresEndpointUrl: true,
-        supportSearch: false
-    },
-    'virtual_lb':
-    {
-        id: SupportedProviders.virtual_lb,
+        id: CustomProviders.virtual_lb,
         name: "Virtual - Load Balancer",
         requiresApiKey: false,
         requiresEndpointUrl: false,
         supportSearch: false,
     },
-    'virtual_mediator':
+    virtual_mediator:
     {
-        id: SupportedProviders.virtual_mediator,
+        id: CustomProviders.virtual_mediator,
         name: "Virtual - Mediator",
         requiresApiKey: false,
         requiresEndpointUrl: false,
         supportSearch: false,
     },
-    'test': {
-        id: SupportedProviders.test,
+    test: {
+        id: CustomProviders.test,
         name: "Test LLM",
         requiresApiKey: false,
         requiresEndpointUrl: false,
         supportSearch: false,
     },
 };
+
+export const SupportedProvidersList: Record<SupportedProviders, SupportedProviderParams> = {
+    ...ProviderList,
+    ...CustomProvidersList
+} as const;
 
 
 export interface VirtualEnvEntry {
