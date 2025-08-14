@@ -116,6 +116,10 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const handleVectorSearch = (query?: ComplexSearchQuery) => {
         if (query && query.vector) {
             search.query.vector = query.vector;
+            search.query.fullText = query.fullText;
+            search.query.weights = query.weights;
+            search.query.score_aggregation = query.score_aggregation;
+            search.query.dynamic_scaling = query.dynamic_scaling;
             if (!actualLayout.find((c) => c.name === "Search Score")) {
                 const layout = [
                     ...actualLayout,
