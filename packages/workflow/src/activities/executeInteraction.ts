@@ -1,6 +1,7 @@
-import { ModelOptions } from "@llumiverse/common";
+import { Modalities, ModelOptions } from "@llumiverse/common";
 import { activityInfo, log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
+import { NodeStreamSource } from "@vertesia/client/node";
 import {
     DSLActivityExecutionPayload,
     DSLActivitySpec,
@@ -14,6 +15,7 @@ import { projectResult } from "../dsl/projections.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { ActivityParamInvalidError, ActivityParamNotFoundError } from "../errors.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
+import { Readable } from "stream";
 
 //Example:
 //@ts-ignore
@@ -148,11 +150,42 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             prompt_data,
             payload.debug_mode,
         );
+        
+        // Handle image uploads if the result contains base64 images
+        if (res.output_modality === Modalities.image) {
+            const images = res.result.images;
+            const uploadedImages = await Promise.all(
+                images.map((image: string, index: number) => {
+                    // Extract base64 data and create buffer
+                    const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, "");
+                    const buffer = Buffer.from(base64Data, 'base64');
+                    
+                    // Generate filename
+                    const { runId } = activityInfo().workflowExecution;
+                    const { activityId } = activityInfo();
+                    const filename = `generated-image-${runId}-${activityId}-${index}.png`;
+                
+                    // Create a readable stream from the buffer
+                    const stream = Readable.from(buffer);
+                    
+                    const source = new NodeStreamSource(
+                        stream,
+                        filename,
+                        "image/png",
+                    );
+                    
+                    return client.files.uploadFile(source);
+                })
+            );
+            res.result.images = uploadedImages;
+        }
+
         return projectResult(payload, params, res, {
             runId: res.id,
             status: res.status,
             result: res.result,
         });
+
     } catch (error: any) {
         log.error("Failed to execute interaction", { error });
         if (error.message.includes("Failed to validate merged prompt schema")) {
@@ -177,7 +210,7 @@ export async function executeInteractionFromActivity(
     const userTags = params.tags;
     const info = activityInfo();
     const runId = info.workflowExecution.runId;
-    let tags = ["workflow", `tmpRunId:${runId}`]; //TODO use wf:wfName
+    let tags = ["workflow"];
     if (userTags) {
         tags = tags.concat(userTags);
     }
@@ -191,9 +224,9 @@ export async function executeInteractionFromActivity(
     if (params.include_previous_error) {
         //retrieve last failed run if any
         if (info.attempt > 1) {
-            log.info("Retrying, searching for previous run", { tags: ["tmpRunId:" + runId] });
+            log.info("Retrying, searching for previous run", { prev_run_id: runId });
             const payload: RunSearchPayload = {
-                query: { tags: ["tmpRunId:" + info.workflowExecution.runId] },
+                query: { workflow_run_ids: [runId] },
                 limit: 1,
             };
             const previousRun = await client.runs.search(payload).then((res) => {

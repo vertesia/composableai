@@ -1,10 +1,11 @@
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { FolderClosed, Search, Trash2 } from "lucide-react";
-import { Button, ConfirmModal, ErrorBox, Table, TBody, TR, useToast, VTooltip, useFetch } from "@vertesia/ui/core";
+import { Button, ConfirmModal, ErrorBox, Table, TBody, TR, useToast, VTooltip, useFetch, EmptyCollection } from "@vertesia/ui/core";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useState, useEffect } from "react";
+import { CreateCollectionModal } from "./CreateCollection";
 
 dayjs.extend(relativeTime);
 
@@ -15,6 +16,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
     const toast = useToast();
     const [collectionToDelete, setCollectionToDelete] = useState<string | undefined>();
     const [isLoading, setIsLoading] = useState(true);
+    const [isOpen, setOpen] = useState(false);
 
     const { data: collections, error, refetch } = useFetch(() => client.store.collections.search({}), []);
 
@@ -55,41 +57,50 @@ export function CollectionsTable({ }: CollectionsTableProps) {
 
     return (
         <>
-            {collections && <Table className="w-full">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Created</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <TBody columns={4} isLoading={isLoading}>
-                    {
-                        collections.map((c) => {
-                            return <TR key={c.id}>
-                                <td>
-                                    <div className="flex items-center gap-2">
-                                        {collectionIcon(c.dynamic)}
-                                        <NavLink href={`/collections/${c.id}`}>{c.name}</NavLink>
-                                    </div>
-                                </td>
-                                <td>{c.type?.name || "-"}</td>
-                                <td>{dayjs(c.created_at).fromNow()}</td>
-                                <td className="text-right">
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => setCollectionToDelete(c.id)}
-                                    >
-                                        <Trash2 className="size-4" />
-                                    </Button>
-                                </td>
-                            </TR>
-                        })
-                    }
-                </TBody>
-            </Table>}
+            {
+                collections &&
+                (collections.length > 0 ?
+                    (<Table className="w-full">
+                        <thead>
+                            <tr>
+                                <th>Name</th >
+                                <th>Type</th>
+                                <th>Created</th>
+                                <th></th>
+                            </tr >
+                        </thead >
+                        <TBody columns={4} isLoading={isLoading}>
+                            {
+                                collections.map((c) => {
+                                    return <TR key={c.id}>
+                                        <td>
+                                            <div className="flex items-center gap-2">
+                                                {collectionIcon(c.dynamic)}
+                                                <NavLink href={`/collections/${c.id}`}>{c.name}</NavLink>
+                                            </div>
+                                        </td>
+                                        <td>{c.type?.name || "-"}</td>
+                                        <td>{dayjs(c.created_at).fromNow()}</td>
+                                        <td className="text-right">
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => setCollectionToDelete(c.id)}
+                                            >
+                                                <Trash2 className="size-4" />
+                                            </Button>
+                                        </td>
+                                    </TR>
+                                })
+                            }
+                        </TBody>
+                    </Table >) :
+                    <EmptyCollection title="No Collections" buttonLabel='New Collections' onClick={() => setOpen(true)}>
+                        Get started by creating a new Collections.
+                    </EmptyCollection>)
+            }
+
+            <CreateCollectionModal isOpen={isOpen} onClose={() => setOpen(false)} />
 
             <ConfirmModal
                 isOpen={!!collectionToDelete}

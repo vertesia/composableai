@@ -16,7 +16,7 @@ export function NextPage() {
     return (
         <div className='p-4'>
             <h1 className='pb-4'>Hello again!</h1>
-            <NavButton href='/home'>Go to previous page</NavButton>
+            <NavButton href='/'>Go to previous page</NavButton>
         </div>
     )
 }

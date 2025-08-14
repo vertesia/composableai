@@ -1,14 +1,18 @@
 export * from './access-control.js';
 export * from './analytics.js';
 export * from './apikey.js';
+export * from './apps.js';
 export * from './common.js';
 export * from './environment.js';
 export * from "./facets.js";
+export * from './group.js';
 export * from './integrations.js';
 export * from './interaction.js';
+export * from './json-schema.js';
+export * from './json.js';
 export * from './meters.js';
+export * from './model_utility.js';
 export * from './payload.js';
-export * from "./plugin.js";
 export * from "./Progress.js";
 export * from './project.js';
 export * from './prompt.js';
@@ -22,6 +26,4 @@ export * from './transient-tokens.js';
 export * from './user.js';
 export * from './utils/auth.js';
 export * from './utils/schemas.js';
-export * from './json-schema.js';
-export * from './json.js';
-export * from './model_utility.js';
+export type * from './utils/type-helpers.js'

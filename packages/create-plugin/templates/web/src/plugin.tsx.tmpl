@@ -1,0 +1,14 @@
+import { App } from "./app";
+/**
+ * Export the plugin component.
+ */
+export default function ${ PluginComponent } ({ slot }: { slot: string }) {
+    if (slot === "page") {
+        return (
+            <App />
+        );
+    } else {
+        console.warn('No component found for slot', slot);
+        return null;
+    }
+}

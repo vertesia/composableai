@@ -489,10 +489,16 @@ function ModernAgentConversationInner({
 
         const lastMessage = messages[messages.length - 1];
         if (lastMessage) {
-            if (interactive) {
-                setShowInput(true);
-            } else {
-                setShowInput(lastMessage.type === AgentMessageType.REQUEST_INPUT);
+            if (lastMessage.type === AgentMessageType.TERMINATED) {
+                setShowInput(false);
+                setWorkflowStatus("TERMINATED");
+            }
+            else {
+                if (interactive) {
+                    setShowInput(true);
+                } else {
+                    setShowInput(lastMessage.type === AgentMessageType.REQUEST_INPUT);
+                }
             }
         }
     }, [messages, plans, activePlanIndex]);

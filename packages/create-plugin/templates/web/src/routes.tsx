@@ -2,7 +2,7 @@ import { HomePage, NextPage } from "./pages";
 
 export const routes = [
     {
-        path: '/home',
+        path: '/',
         Component: HomePage,
     },
     {

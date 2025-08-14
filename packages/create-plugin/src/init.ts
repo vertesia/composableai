@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { copyTree } from "./copy.js";
 import { hasBin } from "./hasBin.js";
 import { Package } from "./Package.js";
-import { ToolTemplateInit } from "./ToolTemplateInit.js";
+//import { ToolTemplateInit } from "./ToolTemplateInit.js";
 import { WebTemplateInit } from "./WebTemplateInit.js";
 
 const { prompt } = enquirer;
@@ -52,18 +52,32 @@ export async function init(dirName?: string | undefined) {
         initial: '',
     },
     {
-        name: 'template',
-        type: 'select',
-        message: "Template to use",
+        name: "isolation",
+        type: "select",
+        message: "Isolation strategy",
         initial: 0,
         choices: [
-            { message: 'Web plugin', name: 'web' },
-            { message: 'Agent tool', name: 'tool' },
+            { message: "Shadow DOM", name: "shadow", hint: "Shadow DOM will be used to fully isolate the plugin." },
+            { message: "CSS-only isolation", name: "css", hint: "Injects Tailwind utilities into host DOM; not fully isolated. Lighter but may generate conflicts" }
         ]
-    },
+    }
+        // {
+        //     name: 'template',
+        //     type: 'select',
+        //     message: "Template to use",
+        //     initial: 0,
+        //     choices: [
+        //         { message: 'Web plugin', name: 'web' },
+        //         { message: 'Agent tool', name: 'tool' },
+        //     ]
+        // },
     ]);
 
-    const templateInit = answer.template === 'web' ? new WebTemplateInit(answer) : new ToolTemplateInit(answer);
+    //const templateName = answer.template;
+    const templateName = "web";
+
+    //const templateInit = templateName === 'web' ? new WebTemplateInit(answer) : new ToolTemplateInit(answer);
+    const templateInit = new WebTemplateInit(answer);
     const pluginName = templateInit.pluginName;
 
     let dir: string;
@@ -81,11 +95,11 @@ export async function init(dirName?: string | undefined) {
         context: templateInit.getVars()
     }
     // copy template to current directory and process template files
-    const templsDir = resolve(fileURLToPath(import.meta.url), '../../templates');
-    if (answer.template === 'web') {
-        await copyTree(join(templsDir, "web"), dir, templateProps);
+    const templateDir = resolve(fileURLToPath(import.meta.url), '../../templates');
+    if (templateName === 'web') {
+        await copyTree(join(templateDir, "web"), dir, templateProps);
     } else if (answer.template === 'tool') {
-        await copyTree(join(templsDir, "tool"), dir, templateProps);
+        await copyTree(join(templateDir, "tool"), dir, templateProps);
     } else {
         throw new Error("Invalid template type");
     }

@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+/**
+ * The login form use this for inputs
+ */
+@plugin '@tailwindcss/forms';
+
+/**
+ * Scan typescript sources 
+ */
+@source "./";
+
+/**
+ * Scan the index.html for tailwind CSS
+ */
+@source "../index.html";
+
+/**
+ * Scan @vertesia/ui dependency for tailwind classes 
+ */
+@source "../node_modules/@vertesia/ui/src";

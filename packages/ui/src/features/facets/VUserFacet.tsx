@@ -5,19 +5,20 @@ import { UserInfo } from '../user/UserInfo';
 interface UserFacetProps {
     buckets: FacetBucket[];
     name: string;
+    placeholder?: string;
 }
 
-export function createUserFilterGroup({ buckets, name }: UserFacetProps): FilterGroup {
+export function createUserFilterGroup({ buckets, name, placeholder }: UserFacetProps): FilterGroup {
     const options = buckets.map((bucket) => {
         return {
             value: bucket._id,
-            // Store the count for use in labelRenderer
             label: `(${bucket.count})`
         };
     });
 
     const filterGroup: FilterGroup = {
-        name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalize first letter
+        name: name,
+        placeholder: placeholder || `${name.charAt(0).toUpperCase() + name.slice(1)}`,
         options: options,
         labelRenderer: (userRef: string) => {
             const isUnknownUser = userRef === 'Unknown User' || !userRef;
@@ -38,12 +39,12 @@ export function createUserFilterGroup({ buckets, name }: UserFacetProps): Filter
                     <span className="text-muted-foreground flex-shrink-0">({bucket?.count || 0})</span>
                 </div>
             );
-        }
+        },
     };
 
     return filterGroup;
 }
 
-export function VUserFacet({ buckets, name }: UserFacetProps) {
-    return createUserFilterGroup({ buckets, name });
+export function VUserFacet({ buckets, name, placeholder }: UserFacetProps) {
+    return createUserFilterGroup({ buckets, name, placeholder });
 }

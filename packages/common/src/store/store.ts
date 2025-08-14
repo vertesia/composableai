@@ -24,6 +24,7 @@ export interface ContentObject<T = any> extends ContentObjectItem<T> {
     parts?: string[]; // the list of objectId of the parts of the object
     parts_etag?: string; // the etag of the text used for the parts list
     transcript?: Transcript;
+    security?: Record<string, string[]>; // Security field for granular permissions
 }
 
 export type ContentNature =
@@ -81,6 +82,12 @@ export interface VideoMetadata extends TemporalMediaMetadata {
     dimensions?: Dimensions;
 }
 
+export interface TextSection {
+    description: string; // the description of the section
+    first_line_index: number;
+    last_line_index: number; 
+}
+
 export interface DocumentMetadata extends ContentMetadata {
     type: "document";
     page_count?: number;
@@ -93,6 +100,7 @@ export interface DocumentMetadata extends ContentMetadata {
         zone_count: number;
         needs_ocr_count?: number;
     };
+    sections?: TextSection[]; // List of sections with descriptions and line indexes
 }
 
 export interface Transcript {

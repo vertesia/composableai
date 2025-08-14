@@ -176,8 +176,12 @@ export class WorkflowsApi extends ApiTopic {
 
                             if (onMessage) onMessage(message, exit);
 
-                            // Only close the stream when the main workstream completes
-                            if (message.type === AgentMessageType.COMPLETE && (!message.workstream_id || message.workstream_id === 'main')) {
+                            const streamIsOver = message.type === AgentMessageType.TERMINATED || 
+                                (message.type === AgentMessageType.COMPLETE && 
+                                    (!message.workstream_id || message.workstream_id === 'main'));
+
+                            // Only close the stream when the main workstream completes or terminates
+                            if (streamIsOver) {
                                 console.log("Closing stream due to COMPLETE message from main workstream");
                                 if (!isClosed) {
                                     isClosed = true;

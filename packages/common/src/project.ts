@@ -13,10 +13,13 @@ export enum ProjectRoles {
     project_admin = "project_admin", // all permissions but manage_account, manage_billing
     developer = "developer", // all permissions but manage_account, manage_billing, manage_roles, delete
     application = "application", // executor + request_pk
+    consumer = "consumer", // required permissions for users of micro apps
     executor = "executor", // can only read and execute interactions
     reader = "reader", // can only read (browse)
     billing = "billing", // can only manage billings
     member = "member", // can only access, but no specific permissions
+    app_member = "app_member", // used to mark an user have access to an application. does not provide any permission on its own
+    content_superadmin = "content_superadmin", // can see all content objects and collections
 }
 
 export function isRoleIncludedIn(role: string, includingRole: string) {

@@ -65,7 +65,21 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     parent?: {
         run_id: string;
         workflow_id: string;
+        /**
+         * the depth of nested parent workflows
+         */
+        run_depth?: number;
     };
+
+    /**
+     * Whether to route resource intensive tasks to a heavy load queue. Managed by the application.
+     */
+    _enable_heavy_task_routing?: boolean;
+
+    /**
+     * The suffix to append to the task queue name for heavy load routing. Managed by the application.
+     */
+    _heavy_task_queue_suffix?: string;
 }
 
 export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {
@@ -376,6 +390,7 @@ export enum AgentMessageType {
     QUESTION = "question",
     REQUEST_INPUT = "request_input",
     IDLE = "idle",
+    TERMINATED = "terminated",
 }
 
 export interface PlanTask {

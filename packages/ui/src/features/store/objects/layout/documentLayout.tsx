@@ -28,7 +28,7 @@ export function DocumentTableView({ objects, selection, isLoading, onRowClick, c
                     ))}
                 </tr>
             </thead>
-            <TBody isLoading={isLoading} columns={columns.length}>
+            <TBody isLoading={isLoading} columns={columns.length + 1}>
                 {
                     objects?.map((obj: ContentObjectItem) => {
                         return (
