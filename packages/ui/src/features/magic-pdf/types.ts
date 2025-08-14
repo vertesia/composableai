@@ -1,1 +1,1 @@
-export type ViewType = "xml" | "json";
+export type ViewType = "xml" | "json" | "markdown";

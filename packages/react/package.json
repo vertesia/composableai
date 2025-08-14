@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/react",
-    "version": "0.65.0",
+    "version": "0.74.0",
     "description": "React helpers for Composable AI",
     "type": "module",
     "types": "./lib/index.d.ts",
@@ -10,7 +10,7 @@
         "src"
     ],
     "license": "MIT",
-    "homepage": "https://composableprompts.com/docs",
+    "homepage": "https://docs.vertesiahq.com",
     "keywords": [
         "llm",
         "streaming",

@@ -1,7 +1,7 @@
 {
     "name": "@vertesia/cli",
-    "version": "0.65.0",
-    "description": "Code generation for the interaction defined with Composable AI Studio",
+    "version": "0.74.0",
+    "description": "The Vertesia command-line interface (CLI) provides a set of commands to manage and interact with the Vertesia Platform.",
     "type": "module",
     "bin": {
         "vertesia": "./bin/app.js",
@@ -34,8 +34,8 @@
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "@vertesia/memory-cli": "^0.43.0",
-        "@vertesia/memory-commands": "^0.43.0",
+        "@vertesia/memory-cli": "workspace:*",
+        "@vertesia/memory-commands": "workspace:*",
         "@vertesia/workflow": "workspace:*",
         "ansi-colors": "^4.1.3",
         "ansi-escapes": "^6.2.0",

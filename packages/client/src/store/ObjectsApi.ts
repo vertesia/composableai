@@ -50,6 +50,11 @@ export interface ComputeFacetsResponse {
     total?: { count: number }[];
 }
 
+export interface SearchResponse {
+    results: ContentObjectItem[];
+    facets: ComputeFacetsResponse;
+}
+
 export class ObjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/objects");
@@ -90,17 +95,13 @@ export class ObjectsApi extends ApiTopic {
         const offset = payload.offset || 0;
         const query = payload.query || ({} as ObjectSearchQuery);
 
-        // Add revision filtering options
-        const showAllRevisions = payload.all_revisions === true;
-        const revisionRoot = payload.from_root;
-
         return this.get("/", {
             query: {
                 limit,
                 offset,
                 ...query,
-                all_revisions: showAllRevisions ? "true" : undefined,
-                from_root: revisionRoot,
+                all_revisions: payload.all_revisions,
+                from_root: payload.from_root || undefined,
             },
         });
     }
@@ -132,7 +133,7 @@ export class ObjectsApi extends ApiTopic {
     }
 
     /** Search object — different from find because allow full text search */
-    search(payload: ComplexSearchPayload): Promise<ContentObjectItem[]> {
+    search(payload: ComplexSearchPayload): Promise<SearchResponse> {
         return this.post("/search", {
             payload,
         });

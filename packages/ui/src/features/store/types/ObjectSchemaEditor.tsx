@@ -6,6 +6,7 @@ import { json } from '@codemirror/lang-json';
 import { CodeMirrorEditor, EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
 import { Button, useToast } from '@vertesia/ui/core';
 import { ContentObjectType } from '@vertesia/common';
+import { Ajv } from "ajv";
 
 const CODE_MIRROR_EXTENSIONS = [basicSetup, json()];
 
@@ -69,6 +70,7 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate }: ObjectSchemaE
             const value = editorRef.current.getValue();
             try {
                 const newSchema = contentToJson(value);
+                validateSchema(newSchema);
                 schema.replaceSchema(newSchema);
             } catch (err: any) {
                 toast({
@@ -124,3 +126,16 @@ function contentToJson(content: string | undefined | null) {
 
     return JSON.parse(content.trim());
 }
+
+const validateSchema = (schema: Record<string, any>) => {
+    try {
+        const ajv = new Ajv({
+            strict: true, // Enable strict mode to ensure all properties are validated
+        });
+        // Compile the schema. This implicitly validates the schema definition
+        // against the JSON Schema draft that ajv supports by default.
+        ajv.compile(schema);
+    } catch (error: any) {
+        throw new Error(`Invalid JSON Schema definition: ${error.message}`);
+    }
+};

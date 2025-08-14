@@ -104,7 +104,6 @@ export async function generateOrAssignContentType(
       return undefined;
     }
     const res = await client.objects.getRendition(objectId, {
-      max_hw: 1024,
       format: ImageRenditionFormat.jpeg,
       generate_if_missing: true,
     });

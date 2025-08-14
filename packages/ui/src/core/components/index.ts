@@ -17,6 +17,7 @@ export * from "./MenuList.js";
 export * from "./MessageBox.js";
 export * from "./Modal.js";
 export * from "./NumberInput.js";
+export * from "./Overlay.js";
 export * from "./popup/index.js";
 export * from "./Portal.js";
 export * from "./RadioGroup.js";

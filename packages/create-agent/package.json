@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/create-agent",
-    "version": "0.65.0",
+    "version": "0.74.0",
     "description": "Initialize workflow agent package",
     "type": "module",
     "bin": {
@@ -14,7 +14,7 @@
         "bin"
     ],
     "license": "MIT",
-    "homepage": "https://composableprompts.com/docs",
+    "homepage": "https://docs.vertesiahq.com",
     "keywords": [
         "workflow",
         "temporal",

@@ -1,5 +1,5 @@
 import { useUserSession } from "@vertesia/ui/session";
-import { ApiKey, ApiKeyTypes, PrincipalType, User } from "@vertesia/common";
+import { ApiKey, PrincipalType, User } from "@vertesia/common";
 import { Avatar, Table, Popover, PopoverContent, PopoverTrigger, useFetch } from "@vertesia/ui/core";
 import { ReactNode } from "react";
 
@@ -166,9 +166,8 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
         return <AvatarPlaceholder />
     }
 
-    const isPublic = data.type === ApiKeyTypes.public;
-    const title = isPublic ? "Public Key" : "Private Key";
-    const avatar = <Avatar name={isPublic ? "PK" : "SK"} color="bg-pink-500" size={size} />;
+    const title = "Private Key";
+    const avatar = <Avatar name={"PK"} color="bg-pink-500" size={size} />;
     const description = (
         <Table className="dark:bg-gray-800 dark:text-gray-200 table-fixed w-full">
             <tr>
@@ -181,7 +180,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
             </tr>
             <tr>
                 <td className="font-semibold w-20">Project:</td>
-                <td className="truncate max-w-0">{data?.project}</td>
+                <td className="truncate max-w-0">{data?.project.name}</td>
             </tr>
         </Table>
     );
@@ -190,7 +189,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
         <UserPopoverPanel title={title} description={description}>
             <div className="flex flex-row items-center gap-2">
                 {avatar}
-                {showTitle && <div className="text-sm font-semibold">{data?.name || data?.account || data?.project || "unknown"}</div>}
+                {showTitle && <div className="text-sm font-semibold">{data?.name || data?.account || data?.project.name || "unknown"}</div>}
             </div>
         </UserPopoverPanel >
     )

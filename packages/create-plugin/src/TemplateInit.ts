@@ -6,6 +6,7 @@ export interface UserOptions {
     plugin_name: string;
     plugin_version: string;
     plugin_description?: string;
+    isolation: "shadow" | "css";
     template: string; // 'web' | 'tool' | 'activity'
 }
 

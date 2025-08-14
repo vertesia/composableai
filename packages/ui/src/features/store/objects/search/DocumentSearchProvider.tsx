@@ -1,5 +1,5 @@
 import { useUserSession } from "@vertesia/ui/session";
-import { FacetSpec, SupportedEmbeddingTypes } from "@vertesia/common";
+import { FacetSpec } from "@vertesia/common";
 import React, { useMemo } from "react";
 import { DocumentSearch, SearchContext } from "./DocumentSearchContext";
 
@@ -9,12 +9,10 @@ interface DocumentSearchProviderProps {
     typeId?: string;
     parent?: string;
     facets?: FacetSpec[];
-    similarTo?: string; //vector search similarity
-    embeddingType?: SupportedEmbeddingTypes; //vector search similarity
     collectionId?: string;
     name?: string;
 }
-export function DocumentSearchProvider({ children, limit, parent, typeId, facets, similarTo, embeddingType, name, collectionId }: DocumentSearchProviderProps) {
+export function DocumentSearchProvider({ children, limit, parent, typeId, facets, name, collectionId }: DocumentSearchProviderProps) {
     const { store } = useUserSession();
     const search = useMemo(() => {
         let facetSpecs: FacetSpec[];
@@ -42,8 +40,6 @@ export function DocumentSearchProvider({ children, limit, parent, typeId, facets
         search.collectionId = collectionId;
         search.query.type = typeId;
         search.query.parent = parent;
-        search.query.similarTo = similarTo;
-        search.query.embeddingType = embeddingType;
         search.query.name = name;
         return search;
     }, [typeId, limit]);

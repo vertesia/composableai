@@ -5,7 +5,7 @@ import {
 import { Button, Spinner, useToast } from "@vertesia/ui/core";
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
-import { JSONDisplay } from "@vertesia/ui/widgets";
+import { JSONDisplay, MarkdownRenderer } from "@vertesia/ui/widgets";
 import {
   ChevronRight,
   Download,
@@ -16,8 +16,6 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 interface DocumentPreviewPanelProps {
   objectId: string | null;
@@ -102,7 +100,6 @@ export function DocumentPreviewPanel({
     try {
       // Try to get a rendition first
       const rendition = await client.objects.getRendition(obj.id, {
-        max_hw: 1024,
         format: ImageRenditionFormat.jpeg,
         generate_if_missing: false,
       });
@@ -234,7 +231,7 @@ export function DocumentPreviewPanel({
                   <div className="shadow rounded-md p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                     {seemsMarkdown ? (
                       <div className="prose prose-sm max-w-none prose-p:my-2 prose-pre:bg-gray-800 prose-pre:my-2 prose-headings:text-indigo-700 dark:prose-invert dark:prose-headings:text-indigo-300">
-                        <Markdown remarkPlugins={[remarkGfm]}>{text}</Markdown>
+                        <MarkdownRenderer>{text}</MarkdownRenderer>
                       </div>
                     ) : (
                       <pre className="text-wrap whitespace-pre-wrap dark:text-gray-200">

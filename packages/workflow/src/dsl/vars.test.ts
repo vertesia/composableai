@@ -68,7 +68,7 @@ describe('Workflow vars', () => {
             boolean: "${objectId ?? true}",
             array: "${objectId ?? [1,2]}",
         });
-        // object valus and path expression are not supported
+        // object value and path expression are not supported
         expect(vars.getValue("squote")).toBe("123");
         expect(vars.getValue("dquote")).toBe("123");
         expect(vars.getValue("number")).toBe(123);
