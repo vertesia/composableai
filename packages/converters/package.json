@@ -27,7 +27,7 @@
     },
     "dependencies": {
         "sharp": "^0.33.5",
-        "tmp": "^0.2.3"
+        "tmp": "^0.2.4"
     },
     "ts_dual_module": {
         "outDir": "lib"
