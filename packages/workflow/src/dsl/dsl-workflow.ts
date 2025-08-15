@@ -143,7 +143,7 @@ async function handleError(originalError: any, basePayload: BaseActivityPayload,
         await CancellationScope.nonCancellable(() => handleDslError(payload));
     } else {
         log.warn(`Workflow execution failed, executing error handler to update document status`, { error: originalError });
-        handleDslError(payload);
+        await handleDslError(payload);
     }
     throw originalError;
 }
