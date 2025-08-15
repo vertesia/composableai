@@ -129,8 +129,14 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         if (environment?.id !== this.payload.config.environment?.id) {
             this.payload.config.environment = environment;
             if (!this._preserveRunValues) {
-                this.payload.config.model = environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
-                    ? environment.default_model : undefined;
+                // First try to use the interaction model, then the environment default model
+                const interactionModel = this.payload.interaction?.model;
+                if (interactionModel && environment && supportsToolUse(interactionModel, environment.provider)) {
+                    this.payload.config.model = interactionModel;
+                } else {
+                    this.payload.config.model = environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
+                        ? environment.default_model : undefined;
+                }
             }
 
             this.onStateChanged();
