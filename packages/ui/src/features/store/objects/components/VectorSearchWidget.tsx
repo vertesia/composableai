@@ -34,7 +34,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
         if (searchTypes) setSelectedTypes(searchTypes);
     }, [searchTypes]);
 
-    // Always derive embeddingSearchTypes and fullText from selectedTypes
+    // Always derive embeddingSearchTypes and full_text from selectedTypes
     const embeddingSearchTypes: Record<string, boolean> = {};
     let fullTextEnabled = false;
     selectedTypes.forEach(type => {
@@ -75,7 +75,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
                 text: searchText,
                 config: embeddingSearchTypes,
             },
-            fullText: fullTextEnabled ? searchText : undefined,
+            full_text: fullTextEnabled ? searchText : undefined,
             limit: limit
         };
         onChange(query);

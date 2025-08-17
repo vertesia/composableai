@@ -104,9 +104,9 @@ export interface ComplexSearchQuery extends ObjectSearchQuery {
     vector?: VectorSearchQuery;
 
     /**
-     * If present, do a full text search.
+     * If present, do a full text search (snake_case version).
      */
-    fullText?: string;
+    full_text?: string;
 
     weights?: Record<SearchTypes, number>;
 
