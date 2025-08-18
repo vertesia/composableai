@@ -131,8 +131,12 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 setActualLayout(layout);
             }
             search.search().then(() => setIsReady(true));
+        } else if (query && query.full_text) {
+            search.query.full_text = query.full_text;
+            search.search().then(() => setIsReady(true));
         } else {
             delete search.query.vector;
+            delete search.query.full_text;
             search.search().then(() => setIsReady(true));
         }
     };

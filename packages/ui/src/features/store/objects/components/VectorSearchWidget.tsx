@@ -37,8 +37,13 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
     // Always derive embeddingSearchTypes and full_text from selectedTypes
     const embeddingSearchTypes: Record<string, boolean> = {};
     let fullTextEnabled = false;
+    let vectorSearchEnabled = false;
     selectedTypes.forEach(type => {
-        if (type === SearchTypes.full_text) fullTextEnabled = true;
+        if (type === SearchTypes.full_text) {
+            fullTextEnabled = true;
+        } else {
+            vectorSearchEnabled = true;
+        }
         if (embeddingTypes.includes(type as SupportedEmbeddingTypes)) {
             embeddingSearchTypes[type] = true;
         }
@@ -71,10 +76,10 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
     const fireSearch = () => {
         if (!isReady || !searchText) return;
         const query: ComplexSearchQuery = {
-            vector: {
+            vector: vectorSearchEnabled ? {
                 text: searchText,
                 config: embeddingSearchTypes,
-            },
+            } : undefined,
             full_text: fullTextEnabled ? searchText : undefined,
             limit: limit
         };
