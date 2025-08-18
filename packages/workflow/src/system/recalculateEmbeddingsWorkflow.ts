@@ -21,7 +21,9 @@ export async function recalculateEmbeddingsWorkflow(payload: WorkflowExecutionPa
 
     const embeddings = [];
 
-    for (const type of Object.values(SupportedEmbeddingTypes)) {
+    const types = payload.vars?.type || Object.values(SupportedEmbeddingTypes);
+
+    for (const type of types) {
         embeddings.push(generateEmbeddings(payload, {
             force: true,
             type
