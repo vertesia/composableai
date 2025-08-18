@@ -9,6 +9,7 @@ interface DocumentSearchResult {
     objects: ContentObjectItem[],
     error?: Error;
     isLoading: boolean;
+    hasMore?: boolean;
 }
 
 
@@ -36,8 +37,12 @@ export class DocumentSearch implements SearchInterface {
         return this.result.value.error;
     }
 
-    get isRunning() {
+    get isRunning(): boolean {
         return this.result.value.isLoading;
+    }
+
+    get hasMore(): boolean {
+        return this.result.value.hasMore || false;
     }
 
     getFilterValue(name: string) {
@@ -79,7 +84,8 @@ export class DocumentSearch implements SearchInterface {
     reset(isLoading = false) {
         this.result.value = {
             objects: [],
-            isLoading
+            isLoading,
+            hasMore: true
         };
     }
 
@@ -88,7 +94,8 @@ export class DocumentSearch implements SearchInterface {
         this.result.value = {
             objects: prev.objects,
             isLoading: value,
-            error: prev.error
+            error: prev.error,
+            hasMore: prev.hasMore
         }
     }
 
@@ -125,6 +132,7 @@ export class DocumentSearch implements SearchInterface {
         this.result.value = {
             isLoading: true,
             objects: loadMore ? this.objects : [],
+            hasMore: loadMore ? this.result.value.hasMore : true
         }
         const limit = this.limit;
         const offset = loadMore ? this.objects.length : 0;
@@ -135,7 +143,8 @@ export class DocumentSearch implements SearchInterface {
 
             this.result.value = {
                 isLoading: false,
-                objects: loadMore ? this.objects.concat(results) : results
+                objects: loadMore ? this.objects.concat(results) : results,
+                hasMore: results.length === limit
             }
 
             // Update facets if they were requested and returned
@@ -148,7 +157,8 @@ export class DocumentSearch implements SearchInterface {
             this.result.value = {
                 error: err,
                 isLoading: false,
-                objects: this.objects
+                objects: this.objects,
+                hasMore: this.result.value.hasMore
             }
             throw err;
         })
@@ -160,7 +170,7 @@ export class DocumentSearch implements SearchInterface {
     }
 
     loadMore(noFacets = false) {
-        if (this.isRunning) return Promise.resolve(false);
+        if (this.isRunning || !this.hasMore) return Promise.resolve(false);
         if (this.query.vector) return Promise.resolve(false); //Load more not supported on vector queries
         if (this.objects.length > 0) {
             noFacets = true; //Only reload facets on loadMore if there are no results.
