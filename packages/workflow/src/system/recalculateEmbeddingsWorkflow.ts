@@ -21,8 +21,8 @@ export async function recalculateEmbeddingsWorkflow(payload: WorkflowExecutionPa
 
     const embeddings = [];
     const payloadType = payload.vars?.type as SupportedEmbeddingTypes;
-    
-    if (!Object.values(SupportedEmbeddingTypes).includes(payloadType)) {
+
+    if (payloadType && !Object.values(SupportedEmbeddingTypes).includes(payloadType)) {
         throw new Error("Embedding type must be text, image, or properties");
     }
     const types = payloadType ? [payloadType] : Object.values(SupportedEmbeddingTypes);
