@@ -41,7 +41,8 @@ export function VTypeFacet({ buckets, typeRegistry, type = 'select', multiple = 
     });
 
     const customFilterGroups: FilterGroup = {
-        name: 'Types',
+        name: 'types',
+        placeholder: 'Types',
         type: type,
         multiple: multiple,
         options: options,

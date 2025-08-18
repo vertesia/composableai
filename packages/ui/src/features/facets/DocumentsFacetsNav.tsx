@@ -42,7 +42,8 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
         const statusFilterGroup = VStringFacet({
             search: null as any, // This will be provided by the search context
             buckets: facets.status || [],
-            name: 'Status',
+            name: 'status',
+            placeholder: 'Status',
             type: 'select',
             multiple: true
         });
@@ -51,7 +52,8 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
 
     if (facets.tags) {
         customFilterGroups.push({
-            name: 'Tags',
+            name: 'tags',
+            placeholder: 'Tags',
             type: 'stringList',
             options: facets.tags.map((tag: string) => ({
                 label: tag,
