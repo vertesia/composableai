@@ -20,8 +20,12 @@ const {
 export async function recalculateEmbeddingsWorkflow(payload: WorkflowExecutionPayload) {
 
     const embeddings = [];
-
-    const types = payload.vars?.type || Object.values(SupportedEmbeddingTypes);
+    const payloadType = payload.vars?.type as SupportedEmbeddingTypes;
+    
+    if (!Object.values(SupportedEmbeddingTypes).includes(payloadType)) {
+        throw new Error("Embedding type must be text, image, or properties");
+    }
+    const types = payloadType ? [payloadType] : Object.values(SupportedEmbeddingTypes);
 
     for (const type of types) {
         embeddings.push(generateEmbeddings(payload, {
