@@ -116,7 +116,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const handleVectorSearch = (query?: ComplexSearchQuery) => {
         if (query && query.vector) {
             search.query.vector = query.vector;
-            search.query.fullText = query.fullText;
+            search.query.full_text = query.full_text;
             search.query.weights = query.weights;
             search.query.score_aggregation = query.score_aggregation;
             search.query.dynamic_scaling = query.dynamic_scaling;
@@ -131,8 +131,12 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 setActualLayout(layout);
             }
             search.search().then(() => setIsReady(true));
+        } else if (query && query.full_text) {
+            search.query.full_text = query.full_text;
+            search.search().then(() => setIsReady(true));
         } else {
             delete search.query.vector;
+            delete search.query.full_text;
             search.search().then(() => setIsReady(true));
         }
     };
