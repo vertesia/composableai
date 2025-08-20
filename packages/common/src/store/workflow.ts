@@ -390,3 +390,5 @@ export interface Plan {
     plan: PlanTask[];
     comment?: string;
 }
+
+export const LOW_PRIORITY_TASK_QUEUE = "low_priority";

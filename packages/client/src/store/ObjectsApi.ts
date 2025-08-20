@@ -4,6 +4,7 @@ import {
     ComputeObjectFacetPayload,
     ContentObject,
     ContentObjectItem,
+    ContentObjectProcessingPriority,
     ContentSource,
     CreateContentObjectPayload,
     Embedding,
@@ -217,6 +218,7 @@ export class ObjectsApi extends ApiTopic {
         payload: UploadContentObjectPayload,
         options?: {
             collection_id?: string;
+            processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<ContentObject> {
         const createPayload: CreateContentObjectPayload = {
@@ -280,6 +282,7 @@ export class ObjectsApi extends ApiTopic {
         options?: {
             createRevision?: boolean;
             revisionLabel?: string;
+            processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<ContentObject> {
         const updatePayload: Partial<CreateContentObjectPayload> = {
