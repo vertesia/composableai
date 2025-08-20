@@ -42,7 +42,7 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="relative z-10">
+                <div className="relative z-20">
                     {/* Backdrop */}
                     {backdrop && (
                         <motion.div
