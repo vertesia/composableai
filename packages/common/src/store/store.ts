@@ -378,3 +378,8 @@ export interface GetFileUrlResponse {
     mime_type: string;
     path: string;
 }
+
+export enum ContentObjectProcessingPriority {
+    normal = "normal",
+    low = "low",
+}
