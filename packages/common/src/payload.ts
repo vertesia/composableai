@@ -12,6 +12,13 @@ import {
 
 export interface SearchPayload {
     facets?: FacetSpec[];
+    /**
+     * If the facets should respect "limit"
+     * If true, the facet count be limited to the number of results in the query.
+     * If false, the facet count will be calculated over all objects.
+     * Default is true.
+     */
+    limit_facets?: boolean;
     query?: SimpleSearchQuery;
     limit?: number;
     offset?: number;

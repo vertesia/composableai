@@ -62,7 +62,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
             vertesiaPluginBuilder({ inlineCss })
         ],
         build: {
-            outDir: 'lib', // the plugin will be generated in the `lib` directory
+            outDir: 'dist/lib', // the plugin will be generated in the `dist/lib` directory
             lib: {
                 entry: './src/plugin.tsx', // Main entry point of your library
                 formats: ['es'], // Build ESM versions
@@ -94,7 +94,7 @@ function defineAppConfig(): UserConfig {
             serveStatic([
                 {
                     pattern: new RegExp("/plugin.(js|css)"),
-                    resolve: (groups: string[]) => `./lib/plugin.${groups[1]}`
+                    resolve: (groups: string[]) => `./dist/lib/plugin.${groups[1]}`
                 },
             ]),
         ],
