@@ -94,9 +94,11 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                         ) : <p className="text-xs text-muted">{"\u2002"}</p>
                     }
                 </div>
-                <div className="text-xs text-muted">
-                    Score: {(document.score)?.toFixed(4) ?? "-"}
-                </div>
+                {document.score && (
+                    <div className="text-xs text-muted">    
+                        Score: {(document.score).toFixed(4) ?? "-"}
+                    </div>
+                )}
             </CardContent>
         </Card>
     )
