@@ -220,6 +220,11 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
      * and modification attempts should be rejected.
      */
     is_locked?: boolean;
+
+    /**
+     * The document score, used for ranking and sorting.
+     */
+    score?: number;
 }
 
 /**

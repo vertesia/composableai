@@ -32,8 +32,10 @@ export class WorkflowsApi extends ApiTopic {
     }
 
     /** List conversations the users has access to */
-    listConversations(): Promise<ListWorkflowRunsResponse> {
-        return this.get(`/conversations`);
+    listConversations(payload: ListWorkflowRunsPayload): Promise<ListWorkflowRunsResponse> {
+        return this.post(`/conversations`, {
+            payload
+        });
     }
 
     searchRuns(payload: ListWorkflowRunsPayload): Promise<ListWorkflowRunsResponse> {
@@ -176,8 +178,8 @@ export class WorkflowsApi extends ApiTopic {
 
                             if (onMessage) onMessage(message, exit);
 
-                            const streamIsOver = message.type === AgentMessageType.TERMINATED || 
-                                (message.type === AgentMessageType.COMPLETE && 
+                            const streamIsOver = message.type === AgentMessageType.TERMINATED ||
+                                (message.type === AgentMessageType.COMPLETE &&
                                     (!message.workstream_id || message.workstream_id === 'main'));
 
                             // Only close the stream when the main workstream completes or terminates
