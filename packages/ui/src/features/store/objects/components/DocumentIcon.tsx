@@ -77,7 +77,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                 )
             }
             <Separator className='bg-gray-200 h-[2px]' />
-            <CardContent className="p-2 flex justify-between items-center flex-wrap">
+            <CardContent className="p-2 flex flex-col">
                 <div className="flex flex-col overflow-hidden">
                     <VTooltip
                         placement='top'
