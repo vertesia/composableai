@@ -95,7 +95,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                     }
                 </div>
                 {document.score && (
-                    <div className="text-xs text-muted">    
+                    <div className="text-xs text-muted w-full flex justify-end">    
                         Score: {(document.score).toFixed(4) ?? "-"}
                     </div>
                 )}
