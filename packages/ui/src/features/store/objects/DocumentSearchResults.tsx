@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { ColumnLayout, ContentObject, ContentObjectItem, ComplexSearchQuery } from '@vertesia/common';
 import {
    
@@ -12,6 +12,7 @@ import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 import { ContentDispositionButton } from './components/ContentDispositionButton';
 import { DocumentTable } from './DocumentTable';
+import { ExtendedColumnLayout } from './layout/DocumentTableColumn';
 import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from './search/DocumentSearchContext';
 import { useDocumentUploadHandler } from './upload/useUploadHandler';
 import { ContentOverview } from './components/ContentOverview';
@@ -101,6 +102,21 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const [filters, setFilters] = useState<BaseFilter[]>([]);
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    
+    // Trigger initial search when component mounts
+    useEffect(() => {
+        if (!isReady && objects.length === 0) {
+            // Manually set loading state to show spinner during initial load
+            search._updateRunningState(true);
+            search.search().then(() => {
+                setIsReady(true);
+            }).catch(err => {
+                console.error('Initial search failed:', err);
+                search._updateRunningState(false);
+            });
+        }
+    }, []);
+
     useIntersectionObserver(loadMoreRef, () => {
         if (isReady && objects.length > 0 && objects.length != loaded) {
             setIsReady(false);
@@ -126,7 +142,8 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                     {
                         name: "Search Score",
                         field: "score",
-                    } satisfies ColumnLayout,
+                        render: (item) => (item as any).score?.toFixed(4) || "0.0000"
+                    } satisfies ExtendedColumnLayout,
                 ];
                 setActualLayout(layout);
             }

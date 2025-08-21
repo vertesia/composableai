@@ -77,8 +77,8 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                 )
             }
             <Separator className='bg-gray-200 h-[2px]' />
-            <CardContent className="p-2 flex flex-col gap-1">
-                <div className="flex flex-col">
+            <CardContent className="p-2 flex flex-col">
+                <div className="flex flex-col overflow-hidden">
                     <VTooltip
                         placement='top'
                         description={document.properties?.title ?? document.name}>
@@ -94,6 +94,11 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                         ) : <p className="text-xs text-muted">{"\u2002"}</p>
                     }
                 </div>
+                {document.score && (
+                    <div className="text-xs text-muted">    
+                        Score: {(document.score).toFixed(4) ?? "-"}
+                    </div>
+                )}
             </CardContent>
         </Card>
     )
