@@ -107,9 +107,11 @@ export class DocumentSearch implements SearchInterface {
             facets: includeFacets ? this.facetSpecs : undefined
         };
 
-        return this.collectionId ?
+        const request = this.collectionId ?
             this.client.collections.searchMembers(this.collectionId, payload)
             : this.client.objects.search(payload);
+            
+        return request;
     }
 
     _facetsRequest() {
@@ -126,7 +128,7 @@ export class DocumentSearch implements SearchInterface {
     }
 
     _search(loadMore = false, noFacets = false) {
-        if (this.isRunning) { // avoid searching when a search is pending
+        if (this.isRunning && loadMore) { // avoid searching when a search is pending, but allow initial search
             return Promise.resolve(false);
         }
         this.result.value = {
@@ -165,7 +167,10 @@ export class DocumentSearch implements SearchInterface {
     }
 
     search(noFacets = false) {
-        if (this.isRunning) return Promise.resolve(false);
+        // Allow initial search even if isLoading is true (for initial page load)
+        if (this.isRunning && this.objects.length > 0) {
+            return Promise.resolve(false);
+        }
         return this._search(false, noFacets);
     }
 

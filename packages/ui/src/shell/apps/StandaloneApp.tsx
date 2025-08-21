@@ -101,7 +101,7 @@ function UnknownAppName() {
                 Before starting to code a Vertesia application you must register an application manifest
                 in Vertesia Studio then install it in one or more projects.
                 <p />
-                Then use the created app name as a parameter to <code>&lt;StandaloneApp name=&quot;your-app-name&quot;&gt;</code> in the <code>src/main.ts</code> file.
+                Then use the created app name as a parameter to <code>&lt;StandaloneApp name=&quot;your-app-name&quot;&gt;</code> in the <code>src/main.tsx</code> file.
             </div>
         </Center>
     )
