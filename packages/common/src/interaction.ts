@@ -325,6 +325,8 @@ interface AsyncExecutionPayloadBase {
      * A list of notification endpoints to notify when the execution is finished.
      */
     notify_endpoints?: string[];
+
+    task_queue?: string;
 }
 
 export type ConversationVisibility = 'private' | 'project';
