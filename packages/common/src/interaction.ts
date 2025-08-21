@@ -291,6 +291,8 @@ interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayloa
      * An array of endpoint URLs to be notified upon execution
      */
     notify_endpoints?: string[];
+
+    task_queue?: string;
 }
 
 export type ConversationVisibility = 'private' | 'project';
