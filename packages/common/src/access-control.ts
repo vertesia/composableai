@@ -60,6 +60,7 @@ export enum AccessControlResourceType {
 export enum AccessControlPrincipalType {
     user = "user",
     group = "group",
+    apikey = "apikey",
 }
 
 
