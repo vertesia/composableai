@@ -3,6 +3,13 @@ import { SupportedEmbeddingTypes } from "../project.js";
 import { ComplexSearchQuery } from "../query.js";
 import { BaseObject } from "./common.js";
 
+export enum ContentObjectApiHeaders {
+    COLLECTION_ID = 'x-collection-id',
+    PROCESSING_PRIORITY = 'x-processing-priority',
+    CREATE_REVISION = 'x-create-revision',
+    REVISION_LABEL = 'x-revision-label',
+}
+
 export enum ContentObjectStatus {
     created = "created",
     processing = "processing", // the was created and still processing
