@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/create-plugin",
-    "version": "0.77.0",
+    "version": "0.78.0",
     "description": "Initialize a Vertesia plugin package",
     "type": "module",
     "bin": {
