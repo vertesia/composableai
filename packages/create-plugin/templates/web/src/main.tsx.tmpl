@@ -6,6 +6,9 @@ import './index.css'
 import { RouterProvider } from '@vertesia/ui/router'
 import { App } from './app'
 import "./env"
+import { setUsePluginAssets } from './assets'
+
+setUsePluginAssets(false);
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
