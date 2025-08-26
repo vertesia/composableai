@@ -99,6 +99,12 @@ const VTabs = ({
 
   const handleValueChange = (newValue: string) => {
     setValue(newValue);
+    
+    // Update the URL hash when tab changes (only if not controlled by parent)
+    if (!current) {
+      window.location.hash = newValue;
+    }
+    
     if (onTabChange) {
       onTabChange(newValue);
     }
