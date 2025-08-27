@@ -90,6 +90,7 @@ export interface AuthTokenPayload {
 
 export enum PrincipalType {
     User = "user",
+    Group = "group",
     ApiKey = "apikey",
     ServiceAccount = "service_account",
 }
