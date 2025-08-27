@@ -42,7 +42,19 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
     }, [collection.table_layout]);
 
     const onSubmit = () => {
-        const query = metadata.query ? JSON.parse(metadata.query) : undefined;
+        let query: any = undefined;
+        try {
+            query = metadata.query ? JSON.parse(metadata.query) : undefined;
+        } catch (err: any) {
+            toast({
+                title: "Invalid Query JSON",
+                description: err.message,
+                status: "error",
+                duration: 5000,
+            });
+            return;
+        }
+        
         const payload: Partial<CreateCollectionPayload> = {
             name: metadata.name,
             description: metadata.description,
@@ -65,6 +77,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                 status: "error",
                 duration: 5000,
             });
+            return;
         }
         if (tableLayoutRef.current) {
             const layout = tableLayoutRef.current.getValue();

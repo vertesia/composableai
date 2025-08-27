@@ -1,5 +1,6 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
+    ContentObjectApiHeaders,
     ComplexSearchPayload,
     ComputeObjectFacetPayload,
     ContentObject,
@@ -233,7 +234,10 @@ export class ObjectsApi extends ApiTopic {
         }
         return await this.post("/", {
             payload: createPayload,
-            query: options || {},
+            headers: options ? {
+                [ContentObjectApiHeaders.COLLECTION_ID]: options.collection_id || "",
+                [ContentObjectApiHeaders.PROCESSING_PRIORITY]: options.processing_priority || "",
+            } : {},
         });
     }
 
@@ -302,8 +306,8 @@ export class ObjectsApi extends ApiTopic {
             return this.put(`/${id}`, {
                 payload: updatePayload,
                 headers: {
-                    "x-create-revision": "true",
-                    "x-revision-label": options.revisionLabel || "",
+                    [ContentObjectApiHeaders.CREATE_REVISION]: "true",
+                    [ContentObjectApiHeaders.REVISION_LABEL]: options.revisionLabel || "",
                 },
             });
         } else {
