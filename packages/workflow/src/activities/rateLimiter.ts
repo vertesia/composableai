@@ -1,12 +1,36 @@
 import { DSLActivityExecutionPayload } from "@vertesia/common";
 import { activityInfo, log } from "@temporalio/activity";
+import { setupActivity } from "../dsl/setup/ActivityContext.js";
 
 export interface RateLimitParams {
-  // just for the activity catalog to not break the build
+  environmentId?: string;
+  interactionId?: string;
 }
 
 export interface RateLimitResult {
   delayMs: number;
+}
+
+async function resolveEnvironmentId(
+  payload: DSLActivityExecutionPayload<RateLimitParams>,
+  params: RateLimitParams
+): Promise<string | null> {
+  if (params.environmentId) {
+    return params.environmentId;
+  }
+
+  if (params.interactionId) {
+    try {
+      const { client } = await setupActivity(payload);
+      const interaction = await client.interactions.get(params.interactionId);
+      return interaction.default_environment_id || null;
+    } catch (error) {
+      log.warn('Failed to fetch interaction for environment resolution:', { error });
+      return null;
+    }
+  }
+
+  return null;
 }
 
 export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLimitParams>): Promise<RateLimitResult> {
@@ -16,6 +40,16 @@ export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLi
   if (!storeUrl) {
     log.warn('No store URL available for rate limit API');
     // If no store URL is available, allow the request without delay
+    return {
+      delayMs: 0,
+    };
+  }
+
+  const { params } = await setupActivity<RateLimitParams>(payload);
+  const environmentId = await resolveEnvironmentId(payload, params);
+  
+  if (!environmentId) {
+    log.warn('No environment ID could be resolved for rate limiting');
     return {
       delayMs: 0,
     };
@@ -32,8 +66,8 @@ export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLi
         'Authorization': `Bearer ${payload.auth_token}`
       },
       body: JSON.stringify({
-        workflowId: info.workflowExecution.workflowId,
-        runId: info.workflowExecution.runId
+        runId: info.workflowExecution.runId,
+        environmentId: environmentId
       })
     });
 
@@ -56,31 +90,5 @@ export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLi
     return {
       delayMs: 0
     };
-  }
-}
-
-export async function recordComplete(payload: DSLActivityExecutionPayload<RateLimitParams>): Promise<void> {
-
-  // Get the store URL from config, fallback to environment variable
-  const storeUrl = payload.config?.store_url || process.env.STORE_URL;
-
-  try {
-    // Call the zeno-server endpoint to record workflow completion
-    const response = await fetch(`${storeUrl}/api/v1/workflows/rate-limit/complete`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${payload.auth_token}`
-      }
-    });
-
-    if (!response.ok) {
-      log.warn(`Rate limit API returned ${response.status}: ${response.statusText}`);
-      // If API fails, just return success
-    }
-  } catch (error) {
-    log.warn('Failed to call rate limit API:', {error});
-    // If API call fails, just return success
-    return;
   }
 }
