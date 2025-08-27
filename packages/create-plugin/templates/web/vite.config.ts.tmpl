@@ -5,20 +5,25 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, type ConfigEnv, type UserConfig } from 'vite';
 import serveStatic from "vite-plugin-serve-static";
 
+
 /**
- * List of external dependencies that should not be bundled when
- * buildiong the plugin library
+ * List of dependencies that must be bundled in the plugin bundle
  */
-const EXTERNALS = [
-    'react',
-    'react-dom',
-    'react/jsx-runtime',
-    'react-dom/client',
-    '@vertesia/common',
-    '@vertesia/ui',
-    /^@vertesia\/ui\/.*/,
-    // add any other external dependencies here
+const INTERNALS: (string | RegExp)[] = [
 ];
+
+function isExternal(id: string) {
+    // If it matches INTERNALS → bundle it
+    if (INTERNALS.some(pattern =>
+        pattern instanceof RegExp ? pattern.test(id) : id === pattern
+    )) {
+        return false;
+    }
+
+    // Otherwise → treat all bare imports (node_modules deps) as external
+    return !id.startsWith('.') && !id.startsWith('/') && !id.startsWith('@/') && !id.startsWith('virtual:');
+}
+
 
 /**
  * if you want to debug vertesia ui sources define a relative path to the vertesia ui package root
@@ -71,7 +76,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
             minify: true,
             sourcemap: true,
             rollupOptions: {
-                external: EXTERNALS,
+                external: isExternal,
             }
         }
     }

@@ -1,4 +1,5 @@
 export * from "./CompositeState.js"
+export * from "./PortalContainerProvider.js"
 export * from "./SharedState.js"
 export * from "./useClickOutside.js"
 export * from "./useCopyToClipboard.js"
