@@ -232,12 +232,18 @@ export class ObjectsApi extends ApiTopic {
         ) {
             createPayload.content = await this.upload(payload.content);
         }
+
+        const headers: Record<string, string> = {};
+        if (options?.processing_priority) {
+            headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
+        } 
+        if (options?.collection_id) {
+            headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
+        }
+
         return await this.post("/", {
             payload: createPayload,
-            headers: options ? {
-                [ContentObjectApiHeaders.COLLECTION_ID]: options.collection_id || "",
-                [ContentObjectApiHeaders.PROCESSING_PRIORITY]: options.processing_priority || "",
-            } : {},
+            headers: headers,
         });
     }
 
