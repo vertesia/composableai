@@ -20,13 +20,24 @@ async function resolveEnvironmentId(
   }
 
   if (params.interactionId) {
-    try {
-      const { client } = await setupActivity(payload);
-      const interaction = await client.interactions.get(params.interactionId);
-      return interaction.default_environment_id || null;
-    } catch (error) {
-      log.warn('Failed to fetch interaction for environment resolution:', { error });
-      return null;
+    if (params.interactionId.includes(':')) {
+      try {
+        const { fetchProject } = await setupActivity(payload);
+        const project = await fetchProject();
+        return project?.configuration?.default_environment?.toString() || null;
+      } catch (error) {
+        log.warn('Failed to fetch project for environment resolution:', { error });
+        return null;
+      }
+    } else {
+      try {
+        const { client } = await setupActivity(payload);
+        const interaction = await client.interactions.get(params.interactionId);
+        return interaction.default_environment_id || null;
+      } catch (error) {
+        log.warn('Failed to fetch interaction for environment resolution:', { error });
+        return null;
+      }
     }
   }
 
