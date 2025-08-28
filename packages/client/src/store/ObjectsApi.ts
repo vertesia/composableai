@@ -232,12 +232,18 @@ export class ObjectsApi extends ApiTopic {
         ) {
             createPayload.content = await this.upload(payload.content);
         }
+
+        const headers: Record<string, string> = {};
+        if (options?.processing_priority) {
+            headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
+        } 
+        if (options?.collection_id) {
+            headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
+        }
+
         return await this.post("/", {
             payload: createPayload,
-            headers: options ? {
-                [ContentObjectApiHeaders.COLLECTION_ID]: options.collection_id || "",
-                [ContentObjectApiHeaders.PROCESSING_PRIORITY]: options.processing_priority || "",
-            } : {},
+            headers: headers,
         });
     }
 
@@ -302,19 +308,21 @@ export class ObjectsApi extends ApiTopic {
             updatePayload.content = await this.upload(payload.content);
         }
 
-        if (options?.createRevision) {
-            return this.put(`/${id}`, {
-                payload: updatePayload,
-                headers: {
-                    [ContentObjectApiHeaders.CREATE_REVISION]: "true",
-                    [ContentObjectApiHeaders.REVISION_LABEL]: options.revisionLabel || "",
-                },
-            });
-        } else {
-            return this.put(`/${id}`, {
-                payload: updatePayload,
-            });
+        const headers: Record<string, string> = {};
+        if (options?.processing_priority) {
+            headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
         }
+        if (options?.createRevision) {
+            headers[ContentObjectApiHeaders.CREATE_REVISION] = "true";
+            if (options.revisionLabel) {
+                headers[ContentObjectApiHeaders.REVISION_LABEL] = options.revisionLabel;
+            }
+        }
+
+        return this.put(`/${id}`, {
+            payload: updatePayload,
+            headers,
+        });
     }
 
     /**
