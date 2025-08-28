@@ -48,32 +48,28 @@ export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLi
   const { client, params } = await setupActivity<RateLimitParams>(payload);
   const environmentId = await resolveEnvironmentId(payload, params);
   
+  const result: RateLimitResult = {
+    delayMs: 0,
+  }
+
   if (!environmentId) {
     log.warn('No environment ID could be resolved for rate limiting');
-    return {
-      delayMs: 0,
-    };
+  } else {
+      try {
+      // Call the studio-server endpoint to get rate limit delay using the Vertesia client
+      const info = activityInfo();
+      const response = await client.post('/api/v1/execute/rate-limit/request', {
+        payload: {
+          runId: info.workflowExecution.runId,
+          environmentId: environmentId
+        }
+      }) as { delayMs: number };
+      result.delayMs = response.delayMs;
+    } catch (error) {
+      log.warn('Failed to call rate limit API:', {error});
+    }
   }
 
-  const info = activityInfo();
-  
-  try {
-    // Call the studio-server endpoint to get rate limit delay using the Vertesia client
-    const result = await client.post('/api/v1/execute/rate-limit/request', {
-      payload: {
-        runId: info.workflowExecution.runId,
-        environmentId: environmentId
-      }
-    }) as { delayMs: number };
-
-    return {
-      delayMs: result.delayMs
-    };
-  } catch (error) {
-    log.warn('Failed to call rate limit API:', {error});
-    // If API call fails, allow the request without delay
-    return {
-      delayMs: 0
-    };
-  }
+  log.info('Rate limit check result:', { delayMs: result.delayMs, environmentId });
+  return result;
 }
