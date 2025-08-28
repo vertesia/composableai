@@ -34,18 +34,7 @@ async function resolveEnvironmentId(
 }
 
 export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLimitParams>): Promise<RateLimitResult> {
-  // Get the store URL from config, fallback to environment variable
-  const storeUrl = payload.config?.store_url || process.env.STORE_URL;
-
-  if (!storeUrl) {
-    log.warn('No store URL available for rate limit API');
-    // If no store URL is available, allow the request without delay
-    return {
-      delayMs: 0,
-    };
-  }
-
-  const { params } = await setupActivity<RateLimitParams>(payload);
+  const { client, params } = await setupActivity<RateLimitParams>(payload);
   const environmentId = await resolveEnvironmentId(payload, params);
   
   if (!environmentId) {
@@ -58,28 +47,13 @@ export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLi
   const info = activityInfo();
   
   try {
-    // Call the zeno-server endpoint to get rate limit delay
-    const response = await fetch(`${storeUrl}/api/v1/workflows/rate-limit/request`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${payload.auth_token}`
-      },
-      body: JSON.stringify({
+    // Call the studio-server endpoint to get rate limit delay using the Vertesia client
+    const result = await client.post('/api/v1/execute/rate-limit/request', {
+      payload: {
         runId: info.workflowExecution.runId,
         environmentId: environmentId
-      })
-    });
-
-    if (!response.ok) {
-      log.warn(`Rate limit API returned ${response.status}: ${response.statusText}`);
-      // If API fails, allow the request without delay
-      return {
-        delayMs: 0
-      };
-    }
-
-    const result = await response.json() as { delayMs: number };
+      }
+    }) as { delayMs: number };
 
     return {
       delayMs: result.delayMs
