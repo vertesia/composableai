@@ -220,39 +220,40 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
     }
 }
 
-function buildRateLimitParams(activity: DSLActivitySpec, importParams: Record<string, any>): RateLimitParams {
+function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLActivityExecutionPayload<any>): RateLimitParams {
     const rateLimitParams: RateLimitParams = {};
+    const params = executionPayload.params;
 
     switch (activity.name) {
         case "executeInteraction":
-            rateLimitParams.interactionId = importParams.interactionName || activity.params?.interactionName;
-            rateLimitParams.environmentId = importParams.environment || activity.params?.environment;
+            rateLimitParams.interactionId = params.interactionName;
+            rateLimitParams.environmentId = params.environment;
             break;
         
         case "generateDocumentProperties":
-            rateLimitParams.interactionId = importParams.interactionName || activity.params?.interactionName || "sys:ExtractInformation";
-            rateLimitParams.environmentId = importParams.environment || activity.params?.environment;
+            rateLimitParams.interactionId = params.interactionName || "sys:ExtractInformation";
+            rateLimitParams.environmentId = params.environment;
             break;
             
         case "identifyTextSections": 
-            rateLimitParams.interactionId = importParams.interactionName || activity.params?.interactionName || "sys:IdentifyTextSections";
-            rateLimitParams.environmentId = importParams.environment || activity.params?.environment;
+            rateLimitParams.interactionId = params.interactionName || "sys:IdentifyTextSections";
+            rateLimitParams.environmentId = params.environment;
             break;
             
         case "generateOrAssignContentType":
-            rateLimitParams.interactionId = importParams.interactionNames?.selectDocumentType || activity.params?.interactionNames?.selectDocumentType || "sys:SelectDocumentType";
-            rateLimitParams.environmentId = importParams.environment || activity.params?.environment;
+            rateLimitParams.interactionId = params.interactionNames?.selectDocumentType || "sys:SelectDocumentType";
+            rateLimitParams.environmentId = params.environment;
             break;
             
         case "chunkDocument":
-            rateLimitParams.interactionId = importParams.interactionName || activity.params?.interactionName || "sys:ChunkDocument";
-            rateLimitParams.environmentId = importParams.environment || activity.params?.environment;
+            rateLimitParams.interactionId = params.interactionName || "sys:ChunkDocument";
+            rateLimitParams.environmentId = params.environment;
             break;
         
         default:
             // For any other rate-limited activities, try to extract what we can
-            rateLimitParams.interactionId = importParams.interactionName || activity.params?.interactionName;
-            rateLimitParams.environmentId = importParams.environment || activity.params?.environment;
+            rateLimitParams.interactionId = params.interactionName;
+            rateLimitParams.environmentId = params.environment;
             break;
     }
 
@@ -292,7 +293,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         log.info(`Applying rate limit for activity ${activity.name}`);
         // Apply rate limiting logic here
          // Check rate limit first - loop until no delay
-        const rateLimitParams = buildRateLimitParams(activity, importParams);
+        const rateLimitParams = buildRateLimitParams(activity, executionPayload);
 
         const rateLimitPayload = dslActivityPayload(basePayload, activity, rateLimitParams);
         let rateLimitResult = await defaultProxy.checkRateLimit(rateLimitPayload);
