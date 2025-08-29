@@ -60,11 +60,11 @@ export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLi
       const info = activityInfo();
       const response = await client.post('/api/v1/execute/rate-limit/request', {
         payload: {
-          runId: info.workflowExecution.runId,
-          environmentId: environmentId
+          run_id: info.workflowExecution.runId,
+          environment_id: environmentId
         }
-      }) as { delayMs: number };
-      result.delayMs = response.delayMs;
+      }) as { delay_ms: number };
+      result.delayMs = response.delay_ms;
     } catch (error) {
       log.warn('Failed to call rate limit API:', {error});
     }
