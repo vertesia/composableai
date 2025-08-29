@@ -54,7 +54,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             });
             return;
         }
-        
+
         const payload: Partial<CreateCollectionPayload> = {
             name: metadata.name,
             description: metadata.description,
@@ -247,8 +247,8 @@ function PropertiesForm({ schema = {}, collection }: PropertiesFormProps) {
     };
 
     return (
-        <GeneratedForm object={object} onSubmit={_onSave}>
-            <Button size="lg" isLoading={isUpdating} className="my-4" variant="primary" type="submit">
+        <GeneratedForm object={object}>
+            <Button size="lg" isLoading={isUpdating} className="my-4" variant="primary" onClick={() => _onSave(object?.value)}>
                 Save Properties
             </Button>
         </GeneratedForm>
