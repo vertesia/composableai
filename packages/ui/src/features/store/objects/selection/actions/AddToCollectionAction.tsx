@@ -41,14 +41,16 @@ interface SelectCollectionModalProps {
 }
 function SelectCollectionModal({ isOpen, onClose, objectIds }: SelectCollectionModalProps) {
     return (
-        <VModal isOpen={isOpen} onClose={onClose}>
-            <VModalTitle className="flex flex-col">
+        <VModal isOpen={isOpen} onClose={onClose} className="max-w-lg w-full min-w-0 overflow-hidden">
+            <VModalTitle className="flex flex-col min-w-0 overflow-hidden">
                 Add to a Collection
             </VModalTitle>
-            <DialogDescription>
+            <DialogDescription className="min-w-0 overflow-hidden">
                 Add the selected objects to an existing collection or create a new one.
             </DialogDescription>
-            <AddToCollectionForm onClose={onClose} objectIds={objectIds} />
+            <div className="min-w-0 max-w-full overflow-hidden">
+                <AddToCollectionForm onClose={onClose} objectIds={objectIds} />
+            </div>
         </VModal>
     )
 }
@@ -92,13 +94,18 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
             name: 'select',
             label: 'Select Collection',
             content: (
-                <div className="p-4">
+                <div className="p-4 min-w-0 max-w-full overflow-hidden">
                     <Heading level={5}>Choose from existing collections</Heading>
-                    <VModalBody>
-                        <SelectCollection onChange={onCollectionChange} value={selectedCollectionId} className="mb-4" />
+                    <VModalBody className="min-w-0 max-w-full overflow-hidden">
+                        <div className="mb-4 min-w-0 max-w-full overflow-hidden">
+                            <SelectCollection onChange={onCollectionChange} value={selectedCollectionId} />
+                        </div>
                     </VModalBody>
                     <VModalFooter>
-                        <Button isDisabled={!selectedCollectionId} onClick={() => selectedCollectionId && onAddToCollection({ collectionId: selectedCollectionId })}>
+                        <Button
+                            isDisabled={!selectedCollectionId}
+                            onClick={() => selectedCollectionId && onAddToCollection({ collectionId: selectedCollectionId })}
+                        >
                             Add to Collection
                         </Button>
                     </VModalFooter>
