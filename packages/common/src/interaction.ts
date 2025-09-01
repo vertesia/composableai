@@ -284,7 +284,7 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
 // ================= async execution payloads ====================
 export type ToolRef = string | { name: string; description: string };
 
-interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayload,"toolDefinitions" | "stream"> {
+interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayload, "toolDefinitions" | "stream"> {
     type: "conversation" | "interaction";
 
     /**
@@ -381,6 +381,10 @@ export interface ToolResultContent {
     content: string;
     is_error: boolean;
     files?: string[];
+    /**
+     * Can contain metadata returned by the tool executor.
+     */
+    meta?: Record<string, any>;
 }
 
 export interface ToolResult extends ToolResultContent {
