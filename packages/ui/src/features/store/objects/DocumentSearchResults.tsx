@@ -129,11 +129,6 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
 
     // Handler for vector search widget
     const handleVectorSearch = (query?: ComplexSearchQuery) => {
-        // Don't trigger search during initial component load
-        if (!isReady) {
-            return;
-        }
-
         if (query && query.vector) {
             search.query.vector = query.vector;
             search.query.full_text = query.full_text;
@@ -155,10 +150,14 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         } else if (query && query.full_text) {
             search.query.full_text = query.full_text;
             search.search().then(() => setIsReady(true));
-        } else {
-            delete search.query.vector;
-            delete search.query.full_text;
-            search.search().then(() => setIsReady(true));
+        } else if (query === undefined) {
+            // Only clear search if this is a user-initiated clear (not initialization)
+            // The VectorSearchWidget calls onChange(undefined) during initialization
+            if (isReady) {
+                delete search.query.vector;
+                delete search.query.full_text;
+                search.search().then(() => setIsReady(true));
+            }
         }
     };
 
@@ -176,12 +175,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
         const newFilters = typeof value === 'function' ? value(filters) : value;
         setFilters(newFilters);
-
-        // Only trigger filter logic (which includes search) if the component is ready
-        // This prevents duplicate search calls during initial load
-        if (isReady) {
-            handleFilterLogic(newFilters);
-        }
+        handleFilterLogic(newFilters);
     };
 
     const url = new URL(window.location.href);
