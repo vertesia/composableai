@@ -22,7 +22,7 @@ export interface ToolExecutionResult extends ToolResultContent {
     /**
      * Medata can be used to return more info on the tool execution like stats or user messages.
      */
-    metadata?: Record<string, any>;
+    meta?: Record<string, any>;
 }
 
 export interface ToolExecutionResponse extends ToolExecutionResult, ToolResult {

@@ -13,10 +13,8 @@ import {
 export interface SearchPayload {
     facets?: FacetSpec[];
     /**
-     * If the facets should respect "limit"
-     * If true, the facet count be limited to the number of results in the query.
-     * If false, the facet count will be calculated over all objects.
-     * Default is true.
+     * If the facets should be limited to the current page of results.
+     * Defaults to false. When false, the facets are independent of the search results page.
      */
     limit_facets?: boolean;
     query?: SimpleSearchQuery;
