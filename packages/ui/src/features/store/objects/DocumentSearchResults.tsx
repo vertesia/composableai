@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { ColumnLayout, ContentObject, ContentObjectItem, ComplexSearchQuery } from '@vertesia/common';
 import {
-   
     Button, Divider, ErrorBox, SidePanel, Spinner, useIntersectionObserver, useToast,
     FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter
 } from '@vertesia/ui/core';
@@ -102,7 +101,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const [filters, setFilters] = useState<BaseFilter[]>([]);
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
-    
+
     // Trigger initial search when component mounts
     useEffect(() => {
         if (!isReady && objects.length === 0) {
@@ -130,6 +129,11 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
 
     // Handler for vector search widget
     const handleVectorSearch = (query?: ComplexSearchQuery) => {
+        // Don't trigger search during initial component load
+        if (!isReady) {
+            return;
+        }
+
         if (query && query.vector) {
             search.query.vector = query.vector;
             search.query.full_text = query.full_text;
@@ -172,7 +176,12 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
         const newFilters = typeof value === 'function' ? value(filters) : value;
         setFilters(newFilters);
-        handleFilterLogic(newFilters);
+
+        // Only trigger filter logic (which includes search) if the component is ready
+        // This prevents duplicate search calls during initial load
+        if (isReady) {
+            handleFilterLogic(newFilters);
+        }
     };
 
     const url = new URL(window.location.href);
