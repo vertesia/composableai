@@ -253,11 +253,16 @@ export class ObjectsApi extends ApiTopic {
      * For the s3 blobs you must use a hash with the blob #region. Ex: s3://bucket/path/to/file#us-east-1
      * @param uri
      * @param payload
+     * @param options
      * @returns
      */
     async createFromExternalSource(
         uri: string,
         payload: CreateContentObjectPayload = {},
+        options?: {
+            collection_id?: string;
+            processing_priority?: ContentObjectProcessingPriority;
+        },
     ): Promise<ContentObject> {
         const metadata = await (this.client as ZenoClient).files.getMetadata(
             uri,
@@ -271,8 +276,18 @@ export class ObjectsApi extends ApiTopic {
                 etag: metadata.etag,
             },
         };
+
+        const headers: Record<string, string> = {};
+        if (options?.processing_priority) {
+            headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
+        } 
+        if (options?.collection_id) {
+            headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
+        }
+
         return await this.post("/", {
             payload: createPayload,
+            headers: headers,
         });
     }
 
