@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { ColumnLayout, ContentObject, ContentObjectItem, ComplexSearchQuery } from '@vertesia/common';
 import {
-   
     Button, Divider, ErrorBox, SidePanel, Spinner, useIntersectionObserver, useToast,
     FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter
 } from '@vertesia/ui/core';
@@ -102,7 +101,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const [filters, setFilters] = useState<BaseFilter[]>([]);
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
-    
+
     // Trigger initial search when component mounts
     useEffect(() => {
         if (!isReady && objects.length === 0) {
@@ -151,10 +150,14 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         } else if (query && query.full_text) {
             search.query.full_text = query.full_text;
             search.search().then(() => setIsReady(true));
-        } else {
-            delete search.query.vector;
-            delete search.query.full_text;
-            search.search().then(() => setIsReady(true));
+        } else if (query === undefined) {
+            // Only clear search if this is a user-initiated clear (not initialization)
+            // The VectorSearchWidget calls onChange(undefined) during initialization
+            if (isReady) {
+                delete search.query.vector;
+                delete search.query.full_text;
+                search.search().then(() => setIsReady(true));
+            }
         }
     };
 
