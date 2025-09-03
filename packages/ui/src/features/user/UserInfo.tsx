@@ -1,10 +1,12 @@
 import { useUserSession } from "@vertesia/ui/session";
-import { ApiKey, PrincipalType, User } from "@vertesia/common";
+import { ApiKey, PrincipalType, User, UserGroup } from "@vertesia/common";
 import { Avatar, Table, Popover, PopoverContent, PopoverTrigger, useFetch } from "@vertesia/ui/core";
 import { ReactNode } from "react";
+import { Users } from "lucide-react";
 
 //TODO use a real cache
 const USER_CACHE: Record<string, Promise<User>> = {};
+const GROUP_CACHE: Record<string, Promise<UserGroup>> = {};
 
 /**
  * Fetch the user information given a user reference.
@@ -26,6 +28,25 @@ export function useFetchUserInfo(userId: string) {
     }, [userId]);
 }
 
+/**
+ * Fetch the group information given a group ID.
+ * @param groupId
+ */
+export function useFetchGroupInfo(groupId: string) {
+    const { client } = useUserSession();
+
+    return useFetch(() => {
+        let group: Promise<UserGroup> | undefined = GROUP_CACHE[groupId];
+        if (!group) {
+            group = client.iam.groups.retrieve(groupId).then(group => {
+                return group;
+            });
+            GROUP_CACHE[groupId] = group;
+        }
+        return group;
+    }, [groupId]);
+}
+
 function AvatarPlaceholder() {
     return <div className='size-8' />
 }
@@ -38,8 +59,10 @@ interface InfoProps {
 function SystemAvatar({ showTitle = false, size = "md" }: InfoProps) {
     return (
         <UserPopoverPanel title="System User" description="The system user is used to initialize built-in objects.">
-            <Avatar src="/icon.svg" size={size} />
-            {showTitle && <div className="text-sm font-semibold pl-2">System User</div>}
+            <div className="flex gap-2 items-center">
+                <Avatar src="/icon.svg" size={size} />
+                {showTitle && <div className="text-sm font-semibold pl-2">System User</div>}
+            </div>
         </UserPopoverPanel>
     )
 }
@@ -96,6 +119,8 @@ export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoPr
     switch (type) {
         case PrincipalType.User:
             return <UserAvatar userId={id} showTitle={showTitle} size={size} />
+        case PrincipalType.Group:
+            return <GroupAvatar userId={id} showTitle={showTitle} size={size} />
         case "system":
             return <SystemAvatar showTitle={showTitle} size={size} />
         case PrincipalType.ServiceAccount:
@@ -118,6 +143,44 @@ function UnknownAvatar({ title, message, color, size = "md", showTitle = false }
             <div className="flex flex-row items-center gap-2">
                 <Avatar color={color} size={size} />
                 {showTitle && <div className="text-sm font-semibold pl-1">{title}</div>}
+            </div>
+        </UserPopoverPanel>
+    )
+}
+
+interface GroupAvatarProps extends InfoProps {
+    userId: string;
+}
+function GroupAvatar({ userId, showTitle = false, size = "md" }: GroupAvatarProps) {
+    const { data: group, error } = useFetchGroupInfo(userId);
+
+    if (error) {
+        return <ErrorAvatar title="Failed to fetch group" error={error} showTitle={showTitle} size={size} />
+    }
+
+    if (!group) {
+        return <AvatarPlaceholder />
+    }
+
+    const description = (
+        <div className="space-y-1">
+            {group.description && <div className="text-sm">{group.description}</div>}
+            <div className="text-xs text-muted-foreground">Group ID: {group.id}</div>
+            {group.tags && group.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                    {group.tags.map(tag => (
+                        <span key={tag} className="px-1.5 py-0.5 bg-muted rounded text-xs">{tag}</span>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+
+    return (
+        <UserPopoverPanel title={group.name || "Unnamed Group"} description={description}>
+            <div className="flex flex-row items-center gap-2">
+                <Users className="size-6 text-indigo-500" size={size} />
+                {showTitle && <div className="text-sm font-semibold pl-2">{group.name || "Unnamed Group"}</div>}
             </div>
         </UserPopoverPanel>
     )
