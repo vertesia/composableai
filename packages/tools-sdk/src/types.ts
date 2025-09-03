@@ -76,3 +76,22 @@ export interface ToolCollectionDefinition {
 }
 
 export type { ToolDefinition };
+
+/**
+ * The details of a connection to a MCP server - including the server URL and an authentication token
+ */
+export interface MCPConnectionDetails {
+    /**
+     * The mcp server name. It will be used to prefix tool names.
+     */
+    name: string;
+    /**
+     * The target mcp server URL
+     */
+    url: string;
+    /**
+     * The bearer authentication token to use when connecting to the mcp server.
+     * If an empty string no authentication will be done
+     */
+    token: string;
+}
