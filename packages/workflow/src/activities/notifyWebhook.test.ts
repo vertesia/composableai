@@ -84,7 +84,7 @@ describe("Webhook should be notified", () => {
       statusText: 'Internal Server Error',
       url: defaultParams.target_url,
       text: vi.fn().mockResolvedValue('{"error": "Database connection failed", "code": "DB_ERROR"}')
-    } as Response;
+    } as unknown as Response;
     mockFetch.mockResolvedValueOnce(mockResponse);
 
     const payload = createTestPayload();
