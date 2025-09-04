@@ -24,25 +24,18 @@ export default function IDFilter({
   const [prefixWildcard, setPrefixWildcard] = useState(false);
   const [suffixWildcard, setSuffixWildcard] = useState(true);
 
-  const buildPatternValue = (input: string, prefix: boolean, suffix: boolean): string => {
-    let pattern = input;
-    if (prefix) pattern = `*${pattern}`;
-    if (suffix) pattern = `${pattern}*`;
-    return pattern;
-  };
-
-  const getDisplayLabel = (input: string, prefix: boolean, suffix: boolean): string => {
-    const pattern = buildPatternValue(input, prefix, suffix);
-    if (!prefix && !suffix) return `Exact: ${input}`;
-    if (prefix && suffix) return `Contains: ${input}`;
-    if (prefix) return `Ends with: ${input}`;
-    if (suffix) return `Starts with: ${input}`;
-    return pattern;
-  };
-
   const handleIDFilterAdd = () => {
-    const patternValue = buildPatternValue(textValue, prefixWildcard, suffixWildcard);
-    const displayLabel = getDisplayLabel(textValue, prefixWildcard, suffixWildcard);
+    // Build pattern value
+    let patternValue = textValue;
+    if (prefixWildcard) patternValue = `*${patternValue}`;
+    if (suffixWildcard) patternValue = `${patternValue}*`;
+    
+    // Build display label
+    let displayLabel: string;
+    if (!prefixWildcard && !suffixWildcard) displayLabel = `Exact: ${textValue}`;
+    else if (prefixWildcard && suffixWildcard) displayLabel = `Contains: ${textValue}`;
+    else if (prefixWildcard) displayLabel = `Ends with: ${textValue}`;
+    else displayLabel = `Starts with: ${textValue}`;
     
     setFilters((prev: Filter[]) => {
       return [
