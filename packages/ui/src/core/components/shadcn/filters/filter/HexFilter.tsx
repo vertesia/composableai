@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "../../button";
 import { Input } from "../../input";
-import { Checkbox } from "../../checkbox";
 import { Filter, FilterGroup } from "../types";
 
 interface HexFilterProps {
@@ -23,21 +22,8 @@ export default function HexFilter({
   filterGroups,
   fullIdLength = 24,
 }: HexFilterProps) {
-  const [prefixWildcard, setPrefixWildcard] = useState(true);
-  const [suffixWildcard, setSuffixWildcard] = useState(false);
-
   const handleHexFilterAdd = () => {
-    // Build pattern value
-    let patternValue = textValue;
-    if (prefixWildcard) patternValue = `*${patternValue}`;
-    if (suffixWildcard) patternValue = `${patternValue}*`;
-    
-    // Build display label
-    let displayLabel: string;
-    if (!prefixWildcard && !suffixWildcard) displayLabel = `Exact: ${textValue}`;
-    else if (prefixWildcard && suffixWildcard) displayLabel = `Contains: ${textValue}`;
-    else if (prefixWildcard) displayLabel = `Ends with: ${textValue}`;
-    else displayLabel = `Starts with: ${textValue}`;
+    const displayLabel = `ID: ${textValue}`;
     
     setFilters((prev: Filter[]) => {
       return [
@@ -45,7 +31,7 @@ export default function HexFilter({
         {
           name: selectedView || "",
           placeholder: filterGroups.find(group => group.name === selectedView)?.placeholder,
-          value: [{ value: patternValue, label: displayLabel }],
+          value: [{ value: textValue, label: displayLabel }],
           type: "hex",
         }
       ];
@@ -60,7 +46,7 @@ export default function HexFilter({
     setTextValue(cleanValue);
   };
 
-  const isValidInput = textValue.trim().length > 0 && /^[0-9a-fA-F]+$/i.test(textValue.trim());
+  const isValidInput = textValue.length === fullIdLength && /^[0-9a-fA-F]+$/i.test(textValue);
 
   return (
     <div className="p-2 flex flex-col gap-1">
@@ -84,36 +70,11 @@ export default function HexFilter({
         </div>
       )}
 
-      <div className="space-y-2 mt-2">
-        <div className="text-sm font-medium text-muted">Find Partial Matches</div>
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="prefix-wildcard"
-            checked={prefixWildcard}
-            onCheckedChange={(checked) => setPrefixWildcard(checked === true)}
-          />
-          <label
-            htmlFor="prefix-wildcard"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            At start of ID
-          </label>
+      {textValue.trim().length > 0 && textValue.length !== fullIdLength && (
+        <div className="text-xs text-muted px-1">
+          Enter complete {fullIdLength}-character Object ID for exact match
         </div>
-        
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="suffix-wildcard"
-            checked={suffixWildcard}
-            onCheckedChange={(checked) => setSuffixWildcard(checked === true)}
-          />
-          <label
-            htmlFor="suffix-wildcard"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            At end of ID
-          </label>
-        </div>
-      </div>
+      )}
       
       <div className="mt-2 p-2 border-t">
         <div className="flex gap-2 justify-end">
