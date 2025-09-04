@@ -10,7 +10,6 @@ interface HexFilterProps {
   setFilters: React.Dispatch<React.SetStateAction<Filter[]>>;
   handleClose: () => void;
   filterGroups: FilterGroup[];
-  fullIdLength?: number;
 }
 
 export default function HexFilter({
@@ -20,10 +19,9 @@ export default function HexFilter({
   setFilters,
   handleClose,
   filterGroups,
-  fullIdLength = 24,
 }: HexFilterProps) {
   const handleHexFilterAdd = () => {
-    const displayLabel = `ID: ${textValue}`;
+    const displayLabel = textValue;
     
     setFilters((prev: Filter[]) => {
       return [
@@ -42,11 +40,12 @@ export default function HexFilter({
 
   const handleInputChange = (value: string) => {
     // Only allow valid hex characters
-    const cleanValue = value.replace(/[^0-9a-fA-F]/g, '');
-    setTextValue(cleanValue);
+    // const cleanValue = value.replace(/[^0-9a-fA-F]/g, '');
+    // setTextValue(cleanValue);
+    setTextValue(value); // Use error message for invalid input
   };
 
-  const isValidInput = textValue.length === fullIdLength && /^[0-9a-fA-F]+$/i.test(textValue);
+  const isValidInput = textValue.trim().length > 0 && /^[0-9a-fA-F]+$/i.test(textValue.trim());
 
   return (
     <div className="p-2 flex flex-col gap-1">
@@ -60,19 +59,17 @@ export default function HexFilter({
         value={textValue}
         onChange={handleInputChange}
         onKeyDown={(e) => e.key === "Enter" && isValidInput && handleHexFilterAdd()}
-        placeholder={`Enter Object ID (numbers and letters A-F, ${fullIdLength} characters for complete ID)...`}
+        placeholder="Enter Full Object ID..."
         className={!isValidInput && textValue.trim().length > 0 ? "border-destructive" : ""}
       />
       
       {!isValidInput && textValue.trim().length > 0 && (
-        <div className="text-xs text-destructive px-1">
-          Only numbers and letters A-F are allowed
-        </div>
-      )}
-
-      {textValue.trim().length > 0 && textValue.length !== fullIdLength && (
-        <div className="text-xs text-muted px-1">
-          Enter complete {fullIdLength}-character Object ID for exact match
+        <div className="text-xs text-destructive p-2">
+          <p>Invalid ID - Please only use:</p>
+          <ul className="list-disc list-inside">
+            <li>Letters A-F (case insensitive)</li>
+            <li>Numbers 0-9</li>
+          </ul>
         </div>
       )}
       
