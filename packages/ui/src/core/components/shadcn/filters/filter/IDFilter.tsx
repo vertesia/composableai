@@ -61,11 +61,10 @@ export default function IDFilter({
   const isValidInput = textValue.trim().length > 0 && /^[0-9a-fA-F]+$/i.test(textValue.trim());
 
   return (
-    <div className="p-2 flex flex-col gap-3">
+    <div className="p-2 flex flex-col gap-1">
       <div className="flex items-center p-1.5 text-xs text-muted">
         <span>{filterGroups.find(group => group.name === selectedView)?.placeholder}</span>
       </div>
-      
       <Input
         autoFocus
         type="text"
@@ -83,7 +82,7 @@ export default function IDFilter({
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-2 mt-2">
         <div className="text-sm font-medium text-muted">Find Partial Matches</div>
         <div className="flex items-center space-x-2">
           <Checkbox
@@ -113,9 +112,8 @@ export default function IDFilter({
           </label>
         </div>
       </div>
-
-
-      <div className="p-2 border-t">
+      
+      <div className="mt-2 p-2 border-t">
         <div className="flex gap-2 justify-end">
           <Button variant="ghost" size="sm" onClick={handleClose}>
             Cancel
