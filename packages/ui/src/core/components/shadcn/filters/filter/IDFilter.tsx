@@ -21,8 +21,8 @@ export default function IDFilter({
   handleClose,
   filterGroups,
 }: IDFilterProps) {
-  const [prefixWildcard, setPrefixWildcard] = useState(false);
-  const [suffixWildcard, setSuffixWildcard] = useState(true);
+  const [prefixWildcard, setPrefixWildcard] = useState(true);
+  const [suffixWildcard, setSuffixWildcard] = useState(false);
 
   const handleIDFilterAdd = () => {
     // Build pattern value
@@ -95,7 +95,7 @@ export default function IDFilter({
             htmlFor="prefix-wildcard"
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
-            At end of ID
+            At start of ID
           </label>
         </div>
         
@@ -109,7 +109,7 @@ export default function IDFilter({
             htmlFor="suffix-wildcard"
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
-            At start of ID
+            At end of ID
           </label>
         </div>
       </div>
