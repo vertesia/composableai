@@ -9,7 +9,6 @@ import { Filter, FilterGroup } from "./types";
 import Filters from "./filters";
 
 import TextFilter from "./filter/TextFilter";
-import HexFilter from "./filter/HexFilter";
 import DateFilter from "./filter/dateFilter";
 import SelectFilter from "./filter/SelectFilter";
 import StringListFilter from "./filter/StringListFilter";
@@ -180,7 +179,6 @@ const FilterBtn = ({ className }: { className?: string }) => {
       ((group.options ?? []).length > 0) ||
       (group.type === "date" && !filters.some(filter => filter.name === group.name)) ||
       (group.type === "text" && !filters.some(filter => filter.name === group.name)) ||
-      (group.type === "hex" && !filters.some(filter => filter.name === group.name)) ||
       (group.type === "stringList" && !filters.some(filter => filter.name === group.name))
     );
 
@@ -242,17 +240,6 @@ const FilterBtn = ({ className }: { className?: string }) => {
       case "text":
         return (
           <TextFilter
-            selectedView={selectedView}
-            textValue={textValue}
-            setTextValue={setTextValue}
-            setFilters={setFilters}
-            handleClose={handleClose}
-            filterGroups={filterGroups}
-          />
-        );
-      case "hex":
-        return (
-          <HexFilter
             selectedView={selectedView}
             textValue={textValue}
             setTextValue={setTextValue}
