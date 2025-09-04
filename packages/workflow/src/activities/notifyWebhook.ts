@@ -42,7 +42,20 @@ export async function notifyWebhook(payload: DSLActivityExecutionPayload<NotifyW
 
     if (!res.ok) {
         log.warn(`Webhook endpoint ${target_url} returned an error - ${res.status} ${res.statusText}`, { fetchResponse: res });
-        throw new Error(`Webhook Notification to ${target_url} failed with status: ${res.status} ${res.statusText}`);
+        
+        // Try to get response payload for error message
+        let errorMessage = `Webhook Notification to ${target_url} failed with status: ${res.status} ${res.statusText}`;
+        try {
+            const responseText = await res.text();
+            if (responseText) {
+                errorMessage += ` - Response: ${responseText}`;
+            }
+        } catch (readError) {
+            // If we can't read the response, just use the basic error message
+            log.debug('Could not read response body for error', { readError });
+        }
+        
+        throw new Error(errorMessage);
     }
 
     return { status: res.status, message: res.statusText, url: res.url }
