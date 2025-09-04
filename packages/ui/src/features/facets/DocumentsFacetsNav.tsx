@@ -31,7 +31,7 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
     customFilterGroups.push({
         placeholder: 'ID',
         name: 'id',
-        type: 'id',
+        type: 'hex',
         options: [],
     });
 

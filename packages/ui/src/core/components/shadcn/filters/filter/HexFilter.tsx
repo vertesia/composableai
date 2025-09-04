@@ -4,27 +4,29 @@ import { Input } from "../../input";
 import { Checkbox } from "../../checkbox";
 import { Filter, FilterGroup } from "../types";
 
-interface IDFilterProps {
+interface HexFilterProps {
   selectedView: string | null;
   textValue: string;
   setTextValue: (value: string) => void;
   setFilters: React.Dispatch<React.SetStateAction<Filter[]>>;
   handleClose: () => void;
   filterGroups: FilterGroup[];
+  fullIdLength?: number;
 }
 
-export default function IDFilter({
+export default function HexFilter({
   selectedView,
   textValue,
   setTextValue,
   setFilters,
   handleClose,
   filterGroups,
-}: IDFilterProps) {
+  fullIdLength = 24,
+}: HexFilterProps) {
   const [prefixWildcard, setPrefixWildcard] = useState(true);
   const [suffixWildcard, setSuffixWildcard] = useState(false);
 
-  const handleIDFilterAdd = () => {
+  const handleHexFilterAdd = () => {
     // Build pattern value
     let patternValue = textValue;
     if (prefixWildcard) patternValue = `*${patternValue}`;
@@ -44,7 +46,7 @@ export default function IDFilter({
           name: selectedView || "",
           placeholder: filterGroups.find(group => group.name === selectedView)?.placeholder,
           value: [{ value: patternValue, label: displayLabel }],
-          type: "text",
+          type: "hex",
         }
       ];
     });
@@ -71,8 +73,8 @@ export default function IDFilter({
         size="sm"
         value={textValue}
         onChange={handleInputChange}
-        onKeyDown={(e) => e.key === "Enter" && isValidInput && handleIDFilterAdd()}
-        placeholder="Enter ObjectId (hex characters only)..."
+        onKeyDown={(e) => e.key === "Enter" && isValidInput && handleHexFilterAdd()}
+        placeholder={`Enter ObjectId (hex characters only, ${fullIdLength} chars for full ID)...`}
         className={!isValidInput && textValue.trim().length > 0 ? "border-destructive" : ""}
       />
       
@@ -120,7 +122,7 @@ export default function IDFilter({
           </Button>
           <Button
             size="sm"
-            onClick={handleIDFilterAdd}
+            onClick={handleHexFilterAdd}
             disabled={!isValidInput}
           >
             Apply
