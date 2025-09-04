@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import type { AppInstallation, AppInstallationKind, AppInstallationPayload, AppInstallationWithManifest, AppManifest, AppManifestData, ProjectRef, RequireAtLeastOne } from "@vertesia/common";
+import type { AppInstallation, AppInstallationKind, AppInstallationPayload, AppInstallationWithManifest, AppManifest, AppManifestData, AppToolCollection, ProjectRef, RequireAtLeastOne } from "@vertesia/common";
 
 export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
     manifest: null,
@@ -17,6 +17,15 @@ export default class AppsApi extends ApiTopic {
 
     update(id: string, manifest: AppManifestData): Promise<AppManifest> {
         return this.put(`/${id}`, { payload: manifest });
+    }
+
+    /**
+     * Get the list if tools provided by the given app.
+     * @param appId 
+     * @returns 
+     */
+    listAppInstallationTools(appInstallId: string): Promise<AppToolCollection[]> {
+        return this.get(`/installations/${appInstallId}/tools`)
     }
 
     /**
