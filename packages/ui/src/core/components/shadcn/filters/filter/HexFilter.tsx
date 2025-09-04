@@ -74,13 +74,13 @@ export default function HexFilter({
         value={textValue}
         onChange={handleInputChange}
         onKeyDown={(e) => e.key === "Enter" && isValidInput && handleHexFilterAdd()}
-        placeholder={`Enter ObjectId (hex characters only, ${fullIdLength} chars for full ID)...`}
+        placeholder={`Enter Object ID (numbers and letters A-F, ${fullIdLength} characters for complete ID)...`}
         className={!isValidInput && textValue.trim().length > 0 ? "border-destructive" : ""}
       />
       
       {!isValidInput && textValue.trim().length > 0 && (
         <div className="text-xs text-destructive px-1">
-          Only hexadecimal characters (0-9, A-F) are allowed
+          Only numbers and letters A-F are allowed
         </div>
       )}
 
