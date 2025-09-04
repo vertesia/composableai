@@ -36,13 +36,13 @@ export async function notifyWebhook(payload: DSLActivityExecutionPayload<NotifyW
             ...headers
         },
     }).catch(err => {
-        log.warn(`Failed to notify webhook ${target_url}: ${err}`);
-        throw new Error(`Failed to notify webhook ${target_url}: ${err}`);
+        log.error(`An error occurred while notifying webhook at ${target_url}`, { err });
+        throw err;
     });
 
     if (!res.ok) {
-        log.warn(`Failed to notify webhook ${target_url} - ${res.status}: ${res.statusText}`, { res });
-        throw new Error(`Failed to notify webhook ${target_url}: ${res.statusText}`);
+        log.warn(`Webhook endpoint ${target_url} returned an error - ${res.status} ${res.statusText}`, { fetchResponse: res });
+        throw new Error(`Webhook Notification to ${target_url} failed with status: ${res.status} ${res.statusText}`);
     }
 
     return { status: res.status, message: res.statusText, url: res.url }
