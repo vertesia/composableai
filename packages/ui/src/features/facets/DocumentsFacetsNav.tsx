@@ -22,16 +22,16 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
     const customFilterGroups: FilterGroup[] = [];
 
     customFilterGroups.push({
-        placeholder: 'Name',
-        name: 'name',
-        type: 'text',
+        placeholder: 'ID',
+        name: 'id',
+        type: 'hex',
         options: [],
     });
 
     customFilterGroups.push({
-        placeholder: 'ID',
-        name: 'id',
-        type: 'hex',
+        placeholder: 'Name',
+        name: 'name',
+        type: 'text',
         options: [],
     });
 
