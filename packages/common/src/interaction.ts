@@ -454,7 +454,7 @@ export interface ExecutionRun<P = any, R = any> {
     prompt: any;
     token_use?: ExecutionTokenUsage;
     chunks?: number;
-    execution_time?: number; //s
+    execution_time?: number; // ms
     created_at: Date;
     updated_at: Date;
     account: AccountRef;
