@@ -73,3 +73,23 @@ export interface AppInstallationPayload {
 }
 
 export type AppInstallationKind = 'ui' | 'tools' | 'all';
+
+/**
+ * A descriptiojn of the tools provided by an app
+ */
+export interface AppToolCollection {
+    /**
+     * The collection name
+     */
+    name: string;
+
+    /**
+     * Optional collection description
+     */
+    description?: string;
+
+    /**
+     * the tools provided by this collection
+     */
+    tools: { name: string, description?: string }[]
+}
