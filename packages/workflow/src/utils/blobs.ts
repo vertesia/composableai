@@ -14,7 +14,9 @@ export async function fetchBlobAsStream(client: VertesiaClient, blobUri: string)
     } catch (err: any) {
         if (err.message.includes("not found")) {
             //TODO improve error handling with a fetch fail error class in the client
-            throw new DocumentNotFoundError(`Failed to download blob ${blobUri}: ${err.message}`, []);
+            throw new DocumentNotFoundError(`Not found at ${blobUri}: ${err.message}`, []);
+        } else if (err.message.includes("forbidden")) {
+            throw new DocumentNotFoundError(`Forbidden at ${blobUri}: ${err.message}`);
         } else {
             throw new Error(`Failed to download blob ${blobUri}: ${err.message}`);
         }
