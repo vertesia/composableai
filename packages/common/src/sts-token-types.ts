@@ -23,6 +23,8 @@ export interface UserTokenRequest extends BaseTokenRequest {
     account_id?: string; // Optional - for scoping to specific account
     project_id?: string; // Optional - for scoping to specific project
     expires_at?: number;
+
+    on_behalf_of?: string; // Optional - user ID when acting on behalf of another user
 }
 
 // Project token requires project_id and account_id
@@ -47,7 +49,7 @@ export interface AgentTokenRequest extends BaseTokenRequest {
     account_id: string;
     project_id: string; // Will verify it belongs to account
     name?: string;
-    user_id?: string; // For GKE workload identity context
+    on_behalf_of: string; // Required: signed Vertesia token to verify user context
 }
 
 // Service account token
