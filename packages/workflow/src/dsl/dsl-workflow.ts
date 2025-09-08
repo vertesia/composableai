@@ -293,19 +293,17 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
     if (patched('system-activity-taskqueue')) {
         const info = workflowInfo();
         let taskQueue = '';
-        switch (info.taskQueue) {
-            case 'zeon-content/production':
-                taskQueue = 'system/production';
-                break;
-            case 'zeon-content/staging':
-                taskQueue = 'system/staging';
-                break;
-            case 'zeon-content/preview':
-                taskQueue = 'system/preview';
-                break;
-            default:
-                taskQueue = 'system/dev';
-                break;
+        if (info.taskQueue.startsWith('zeon-content/production')) {
+            taskQueue = 'system/production';
+        } else if (info.taskQueue.startsWith('zeon-content/preview')) {
+            taskQueue = 'system/preview';
+        } else if (info.taskQueue.startsWith('zeon-content/staging')) {
+            taskQueue = 'system/staging';
+        } else if (info.taskQueue.startsWith('zeon-content/dev')) {
+            taskQueue = 'system/dev';
+        } else {
+            log.error(`Unable to compute system task queue based on current task queue [${info.taskQueue}], falling back to the default one`);
+            taskQueue = info.taskQueue;
         }
         systemProxy = proxyActivities({
             ...defaultOptions,
