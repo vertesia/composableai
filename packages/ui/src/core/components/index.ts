@@ -7,7 +7,6 @@ export * from "./ConfirmModal.js";
 export * from "./DeleteModal.js";
 export * from "./Divider.js";
 export * from "./Dropdown.js";
-export * from "./DropdownList.js";
 export * from "./EmptyCollection.js";
 export * from "./FileUpload.js";
 export * from "./FormItem.js";
