@@ -10,6 +10,7 @@ import {
     sleep,
     startChild,
     UntypedActivities,
+    workflowInfo,
 } from "@temporalio/workflow";
 import {
     DSLActivityExecutionPayload,
@@ -28,7 +29,6 @@ import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from "../errors.j
 import { Vars } from "./vars.js";
 import { RateLimitParams } from "../activities/rateLimiter.js";
 
-const workerEnv = process.env.ENVIRONMENT;
 
 interface BaseActivityPayload extends WorkflowExecutionPayload {
     workflow_name: string;
@@ -291,15 +291,16 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
 
     let systemProxy: ActivityInterfaceFor<UntypedActivities>;
     if (patched('system-activity-taskqueue')) {
+        const info = workflowInfo();
         let taskQueue = '';
-        switch (workerEnv) {
-            case 'production':
+        switch (info.taskQueue) {
+            case 'zeon-content/production':
                 taskQueue = 'system/production';
                 break;
-            case 'staging':
+            case 'zeon-content/staging':
                 taskQueue = 'system/staging';
                 break;
-            case 'preview':
+            case 'zeon-content/preview':
                 taskQueue = 'system/preview';
                 break;
             default:
