@@ -1,9 +1,9 @@
 import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { useState } from 'react';
-import { VStringFacet } from './VStringFacet';
-import { VTypeFacet } from './VTypeFacet';
-import { SearchInterface } from './VFacetsNav';
+import { VStringFacet } from './utils/VStringFacet';
+import { VTypeFacet } from './utils/VTypeFacet';
+import { SearchInterface } from './utils/SearchInterface';
 
 interface DocumentsFacetsNavProps {
     facets: {
@@ -94,7 +94,7 @@ export function useDocumentFilterHandler(search: SearchInterface) {
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
                 const filterName = filter.name;
-                
+
                 let filterValue;
                 if (filter.type === 'date' && filter.multiple) {
                     // Handle date range filters
@@ -117,18 +117,18 @@ export function useDocumentFilterHandler(search: SearchInterface) {
                         }
                     }
                 } else if (filter.multiple) {
-                    filterValue = Array.isArray(filter.value) 
+                    filterValue = Array.isArray(filter.value)
                         ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
                         : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];
                 } else {
                     // Single value - don't wrap in array
                     filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
                         ? (filter.value[0] as any).value
-                        : Array.isArray(filter.value) && filter.value[0] 
+                        : Array.isArray(filter.value) && filter.value[0]
                             ? filter.value[0]
                             : filter.value;
                 }
-                
+
                 if (filterName === 'name') {
                     search.query.search_term = filterValue;
                     search.query.name = filterValue;
