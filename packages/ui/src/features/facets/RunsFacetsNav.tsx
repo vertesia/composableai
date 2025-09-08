@@ -108,6 +108,14 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
     };
     customFilterGroups.push(dateBeforeFilterGroup);
 
+    const workflowRunIdFilterGroup = {
+        name: 'workflow_run_ids',
+        placeholder: 'Workflow Run ID',
+        type: 'stringList' as const,
+        multiple: false
+    };
+    customFilterGroups.push(workflowRunIdFilterGroup);
+
     return customFilterGroups;
 }
 

@@ -35,7 +35,7 @@ export const StringListCombobox = ({
             >
                 <div className="flex gap-1.5 items-center">
                     {filterValues.length > 0 ? (
-                        filterValues.length === 1 ? filterValues[0] : `${filterValues.length} tags`
+                        filterValues.length === 1 ? filterValues[0] : `${filterValues.length} items`
                     ) : (
                         "Add tags..."
                     )}
