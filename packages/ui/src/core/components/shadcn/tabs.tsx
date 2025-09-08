@@ -31,6 +31,7 @@ interface TabsProps {
   onTabChange?: (tabName: string) => void;
   responsive?: boolean;
   variant?: "tabs" | "pills";
+  updateHash?: boolean;
 }
 
 const VTabs = ({
@@ -42,7 +43,8 @@ const VTabs = ({
   children,
   onTabChange,
   responsive = false,
-  variant = "tabs"
+  variant = "tabs",
+  updateHash = true
 }: TabsProps) => {
   // Initialize value
   const [value, setValue] = React.useState(() => {
@@ -101,7 +103,7 @@ const VTabs = ({
     setValue(newValue);
     
     // Update the URL hash when tab changes (only if not controlled by parent)
-    if (!current) {
+    if (!current && updateHash) {
       window.location.hash = newValue;
     }
     
