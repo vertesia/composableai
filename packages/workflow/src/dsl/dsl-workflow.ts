@@ -293,13 +293,13 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
     if (patched('system-activity-taskqueue')) {
         const info = workflowInfo();
         let taskQueue = '';
-        if (info.taskQueue.startsWith('zeon-content/production')) {
+        if (info.taskQueue.startsWith('zeno-content/production')) {
             taskQueue = 'system/production';
-        } else if (info.taskQueue.startsWith('zeon-content/preview')) {
+        } else if (info.taskQueue.startsWith('zeno-content/preview')) {
             taskQueue = 'system/preview';
-        } else if (info.taskQueue.startsWith('zeon-content/staging')) {
+        } else if (info.taskQueue.startsWith('zeno-content/staging')) {
             taskQueue = 'system/staging';
-        } else if (info.taskQueue.startsWith('zeon-content/dev')) {
+        } else if (info.taskQueue.startsWith('zeno-content/dev')) {
             taskQueue = 'system/dev';
         } else {
             log.error(`Unable to compute system task queue based on current task queue [${info.taskQueue}], falling back to the default one`);
