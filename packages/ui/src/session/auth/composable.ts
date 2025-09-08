@@ -33,7 +33,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
     }
 
     // Use STS endpoint - either configured or default to sts.vertesia.io
-    const stsEndpoint = Env.endpoints.sts || 'https://sts.vertesia.io';
+    const stsEndpoint = Env.endpoints.sts;
     console.log('Using STS for token generation:', stsEndpoint);
     Env.logger.info('Using STS for token generation', {
         vertesia: {
@@ -109,7 +109,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
         if (error instanceof UserNotFoundError) {
             throw error; // Re-throw UserNotFoundError
         }
-        
+
         localStorage.removeItem(LastSelectedAccountId_KEY);
         localStorage.removeItem(LastSelectedProjectId_KEY);
         console.error('Failed to get composable token from STS', error);
