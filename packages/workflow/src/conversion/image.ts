@@ -113,8 +113,20 @@ export async function imageResizer(
         // Add JPEG shrink-on-load optimization
         args.push("-define", `jpeg:size=${max_hw * 3}x${max_hw * 3}`);
 
-        // Resize operation
+        // Resize operation (> prevents upscaling)
         args.push("-resize", `${max_hw}x${max_hw}>`);
+
+        // Add compression settings even for images that aren't resized
+        const lowerFormat = format.toLowerCase();
+        if (lowerFormat === "jpeg" || lowerFormat === "jpg") {
+            args.push("-quality", "90");
+        } else if (lowerFormat === "png") {
+            args.push("-define", "png:compression-level=9");
+            args.push("-define", "png:compression-strategy=1");
+        } else if (lowerFormat === "webp") {
+            args.push("-quality", "90");
+            args.push("-define", "webp:method=4");
+        }
 
         // Restore colorspace after processing
         if (colorspaceCorrection) {
