@@ -167,29 +167,35 @@ export function ContentOverview({
 
     useEffect(() => {
         if (isImage) {
-            client.objects
-                .getRendition(object.id, {
-                    format: ImageRenditionFormat.jpeg,
-                    generate_if_missing: false,
-                    sign_url: true,
-                })
-                .then((r) => {
-                    if (r.status === "found") {
-                        return r.renditions?.length ? r.renditions[0] : null;
-                    } else {
-                        return object;
+            const loadImage = async () => {
+                const webSupportedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+                const isOriginalWebSupported = content?.type && webSupportedFormats.includes(content.type);
+
+                try {
+                    const rendition = await client.objects.getRendition(object.id, {
+                        format: ImageRenditionFormat.jpeg,
+                        generate_if_missing: false,
+                        sign_url: true,
+                    });
+
+                    if (rendition.status === "found" && rendition.renditions?.length) {
+                        // Use rendition URL directly
+                        setImageUrl(rendition.renditions[0]);
+                    } else if (isOriginalWebSupported) {
+                        // Fall back to original file only if web-supported
+                        const downloadUrl = await client.files.getDownloadUrl(object.content.source!);
+                        setImageUrl(downloadUrl.url);
                     }
-                })
-                .catch(() => {
-                    return object;
-                })
-                .then(() => {
-                    client.files
-                        .getDownloadUrl(object.content.source!)
-                        .then((r) => {
-                            setImageUrl(r.url);
-                        });
-                });
+                } catch (error) {
+                    // Fall back to original file only if web-supported
+                    if (isOriginalWebSupported) {
+                        const downloadUrl = await client.files.getDownloadUrl(object.content.source!);
+                        setImageUrl(downloadUrl.url);
+                    }
+                }
+            };
+
+            loadImage();
         }
     }, []);
 
