@@ -1,3 +1,4 @@
+import { JSONSchema } from "@llumiverse/common";
 
 export interface AppUIConfig {
     /**
@@ -46,6 +47,11 @@ export interface AppManifestData {
      * If the `?import` query string is used the tool will be imported as a javascript module and not executed through a POST on the collections endpoint.
      */
     tool_collections?: string[]
+
+    /**
+     * A JSON chema for the app installation settings.
+     */
+    settings_schema?: JSONSchema;
 }
 export interface AppManifest extends AppManifestData {
     id: string;
@@ -73,3 +79,23 @@ export interface AppInstallationPayload {
 }
 
 export type AppInstallationKind = 'ui' | 'tools' | 'all';
+
+/**
+ * A descriptiojn of the tools provided by an app
+ */
+export interface AppToolCollection {
+    /**
+     * The collection name
+     */
+    name: string;
+
+    /**
+     * Optional collection description
+     */
+    description?: string;
+
+    /**
+     * the tools provided by this collection
+     */
+    tools: { name: string, description?: string }[]
+}

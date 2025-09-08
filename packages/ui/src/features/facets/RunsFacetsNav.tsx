@@ -1,10 +1,10 @@
 import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useState } from 'react';
-import { VEnvironmentFacet } from './VEnvironmentFacet';
-import { VInteractionFacet } from './VInteractionFacet';
-import { VStringFacet } from './VStringFacet';
-import { VUserFacet } from './VUserFacet';
-import { SearchInterface } from './VFacetsNav';
+import { VEnvironmentFacet } from './utils/VEnvironmentFacet';
+import { VInteractionFacet } from './utils/VInteractionFacet';
+import { VStringFacet } from './utils/VStringFacet';
+import { VUserFacet } from './utils/VUserFacet';
+import { SearchInterface } from './utils/SearchInterface';
 
 interface RunsFacetsNavProps {
     facets: {
@@ -130,14 +130,14 @@ export function useRunsFilterHandler(search: SearchInterface) {
                 if (filter.type === 'stringList') {
                     filterValue = filter.value.map(v => typeof v === 'string' ? v : v.value);
                 } else if (filter.multiple) {
-                    filterValue = Array.isArray(filter.value) 
+                    filterValue = Array.isArray(filter.value)
                         ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
                         : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];
                 } else {
                     // Single value - don't wrap in array
                     filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
                         ? (filter.value[0] as any).value
-                        : Array.isArray(filter.value) && filter.value[0] 
+                        : Array.isArray(filter.value) && filter.value[0]
                             ? filter.value[0]
                             : filter.value;
                 }
