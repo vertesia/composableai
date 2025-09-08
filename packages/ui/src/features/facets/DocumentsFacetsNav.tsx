@@ -137,8 +137,8 @@ export function useDocumentFilterHandler(search: SearchInterface) {
                 }
 
                 if (filterName === 'name') {
-                    // Name filtering: Backend uses Atlas Search for broad matching, then client-side
-                    // substring filtering occurs in DocumentSearchContext.ts (_search method)
+                    // Name filtering: Backend handles both Atlas Search and post-filtering
+                    // Backend location: apps/zeno-server/src/api/search.ts (search function)
                     search.query.name = filterValue;
                 } else if (filterName === 'id') {
                     search.query.id = filterValue;
