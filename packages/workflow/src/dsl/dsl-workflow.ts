@@ -287,8 +287,40 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         });
     }
 
+    let systemProxy: ActivityInterfaceFor<UntypedActivities>;
+    if (patched('system-activity-taskqueue')) {
+        let taskQueue = '';
+        switch (process.env.ENVIRONMENT) {
+            case 'production':
+                taskQueue = 'system/production';
+                break;
+            case 'staging':
+                taskQueue = 'system/staging';
+                break;
+            case 'preview':
+                taskQueue = 'system/preview';
+                break;
+            default:
+                taskQueue = 'system/dev';
+                break;
+        }
+        systemProxy = proxyActivities({
+            ...defaultOptions,
+            taskQueue: taskQueue,
+        });
+    } else {
+        systemProxy = defaultProxy;
+    }
+
     // call rate limiter depending on the activity type
-    const rateLimitedActivities = ["generateDocumentProperties","executeInteraction","identifyTextSections", "generateOrAssignContentType", "chunkDocument"];
+    const rateLimitedActivities = [
+        "chunkDocument",
+        "executeInteraction",
+        "generateDocumentProperties",
+        "generateOrAssignContentType",
+        "identifyTextSections",
+    ];
+
     if (activity.name && rateLimitedActivities.includes(activity.name)) {
         log.info(`Applying rate limit for activity ${activity.name}`);
         // Apply rate limiting logic here
@@ -296,14 +328,14 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         const rateLimitParams = buildRateLimitParams(activity, executionPayload);
 
         const rateLimitPayload = dslActivityPayload(basePayload, activity, rateLimitParams);
-        let rateLimitResult = await defaultProxy.checkRateLimit(rateLimitPayload);
+        let rateLimitResult = await systemProxy.checkRateLimit(rateLimitPayload);
     
         while (rateLimitResult.delayMs > 0) {
             log.info(`Rate limit delay applied: ${rateLimitResult.delayMs}ms`);
             await sleep(rateLimitResult.delayMs);
-            
+
             // Check again after sleeping
-            rateLimitResult = await defaultProxy.checkRateLimit(rateLimitPayload);
+            rateLimitResult = await systemProxy.checkRateLimit(rateLimitPayload);
         }
     }
 
