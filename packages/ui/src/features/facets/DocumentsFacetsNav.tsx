@@ -137,6 +137,8 @@ export function useDocumentFilterHandler(search: SearchInterface) {
                 }
 
                 if (filterName === 'name') {
+                    // Name filtering: Backend uses Atlas Search for broad matching, then client-side
+                    // substring filtering occurs in DocumentSearchContext.ts (_search method)
                     search.query.name = filterValue;
                 } else if (filterName === 'id') {
                     search.query.id = filterValue;

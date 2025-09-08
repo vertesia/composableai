@@ -140,8 +140,19 @@ export class DocumentSearch implements SearchInterface {
         const offset = loadMore ? this.objects.length : 0;
         return this._searchRequest(this.query, limit, offset, !noFacets).then(async (res) => {
             // Handle the new format with results and facets
-            const results = res.results || [];
+            let results = res.results || [];
             const facets = res.facets || {};
+
+            // Apply client-side name filtering to results returned from Atlas Search
+            // This ensures only objects with actual substring matches are shown
+            // Backend location: apps/zeno-server/src/api/search.ts (getNameSearchStage)
+            if (this.query.name && typeof this.query.name === 'string') {
+                const nameQuery = this.query.name.toLowerCase();
+                results = results.filter(obj => 
+                    obj.name?.toLowerCase().includes(nameQuery) || 
+                    obj.properties?.title?.toLowerCase().includes(nameQuery)
+                );
+            }
 
             this.result.value = {
                 isLoading: false,
