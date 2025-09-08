@@ -28,6 +28,8 @@ import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from "../errors.j
 import { Vars } from "./vars.js";
 import { RateLimitParams } from "../activities/rateLimiter.js";
 
+const workerEnv = process.env.ENVIRONMENT;
+
 interface BaseActivityPayload extends WorkflowExecutionPayload {
     workflow_name: string;
     debug_mode?: boolean;
@@ -290,7 +292,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
     let systemProxy: ActivityInterfaceFor<UntypedActivities>;
     if (patched('system-activity-taskqueue')) {
         let taskQueue = '';
-        switch (process.env.ENVIRONMENT) {
+        switch (workerEnv) {
             case 'production':
                 taskQueue = 'system/production';
                 break;
