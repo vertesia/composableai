@@ -10,6 +10,7 @@ import {
     sleep,
     startChild,
     UntypedActivities,
+    workflowInfo,
 } from "@temporalio/workflow";
 import {
     DSLActivityExecutionPayload,
@@ -27,6 +28,7 @@ import * as activities from "../activities/index.js";
 import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from "../errors.js";
 import { Vars } from "./vars.js";
 import { RateLimitParams } from "../activities/rateLimiter.js";
+
 
 interface BaseActivityPayload extends WorkflowExecutionPayload {
     workflow_name: string;
@@ -287,8 +289,39 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         });
     }
 
+    let systemProxy: ActivityInterfaceFor<UntypedActivities>;
+    if (patched('system-activity-taskqueue')) {
+        const info = workflowInfo();
+        let taskQueue = '';
+        if (info.taskQueue.startsWith('zeno-content/production')) {
+            taskQueue = 'system/production';
+        } else if (info.taskQueue.startsWith('zeno-content/preview')) {
+            taskQueue = 'system/preview';
+        } else if (info.taskQueue.startsWith('zeno-content/staging')) {
+            taskQueue = 'system/staging';
+        } else if (info.taskQueue.startsWith('zeno-content/dev')) {
+            taskQueue = 'system/dev';
+        } else {
+            log.error(`Unable to compute system task queue based on current task queue [${info.taskQueue}], falling back to the default one`);
+            taskQueue = info.taskQueue;
+        }
+        systemProxy = proxyActivities({
+            ...defaultOptions,
+            taskQueue: taskQueue,
+        });
+    } else {
+        systemProxy = defaultProxy;
+    }
+
     // call rate limiter depending on the activity type
-    const rateLimitedActivities = ["generateDocumentProperties","executeInteraction","identifyTextSections", "generateOrAssignContentType", "chunkDocument"];
+    const rateLimitedActivities = [
+        "chunkDocument",
+        "executeInteraction",
+        "generateDocumentProperties",
+        "generateOrAssignContentType",
+        "identifyTextSections",
+    ];
+
     if (activity.name && rateLimitedActivities.includes(activity.name)) {
         log.info(`Applying rate limit for activity ${activity.name}`);
         // Apply rate limiting logic here
@@ -296,14 +329,14 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         const rateLimitParams = buildRateLimitParams(activity, executionPayload);
 
         const rateLimitPayload = dslActivityPayload(basePayload, activity, rateLimitParams);
-        let rateLimitResult = await defaultProxy.checkRateLimit(rateLimitPayload);
+        let rateLimitResult = await systemProxy.checkRateLimit(rateLimitPayload);
     
         while (rateLimitResult.delayMs > 0) {
             log.info(`Rate limit delay applied: ${rateLimitResult.delayMs}ms`);
             await sleep(rateLimitResult.delayMs);
-            
+
             // Check again after sleeping
-            rateLimitResult = await defaultProxy.checkRateLimit(rateLimitPayload);
+            rateLimitResult = await systemProxy.checkRateLimit(rateLimitPayload);
         }
     }
 
