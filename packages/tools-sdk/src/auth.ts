@@ -27,6 +27,9 @@ export async function verifyToken(token: string) {
     if (!decodedJwt.iss) {
         throw new Error("No issuer URL found in JWT");
     }
+    if (!isAllowedIssuer(decodedJwt.iss)) {
+        throw new Error("Issuer is not allowed: " + decodedJwt.iss);
+    }
     const jwks = await getJwks(`${decodedJwt.iss}/.well-known/jwks`);
     return await jwtVerify<AuthTokenPayload>(token, jwks);
 }
@@ -82,4 +85,8 @@ export class AuthSession implements ToolExecutionContext {
         }
         return this._client;
     }
+}
+
+function isAllowedIssuer(iss: string) {
+    return iss.endsWith(".vertesia.io") || iss.endsWith(".becomposable.com");
 }
