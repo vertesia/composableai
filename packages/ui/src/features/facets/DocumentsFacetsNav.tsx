@@ -22,7 +22,14 @@ export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets'
     const customFilterGroups: FilterGroup[] = [];
 
     customFilterGroups.push({
-        placeholder: 'Name or ID',
+        placeholder: 'ID',
+        name: 'id',
+        type: 'text',
+        options: [],
+    });
+
+    customFilterGroups.push({
+        placeholder: 'Name',
         name: 'name',
         type: 'text',
         options: [],
@@ -130,8 +137,9 @@ export function useDocumentFilterHandler(search: SearchInterface) {
                 }
 
                 if (filterName === 'name') {
-                    search.query.search_term = filterValue;
                     search.query.name = filterValue;
+                } else if (filterName === 'id') {
+                    search.query.id = filterValue;
                 } else {
                     search.query[filterName] = filterValue;
                 }
