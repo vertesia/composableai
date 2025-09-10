@@ -1,10 +1,11 @@
-import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
+import { Button, Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useState } from 'react';
 import { VEnvironmentFacet } from './utils/VEnvironmentFacet';
 import { VInteractionFacet } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
 import { SearchInterface } from './utils/SearchInterface';
+import { RefreshCw } from 'lucide-react';
 
 interface RunsFacetsNavProps {
     facets: {
@@ -178,14 +179,23 @@ export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
         handleFilterLogic(newFilters);
     };
 
+    const handleRefetch = () => {
+        search.search();
+    }
+
     return (
         <FilterProvider
             filterGroups={filterGroups}
             filters={filters}
             setFilters={handleFilterChange}
         >
-            <div className="flex gap-2 items-center">
+            <div className='flex justify-between mb-1'>
                 <FilterBtn />
+                <Button onClick={handleRefetch} variant='outline' title="Refresh">
+                    <RefreshCw className="size-5" />
+                </Button>
+            </div>
+            <div className='flex gap-2 items-center'>
                 <FilterBar />
                 <FilterClear />
             </div>
