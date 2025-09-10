@@ -83,7 +83,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return await new VertesiaClient({
             serverUrl: endpoints.studio,
             storeUrl: endpoints.store,
-            tokenServerUrl: endpoints.token.replace(/api\./, 'sts')
+            tokenServerUrl: payload.iss
         }).withApiKey(token);
     }
 
