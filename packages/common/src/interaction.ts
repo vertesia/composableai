@@ -555,3 +555,13 @@ export interface GenerateTestDataPayload {
 export interface ImprovePromptPayload {
     config: InteractionExecutionConfiguration;
 }
+
+export interface RateLimitRequestPayload {
+    environment_id: string,
+    model_id?: string,
+    run_id: string
+}
+
+export interface RateLimitRequestResponse {
+    delay_ms: number;
+}

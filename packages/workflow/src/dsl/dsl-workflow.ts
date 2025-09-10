@@ -230,32 +230,38 @@ function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLAc
         case "executeInteraction":
             rateLimitParams.interactionId = params.interactionName;
             rateLimitParams.environmentId = params.environment;
+            rateLimitParams.modelId = params.model;
             break;
         
         case "generateDocumentProperties":
             rateLimitParams.interactionId = params.interactionName || "sys:ExtractInformation";
             rateLimitParams.environmentId = params.environment;
+            rateLimitParams.modelId = params.model;
             break;
             
         case "identifyTextSections": 
             rateLimitParams.interactionId = params.interactionName || "sys:IdentifyTextSections";
             rateLimitParams.environmentId = params.environment;
+            rateLimitParams.modelId = params.model;
             break;
             
         case "generateOrAssignContentType":
             rateLimitParams.interactionId = params.interactionNames?.selectDocumentType || "sys:SelectDocumentType";
             rateLimitParams.environmentId = params.environment;
+            rateLimitParams.modelId = params.model;
             break;
             
         case "chunkDocument":
             rateLimitParams.interactionId = params.interactionName || "sys:ChunkDocument";
             rateLimitParams.environmentId = params.environment;
+            rateLimitParams.modelId = params.model;
             break;
         
         default:
             // For any other rate-limited activities, try to extract what we can
             rateLimitParams.interactionId = params.interactionName;
             rateLimitParams.environmentId = params.environment;
+            rateLimitParams.modelId = params.model;
             break;
     }
 
