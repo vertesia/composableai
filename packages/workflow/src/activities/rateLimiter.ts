@@ -71,7 +71,7 @@ export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLi
         requestPayload.model_id = modelId;
       }
       
-      const response = await client.interactions.checkRateLimit(requestPayload);
+      const response = await client.interactions.requestSlot(requestPayload);
       result.delayMs = response.delay_ms;
     } catch (error) {
       log.warn('Failed to call rate limit API:', {error});

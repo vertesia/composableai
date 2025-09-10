@@ -1,7 +1,7 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
 import { AsyncExecutionPayload, ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload, RateLimitRequestPayload, RateLimitRequestResponse } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
-import { executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
+import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
 
 export interface ComputeInteractionFacetsResponse {
     tags?: { _id: string, count: number }[];
@@ -239,14 +239,12 @@ export default class InteractionsApi extends ApiTopic {
     }
 
     /**
-     * Request a rate limit slot
+     * Request a time slot to execute an interaction with a given environment / model
      * @param payload RateLimitRequestPayload
      * @returns RateLimitRequestResponse with delay_ms
      */
-    checkRateLimit(payload: RateLimitRequestPayload): Promise<RateLimitRequestResponse> {
-        return this.post('/rate-limit/request', {
-            payload
-        });
+    requestSlot(payload: RateLimitRequestPayload): Promise<RateLimitRequestResponse> {
+        return checkRateLimit(this.client as VertesiaClient, payload);
     }
 
 }

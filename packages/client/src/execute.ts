@@ -1,4 +1,4 @@
-import { AsyncExecutionPayload, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload } from '@vertesia/common';
+import { AsyncExecutionPayload, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload, RateLimitRequestPayload, RateLimitRequestResponse } from '@vertesia/common';
 import { VertesiaClient } from './client.js';
 
 export async function EventSourceProvider(): Promise<typeof EventSource> {
@@ -116,5 +116,11 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
 export async function executeInteractionAsync(client: VertesiaClient, payload: AsyncExecutionPayload): Promise<{ runId: string, workflowId: string }> {
     return await client.post('/api/v1/execute/async', {
         payload,
+    });
+}
+
+export async function checkRateLimit(client: VertesiaClient, payload: RateLimitRequestPayload): Promise<RateLimitRequestResponse> {
+    return await client.post('/api/v1/execute/rate-limit/request', {
+        payload
     });
 }
