@@ -1,4 +1,4 @@
-import { DSLActivityExecutionPayload } from "@vertesia/common";
+import { DSLActivityExecutionPayload, RateLimitRequestPayload } from "@vertesia/common";
 import { activityInfo, log } from "@temporalio/activity";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 
@@ -62,7 +62,7 @@ export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLi
       try {
       // Call the studio-server endpoint to get rate limit delay using the Vertesia client
       const info = activityInfo();
-      const requestPayload: any = {
+      const requestPayload: RateLimitRequestPayload = {
         run_id: info.workflowExecution.runId,
         environment_id: environmentId
       };
@@ -71,15 +71,12 @@ export async function checkRateLimit(payload: DSLActivityExecutionPayload<RateLi
         requestPayload.model_id = modelId;
       }
       
-      const response = await client.post('/api/v1/execute/rate-limit/request', {
-        payload: requestPayload
-      }) as { delay_ms: number };
+      const response = await client.interactions.checkRateLimit(requestPayload);
       result.delayMs = response.delay_ms;
     } catch (error) {
       log.warn('Failed to call rate limit API:', {error});
     }
   }
 
-  log.info('Rate limit check result:', { delayMs: result.delayMs, environmentId, modelId });
   return result;
 }
