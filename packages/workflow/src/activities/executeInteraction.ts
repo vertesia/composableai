@@ -13,7 +13,7 @@ import {
 } from "@vertesia/common";
 import { projectResult } from "../dsl/projections.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { ActivityParamInvalidError, ActivityParamNotFoundError } from "../errors.js";
+import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from "../errors.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import { Readable } from "stream";
 
@@ -98,6 +98,11 @@ export interface InteractionExecutionParams {
      * Options to control generation
      */
     model_options?: ModelOptions;
+
+    /**
+     * activity won't be retried if it fails due to resource exhaustion (429)
+     */
+    exit_on_resource_exhaustion?: boolean;
 }
 
 /**
@@ -187,15 +192,17 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         });
 
     } catch (error: any) {
-        log.error("Failed to execute interaction", { error });
-        if (error.message.includes("Failed to validate merged prompt schema")) {
+        log.error(`Failed to execute interaction ${interactionName}`, { error });
+        if (error.statusCode === 429 && params.exit_on_resource_exhaustion) {
+            throw new ResourceExhaustedError(error.statusCode, "Resource exhausted - rate limit exceeded");
+        } else if (error.message.includes("Failed to validate merged prompt schema")) {
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError("prompt_data", payload.activity, error.message);
         } else if (error.message.includes("modelId: Path `modelId` is required")) {
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError("model", payload.activity, error.message);
         } else {
-            throw error;
+            throw new Error(`Interaction Execution failed ${interactionName}: ${error.message}`);
         }
     }
 }
@@ -270,7 +277,7 @@ export async function executeInteractionFromActivity(
         })
         .catch((err) => {
             log.error(`Error executing interaction ${interactionName}`, { err });
-            throw new Error(`Interaction Execution failed ${interactionName}: ${err.message}`);
+            throw err;
         });
 
     if (debug) {

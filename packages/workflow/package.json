@@ -103,6 +103,11 @@
         },
         "./workflows-bundle": {
             "import": "./lib/workflows-bundle.js"
+        },
+        "./errors": {
+            "types": "./lib/types/errors.d.ts",
+            "import": "./lib/esm/errors.js",
+            "require": "./lib/cjs/errors.js"
         }
     },
     "types": "./lib/types/index.d.ts",
@@ -122,6 +127,9 @@
             ],
             "vars": [
                 "./lib/types/dsl/vars.d.ts"
+            ],
+            "errors": [
+                "./lib/types/errors.d.ts"
             ]
         }
     }

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { FacetBucket, FacetNameBucket } from '@vertesia/common';
 import { SelectBox } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { facetOptionNameLabel } from './utils';
+import { facetOptionNameLabel } from './utils/utils';
 
 interface EnvironmentFacetProps {
     search: any;

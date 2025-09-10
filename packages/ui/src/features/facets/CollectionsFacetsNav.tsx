@@ -1,72 +1,42 @@
 import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useState } from 'react';
-import { VStringFacet } from './utils/VStringFacet';
-import { VUserFacet } from './utils/VUserFacet';
 import { SearchInterface } from './utils/SearchInterface';
 
-interface WorkflowExecutionsFacetsNavProps {
+interface CollectionsFacetsNavProps {
     facets: {
-        status?: any[];
-        initiated_by?: any[];
+        type?: any[];
+        dynamic?: any[];
     };
     search: SearchInterface;
 }
 
-// Hook to create filter groups for workflow executions
-export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFacetsNavProps['facets']): FilterGroup[] {
+// Hook to create filter groups for collections
+export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['facets']): FilterGroup[] {
+    void facets;
     const customFilterGroups: FilterGroup[] = [];
 
-    customFilterGroups.push({
-        placeholder: 'Search by Workflow or Run ID',
+    // Add name filter as text type
+    const nameFilterGroup = {
         name: 'name',
-        type: 'text',
-        options: [],
-    });
-
-    if (facets.status) {
-        const statusFilterGroup = VStringFacet({
-            search: null as any, // This will be provided by the search context
-            buckets: facets.status || [],
-            name: 'Status'
-        });
-        customFilterGroups.push(statusFilterGroup);
-    }
-
-    if (facets.initiated_by) {
-        const initiatedByFilterGroup = VUserFacet({
-            buckets: facets.initiated_by || [],
-            name: 'User'
-        });
-        customFilterGroups.push(initiatedByFilterGroup);
-    }
-
-    const dateAfterFilterGroup = {
-        name: 'start',
-        placeholder: 'Date After',
-        type: 'date' as const,
+        placeholder: 'Filter by Name',
+        type: 'text' as const,
         multiple: false
     };
-    customFilterGroups.push(dateAfterFilterGroup);
-
-    const dateBeforeFilterGroup = {
-        name: 'end',
-        placeholder: 'Date Before',
-        type: 'date' as const,
-        multiple: false
-    };
-    customFilterGroups.push(dateBeforeFilterGroup);
+    customFilterGroups.push(nameFilterGroup);
 
     return customFilterGroups;
 }
 
-// Hook to create filter change handler for workflow executions
-export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
+// Hook to create filter change handler for collections
+export function useCollectionsFilterHandler(search: SearchInterface) {
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
-            search.clearFilters();
+            // Clear filters without applying defaults - user wants to remove all filters
+            search.clearFilters(true);
             return;
         }
 
+        // Clear all filters first, then apply new ones
         search.clearFilters(false);
 
         newFilters.forEach(filter => {
@@ -88,12 +58,7 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
                             : filter.value;
                 }
 
-                if (filterName === 'name') {
-                    search.query.search_term = filterValue;
-                    search.query.name = filterValue;
-                } else {
-                    search.query[filterName] = filterValue;
-                }
+                search.query[filterName] = filterValue;
             }
         });
 
@@ -101,14 +66,11 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
     };
 }
 
-// Legacy component for backward compatibility
-export function WorkflowExecutionsFacetsNav({
-    facets,
-    search,
-}: WorkflowExecutionsFacetsNavProps) {
+// Component for collections filtering
+export function CollectionsFacetsNav({ facets, search }: CollectionsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
-    const filterGroups = useWorkflowExecutionsFilterGroups(facets);
-    const handleFilterLogic = useWorkflowExecutionsFilterHandler(search);
+    const filterGroups = useCollectionsFilterGroups(facets);
+    const handleFilterLogic = useCollectionsFilterHandler(search);
 
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
         const newFilters = typeof value === 'function' ? value(filters) : value;

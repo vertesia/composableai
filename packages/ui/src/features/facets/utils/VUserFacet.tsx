@@ -1,6 +1,6 @@
 import { FacetBucket } from '@vertesia/common';
 import { FilterGroup } from '@vertesia/ui/core';
-import { UserInfo } from '../user/UserInfo';
+import { UserInfo } from '../../user/UserInfo';
 
 interface UserFacetProps {
     buckets: FacetBucket[];
