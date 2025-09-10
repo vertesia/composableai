@@ -24,6 +24,14 @@ interface RunsFacetsNavProps {
 export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): FilterGroup[] {
     const customFilterGroups: FilterGroup[] = [];
 
+    const runIdFilterGroup = {
+        name: 'run_ids',
+        placeholder: 'Run ID',
+        type: 'text' as const,
+        multiple: false
+    };
+    customFilterGroups.push(runIdFilterGroup);
+
     if (facets.interactions) {
         const interactionFilterGroup = VInteractionFacet({
             buckets: facets.interactions || [],
@@ -107,6 +115,14 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
         multiple: false
     };
     customFilterGroups.push(dateBeforeFilterGroup);
+
+    const workflowRunIdFilterGroup = {
+        name: 'workflow_run_ids',
+        placeholder: 'Workflow Run ID',
+        type: 'text' as const,
+        multiple: false
+    };
+    customFilterGroups.push(workflowRunIdFilterGroup);
 
     return customFilterGroups;
 }
