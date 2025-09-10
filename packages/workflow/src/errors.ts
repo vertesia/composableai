@@ -51,6 +51,19 @@ export class WorkflowParamNotFoundError extends ApplicationFailure {
     }
 }
 
+export class ResourceExhaustedError extends ApplicationFailure {
+    constructor(
+        public statusCode: number = 429,
+        message?: string,
+    ) {
+        super(
+            message || "Resource exhausted - rate limit exceeded",
+            "ResourceExhaustedError",
+            true, // non-retryable
+        );
+    }
+}
+
 export const WF_NON_RETRYABLE_ERRORS = [
     "DocumentNotFoundError",
     "ActivityParamInvalidError",

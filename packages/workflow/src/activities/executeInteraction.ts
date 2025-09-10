@@ -1,5 +1,5 @@
 import { Modalities, ModelOptions } from "@llumiverse/common";
-import { activityInfo, ApplicationFailure, log } from "@temporalio/activity";
+import { activityInfo, log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
 import {
@@ -13,7 +13,7 @@ import {
 } from "@vertesia/common";
 import { projectResult } from "../dsl/projections.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { ActivityParamInvalidError, ActivityParamNotFoundError } from "../errors.js";
+import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from "../errors.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import { Readable } from "stream";
 
@@ -194,7 +194,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
     } catch (error: any) {
         log.error(`Failed to execute interaction ${interactionName}`, { error });
         if (error.statusCode === 429 && params.exit_on_resource_exhaustion) {
-            throw ApplicationFailure.nonRetryable("resource exhausted","429");
+            throw new ResourceExhaustedError(error.statusCode, "Resource exhausted - rate limit exceeded");
         } else if (error.message.includes("Failed to validate merged prompt schema")) {
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError("prompt_data", payload.activity, error.message);
