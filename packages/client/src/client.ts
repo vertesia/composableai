@@ -38,6 +38,7 @@ export type VertesiaClientProps = {
     site?: 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api-staging.vertesia.io';
     serverUrl?: string;
     storeUrl?: string;
+    tokenServerUrl?: string
     apikey?: string;
     projectId?: string;
     sessionTags?: string | string[];
@@ -62,11 +63,15 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      */
     sessionTags?: string | string[];
 
+    /**
+     * tokenServerUrl
+     */
+    tokenServerUrl: string;
 
     /**
-     * Create a client from the given token. 
+     * Create a client from the given token.
      * If you already have the decoded token you can pass it as the second argument to avoid decodinf it again.
-     * 
+     *
      * @param token the raw JWT token
      * @param payload the decoded JWT token as an AuthTokenPayload - optional
      */
@@ -77,7 +82,8 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         const endpoints = decodeEndpoints(payload!.endpoints);
         return await new VertesiaClient({
             serverUrl: endpoints.studio,
-            storeUrl: endpoints.store
+            storeUrl: endpoints.store,
+            tokenServerUrl: endpoints.token.replace(/api\./, 'sts')
         }).withApiKey(token);
     }
 
@@ -111,8 +117,17 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
 
         super(studioServerUrl);
 
+        if (opts.tokenServerUrl) {
+            this.tokenServerUrl = opts.tokenServerUrl;
+        } else if (opts.site) {
+            this.tokenServerUrl = `https://${opts.site.replace(/^api/, 'sts')}`;
+        } else {
+            throw new Error("Parameter 'site' or 'tokenServerUrl' is required for VertesiaClient");
+        }
+
         this.store = new ZenoClient({
             serverUrl: zenoServerUrl,
+            tokenServerUrl: this.tokenServerUrl,
             apikey: opts.apikey,
             onRequest: opts.onRequest,
             onResponse: opts.onResponse
@@ -121,10 +136,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         if (opts.apikey) {
             this.withApiKey(opts.apikey);
         }
-        //TODO: this is no more used, remove in next major version
-        if (opts.projectId) {
-            this.headers["x-project-id"] = opts.projectId;
-        }
+
         this.onRequest = opts.onRequest;
         this.onResponse = opts.onResponse;
         this.sessionTags = opts.sessionTags;
@@ -213,18 +225,25 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
 
     /**
      *
-     * Generate a token for use with other Composable's services
+     * Generate a token for use with other Vertesia's services
      *
-     * @param accountId: selected account to generate the token for
      * @returns AuthTokenResponse
      */
-    async getAuthToken(token?: string, accountId?: string): Promise<AuthTokenResponse> {
-        const query = {
-            accountId,
-            token
-        };
+    async getAuthToken(token?: string): Promise<AuthTokenResponse> {
 
-        return this.get('/auth/token', { query: query, headers: { "authorization": undefined } as any });
+        return fetch(`${this.tokenServerUrl}/token/issue`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        })
+            .then(response => response.json())
+            .then(data => data as AuthTokenResponse)
+            .catch(error => {
+                console.error(`Error fetching token from ${this.tokenServerUrl}:`, { error });
+                throw error;
+            });
     }
 
     projects = new ProjectsApi(this);
