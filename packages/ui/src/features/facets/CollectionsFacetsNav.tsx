@@ -15,6 +15,16 @@ export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['fa
     void facets;
     const customFilterGroups: FilterGroup[] = [];
 
+    // Add ID filter as text type (first in order)
+    const idFilterGroup = {
+        name: 'id',
+        placeholder: 'Filter by ID',
+        type: 'text' as const,
+        multiple: false,
+        autoComplete: 'off'
+    };
+    customFilterGroups.push(idFilterGroup);
+
     // Add name filter as text type
     const nameFilterGroup = {
         name: 'name',
@@ -23,15 +33,6 @@ export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['fa
         multiple: false
     };
     customFilterGroups.push(nameFilterGroup);
-
-    // Add ID filter as text type
-    const idFilterGroup = {
-        name: 'id',
-        placeholder: 'Filter by ID',
-        type: 'text' as const,
-        multiple: false
-    };
-    customFilterGroups.push(idFilterGroup);
 
     return customFilterGroups;
 }
