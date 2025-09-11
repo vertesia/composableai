@@ -130,7 +130,7 @@ export async function identifyTextSections(
                     allSections.push(parts);
                 }
             } catch (error) {
-                log.warn(`Failed to process chunk ${i + 1}/${chunks.length} for object ${objectId}:`, error);
+                log.warn(`Failed to process chunk ${i + 1}/${chunks.length} for object ${objectId}:`, { error });
             }
         }
     }
