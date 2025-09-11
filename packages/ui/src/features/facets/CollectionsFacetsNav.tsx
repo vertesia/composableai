@@ -24,6 +24,15 @@ export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['fa
     };
     customFilterGroups.push(nameFilterGroup);
 
+    // Add ID filter as text type
+    const idFilterGroup = {
+        name: 'id',
+        placeholder: 'Filter by ID',
+        type: 'text' as const,
+        multiple: false
+    };
+    customFilterGroups.push(idFilterGroup);
+
     return customFilterGroups;
 }
 
