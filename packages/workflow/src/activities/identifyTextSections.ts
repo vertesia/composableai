@@ -33,25 +33,6 @@ function chunkInstrumentedText(instrumentedText: string, chunkSize: number, over
     return chunks;
 }
 
-function combineAndDeduplicateSections(allSections: any[][]): any[] {
-    const sectionMap = new Map<string, any>();
-    
-    for (const sections of allSections) {
-        for (const section of sections) {
-            if (section && typeof section === 'object') {
-                const key = `${section.title || ''}-${section.start_line || 0}-${section.end_line || 0}`;
-                
-                if (!sectionMap.has(key) || 
-                    (section.confidence && (!sectionMap.get(key)?.confidence || section.confidence > sectionMap.get(key).confidence))) {
-                    sectionMap.set(key, section);
-                }
-            }
-        }
-    }
-    
-    return Array.from(sectionMap.values()).sort((a, b) => (a.start_line || 0) - (b.start_line || 0));
-}
-
 export async function identifyTextSections(
     payload: DSLActivityExecutionPayload<identifyTextSectionsParams>,
 ) {
@@ -75,7 +56,7 @@ export async function identifyTextSections(
     const lines = text.split('\n');
     const instrumented = lines.map((l, i) => `{%${i}%}${l}`).join('\n');
 
-    let allSections: any[][] = [];
+    let allSections: any[] = [];
 
     if (instrumented.length <= chunkSize) {
         // Process as single chunk
@@ -126,8 +107,9 @@ export async function identifyTextSections(
                 );
 
                 const parts = infoRes.result.parts;
+                console.log(JSON.stringify(parts, null, 2));
                 if (parts && Array.isArray(parts) && parts.length > 0) {
-                    allSections.push(parts);
+                    allSections.push(...parts);
                 }
             } catch (error) {
                 log.warn(`Failed to process chunk ${i + 1}/${chunks.length} for object ${objectId}:`, { error });
@@ -140,14 +122,12 @@ export async function identifyTextSections(
         return;
     }
 
-    const combinedSections = combineAndDeduplicateSections(allSections);
-
     const existingMetadata = doc.metadata as DocumentMetadata | undefined;
     const updatedMetadata: DocumentMetadata = {
         type: "document",
         ...existingMetadata,
         generation_runs: existingMetadata?.generation_runs ?? [],
-        sections: combinedSections
+        sections: allSections
     };
 
     await client.objects.update(doc.id, {
