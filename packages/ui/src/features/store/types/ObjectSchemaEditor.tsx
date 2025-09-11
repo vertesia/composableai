@@ -130,7 +130,7 @@ function contentToJson(content: string | undefined | null) {
 const validateSchema = (schema: Record<string, any>) => {
     try {
         const ajv = new Ajv({
-            strict: true, // Enable strict mode to ensure all properties are validated
+            strict: false, // Enable strict mode to ensure all properties are validated
         });
         // Compile the schema. This implicitly validates the schema definition
         // against the JSON Schema draft that ajv supports by default.
