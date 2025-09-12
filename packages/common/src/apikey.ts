@@ -85,6 +85,10 @@ export interface AuthTokenPayload {
     iss: string; //issuer
     aud: string; //audience
     exp: number; //expires in (EPOC seconds)
+    tags?: string[]; //tags
+
+    permissions?: string[]; //permissions
+    scopes?: string[]; //scopes
 }
 
 
