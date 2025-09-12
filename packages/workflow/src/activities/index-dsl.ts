@@ -17,5 +17,4 @@ export { convertPdfToStructuredText } from "./media/processPdfWithTextract.js";
 export { transcribeMedia } from "./media/transcribeMediaWithGladia.js";
 export { notifyWebhook } from "./notifyWebhook.js";
 export { setDocumentStatus } from "./setDocumentStatus.js";
-export { identifyTextSections } from "./identifyTextSections.js";
 export { checkRateLimit } from "./rateLimiter.js";
