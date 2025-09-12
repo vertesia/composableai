@@ -17,7 +17,7 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
     const customFilterGroups: FilterGroup[] = [];
 
     customFilterGroups.push({
-        placeholder: 'Search by Workflow or Run ID',
+        placeholder: 'Workflow or Run ID',
         name: 'name',
         type: 'text',
         options: [],

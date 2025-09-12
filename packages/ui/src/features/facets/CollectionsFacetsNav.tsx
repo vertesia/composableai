@@ -18,7 +18,7 @@ export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['fa
     // Add name filter as text type
     const nameFilterGroup = {
         name: 'name',
-        placeholder: 'Filter by Name',
+        placeholder: 'Name',
         type: 'text' as const,
         multiple: false
     };
