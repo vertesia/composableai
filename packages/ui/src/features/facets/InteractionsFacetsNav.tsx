@@ -17,7 +17,7 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
     // Add name filter as string type
     const nameFilterGroup = {
         name: 'name',
-        placeholder: 'Filter by Name',
+        placeholder: 'Name',
         type: 'text' as const,
         multiple: false
     };
@@ -26,7 +26,7 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
     // Add prompt name filter as string type
     const promptNameFilterGroup = {
         name: 'prompt',
-        placeholder: 'Filter by Prompt Name',
+        placeholder: 'Prompt Name',
         type: 'text' as const,
         multiple: false
     };
