@@ -19,7 +19,7 @@ export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']):
     // Add name filter as text type
     const nameFilterGroup = {
         name: 'name',
-        placeholder: 'Filter by Name',
+        placeholder: 'Name',
         type: 'text' as const,
         multiple: false
     };
