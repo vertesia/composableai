@@ -124,9 +124,12 @@ export function useDocumentFilterHandler(search: SearchInterface) {
                         }
                     }
                 } else if (filter.multiple) {
-                    filterValue = Array.isArray(filter.value)
-                        ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
-                        : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];
+                    if (Array.isArray(filter.value)) {
+                        filterValue = filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v);
+                    } else {
+                        const singleValue = typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value;
+                        filterValue = [singleValue];
+                    }
                 } else {
                     // Single value - don't wrap in array
                     filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
