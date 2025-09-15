@@ -29,7 +29,8 @@ interface FilterProviderProps {
 const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterProviderProps) => {
   const url = new URL(window.location.href);
   const searchParams = url.searchParams;
-  
+  const [hasInitialized, setHasInitialized] = React.useState(false);
+
   useEffect(() => {
     try {
       const params = new URLSearchParams(searchParams.toString());
@@ -42,16 +43,22 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
             // Handle stringList with direct string array - always array format
             values = `[${(filter.value as string[]).map(item => encodeURIComponent(item)).join(',')}]`;
           } else if (Array.isArray(filter.value)) {
-            if (filter.multiple || filter.value.length > 1) {
-              // Handle multiple values - use array format
-              values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || '')).join(',')}]`;
+            if (filter.multiple) {
+              // Handle multiple filters - always use array format for multiple=true
+              values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || item || '')).join(',')}]`;
+            } else if (filter.value.length > 1) {
+              // Handle multiple values for non-multiple filters
+              values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || item || '')).join(',')}]`;
             } else {
-              // Single value in array - don't use array format
+              // Single value in array for non-multiple filter - don't use array format
               const firstValue = filter.value[0];
               if (typeof firstValue === 'string') {
                 values = encodeURIComponent(firstValue);
+              } else if (typeof firstValue === 'object' && firstValue?.value !== undefined) {
+                // Handle FilterOption object
+                values = encodeURIComponent(String(firstValue.value));
               } else {
-                values = encodeURIComponent(firstValue?.value || '');
+                values = encodeURIComponent(String(firstValue || ''));
               }
             }
           } else {
@@ -73,14 +80,14 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
 
   useEffect(() => {
     const filtersParam = searchParams.get('filters');
-    if (filtersParam) {
+    if (filtersParam && filterGroups.length > 0 && !hasInitialized) {
       try {
         // Parse format with array indicators: filterName:value or filterName:[value1,value2]
         const filterPairs = filtersParam.split(';');
         const parsedFilters = filterPairs.map(pair => {
           const [encodedName, valuesString] = pair.split(':');
           const name = decodeURIComponent(encodedName);
-          
+
           let values: string[];
           // Check if it's an array format [value1,value2]
           if (valuesString.startsWith('[') && valuesString.endsWith(']')) {
@@ -100,8 +107,8 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
             filterValue = values;
           } else if (group?.type === 'text') {
             // For text, return FilterOption array (single value for text inputs)
-            filterValue = values.length === 1 ? [{ value: values[0], label: values[0] }] : 
-                         values.map(value => ({ value, label: value }));
+            filterValue = values.length === 1 ? [{ value: values[0], label: values[0] }] :
+              values.map(value => ({ value, label: value }));
           } else {
             // For other types, find options with labels
             filterValue = values.map(value => {
@@ -123,21 +130,40 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
             });
           }
 
-          return {
+          if (group?.multiple && !valuesString.startsWith('[') && !valuesString.endsWith(']')) {
+            if (group.type === 'stringList') {
+              filterValue = values;
+            } else {
+              if (!Array.isArray(filterValue)) {
+                filterValue = [filterValue];
+              }
+            }
+          }
+
+          // Fallback: if group not found but we detected array format, assume it should be multiple
+          const shouldBeMultiple = group?.multiple || (!group && valuesString.startsWith('[') && valuesString.endsWith(']'));
+
+          const filter = {
             name,
             type: group?.type || 'select',
             placeholder: group?.placeholder,
             value: filterValue,
-            multiple: group?.multiple || false
+            multiple: shouldBeMultiple
           };
+
+          return filter;
         });
 
         setFilters(parsedFilters);
+        setHasInitialized(true);
       } catch (error) {
-        console.error("Failed to parse filters from URL:", error);
+        setHasInitialized(true);
       }
+    } else if (filterGroups.length > 0 && !hasInitialized) {
+      // No URL params but we have groups - mark as initialized
+      setHasInitialized(true);
     }
-  }, []);
+  }, [filterGroups, hasInitialized]);
 
   return (
     <FilterContext.Provider value={{ filters, setFilters, filterGroups }}>
@@ -316,7 +342,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
 
 const FilterBar = ({ className }: { className?: string }) => {
   const { filters, setFilters, filterGroups } = React.useContext(FilterContext);
-  
+
   return (
     <div className={cn(className)}>
       <Filters filters={filters} setFilters={setFilters} filterGroups={filterGroups} />
@@ -326,13 +352,13 @@ const FilterBar = ({ className }: { className?: string }) => {
 
 const FilterClear = ({ className }: { className?: string }) => {
   const { filters, setFilters } = React.useContext(FilterContext);
-  
+
   const hasActiveFilters = filters.filter((filter) => filter.value?.length > 0).length > 0;
-  
+
   if (!hasActiveFilters) {
     return null;
   }
-  
+
   return (
     <Button
       variant="outline"

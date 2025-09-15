@@ -33,10 +33,13 @@ export function VTypeFacet({ buckets, typeRegistry, type = 'select', multiple = 
     });
 
     const options = buckets.map((bucket) => {
-        const typeId = bucket._id || "Document";
+        const actualId = bucket._id;
+        const displayKey = actualId || "Document";
+        const typeData = typeDataMap.get(displayKey);
+        
         return {
-            value: typeId,
-            label: `(${bucket.count})`
+            value: actualId,
+            label: typeData ? `${typeData.name} (${typeData.count})` : `Unknown (${bucket.count})`
         };
     });
 
