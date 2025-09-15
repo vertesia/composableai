@@ -557,9 +557,10 @@ export interface ImprovePromptPayload {
 }
 
 export interface RateLimitRequestPayload {
-    environment_id: string,
+    interaction: string,
+    environment_id?: string,
     model_id?: string,
-    run_id: string
+    workflow_run_id?: string
 }
 
 export interface RateLimitRequestResponse {
