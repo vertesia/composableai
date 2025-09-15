@@ -223,49 +223,45 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
 }
 
 function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLActivityExecutionPayload<any>): RateLimitParams {
-    const rateLimitParams: RateLimitParams = {};
     const params = executionPayload.params;
+    let interactionId: string;
 
     switch (activity.name) {
         case "executeInteraction":
-            rateLimitParams.interactionId = params.interactionName;
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+            interactionId = params.interactionName;
             break;
-        
+
         case "generateDocumentProperties":
-            rateLimitParams.interactionId = params.interactionName || "sys:ExtractInformation";
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+            interactionId = params.interactionName || "sys:ExtractInformation";
             break;
-            
-        case "identifyTextSections": 
-            rateLimitParams.interactionId = params.interactionName || "sys:IdentifyTextSections";
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+
+        case "identifyTextSections":
+            interactionId = params.interactionName || "sys:IdentifyTextSections";
             break;
-            
+
         case "generateOrAssignContentType":
-            rateLimitParams.interactionId = params.interactionNames?.selectDocumentType || "sys:SelectDocumentType";
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+            interactionId = params.interactionNames?.selectDocumentType || "sys:SelectDocumentType";
             break;
-            
+
         case "chunkDocument":
-            rateLimitParams.interactionId = params.interactionName || "sys:ChunkDocument";
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+            interactionId = params.interactionName || "sys:ChunkDocument";
             break;
-        
+
         default:
             // For any other rate-limited activities, try to extract what we can
-            rateLimitParams.interactionId = params.interactionName;
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+            interactionId = params.interactionName;
             break;
     }
 
-    return rateLimitParams;
+    if (!interactionId) {
+        throw new Error(`No interaction ID could be determined for activity ${activity.name}`);
+    }
+
+    return {
+        interactionIdOrEndpoint: interactionId,
+        environmentId: params.environment,
+        modelId: params.model,
+    };
 }
 
 async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
