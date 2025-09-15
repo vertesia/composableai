@@ -86,8 +86,8 @@ export interface RunSearchQuery extends SimpleSearchQuery {
     end?: string;
     finish_reason?: string;
     created_by?: string;
-    workflow_run_ids?: string[] | string;
-    run_ids?: string[] | string;
+    workflow_run_ids?: string[];
+    run_ids?: string[];
 }
 
 export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {

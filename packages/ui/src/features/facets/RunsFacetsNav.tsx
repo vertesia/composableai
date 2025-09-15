@@ -159,6 +159,11 @@ export function useRunsFilterHandler(search: SearchInterface) {
                             : filter.value;
                 }
 
+                // Force array format for backend fields that expect arrays
+                if ((filterName === 'run_ids' || filterName === 'workflow_run_ids') && !Array.isArray(filterValue)) {
+                    filterValue = [filterValue];
+                }
+
                 search.query[filterName] = filterValue;
             }
         });
