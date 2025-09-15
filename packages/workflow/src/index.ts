@@ -22,6 +22,7 @@ export * from "./activities/renditions/generateImageRendition.js";
 export * from "./activities/renditions/generateVideoRendition.js";
 export * from "./activities/generateOrAssignContentType.js";
 export * from "./activities/notifyWebhook.js";
+export * from "./activities/rateLimiter.js";
 export * from "./activities/setDocumentStatus.js";
 export * from "./iterative-generation/activities/index.js";
 
