@@ -2,16 +2,45 @@
  * get a zeno client for a given token
  */
 
-import { VertesiaClient } from "@vertesia/client";
+import {
+    decodeJWT,
+    VertesiaClient,
+    VertesiaClientProps,
+} from "@vertesia/client";
 import { WorkflowExecutionBaseParams } from "@vertesia/common";
 import { WorkflowParamNotFoundError } from "../errors.js";
 
 export function getVertesiaClient(payload: WorkflowExecutionBaseParams) {
+    return new VertesiaClient(getVertesiaClientOptions(payload));
+}
+
+export function getVertesiaClientOptions(
+    payload: WorkflowExecutionBaseParams,
+): VertesiaClientProps {
     if (!payload.auth_token) {
         throw new WorkflowParamNotFoundError(
             "Authentication Token is missing from WorkflowExecutionPayload.authToken",
         );
     }
 
-    return VertesiaClient.fromAuthToken(payload.auth_token);
+    if (!payload.config?.studio_url) {
+        throw new WorkflowParamNotFoundError(
+            "Content Store URL is missing from WorkflowExecutionPayload.servers.storeUrl",
+        );
+    }
+
+    if (!payload.config?.store_url) {
+        throw new WorkflowParamNotFoundError(
+            "Content Store URL is missing from WorkflowExecutionPayload.servers.storeUrl",
+        );
+    }
+
+    const token = decodeJWT(payload.auth_token);
+
+    return {
+        serverUrl: payload.config.studio_url,
+        storeUrl: payload.config.store_url,
+        tokenServerUrl: token.iss,
+        apikey: payload.auth_token,
+    };
 }
