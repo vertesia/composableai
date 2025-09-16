@@ -10,7 +10,6 @@ import {
     sleep,
     startChild,
     UntypedActivities,
-    workflowInfo,
 } from "@temporalio/workflow";
 import {
     DSLActivityExecutionPayload,
@@ -223,49 +222,45 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
 }
 
 function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLActivityExecutionPayload<any>): RateLimitParams {
-    const rateLimitParams: RateLimitParams = {};
     const params = executionPayload.params;
+    let interactionId: string;
 
     switch (activity.name) {
         case "executeInteraction":
-            rateLimitParams.interactionId = params.interactionName;
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+            interactionId = params.interactionName;
             break;
-        
+
         case "generateDocumentProperties":
-            rateLimitParams.interactionId = params.interactionName || "sys:ExtractInformation";
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+            interactionId = params.interactionName || "sys:ExtractInformation";
             break;
-            
-        case "identifyTextSections": 
-            rateLimitParams.interactionId = params.interactionName || "sys:IdentifyTextSections";
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+
+        case "identifyTextSections":
+            interactionId = params.interactionName || "sys:IdentifyTextSections";
             break;
-            
+
         case "generateOrAssignContentType":
-            rateLimitParams.interactionId = params.interactionNames?.selectDocumentType || "sys:SelectDocumentType";
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+            interactionId = params.interactionNames?.selectDocumentType || "sys:SelectDocumentType";
             break;
-            
+
         case "chunkDocument":
-            rateLimitParams.interactionId = params.interactionName || "sys:ChunkDocument";
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+            interactionId = params.interactionName || "sys:ChunkDocument";
             break;
-        
+
         default:
             // For any other rate-limited activities, try to extract what we can
-            rateLimitParams.interactionId = params.interactionName;
-            rateLimitParams.environmentId = params.environment;
-            rateLimitParams.modelId = params.model;
+            interactionId = params.interactionName;
             break;
     }
 
-    return rateLimitParams;
+    if (!interactionId) {
+        throw new Error(`No interaction ID could be determined for activity ${activity.name}`);
+    }
+
+    return {
+        interactionIdOrEndpoint: interactionId,
+        environmentId: params.environment,
+        modelId: params.model,
+    };
 }
 
 async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
@@ -295,30 +290,6 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         });
     }
 
-    let systemProxy: ActivityInterfaceFor<UntypedActivities>;
-    if (patched('system-activity-taskqueue')) {
-        const info = workflowInfo();
-        let taskQueue = '';
-        if (info.taskQueue.startsWith('zeno-content/production')) {
-            taskQueue = 'system/production';
-        } else if (info.taskQueue.startsWith('zeno-content/preview')) {
-            taskQueue = 'system/preview';
-        } else if (info.taskQueue.startsWith('zeno-content/staging')) {
-            taskQueue = 'system/staging';
-        } else if (info.taskQueue.startsWith('zeno-content/dev')) {
-            taskQueue = 'system/dev';
-        } else {
-            log.error(`Unable to compute system task queue based on current task queue [${info.taskQueue}], falling back to the default one`);
-            taskQueue = info.taskQueue;
-        }
-        systemProxy = proxyActivities({
-            ...defaultOptions,
-            taskQueue: taskQueue,
-        });
-    } else {
-        systemProxy = defaultProxy;
-    }
-
     // call rate limiter depending on the activity type
     const rateLimitedActivities = [
         "chunkDocument",
@@ -335,14 +306,14 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         const rateLimitParams = buildRateLimitParams(activity, executionPayload);
 
         const rateLimitPayload = dslActivityPayload(basePayload, activity, rateLimitParams);
-        let rateLimitResult = await systemProxy.checkRateLimit(rateLimitPayload);
+        let rateLimitResult = await proxy.checkRateLimit(rateLimitPayload);
     
         while (rateLimitResult.delayMs > 0) {
             log.info(`Rate limit delay applied: ${rateLimitResult.delayMs}ms`);
             await sleep(rateLimitResult.delayMs);
 
             // Check again after sleeping
-            rateLimitResult = await systemProxy.checkRateLimit(rateLimitPayload);
+            rateLimitResult = await proxy.checkRateLimit(rateLimitPayload);
         }
     }
 
