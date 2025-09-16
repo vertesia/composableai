@@ -120,9 +120,9 @@ export class FilesApi extends ApiTopic {
                 if (res.ok) {
                     return res;
                 } else if (res.status === 404) {
-                    throw new Error(`File ${location} not found`); //TODO: type fetch error better with a fetch error class
+                    throw new Error(`File at ${url} not found`); //TODO: type fetch error better with a fetch error class
                 } else if (res.status === 403) {
-                    throw new Error(`File ${location} is forbidden`);
+                    throw new Error(`File at ${url} is forbidden`);
                 } else {
                     console.log(res);
                     throw new Error(
