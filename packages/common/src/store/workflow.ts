@@ -14,7 +14,9 @@ export enum ContentEventName {
 
 export interface Queue {
     name: string;
-    suffix: string;
+    // use either suffix or full name. fullname has precedence over suffix
+    queue_suffix?: string; // suffix to append to the base queue name
+    queue_full_name?: string; // full name
 }
 
 export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
