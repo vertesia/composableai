@@ -127,7 +127,7 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
         });
     }
 
-    const client = getVertesiaClient(payload);
+    const client = await getVertesiaClient(payload);
     const fetchSpecs = payload.activity.fetch;
     if (fetchSpecs) {
         const keys = Object.keys(fetchSpecs);
