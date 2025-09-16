@@ -10,7 +10,6 @@ import {
     sleep,
     startChild,
     UntypedActivities,
-    workflowInfo,
 } from "@temporalio/workflow";
 import {
     DSLActivityExecutionPayload,
