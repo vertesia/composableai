@@ -81,7 +81,8 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         if (!payload) {
             payload = decodeJWT(token);
         }
-        const endpoints = decodeEndpoints(payload!.endpoints);
+
+        const endpoints = decodeEndpoints(payload.endpoints);
         return await new VertesiaClient({
             serverUrl: endpoints.studio,
             storeUrl: endpoints.store,
@@ -341,12 +342,14 @@ function getEndpointsFromDomain(domain: string) {
         return {
             studio: `http://localhost:8091`,
             store: `http://localhost:8092`,
+            token: process.env.STS_URL ?? "https://sts-staging.vertesia.io",
         };
     } else {
         const url = `https://${domain}`;
         return {
             studio: url,
             store: url,
+            token: url.replace("api", "sts"),
         };
     }
 }
