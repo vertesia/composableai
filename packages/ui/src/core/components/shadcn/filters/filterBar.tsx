@@ -313,7 +313,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
           {"Filter"}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent className="w-[300px] p-0" align="start" sideOffset={4}>
         <Command>
           {
             filterGroups.find(group => group.name === selectedView)?.type === "select" && (
@@ -329,7 +329,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
               />
             )
           }
-          <CommandList className="max-h-[300px] overflow-y-auto">
+          <CommandList>
             <CommandGroup>
               {!selectedView ? getAvailableFilterGroups() : renderFilterOptions()}
             </CommandGroup>
