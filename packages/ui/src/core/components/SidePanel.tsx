@@ -53,7 +53,7 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
                             onClick={onClose}
                         />
                     )}
-                    
+
                     <div className="fixed inset-y-0 right-0 overflow-hidden">
                         <div className="absolute inset-0 overflow-hidden">
                             <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16">
@@ -71,17 +71,20 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
                                             className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-indigo-500 transition-colors"
                                             onMouseDown={handleDragStart}
                                         />
-                                        <div className="flex-1 flex flex-col overflow-y-scroll gap-4 bg-background py-6 shadow-xl">
-                                            <div className="px-2 sm:px-4">
-                                                <div className="flex items-start justify-between">
-                                                    <h2 className="w-full text-base font-semibold leading-6">
-                                                        <div className="text-2xl">{title ?? ""}</div>
-                                                    </h2>
-                                                    <div className="ml-3 flex h-7 items-center">
-                                                        <CloseButton onClose={onClose} />
+                                        <div className="flex-1 flex flex-col overflow-y-scroll gap-4 bg-background py-2 shadow-xl">
+                                            {title && (
+                                                <div className="px-2 sm:px-4">
+                                                    <div className="flex items-start justify-between">
+                                                        <h2 className="w-full text-base font-semibold leading-6">
+                                                            <div className="text-2xl">{title ?? ""}</div>
+                                                        </h2>
+                                                        <div className="ml-3 flex h-7 items-center">
+                                                            <CloseButton onClose={onClose} />
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            )}
+
                                             <div className="px-2 sm:px-4">
                                                 {children}
                                             </div>
