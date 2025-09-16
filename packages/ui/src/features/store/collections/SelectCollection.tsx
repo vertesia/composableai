@@ -2,9 +2,11 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 import { CollectionItem } from "@vertesia/common";
-import { Button, cn, ErrorBox, useDebounce, useFetch } from "@vertesia/ui/core";
-import { Popover, PopoverContent, PopoverTrigger } from "@vertesia/ui/core";
-import { Command, CommandEmpty, CommandGroup, CommandItem, CommandInput } from "@vertesia/ui/core";
+import {
+    Button, cn, ErrorBox, useDebounce, useFetch,
+    Popover, PopoverContent, PopoverTrigger,
+    Command, CommandEmpty, CommandGroup, CommandItem, CommandInput
+} from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 
 /**
