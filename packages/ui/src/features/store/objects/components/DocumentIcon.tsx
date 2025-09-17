@@ -15,6 +15,36 @@ interface DocumentIconProps {
     selection: DocumentSelection;
     onRowClick?: (object: ContentObjectItem) => void;
 }
+
+export function DocumentIconSkeleton({ isLoading = false, counts = 6 }: { isLoading?: boolean, counts?: number }) {
+    if (!isLoading) {
+        return null
+    }
+    return (
+        <div className='flex flex-wrap gap-2 justify-between'>
+            {Array(counts).fill(0).map((_, index) =>
+                <div key={index} className="w-[15vw] animate-pulse">
+                    <Card className="relative flex flex-col border h-fit">
+                        <div className="h-48 bg-muted rounded-t-xl flex items-center justify-center text-muted">
+                            &nbsp;
+                        </div>
+                        <Separator className='bg-muted h-[2px]' />
+                        <CardContent className="p-2 flex flex-col">
+                            <div className="flex flex-col overflow-hidden">
+                                <div className="h-5 bg-muted rounded w-3/4 mb-2"></div>
+                                <div className="h-4 bg-muted rounded w-1/2"></div>
+                            </div>
+                            <div className="text-xs text-muted w-full flex justify-end mt-2">
+                                <div className="h-3 bg-muted rounded w-1/4"></div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+        </div>
+    )
+}
+
 export function DocumentIcon({ selection, document, onSelectionChange, onRowClick }: Readonly<DocumentIconProps>) {
     const { client } = useUserSession()
 
@@ -95,7 +125,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
                     }
                 </div>
                 {document.score && (
-                    <div className="text-xs text-muted w-full flex justify-end">    
+                    <div className="text-xs text-muted w-full flex justify-end">
                         Score: {(document.score).toFixed(4) ?? "-"}
                     </div>
                 )}

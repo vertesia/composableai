@@ -23,7 +23,7 @@ export function RowSkeleton({ columns }: { columns: number }) {
         <tr className="hover:bg-muted">
             {Array(columns).fill(0).map((_, index) =>
                 <td key={index}>
-                    <div className="animate-pulse rounded-xs h-5 bg-gray-200 dark:bg-gray-600"></div>
+                    <div className="animate-pulse rounded-xs h-5 bg-muted"></div>
                 </td>
             )}
         </tr>
