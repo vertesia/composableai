@@ -67,7 +67,7 @@ export default function InfoList() {
 
     return (
         <div className="w-full">
-            <VTabs defaultValue="user" tabs={tabs} fullWidth>
+            <VTabs defaultValue="user" tabs={tabs} fullWidth updateHash={false}>
                 <VTabsBar />
                 <VTabsPanel />
             </VTabs>
