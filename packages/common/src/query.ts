@@ -43,6 +43,7 @@ export interface SimpleSearchQuery {
 }
 
 export interface ObjectSearchQuery extends SimpleSearchQuery {
+    id?: string;
     createdFrom?: string;
     createdTo?: string;
     updatedFrom?: string;
@@ -86,6 +87,7 @@ export interface RunSearchQuery extends SimpleSearchQuery {
     finish_reason?: string;
     created_by?: string;
     workflow_run_ids?: string[];
+    run_ids?: string[];
 }
 
 export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {

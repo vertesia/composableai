@@ -1,7 +1,7 @@
 import { log } from "@temporalio/activity";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
-import { TruncateSpec } from "../utils/tokens.js";
+import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
 
 const INT_EXTRACT_INFORMATION = "sys:ExtractInformation";
@@ -55,8 +55,12 @@ export async function generateDocumentProperties(
         return undefined;
     };
 
+    const content = doc.text
+        ? truncByMaxTokens(doc.text, params.truncate || 30000)
+        : undefined;
+
     const promptData = {
-        content: doc.text ?? undefined,
+        content: content,
         image: getImageRef() ?? undefined,
         human_context: project?.configuration?.human_context ?? undefined,
     };

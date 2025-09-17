@@ -78,6 +78,12 @@ export async function imageResizer(
         const command = `convert`
         let args = [inputPath];
 
+        // Add JPEG shrink-on-load optimization
+        args.push("-define", `jpeg:size=${max_hw * 3}x${max_hw * 3}`);
+
+        // Remove metadata
+        args.push("-strip");
+
         // https://usage.imagemagick.org/filter/nicolas/#downsample
         // Add colorspace correction if enabled
         if (colorspaceCorrection) {
@@ -109,9 +115,6 @@ export async function imageResizer(
                     break;
             }
         }
-
-        // Add JPEG shrink-on-load optimization
-        args.push("-define", `jpeg:size=${max_hw * 3}x${max_hw * 3}`);
 
         // Resize operation
         args.push("-resize", `${max_hw}x${max_hw}>`);

@@ -1,73 +1,59 @@
 import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useState } from 'react';
-import { VStringFacet } from './utils/VStringFacet';
-import { VUserFacet } from './utils/VUserFacet';
 import { SearchInterface } from './utils/SearchInterface';
 
-interface WorkflowExecutionsFacetsNavProps {
+interface PromptsFacetsNavProps {
     facets: {
+        role?: any[];
         status?: any[];
-        initiated_by?: any[];
+        tags?: any[];
     };
     search: SearchInterface;
 }
 
-// Hook to create filter groups for workflow executions
-export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFacetsNavProps['facets']): FilterGroup[] {
+// Hook to create filter groups for prompts
+export function usePromptsFilterGroups(facets: PromptsFacetsNavProps['facets']): FilterGroup[] {
+    void facets;
     const customFilterGroups: FilterGroup[] = [];
 
-    customFilterGroups.push({
-        placeholder: 'Workflow or Run ID',
+    // Add name filter as text type
+    const nameFilterGroup = {
         name: 'name',
-        type: 'text',
-        options: [],
-    });
-
-    if (facets.status) {
-        const statusFilterGroup = VStringFacet({
-            search: null as any, // This will be provided by the search context
-            buckets: facets.status || [],
-            name: 'Status'
-        });
-        customFilterGroups.push(statusFilterGroup);
-    }
-
-    if (facets.initiated_by) {
-        const initiatedByFilterGroup = VUserFacet({
-            buckets: facets.initiated_by || [],
-            name: 'User'
-        });
-        customFilterGroups.push(initiatedByFilterGroup);
-    }
-
-    const dateAfterFilterGroup = {
-        name: 'start',
-        placeholder: 'Date After',
-        type: 'date' as const,
+        placeholder: 'Name',
+        type: 'text' as const,
         multiple: false
     };
-    customFilterGroups.push(dateAfterFilterGroup);
+    customFilterGroups.push(nameFilterGroup);
 
-    const dateBeforeFilterGroup = {
-        name: 'end',
-        placeholder: 'Date Before',
-        type: 'date' as const,
-        multiple: false
-    };
-    customFilterGroups.push(dateBeforeFilterGroup);
+    // Add role filter as select type if role facets are available
+    if (facets.role && facets.role.length > 0) {
+        const rolesFilterGroup = {
+            name: 'role',
+            placeholder: 'Role',
+            type: 'select' as const,
+            options: facets.role.map((facet: { _id: string; count: number }) => ({
+                label: facet._id,
+                value: facet._id,
+                count: facet.count
+            })),
+        };
+        customFilterGroups.push(rolesFilterGroup);
+    }
 
     return customFilterGroups;
 }
 
-// Hook to create filter change handler for workflow executions
-export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
+// Hook to create filter change handler for prompts
+export function usePromptsFilterHandler(search: SearchInterface) {
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
-            search.clearFilters();
+            // Clear filters without applying defaults - user wants to remove all filters
+            search.clearFilters(true, false);
             return;
         }
 
-        search.clearFilters(false);
+        // Clear all filters first without defaults, then apply new ones
+        search.clearFilters(false, false);
 
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
@@ -88,12 +74,7 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
                             : filter.value;
                 }
 
-                if (filterName === 'name') {
-                    search.query.search_term = filterValue;
-                    search.query.name = filterValue;
-                } else {
-                    search.query[filterName] = filterValue;
-                }
+                search.query[filterName] = filterValue;
             }
         });
 
@@ -101,14 +82,11 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
     };
 }
 
-// Legacy component for backward compatibility
-export function WorkflowExecutionsFacetsNav({
-    facets,
-    search,
-}: WorkflowExecutionsFacetsNavProps) {
+// Component for prompts filtering
+export function PromptsFacetsNav({ facets, search }: PromptsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
-    const filterGroups = useWorkflowExecutionsFilterGroups(facets);
-    const handleFilterLogic = useWorkflowExecutionsFilterHandler(search);
+    const filterGroups = usePromptsFilterGroups(facets);
+    const handleFilterLogic = usePromptsFilterHandler(search);
 
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
         const newFilters = typeof value === 'function' ? value(filters) : value;

@@ -12,6 +12,13 @@ export enum ContentEventName {
     api_request = "api_request",
 }
 
+export interface Queue {
+    name: string;
+    // use either suffix or full name. fullname has precedence over suffix
+    queue_suffix?: string; // suffix to append to the base queue name
+    queue_full_name?: string; // full name
+}
+
 export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     /**
      * The ref of the user who initiated the workflow.
@@ -72,14 +79,10 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     };
 
     /**
-     * Whether to route resource intensive tasks to a heavy load queue. Managed by the application.
+     *  List of enabled processing queues. Managed by the application.
      */
-    _enable_heavy_task_routing?: boolean;
+    _enabled_queues?: Queue[];
 
-    /**
-     * The suffix to append to the task queue name for heavy load routing. Managed by the application.
-     */
-    _heavy_task_queue_suffix?: string;
 }
 
 export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {

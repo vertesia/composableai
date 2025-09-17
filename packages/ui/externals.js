@@ -60,6 +60,7 @@ export const EXTERNALS = [
     "json-schema",
     "react-calendar",
     "framer-motion",
+    "react-resizable-panels",
     /^framer-motion\/.*/
 ];
 

@@ -1,10 +1,11 @@
-import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
+import { Button, Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useState } from 'react';
-import { VEnvironmentFacet } from './VEnvironmentFacet';
-import { VInteractionFacet } from './VInteractionFacet';
-import { VStringFacet } from './VStringFacet';
-import { VUserFacet } from './VUserFacet';
-import { SearchInterface } from './VFacetsNav';
+import { VEnvironmentFacet } from './utils/VEnvironmentFacet';
+import { VInteractionFacet } from './utils/VInteractionFacet';
+import { VStringFacet } from './utils/VStringFacet';
+import { VUserFacet } from './utils/VUserFacet';
+import { SearchInterface } from './utils/SearchInterface';
+import { RefreshCw } from 'lucide-react';
 
 interface RunsFacetsNavProps {
     facets: {
@@ -23,6 +24,14 @@ interface RunsFacetsNavProps {
 // Hook to create filter groups for runs
 export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): FilterGroup[] {
     const customFilterGroups: FilterGroup[] = [];
+
+    const runIdFilterGroup = {
+        name: 'run_ids',
+        placeholder: 'Run ID',
+        type: 'text' as const,
+        multiple: false
+    };
+    customFilterGroups.push(runIdFilterGroup);
 
     if (facets.interactions) {
         const interactionFilterGroup = VInteractionFacet({
@@ -108,6 +117,14 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
     };
     customFilterGroups.push(dateBeforeFilterGroup);
 
+    const workflowRunIdFilterGroup = {
+        name: 'workflow_run_ids',
+        placeholder: 'Workflow Run ID',
+        type: 'text' as const,
+        multiple: false
+    };
+    customFilterGroups.push(workflowRunIdFilterGroup);
+
     return customFilterGroups;
 }
 
@@ -130,16 +147,21 @@ export function useRunsFilterHandler(search: SearchInterface) {
                 if (filter.type === 'stringList') {
                     filterValue = filter.value.map(v => typeof v === 'string' ? v : v.value);
                 } else if (filter.multiple) {
-                    filterValue = Array.isArray(filter.value) 
+                    filterValue = Array.isArray(filter.value)
                         ? filter.value.map((v: any) => typeof v === 'object' && v.value ? v.value : v)
                         : [typeof filter.value === 'object' && (filter.value as any).value ? (filter.value as any).value : filter.value];
                 } else {
                     // Single value - don't wrap in array
                     filterValue = Array.isArray(filter.value) && filter.value[0] && typeof filter.value[0] === 'object'
                         ? (filter.value[0] as any).value
-                        : Array.isArray(filter.value) && filter.value[0] 
+                        : Array.isArray(filter.value) && filter.value[0]
                             ? filter.value[0]
                             : filter.value;
+                }
+
+                // Force array format for backend fields that expect arrays
+                if ((filterName === 'run_ids' || filterName === 'workflow_run_ids') && !Array.isArray(filterValue)) {
+                    filterValue = [filterValue];
                 }
 
                 search.query[filterName] = filterValue;
@@ -162,14 +184,23 @@ export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
         handleFilterLogic(newFilters);
     };
 
+    const handleRefetch = () => {
+        search.search();
+    }
+
     return (
         <FilterProvider
             filterGroups={filterGroups}
             filters={filters}
             setFilters={handleFilterChange}
         >
-            <div className="flex gap-2 items-center">
+            <div className='flex justify-between mb-1'>
                 <FilterBtn />
+                <Button onClick={handleRefetch} variant='outline' title="Refresh">
+                    <RefreshCw className="size-5" />
+                </Button>
+            </div>
+            <div className='flex gap-2 items-center'>
                 <FilterBar />
                 <FilterClear />
             </div>

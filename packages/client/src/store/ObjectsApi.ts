@@ -49,7 +49,7 @@ export interface ComputeFacetsResponse {
     type?: { _id: string; count: number }[];
     location?: { _id: string; count: number }[];
     status?: { _id: string; count: number }[];
-    total?: { count: number }[];
+    total?: number;
 }
 
 export interface SearchResponse {

@@ -20,3 +20,4 @@ export * from './command';
 export * from './checkbox';
 export * from './heading';
 export * from './text';
+export * from './resizeable';
