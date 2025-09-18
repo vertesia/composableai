@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { useUserSession } from "@vertesia/ui/session";
-import { Button, Spinner, useToast } from "@vertesia/ui/core";
+import { Button, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer } from "@vertesia/ui/widgets";
 import { ContentObject, ImageRenditionFormat } from "@vertesia/common";
 import { Copy, Download, SquarePen } from "lucide-react";
@@ -200,10 +200,10 @@ export function ContentOverview({
     }, []);
 
     return (
-        <div className="w-full">
-            <div className="flex flex-col lg:flex-row lg:gap-8">
-                <div className="w-full lg:w-1/2">
-                    <div className="h-[41px] text-lg font-semibold mb-4 border-b flex justify-between items-center">
+        <>
+            <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-200px)]">
+                <ResizablePanel className="min-w-[100px]">
+                    <div className="h-[41px] text-lg font-semibold mb-2 flex justify-between items-center">
                         <div className="flex items-center gap-1">
                             Properties
                             <Button
@@ -247,16 +247,24 @@ export function ContentOverview({
                         </div>
                     </div>
                     {object.properties ? (
-                        <JSONDisplay
-                            value={object.properties}
-                            viewCode={viewCode}
-                        />
+                        <div className="h-[calc(100vh-220px)] overflow-auto">
+                            <JSONDisplay
+                                value={object.properties}
+                                viewCode={viewCode}
+
+                            />
+                        </div>
                     ) : (
                         <div>No properties defined</div>
                     )}
+
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+                <ResizablePanel className="min-w-[100px]">
+                    {isLoadingText && <Spinner size="md" />}
                     {isImage && (
-                        <div className="my-4">
-                            <div className="h-[41px] text-lg font-semibold mb-4 border-b flex justify-between items-center">
+                        <div className="mb-4 px-2">
+                            <div className="h-[41px] text-lg font-semibold mb-2 flex justify-between items-center">
                                 <span className="py-1">Image</span>
                             </div>
                             {imageUrl ? (
@@ -270,130 +278,132 @@ export function ContentOverview({
                             )}
                         </div>
                     )}
-                </div>
 
-                <div className="w-full lg:w-1/2 mt-4 lg:mt-0">
-                    <div className="h-[41px] text-lg font-semibold mb-4 border-b flex justify-between items-center">
-                        <span className="py-1">Text</span>
-                        <div className="flex items-center gap-2">
-                            {text && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    title="Copy text"
-                                    onClick={() =>
-                                        handleCopyContent(text, "text")
-                                    }
-                                    className="flex items-center gap-2"
-                                >
-                                    <Copy className="h-4 w-4" />
-                                </Button>
-                            )}
-                            {(isMarkdownOrText || seemsMarkdown) && text && (
-                                <>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleExportDocx}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Download className="h-4 w-4" />
-                                        DOCX
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleExportPdf}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Download className="h-4 w-4" />
-                                        PDF
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                    {isLoadingText && <Spinner size="md" />}
                     {text ? (
-                        <div className="border shadow-xs rounded-xs max-w-7xl">
-                            {seemsMarkdown ? (
-                                <div className="vprose prose-sm p-1">
-                                    <MarkdownRenderer
-                                        components={{
-                                            a: ({ node, ...props }: { node?: any; href?: string; children?: React.ReactNode }) => {
-                                                const href = props.href || "";
-                                                if (href.includes("/store/objects/")) {
-                                                    return (
-                                                        <NavLink
-                                                            topLevelNav
-                                                            href={href}
-                                                            className="text-info"
-                                                        >
-                                                            {props.children}
-                                                        </NavLink>
-                                                    );
-                                                }
-                                                return <a {...props} data-debug="test" target="_blank" rel="noopener noreferrer" />;
-                                            },
-                                            p: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                                <p {...props} className={`my-0`} />
-                                            ),
-                                            pre: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                                <pre {...props} className={`my-2 p-2 rounded`} />
-                                            ),
-                                            code: ({
-                                                node,
-                                                className,
-                                                children,
-                                                ...props
-                                            }: {
-                                                node?: any;
-                                                className?: string;
-                                                children?: React.ReactNode;
-                                            }) => {
-                                                const match = /language-(\w+)/.exec(className || "");
-                                                const isInline = !match;
-                                                return (
-                                                    <code
-                                                        {...props}
-                                                        className={
-                                                            isInline
-                                                                ? `px-1.5 py-0.5 rounded`
-                                                                : "text-muted"
-                                                        }
-                                                    >
-                                                        {children}
-                                                    </code>
-                                                );
-                                            },
-                                            h1: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                                <h1 {...props} className={`font-bold text-2xl my-2`} />
-                                            ),
-                                            h2: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                                <h2 {...props} className={`font-bold text-xl my-2`} />
-                                            ),
-                                            h3: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                                <h3 {...props} className={`font-bold text-lg my-2`} />
-                                            ),
-                                            li: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                                <li {...props} />
-                                            ),
-                                        }}
-                                    >
-                                        {text}
-                                    </MarkdownRenderer>
+                        <>
+                            <div className="h-[41px] text-lg font-semibold mb-4 flex justify-between items-center px-2">
+                                <span className="py-1">Text</span>
+                                <div className="flex items-center gap-2">
+                                    {text && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            title="Copy text"
+                                            onClick={() =>
+                                                handleCopyContent(text, "text")
+                                            }
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    {(isMarkdownOrText || seemsMarkdown) && text && (
+                                        <>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={handleExportDocx}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Download className="h-4 w-4" />
+                                                DOCX
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={handleExportPdf}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Download className="h-4 w-4" />
+                                                PDF
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
-                            ) : (
-                                <pre className="text-wrap bg-muted text-muted p-2">
-                                    {text}
-                                </pre>
-                            )}
+                            </div>
+                            <div className="border shadow-xs rounded-xs max-w-7xl px-2">
+                                {seemsMarkdown ? (
+                                    <div className="vprose prose-sm p-1">
+                                        <MarkdownRenderer
+                                            components={{
+                                                a: ({ node, ...props }: { node?: any; href?: string; children?: React.ReactNode }) => {
+                                                    const href = props.href || "";
+                                                    if (href.includes("/store/objects/")) {
+                                                        return (
+                                                            <NavLink
+                                                                topLevelNav
+                                                                href={href}
+                                                                className="text-info"
+                                                            >
+                                                                {props.children}
+                                                            </NavLink>
+                                                        );
+                                                    }
+                                                    return <a {...props} data-debug="test" target="_blank" rel="noopener noreferrer" />;
+                                                },
+                                                p: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                    <p {...props} className={`my-0`} />
+                                                ),
+                                                pre: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                    <pre {...props} className={`my-2 p-2 rounded`} />
+                                                ),
+                                                code: ({
+                                                    node,
+                                                    className,
+                                                    children,
+                                                    ...props
+                                                }: {
+                                                    node?: any;
+                                                    className?: string;
+                                                    children?: React.ReactNode;
+                                                }) => {
+                                                    const match = /language-(\w+)/.exec(className || "");
+                                                    const isInline = !match;
+                                                    return (
+                                                        <code
+                                                            {...props}
+                                                            className={
+                                                                isInline
+                                                                    ? `px-1.5 py-0.5 rounded`
+                                                                    : "text-muted"
+                                                            }
+                                                        >
+                                                            {children}
+                                                        </code>
+                                                    );
+                                                },
+                                                h1: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                    <h1 {...props} className={`font-bold text-2xl my-2`} />
+                                                ),
+                                                h2: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                    <h2 {...props} className={`font-bold text-xl my-2`} />
+                                                ),
+                                                h3: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                    <h3 {...props} className={`font-bold text-lg my-2`} />
+                                                ),
+                                                li: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                                    <li {...props} />
+                                                ),
+                                            }}
+                                        >
+                                            {text}
+                                        </MarkdownRenderer>
+                                    </div>
+                                ) : (
+                                    <pre className="text-wrap bg-muted text-muted p-2">
+                                        {text}
+                                    </pre>
+                                )}
+                            </div>
+                        </>
+                    ) :
+                        <div className="px-2">
+                            <span className="py-1 text-lg font-semibold">Text</span>
+                            <div>No content</div>
                         </div>
-                    ) : (
-                        <div>No content</div>
-                    )}
-                </div>
-            </div>
+                    }
+                </ResizablePanel>
+            </ResizablePanelGroup>
 
             {/* Properties Editor Modal */}
             <PropertiesEditorModal
@@ -402,6 +412,6 @@ export function ContentOverview({
                 object={object}
                 refetch={refetch}
             />
-        </div>
+        </>
     );
 }
