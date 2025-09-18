@@ -12,6 +12,7 @@ export interface EnvProps {
     endpoints: {
         zeno: string,
         studio: string,
+        sts: string, // Security Token Service endpoint
     },
     firebase?: {
         apiKey: string,
