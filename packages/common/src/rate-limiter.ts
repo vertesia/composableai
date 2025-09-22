@@ -10,22 +10,23 @@ export interface RateLimiterCapacity {
 
 export interface RateLimiterBreakerState {
     state: 'open' | 'closed';
-    lastOpenedAt?: string;
-    consecutiveFailures?: number;
+    is_open: boolean;
+    last_opened_at?: string;
+    consecutive_failures?: number;
 }
 
 export interface RateLimiterModelStatus {
-    modelId: string;
+    model_id: string;
     admitted: number;
     delayed: number;
     capacity: RateLimiterCapacity;
     breaker: RateLimiterBreakerState;
-    lastUpdated: string;
+    last_updated: string;
 }
 
 export interface RateLimiterStatus {
-    environmentId: string;
-    modelId: string;
+    environment_id: string;
+    model_id: string;
     status: RateLimiterModelStatus;
 }
 
