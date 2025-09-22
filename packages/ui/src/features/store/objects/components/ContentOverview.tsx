@@ -52,7 +52,7 @@ export function ContentOverview({
                 <ResizableHandle withHandle />
 
                 <ResizablePanel className="min-w-[100px]">
-                    <DataTabs object={object} loadText={loadText ?? false} handleCopyContent={handleCopyContent} />
+                    <DataPanel object={object} loadText={loadText ?? false} handleCopyContent={handleCopyContent} />
                 </ResizablePanel>
             </ResizablePanelGroup>
 
@@ -74,8 +74,8 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 
     return (
         <>
-            <div className="h-[41px] text-lg font-semibold mb-2 flex justify-between items-center pt-2">
-                <div className="flex items-center gap-1 bg-muted p-1 rounded">
+            <div className="flex justify-between items-center px-2">
+                <div className="flex items-center gap-1 bg-muted mb-2 p-1 rounded">
                     <Button
                         variant={`${viewCode ? "ghost" : "primary"}`}
                         size="sm"
@@ -127,7 +127,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 
             {
                 object.properties ? (
-                    <div className="h-[calc(100vh-220px)] overflow-auto">
+                    <div className="h-[calc(100vh-220px)] overflow-auto px-2">
                         <JSONDisplay
                             value={object.properties}
                             viewCode={viewCode}
@@ -135,7 +135,9 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
                         />
                     </div>
                 ) : (
-                    <div>No properties defined</div>
+                    <div className="h-[calc(100vh-220px)] overflow-auto px-2">
+                        <div>No properties defined</div>
+                    </div>
                 )
             }
             {/* Properties Editor Modal */}
@@ -149,17 +151,38 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
     );
 }
 
-function DataTabs({ object, loadText, handleCopyContent }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
+function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
+    const { store } = useUserSession();
     const [viewImage, setViewImage] = useState(false);
 
     const content = object.content;
     const isImage =
         content && content.type && content.type.startsWith("image/");
 
+    const [text, setText] = useState<string | undefined>(object.text);
+    const [isLoadingText, setIsLoadingText] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (loadText && !text) {
+            setIsLoadingText(true);
+            store.objects
+                .getObjectText(object.id)
+                .then((res) => {
+                    setText(res.text);
+                })
+                .catch((err) => {
+                    console.error("Failed to load text", err);
+                })
+                .finally(() => {
+                    setIsLoadingText(false);
+                });
+        }
+    }, [loadText]);
+
     return (
         <>
-            <div className="flex justify-between items-center mb-4 px-2">
-                <div className="flex items-center gap-1 bg-muted p-1 rounded">
+            <div className="flex justify-between items-center px-2">
+                <div className="flex items-center gap-1 bg-muted mb-2 p-1 rounded">
                     <Button
                         variant={`${viewImage ? "ghost" : "primary"}`}
                         size="sm"
@@ -180,67 +203,36 @@ function DataTabs({ object, loadText, handleCopyContent }: { object: ContentObje
                     }
 
                 </div>
-                {!viewImage && <TextActions />}
+                {!viewImage && <TextActions object={object} text={text} handleCopyContent={handleCopyContent} />}
             </div>
             {
                 viewImage ? (
                     <ImagePanel object={object} />
                 ) : (
-                    <TextPanel object={object} loadText={loadText} handleCopyContent={handleCopyContent} />
+                    isLoadingText ? (
+                        <div className="flex justify-center items-center h-[calc(100vh-260px)]">
+                            <Spinner size="lg" />
+                        </div>
+                    ) : (
+                        <TextPanel object={object} text={text} />
+                    )
                 )
             }
         </>
     );
 }
 
-function TextActions() {
-    return (
-        <div className="h-[41px] text-lg font-semibold mb-4 flex justify-between items-center px-2">
-            <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" title="Copy text" className="flex items-center gap-2">
-                    <Copy className="size-4" />
-                </Button>
-                <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                    <Download className="size-4" />
-                    DOCX
-                </Button>
-                <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                    <Download className="size-4" />
-                    PDF
-                </Button>
-            </div>
-        </div>
-    );
-}
-
-function TextPanel({ object, loadText, handleCopyContent }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
+function TextActions({ object, text, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, text: string | undefined }) {
+    const { client } = useUserSession();
     const toast = useToast();
-    const { client, store } = useUserSession();
-    const [text, setText] = useState<string | undefined>(object.text);
-    const [isLoadingText, setIsLoadingText] = useState<boolean>(false);
-    const content = object.content;
 
-    useEffect(() => {
-        if (loadText && !text) {
-            setIsLoadingText(true);
-            store.objects
-                .getObjectText(object.id)
-                .then((res) => {
-                    setText(res.text);
-                })
-                .catch((err) => {
-                    console.error("Failed to load text", err);
-                })
-                .finally(() => {
-                    setIsLoadingText(false);
-                });
-        }
-    }, [loadText]);
+    const content = object.content;
 
     const isMarkdownOrText =
         content &&
         content.type &&
         (content.type === "text/markdown" || content.type === "text/plain");
+
     // Check for markdown indicators, ignoring any HTML comments
     const seemsMarkdown =
         text &&
@@ -319,133 +311,203 @@ function TextPanel({ object, loadText, handleCopyContent }: { object: ContentObj
 
     const handleExportDocx = () => handleExportDocument("docx");
     const handleExportPdf = () => handleExportDocument("pdf");
+    return (
+        <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
+            <div className="flex items-center gap-2">
+                {text && (
+                    <Button variant="ghost" size="sm" title="Copy text" className="flex items-center gap-2" onClick={() => handleCopyContent(text, "text")}>
+                        <Copy className="size-4" />
+                    </Button>
+                )}
+                {(isMarkdownOrText || seemsMarkdown) && text && (
+                    <>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleExportDocx}
+                            className="flex items-center gap-2"
+                        >
+                            <Download className="size-4" />
+                            DOCX
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleExportPdf}
+                            className="flex items-center gap-2"
+                        >
+                            <Download className="size-4" />
+                            PDF
+                        </Button>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function TextPanel({ object, text }: { object: ContentObject, text: string | undefined }) {
+    const toast = useToast();
+    const { client } = useUserSession();
+
+    // Check for markdown indicators, ignoring any HTML comments
+    const seemsMarkdown =
+        text &&
+        // Look for markdown indicators
+        (text.includes("\n#") ||
+            text.includes("\n*") ||
+            text.includes("\n+") ||
+            text.includes("!["));
+
+    const handleExportDocument = async (format: "docx" | "pdf") => {
+        try {
+            // Request document rendition from the server
+            const response = await client.objects.getRendition(object.id, {
+                format: format as any, // We're extending the format type
+                generate_if_missing: true,
+                sign_url: true,
+            });
+
+            if (response.status === "generating") {
+                toast({
+                    status: "info",
+                    title: "Generating document",
+                    description: `Please wait while we prepare your ${format.toUpperCase()} file...`,
+                    duration: 5000,
+                });
+
+                // Poll for completion
+                setTimeout(() => handleExportDocument(format), 3000);
+                return;
+            }
+
+            if (response.status === "failed") {
+                throw new Error("Document generation failed");
+            }
+
+            // Download the generated file or open in new window
+            if (response.renditions && response.renditions.length > 0) {
+                const downloadUrl = response.renditions[0];
+
+                if (format === 'pdf') {
+                    // Open PDF in new window
+                    window.open(downloadUrl, '_blank');
+                    toast({
+                        status: "success",
+                        title: "PDF opened",
+                        description: "PDF document opened in a new window",
+                        duration: 2000,
+                    });
+                } else {
+                    // Download DOCX file
+                    const link = document.createElement("a");
+                    link.href = downloadUrl;
+                    link.download = `${object.name || "document"}.${format}`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    toast({
+                        status: "success",
+                        title: "Document exported",
+                        description: `Successfully exported to ${format.toUpperCase()} format`,
+                        duration: 2000,
+                    });
+                }
+            }
+        } catch (err) {
+            console.error(`Failed to export document as ${format}:`, err);
+            toast({
+                status: "error",
+                title: "Export failed",
+                description: `Failed to export document to ${format.toUpperCase()} format`,
+                duration: 5000,
+            });
+        }
+    };
 
     return (
-        <>
-            {isLoadingText && <Spinner size="md" />}
-
-            {text ? (
-                <>
-                    <div className="h-[41px] text-lg font-semibold mb-4 flex justify-between items-center px-2">
-                        <div className="flex items-center gap-2">
-                            {text && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    title="Copy text"
-                                    onClick={() =>
-                                        handleCopyContent(text, "text")
-                                    }
-                                    className="flex items-center gap-2"
-                                >
-                                    <Copy className="size-4" />
-                                </Button>
-                            )}
-                            {(isMarkdownOrText || seemsMarkdown) && text && (
-                                <>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleExportDocx}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Download className="size-4" />
-                                        DOCX
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleExportPdf}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Download className="size-4" />
-                                        PDF
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                    <div className="shadow-xs rounded-xs max-w-7xl px-2">
-                        {seemsMarkdown ? (
-                            <div className="vprose prose-sm p-1">
-                                <MarkdownRenderer
-                                    components={{
-                                        a: ({ node, ...props }: { node?: any; href?: string; children?: React.ReactNode }) => {
-                                            const href = props.href || "";
-                                            if (href.includes("/store/objects/")) {
-                                                return (
-                                                    <NavLink
-                                                        topLevelNav
-                                                        href={href}
-                                                        className="text-info"
-                                                    >
-                                                        {props.children}
-                                                    </NavLink>
-                                                );
-                                            }
-                                            return <a {...props} data-debug="test" target="_blank" rel="noopener noreferrer" />;
-                                        },
-                                        p: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                            <p {...props} className={`my-0`} />
-                                        ),
-                                        pre: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                            <pre {...props} className={`my-2 p-2 rounded`} />
-                                        ),
-                                        code: ({
-                                            node,
-                                            className,
-                                            children,
-                                            ...props
-                                        }: {
-                                            node?: any;
-                                            className?: string;
-                                            children?: React.ReactNode;
-                                        }) => {
-                                            const match = /language-(\w+)/.exec(className || "");
-                                            const isInline = !match;
+        text ? (
+            <>
+                <div className="max-w-7xl px-2">
+                    {seemsMarkdown ? (
+                        <div className="vprose prose-sm p-1">
+                            <MarkdownRenderer
+                                components={{
+                                    a: ({ node, ...props }: { node?: any; href?: string; children?: React.ReactNode }) => {
+                                        const href = props.href || "";
+                                        if (href.includes("/store/objects/")) {
                                             return (
-                                                <code
-                                                    {...props}
-                                                    className={
-                                                        isInline
-                                                            ? `px-1.5 py-0.5 rounded`
-                                                            : "text-muted"
-                                                    }
+                                                <NavLink
+                                                    topLevelNav
+                                                    href={href}
+                                                    className="text-info"
                                                 >
-                                                    {children}
-                                                </code>
+                                                    {props.children}
+                                                </NavLink>
                                             );
-                                        },
-                                        h1: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                            <h1 {...props} className={`font-bold text-2xl my-2`} />
-                                        ),
-                                        h2: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                            <h2 {...props} className={`font-bold text-xl my-2`} />
-                                        ),
-                                        h3: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                            <h3 {...props} className={`font-bold text-lg my-2`} />
-                                        ),
-                                        li: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                            <li {...props} />
-                                        ),
-                                    }}
-                                >
-                                    {text}
-                                </MarkdownRenderer>
-                            </div>
-                        ) : (
-                            <pre className="text-wrap bg-muted text-muted p-2">
+                                        }
+                                        return <a {...props} data-debug="test" target="_blank" rel="noopener noreferrer" />;
+                                    },
+                                    p: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                        <p {...props} className={`my-0`} />
+                                    ),
+                                    pre: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                        <pre {...props} className={`my-2 p-2 rounded`} />
+                                    ),
+                                    code: ({
+                                        node,
+                                        className,
+                                        children,
+                                        ...props
+                                    }: {
+                                        node?: any;
+                                        className?: string;
+                                        children?: React.ReactNode;
+                                    }) => {
+                                        const match = /language-(\w+)/.exec(className || "");
+                                        const isInline = !match;
+                                        return (
+                                            <code
+                                                {...props}
+                                                className={
+                                                    isInline
+                                                        ? `px-1.5 py-0.5 rounded`
+                                                        : "text-muted"
+                                                }
+                                            >
+                                                {children}
+                                            </code>
+                                        );
+                                    },
+                                    h1: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                        <h1 {...props} className={`font-bold text-2xl my-2`} />
+                                    ),
+                                    h2: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                        <h2 {...props} className={`font-bold text-xl my-2`} />
+                                    ),
+                                    h3: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                        <h3 {...props} className={`font-bold text-lg my-2`} />
+                                    ),
+                                    li: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
+                                        <li {...props} />
+                                    ),
+                                }}
+                            >
                                 {text}
-                            </pre>
-                        )}
-                    </div>
-                </>
-            ) :
-                <div className="px-2">
-                    <div>No content</div>
+                            </MarkdownRenderer>
+                        </div>
+                    ) : (
+                        <pre className="text-wrap bg-muted text-muted p-2">
+                            {text}
+                        </pre>
+                    )}
                 </div>
-            }
-        </>
+            </>
+        ) :
+            <div className="px-2">
+                <div>No content</div>
+            </div>
     );
 }
 
@@ -505,4 +567,4 @@ function ImagePanel({ object }: { object: ContentObject }) {
             )}
         </div>
     );
-}
+}``
