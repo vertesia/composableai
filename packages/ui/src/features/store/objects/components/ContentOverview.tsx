@@ -567,4 +567,4 @@ function ImagePanel({ object }: { object: ContentObject }) {
             )}
         </div>
     );
-}``
+}
