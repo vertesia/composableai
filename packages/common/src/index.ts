@@ -17,6 +17,7 @@ export * from "./Progress.js";
 export * from './project.js';
 export * from './prompt.js';
 export * from './query.js';
+export * from './rate-limiter.js';
 export * from './refs.js';
 export * from './runs.js';
 export * from "./store/index.js";
