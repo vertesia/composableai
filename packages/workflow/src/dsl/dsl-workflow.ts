@@ -290,6 +290,11 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         });
     }
 
+    if (patched('system-activity-taskqueue')) {
+        // hack: do nothing, remove later
+        // https://github.com/vertesia/composableai/pull/544/files
+    }
+
     // call rate limiter depending on the activity type
     const rateLimitedActivities = [
         "chunkDocument",
