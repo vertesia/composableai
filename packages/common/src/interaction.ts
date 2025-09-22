@@ -14,6 +14,7 @@ import { ExecutionTokenUsage } from "@llumiverse/common";
 import { ExecutionEnvironmentRef } from "./environment.js";
 import { ProjectRef } from "./project.js";
 import {
+    ExecutablePromptSegmentDef,
     PopulatedPromptSegmentDef,
     PromptSegmentDef,
     PromptTemplateRef,
@@ -166,28 +167,31 @@ export interface CachePolicy {
     ttl: number;
 }
 export type InteractionVisibility = "public" | "private";
-export interface Interaction {
+
+export interface InteractionData {
     readonly id: string;
     name: string;
     endpoint: string;
     description?: string;
+    project: string | ProjectRef;
+    tags: string[];
+    result_schema?: JSONSchema4 | SchemaRef;
+    model: string;
+    model_options?: ModelOptions;
+    environment: string | ExecutionEnvironmentRef;
+    restriction?: RunDataStorageLevel;
+    output_modality?: Modalities;
+}
+export interface Interaction extends InteractionData {
     status: InteractionStatus;
     parent?: string;
     // only used for versions (status === "published")
     visibility: InteractionVisibility;
     version: number;
-    tags: string[];
     test_data?: JSONObject;
     interaction_schema?: JSONSchema4 | SchemaRef;
-    result_schema?: JSONSchema4 | SchemaRef;
     cache_policy?: CachePolicy;
-    model: string;
-    model_options?: ModelOptions;
     prompts: PromptSegmentDef[];
-    output_modality?: Modalities;
-    environment: string | ExecutionEnvironmentRef;
-    restriction?: RunDataStorageLevel;
-    project: string | ProjectRef;
     // only for drafts - when it was last published
     last_published_at?: Date;
     created_by: string;
@@ -198,6 +202,14 @@ export interface Interaction {
 
 export interface PopulatedInteraction extends Omit<Interaction, "prompts"> {
     prompts: PopulatedPromptSegmentDef[];
+}
+
+/**
+ * Used to describe an interaction that can be executed. Contains only the interaction data useful
+ * to execute the interaction plus the prompt templates
+ */
+export interface ExecutableInteraction extends InteractionData {
+    prompts: ExecutablePromptSegmentDef[];
 }
 
 export interface InteractionCreatePayload
@@ -423,7 +435,7 @@ export interface RunSource {
     client_ip: string;
 }
 
-export interface ExecutionRun<P = any, R = any> {
+export interface BaseExecutionRun<P = any, R = any> {
     readonly id: string;
     /**
      * Only used by runs that were created by a virtual run to point toward the virtual run parent
@@ -442,8 +454,12 @@ export interface ExecutionRun<P = any, R = any> {
      */
     parameters: P; //params used to create the interaction, only in varies on?
     tags?: string[];
-    //TODO a string is returned when executing not the interaction object
-    interaction: Interaction;
+    // only set when the target interaction is a stored interaction
+    //TODO check the code where Interaction type is used (should be in run details)
+    // TODO when execution string is passed as the type of interaction
+    interaction: string | Interaction;
+    // only set when the target interaction is an in-code interaction
+    interaction_code?: string; // Interaction code name in case of in-code interaction (not stored in the DB as an Interaction document)
     //TODO a string is returned when execution not the env object
     environment: ExecutionEnvironmentRef;
     modelId: string;
@@ -474,6 +490,14 @@ export interface ExecutionRun<P = any, R = any> {
      * @since 0.60.0
      */
     workflow?: ExecutionRunWorkflow;
+}
+
+export interface ExecutionRun<P = any, R = any> extends BaseExecutionRun<P, R> {
+    interaction: string;
+}
+
+export interface PopulatedExecutionRun<P = any, R = any> extends BaseExecutionRun<P, R> {
+    interaction: Interaction;
 }
 
 export interface ExecutionRunWorkflow {

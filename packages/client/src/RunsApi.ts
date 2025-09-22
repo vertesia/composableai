@@ -5,6 +5,7 @@ import {
     ExecutionRun,
     ExecutionRunRef,
     FindPayload,
+    PopulatedExecutionRun,
     RunCreatePayload,
     RunListingFilters,
     RunListingQueryOptions,
@@ -65,6 +66,12 @@ export class RunsApi extends ApiTopic {
      **/
     retrieve<P = any, R = any>(id: string): Promise<ExecutionRun<P, R>> {
         return this.get("/" + id);
+    }
+
+    retrievePopulated<P = any, R = any>(id: string): Promise<PopulatedExecutionRun<P, R>> {
+        return this.get("/" + id, {
+            query: { populate: "true" },
+        });
     }
 
     /**

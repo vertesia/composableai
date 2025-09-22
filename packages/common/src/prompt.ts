@@ -1,7 +1,7 @@
-import type { JSONSchema4 } from "json-schema";
 import type { JSONObject } from "@llumiverse/common";
-import { ProjectRef } from "./project.js";
 import { PromptRole } from "@llumiverse/common";
+import type { JSONSchema4 } from "json-schema";
+import { ProjectRef } from "./project.js";
 
 export interface ChatPromptSchema {
     role: PromptRole.user | PromptRole.assistant;
@@ -31,6 +31,13 @@ export interface PopulatedPromptSegmentDef
     extends Omit<PromptSegmentDef, "template"> {
     template?: PromptTemplate;
 }
+/**
+ * Used for prompt rendering at interaction execution
+ */
+export interface ExecutablePromptSegmentDef
+    extends Omit<PromptSegmentDef, "template"> {
+    template?: ExecutablePromptTemplate;
+}
 
 export interface PromptTemplateRef {
     id: string;
@@ -50,22 +57,23 @@ export enum TemplateType {
     js = "js",
     jst = "jst",
 }
-
-export interface PromptTemplate {
+export interface ExecutablePromptTemplate {
+    role: PromptRole;
+    content: string;
+    content_type: TemplateType;
+    inputSchema?: JSONSchema4;
+}
+export interface PromptTemplate extends ExecutablePromptTemplate {
     id: string;
     name: string;
-    role: PromptRole;
     status: PromptStatus;
     version: number;
     // only to be used by published versions
     // the id draft version which is the source of this published version (only when published)
     parent?: string;
     description?: string;
-    content_type: TemplateType;
-    content: string;
     test_data?: JSONObject; // optional test data satisfying the schema
     script?: string; // cache the template output
-    inputSchema?: JSONSchema4;
     project: string | ProjectRef; // or projectRef? ObjectIdType;
     // The name of a field in the input data that is of the specified schema and on each the template will iterate.
     // If not specified then the schema will define the whole input data
