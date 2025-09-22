@@ -85,6 +85,8 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
 export async function setupActivity<ParamsT extends Record<string, any>>(
     payload: DSLActivityExecutionPayload<ParamsT>,
 ) {
+    const startTime = Date.now();
+
     const isDebugMode = !!payload.debug_mode;
 
     const vars = new Vars({
@@ -136,7 +138,8 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
     }
 
     const params = vars.resolve() as ParamsT;
-    log.info(`Activity ${payload.activity.name} setup complete`);
+    
+    log.info(`Activity ${payload.activity.name} setup complete`, { totalTime: Date.now() - startTime });
 
     return new ActivityContext<ParamsT>(payload, client, params);
 }
