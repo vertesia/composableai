@@ -342,7 +342,8 @@ export interface InteractionExecutionPayload {
     workflow?: ExecutionRunWorkflow;
 
     /**
-     * Only used by ad-hoc (temporary) interactions which defiens the prompt in the execution payload itself
+     * Only used by ad-hoc interactions which defines the prompt in the execution payload itself
+     * These are temporary interactions using "tmp:" suffix.
      */
     prompts?: InCodePrompt[];
 }
