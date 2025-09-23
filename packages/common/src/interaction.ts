@@ -3,6 +3,7 @@ import type {
     JSONSchema,
     Modalities,
     ModelOptions,
+    PromptRole,
     StatelessExecutionOptions,
     ToolDefinition,
     ToolUse,
@@ -19,6 +20,7 @@ import {
     PromptSegmentDef,
     PromptTemplateRef,
     PromptTemplateRefWithSchema,
+    TemplateType,
 } from "./prompt.js";
 import { ExecutionRunDocRef } from "./runs.js";
 import { AccountRef } from "./user.js";
@@ -28,6 +30,62 @@ export interface InteractionExecutionError {
     message: string;
     data?: any;
 }
+
+
+// ------------------ in code interactions -----------------
+export interface InCodePrompt {
+    role: PromptRole,
+    content: string,
+    content_type: TemplateType;
+    schema?: JSONSchema;
+}
+export interface InCodeInteraction {
+    /**
+     * The interaction code name. Required. 
+     * Should not include spaces. It is recommended to use kebab-case or camel-case.
+     * The endpoints must satisfy the following regexp: /^[a-zA-Z0-9-_]+$/. No whitespaces or special characters are allowed.
+     */
+    endpoint: string;
+
+    /**
+     * If not provided, the endpoint will be used.
+     */
+    name?: string;
+
+    /**
+     * An optional description of the interaction.
+     */
+    description?: string;
+
+    /**
+     * The JSON schema to be used for the result if any.
+     */
+    result_schema?: JSONSchema;
+
+    /**
+     * The modality of the interaction output. 
+     * If not specified Modalities.Text is assumed.
+     */
+    output_modality?: Modalities,
+
+    /**
+     * How to store the run data for executions of this interaction.
+     * Defaults to STANDARD.
+     */
+    storage?: RunDataStorageLevel;
+
+    /**
+     * Optional tags for the interaction.
+     */
+    tags?: string[];
+
+    /**
+     * The prompts composing the interaction. Required.
+     */
+    prompts: InCodePrompt[]
+
+}
+// ---------------------------------------------------------
 
 /**
  * The payload to query the interaction endpoints
@@ -282,6 +340,11 @@ export interface InteractionExecutionPayload {
      * The workflow related to this Interaction Run.
      */
     workflow?: ExecutionRunWorkflow;
+
+    /**
+     * Only used by ad-hoc (temporary) interactions which defiens the prompt in the execution payload itself
+     */
+    prompts?: InCodePrompt[];
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
