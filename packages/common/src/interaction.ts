@@ -521,7 +521,7 @@ export interface BaseExecutionRun<P = any, R = any> {
     // only set when the target interaction is a stored interaction
     //TODO check the code where Interaction type is used (should be in run details)
     // TODO when execution string is passed as the type of interaction
-    interaction: string | Interaction;
+    interaction?: string | Interaction;
     // only set when the target interaction is an in-code interaction
     interaction_code?: string; // Interaction code name in case of in-code interaction (not stored in the DB as an Interaction document)
     //TODO a string is returned when execution not the env object
@@ -557,11 +557,11 @@ export interface BaseExecutionRun<P = any, R = any> {
 }
 
 export interface ExecutionRun<P = any, R = any> extends BaseExecutionRun<P, R> {
-    interaction: string;
+    interaction?: string;
 }
 
 export interface PopulatedExecutionRun<P = any, R = any> extends BaseExecutionRun<P, R> {
-    interaction: Interaction;
+    interaction?: Interaction;
 }
 
 export interface ExecutionRunWorkflow {
@@ -597,7 +597,8 @@ export interface InteractionExecutionResult<P = any, R = any> extends ExecutionR
 }
 
 export interface ExecutionRunRef extends Omit<ExecutionRun, "result" | "parameters" | "interaction"> {
-    interaction: InteractionRef;
+    interaction?: InteractionRef;
+    interaction_code?: string;
 }
 
 export const ExecutionRunRefSelect = "-result -parameters -result_schema -prompt";
