@@ -114,12 +114,11 @@ export function DocumentUploadModal({
         if (!collectionData && !selectedFolder) return null;
 
         return (
-            <div className="mb-4 p-3 bg-primary rounded-md border border-primary">
-                <div className="flex items-center text-primary">
-                    <FolderIcon className="size-5 mr-2" />
+            <MessageBox className="mb-4" status="default" icon={<FolderIcon className="size-5" />}>
+                <div className="flex items-center">
                     <span className="font-medium">Upload Location:</span>
                 </div>
-                <div className="ml-7 text-sm text-primary mt-1">
+                <div className="text-sm mt-1">
                     {collectionData && (
                         <div className="flex items-center">
                             <span className="mr-1">Collection:</span>
@@ -133,7 +132,7 @@ export function DocumentUploadModal({
                         </div>
                     )}
                 </div>
-            </div>
+            </MessageBox>
         );
     };
 
@@ -167,7 +166,7 @@ export function DocumentUploadModal({
             setResult(null);
             setTitle(title);
             setDescription("");
-            
+
             // Set initial files if provided
             if (initialFiles && initialFiles.length > 0) {
                 setFiles(initialFiles);

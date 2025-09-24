@@ -27,7 +27,8 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
         const statusFilterGroup = VStringFacet({
             search: null as any, // This will be provided by the search context
             buckets: facets.status || [],
-            name: 'Status'
+            name: 'status',
+            placeholder: 'Status'
         });
         customFilterGroups.push(statusFilterGroup);
     }
@@ -35,7 +36,8 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
     if (facets.initiated_by) {
         const initiatedByFilterGroup = VUserFacet({
             buckets: facets.initiated_by || [],
-            name: 'User'
+            name: 'initiated_by',
+            placeholder: 'Initiated By'
         });
         customFilterGroups.push(initiatedByFilterGroup);
     }
