@@ -1,6 +1,7 @@
 import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError } from "../../errors.js";
+import { parseResultAsJson } from "@llumiverse/common";
 
 
 export interface UpdateDocumentFromInteractionRunParams {
@@ -28,7 +29,9 @@ export async function updateDocumentFromInteractionRun(payload: DSLActivityExecu
         return { status: "failed", error: "no-props" };
     }
 
-    await client.objects.update(objectId, docProps);
+    const jsonResult = parseResultAsJson(params.run.result);
+
+    await client.objects.update(objectId, jsonResult);
 
     return { status: "success" };
 }

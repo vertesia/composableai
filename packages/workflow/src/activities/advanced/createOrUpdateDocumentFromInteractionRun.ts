@@ -2,6 +2,7 @@ import { log } from "@temporalio/activity";
 import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError, DocumentNotFoundError } from "../../errors.js";
+import { parseResultAsJson, resultAsString } from "@llumiverse/common";
 
 interface CreateOrUpdateObjectFromInteractionRunParams {
     /**
@@ -68,28 +69,23 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
 
 
     const result = run.result;
-    const resultIsObject = typeof result === 'object';
+    const jsonResult = parseResultAsJson(run.result);
     const inputData = run.parameters;
 
-    let name: string;
-    if (resultIsObject) {
-        name = result['name'] || result["title"] || inputData['name'] || params.fallback_name || 'Untitled';
-    } else {
-        name = inputData['name'] || params.fallback_name || 'Untitled';
-    }
+    const name = jsonResult['name'] || jsonResult["title"] || inputData['name'] || params.fallback_name || 'Untitled';
 
     const docPayload = {
         name,
         parent: params.parent ?? undefined,
-        properties: resultIsObject ? result : {},
-        text: !resultIsObject ? result : undefined,
+        properties: jsonResult ? jsonResult : {},
+        text: !jsonResult ? result.map(resultAsString).join('\n') : undefined,
         type: type?.id,
         status: ContentObjectStatus.completed,
         generation_run_info: {
             id: run.id,
             date: new Date().toISOString(),
             model: run.modelId,
-            target: resultIsObject ? 'properties' : 'text'
+            target: jsonResult ? 'properties' : 'text'
         }
     };
 
