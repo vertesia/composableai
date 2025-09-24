@@ -19,6 +19,7 @@ import {
     DSLWorkflowExecutionPayload,
     DSLWorkflowSpec,
     getDocumentIds,
+    getTenantId,
     WorkflowExecutionPayload
 } from "@vertesia/common";
 import ms, { StringValue } from 'ms';
@@ -175,6 +176,7 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
             AccountId: [payload.account_id],
             DocumentId: getDocumentIds(payload),
             ProjectId: [payload.project_id],
+            TenantId: [getTenantId(payload.account_id, payload.project_id)],
             InitiatedBy: payload.initiated_by ? [payload.initiated_by] : [],
         },
     });
@@ -207,6 +209,7 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
             AccountId: [payload.account_id],
             DocumentId: getDocumentIds(payload),
             ProjectId: [payload.project_id],
+            TenantId: [getTenantId(payload.account_id, payload.project_id)],
             InitiatedBy: payload.initiated_by ? [payload.initiated_by] : [],
         },
     });
