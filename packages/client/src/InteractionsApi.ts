@@ -134,7 +134,7 @@ export default class InteractionsApi extends ApiTopic {
      **/
     execute<P = any, R = any>(id: string, payload: InteractionExecutionPayload = {},
         onChunk?: (chunk: string) => void): Promise<ExecutionRun<P, R>> {
-        return executeInteraction(this.client as VertesiaClient, id, payload, onChunk).catch(err => {
+        return executeInteraction<P, R>(this.client as VertesiaClient, id, payload, onChunk).catch(err => {
             if (err instanceof ServerError && err.payload?.id) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {
@@ -160,7 +160,7 @@ export default class InteractionsApi extends ApiTopic {
      */
     executeByName<P = any, R = any>(nameWithTag: string, payload: InteractionExecutionPayload = {},
         onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P, R>> {
-        return executeInteractionByName(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
+        return executeInteractionByName<P, R>(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
             if (err instanceof ServerError && err.payload?.id) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {
