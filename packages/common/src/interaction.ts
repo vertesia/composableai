@@ -435,7 +435,7 @@ export interface ExecutionRun<P = any, R = any> {
         selected?: boolean;
         scores?: Record<string, number>;
     };
-    result: CompletionResult[] | R;
+    result: CompletionResult[] | R; // Any new result will actually be CompletionResult[], the old typing is R.
     /**
      * The parameters used to create the interaction.
      * If the parameters contains the special property "@memory" it will be used
