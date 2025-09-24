@@ -15,6 +15,7 @@ import {
   InteractionExecutionParams,
   executeInteractionFromActivity,
 } from "./executeInteraction.js";
+import { parseResultAsJson } from "@llumiverse/common";
 
 const INT_SELECT_DOCUMENT_TYPE = "sys:SelectDocumentType";
 const INT_GENERATE_METADATA_MODEL = "sys:GenerateMetadataModel";
@@ -133,12 +134,15 @@ export async function generateOrAssignContentType(
     },
   );
 
-  log.info("Selected Content Type Result: " + JSON.stringify(res.result));
+  const jsonResult = parseResultAsJson(res.result);
+
+  log.info("Selected Content Type Result: " + JSON.stringify(jsonResult));
+  
 
   //if type is not identified or not present in the database, generate a new type
   let selectedType: { id: string; name: string } | undefined = undefined;
 
-  selectedType = types.find((t) => t.name === res.result.document_type);
+  selectedType = types.find((t) => t.name === jsonResult.document_type);
 
   if (!selectedType) {
     log.warn("Document type not identified: starting type generation");
@@ -153,7 +157,7 @@ export async function generateOrAssignContentType(
 
   if (!selectedType) {
     log.error("Type not found: ", res.result);
-    throw new Error("Type not found: " + res.result.document_type);
+    throw new Error("Type not found: " + jsonResult.document_type);
   }
 
   //update object with selected type
@@ -193,18 +197,20 @@ async function generateNewType(
     },
   );
 
-  if (!genTypeRes.result.document_type) {
+  const jsonResult = parseResultAsJson(genTypeRes.result);
+
+  if (!jsonResult.document_type) {
     log.error("No name generated for type", genTypeRes);
     throw new Error("No name generated for type");
   }
 
-  log.info("Generated schema for type", genTypeRes.result.metadata_schema);
+  log.info("Generated schema for type", jsonResult.metadata_schema);
   const typeData: CreateContentObjectTypePayload = {
-    name: genTypeRes.result.document_type,
-    description: genTypeRes.result.document_type_description,
-    object_schema: genTypeRes.result.metadata_schema,
-    is_chunkable: genTypeRes.result.is_chunkable,
-    table_layout: genTypeRes.result.table_layout,
+    name: jsonResult.document_type,
+    description: jsonResult.document_type_description,
+    object_schema: jsonResult.metadata_schema,
+    is_chunkable: jsonResult.is_chunkable,
+    table_layout: jsonResult.table_layout,
   };
 
   const type = await client.types.create(typeData);

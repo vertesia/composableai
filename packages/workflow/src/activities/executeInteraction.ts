@@ -158,11 +158,11 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         
         // Handle image uploads if the result contains base64 images
         if (res.output_modality === Modalities.image) {
-            const images = res.result.images;
+            const images = res.result.filter(r => r.type === 'image');
             const uploadedImages = await Promise.all(
-                images.map((image: string, index: number) => {
+                images.map((image, index: number) => {
                     // Extract base64 data and create buffer
-                    const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, "");
+                    const base64Data = image.value.replace(/^data:image\/[a-z]+;base64,/, "");
                     const buffer = Buffer.from(base64Data, 'base64');
                     
                     // Generate filename
@@ -182,7 +182,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                     return client.files.uploadFile(source);
                 })
             );
-            res.result.images = uploadedImages;
+            res.result = uploadedImages.map(file => ({ type: "image", value: file }));
         }
 
         return projectResult(payload, params, res, {
