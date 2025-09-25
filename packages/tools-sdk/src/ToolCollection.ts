@@ -89,7 +89,7 @@ export class ToolCollection implements Iterable<Tool<any>> {
         return this.tools.getTools().map(callback);
     }
 
-    async execute(ctx: Context) {
+    async execute(ctx: Context): Promise<Response> {
         let payload: ToolExecutionPayload<any> | undefined;
         try {
             payload = await readPayload(ctx);
