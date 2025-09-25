@@ -19,10 +19,10 @@ export async function EventSourceProvider(): Promise<typeof EventSource> {
  * @param payload InteractionExecutionPayload
  * @param onChunk callback to be called when the next chunk of the response is available
  */
-export async function executeInteraction<P = any, R = any>(client: VertesiaClient,
+export async function executeInteraction<P = any>(client: VertesiaClient,
     interactionId: string,
     payload: InteractionExecutionPayload = {},
-    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P, R>> {
+    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
     const response = await client.runs.create({
         ...payload, interaction: interactionId, stream
@@ -52,10 +52,10 @@ export async function executeInteraction<P = any, R = any>(client: VertesiaClien
  * @param onChunk
  * @returns
  */
-export async function executeInteractionByName<P = any, R = any>(client: VertesiaClient,
+export async function executeInteractionByName<P = any>(client: VertesiaClient,
     interaction: string,
     payload: InteractionExecutionPayload = {},
-    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P, R>> {
+    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
     const response = await client.post('/api/v1/execute', {
         payload: {

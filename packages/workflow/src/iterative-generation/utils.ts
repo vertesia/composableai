@@ -15,7 +15,7 @@ export interface ExecuteOptions {
     result_schema?: Record<string, any>;
 }
 
-export async function execute<T = any>(client: VertesiaClient, options: ExecuteOptions): Promise<ExecutionRun<any, T>> {
+export async function execute(client: VertesiaClient, options: ExecuteOptions): Promise<ExecutionRun> {
     return client.interactions.executeByName(options.interaction, {
         data: {
             ...options.memory_mapping,
@@ -30,7 +30,7 @@ export async function execute<T = any>(client: VertesiaClient, options: ExecuteO
     });
 }
 
-export function executeWithVars<T = any>(client: VertesiaClient, interaction: string, vars: Record<string, any>, mapping?: Record<string, any>, result_schema?: Record<string, any>): Promise<ExecutionRun<any, T>> {
+export function executeWithVars(client: VertesiaClient, interaction: string, vars: Record<string, any>, mapping?: Record<string, any>, result_schema?: Record<string, any>): Promise<ExecutionRun> {
     if (mapping) {
         mapping = { ...vars.input_mapping, ...mapping };
     } else {
