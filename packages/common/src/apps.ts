@@ -49,6 +49,13 @@ export interface AppManifestData {
     tool_collections?: string[]
 
     /**
+     * An URL providing interactions definitions in JSON format.
+     * GET interactions_url should return a JSON object with the interactions definitions.
+     * GET `${interactions_url}/${endpoint}` should return a JSON object with the interaction definition for the specified endpoint.
+     */
+    interactions?: string;
+
+    /**
      * A JSON chema for the app installation settings.
      */
     settings_schema?: JSONSchema;
