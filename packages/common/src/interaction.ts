@@ -402,7 +402,7 @@ export interface UserMessagePayload extends ResumeConversationPayload {
     message: string;
 }
 
-export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results" | "tools">
+export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results">
 
 // ================= end async execution payloads ====================
 
