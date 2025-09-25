@@ -7,7 +7,7 @@ import { Env } from "@vertesia/ui/env";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from "./UserSession";
 
 const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app"];
-const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
+const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/?sts=https://sts-staging.vertesia.io";
 
 function shouldRedirectToCentralAuth() {
     // Authentication is not supported in Docker environment.
