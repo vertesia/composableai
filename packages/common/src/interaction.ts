@@ -41,16 +41,25 @@ export interface InCodePrompt {
 }
 export interface InCodeInteraction {
     /**
-     * The interaction code name. Required. 
-     * Should not include spaces. It is recommended to use kebab-case or camel-case.
-     * The endpoints must satisfy the following regexp: /^[a-zA-Z0-9-_]+$/. No whitespaces or special characters are allowed.
+     * The id of the interaction. Required.
+     * The id is a unique identifier for the interaction.
+     * It is recommended to use a URL safe string and not include spaces. 
+     * The id composaed  by some namespace or prefix and the interaction name.
+     * Example: sys:generic_question, app:review_contract, tmp:my_temp_interaction
      */
-    endpoint: string;
+    id: string;
 
     /**
-     * If not provided, the endpoint will be used.
+     * The interaction code name. Required. 
+     * Should be a URL safe string and not include spaces. It is recommended to use kebab-case or camel-case.
+     * The endpoints must satisfy the following regexp: /^[a-zA-Z0-9-_]+$/. No whitespaces or special characters are allowed.
      */
-    name?: string;
+    name: string;
+
+    /**
+     * A title for the interaction. If not provided, the endpoint will be used.
+     */
+    title?: string;
 
     /**
      * An optional description of the interaction.
@@ -80,10 +89,18 @@ export interface InCodeInteraction {
     tags?: string[];
 
     /**
+     * Default options for the model to be used when executing this interaction.
+     * (like temperature etc)
+     */
+    model_options?: ModelOptions;
+
+    /**
      * The prompts composing the interaction. Required.
      */
     prompts: InCodePrompt[]
 
+}
+export interface InteractionSpec extends Omit<InCodeInteraction, 'id'> {
 }
 // ---------------------------------------------------------
 
@@ -234,9 +251,9 @@ export interface InteractionData {
     project: string | ProjectRef;
     tags: string[];
     result_schema?: JSONSchema4 | SchemaRef;
-    model: string;
+    environment?: string | ExecutionEnvironmentRef;
+    model?: string;
     model_options?: ModelOptions;
-    environment: string | ExecutionEnvironmentRef;
     restriction?: RunDataStorageLevel;
     output_modality?: Modalities;
 }
