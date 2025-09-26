@@ -106,7 +106,7 @@ export async function generateDocumentProperties(
     log.info(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
     await client.objects.update(doc.id, {
         properties: {
-            ...infoRes.result,
+            ...parseCompletionResultsToJson(infoRes.result),
             etag: doc.text_etag,
         },
         text: getText(),
