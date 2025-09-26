@@ -3,6 +3,7 @@ import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocPart } from "../utils/chunks.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
+import { parseCompletionResultsToJson } from "@llumiverse/common";
 
 const INT_CHUNK_DOCUMENT = "sys:ChunkDocument"
 
@@ -82,7 +83,9 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
         content: instrumented
     });
 
-    const parts = res.result.parts as DocPart[];
+    const jsonResult = parseCompletionResultsToJson(res.result);
+
+    const parts = jsonResult.parts as DocPart[];
     if (!parts || parts.length === 0) {
         log.warn('No parts found for object ID: ' + objectId, res);
         return { id: objectId, status: "failed", parts: [], message: "no parts found" }
