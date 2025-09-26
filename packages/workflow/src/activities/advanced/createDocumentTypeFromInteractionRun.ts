@@ -3,7 +3,7 @@ import { log } from "@temporalio/activity";
 import { projectResult } from "../../dsl/projections.js";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError } from "../../errors.js";
-import { parseResultAsJson } from "@llumiverse/common";
+import { parseCompletionResultsToJson } from "@llumiverse/common";
 
 
 export interface CreateDocumentTypeFromInteractionRunParams {
@@ -31,7 +31,7 @@ export async function createDocumentTypeFromInteractionRun(payload: DSLActivityE
 
     const genTypeRes = params.run.result;
 
-    const jsonResult = parseResultAsJson(params.run.result);
+    const jsonResult = parseCompletionResultsToJson(params.run.result);
 
     if (!jsonResult.document_type) {
         log.error("No name generated for type: " + JSON.stringify(genTypeRes), genTypeRes);

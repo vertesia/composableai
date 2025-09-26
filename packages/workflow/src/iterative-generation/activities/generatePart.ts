@@ -5,7 +5,7 @@ import { getVertesiaClient } from "../../utils/client.js";
 import { buildAndPublishMemoryPack, loadMemoryPack } from "../../utils/memory.js";
 import { IterativeGenerationPayload, OutputMemoryMeta, Section, TocPart, TocSection } from "../types.js";
 import { executeWithVars, expectMemoryIsConsistent } from "../utils.js";
-import { resultAsString } from "@llumiverse/common";
+import { completionResultToString } from "@llumiverse/common";
 
 export async function it_gen_generatePart(payload: WorkflowExecutionPayload, path: number[]) {
     const vars = payload.vars as IterativeGenerationPayload;
@@ -57,7 +57,7 @@ export async function it_gen_generatePart(payload: WorkflowExecutionPayload, pat
         }
     });
 
-    const result = r.result.map(resultAsString).join('\n');
+    const result = r.result.map(completionResultToString).join('\n');
     content[content.length - 1].content += result;
     meta.lastProcessedPart = path;
     await buildAndPublishMemoryPack(client, `${memory}/output`, async ({ copyText }) => {

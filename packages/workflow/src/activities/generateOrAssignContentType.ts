@@ -15,7 +15,7 @@ import {
   InteractionExecutionParams,
   executeInteractionFromActivity,
 } from "./executeInteraction.js";
-import { parseResultAsJson } from "@llumiverse/common";
+import { parseCompletionResultsToJson } from "@llumiverse/common";
 
 const INT_SELECT_DOCUMENT_TYPE = "sys:SelectDocumentType";
 const INT_GENERATE_METADATA_MODEL = "sys:GenerateMetadataModel";
@@ -120,7 +120,7 @@ export async function generateOrAssignContentType(
 
   log.info(
     "Execute SelectDocumentType interaction on content with \nexisting types - passing full types: " +
-      existing_types.filter((t) => !t.tags?.includes("system")),
+    existing_types.filter((t) => !t.tags?.includes("system")),
   );
 
   const res = await executeInteractionFromActivity(
@@ -134,10 +134,10 @@ export async function generateOrAssignContentType(
     },
   );
 
-  const jsonResult = parseResultAsJson(res.result);
+  const jsonResult = parseCompletionResultsToJson(res.result);
 
   log.info("Selected Content Type Result: " + JSON.stringify(jsonResult));
-  
+
 
   //if type is not identified or not present in the database, generate a new type
   let selectedType: { id: string; name: string } | undefined = undefined;
@@ -197,7 +197,7 @@ async function generateNewType(
     },
   );
 
-  const jsonResult = parseResultAsJson(genTypeRes.result);
+  const jsonResult = parseCompletionResultsToJson(genTypeRes.result);
 
   if (!jsonResult.document_type) {
     log.error("No name generated for type", genTypeRes);

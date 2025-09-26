@@ -3,7 +3,7 @@ import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocPart } from "../utils/chunks.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
-import { parseResultAsJson } from "@llumiverse/common";
+import { parseCompletionResultsToJson } from "@llumiverse/common";
 
 const INT_CHUNK_DOCUMENT = "sys:ChunkDocument"
 
@@ -83,7 +83,7 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
         content: instrumented
     });
 
-    const jsonResult = parseResultAsJson(res.result);
+    const jsonResult = parseCompletionResultsToJson(res.result);
 
     const parts = jsonResult.parts as DocPart[];
     if (!parts || parts.length === 0) {

@@ -3,7 +3,7 @@ import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
-import { parseResultAsJson } from "@llumiverse/common";
+import { parseCompletionResultsToJson } from "@llumiverse/common";
 
 const INT_EXTRACT_INFORMATION = "sys:ExtractInformation";
 export interface GenerateDocumentPropertiesParams extends InteractionExecutionParams {
@@ -89,7 +89,7 @@ export async function generateDocumentProperties(
             return undefined;
         }
         let text = "";
-        const jsonResult = parseResultAsJson(infoRes.result);
+        const jsonResult = parseCompletionResultsToJson(infoRes.result);
         if (jsonResult.title) {
             text += jsonResult.title + "\n";
         }
