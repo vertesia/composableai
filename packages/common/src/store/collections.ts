@@ -69,4 +69,5 @@ export interface CollectionSearchPayload {
     offset?: number;
     name?: string;
     type?: string;
+    types?: string[];
 }
