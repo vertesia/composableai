@@ -62,11 +62,11 @@ importers:
         version: 1.1.2
     devDependencies:
       '@koa-stack/router':
-        specifier: ^0.23.0
-        version: 0.23.0
+        specifier: ^0.24.0
+        version: 0.24.0
       '@koa-stack/server':
-        specifier: ^0.23.0
-        version: 0.23.0
+        specifier: ^0.24.0
+        version: 0.24.0
       '@types/koa':
         specifier: ^2.13.8
         version: 2.15.0
@@ -1643,14 +1643,14 @@ packages:
     peerDependencies:
       tslib: '2'
 
-  '@koa-stack/body@0.23.0':
-    resolution: {integrity: sha512-61Ca/cyRWltprabi6xt3DGCOFHLg/4IvlnCVG0Xo/OybdzT8ad1l/dhSPIG2HZFBSNifZyieyflWr3Paa3BzPA==}
+  '@koa-stack/body@0.24.0':
+    resolution: {integrity: sha512-1Rf6pEw69eBLCR67JzZ7vSxMNYJq+bn9eYrRn5p9UMPxfYbSNACTIBvZP9IvQAsZEg/kdXcwmw3+6Y68yGjcJQ==}
 
-  '@koa-stack/router@0.23.0':
-    resolution: {integrity: sha512-nmOZpI42nreBzgILEC/uiegs5IF1jMXwScaiIAfWawr6oztKVSHHc7Ylsjfp5PRgibizCDbq6qqaFIDpW5gevQ==}
+  '@koa-stack/router@0.24.0':
+    resolution: {integrity: sha512-Duxow/4D7nVJ26YsnsNzN998YZyITgGWKIAtQR3oq3Z4cyo/FwJnpTpNbaDeK39pi4pAyie5M1MyCD3R8yiRUQ==}
 
-  '@koa-stack/server@0.23.0':
-    resolution: {integrity: sha512-UFpR0fAql5Rc5rtZyF/tq/J5UzlXob7XYWS/2qOupm03pzLM7AcTg6tXhTBzL/oddVSyjKdnSwZqAQ+ixuTuFg==}
+  '@koa-stack/server@0.24.0':
+    resolution: {integrity: sha512-ecVuJUKVRmkA/UQaQkB/GP5xv4O0QLLiKQ7YCfiL6byB+1vc/aYYXsDKh/b5HD9or8g6VJnyqL6oAwcmT9BTjg==}
 
   '@lezer/common@1.2.3':
     resolution: {integrity: sha512-w7ojc8ejBqr2REPsWxJjrMFsA/ysDCFICn8zEOR9mrqzOu2amhITYuLD8ag6XZf0CFXDrhKqw7+tW8cX66NaDA==}
@@ -7277,14 +7277,14 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@koa-stack/body@0.23.0':
+  '@koa-stack/body@0.24.0':
     dependencies:
       formidable: 3.5.4
       inflation: 2.1.0
       qs: 6.14.0
       raw-body: 2.5.2
 
-  '@koa-stack/router@0.23.0':
+  '@koa-stack/router@0.24.0':
     dependencies:
       koa: 2.16.2
       koa-compose: 4.1.0
@@ -7294,10 +7294,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@koa-stack/server@0.23.0':
+  '@koa-stack/server@0.24.0':
     dependencies:
-      '@koa-stack/body': 0.23.0
-      '@koa-stack/router': 0.23.0
+      '@koa-stack/body': 0.24.0
+      '@koa-stack/router': 0.24.0
       koa: 2.16.2
     transitivePeerDependencies:
       - supports-color

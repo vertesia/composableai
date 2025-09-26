@@ -56,6 +56,13 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
         });
     }
 
+    get initialHeaders() {
+        return {
+            ...super.initialHeaders,
+            'X-Api-Version': '20250925' // YYYYMMDD, client versioning for API endpoints. Increment manually for breaking changes
+        }
+    }
+
     objects = new ObjectsApi(this);
     types = new TypesApi(this);
     workflows = new WorkflowsApi(this);
