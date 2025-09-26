@@ -132,9 +132,9 @@ export default class InteractionsApi extends ApiTopic {
      * @throws 500 if interaction execution fails
      * @throws 500 if interaction execution times out
      **/
-    execute<P = any, R = any>(id: string, payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<ExecutionRun<P, R>> {
-        return executeInteraction(this.client as VertesiaClient, id, payload, onChunk).catch(err => {
+    execute<P = any>(id: string, payload: InteractionExecutionPayload = {},
+        onChunk?: (chunk: string) => void): Promise<ExecutionRun<P>> {
+        return executeInteraction<P>(this.client as VertesiaClient, id, payload, onChunk).catch(err => {
             if (err instanceof ServerError && err.payload?.id) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {
@@ -158,9 +158,9 @@ export default class InteractionsApi extends ApiTopic {
      * @param onChunk
      * @returns
      */
-    executeByName<P = any, R = any>(nameWithTag: string, payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P, R>> {
-        return executeInteractionByName(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
+    executeByName<P = any>(nameWithTag: string, payload: InteractionExecutionPayload = {},
+        onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
+        return executeInteractionByName<P>(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
             if (err instanceof ServerError && err.payload?.id) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {

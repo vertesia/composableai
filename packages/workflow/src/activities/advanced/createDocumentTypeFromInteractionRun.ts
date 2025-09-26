@@ -3,6 +3,7 @@ import { log } from "@temporalio/activity";
 import { projectResult } from "../../dsl/projections.js";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError } from "../../errors.js";
+import { parseCompletionResultsToJson } from "@llumiverse/common";
 
 
 export interface CreateDocumentTypeFromInteractionRunParams {
@@ -30,16 +31,18 @@ export async function createDocumentTypeFromInteractionRun(payload: DSLActivityE
 
     const genTypeRes = params.run.result;
 
-    if (!genTypeRes.document_type) {
+    const jsonResult = parseCompletionResultsToJson(params.run.result);
+
+    if (!jsonResult.document_type) {
         log.error("No name generated for type: " + JSON.stringify(genTypeRes), genTypeRes);
         throw new Error("No name generated for type");
     }
 
-    log.info("Generated schema for type", genTypeRes.metadata_schema);
+    log.info("Generated schema for type", jsonResult.metadata_schema);
     const typeData: CreateContentObjectTypePayload = {
-        name: genTypeRes.document_type,
-        object_schema: genTypeRes.metadata_schema,
-        is_chunkable: !!genTypeRes.is_chunkable,
+        name: jsonResult.document_type,
+        object_schema: jsonResult.metadata_schema,
+        is_chunkable: !!jsonResult.is_chunkable,
     }
 
     const type = await client.types.create(typeData);

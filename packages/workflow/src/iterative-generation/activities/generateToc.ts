@@ -8,6 +8,7 @@ import {
     TocIndex,
 } from "../types.js";
 import { executeWithVars, tocIndex } from "../utils.js";
+import { parseCompletionResultsToJson } from "@llumiverse/common";
 
 const defaultTocSchema = {
     type: "object",
@@ -93,7 +94,12 @@ export async function it_gen_generateToc(
         schema,
     );
 
-    const toc = run.result as Toc;
+    //Parse the CompletionResult[] to get a Toc object
+    const jsonResults = parseCompletionResultsToJson(run.result);
+
+    const toc: Toc = {
+        sections: jsonResults.sections
+    };
 
     await buildAndPublishMemoryPack(
         client,
@@ -103,7 +109,7 @@ export async function it_gen_generateToc(
                 toc,
                 lastProcessedPart: undefined, // the part index (a number array)
                 previouslyGenerated: "",
-            } as OutputMemoryMeta;
+            } satisfies OutputMemoryMeta;
         },
     );
 
