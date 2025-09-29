@@ -153,11 +153,13 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 
 function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
     const { store } = useUserSession();
-    const [viewImage, setViewImage] = useState(false);
 
     const content = object.content;
     const isImage =
         content && content.type && content.type.startsWith("image/");
+
+    const [viewImage, setViewImage] = useState(isImage);
+
 
     const [text, setText] = useState<string | undefined>(object.text);
     const [isLoadingText, setIsLoadingText] = useState<boolean>(false);
@@ -183,24 +185,24 @@ function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObj
         <>
             <div className="flex justify-between items-center px-2">
                 <div className="flex items-center gap-1 bg-muted mb-2 p-1 rounded">
-                    <Button
-                        variant={`${viewImage ? "ghost" : "primary"}`}
-                        size="sm"
-                        alt="Preview properties"
-                        onClick={() => setViewImage(!viewImage)}
-                    >
-                        Text
-                    </Button>
                     {isImage &&
                         <Button
                             variant={`${viewImage ? "primary" : "ghost"}`}
                             size="sm"
-                            alt="View in JSON format"
-                            onClick={() => setViewImage(!viewImage)}
+                            alt="View Image"
+                            onClick={() => setViewImage(true)}
                         >
                             Image
                         </Button>
                     }
+                    <Button
+                        variant={`${viewImage ? "ghost" : "primary"}`}
+                        size="sm"
+                        alt="View Text"
+                        onClick={() => setViewImage(false)}
+                    >
+                        Text
+                    </Button>
 
                 </div>
                 {!viewImage && <TextActions object={object} text={text} handleCopyContent={handleCopyContent} />}
@@ -429,7 +431,7 @@ function TextPanel({ object, text }: { object: ContentObject, text: string | und
     return (
         text ? (
             <>
-                <div className="max-w-7xl px-2">
+                <div className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto">
                     {seemsMarkdown ? (
                         <div className="vprose prose-sm p-1">
                             <MarkdownRenderer
