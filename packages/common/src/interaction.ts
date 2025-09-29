@@ -358,6 +358,9 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /** Whether to save the output to a file */
     save_output_to_file?: boolean;
 
+    /** Whether to enable rate limiting for LLM calls */
+    enable_rate_limiting?: boolean;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
