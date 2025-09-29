@@ -12,13 +12,15 @@ const TabsContext = React.createContext<{
   setTab?: (name: string) => void;
   responsive?: boolean;
   variant?: "tabs" | "pills";
+  updateHash?: boolean;
 }>({
   size: undefined,
   tabs: undefined,
   current: undefined,
   setTab: undefined,
   responsive: false,
-  variant: "tabs"
+  variant: "tabs",
+  updateHash: true
 });
 
 interface TabsProps {
@@ -102,8 +104,8 @@ const VTabs = ({
   const handleValueChange = (newValue: string) => {
     setValue(newValue);
     
-    // Update the URL hash when tab changes (only if not controlled by parent)
-    if (!current && updateHash) {
+    // Update the URL hash when tab changes (only if updateHash is true and not controlled by parent)
+    if (updateHash && !current) {
       window.location.hash = newValue;
     }
     
@@ -117,7 +119,7 @@ const VTabs = ({
   }, [handleValueChange]);
 
   return (
-    <TabsContext.Provider value={{ tabs, size: fullWidth ? tabs.length : 0, current: value, setTab, responsive: responsive, variant }}>
+    <TabsContext.Provider value={{ tabs, size: fullWidth ? tabs.length : 0, current: value, setTab, responsive: responsive, variant, updateHash }}>
       <TabsPrimitive.Root
         defaultValue={value || tabs[0]?.name}
         value={value}
@@ -131,7 +133,7 @@ const VTabs = ({
 };
 
 const VTabsBar = ({ className }: { className?: string }) => {
-  const { tabs, size, current, setTab, responsive, variant } = React.useContext(TabsContext);
+  const { tabs, size, current, setTab, responsive, variant, updateHash } = React.useContext(TabsContext);
 
   const fullWidth = size !== 0;
 
@@ -140,13 +142,13 @@ const VTabsBar = ({ className }: { className?: string }) => {
 
     const tab = tabs.find(t => t.name === tabName);
 
-    if (tab?.href) {
+    if (tab?.href && updateHash) {
       window.history.pushState(null, '', tab.href);
     }
 
     setTab(tabName);
 
-  }, [tabs, setTab]);
+  }, [tabs, setTab, updateHash]);
 
   if (!tabs || !setTab) {
     console.warn("TabsBar: No tabs provided or setTab not available");
