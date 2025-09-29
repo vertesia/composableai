@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import clsx from "clsx";
 import { ReactNode, useMemo, useState } from "react";
+import { Input } from "./shadcn";
 
 const Default_Option_Style = "flex-1 px-2 py-2 hover:bg-accent nowrap";
 
@@ -28,9 +29,12 @@ export interface SelectListProps<T> {
     by?: (keyof T & string) | ((o1: T, o2: T) => boolean);
     optionLayout?: (opt: T, selected: boolean) => OptionLayout;
     noCheck?: boolean;
+    filterBy?: (filterValue: string) => (opt: T) => boolean;
 }
-export function SelectList<T>({ value, options, onChange, className, optionLayout, by, noCheck }: SelectListProps<T>) {
+export function SelectList<T>({ value, options, onChange, className, optionLayout, by, noCheck, filterBy }: SelectListProps<T>) {
     const [selected, setSelected] = useState(value);
+    const [filterValue, setFilterValue] = useState("");
+
     const onSelect = (option: T) => {
         setSelected(option);
         onChange(option);
@@ -46,7 +50,13 @@ export function SelectList<T>({ value, options, onChange, className, optionLayou
     }, [by]);
     return (
         <div className={clsx("", className)}>
+            {filterBy && (
+                <Input type="text" placeholder="Filter..." value={filterValue} onChange={(value) => setFilterValue(value)} />
+            )}
             {options.map((option, i) => {
+                if (filterBy && !filterBy(filterValue)(option)) {
+                    return null;
+                }
                 const isSelected = selected ? optionEquals(selected, option) : false;
                 let layout: OptionLayout;
                 if (optionLayout) {
