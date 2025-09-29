@@ -355,6 +355,9 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /** Maximum depth for nested conversations to prevent infinite recursion (default: 5) */
     max_nested_conversation_depth?: number;
 
+    /** Whether to save the output to a file */
+    save_output_to_file?: boolean;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
