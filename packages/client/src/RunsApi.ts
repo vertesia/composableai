@@ -64,7 +64,7 @@ export class RunsApi extends ApiTopic {
      * @param id
      * @returns InteractionResult
      **/
-    retrieve<P = any, R = any>(id: string): Promise<ExecutionRun<P, R>> {
+    retrieve<P = any>(id: string): Promise<ExecutionRun<P>> {
         return this.get("/" + id);
     }
 

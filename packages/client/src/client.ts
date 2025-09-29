@@ -126,14 +126,42 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             this.tokenServerUrl = opts.tokenServerUrl;
         } else if (opts.site) {
             this.tokenServerUrl = `https://${opts.site.replace(/^api/, "sts")}`;
-        } else if (opts.storeUrl?.startsWith("api")) {
-            this.tokenServerUrl = `https://${opts.storeUrl.replace(/^api/, "sts")}`;
-        } else if (opts.storeUrl?.match(/^zeno-server-(\w+)\./)) {
-            this.tokenServerUrl = `https://${opts.storeUrl.replace(/^zeno-server/, "sts")}`;
+        } else if (opts.serverUrl || opts.storeUrl) {
+            // Determine STS URL based on environment in serverUrl or storeUrl
+            const urlToCheck = opts.serverUrl || opts.storeUrl || "";
+            try {
+                const url = new URL(urlToCheck);
+                // Check for environment patterns
+                if (url.hostname.includes("-production.")) {
+                    // zeno-server-production.api.vertesia.io -> sts.vertesia.io
+                    this.tokenServerUrl = "https://sts.vertesia.io";
+                } else if (url.hostname.includes("-preview.")) {
+                    // zeno-server-preview.api.vertesia.io -> sts-preview.vertesia.io
+                    this.tokenServerUrl = "https://sts-preview.vertesia.io";
+                } else if (url.hostname === "api.vertesia.io") {
+                    // api.vertesia.io -> sts.vertesia.io
+                    this.tokenServerUrl = "https://sts.vertesia.io";
+                } else if (url.hostname === "api-preview.vertesia.io") {
+                    // api-preview.vertesia.io -> sts-preview.vertesia.io
+                    this.tokenServerUrl = "https://sts-preview.vertesia.io";
+                } else if (url.hostname === "api-staging.vertesia.io") {
+                    // api-staging.vertesia.io -> sts-staging.vertesia.io
+                    this.tokenServerUrl = "https://sts-staging.vertesia.io";
+                } else if (url.hostname.startsWith("api")) {
+                    // Generic api.* pattern replacement
+                    url.hostname = url.hostname.replace(/^api/, "sts");
+                    this.tokenServerUrl = url.toString();
+                } else {
+                    // Default to staging for everything else
+                    this.tokenServerUrl = "https://sts-staging.vertesia.io";
+                }
+            } catch (e) {
+                // Default to staging if URL parsing fails
+                this.tokenServerUrl = "https://sts-staging.vertesia.io";
+            }
         } else {
-            throw new Error(
-                "Cannot guess URL for Token Server: 'site' or 'tokenServerUrl' is required for VertesiaClient",
-            );
+            // Default to staging if no URL provided
+            this.tokenServerUrl = "https://sts-staging.vertesia.io";
         }
 
         this.store = new ZenoClient({
@@ -259,6 +287,13 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
                 );
                 throw error;
             });
+    }
+
+    get initialHeaders() {
+        return {
+            ...super.initialHeaders,
+            'X-Api-Version': '20250925' // YYYYMMDD, client versioning for API endpoints. Increment manually for breaking changes
+        }
     }
 
     projects = new ProjectsApi(this);

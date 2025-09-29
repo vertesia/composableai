@@ -1,4 +1,5 @@
 import type {
+    CompletionResult,
     JSONObject,
     JSONSchema,
     Modalities,
@@ -516,7 +517,7 @@ export interface RunSource {
     client_ip: string;
 }
 
-export interface BaseExecutionRun<P = any, R = any> {
+export interface BaseExecutionRun<P = any> {
     readonly id: string;
     /**
      * Only used by runs that were created by a virtual run to point toward the virtual run parent
@@ -527,7 +528,7 @@ export interface BaseExecutionRun<P = any, R = any> {
         selected?: boolean;
         scores?: Record<string, number>;
     };
-    result: R;
+    result: CompletionResult[] // Any new result will actually be CompletionResult[], the old typing is R, and R used to default to any.
     /**
      * The parameters used to create the interaction.
      * If the parameters contains the special property "@memory" it will be used
@@ -573,11 +574,11 @@ export interface BaseExecutionRun<P = any, R = any> {
     workflow?: ExecutionRunWorkflow;
 }
 
-export interface ExecutionRun<P = any, R = any> extends BaseExecutionRun<P, R> {
+export interface ExecutionRun<P = any> extends BaseExecutionRun<P> {
     interaction?: string;
 }
 
-export interface PopulatedExecutionRun<P = any, R = any> extends BaseExecutionRun<P, R> {
+export interface PopulatedExecutionRun<P = any> extends BaseExecutionRun<P> {
     interaction?: Interaction;
 }
 
@@ -607,7 +608,7 @@ export interface ExecutionRunWorkflow {
     activity_type?: string;
 }
 
-export interface InteractionExecutionResult<P = any, R = any> extends ExecutionRun<P, R> {
+export interface InteractionExecutionResult<P = any> extends ExecutionRun<P> {
     tool_use?: ToolUse[];
     conversation?: unknown;
     options?: StatelessExecutionOptions;
