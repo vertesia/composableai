@@ -84,6 +84,15 @@ export class WorkflowsApi extends ApiTopic {
             const detailsSize = Buffer.byteLength(detailsStr, 'utf-8');
 
             if (detailsSize > MAX_DETAILS_SIZE) {
+                console.warn(`postMessage: Truncating large details field`, {
+                    runId,
+                    messageType: msg.type,
+                    workstreamId: msg.workstream_id,
+                    originalSizeKB: Math.round(detailsSize / 1024),
+                    maxSizeKB: Math.round(MAX_DETAILS_SIZE / 1024),
+                    originalSizeBytes: detailsSize
+                });
+
                 // Truncate details
                 const truncatedDetailsStr = detailsStr.substring(0, MAX_DETAILS_SIZE);
 
@@ -99,8 +108,12 @@ export class WorkflowsApi extends ApiTopic {
                             _truncation_note: `Details truncated from ${Math.round(detailsSize / 1024)}KB to ${Math.round(MAX_DETAILS_SIZE / 1024)}KB`
                         }
                     };
-                } catch {
+                    console.log(`postMessage: Successfully truncated details to valid JSON`);
+                } catch (parseError) {
                     // If truncated JSON is invalid, create a minimal details object
+                    console.warn(`postMessage: Truncated JSON invalid, replacing with minimal details`, {
+                        parseError: parseError instanceof Error ? parseError.message : String(parseError)
+                    });
                     processedMsg = {
                         ...msg,
                         details: {
