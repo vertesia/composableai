@@ -74,7 +74,46 @@ export class WorkflowsApi extends ApiTopic {
         if (!runId) {
             throw new Error("runId is required");
         }
-        return this.post(`/runs/${runId}/updates`, { payload: msg });
+
+        // Truncate large details to avoid 413 Payload Too Large errors
+        const MAX_DETAILS_SIZE = 300 * 1024; // 300KB limit for details
+        let processedMsg = msg;
+
+        if (msg.details) {
+            const detailsStr = JSON.stringify(msg.details);
+            const detailsSize = Buffer.byteLength(detailsStr, 'utf-8');
+
+            if (detailsSize > MAX_DETAILS_SIZE) {
+                // Truncate details
+                const truncatedDetailsStr = detailsStr.substring(0, MAX_DETAILS_SIZE);
+
+                try {
+                    // Try to parse truncated JSON and add truncation info
+                    const truncatedDetails = JSON.parse(truncatedDetailsStr);
+                    processedMsg = {
+                        ...msg,
+                        details: {
+                            ...truncatedDetails,
+                            _truncated: true,
+                            _original_size_bytes: detailsSize,
+                            _truncation_note: `Details truncated from ${Math.round(detailsSize / 1024)}KB to ${Math.round(MAX_DETAILS_SIZE / 1024)}KB`
+                        }
+                    };
+                } catch {
+                    // If truncated JSON is invalid, create a minimal details object
+                    processedMsg = {
+                        ...msg,
+                        details: {
+                            _truncated: true,
+                            _original_size_bytes: detailsSize,
+                            _truncation_note: `Details too large (${Math.round(detailsSize / 1024)}KB) and could not be safely truncated. Original details removed.`
+                        }
+                    };
+                }
+            }
+        }
+
+        return this.post(`/runs/${runId}/updates`, { payload: processedMsg });
     }
 
     retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
