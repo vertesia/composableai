@@ -59,10 +59,22 @@ export class FilesApi extends ApiTopic {
         });
     }
 
-    getDownloadUrl(file: string): Promise<GetFileUrlResponse> {
+    /**
+     * Get a signed download URL for a file
+     * @param file - The file path or URI (e.g., "path/to/file.pdf" or "gs://bucket/file.pdf")
+     * @param ttl - Time-to-live for the signed URL in seconds (default: 15 minutes = 900 seconds)
+     *              Examples:
+     *              - 5 minutes: 300
+     *              - 1 hour: 3600
+     *              - 24 hours: 86400
+     *              - 7 days: 604800
+     * @returns Promise containing the signed URL and file metadata
+     */
+    getDownloadUrl(file: string, ttl?: number): Promise<GetFileUrlResponse> {
         return this.post("/download-url", {
             payload: {
                 file,
+                ttl,
             } satisfies GetFileUrlPayload,
         });
     }
@@ -102,15 +114,16 @@ export class FilesApi extends ApiTopic {
     }
 
     /**
-     *
+     * Download a file from storage
      * @param location can be a relative path in the project, a reference to a cloud storage, or a accessible HTTPS URL (typically signed URL)
+     * @param ttl - Time-to-live for the signed URL in seconds (only used when signing is needed)
      * @returns ReadableStream
      */
-    async downloadFile(location: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
+    async downloadFile(location: string, ttl?: number): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
         //if start with HTTPS, no download url needed - assume it's signed already
         const needSign = !location.startsWith("https:");
         const { url } = needSign
-            ? await this.getDownloadUrl(location)
+            ? await this.getDownloadUrl(location, ttl)
             : { url: location };
 
         const res = await fetch(url, {
