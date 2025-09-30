@@ -361,6 +361,9 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /** Whether to enable rate limiting for LLM calls */
     enable_rate_limiting?: boolean;
 
+    /** Whether to skip the final verification check */
+    skip_final_verification?: boolean;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
