@@ -39,7 +39,7 @@ export async function authorize(ctx: Context) {
     const auth = ctx.req.header('Authorization');
     if (!auth) {
         throw new HTTPException(401, {
-            message: `Missing Authorization header'`
+            message: `Missing Authorization header`
         });
     }
     const [scheme, value] = auth.trim().split(' ');
