@@ -44,13 +44,8 @@ export async function saveAgentArtifact(
             err,
             file: filePath,
         });
-        throw ApplicationFailure.nonRetryable(
-            `Failed to save agent artifact for run ${runId}`,
-            "SaveAgentArtifactError",
-            {
-                error: err,
-            },
-        );
+        // Re-throw original error to preserve retry behavior
+        throw err;
     }
 }
 
