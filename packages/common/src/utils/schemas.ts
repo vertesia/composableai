@@ -1,8 +1,8 @@
-import { PromptRole } from "@llumiverse/common";
 import type { JSONSchema } from "@llumiverse/common";
+import { PromptRole } from "@llumiverse/common";
 import type { JSONSchema4 } from "json-schema";
 import { InteractionRefWithSchema, PopulatedInteraction } from "../interaction.js";
-import { PopulatedPromptSegmentDef, PromptSegmentDef, PromptSegmentDefType, PromptTemplateRefWithSchema } from "../prompt.js";
+import { ExecutablePromptSegmentDef, PromptSegmentDefType } from "../prompt.js";
 
 
 export function mergeJSONSchemas(schemas: JSONSchema[]) {
@@ -22,7 +22,7 @@ export function mergeJSONSchemas(schemas: JSONSchema[]) {
     return schema;
 }
 
-export function _mergePromptsSchema(prompts: PromptSegmentDef<PromptTemplateRefWithSchema>[] | PopulatedPromptSegmentDef[]) {
+export function _mergePromptsSchema(prompts: ExecutablePromptSegmentDef[]) {
     const props: Record<string, JSONSchema4> = {};
     let required: string[] = [];
     for (const prompt of prompts) {
@@ -59,5 +59,5 @@ export function _mergePromptsSchema(prompts: PromptSegmentDef<PromptTemplateRefW
 
 export function mergePromptsSchema(interaction: InteractionRefWithSchema | PopulatedInteraction) {
     if (!interaction.prompts) return null;
-    return _mergePromptsSchema(interaction.prompts);
+    return _mergePromptsSchema(interaction.prompts as ExecutablePromptSegmentDef[]);
 }
