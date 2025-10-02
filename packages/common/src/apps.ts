@@ -37,6 +37,12 @@ export interface AppManifestData {
      */
     icon?: string;
 
+    /**
+     * A color name to be used as the color of the app card (e.g. blue, red, green, etc.)
+     * If not specified a random color will be picked.
+     */
+    color?: string;
+
     status: "beta" | "stable" | "deprecated"
 
     ui?: AppUIConfig
