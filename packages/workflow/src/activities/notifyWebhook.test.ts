@@ -29,7 +29,7 @@ const defaultParams = {
 const createTestPayload = (params: Partial<NotifyWebhookParams> = {}): DSLActivityExecutionPayload<NotifyWebhookParams> => {
   const mergedParams = { ...defaultParams, ...params };
   return {
-    auth_token: "unset",
+    auth_token: process.env.VERTESIA_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature",
     account_id: "unset",
     project_id: "unset",
     params: mergedParams,

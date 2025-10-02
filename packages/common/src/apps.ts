@@ -15,6 +15,33 @@ export interface AppUIConfig {
     isolation?: "shadow" | "css";
 }
 
+export interface AppInteractionRef {
+    /**
+     * The interaction code name
+     */
+    name: string;
+
+    /**
+     * The url to get the interaction specification
+    */
+    url: string;
+
+    /**
+     * The interaction title. Optional. To be used in studio UI when the interaction is displayed
+     */
+    title?: string;
+
+    /**
+     * The interaction description. Optional. To be used in studio UI when the interaction is displayed
+     */
+    description?: string;
+}
+export interface ResolvedAppInteractionRef extends AppInteractionRef {
+    /**
+     * The interaction unique name (can also be used as an ID) that can be used to execute the interaction.
+     */
+    id: string;
+}
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -53,6 +80,13 @@ export interface AppManifestData {
      * If the `?import` query string is used the tool will be imported as a javascript module and not executed through a POST on the collections endpoint.
      */
     tool_collections?: string[]
+
+    /**
+     * An URL providing interactions definitions in JSON format.
+     * GET interactions_url should return a JSON object with the interactions definitions.
+     * GET `${interactions_url}/${endpoint}` should return a JSON object with the interaction definition for the specified endpoint.
+     */
+    interactions?: AppInteractionRef[];
 
     /**
      * A JSON chema for the app installation settings.
