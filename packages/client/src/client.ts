@@ -296,13 +296,6 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         }
     }
 
-    get initialHeaders() {
-        return {
-            ...super.initialHeaders,
-            'X-Api-Version': '20250925' // YYYYMMDD, client versioning for API endpoints. Increment manually for breaking changes
-        }
-    }
-
     projects = new ProjectsApi(this);
     environments = new EnvironmentsApi(this);
     interactions = new InteractionsApi(this);
