@@ -1,5 +1,6 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
 import { AsyncExecutionPayload, ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload, RateLimitRequestPayload, RateLimitRequestResponse } from "@vertesia/common";
+import { CompletionResult } from "@llumiverse/common";
 import { VertesiaClient } from "./client.js";
 import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
 
@@ -214,7 +215,7 @@ export default class InteractionsApi extends ApiTopic {
     /**
      * Suggest Improvement for a prompt
      */
-    suggestImprovements(id: string, payload: ImprovePromptPayload): Promise<{ result: string; }> {
+    suggestImprovements(id: string, payload: ImprovePromptPayload): Promise<{ result: CompletionResult[]; }> {
         return this.post(`${id}/suggest-prompt-improvements`, {
             payload
         });

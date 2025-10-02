@@ -125,6 +125,8 @@ export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoPr
             return <SystemAvatar showTitle={showTitle} size={size} />
         case PrincipalType.ServiceAccount:
             return <ServiceAccountAvatar accountId={id} showTitle={showTitle} size={size} />
+        case PrincipalType.Agent:
+            return <ServiceAccountAvatar accountId={id} showTitle={showTitle} size={size} />
         case PrincipalType.ApiKey:
             return <ApiKeyAvatar keyId={id} size={size} showTitle={showTitle} />
         default:
