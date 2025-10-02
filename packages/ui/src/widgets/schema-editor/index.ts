@@ -1,4 +1,3 @@
-export * from "./JSONSchemaEditorModal.js";
 export * from "./ManagedSchema.js";
 export * from "./editor/EditableSchemaProperty.js";
 export * from "./editor/PropertyEditor.js";
