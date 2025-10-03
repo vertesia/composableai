@@ -110,18 +110,54 @@ export abstract class ClientBase {
 
     createServerError(req: Request, res: Response, payload: any): RequestError {
         const status = res.status;
-        let message = 'Server Error: ' + status;
-        if (payload) {
-            if (payload.message) {
-                message = String(payload.message);
+        let message: string;
+        let upstreamMessage: string | undefined;
+
+        // Extract upstream message from payload if available
+        if (payload && typeof payload === 'object') {
+            if (payload.message && typeof payload.message === 'string' && !payload.message.includes('Not a valid JSON')) {
+                upstreamMessage = payload.message;
             } else if (payload.error) {
-                if (typeof payload.error === 'string') {
-                    message = String(payload.error);
-                } else if (typeof payload.error.message === 'string') {
-                    message = String(payload.error.message);
+                if (typeof payload.error === 'string' && !payload.error.includes('Not a valid JSON')) {
+                    upstreamMessage = payload.error;
+                } else if (typeof payload.error?.message === 'string') {
+                    upstreamMessage = payload.error.message;
                 }
+            } else if (payload.text && typeof payload.text === 'string' && payload.text.length > 0) {
+                // Include raw text for non-JSON responses (limit length)
+                upstreamMessage = payload.text.substring(0, 200);
             }
         }
+
+        // Create status-based primary message
+        switch (status) {
+            case 429:
+                message = 'Rate limit exceeded - inference service is busy';
+                break;
+            case 502:
+                message = 'Bad gateway - upstream service error';
+                break;
+            case 503:
+                message = 'Service unavailable';
+                break;
+            case 504:
+                message = 'Gateway timeout - request took too long';
+                break;
+            case 529:
+                message = 'Site overloaded - service temporarily unavailable';
+                break;
+            case 500:
+                message = 'Internal server error';
+                break;
+            default:
+                message = `Server error: ${status}`;
+        }
+
+        // Append upstream message if available and meaningful
+        if (upstreamMessage) {
+            message += ` (${upstreamMessage})`;
+        }
+
         return new ServerError(message, req, res.status, payload, this.verboseErrors);
     }
 
@@ -164,13 +200,15 @@ export abstract class ClientBase {
                 return params.reader.call(this, res);
             }
         } else {
-            return this.readJSONPayload(res).then((payload) => {
-                if (res.ok) {
-                    return payload;
-                } else {
+            // Check HTTP status BEFORE attempting JSON parsing
+            if (!res.ok) {
+                // For error responses, attempt to read payload but handle parsing failures gracefully
+                return this.readJSONPayload(res).then((payload) => {
                     this.throwError(this.createServerError(req, res, payload));
-                }
-            });
+                });
+            }
+            // For successful responses, read and return JSON
+            return this.readJSONPayload(res);
         }
     }
 
