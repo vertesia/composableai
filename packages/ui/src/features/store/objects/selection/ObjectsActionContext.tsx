@@ -34,7 +34,7 @@ export class ObjectsActionContext {
 
         if (isInCollection) {
             return this.allActions.filter(action =>
-                action.id !== 'addToCollection' && action.id !== 'delete'
+                action.id !== 'addToCollection'
             );
         } else {
             return this.allActions.filter(action =>
