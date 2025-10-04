@@ -1,6 +1,11 @@
 name: composable
+
 on:
   - push
+
+permissions:
+  contents: read
+
 jobs:
   composableai-build:
     runs-on: ubuntu-latest
@@ -106,3 +111,30 @@ jobs:
       - run: pnpm install
       - run: pnpm build
       - run: npm --prefix packages/workflow test
+
+  notify-repo-studio:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/repo-dispatch')
+    needs:
+      - api-fetch-client-test
+      - client-test
+      - converters-test
+      - json-test
+      - workflow-test
+    steps:
+      - name: Notify repository vertesia/studio
+        run: |
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.REPO_STUDIO_ACCESS_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            --fail-with-body \
+            https://api.github.com/repos/vertesia/studio/dispatches \
+            -d '{
+              "event_type": "update-git-submodule-request",
+              "client_payload": {
+                "composableai_sha": "${{ github.sha }}",
+                "branch": "main"
+              }
+            }'

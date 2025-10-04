@@ -1,5 +1,5 @@
 import { CreateCollectionPayload } from "@vertesia/common";
-import { useToast, VModalBody, FormItem, Styles, VModalFooter, Input, Switch, Button } from "@vertesia/ui/core";
+import { useToast, VModalBody, FormItem, Styles, VModalFooter, Input, Switch, Button, VModal, VModalTitle } from "@vertesia/ui/core";
 import { SelectContentType } from "../types/SelectContentType";
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
@@ -74,7 +74,7 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
     };
 
     return (
-        <form>
+        <form onSubmit={(e) => e.preventDefault()}>
             <VModalBody>
                 <FormItem label="Name" required>
                     <Input type="text" value={payload.name || ""} onChange={(value) => setPayloadProp("name", value)} />
@@ -86,10 +86,25 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                         onChange={(ev) => setPayloadProp("description", ev.target.value)}
                     />
                 </FormItem>
-                <FormItem label="Dynamic Collection" className="mt-2" direction="row" description="Dynamic Collection is based on a query vs. users manully adding content.">
+                <FormItem label="Dynamic Collection" className="mt-2" direction="row" description="Dynamically fetch content for the collection based on a query. If not enabled, then content must be added by users or agents.">
                     <Switch value={payload.dynamic || false} onChange={(value) => setPayloadProp("dynamic", value)} />
                 </FormItem>
-                <FormItem label="Type" className="mt-2" description="This is optional and drives what properties are used to describe a collection">
+                { !payload.dynamic &&
+                    <FormItem label="Allowed Content Types" className="mt-4" description="Optionally select which content types can be added to the collection. If not set, then all content types are allowed.">
+                        <SelectContentType
+                            defaultValue={payload.allowed_types || null}
+                            onChange={(v) => {
+                                if (Array.isArray(v)) {
+                                    setPayloadProp("allowed_types", v.map(type => type.id));
+                                } else {
+                                    setPayloadProp("allowed_types", v ? [v.id] : []);
+                                }
+                            }}
+                            isClearable multiple
+                        />
+                    </FormItem>
+                }
+                <FormItem label="Type" className="mt-2" description="Optionally select a content type to assign custom properties and data to the collection.">
                     <SelectContentType
                         defaultValue={payload.type || null}
                         onChange={(v) => {
@@ -102,19 +117,6 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                         isClearable
                     />
                 </FormItem>
-                <FormItem label="Allowed Content Types" className="mt-4">
-                    <SelectContentType
-                        defaultValue={payload.allowed_types || null}
-                        onChange={(v) => {
-                            if (Array.isArray(v)) {
-                                setPayloadProp("allowed_types", v.map(type => type.id));
-                            } else {
-                                setPayloadProp("allowed_types", v ? [v.id] : []);
-                            }
-                        }}
-                        isClearable multiple
-                    />
-                </FormItem>
             </VModalBody>
             <VModalFooter>
                 <Button isDisabled={isProcessing} onClick={onCreate}>
@@ -122,5 +124,18 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                 </Button>
             </VModalFooter>
         </form >
+    );
+}
+
+interface CreateCollectionModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+export function CreateCollectionModal({ isOpen, onClose }: CreateCollectionModalProps) {
+    return (
+        <VModal onClose={onClose} isOpen={isOpen}>
+            <VModalTitle>Create a Collection</VModalTitle>
+            <CreateCollectionForm onClose={onClose} />
+        </VModal>
     );
 }

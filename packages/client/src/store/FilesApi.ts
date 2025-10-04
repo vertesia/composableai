@@ -106,7 +106,7 @@ export class FilesApi extends ApiTopic {
      * @param location can be a relative path in the project, a reference to a cloud storage, or a accessible HTTPS URL (typically signed URL)
      * @returns ReadableStream
      */
-    async downloadFile(location: string): Promise<ReadableStream<Uint8Array>> {
+    async downloadFile(location: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
         //if start with HTTPS, no download url needed - assume it's signed already
         const needSign = !location.startsWith("https:");
         const { url } = needSign
@@ -120,9 +120,9 @@ export class FilesApi extends ApiTopic {
                 if (res.ok) {
                     return res;
                 } else if (res.status === 404) {
-                    throw new Error(`File ${location} not found`); //TODO: type fetch error better with a fetch error class
+                    throw new Error(`File at ${url} not found`); //TODO: type fetch error better with a fetch error class
                 } else if (res.status === 403) {
-                    throw new Error(`File ${location} is forbidden`);
+                    throw new Error(`File at ${url} is forbidden`);
                 } else {
                     console.log(res);
                     throw new Error(

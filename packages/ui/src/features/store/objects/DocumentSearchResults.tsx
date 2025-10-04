@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from "react";
-
-import { ColumnLayout, ContentObject, ContentObjectItem, VectorSearchQuery } from '@vertesia/common';
-import { Button, Divider, ErrorBox, SidePanel, Spinner, useDebounce, useIntersectionObserver, useToast } from '@vertesia/ui/core';
+import { useRef, useState, useEffect } from "react";
+import { ColumnLayout, ContentObject, ContentObjectItem, ComplexSearchQuery } from '@vertesia/common';
+import {
+    Button, Divider, ErrorBox, SidePanel, Spinner, useIntersectionObserver, useToast,
+    FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter
+} from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
-import { Download, RefreshCw, SquareArrowOutUpRight } from 'lucide-react';
-import { VFacetsNav } from "../../facets";
+import { Download, RefreshCw, Eye } from 'lucide-react';
+import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
-
 import { ContentDispositionButton } from './components/ContentDispositionButton';
 import { DocumentTable } from './DocumentTable';
+import { ExtendedColumnLayout } from './layout/DocumentTableColumn';
 import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from './search/DocumentSearchContext';
 import { useDocumentUploadHandler } from './upload/useUploadHandler';
 import { ContentOverview } from './components/ContentOverview';
@@ -25,7 +27,13 @@ const defaultLayout: ColumnLayout[] = [
 
 function getTableLayout(registry: TypeRegistry, type: string | undefined): ColumnLayout[] {
     const layout = type ? registry.getTypeLayout(type) : defaultLayout;
-    return layout ?? defaultLayout;
+    console.log('[DEBUG] getTableLayout called with type:', type);
+    console.log('[DEBUG] Layout from registry:', layout);
+    console.log('[DEBUG] Using defaultLayout?', layout === defaultLayout);
+    const result = layout ?? defaultLayout;
+    console.log('[DEBUG] Final layout:', result);
+    console.log('[DEBUG] Has Status field?', result.some(col => col.field === 'status'));
+    return result;
 }
 
 interface DocumentSearchResultsWithDropZoneProps {
@@ -89,16 +97,39 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const [selectedObject, setSelectedObject] = useState<ContentObjectItem | null>(null);
     const { typeRegistry } = useUserSession();
     const { search, isLoading, error, objects } = useWatchDocumentSearchResult();
-    const [vQuery, setVQuery] = useState<VectorSearchQuery | undefined>(undefined);
+
+    console.log('[DEBUG] DocumentSearchResults - layout prop:', layout);
+    console.log('[DEBUG] DocumentSearchResults - search.query.type:', search.query.type);
+    console.log('[DEBUG] DocumentSearchResults - typeRegistry exists?', !!typeRegistry);
+
     const [actualLayout, setActualLayout] = useState<ColumnLayout[]>(
         typeRegistry ? layout || getTableLayout(typeRegistry, search.query.type) : defaultLayout,
     );
+
+    console.log('[DEBUG] DocumentSearchResults - actualLayout:', actualLayout);
+    console.log('[DEBUG] DocumentSearchResults - actualLayout has Status?', actualLayout.some(col => col.field === 'status'));
     //TODO _setRefreshTrigger state not used
     const [refreshTrigger, _setRefreshTrigger] = useState(0);
     const [loaded, setLoaded] = useState(0);
     const [isGridView, setIsGridView] = useState(localStorage.getItem(ContentDispositionButton.LAST_DISPLAYED_VIEW) === "grid");
+    const [filters, setFilters] = useState<BaseFilter[]>([]);
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Trigger initial search when component mounts
+    useEffect(() => {
+        if (!isReady && objects.length === 0) {
+            // Manually set loading state to show spinner during initial load
+            search._updateRunningState(true);
+            search.search().then(() => {
+                setIsReady(true);
+            }).catch(err => {
+                console.error('Initial search failed:', err);
+                search._updateRunningState(false);
+            });
+        }
+    }, []);
+
     useIntersectionObserver(loadMoreRef, () => {
         if (isReady && objects.length > 0 && objects.length != loaded) {
             setIsReady(false);
@@ -109,37 +140,40 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         }
     }, { deps: [isReady, objects.length] });
 
-    useEffect(() => {
-        search.search().then(() => setIsReady(true));
-    }, []);
 
-    //TODO _setSearchTerm state not used
-    const [searchTerm, _setSearchTerm] = useState("");
-    const debounceValue = useDebounce(searchTerm, 500);
-    useEffect(() => {
-        search.query.name = searchTerm;
-        search.search().then(() => setIsReady(true));
-    }, [debounceValue]);
-
-    useEffect(() => {
-        if (vQuery) {
-            search.query.vector = vQuery;
-            if (!actualLayout.find((c) => c.name === "Vector Similarity")) {
+    // Handler for vector search widget
+    const handleVectorSearch = (query?: ComplexSearchQuery) => {
+        if (query && query.vector) {
+            search.query.vector = query.vector;
+            search.query.full_text = query.full_text;
+            search.query.weights = query.weights;
+            search.query.score_aggregation = query.score_aggregation;
+            search.query.dynamic_scaling = query.dynamic_scaling;
+            if (!actualLayout.find((c) => c.name === "Search Score")) {
                 const layout = [
                     ...actualLayout,
                     {
-                        name: "Vector Similarity",
+                        name: "Search Score",
                         field: "score",
-                    } satisfies ColumnLayout,
+                        render: (item) => (item as any).score?.toFixed(4) || "0.0000"
+                    } satisfies ExtendedColumnLayout,
                 ];
                 setActualLayout(layout);
             }
             search.search().then(() => setIsReady(true));
-        } else {
-            delete search.query.vector;
+        } else if (query && query.full_text) {
+            search.query.full_text = query.full_text;
             search.search().then(() => setIsReady(true));
+        } else if (query === undefined) {
+            // Only clear search if this is a user-initiated clear (not initialization)
+            // The VectorSearchWidget calls onChange(undefined) during initialization
+            if (isReady) {
+                delete search.query.vector;
+                delete search.query.full_text;
+                search.search().then(() => setIsReady(true));
+            }
         }
-    }, [vQuery?.values]);
+    };
 
     const facets = useWatchDocumentSearchFacets();
     const facetSearch = useDocumentSearch();
@@ -148,22 +182,91 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         search.search().then(() => setIsReady(true));
     };
 
+    // Use DocumentsFacetsNav hooks for cleaner organization
+    const filterGroups = useDocumentFilterGroups(facets);
+    const handleFilterLogic = useDocumentFilterHandler(facetSearch);
+
+    const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
+        const newFilters = typeof value === 'function' ? value(filters) : value;
+        setFilters(newFilters);
+        handleFilterLogic(newFilters);
+    };
+
+    const url = new URL(window.location.href);
+    const filtersParam = url.searchParams.get('filters');
+
+    if (filtersParam) {
+        try {
+            const filterPairs = filtersParam.split(';');
+            const validFilterPairs = filterPairs.filter(pair => {
+                const [encodedName] = pair.split(':');
+                const name = decodeURIComponent(encodedName);
+                return name !== 'start' && name !== 'end';
+            });
+
+            if (validFilterPairs.length !== filterPairs.length) {
+                const newFiltersParam = validFilterPairs.length > 0 ? validFilterPairs.join(';') : '';
+                if (newFiltersParam) {
+                    url.searchParams.set('filters', newFiltersParam);
+                } else {
+                    url.searchParams.delete('filters');
+                }
+                window.history.replaceState({}, '', url.toString());
+            }
+        } catch (error) {
+            console.error("Failed to clean start/end filters from URL:", error);
+        }
+    }
+
     return (
         <div className="flex flex-col gap-y-2">
             <OverviewDrawer object={selectedObject} onClose={() => setSelectedObject(null)} />
             {
                 error && <ErrorBox title="Error">{error.message}</ErrorBox>
             }
-            <div className="flex flex-row gap-4 items-center justify-between w-full">
+            <div className="sticky top-0 z-10 bg-background pb-2">
                 {
-                    allowSearch && <VectorSearchWidget onChange={setVQuery} isLoading={isLoading} refresh={refreshTrigger} />
+                    allowFilter && (
+                        <FilterProvider
+                            filterGroups={filterGroups}
+                            filters={filters}
+                            setFilters={handleFilterChange}
+                        >
+                            <div className="flex flex-row gap-4 items-center justify-between w-full">
+                                <div className="flex gap-2 items-center w-2/3">
+                                    {
+                                        allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
+                                    }
+                                    <FilterBtn />
+                                </div>
+                                <div className="flex gap-1 items-center">
+                                    <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                                    <ContentDispositionButton onUpdate={setIsGridView} />
+                                </div>
+                            </div>
+                            <div className="flex gap-2 items-center">
+                                <FilterBar />
+                                <FilterClear />
+                            </div>
+                        </FilterProvider>
+                    )
                 }
-                <div className="flex gap-1 items-center">
-                    <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
-                    <ContentDispositionButton onUpdate={setIsGridView} />
-                </div>
+                {
+                    !allowFilter && (
+                        <div className="flex flex-row gap-4 items-center justify-between w-full">
+                            <div className="flex gap-2 items-center w-2/3">
+                                {
+                                    allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} />
+                                }
+                            </div>
+                            <div className="flex gap-1 items-center">
+                                <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                                <ContentDispositionButton onUpdate={setIsGridView} />
+                            </div>
+                        </div>
+                    )
+                }
             </div>
-            {allowFilter && <VFacetsNav facets={facets} search={facetSearch} textSearch={"Name or ID"} />}
             <DocumentTable
                 objects={objects}
                 isLoading={!objects.length && isLoading}
@@ -195,7 +298,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
         <SidePanel title={object.properties?.title || object.name} isOpen={true} onClose={onClose}>
             <div className="flex items-center gap-x-2">
                 <Button variant="ghost" size="sm" title="Open Object" onClick={() => navigate(`/objects/${object.id}`)}>
-                    <SquareArrowOutUpRight className="size-4" />
+                    <Eye className="size-4" />
                 </Button>
                 {object.content?.source && (
                     <Button variant="ghost" size="sm" title="Download" onClick={onDownload}>

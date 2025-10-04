@@ -44,9 +44,16 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
             case AgentMessageType.COMPLETE:
                 return {
                     ...baseStyle,
-                    containerClass: "bg-white border-l-4 border-l-green-500 shadow-sm",
+                    containerClass: "bg-white border-l-4 border-l-success shadow-sm",
                     iconComponent: <CheckCircle className="size-4 text-success" />,
                     sender: "Completed",
+                };
+            case AgentMessageType.TERMINATED:
+                return {
+                    ...baseStyle,
+                    containerClass: "bg-white border-l-4 border-l-attention shadow-sm",
+                    iconComponent: <CheckCircle className="size-4 text-attention" />,
+                    sender: "Terminated",
                 };
             case AgentMessageType.QUESTION:
                 return {
@@ -252,9 +259,9 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                 <Markdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                        a: ({ node, ...props }: { node?: any; href?: string; children?: React.ReactNode }) => {
+                        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
                             const href = props.href || "";
-                            if (href.startsWith("/store/")) {
+                            if (href.includes("/store/objects")) {
                                 return (
                                     <NavLink
                                         href={href}
@@ -272,7 +279,7 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                                 />
                             );
                         },
-                        img: ({ node, ...props }: { node?: any; src?: string; alt?: string }) => {
+                        img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
                             return (
                                 <img
                                     {...props}
@@ -284,11 +291,13 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                         },
                         code: ({
                             node,
+                            ref,
                             className,
                             children,
                             ...props
                         }: {
                             node?: any;
+                            ref?: any;
                             className?: string;
                             children?: React.ReactNode;
                         }) => {
@@ -310,21 +319,22 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                                 </>
                             );
                         },
-                        p: (props) => <p {...props} />,
-                        strong: (props) => <strong {...props} />,
-                        em: (props) => <em {...props} />,
-                        pre: (props) => <pre {...props} />,
-                        h1: (props) => <h1 {...props} />,
-                        h2: (props) => <h2 {...props} />,
-                        h3: (props) => <h3 {...props} />,
-                        li: (props) => <li {...props} />,
-                        ul: (props) => <ul {...props} />,
-                        ol: (props) => <ol {...props} />,
-                        blockquote: (props) => <blockquote {...props} />,
-                        hr: (props) => <hr {...props} />,
-                        table: (props) => <div className="overflow-x-auto"><table {...props} /></div>,
-                        th: (props) => <th {...props} />,
-                        td: (props) => <td {...props} />,
+                        // Remove 'node' and 'ref' from props
+                        p: ({ node, ref, ...props }) => <p {...props} />, 
+                        strong: ({ node, ref, ...props }) => <strong {...props} />,
+                        em: ({ node, ref, ...props }) => <em {...props} />,
+                        pre: ({ node, ref, ...props }) => <pre {...props} />,
+                        h1: ({ node, ref, ...props }) => <h1 {...props} />,
+                        h2: ({ node, ref, ...props }) => <h2 {...props} />,
+                        h3: ({ node, ref, ...props }) => <h3 {...props} />,
+                        li: ({ node, ref, ...props }) => <li {...props} />,
+                        ul: ({ node, ref, ...props }) => <ul {...props} />,
+                        ol: ({ node, ref, ...props }) => <ol {...props} />,
+                        blockquote: ({ node, ref, ...props }) => <blockquote {...props} />,
+                        hr: ({ node, ref, ...props }) => <hr {...props} />,
+                        table: ({ node, ref, ...props }) => <div className="overflow-x-auto"><table {...props} /></div>,
+                        th: ({ node, ref, ...props }) => <th {...props} />,
+                        td: ({ node, ref, ...props }) => <td {...props} />,
                     }}
                 >
                     {content as string}
@@ -377,6 +387,8 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                 return "border-l-success bg-success";
             case AgentMessageType.PLAN:
                 return "border-l-attention bg-attention";
+            case AgentMessageType.TERMINATED:
+                return "border-l-muted bg-muted";
             default:
                 return "border-l-indigo-500 dark:border-l-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10";
         }
@@ -436,6 +448,8 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                     <Bot className={`size-4 ${iconColor}`} />
                 );
             case AgentMessageType.COMPLETE:
+                return <CheckCircle className={`size-4 ${iconColor}`} />;
+            case AgentMessageType.TERMINATED:
                 return <CheckCircle className={`size-4 ${iconColor}`} />;
             case AgentMessageType.IDLE:
                 return <Clock className={`size-4 ${iconColor}`} />;

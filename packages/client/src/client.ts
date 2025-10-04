@@ -4,11 +4,11 @@ import AccountApi from "./AccountApi.js";
 import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";
 import { ApiKeysApi } from "./ApiKeysApi.js";
+import AppsApi from "./AppsApi.js";
 import CommandsApi from "./CommandsApi.js";
 import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
-import PluginsApi from "./PluginsApi.js";
 import ProjectsApi from "./ProjectsApi.js";
 import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
@@ -35,18 +35,21 @@ export type VertesiaClientProps = {
      * @default api.vertesia.io
      * @since 0.52.0
      */
-    site?: 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api-staging.vertesia.io';
+    site?:
+        | "api.vertesia.io"
+        | "api-preview.vertesia.io"
+        | "api-staging.vertesia.io";
     serverUrl?: string;
     storeUrl?: string;
+    tokenServerUrl?: string;
     apikey?: string;
     projectId?: string;
     sessionTags?: string | string[];
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
-}
+};
 
 export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
-
     /**
      * The JWT token linked to the API KEY (sk or pk)
      */
@@ -62,10 +65,37 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      */
     sessionTags?: string | string[];
 
+    /**
+     * tokenServerUrl
+     */
+    tokenServerUrl: string;
+
+    /**
+     * Create a client from the given token.
+     * If you already have the decoded token you can pass it as the second argument to avoid decodinf it again.
+     *
+     * @param token the raw JWT token
+     * @param payload the decoded JWT token as an AuthTokenPayload - optional
+     */
+    static async fromAuthToken(token: string, payload?: AuthTokenPayload) {
+        if (!payload) {
+            payload = decodeJWT(token);
+        }
+
+        const endpoints = decodeEndpoints(payload.endpoints);
+        return await new VertesiaClient({
+            serverUrl: endpoints.studio,
+            storeUrl: endpoints.store,
+            tokenServerUrl: payload.iss,
+        }).withApiKey(token);
+    }
+
+    static decodeEndpoints() {}
+
     constructor(
         opts: VertesiaClientProps = {
-            site: 'api.vertesia.io',
-        }
+            site: "api.vertesia.io",
+        },
     ) {
         let studioServerUrl: string;
         let zenoServerUrl: string;
@@ -75,7 +105,9 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         } else if (opts.site) {
             studioServerUrl = `https://${opts.site}`;
         } else {
-            throw new Error("Parameter 'site' or 'serverUrl' is required for VertesiaClient");
+            throw new Error(
+                "Parameter 'site' or 'serverUrl' is required for VertesiaClient",
+            );
         }
 
         if (opts.storeUrl) {
@@ -83,25 +115,67 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         } else if (opts.site) {
             zenoServerUrl = `https://${opts.site}`;
         } else {
-            throw new Error("Parameter 'site' or 'storeUrl' is required for VertesiaClient");
+            throw new Error(
+                "Parameter 'site' or 'storeUrl' is required for VertesiaClient",
+            );
         }
 
         super(studioServerUrl);
 
+        if (opts.tokenServerUrl) {
+            this.tokenServerUrl = opts.tokenServerUrl;
+        } else if (opts.site) {
+            this.tokenServerUrl = `https://${opts.site.replace(/^api/, "sts")}`;
+        } else if (opts.serverUrl || opts.storeUrl) {
+            // Determine STS URL based on environment in serverUrl or storeUrl
+            const urlToCheck = opts.serverUrl || opts.storeUrl || "";
+            try {
+                const url = new URL(urlToCheck);
+                // Check for environment patterns
+                if (url.hostname.includes("-production.")) {
+                    // zeno-server-production.api.vertesia.io -> sts.vertesia.io
+                    this.tokenServerUrl = "https://sts.vertesia.io";
+                } else if (url.hostname.includes("-preview.")) {
+                    // zeno-server-preview.api.vertesia.io -> sts-preview.vertesia.io
+                    this.tokenServerUrl = "https://sts-preview.vertesia.io";
+                } else if (url.hostname === "api.vertesia.io") {
+                    // api.vertesia.io -> sts.vertesia.io
+                    this.tokenServerUrl = "https://sts.vertesia.io";
+                } else if (url.hostname === "api-preview.vertesia.io") {
+                    // api-preview.vertesia.io -> sts-preview.vertesia.io
+                    this.tokenServerUrl = "https://sts-preview.vertesia.io";
+                } else if (url.hostname === "api-staging.vertesia.io") {
+                    // api-staging.vertesia.io -> sts-staging.vertesia.io
+                    this.tokenServerUrl = "https://sts-staging.vertesia.io";
+                } else if (url.hostname.startsWith("api")) {
+                    // Generic api.* pattern replacement
+                    url.hostname = url.hostname.replace(/^api/, "sts");
+                    this.tokenServerUrl = url.toString();
+                } else {
+                    // Default to staging for everything else
+                    this.tokenServerUrl = "https://sts-staging.vertesia.io";
+                }
+            } catch (e) {
+                // Default to staging if URL parsing fails
+                this.tokenServerUrl = "https://sts-staging.vertesia.io";
+            }
+        } else {
+            // Default to staging if no URL provided
+            this.tokenServerUrl = "https://sts-staging.vertesia.io";
+        }
+
         this.store = new ZenoClient({
             serverUrl: zenoServerUrl,
+            tokenServerUrl: this.tokenServerUrl,
             apikey: opts.apikey,
             onRequest: opts.onRequest,
-            onResponse: opts.onResponse
+            onResponse: opts.onResponse,
         });
 
         if (opts.apikey) {
             this.withApiKey(opts.apikey);
         }
-        //TODO: this is no more used, remove in next major version
-        if (opts.projectId) {
-            this.headers["x-project-id"] = opts.projectId;
-        }
+
         this.onRequest = opts.onRequest;
         this.onResponse = opts.onResponse;
         this.sessionTags = opts.sessionTags;
@@ -119,25 +193,28 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
 
     async withApiKey(apiKey: string | null) {
         return this.withAuthCallback(
-            apiKey ? async () => {
-                if (!isApiKey(apiKey)) {
-                    return `Bearer ${apiKey}`
-                }
+            apiKey
+                ? async () => {
+                      if (!isApiKey(apiKey)) {
+                          return `Bearer ${apiKey}`;
+                      }
 
-                if (isTokenExpired(this._jwt)) {
-                    const jwt = await this.getAuthToken(apiKey);
-                    this._jwt = jwt.token;
-                }
-                return `Bearer ${this._jwt}`
-            } : undefined
+                      if (isTokenExpired(this._jwt)) {
+                          const jwt = await this.getAuthToken(apiKey);
+                          this._jwt = jwt.token;
+                      }
+                      return `Bearer ${this._jwt}`;
+                  }
+                : undefined,
         );
     }
 
     async getRawJWT() {
         if (!this._jwt && this._auth) {
             const auth = await this._auth();
-            if (!this._jwt) { // the _jwt may be set by the auth callback
-                this._jwt = auth.trim().split(' ')[1]; // remove Bearer prefix
+            if (!this._jwt) {
+                // the _jwt may be set by the auth callback
+                this._jwt = auth.trim().split(" ")[1]; // remove Bearer prefix
             }
         }
         return this._jwt || null;
@@ -187,21 +264,36 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.baseUrl;
     }
 
-
     /**
      *
-     * Generate a token for use with other Composable's services
+     * Generate a token for use with other Vertesia's services
      *
-     * @param accountId: selected account to generate the token for
      * @returns AuthTokenResponse
      */
-    async getAuthToken(token?: string, accountId?: string): Promise<AuthTokenResponse> {
-        const query = {
-            accountId,
-            token
-        };
+    async getAuthToken(token?: string): Promise<AuthTokenResponse> {
+        return fetch(`${this.tokenServerUrl}/token/issue`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        })
+            .then((response) => response.json())
+            .then((data) => data as AuthTokenResponse)
+            .catch((error) => {
+                console.error(
+                    `Error fetching token from ${this.tokenServerUrl}:`,
+                    { error },
+                );
+                throw error;
+            });
+    }
 
-        return this.get('/auth/token', { query: query, headers: { "authorization": undefined } as any });
+    get initialHeaders() {
+        return {
+            ...super.initialHeaders,
+            'X-Api-Version': '20250925' // YYYYMMDD, client versioning for API endpoints. Increment manually for breaking changes
+        }
     }
 
     projects = new ProjectsApi(this);
@@ -218,11 +310,11 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     iam = new IamApi(this);
     refs = new RefsApi(this);
     commands = new CommandsApi(this);
-    plugins = new PluginsApi(this);
+    apps = new AppsApi(this);
 }
 
 function isApiKey(apiKey: string) {
-    return (apiKey.startsWith('pk-') || apiKey.startsWith('sk-'));
+    return apiKey.startsWith("pk-") || apiKey.startsWith("sk-");
 }
 
 function isTokenExpired(token: string | null) {
@@ -233,31 +325,66 @@ function isTokenExpired(token: string | null) {
     const decoded = decodeJWT(token);
     const exp = decoded.exp;
     const currentTime = Date.now();
-    return (currentTime <= exp * 1000 - EXPIRATION_THRESHOLD);
+    return currentTime <= exp * 1000 - EXPIRATION_THRESHOLD;
 }
 
-function decodeJWT(jwt: string) {
-    const payloadBase64 = jwt.split('.')[1];
+export function decodeJWT(jwt: string): AuthTokenPayload {
+    const payloadBase64 = jwt.split(".")[1];
     const decodedJson = base64UrlDecode(payloadBase64);
-    return JSON.parse(decodedJson)
+    return JSON.parse(decodedJson);
 }
 
 function base64UrlDecode(input: string): string {
     // Convert base64url to base64
-    const base64 = input.replace(/-/g, '+').replace(/_/g, '/')
+    const base64 = input
+        .replace(/-/g, "+")
+        .replace(/_/g, "/")
         // Pad with '=' to make length a multiple of 4
-        .padEnd(Math.ceil(input.length / 4) * 4, '=');
+        .padEnd(Math.ceil(input.length / 4) * 4, "=");
 
-    if (typeof Buffer !== 'undefined') {
+    if (typeof Buffer !== "undefined") {
         // Node.js
-        return Buffer.from(base64, 'base64').toString('utf-8');
-    } else if (typeof atob !== 'undefined' && typeof TextDecoder !== 'undefined') {
+        return Buffer.from(base64, "base64").toString("utf-8");
+    } else if (
+        typeof atob !== "undefined" &&
+        typeof TextDecoder !== "undefined"
+    ) {
         // Browser
         const binary = atob(base64);
-        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
         // decode to utf8
         return new TextDecoder().decode(bytes);
     } else {
-        throw new Error('No base64 decoder available');
+        throw new Error("No base64 decoder available");
+    }
+}
+
+export function decodeEndpoints(
+    endpoints: string | Record<string, string> | undefined,
+): Record<string, string> {
+    if (!endpoints) {
+        return getEndpointsFromDomain("api.vertesia.io");
+    }
+    if (typeof endpoints === "string") {
+        return getEndpointsFromDomain(endpoints);
+    } else {
+        return endpoints;
+    }
+}
+
+function getEndpointsFromDomain(domain: string) {
+    if (domain === "local") {
+        return {
+            studio: `http://localhost:8091`,
+            store: `http://localhost:8092`,
+            token: process.env.STS_URL ?? "https://sts-staging.vertesia.io",
+        };
+    } else {
+        const url = `https://${domain}`;
+        return {
+            studio: url,
+            store: url,
+            token: url.replace("api", "sts"),
+        };
     }
 }

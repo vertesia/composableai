@@ -1,8 +1,8 @@
 {
     "name": "@vertesia/workflow",
-    "version": "0.65.0",
+    "version": "0.78.0",
     "type": "module",
-    "description": "Composable prompts workflow dsl",
+    "description": "Vertesia workflow DSL",
     "main": "./lib/esm/index.js",
     "files": [
         "lib",
@@ -45,7 +45,7 @@
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "@vertesia/memory": "^0.43.0",
+        "@vertesia/memory": "workspace:*",
         "fast-deep-equal": "^3.1.3",
         "jsonwebtoken": "^9.0.2",
         "mime": "^4.0.0",
@@ -56,7 +56,7 @@
         "seedrandom": "^3.0.5",
         "sharp": "^0.33.4",
         "tiktoken": "^1.0.15",
-        "tmp": "^0.2.3",
+        "tmp": "^0.2.4",
         "tmp-promise": "^3.0.3",
         "yaml": "^2.6.0"
     },
@@ -103,6 +103,11 @@
         },
         "./workflows-bundle": {
             "import": "./lib/workflows-bundle.js"
+        },
+        "./errors": {
+            "types": "./lib/types/errors.d.ts",
+            "import": "./lib/esm/errors.js",
+            "require": "./lib/cjs/errors.js"
         }
     },
     "types": "./lib/types/index.d.ts",
@@ -122,6 +127,9 @@
             ],
             "vars": [
                 "./lib/types/dsl/vars.d.ts"
+            ],
+            "errors": [
+                "./lib/types/errors.d.ts"
             ]
         }
     }

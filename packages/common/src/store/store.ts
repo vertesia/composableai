@@ -3,6 +3,13 @@ import { SupportedEmbeddingTypes } from "../project.js";
 import { ComplexSearchQuery } from "../query.js";
 import { BaseObject } from "./common.js";
 
+export enum ContentObjectApiHeaders {
+    COLLECTION_ID = 'x-collection-id',
+    PROCESSING_PRIORITY = 'x-processing-priority',
+    CREATE_REVISION = 'x-create-revision',
+    REVISION_LABEL = 'x-revision-label',
+}
+
 export enum ContentObjectStatus {
     created = "created",
     processing = "processing", // the was created and still processing
@@ -24,6 +31,7 @@ export interface ContentObject<T = any> extends ContentObjectItem<T> {
     parts?: string[]; // the list of objectId of the parts of the object
     parts_etag?: string; // the etag of the text used for the parts list
     transcript?: Transcript;
+    security?: Record<string, string[]>; // Security field for granular permissions
 }
 
 export type ContentNature =
@@ -81,6 +89,12 @@ export interface VideoMetadata extends TemporalMediaMetadata {
     dimensions?: Dimensions;
 }
 
+export interface TextSection {
+    description: string; // the description of the section
+    first_line_index: number;
+    last_line_index: number; 
+}
+
 export interface DocumentMetadata extends ContentMetadata {
     type: "document";
     page_count?: number;
@@ -93,6 +107,7 @@ export interface DocumentMetadata extends ContentMetadata {
         zone_count: number;
         needs_ocr_count?: number;
     };
+    sections?: TextSection[]; // List of sections with descriptions and line indexes
 }
 
 export interface Transcript {
@@ -212,6 +227,11 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
      * and modification attempts should be rejected.
      */
     is_locked?: boolean;
+
+    /**
+     * The document score, used for ranking and sorting.
+     */
+    score?: number;
 }
 
 /**
@@ -369,4 +389,9 @@ export interface GetFileUrlResponse {
     id: string;
     mime_type: string;
     path: string;
+}
+
+export enum ContentObjectProcessingPriority {
+    normal = "normal",
+    low = "low",
 }

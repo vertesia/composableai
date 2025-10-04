@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/plugin-builder",
-  "version": "0.65.0",
+  "version": "0.78.0",
   "description": "A vite plugin to build vertesia UI plugins",
   "type": "module",
   "types": "./lib/index.d.ts",
@@ -10,7 +10,7 @@
     "src"
   ],
   "license": "MIT",
-  "homepage": "https://composableprompts.com/docs",
+  "homepage": "https://docs.vertesiahq.com",
   "keywords": [
     "llm",
     "streaming",

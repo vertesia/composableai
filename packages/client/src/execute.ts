@@ -1,4 +1,4 @@
-import { AsyncExecutionPayload, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload } from '@vertesia/common';
+import { AsyncExecutionPayload, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload, RateLimitRequestPayload, RateLimitRequestResponse } from '@vertesia/common';
 import { VertesiaClient } from './client.js';
 
 export async function EventSourceProvider(): Promise<typeof EventSource> {
@@ -19,10 +19,10 @@ export async function EventSourceProvider(): Promise<typeof EventSource> {
  * @param payload InteractionExecutionPayload
  * @param onChunk callback to be called when the next chunk of the response is available
  */
-export async function executeInteraction<P = any, R = any>(client: VertesiaClient,
+export async function executeInteraction<P = any>(client: VertesiaClient,
     interactionId: string,
     payload: InteractionExecutionPayload = {},
-    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P, R>> {
+    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
     const response = await client.runs.create({
         ...payload, interaction: interactionId, stream
@@ -52,10 +52,10 @@ export async function executeInteraction<P = any, R = any>(client: VertesiaClien
  * @param onChunk
  * @returns
  */
-export async function executeInteractionByName<P = any, R = any>(client: VertesiaClient,
+export async function executeInteractionByName<P = any>(client: VertesiaClient,
     interaction: string,
     payload: InteractionExecutionPayload = {},
-    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P, R>> {
+    onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
     const response = await client.post('/api/v1/execute', {
         payload: {
@@ -116,5 +116,11 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
 export async function executeInteractionAsync(client: VertesiaClient, payload: AsyncExecutionPayload): Promise<{ runId: string, workflowId: string }> {
     return await client.post('/api/v1/execute/async', {
         payload,
+    });
+}
+
+export async function checkRateLimit(client: VertesiaClient, payload: RateLimitRequestPayload): Promise<RateLimitRequestResponse> {
+    return await client.post('/api/v1/execute/rate-limit/request', {
+        payload
     });
 }

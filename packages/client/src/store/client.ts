@@ -12,6 +12,7 @@ import { CollectionsApi } from "./CollectionsApi.js";
 
 export interface ZenoClientProps {
     serverUrl?: string;
+    tokenServerUrl?: string;
     apikey?: string;
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
@@ -54,6 +55,13 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
         return this.post("/api/v1/operations", {
             payload
         });
+    }
+
+    get initialHeaders() {
+        return {
+            ...super.initialHeaders,
+            'X-Api-Version': '20250925' // YYYYMMDD, client versioning for API endpoints. Increment manually for breaking changes
+        }
     }
 
     objects = new ObjectsApi(this);

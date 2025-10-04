@@ -12,6 +12,13 @@ export enum ContentEventName {
     api_request = "api_request",
 }
 
+export interface Queue {
+    name: string;
+    // use either suffix or full name. fullname has precedence over suffix
+    queue_suffix?: string; // suffix to append to the base queue name
+    queue_full_name?: string; // full name
+}
+
 export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     /**
      * The ref of the user who initiated the workflow.
@@ -65,7 +72,17 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     parent?: {
         run_id: string;
         workflow_id: string;
+        /**
+         * the depth of nested parent workflows
+         */
+        run_depth?: number;
     };
+
+    /**
+     *  List of enabled processing queues. Managed by the application.
+     */
+    _enabled_queues?: Queue[];
+
 }
 
 export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {
@@ -228,7 +245,7 @@ interface WorkflowRunEvent {
         }
         recipient?: {
             workflowId?: string,
-            runId?: string 
+            runId?: string
         },
         initiatedEventId?: string,
     }
@@ -260,7 +277,7 @@ export interface WorkflowRun {
     interaction_name?: string;
     input?: any;
     result?: any;
-    error?:any,
+    error?: any,
     raw?: any;
     /**
      * The Vertesia Workflow Type of this Workflow Run.
@@ -310,6 +327,8 @@ export interface WorkflowInteraction {
     prompt_data: JSONSchema4,
     interactive: boolean,
     interactionParamsSchema?: JSONSchema4
+    debug_mode?: boolean;
+    collection_id?: string;
 }
 
 export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, "config"> {
@@ -374,6 +393,7 @@ export enum AgentMessageType {
     QUESTION = "question",
     REQUEST_INPUT = "request_input",
     IDLE = "idle",
+    TERMINATED = "terminated",
 }
 
 export interface PlanTask {
@@ -388,3 +408,5 @@ export interface Plan {
     plan: PlanTask[];
     comment?: string;
 }
+
+export const LOW_PRIORITY_TASK_QUEUE = "low_priority";

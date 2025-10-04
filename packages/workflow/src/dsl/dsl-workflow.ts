@@ -7,6 +7,7 @@ import {
     log,
     patched,
     proxyActivities,
+    sleep,
     startChild,
     UntypedActivities,
 } from "@temporalio/workflow";
@@ -18,6 +19,7 @@ import {
     DSLWorkflowExecutionPayload,
     DSLWorkflowSpec,
     getDocumentIds,
+    getTenantId,
     WorkflowExecutionPayload
 } from "@vertesia/common";
 import ms, { StringValue } from 'ms';
@@ -25,6 +27,8 @@ import { HandleDslErrorParams } from "../activities/handleError.js";
 import * as activities from "../activities/index.js";
 import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from "../errors.js";
 import { Vars } from "./vars.js";
+import { RateLimitParams } from "../activities/rateLimiter.js";
+
 
 interface BaseActivityPayload extends WorkflowExecutionPayload {
     workflow_name: string;
@@ -143,7 +147,7 @@ async function handleError(originalError: any, basePayload: BaseActivityPayload,
         await CancellationScope.nonCancellable(() => handleDslError(payload));
     } else {
         log.warn(`Workflow execution failed, executing error handler to update document status`, { error: originalError });
-        handleDslError(payload);
+        await handleDslError(payload);
     }
     throw originalError;
 }
@@ -151,8 +155,9 @@ async function handleError(originalError: any, basePayload: BaseActivityPayload,
 async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean) {
     const resolvedVars = vars.resolve();
     if (step.vars) {
-        // copy user vars (from step definition) to the resolved vars
-        Object.assign(resolvedVars, step.vars);
+        // copy user vars (from step definition) to the resolved vars, resolving any expressions
+        const resolvedStepVars = vars.resolveParams(step.vars);
+        Object.assign(resolvedVars, resolvedStepVars);
     }
     if (debug_mode) {
         log.debug(`Workflow vars before starting child workflow ${step.name}`, { vars: resolvedVars });
@@ -171,6 +176,7 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
             AccountId: [payload.account_id],
             DocumentId: getDocumentIds(payload),
             ProjectId: [payload.project_id],
+            TenantId: [getTenantId(payload.account_id, payload.project_id)],
             InitiatedBy: payload.initiated_by ? [payload.initiated_by] : [],
         },
     });
@@ -182,8 +188,9 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
 async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean) {
     const resolvedVars = vars.resolve();
     if (step.vars) {
-        // copy user vars (from step definition) to the resolved vars
-        Object.assign(resolvedVars, step.vars);
+        // copy user vars (from step definition) to the resolved vars, resolving any expressions
+        const resolvedStepVars = vars.resolveParams(step.vars);
+        Object.assign(resolvedVars, resolvedStepVars);
     }
     if (debug_mode) {
         log.debug(`Workflow vars before executing child workflow ${step.name}`, { vars: resolvedVars });
@@ -202,6 +209,7 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
             AccountId: [payload.account_id],
             DocumentId: getDocumentIds(payload),
             ProjectId: [payload.project_id],
+            TenantId: [getTenantId(payload.account_id, payload.project_id)],
             InitiatedBy: payload.initiated_by ? [payload.initiated_by] : [],
         },
     });
@@ -214,6 +222,48 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
     } else if (debug_mode) {
         log.debug(`Workflow vars after executing child workflow ${step.name}`, { vars: resolvedVars });
     }
+}
+
+function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLActivityExecutionPayload<any>): RateLimitParams {
+    const params = executionPayload.params;
+    let interactionId: string;
+
+    switch (activity.name) {
+        case "executeInteraction":
+            interactionId = params.interactionName;
+            break;
+
+        case "generateDocumentProperties":
+            interactionId = params.interactionName || "sys:ExtractInformation";
+            break;
+
+        case "identifyTextSections":
+            interactionId = params.interactionName || "sys:IdentifyTextSections";
+            break;
+
+        case "generateOrAssignContentType":
+            interactionId = params.interactionNames?.selectDocumentType || "sys:SelectDocumentType";
+            break;
+
+        case "chunkDocument":
+            interactionId = params.interactionName || "sys:ChunkDocument";
+            break;
+
+        default:
+            // For any other rate-limited activities, try to extract what we can
+            interactionId = params.interactionName;
+            break;
+    }
+
+    if (!interactionId) {
+        throw new Error(`No interaction ID could be determined for activity ${activity.name}`);
+    }
+
+    return {
+        interactionIdOrEndpoint: interactionId,
+        environmentId: params.environment,
+        modelId: params.model,
+    };
 }
 
 async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
@@ -241,6 +291,38 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
             activityName: activity.name,
             activityOptions: defaultOptions,
         });
+    }
+
+    if (patched('system-activity-taskqueue')) {
+        // hack: do nothing, remove later
+        // https://github.com/vertesia/composableai/pull/544/files
+    }
+
+    // call rate limiter depending on the activity type
+    const rateLimitedActivities = [
+        "chunkDocument",
+        "executeInteraction",
+        "generateDocumentProperties",
+        "generateOrAssignContentType",
+        "identifyTextSections",
+    ];
+
+    if (activity.name && rateLimitedActivities.includes(activity.name)) {
+        log.info(`Applying rate limit for activity ${activity.name}`);
+        // Apply rate limiting logic here
+         // Check rate limit first - loop until no delay
+        const rateLimitParams = buildRateLimitParams(activity, executionPayload);
+
+        const rateLimitPayload = dslActivityPayload(basePayload, activity, rateLimitParams);
+        let rateLimitResult = await proxy.checkRateLimit(rateLimitPayload);
+    
+        while (rateLimitResult.delayMs > 0) {
+            log.info(`Rate limit delay applied: ${rateLimitResult.delayMs}ms`);
+            await sleep(rateLimitResult.delayMs);
+
+            // Check again after sleeping
+            rateLimitResult = await proxy.checkRateLimit(rateLimitPayload);
+        }
     }
 
     const fn = proxy[activity.name];

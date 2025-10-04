@@ -1,0 +1,39 @@
+{
+    "name": "@vertesia/tools-sdk",
+    "version": "0.78.0",
+    "description": "Tools SDK - utilities for building remote tools",
+    "type": "module",
+    "types": "./lib/types/index.d.ts",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "license": "Apache-2.0",
+    "scripts": {
+        "test": "vitest run",
+        "build": "pnpm exec tsmod build",
+        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+    },
+    "exports": {
+        "types": "./lib/types/index.d.ts",
+        "import": "./lib/esm/index.js",
+        "require": "./lib/cjs/index.js"
+    },
+    "devDependencies": {
+        "ts-dual-module": "^0.6.3",
+        "typescript": "^5.0.2",
+        "vitest": "^3.0.9"
+    },
+    "ts_dual_module": {
+        "outDir": "lib"
+    },
+    "peerDependencies": {
+        "hono": "^4.9.6"
+    },
+    "dependencies": {
+        "@llumiverse/common": "workspace:*",
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*",
+        "jose": "^6.0.11"
+    }
+}

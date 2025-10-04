@@ -8,16 +8,20 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 export interface ConversationWorkflowPayload {
     interaction?: Interaction | undefined;
-    environment?: ExecutionEnvironmentRef | undefined;
-    model?: string;
-    prompt_data?: JSONObject | undefined,
-    tools: string[],
+    config: {
+        environment?: ExecutionEnvironmentRef | undefined;
+        model?: string;
+    }
+    data?: JSONObject | undefined,
+    tool_names: string[],
 }
 
 export class PayloadBuilder implements ConversationWorkflowPayload {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
+    _collection: string | undefined;
     _start: boolean = false;
+    _preserveRunValues: boolean = false;
 
     payload: ConversationWorkflowPayload;
     private _interactionParamsSchema?: JSONSchema4 | null;
@@ -28,8 +32,10 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
 
     constructor(public vertesia: VertesiaClient, public updateState: (data: PayloadBuilder) => void) {
         this.payload = {
-            model: '',
-            tools: [],
+            config: {
+                model: '',
+            },
+            tool_names: [],
         }
     }
 
@@ -46,6 +52,8 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         builder._debug_mode = this._debug_mode;
         builder._inputValidator = this._inputValidator;
         builder._start = this._start;
+        builder._collection = this._collection;
+        builder._preserveRunValues = this._preserveRunValues;
         return builder;
     }
 
@@ -71,6 +79,21 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         }
     }
 
+    get collection() {
+        return this._collection;
+    }
+
+    set collection(collection: string | undefined) {
+        if (collection !== this._collection) {
+            this._collection = collection;
+            this.onStateChanged();
+        }
+    }
+
+    get search_scope() {
+        return this._collection ? "collection" : undefined;
+    }
+
     get interaction() {
         return this.payload.interaction;
     }
@@ -80,18 +103,18 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
             this._interactionParamsSchema = mergePromptsSchema(this.interaction as PopulatedInteraction) as JSONSchema4;
             // Reset the validator when schema changes
             this._inputValidator = undefined;
-            if (interaction) {
+            if (interaction && !this._preserveRunValues) {
                 if (interaction.environment) {
                     if (typeof interaction.environment === 'string') {
                         this.vertesia.environments.retrieve(interaction.environment).then((environment) => this.environment = environment);
                     } else {
-                        this.payload.environment = interaction.environment;
+                        this.payload.config.environment = interaction.environment;
                     }
                 }
                 if (interaction.model) {
-                    this.payload.model = interaction.model;
+                    this.payload.config.model = interaction.model;
                 } else {
-                    this.payload.model = this.environment?.default_model && supportsToolUse(this.environment.default_model, this.environment.provider)
+                    this.payload.config.model = this.environment?.default_model && supportsToolUse(this.environment.default_model, this.environment.provider)
                         ? this.environment.default_model : undefined;
                 }
             }
@@ -100,42 +123,54 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     }
 
     get environment() {
-        return this.payload.environment;
+        return this.payload.config.environment;
     }
     set environment(environment: ExecutionEnvironmentRef | undefined) {
-        if (environment?.id !== this.payload.environment?.id) {
-            this.payload.environment = environment;
-            this.payload.model = environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
-                ? environment.default_model : undefined;
+        if (environment?.id !== this.payload.config.environment?.id) {
+            this.payload.config.environment = environment;
+            if (!this._preserveRunValues) {
+                // First try to use the interaction model, then the environment default model
+                const interactionModel = this.payload.interaction?.model;
+                if (interactionModel && environment && supportsToolUse(interactionModel, environment.provider)) {
+                    this.payload.config.model = interactionModel;
+                } else {
+                    this.payload.config.model = environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
+                        ? environment.default_model : undefined;
+                }
+            }
 
             this.onStateChanged();
         }
     }
 
     get model() {
-        return this.payload.model;
+        return this.payload.config.model;
     }
     set model(model: string | undefined) {
-        if (model !== this.payload.model) {
-            this.payload.model = model;
+        if (model !== this.payload.config.model) {
+            this.payload.config.model = model;
             this.onStateChanged();
         }
     }
 
-    get tools() {
-        return this.payload.tools;
+    get tool_names() {
+        return this.payload.tool_names;
     }
-    set tools(tools: string[]) {
-        this.payload.tools = tools;
+    set tool_names(tools: string[]) {
+        this.payload.tool_names = tools;
         this.onStateChanged();
     }
 
-    get prompt_data(): JSONObject | undefined {
-        return this.payload.prompt_data;
+    get data(): JSONObject | undefined {
+        return this.payload.data;
     }
-    set prompt_data(prompt_data: JSONObject) {
-        this.payload.prompt_data = prompt_data;
+    set data(prompt_data: JSONObject) {
+        this.payload.data = prompt_data;
         this.onStateChanged();
+    }
+
+    get config() {
+        return this.payload.config;
     }
 
     set run(run: AsyncExecutionResult | { workflow_id: string; run_id: string }) {
@@ -154,6 +189,14 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         return this._start;
     }
 
+    get preserveRunValues(): boolean {
+        return this._preserveRunValues;
+    }
+
+    set preserveRunValues(value: boolean) {
+        this._preserveRunValues = value;
+    }
+
     get interactionParamsSchema(): JSONSchema4 | null | undefined {
         return this._interactionParamsSchema;
     }
@@ -169,15 +212,21 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         this._start = false;
         this._interactive = true;
         this._debug_mode = false;
+        this._collection = undefined;
+        this._preserveRunValues = false;
         this.payload = {
-            model: '',
-            tools: [],
+            config: {
+                environment: undefined,
+                model: '',
+            },
+            tool_names: [],
             interaction: undefined,
-            environment: undefined,
-            prompt_data: undefined
+            data: undefined
         };
         this._interactionParamsSchema = null;
         this._inputValidator = undefined;
+        this.model = undefined;
+        this.environment = undefined;
 
         this.onStateChanged();
 
@@ -201,7 +250,7 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
             };
         }
 
-        const prompt_data = this.payload.prompt_data || {};
+        const prompt_data = this.payload.data || {};
         const isValid = this._inputValidator.validate(prompt_data);
 
         if (!isValid) {

@@ -31,6 +31,7 @@ export const EXTERNALS = [
     "ts-md5",
     "react-markdown",
     "remark-gfm",
+    "unist-util-visit",
     "@monaco-editor/react",
     "monaco-editor",
     "motion",
@@ -56,7 +57,11 @@ export const EXTERNALS = [
     /^@vertesia\/ui\/.*/,
     "@floating-ui/dom",
     "@floating-ui/react",
-    "json-schema"
+    "json-schema",
+    "react-calendar",
+    "framer-motion",
+    "react-resizable-panels",
+    /^framer-motion\/.*/
 ];
 
 // Put here exceptions - deps that shuld be inlined

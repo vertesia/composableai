@@ -2,13 +2,14 @@ import { createContext, useContext } from 'react';
 
 import { SharedState, useWatchSharedState } from '@vertesia/ui/core';
 import { ComputeFacetsResponse, ZenoClient } from '@vertesia/client';
-import { ComplexSearchQuery, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
+import { ComplexSearchPayload, ComplexSearchQuery, ComputeObjectFacetPayload, ContentObjectItem, FacetBucket, FacetSpec, ObjectSearchQuery } from '@vertesia/common';
 import { SearchInterface } from '@vertesia/ui/features'
 
 interface DocumentSearchResult {
     objects: ContentObjectItem[],
     error?: Error;
     isLoading: boolean;
+    hasMore?: boolean;
 }
 
 
@@ -36,8 +37,12 @@ export class DocumentSearch implements SearchInterface {
         return this.result.value.error;
     }
 
-    get isRunning() {
+    get isRunning(): boolean {
         return this.result.value.isLoading;
+    }
+
+    get hasMore(): boolean {
+        return this.result.value.hasMore || false;
     }
 
     getFilterValue(name: string) {
@@ -51,9 +56,16 @@ export class DocumentSearch implements SearchInterface {
     }
 
     clearFilters(autoSearch: boolean = true) {
-        const parent = this.query.parent;
+        // Preserve search-related fields when clearing filters
+        const { parent, full_text, vector, weights, score_aggregation, dynamic_scaling, limit } = this.query;
         this.query = {
-            parent
+            parent,
+            ...(full_text !== undefined && { full_text }),
+            ...(vector !== undefined && { vector }),
+            ...(weights !== undefined && { weights }),
+            ...(score_aggregation !== undefined && { score_aggregation }),
+            ...(dynamic_scaling !== undefined && { dynamic_scaling }),
+            ...(limit !== undefined && { limit })
         };
 
         if (autoSearch) {
@@ -72,7 +84,8 @@ export class DocumentSearch implements SearchInterface {
     reset(isLoading = false) {
         this.result.value = {
             objects: [],
-            isLoading
+            isLoading,
+            hasMore: true
         };
     }
 
@@ -81,34 +94,31 @@ export class DocumentSearch implements SearchInterface {
         this.result.value = {
             objects: prev.objects,
             isLoading: value,
-            error: prev.error
+            error: prev.error,
+            hasMore: prev.hasMore
         }
     }
 
-    _searchRequest(query: ComplexSearchQuery, limit: number, offset: number) {
-        return this.collectionId ?
-            this.client.collections.searchMembers(this.collectionId, {
-                limit,
-                offset,
-                query
-            })
-            : this.client.objects.search({
-                limit,
-                offset,
-                query
-            });
+    _searchRequest(query: ComplexSearchQuery, limit: number, offset: number, includeFacets: boolean = true) {
+        const payload: ComplexSearchPayload = {
+            limit,
+            offset,
+            query,
+            facets: includeFacets ? this.facetSpecs : undefined
+        };
+
+        const request = this.collectionId ?
+            this.client.collections.searchMembers(this.collectionId, payload)
+            : this.client.objects.search(payload);
+            
+        return request;
     }
 
     _facetsRequest() {
+        const payload: ComputeObjectFacetPayload = { facets: this.facetSpecs, query: this.query }
         return this.collectionId ?
-            this.client.collections.computeFacets(this.collectionId, {
-                facets: this.facetSpecs,
-                query: this.query
-            })
-            : this.client.objects.computeFacets({
-                facets: this.facetSpecs,
-                query: this.query
-            });
+            this.client.collections.computeFacets(this.collectionId, payload)
+            : this.client.objects.computeFacets(payload);
     }
 
     computeFacets(_query: ObjectSearchQuery) {
@@ -117,44 +127,60 @@ export class DocumentSearch implements SearchInterface {
         });
     }
 
-    _search(loadMore = false) {
-        if (this.isRunning) { // avoid searching when a search is pending
+    _search(loadMore = false, noFacets = false) {
+        if (this.isRunning && loadMore) { // avoid searching when a search is pending, but allow initial search
             return Promise.resolve(false);
         }
         this.result.value = {
             isLoading: true,
             objects: loadMore ? this.objects : [],
+            hasMore: loadMore ? this.result.value.hasMore : true
         }
         const limit = this.limit;
-        const offset = this.objects.length;
-        return this._searchRequest(this.query, limit, offset).then(async (res) => {
+        const offset = loadMore ? this.objects.length : 0;
+        return this._searchRequest(this.query, limit, offset, !noFacets).then(async (res) => {
+            // Handle the new format with results and facets
+            const results = res.results || [];
+            const facets = res.facets || {};
+
             this.result.value = {
                 isLoading: false,
-                objects: this.objects.concat(res)
+                objects: loadMore ? this.objects.concat(results) : results,
+                hasMore: results.length === limit
             }
+
+            // Update facets if they were requested and returned
+            if (!noFacets && facets && Object.keys(facets).length > 0) {
+                this.facets.value = facets;
+            }
+
             return true;
         }).catch((err) => {
             this.result.value = {
                 error: err,
                 isLoading: false,
-                objects: this.objects
+                objects: this.objects,
+                hasMore: this.result.value.hasMore
             }
             throw err;
         })
     }
 
     search(noFacets = false) {
-        if (this.isRunning) return Promise.resolve(false);
-        !noFacets && this.computeFacets(this.query);
-        return this._search(false);
+        // Allow initial search even if isLoading is true (for initial page load)
+        if (this.isRunning && this.objects.length > 0) {
+            return Promise.resolve(false);
+        }
+        return this._search(false, noFacets);
     }
 
     loadMore(noFacets = false) {
-        if (this.isRunning) return Promise.resolve(false);
-        if (this.objects.length === 0) {
-            !noFacets && this.computeFacets(this.query);
+        if (this.isRunning || !this.hasMore) return Promise.resolve(false);
+        if (this.query.vector) return Promise.resolve(false); //Load more not supported on vector queries
+        if (this.objects.length > 0) {
+            noFacets = true; //Only reload facets on loadMore if there are no results.
         }
-        return this._search(true);
+        return this._search(true, noFacets);
     }
 }
 

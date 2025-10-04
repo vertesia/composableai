@@ -8,17 +8,172 @@ import { ListFilter } from "lucide-react";
 import { Filter, FilterGroup } from "./types";
 import Filters from "./filters";
 
-import TextFilter from "./textFilter";
-import DateFilter from "./dateFilter";
-import SelectFilter from "./selectFilter";
+import TextFilter from "./filter/TextFilter";
+import DateFilter from "./filter/dateFilter";
+import SelectFilter from "./filter/SelectFilter";
+import StringListFilter from "./filter/StringListFilter";
 
-interface FilterBarProps {
+const FilterContext = React.createContext<{
   filters: Filter[];
   setFilters: Dispatch<SetStateAction<Filter[]>>;
   filterGroups: FilterGroup[];
+}>({} as any);
+
+interface FilterProviderProps {
+  filters: Filter[];
+  setFilters: Dispatch<SetStateAction<Filter[]>>;
+  filterGroups: FilterGroup[];
+  children: React.ReactNode;
 }
 
-export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps) {
+const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterProviderProps) => {
+  const url = new URL(window.location.href);
+  const searchParams = url.searchParams;
+  const [hasInitialized, setHasInitialized] = React.useState(false);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(searchParams.toString());
+      if (filters.length > 0) {
+        // Convert filters to format with array indicators: filterName:value,value;filterName2:value
+        // Arrays are prefixed with []: filterName:[value1,value2]
+        const filterString = filters.map(filter => {
+          let values;
+          if (filter.type === 'stringList' && Array.isArray(filter.value) && typeof filter.value[0] === 'string') {
+            // Handle stringList with direct string array - always array format
+            values = `[${(filter.value as string[]).map(item => encodeURIComponent(item)).join(',')}]`;
+          } else if (Array.isArray(filter.value)) {
+            if (filter.multiple) {
+              // Handle multiple filters - always use array format for multiple=true
+              values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || item || '')).join(',')}]`;
+            } else if (filter.value.length > 1) {
+              // Handle multiple values for non-multiple filters
+              values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || item || '')).join(',')}]`;
+            } else {
+              // Single value in array for non-multiple filter - don't use array format
+              const firstValue = filter.value[0];
+              if (typeof firstValue === 'string') {
+                values = encodeURIComponent(firstValue);
+              } else if (typeof firstValue === 'object' && firstValue?.value !== undefined) {
+                // Handle FilterOption object
+                values = encodeURIComponent(String(firstValue.value));
+              } else {
+                values = encodeURIComponent(String(firstValue || ''));
+              }
+            }
+          } else {
+            values = encodeURIComponent(filter.value || '');
+          }
+          return `${encodeURIComponent(filter.name)}:${values}`;
+        }).join(';');
+        params.set('filters', filterString);
+      } else {
+        params.delete('filters');
+      }
+
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    } catch (error) {
+      console.error("Failed to update URL with filters:", error);
+    }
+  }, [filters]);
+
+  useEffect(() => {
+    const filtersParam = searchParams.get('filters');
+    if (filtersParam && filterGroups.length > 0 && !hasInitialized) {
+      try {
+        // Parse format with array indicators: filterName:value or filterName:[value1,value2]
+        const filterPairs = filtersParam.split(';');
+        const parsedFilters = filterPairs.map(pair => {
+          const [encodedName, valuesString] = pair.split(':');
+          const name = decodeURIComponent(encodedName);
+
+          let values: string[];
+          // Check if it's an array format [value1,value2]
+          if (valuesString.startsWith('[') && valuesString.endsWith(']')) {
+            // Array format - remove brackets and split by comma
+            const arrayContent = valuesString.slice(1, -1); // Remove [ and ]
+            values = arrayContent ? arrayContent.split(',').map(encodedValue => decodeURIComponent(encodedValue)) : [];
+          } else {
+            // Single value format
+            values = [decodeURIComponent(valuesString)];
+          }
+
+          const group = filterGroups.find(g => g.name === name);
+          let filterValue;
+
+          if (group?.type === 'stringList') {
+            // For stringList, return direct string array
+            filterValue = values;
+          } else if (group?.type === 'text') {
+            // For text, return FilterOption array (single value for text inputs)
+            filterValue = values.length === 1 ? [{ value: values[0], label: values[0] }] :
+              values.map(value => ({ value, label: value }));
+          } else {
+            // For other types, find options with labels
+            filterValue = values.map(value => {
+              const matchingOption = group?.options?.find(opt => opt.value === value);
+              let label = value;
+
+              if (matchingOption?.label) {
+                label = String(matchingOption.label);
+              } else if (matchingOption?.labelRenderer) {
+                label = String(matchingOption.labelRenderer(value));
+              } else if (group?.labelRenderer) {
+                label = String(group.labelRenderer(value));
+              }
+
+              return {
+                value,
+                label
+              };
+            });
+          }
+
+          if (group?.multiple && !valuesString.startsWith('[') && !valuesString.endsWith(']')) {
+            if (group.type === 'stringList') {
+              filterValue = values;
+            } else {
+              if (!Array.isArray(filterValue)) {
+                filterValue = [filterValue];
+              }
+            }
+          }
+
+          // Fallback: if group not found but we detected array format, assume it should be multiple
+          const shouldBeMultiple = group?.multiple || (!group && valuesString.startsWith('[') && valuesString.endsWith(']'));
+
+          const filter = {
+            name,
+            type: group?.type || 'select',
+            placeholder: group?.placeholder,
+            value: filterValue,
+            multiple: shouldBeMultiple
+          };
+
+          return filter;
+        });
+
+        setFilters(parsedFilters);
+        setHasInitialized(true);
+      } catch (error) {
+        setHasInitialized(true);
+      }
+    } else if (filterGroups.length > 0 && !hasInitialized) {
+      // No URL params but we have groups - mark as initialized
+      setHasInitialized(true);
+    }
+  }, [filterGroups, hasInitialized]);
+
+  return (
+    <FilterContext.Provider value={{ filters, setFilters, filterGroups }}>
+      {children}
+    </FilterContext.Provider>
+  );
+};
+
+const FilterBtn = ({ className }: { className?: string }) => {
+  const { filters, setFilters, filterGroups } = React.useContext(FilterContext);
   const [open, setOpen] = React.useState(false);
   const [selectedView, setSelectedView] = React.useState<string | null>(null);
   const [commandInput, setCommandInput] = React.useState("");
@@ -41,13 +196,16 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
             return filter.name === group.name;
           }
           return filter.name === group.name &&
-            filter.value.some(val => val.value === option.value);
+            (Array.isArray(filter.value) && typeof filter.value[0] === 'string'
+              ? filter.value.some(val => val === option.value)
+              : filter.value.some(val => (val as any).value === option.value));
         })
       )
     })).filter(group =>
       ((group.options ?? []).length > 0) ||
       (group.type === "date" && !filters.some(filter => filter.name === group.name)) ||
-      (group.type === "text" && !filters.some(filter => filter.name === group.name))
+      (group.type === "text" && !filters.some(filter => filter.name === group.name)) ||
+      (group.type === "stringList" && !filters.some(filter => filter.name === group.name))
     );
 
     if (options.length === 0) {
@@ -85,23 +243,10 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
     }
   };
 
-  const ButtonClearFilter = () => {
-    return (
-      <div className="flex gap-2 items-center">
-        <Button
-          variant="outline"
-          size="xs"
-          className="transition group"
-          onClick={() => setFilters([])}
-        >
-          Clear All
-        </Button>
-      </div>
-    );
-  };
-
   const renderFilterOptions = () => {
-    if (!selectedView) return null;
+    if (!selectedView) {
+      return null;
+    }
 
     const selectedGroupType = filterGroups.find(g => g.name === selectedView)?.type;
 
@@ -129,6 +274,15 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
             filterGroups={filterGroups}
           />
         );
+      case "stringList":
+        return (
+          <StringListFilter
+            selectedView={selectedView}
+            setFilters={setFilters}
+            handleClose={handleClose}
+            filterGroups={filterGroups}
+          />
+        );
       default:
         return (
           <SelectFilter
@@ -142,129 +296,79 @@ export function FilterBar({ filters, setFilters, filterGroups }: FilterBarProps)
     }
   };
 
-  const url = new URL(window.location.href);
-  const searchParams = url.searchParams;
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(searchParams.toString());
-      if (filters.length > 0) {
-        // Convert filters to simple format with URL-safe encoding: filterName:value,value;filterName2:value
-        const filterString = filters.map(filter => {
-          const values = Array.isArray(filter.value) 
-            ? filter.value.map(item => encodeURIComponent(item.value || '')).join(',')
-            : encodeURIComponent(filter.value || '');
-          return `${encodeURIComponent(filter.name)}:${values}`;
-        }).join(';');
-        params.set('filters', filterString);
-      } else {
-        params.delete('filters');
-      }
+  return (
+    <Popover _open={open} onOpenChange={handleOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          size="md"
+          className={cn(
+            "transition group flex gap-1.5",
+            className
+          )}
+        >
+          <ListFilter className="size-4 shrink-0 transition-all text-muted" />
+          {"Filter"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] p-0" align="start" sideOffset={4}>
+        <Command>
+          {
+            filterGroups.find(group => group.name === selectedView)?.type === "select" && (
+              <CommandInput
+                placeholder={selectedView ? `Filter by ${selectedView}` : "Filter..."}
+                className="h-9 ring-0"
+                value={commandInput}
+                onValueChange={(value) => {
+                  setCommandInput(value);
+                }}
+                ref={commandInputRef}
+                autoFocus={true}
+              />
+            )
+          }
+          <CommandList>
+            <CommandGroup>
+              {!selectedView ? getAvailableFilterGroups() : renderFilterOptions()}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
-      const newUrl = `${window.location.pathname}?${params.toString()}`;
-      window.history.replaceState({}, '', newUrl);
-    } catch (error) {
-      console.error("Failed to update URL with filters:", error);
-    }
-  }, [filters]);
-
-  useEffect(() => {
-    const filtersParam = searchParams.get('filters');
-    if (filtersParam) {
-      try {
-        // Parse simple format with URL-safe decoding: filterName:value,value;filterName2:value
-        const filterPairs = filtersParam.split(';');
-        const parsedFilters = filterPairs.map(pair => {
-          const [encodedName, valuesString] = pair.split(':');
-          const name = decodeURIComponent(encodedName);
-          const values = valuesString.split(',').map(encodedValue => decodeURIComponent(encodedValue));
-          
-          const group = filterGroups.find(g => g.name === name);
-          console.log("group", group);
-          
-          const filterOptions = values.map(value => {
-            if (group?.type === 'text') {
-              return { value, label: value };
-            } else {
-              // Try to find option with label, or use labelRenderer, or fallback to value
-              const matchingOption = group?.options?.find(opt => opt.value === value);
-              let label = value;
-              
-              if (matchingOption?.label) {
-                label = String(matchingOption.label);
-              } else if (matchingOption?.labelRenderer) {
-                label = String(matchingOption.labelRenderer(value));
-              } else if (group?.labelRenderer) {
-                label = String(group.labelRenderer(value));
-              }
-              
-              return {
-                value,
-                label
-              };
-            }
-          });
-          
-          console.log("valuesWithLabels", filterOptions);
-          
-          return {
-            name,
-            type: group?.type || 'select',
-            placeholder: group?.placeholder,
-            value: filterOptions
-          };
-        });
-
-        setFilters(parsedFilters);
-      } catch (error) {
-        console.error("Failed to parse filters from URL:", error);
-      }
-    }
-  }, []);
+const FilterBar = ({ className }: { className?: string }) => {
+  const { filters, setFilters, filterGroups } = React.useContext(FilterContext);
 
   return (
-    <div className="flex gap-2 flex-wrap justify-start w-full items-center">
-      <div className="flex gap-2 items-center">
-        <Popover _open={open} onOpenChange={handleOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              role="combobox"
-              aria-expanded={open}
-              size="md"
-              className={cn(
-                "transition group flex gap-1.5",
-              )}
-            >
-              <ListFilter className="size-4 shrink-0 transition-all text-muted" />
-              {"Filter"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[300px] p-0" align="start">
-            <Command>
-              {filterGroups.find(group => group.name === selectedView)?.type === "select" ? (
-                <CommandInput
-                  placeholder={selectedView ? `Filter by ${selectedView}` : "Filter..."}
-                  className="h-9 ring-0"
-                  value={commandInput}
-                  onValueChange={(value) => {
-                    setCommandInput(value);
-                  }}
-                  ref={commandInputRef}
-                  autoFocus={true}
-                />
-              ) : null}
-
-              <CommandList className="max-h-[300px] overflow-y-auto">
-                <CommandGroup>
-                  {!selectedView ? getAvailableFilterGroups() : renderFilterOptions()}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
+    <div className={cn(className)}>
       <Filters filters={filters} setFilters={setFilters} filterGroups={filterGroups} />
-      {filters.filter((filter) => filter.value?.length > 0).length > 0 && <ButtonClearFilter />}
     </div>
   );
-}
+};
+
+const FilterClear = ({ className }: { className?: string }) => {
+  const { filters, setFilters } = React.useContext(FilterContext);
+
+  const hasActiveFilters = filters.filter((filter) => filter.value?.length > 0).length > 0;
+
+  if (!hasActiveFilters) {
+    return null;
+  }
+
+  return (
+    <Button
+      variant="outline"
+      size="xs"
+      className={cn("transition group", className)}
+      onClick={() => setFilters([])}
+    >
+      Clear All
+    </Button>
+  );
+};
+
+export { FilterProvider, FilterBtn, FilterBar, FilterClear };

@@ -89,12 +89,12 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     };
 
     return (
-        <div>
+        <div className='flex flex-col gap-4 h-full'>
             <div className="flex gap-4">
                 <Input placeholder="Filter by Name" value={searchTerm} onChange={setSearchTerm} />
                 <SelectBox className="w-60" isClearable options={Object.values(ChunkableOptions)} value={chunkable} onChange={onChunkableChange} placeholder={"Is Chunkable"} />
             </div>
-            <div className="w-full">
+            <div className="flex-1">
                 {
                     (!isLoading && objects?.length === 0) ?
                         <EmptyCollection title="No Type" buttonLabel='Create Type' onClick={onOpenCreateModal}>

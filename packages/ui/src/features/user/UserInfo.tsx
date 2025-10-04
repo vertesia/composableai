@@ -1,10 +1,12 @@
 import { useUserSession } from "@vertesia/ui/session";
-import { ApiKey, ApiKeyTypes, PrincipalType, User } from "@vertesia/common";
+import { ApiKey, PrincipalType, User, UserGroup } from "@vertesia/common";
 import { Avatar, Table, Popover, PopoverContent, PopoverTrigger, useFetch } from "@vertesia/ui/core";
 import { ReactNode } from "react";
+import { Users } from "lucide-react";
 
 //TODO use a real cache
 const USER_CACHE: Record<string, Promise<User>> = {};
+const GROUP_CACHE: Record<string, Promise<UserGroup>> = {};
 
 /**
  * Fetch the user information given a user reference.
@@ -26,6 +28,25 @@ export function useFetchUserInfo(userId: string) {
     }, [userId]);
 }
 
+/**
+ * Fetch the group information given a group ID.
+ * @param groupId
+ */
+export function useFetchGroupInfo(groupId: string) {
+    const { client } = useUserSession();
+
+    return useFetch(() => {
+        let group: Promise<UserGroup> | undefined = GROUP_CACHE[groupId];
+        if (!group) {
+            group = client.iam.groups.retrieve(groupId).then(group => {
+                return group;
+            });
+            GROUP_CACHE[groupId] = group;
+        }
+        return group;
+    }, [groupId]);
+}
+
 function AvatarPlaceholder() {
     return <div className='size-8' />
 }
@@ -38,8 +59,10 @@ interface InfoProps {
 function SystemAvatar({ showTitle = false, size = "md" }: InfoProps) {
     return (
         <UserPopoverPanel title="System User" description="The system user is used to initialize built-in objects.">
-            <Avatar src="/icon.svg" size={size} />
-            {showTitle && <div className="text-sm font-semibold pl-2">System User</div>}
+            <div className="flex gap-2 items-center">
+                <Avatar src="/icon.svg" size={size} />
+                {showTitle && <div className="text-sm font-semibold pl-2">System User</div>}
+            </div>
         </UserPopoverPanel>
     )
 }
@@ -96,9 +119,13 @@ export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoPr
     switch (type) {
         case PrincipalType.User:
             return <UserAvatar userId={id} showTitle={showTitle} size={size} />
+        case PrincipalType.Group:
+            return <GroupAvatar userId={id} showTitle={showTitle} size={size} />
         case "system":
             return <SystemAvatar showTitle={showTitle} size={size} />
         case PrincipalType.ServiceAccount:
+            return <ServiceAccountAvatar accountId={id} showTitle={showTitle} size={size} />
+        case PrincipalType.Agent:
             return <ServiceAccountAvatar accountId={id} showTitle={showTitle} size={size} />
         case PrincipalType.ApiKey:
             return <ApiKeyAvatar keyId={id} size={size} showTitle={showTitle} />
@@ -123,6 +150,44 @@ function UnknownAvatar({ title, message, color, size = "md", showTitle = false }
     )
 }
 
+interface GroupAvatarProps extends InfoProps {
+    userId: string;
+}
+function GroupAvatar({ userId, showTitle = false, size = "md" }: GroupAvatarProps) {
+    const { data: group, error } = useFetchGroupInfo(userId);
+
+    if (error) {
+        return <ErrorAvatar title="Failed to fetch group" error={error} showTitle={showTitle} size={size} />
+    }
+
+    if (!group) {
+        return <AvatarPlaceholder />
+    }
+
+    const description = (
+        <div className="space-y-1">
+            {group.description && <div className="text-sm">{group.description}</div>}
+            <div className="text-xs text-muted-foreground">Group ID: {group.id}</div>
+            {group.tags && group.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                    {group.tags.map(tag => (
+                        <span key={tag} className="px-1.5 py-0.5 bg-muted rounded text-xs">{tag}</span>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+
+    return (
+        <UserPopoverPanel title={group.name || "Unnamed Group"} description={description}>
+            <div className="flex flex-row items-center gap-2">
+                <Users className="size-6 text-indigo-500" size={size} />
+                {showTitle && <div className="text-sm font-semibold pl-2">{group.name || "Unnamed Group"}</div>}
+            </div>
+        </UserPopoverPanel>
+    )
+}
+
 interface UserAvatarProps extends InfoProps {
     userId: string;
 }
@@ -137,8 +202,12 @@ function UserAvatar({ userId, showTitle = false, size = "md" }: UserAvatarProps)
         return <AvatarPlaceholder />
     }
 
+    const description = (
+        <div className="truncate" title={user.email}>{user.email}</div>
+    )
+
     return (
-        <UserPopoverPanel title={user.name || user.email || user.username || "unknown"} description={user.email}>
+        <UserPopoverPanel title={user.name || user.email || user.username || "unknown"} description={description}>
             <div className="flex flex-row items-center gap-2">
                 <Avatar src={user.picture} name={user.name} color="bg-indigo-500" size={size} />
                 {showTitle && <div className="text-sm font-semibold pl-2">{user.name || user.email || user.username || "unknown"}</div>}
@@ -162,22 +231,21 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
         return <AvatarPlaceholder />
     }
 
-    const isPublic = data.type === ApiKeyTypes.public;
-    const title = isPublic ? "Public Key" : "Private Key";
-    const avatar = <Avatar name={isPublic ? "PK" : "SK"} color="bg-pink-500" size={size} />;
+    const title = "Private Key";
+    const avatar = <Avatar name={"PK"} color="bg-pink-500" size={size} />;
     const description = (
-        <Table className="dark:bg-gray-800 dark:text-gray-200">
+        <Table className="dark:bg-gray-800 dark:text-gray-200 table-fixed w-full">
             <tr>
-                <td className="font-semibold">Key:</td>
-                <td>{data?.name}</td>
+                <td className="font-semibold w-20">Key:</td>
+                <td className="truncate max-w-0">{data?.name}</td>
             </tr>
             <tr>
-                <td className="font-semibold">Account:</td>
-                <td>{data?.account}</td>
+                <td className="font-semibold w-20">Account:</td>
+                <td className="truncate max-w-0">{data?.account}</td>
             </tr>
             <tr>
-                <td className="font-semibold">Project:</td>
-                <td>{data?.project}</td>
+                <td className="font-semibold w-20">Project:</td>
+                <td className="truncate max-w-0">{data?.project.name}</td>
             </tr>
         </Table>
     );
@@ -186,7 +254,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
         <UserPopoverPanel title={title} description={description}>
             <div className="flex flex-row items-center gap-2">
                 {avatar}
-                {showTitle && <div className="text-sm font-semibold pl-2">{data?.name || data?.account || data?.project || "unknown"}</div>}
+                {showTitle && <div className="text-sm font-semibold">{data?.name || data?.account || data?.project.name || "unknown"}</div>}
             </div>
         </UserPopoverPanel >
     )
@@ -206,7 +274,7 @@ function UserPopoverPanel({ title, description, children }: UserPopoverPanelProp
             <PopoverContent align="center" sideOffset={8} side="right">
                 <div className="flex flex-col gap-1 rounded-md shadow-md p-2">
                     <div className='text-md font-semibold'>{title}</div>
-                    <div>{description}</div>
+                    {description}
                 </div>
             </PopoverContent>
         </Popover>

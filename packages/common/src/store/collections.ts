@@ -17,6 +17,7 @@ export interface CreateCollectionPayload {
     parent?: string | null;
     table_layout?: ColumnLayout[] | null;
     allowed_types?: string[];
+    updated_by?: string,
 }
 
 export interface CollectionItem extends BaseObject {
@@ -48,6 +49,7 @@ export interface CollectionItem extends BaseObject {
 export interface Collection extends CollectionItem {
     properties: Record<string, any>;
     query?: Record<string, any>;
+    security?: Record<string, string[]>; // ACL for collection access
 }
 
 export interface StaticCollection extends Collection {
@@ -66,4 +68,6 @@ export interface CollectionSearchPayload {
     limit?: number;
     offset?: number;
     name?: string;
+    type?: string;
+    types?: string[];
 }

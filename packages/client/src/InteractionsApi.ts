@@ -1,7 +1,8 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { AsyncExecutionPayload, ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload } from "@vertesia/common";
+import { AsyncExecutionPayload, ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload, RateLimitRequestPayload, RateLimitRequestResponse } from "@vertesia/common";
+import { CompletionResult } from "@llumiverse/common";
 import { VertesiaClient } from "./client.js";
-import { executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
+import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
 
 export interface ComputeInteractionFacetsResponse {
     tags?: { _id: string, count: number }[];
@@ -35,7 +36,7 @@ export default class InteractionsApi extends ApiTopic {
      * Find interactions given a mongo match query.
      * You can also specify if prompts schemas are included in the result
      */
-    listEndpoints(payload: InteractionEndpointQuery): Promise<InteractionRef[] | InteractionEndpoint[]> {
+    listEndpoints(payload: InteractionEndpointQuery): Promise<InteractionEndpoint[]> {
         return this.post("/endpoints", {
             payload
         });
@@ -132,9 +133,9 @@ export default class InteractionsApi extends ApiTopic {
      * @throws 500 if interaction execution fails
      * @throws 500 if interaction execution times out
      **/
-    execute<P = any, R = any>(id: string, payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<ExecutionRun<P, R>> {
-        return executeInteraction(this.client as VertesiaClient, id, payload, onChunk).catch(err => {
+    execute<P = any>(id: string, payload: InteractionExecutionPayload = {},
+        onChunk?: (chunk: string) => void): Promise<ExecutionRun<P>> {
+        return executeInteraction<P>(this.client as VertesiaClient, id, payload, onChunk).catch(err => {
             if (err instanceof ServerError && err.payload?.id) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {
@@ -158,9 +159,9 @@ export default class InteractionsApi extends ApiTopic {
      * @param onChunk
      * @returns
      */
-    executeByName<P = any, R = any>(nameWithTag: string, payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P, R>> {
-        return executeInteractionByName(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
+    executeByName<P = any>(nameWithTag: string, payload: InteractionExecutionPayload = {},
+        onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
+        return executeInteractionByName<P>(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
             if (err instanceof ServerError && err.payload?.id) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {
@@ -214,7 +215,7 @@ export default class InteractionsApi extends ApiTopic {
     /**
      * Suggest Improvement for a prompt
      */
-    suggestImprovements(id: string, payload: ImprovePromptPayload): Promise<{ result: string; }> {
+    suggestImprovements(id: string, payload: ImprovePromptPayload): Promise<{ result: CompletionResult[]; }> {
         return this.post(`${id}/suggest-prompt-improvements`, {
             payload
         });
@@ -236,6 +237,15 @@ export default class InteractionsApi extends ApiTopic {
      */
     listForks(id: string): Promise<InteractionRef[]> {
         return this.get(`/${id}/forks`);
+    }
+
+    /**
+     * Request a time slot to execute an interaction with a given environment / model
+     * @param payload RateLimitRequestPayload
+     * @returns RateLimitRequestResponse with delay_ms
+     */
+    requestSlot(payload: RateLimitRequestPayload): Promise<RateLimitRequestResponse> {
+        return checkRateLimit(this.client as VertesiaClient, payload);
     }
 
 }

@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/converters",
-    "version": "0.65.0",
+    "version": "0.78.0",
     "description": "Image and content converters",
     "type": "module",
     "types": "./lib/types/index.d.ts",
@@ -27,7 +27,7 @@
     },
     "dependencies": {
         "sharp": "^0.33.5",
-        "tmp": "^0.2.3"
+        "tmp": "^0.2.4"
     },
     "ts_dual_module": {
         "outDir": "lib"

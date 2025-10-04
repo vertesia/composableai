@@ -2,7 +2,7 @@ import { ExecutionRun, InteractionUpdatePayload, InteractionExecutionPayload } f
 import { VertesiaClient, VertesiaClientProps } from "./client.js";
 import { executeInteraction } from "./execute.js";
 
-export class InteractionBase<P = any, R = any> {
+export class InteractionBase<P = any> {
     client: VertesiaClient;
 
     constructor(public id: string, clientOrOpts: VertesiaClient | VertesiaClientProps) {
@@ -38,7 +38,7 @@ export class InteractionBase<P = any, R = any> {
      * @returns the resolved execution run as Promise<ExecutionRun>
      */
     async execute(payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<ExecutionRun<P, R>> {
-        return executeInteraction<P, R>(this.client, this.id, payload, onChunk);
+        onChunk?: (chunk: string) => void): Promise<ExecutionRun<P>> {
+        return executeInteraction<P>(this.client, this.id, payload, onChunk);
     }
 }

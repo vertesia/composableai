@@ -1,5 +1,6 @@
 import { FacetSpec } from "./facets.js";
 import {
+    ComplexCollectionSearchQuery,
     ComplexSearchQuery,
     InteractionSearchQuery,
     ObjectSearchQuery,
@@ -10,6 +11,12 @@ import {
 } from "./query.js";
 
 export interface SearchPayload {
+    facets?: FacetSpec[];
+    /**
+     * If the facets should be limited to the current page of results.
+     * Defaults to false. When false, the facets are independent of the search results page.
+     */
+    limit_facets?: boolean;
     query?: SimpleSearchQuery;
     limit?: number;
     offset?: number;
@@ -41,6 +48,10 @@ export interface PromptSearchPayload extends SearchPayload {
 
 export interface RunSearchPayload extends SearchPayload {
     query?: RunSearchQuery;
+}
+
+export interface ComputeCollectionFacetPayload extends Omit<ComputeFacetPayload, 'query'> {
+    query?: ComplexCollectionSearchQuery;
 }
 
 export interface ComputeInteractionFacetPayload extends ComputeFacetPayload {

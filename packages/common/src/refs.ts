@@ -2,6 +2,7 @@
 
 export enum ResolvableRefType {
     project = "Project",
+    projects = "Projects",
     environment = "Environment",
     user = "User",
     account = "Account",
@@ -25,4 +26,5 @@ export interface ResourceRef {
     id: string
     name: string
     type: string
+    description?: string
 }

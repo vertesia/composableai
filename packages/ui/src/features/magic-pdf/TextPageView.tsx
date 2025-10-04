@@ -1,4 +1,4 @@
-import { JSONCode, Theme, XMLViewer } from '@vertesia/ui/widgets';
+import { JSONCode, Theme, XMLViewer, MarkdownRenderer } from '@vertesia/ui/widgets';
 import { useEffect, useLayoutEffect, useState } from "react";
 import { usePdfPagesInfo } from "./PdfPageProvider";
 import { ViewType } from "./types";
@@ -14,12 +14,20 @@ const darkTheme: Theme = {
     cdataColor: "#33CC66",
 }
 
+
 interface TextPageViewProps {
     pageNumber: number;
     viewType: ViewType;
 }
 export function TextPageView({ viewType, pageNumber }: TextPageViewProps) {
-    return viewType === "json" ? <JsonPageLayoutView pageNumber={pageNumber} /> : <XmlPageView pageNumber={pageNumber} />
+    switch (viewType) {
+        case "json":
+            return <JsonPageLayoutView pageNumber={pageNumber} />;
+        case "markdown":
+            return <MarkdownPageView pageNumber={pageNumber} />;
+        default:
+            return <XmlPageView pageNumber={pageNumber} />;
+    }
 }
 
 interface XmlPageViewProps {
@@ -60,5 +68,24 @@ function JsonPageLayoutView({ pageNumber }: JsonPageLayoutViewProps) {
     }, [pageNumber]);
     return (
         content && <JSONCode className="w-full" data={content} />
+    )
+}
+
+interface MarkdownPageViewProps {
+    pageNumber: number;
+}
+function MarkdownPageView({ pageNumber }: MarkdownPageViewProps) {
+    const [content, setContent] = useState<string>();
+    const { markdownProvider } = usePdfPagesInfo();
+    useEffect(() => {
+        markdownProvider.getPageMarkdown(pageNumber).then(setContent).catch((err: any) => {
+            console.error(err);
+            setContent(undefined);
+        });
+    }, [pageNumber]);
+    return (
+        <div className="px-4 py-2 prose prose-sm max-w-none dark:prose-invert">
+            {content ? <MarkdownRenderer>{content}</MarkdownRenderer> : <div>No markdown content available</div>}
+        </div>
     )
 }

@@ -1,8 +1,7 @@
-import { Table, TBody, Spinner } from "@vertesia/ui/core";
+import { Table, TBody } from "@vertesia/ui/core";
 import { ContentObjectItem, ColumnLayout } from "@vertesia/common";
-import clsx from "clsx";
 import { ChangeEvent } from "react";
-import { DocumentIcon } from "../components/DocumentIcon";
+import { DocumentIcon, DocumentIconSkeleton } from "../components/DocumentIcon";
 import { DocumentSelection } from "../DocumentSelectionProvider";
 import { DocumentTableColumn } from "./DocumentTableColumn";
 
@@ -28,7 +27,7 @@ export function DocumentTableView({ objects, selection, isLoading, onRowClick, c
                     ))}
                 </tr>
             </thead>
-            <TBody isLoading={isLoading} columns={columns.length}>
+            <TBody isLoading={isLoading} columns={columns.length + 1}>
                 {
                     objects?.map((obj: ContentObjectItem) => {
                         return (
@@ -53,12 +52,9 @@ export function DocumentTableView({ objects, selection, isLoading, onRowClick, c
 }
 
 export function DocumentGridView({ objects, selection, isLoading, onSelectionChange, onRowClick }: ViewProps) {
-
     return (
         <>
-            <div className={clsx("bg-white opacity-40 absolute inset-0 z-50 flex justify-center items-center", isLoading ? "block" : "hidden")}>
-                <Spinner size='xl' />
-            </div>
+            <DocumentIconSkeleton isLoading={isLoading} />
             <div className="w-full gap-2 grid lg:grid-cols-6">
                 {objects.map((document) => (
                     <DocumentIcon key={document.id} document={document} selection={selection} onSelectionChange={onSelectionChange} onRowClick={onRowClick} />

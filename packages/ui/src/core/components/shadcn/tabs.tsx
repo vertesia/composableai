@@ -11,12 +11,16 @@ const TabsContext = React.createContext<{
   current?: string;
   setTab?: (name: string) => void;
   responsive?: boolean;
+  variant?: "tabs" | "pills";
+  updateHash?: boolean;
 }>({
   size: undefined,
   tabs: undefined,
   current: undefined,
   setTab: undefined,
-  responsive: false
+  responsive: false,
+  variant: "tabs",
+  updateHash: true
 });
 
 interface TabsProps {
@@ -28,6 +32,8 @@ interface TabsProps {
   children?: React.ReactNode;
   onTabChange?: (tabName: string) => void;
   responsive?: boolean;
+  variant?: "tabs" | "pills";
+  updateHash?: boolean;
 }
 
 const VTabs = ({
@@ -38,20 +44,71 @@ const VTabs = ({
   fullWidth,
   children,
   onTabChange,
-  responsive = false
+  responsive = false,
+  variant = "tabs",
+  updateHash = true
 }: TabsProps) => {
-  const currentValue = typeof current === 'function' ? current() : current || defaultValue;
-
-  const [value, setValue] = React.useState(currentValue);
-
-  React.useEffect(() => {
+  // Initialize value
+  const [value, setValue] = React.useState(() => {
+    // First check if current is provided
+    const currentValue = typeof current === 'function' ? current() : current;
     if (currentValue) {
+      return currentValue;
+    }
+
+    // Then check hash
+    const hash = window.location.hash;
+    const currentTab = hash ? hash.substring(1) : undefined;
+    
+    // Check if the tab from hash exists in tabs
+    if (currentTab && tabs.some(tab => tab.name === currentTab)) {
+      return currentTab;
+    }
+    
+    // Fall back to default or first tab
+    return defaultValue || tabs[0]?.name;
+  });
+
+  // Update when current prop changes (but don't create a loop)
+  React.useEffect(() => {
+    const currentValue = typeof current === 'function' ? current() : current;
+    if (currentValue && currentValue !== value) {
       setValue(currentValue);
     }
-  }, [currentValue]);
+  }, [current]);
+
+  // Listen to hash changes only when there's no current prop being controlled externally
+  React.useEffect(() => {
+    if (current) return; // Skip hash handling if controlled by parent
+
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      const currentTab = hash ? hash.substring(1) : undefined;
+      
+      // Only update if the tab exists in tabs
+      if (currentTab && tabs.some(tab => tab.name === currentTab)) {
+        setValue(currentTab);
+      } else if (!hash && defaultValue) {
+        // If no hash, fall back to default
+        setValue(defaultValue);
+      }
+    };
+
+    // Check initial hash
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [current, tabs, defaultValue]);
 
   const handleValueChange = (newValue: string) => {
     setValue(newValue);
+    
+    // Update the URL hash when tab changes (only if updateHash is true and not controlled by parent)
+    if (updateHash && !current) {
+      window.location.hash = newValue;
+    }
+    
     if (onTabChange) {
       onTabChange(newValue);
     }
@@ -62,9 +119,9 @@ const VTabs = ({
   }, [handleValueChange]);
 
   return (
-    <TabsContext.Provider value={{ tabs, size: fullWidth ? tabs.length : 0, current: value, setTab, responsive: responsive }}>
+    <TabsContext.Provider value={{ tabs, size: fullWidth ? tabs.length : 0, current: value, setTab, responsive: responsive, variant, updateHash }}>
       <TabsPrimitive.Root
-        defaultValue={tabs[0]?.name}
+        defaultValue={value || tabs[0]?.name}
         value={value}
         onValueChange={handleValueChange}
         className={className}
@@ -76,7 +133,7 @@ const VTabs = ({
 };
 
 const VTabsBar = ({ className }: { className?: string }) => {
-  const { tabs, size, current, setTab, responsive } = React.useContext(TabsContext);
+  const { tabs, size, current, setTab, responsive, variant, updateHash } = React.useContext(TabsContext);
 
   const fullWidth = size !== 0;
 
@@ -85,13 +142,13 @@ const VTabsBar = ({ className }: { className?: string }) => {
 
     const tab = tabs.find(t => t.name === tabName);
 
-    if (tab?.href) {
+    if (tab?.href && updateHash) {
       window.history.pushState(null, '', tab.href);
     }
 
     setTab(tabName);
 
-  }, [tabs, setTab]);
+  }, [tabs, setTab, updateHash]);
 
   if (!tabs || !setTab) {
     console.warn("TabsBar: No tabs provided or setTab not available");
@@ -114,13 +171,14 @@ const VTabsBar = ({ className }: { className?: string }) => {
           />
         </div>
       )}
-      <TabsList size={size} className={cn((fullWidth ? "w-full" : ""), className, (responsive ? "hidden lg:flex" : ""))}>
+      <TabsList size={size} variant={variant} className={cn((fullWidth ? "w-full" : ""), className, (responsive ? "hidden lg:flex" : ""))}>
         {tabs.map((tab) => (
           <TabsTrigger
             key={tab.name}
             value={tab.name}
             disabled={tab.disabled}
             href={tab.href}
+            variant={variant}
             onClick={() => handleTabChange(tab.name)}
           >
             {tab.label}
@@ -149,13 +207,15 @@ const VTabsPanel = () => {
 
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { size?: number }
->(({ className, size, ...props }, ref) => (
-  <TabsContext.Provider value={{ size }}>
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { size?: number; variant?: "tabs" | "pills" }
+>(({ className, size, variant = "tabs", ...props }, ref) => (
+  <TabsContext.Provider value={{ size, variant }}>
     <TabsPrimitive.List
       ref={ref}
       className={cn(
-        "border-b -mb-px flex space-x-4",
+        variant === "tabs" 
+          ? "border-b -mb-px flex space-x-4"
+          : "flex space-x-2 p-1 rounded-md",
         className
       )}
       {...props}
@@ -168,8 +228,9 @@ const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & {
     href?: string;
+    variant?: "tabs" | "pills";
   }
->(({ className, href, ...props }, ref) => {
+>(({ className, href, variant = "tabs", ...props }, ref) => {
   const { size } = React.useContext(TabsContext);
 
   const handleClick = React.useCallback((event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -186,10 +247,19 @@ const TabsTrigger = React.forwardRef<
     <TabsPrimitive.Trigger
       ref={ref}
       className={cn(
-        "border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer",
-        "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
-        "data-[state=active]:border-primary data-[state=active]:text-primary",
-        "disabled:pointer-events-none disabled:opacity-50",
+        variant === "tabs" 
+          ? cn(
+              "border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer",
+              "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
+              "data-[state=active]:border-primary data-[state=active]:text-primary",
+              "disabled:pointer-events-none disabled:opacity-50"
+            )
+          : cn(
+              "px-3 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer rounded-sm transition-colors",
+              "tborder border-input bg-muted shadow-xs hover:bg-muted ring-inset",
+              "data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm",
+              "disabled:pointer-events-none disabled:opacity-50"
+            ),
         className,
         size ? `w-1/${size}` : ""
       )}

@@ -13,6 +13,9 @@ let _firebaseAuth: Auth | null = null;
 export function getFirebaseApp(): FirebaseApp {
     if (!_firebaseApp) {
         try {
+            if (!Env.firebase) {
+                throw new Error("Firebase configuration is not available in the environment");
+            }
             _firebaseApp = initializeApp(Env.firebase);
         } catch (error) {
             console.error("Failed to initialize Firebase app:", error);
@@ -40,6 +43,11 @@ export function getFirebaseAuth(): Auth {
 export async function setFirebaseTenant(tenantEmail?: string) {
     if (!tenantEmail) {
         console.log("No tenant name or email specified, skipping tenant setup");
+        return;
+    }
+
+    if (!Env.firebase) {
+        console.log("Firebase configuration is not available in the environment");
         return;
     }
 

@@ -1,6 +1,6 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { Collection, CollectionItem, CollectionSearchPayload, ComplexSearchPayload, ComputeObjectFacetPayload, ContentObjectItem, ContentObjectStatus, CreateCollectionPayload, DynamicCollection } from "@vertesia/common";
-import { ComputeFacetsResponse } from "./ObjectsApi.js";
+import { Collection, CollectionItem, ComplexCollectionSearchQuery, ComplexSearchPayload, ComputeCollectionFacetPayload, ComputeObjectFacetPayload, ContentObjectItem, ContentObjectStatus, CreateCollectionPayload, DynamicCollection } from "@vertesia/common";
+import { ComputeFacetsResponse, SearchResponse } from "./ObjectsApi.js";
 
 
 export class CollectionsApi extends ApiTopic {
@@ -11,16 +11,21 @@ export class CollectionsApi extends ApiTopic {
 
     /**
      * List collections
-     * @param payload
-     * @returns
-     */
-    list(payload: CollectionSearchPayload = {}): Promise<CollectionItem[]> {
-        return this.get("/", {
-            query: {
-                limit: 100,
-                offset: 0,
-                ...payload
-            }
+     * @param payload: CollectionSearchPayload
+     * @returns CollectionItem[] list of collections
+    **/
+    search(payload: ComplexCollectionSearchQuery): Promise<CollectionItem[]> {
+        return this.post("/search", { payload });
+    }
+
+    /**
+     * Compute facets for List collections
+     * @param query: ComputeCollectionFacetPayload
+     * @returns ComputeFacetsResponse list of facets
+    **/
+    computeListFacets(query: ComputeCollectionFacetPayload): Promise<ComputeFacetsResponse> {
+        return this.post("/facets", {
+            payload: query
         });
     }
 
@@ -73,7 +78,7 @@ export class CollectionsApi extends ApiTopic {
         });
     }
 
-    searchMembers(collectionId: string, payload: ComplexSearchPayload): Promise<ContentObjectItem[]> {
+    searchMembers(collectionId: string, payload: ComplexSearchPayload): Promise<SearchResponse> {
         return this.post(`/${collectionId}/search`, { payload });
     }
 
@@ -88,6 +93,37 @@ export class CollectionsApi extends ApiTopic {
 
     delete(id: string) {
         return this.del(`/${id}`);
+    }
+
+    /**
+     * Update collection permissions and propagate to member objects
+     * @param collectionId - The collection ID
+     * @param permissions - Map of permission types to principal arrays
+     * @returns Object with collection id, updated security, and number of objects updated
+     */
+    updatePermissions(collectionId: string, permissions: Record<string, string[]>): Promise<{
+        id: string;
+        security: Record<string, string[]>;
+        objectsUpdated: number;
+    }> {
+        return this.put(`/${collectionId}/permissions`, {
+            payload: permissions
+        });
+    }
+
+    /**
+     * Manually trigger permission propagation from collection to member objects
+     * Useful for debugging and fixing permission issues
+     * @param collectionId - The collection ID
+     * @returns Object with collection id, message, and number of objects updated
+     */
+    propagatePermissions(collectionId: string): Promise<{
+        id: string;
+        message: string;
+        security?: Record<string, string[]>;
+        objectsUpdated: number;
+    }> {
+        return this.post(`/${collectionId}/propagate-permissions`);
     }
 
 }

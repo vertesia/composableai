@@ -7,7 +7,7 @@ import { Env } from "@vertesia/ui/env";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from "./UserSession";
 
 const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app"];
-const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
+const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/?sts=https://sts-staging.vertesia.io";
 
 function shouldRedirectToCentralAuth() {
     // Authentication is not supported in Docker environment.
@@ -26,7 +26,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
     const token = hashParams.get("token");
     const state = hashParams.get("state");
     const [session, setSession] = useState<UserSession>(new UserSession());
-    const { generateState, verifyState } = useAuthState();
+    const { generateState, verifyState, clearState } = useAuthState();
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
         const url = new URL(CENTRAL_AUTH_REDIRECT);
@@ -68,8 +68,10 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                     },
                 });
                 redirectToCentralAuth();
+            } else {
+                clearState()
             }
-            getComposableToken(selectedAccount, selectedProject, token)
+            getComposableToken(selectedAccount, selectedProject, token, false, shouldRedirectToCentralAuth())
                 .then((res) => {
                     session.login(res.rawToken).then(() => {
                         setSession(session.clone());
@@ -132,7 +134,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                     },
                 });
                 session.setSession = setSession;
-                await getComposableToken(selectedAccount, selectedProject)
+                await getComposableToken(selectedAccount, selectedProject, undefined, false, shouldRedirectToCentralAuth())
                     .then((res) => {
                         session.login(res.rawToken).then(() => setSession(session.clone()));
                     })

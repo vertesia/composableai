@@ -83,6 +83,35 @@ const steps2: DSLWorkflowStep[] = [
     }
 ]
 
+const steps3: DSLWorkflowStep[] = [
+    {
+        type: 'activity',
+        name: 'sayHelloFromParent',
+        output: 'parent',
+        import: ["name"],
+    },
+    {
+        type: 'workflow',
+        name: 'dslWorkflow',
+        output: 'child',
+        spec: {
+            name: 'testChildWorkflow',
+            steps: childSteps,
+            vars: {}
+        },
+        vars: {
+            storeUrl: 'store:${objectIds[0]}',
+            name: '${name}'
+        }
+    },
+    {
+        type: 'activity',
+        name: 'prepareResult',
+        import: ["parent", "child"],
+        output: 'result',
+    }
+]
+
 
 // ========== test env setup ==========
 
@@ -100,6 +129,7 @@ describe('DSL Workflow with child workflows', () => {
                 AccountId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
                 DocumentId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
                 ProjectId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
+                TenantId: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
                 InitiatedBy: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
             },
         });
@@ -128,9 +158,8 @@ describe('DSL Workflow with child workflows', () => {
             vars: {},
             account_id: '123',
             project_id: '123',
-            timestamp: Date.now(),
             wf_rule_name: 'test',
-            auth_token: 'test',
+            auth_token: process.env.VERTESIA_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature',
             config: {
                 studio_url: process.env.CP_STUDIO_URL || "http://localhost:8081",
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
@@ -173,9 +202,8 @@ describe('DSL Workflow with child workflows', () => {
             vars: {},
             account_id: '123',
             project_id: '123',
-            timestamp: Date.now(),
             wf_rule_name: 'test',
-            auth_token: 'test',
+            auth_token: process.env.VERTESIA_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature',
             config: {
                 studio_url: process.env.CP_STUDIO_URL || "http://localhost:8081",
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
@@ -192,6 +220,50 @@ describe('DSL Workflow with child workflows', () => {
         let result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
             args: [payload],
             workflowId: 'test',
+            taskQueue,
+        }));
+
+        expect(result).toEqual([`Parent: Hello, ${name}!`, `DSL Child: Hello, ${name}!`]);
+
+    });
+
+    test('execute DSL child workflow with variable resolution', async () => {
+        const { client, nativeConnection } = testEnv;
+        const taskQueue = 'test';
+
+        const name = 'Baz';
+
+        const worker = await Worker.create({
+            connection: nativeConnection,
+            taskQueue,
+            workflowsPath: new URL("./test/test-child-workflow.ts", import.meta.url).pathname,
+            activities: { sayHelloFromParent, prepareResult, sayHelloFromDSLChild },
+        });
+
+        const payload: DSLWorkflowExecutionPayload = {
+            event: ContentEventName.create,
+            objectIds: ['doc123'],
+            vars: {},
+            account_id: '123',
+            project_id: '123',
+            wf_rule_name: 'test',
+            auth_token: process.env.VERTESIA_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature',
+            config: {
+                studio_url: process.env.CP_STUDIO_URL || "http://localhost:8081",
+                store_url: process.env.CP_STORE_URL || "http://localhost:8082",
+            },
+            workflow: {
+                steps: steps3,
+                vars: {
+                    name,
+                },
+                name: 'test',
+            }
+        }
+
+        let result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
+            args: [payload],
+            workflowId: 'test-vars',
             taskQueue,
         }));
 
