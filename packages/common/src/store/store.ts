@@ -232,6 +232,12 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
      * The document score, used for ranking and sorting.
      */
     score?: number;
+
+    /**
+     * Optional expiration timestamp for transient objects.
+     * Objects with this field set will be automatically deleted by MongoDB TTL index.
+     */
+    expires_at?: Date;
 }
 
 /**

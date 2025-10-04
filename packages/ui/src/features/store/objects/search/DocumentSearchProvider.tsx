@@ -41,6 +41,8 @@ export function DocumentSearchProvider({ children, limit, parent, typeId, facets
         search.query.type = typeId;
         search.query.parent = parent;
         search.query.name = name;
+        // Exclude transient objects (with expires_at set) from default listing
+        search.query.match = { expires_at: null };
         return search;
     }, [typeId, limit]);
 
