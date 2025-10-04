@@ -59,10 +59,11 @@ export class FilesApi extends ApiTopic {
         });
     }
 
-    getDownloadUrl(file: string): Promise<GetFileUrlResponse> {
+    getDownloadUrl(file: string, ttl?: number): Promise<GetFileUrlResponse> {
         return this.post("/download-url", {
             payload: {
                 file,
+                ttl,
             } satisfies GetFileUrlPayload,
         });
     }

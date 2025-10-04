@@ -382,6 +382,8 @@ export interface GetUploadUrlPayload {
 
 export interface GetFileUrlPayload {
     file: string;
+    /** Time-to-live for the signed URL in seconds (optional) */
+    ttl?: number;
 }
 
 export interface GetFileUrlResponse {

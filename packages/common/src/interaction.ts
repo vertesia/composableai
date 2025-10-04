@@ -451,9 +451,15 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * The workflow will return the file path instead of the actual output.
      */
     save_output_to_file?: boolean;
-    
+
     /** Maximum depth for nested conversations to prevent infinite recursion (default: 5) */
     max_nested_conversation_depth?: number;
+
+    /** Whether to enable rate limiting for this conversation execution */
+    enable_rate_limiting?: boolean;
+
+    /** Whether to skip final verification in the conversation workflow */
+    skip_final_verification?: boolean;
 
 }
 
