@@ -4,6 +4,7 @@ export { createOrUpdateDocumentFromInteractionRun } from "./advanced/createOrUpd
 export { updateDocumentFromInteractionRun } from "./advanced/updateDocumentFromInteractionRun.js";
 export { chunkDocument } from "./chunkDocument.js";
 export { createPdfDocumentFromSource } from "./createDocumentFromOther.js";
+export { deleteDocuments } from "./deleteDocuments.js";
 export { executeInteraction } from "./executeInteraction.js";
 export { extractDocumentText } from "./extractDocumentText.js";
 export { generateDocumentProperties } from "./generateDocumentProperties.js";
