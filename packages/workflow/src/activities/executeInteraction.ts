@@ -194,8 +194,13 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
     } catch (error: any) {
         log.error(`Failed to execute interaction ${interactionName}`, { error });
         const errorStatus = error.status || error.statusCode; // ServerError uses 'status', some other errors use 'statusCode'
-        if (errorStatus === 429 && params.exit_on_resource_exhaustion) {
-            throw new ResourceExhaustedError(errorStatus, "Resource exhausted - rate limit exceeded");
+
+        // Resource exhaustion status codes: 429 (rate limit), 502 (bad gateway), 503 (service unavailable), 504 (timeout), 529 (overloaded)
+        const RESOURCE_EXHAUSTION_CODES = [429, 502, 503, 504, 529];
+        const isResourceExhausted = RESOURCE_EXHAUSTION_CODES.includes(errorStatus);
+
+        if (isResourceExhausted && params.exit_on_resource_exhaustion) {
+            throw new ResourceExhaustedError(errorStatus, `Resource exhausted (${errorStatus}): ${error.message}`);
         } else if (error.message.includes("Failed to validate merged prompt schema")) {
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError("prompt_data", payload.activity, error.message);
