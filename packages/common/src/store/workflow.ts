@@ -85,7 +85,7 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
 
 }
 
-interface WebHookSpec {
+export interface WebHookSpec {
     /**
      * The webhook URL to call using POST method
      */
