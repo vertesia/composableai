@@ -15,9 +15,22 @@ jobs:
     strategy:
       matrix:
         package:
+          - api-fetch-client
+          - cli
+          - client
           - common
           - converters
-          # TODO: add more packages when tests passed
+          - create-agent
+          - create-plugin
+          - json
+          - memory
+          - memory-cli
+          - memory-commands
+          - plugin-builder
+          - react
+          - tools-sdk
+          - ui
+          - workflow
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
