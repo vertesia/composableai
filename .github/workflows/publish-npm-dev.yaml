@@ -5,6 +5,7 @@ on:
     inputs: {}
 
 permissions:
+  id-token: write  # Required for OIDC between GitHub and NPM
   contents: read
 
 jobs:
@@ -28,5 +29,3 @@ jobs:
           dev_version="${current_version}-dev-${GITHUB_SHA::7}"
           pnpm -r --filter "./packages/*" exec npm version ${dev_version} --no-git-tag-version
           pnpm -r --filter "./packages/*" exec npm publish --access public --tag dev
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
