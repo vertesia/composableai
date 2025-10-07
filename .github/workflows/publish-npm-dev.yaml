@@ -17,7 +17,7 @@ jobs:
           node-version: 22
           cache: "pnpm"
       - run: pnpm install
-      - name: Change version
+      - name: Publish packages to NPM
         run: |
           set +x
           current_version=$(pnpm pkg get version | tr -d '"')
