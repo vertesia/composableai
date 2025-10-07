@@ -27,7 +27,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          registry-url: 'https://registry.npmjs.org'
           cache: "pnpm"
+
+      - run: npm --version
+      # Ensure npm 11.5.1 or later is installed
+      - name: Update npm
+        run: npm install -g npm@latest
+      - run: npm --version
+
       - run: pnpm install
       - name: Publish packages to NPM
         run: |
@@ -38,4 +46,4 @@ jobs:
 
           # --no-git-checks: don't check whenther the working directory is clean because we update
           #     the version directly in the CI
-          pnpm publish "packages/${{ matrix.package }}" --access public --tag dev --no-git-checks
+          npm --prefix "packages/${{ matrix.package }}" publish --access public --tag dev --no-git-checks
