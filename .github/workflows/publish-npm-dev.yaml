@@ -44,9 +44,10 @@ jobs:
           dev_version="${current_version}-dev-${GITHUB_SHA::7}"
           echo "Changing version from [${current_version}] to [${dev_version}]"
 
-          pnpm -r exec npm version ${dev_version} --no-git-tag-version
+          npm version ${dev_version} --no-git-tag-version
+          pnpm -r --filter "./packages/**" exec npm version ${dev_version} --no-git-tag-version
 
           cd "packages/${{ matrix.package }}"
           # --no-git-checks: don't check whenther the working directory is clean because we update
           #     the version directly in the CI
-          npm --prefix  publish --access public --tag dev --no-git-checks
+          npm publish --access public --tag dev --no-git-checks
