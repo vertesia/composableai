@@ -23,10 +23,6 @@
     "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
   },
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vertesia/composableai/tree/main/packages/api-fetch-client.git"
-  },
-  "repository": {
     "type" : "git",
     "url": "https://github.com/vertesia/composableai.git",
     "directory": "packages/api-fetch-client"
