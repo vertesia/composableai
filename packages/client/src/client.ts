@@ -16,6 +16,7 @@ import { RunsApi } from "./RunsApi.js";
 import { ZenoClient } from "./store/client.js";
 import TrainingApi from "./TrainingApi.js";
 import UsersApi from "./UsersApi.js";
+import { VERSION, VERSION_HEADER } from "./store/version.js";
 
 /**
  * 1 min threshold constant in ms
@@ -130,6 +131,15 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.sessionTags = opts.sessionTags;
     }
 
+    withApiVersion(version: string | number | null) {
+        if (!version) {
+            delete this.headers[VERSION_HEADER];
+        } else {
+            this.headers[VERSION_HEADER] = String(version);
+        }
+        return this;
+    }
+
     /**
      * Overwrite to keep store and composable clients synchronized on the auth callback
      * @param authCb
@@ -230,7 +240,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     get initialHeaders() {
         return {
             ...super.initialHeaders,
-            'X-Api-Version': '20250925' // YYYYMMDD, client versioning for API endpoints. Increment manually for breaking changes
+            [VERSION_HEADER]: VERSION
         }
     }
 

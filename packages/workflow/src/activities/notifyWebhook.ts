@@ -1,9 +1,9 @@
 import { log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
-import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun, WebHookSpec, WorkflowExecutionBaseParams } from "@vertesia/common";
+import { DSLActivityExecutionPayload, DSLActivitySpec, WebHookSpec, WorkflowExecutionBaseParams } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { WorkflowParamNotFoundError } from "../errors.js";
-import { getVertesiaClient } from "../utils/client.js";
+import { getVertesiaClientOptions } from "../utils/client.js";
 
 export interface NotifyWebhookParams {
     webhook: string | WebHookSpec; //URL to send the notification to
@@ -115,19 +115,17 @@ async function createRequestBody(payload: WorkflowExecutionBaseParams, params: N
 async function createEventData(payload: WorkflowExecutionBaseParams, params: NotifyWebhookParams, api_version: number | undefined): Promise<any> {
     const data = params.detail;
     if (data && data.run_id && params.event_name === "workflow_completed" && params.workflow_type === 'ExecuteInteractionWorkflow') {
-        const client = getVertesiaClient(payload); //ensure client is initialized
+        const client = getVersionedVertesiaClient(payload, api_version); //ensure client is initialized
         // we replace the result property with the full execution run object
-        return await fetchRun(client, data.run_id, api_version);
+        return await client.runs.retrieve(data.run_id);
     }
     return data;
 }
 
-async function fetchRun(client: VertesiaClient, runId: string, version?: number): Promise<ExecutionRun> {
-    return await client.runs.get(`/${runId}`, {
-        headers: version ? {
-            'X-Run-Version': version.toString()
-        } : undefined
-    });
+
+function getVersionedVertesiaClient(payload: WorkflowExecutionBaseParams, version: string | number | undefined) {
+    // set the api version header
+    return new VertesiaClient(getVertesiaClientOptions(payload)).withApiVersion(version ? String(version) : null);
 }
 
 
