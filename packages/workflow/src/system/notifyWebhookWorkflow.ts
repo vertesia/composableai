@@ -27,12 +27,16 @@ export interface NotifyWebhookWorfklowParams {
 
 export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload<NotifyWebhookWorfklowParams>): Promise<any> {
 
+    const info = workflowInfo();
     const { objectIds, vars } = payload;
     const notifications = [];
     const endpoints = vars.endpoints ?? (vars as any).webhooks ?? [];
     const data = vars.data ?? (vars as any).webhook_data ?? undefined;
-    const workflow_type = vars.workflow_type ?? workflowInfo().workflowType;
+    const workflow_type = vars.workflow_type ?? info.workflowType;
     const eventName = payload.event;
+
+    const workflowId = info.parent?.workflowId || info.workflowId;
+    const workflowRunId = info.parent?.runId || info.runId;
 
     if (!endpoints.length) {
         log.info(`No webhooks to notify`);
@@ -42,11 +46,13 @@ export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload<No
     for (const ep of endpoints) {
         const n = notifyWebhook(payload, {
             webhook: ep,
-            workflow_type,
             method: 'POST',
-            payload: {
+            workflow_type,
+            workflow_id: workflowId,
+            workflow_run_id: workflowRunId,
+            event_name: eventName,
+            detail: {
                 object_ids: objectIds,
-                event: eventName,
                 data
             }
         }).then(res => {
