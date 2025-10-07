@@ -1,6 +1,7 @@
 {
     "name": "@vertesia/packages",
     "version": "0.78.0",
+    "private": true,
     "scripts": {
         "bump": "pnpm exec wst bump minor -x llumiverse",
         "release": "pnpm -r publish --access public",
