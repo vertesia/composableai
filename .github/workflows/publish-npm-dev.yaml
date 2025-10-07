@@ -10,7 +10,14 @@ permissions:
 
 jobs:
   publish:
+    name: publish-${{ matrix.package }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package:
+          - common
+          - converters
+          # TODO: add more packages when tests passed
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,4 +36,4 @@ jobs:
           current_version=$(pnpm pkg get version | tr -d '"')
           dev_version="${current_version}-dev-${GITHUB_SHA::7}"
           pnpm -r --filter "./packages/*" exec npm version ${dev_version} --no-git-tag-version
-          pnpm -r --filter "./packages/*" exec npm publish --access public --tag dev
+          pnpm publish "packages/${{ matrix.package }}" --access public --tag dev
