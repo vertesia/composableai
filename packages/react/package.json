@@ -36,5 +36,10 @@
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "json-schema": "^0.4.0"
+    },
+    "repository": {
+        "type" : "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/react"
     }
 }
