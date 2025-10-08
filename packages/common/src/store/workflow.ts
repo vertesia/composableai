@@ -66,7 +66,7 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
      * The list of endpoints to notify when the workflow finishes.
      * It is handled by a sub-workflow execution, so the main workflow will not wait for the notification to be sent.
      */
-    notify_endpoints?: string[];
+    notify_endpoints?: (string | WebHookSpec)[];
 
     /** If this is a child workflow, parent contains parent's ids  */
     parent?: {
@@ -83,6 +83,17 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
      */
     _enabled_queues?: Queue[];
 
+}
+
+export interface WebHookSpec {
+    /**
+     * The webhook URL to call using POST method
+     */
+    url: string;
+    /**
+     * the API version to use if any
+     */
+    version?: number;
 }
 
 export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {

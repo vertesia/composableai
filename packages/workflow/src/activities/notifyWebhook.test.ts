@@ -1,9 +1,9 @@
 import {
   MockActivityEnvironment,
 } from "@temporalio/testing";
-import { beforeAll, beforeEach, describe, expect, it, test, vi } from "vitest";
-import { notifyWebhook, NotifyWebhook, NotifyWebhookParams } from "./notifyWebhook.js";
 import { ContentEventName, DSLActivityExecutionPayload } from "@vertesia/common";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { notifyWebhook, NotifyWebhookParams } from "./notifyWebhook.js";
 
 // Mock fetch globally
 vi.stubGlobal('fetch', vi.fn());
@@ -20,10 +20,14 @@ beforeEach(() => {
 });
 
 const defaultParams = {
-  target_url: "https://vertesia.test",
+  webhook: "https://vertesia.test",
   method: "POST" as const,
-  payload: { message: "Hello World" }
-};
+  detail: { message: "Hello World" },
+  workflow_id: "wf_id",
+  workflow_type: "wfFuncName",
+  workflow_run_id: "wf_run_id",
+  event_name: "completed",
+} satisfies NotifyWebhookParams;
 
 // Helper function to create test payload
 const createTestPayload = (params: Partial<NotifyWebhookParams> = {}): DSLActivityExecutionPayload<NotifyWebhookParams> => {
@@ -52,15 +56,15 @@ describe("Webhook should be notified", () => {
       ok: true,
       status: 200,
       statusText: 'OK',
-      url: defaultParams.target_url
+      url: defaultParams.webhook
     };
     mockFetch.mockResolvedValueOnce(mockResponse as Response);
 
     const payload = createTestPayload();
     const res = await testEnv.run(notifyWebhook, payload);
-    
+
     // Verify fetch was called with correct parameters
-    expect(mockFetch).toHaveBeenCalledWith(defaultParams.target_url, {
+    expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
       method: 'POST',
       body: JSON.stringify({ message: 'Hello World' }),
       headers: {
@@ -72,7 +76,7 @@ describe("Webhook should be notified", () => {
     expect(res).toEqual({
       status: 200,
       message: 'OK',
-      url: defaultParams.target_url
+      url: defaultParams.webhook
     });
   });
 
@@ -82,7 +86,7 @@ describe("Webhook should be notified", () => {
       ok: false,
       status: 500,
       statusText: 'Internal Server Error',
-      url: defaultParams.target_url,
+      url: defaultParams.webhook,
       text: vi.fn().mockResolvedValue('{"error": "Database connection failed", "code": "DB_ERROR"}')
     } as unknown as Response;
     mockFetch.mockResolvedValueOnce(mockResponse);
@@ -91,11 +95,11 @@ describe("Webhook should be notified", () => {
 
     // Expect the function to throw an error with response payload
     await expect(testEnv.run(notifyWebhook, payload)).rejects.toThrow(
-      `Webhook Notification to ${defaultParams.target_url} failed with status: 500 Internal Server Error - Response: {"error": "Database connection failed", "code": "DB_ERROR"}`
+      `Webhook Notification to ${defaultParams.webhook} failed with status: 500 Internal Server Error - Response: {"error": "Database connection failed", "code": "DB_ERROR"}`
     );
 
     // Verify fetch was called with correct parameters
-    expect(mockFetch).toHaveBeenCalledWith(defaultParams.target_url, {
+    expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
       method: 'POST',
       body: JSON.stringify({ message: 'Hello World' }),
       headers: {
@@ -118,7 +122,7 @@ describe("Webhook should be notified", () => {
     await expect(testEnv.run(notifyWebhook, payload)).rejects.toThrow('Network request failed');
 
     // Verify fetch was called with correct parameters
-    expect(mockFetch).toHaveBeenCalledWith(defaultParams.target_url, {
+    expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
       method: 'POST',
       body: JSON.stringify({ message: 'Hello World' }),
       headers: {
