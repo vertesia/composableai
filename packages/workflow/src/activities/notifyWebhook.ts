@@ -147,7 +147,7 @@ function getVersionedVertesiaClient(payload: WorkflowExecutionBaseParams, versio
     "result": {
         "run_id": "68e616274b0e9bb510462378",
         "status": "completed",
-        "result": "{\n  \"Color\": \"white\"\n}"
+        "result": {"Color": "white"}
     }
 }
 
@@ -190,7 +190,7 @@ async function createOldRequestBody(payload: WorkflowExecutionBaseParams, params
             result: {
                 run_id: run.id,
                 status: run.status,
-                result: result ? JSON.stringify(result) : null
+                result: result || null
             }
         };
     }
