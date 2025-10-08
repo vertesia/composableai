@@ -18,6 +18,7 @@ import TrainingApi from "./TrainingApi.js";
 import UsersApi from "./UsersApi.js";
 import { VERSION, VERSION_HEADER } from "./store/version.js";
 
+
 /**
  * 1 min threshold constant in ms
  */

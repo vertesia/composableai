@@ -1,6 +1,6 @@
 import { log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
-import { DSLActivityExecutionPayload, DSLActivitySpec, WebHookSpec, WorkflowExecutionBaseParams } from "@vertesia/common";
+import { ApiVersions, DSLActivityExecutionPayload, DSLActivitySpec, WebHookSpec, WorkflowExecutionBaseParams } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { WorkflowParamNotFoundError } from "../errors.js";
 import { getVertesiaClientOptions } from "../utils/client.js";
@@ -102,6 +102,14 @@ function getWorkflowName(workflowType: string): string {
 }
 
 async function createRequestBody(payload: WorkflowExecutionBaseParams, params: NotifyWebhookParams, api_version: number | undefined): Promise<string> {
+    if (api_version === undefined || Number(api_version) < ApiVersions.COMPLETION_RESULT_V1) {
+        return createOldRequestBody(payload, params);
+    } else {
+        return createLatestRequestBody(payload, params, api_version);
+    }
+}
+
+async function createLatestRequestBody(payload: WorkflowExecutionBaseParams, params: NotifyWebhookParams, api_version: number | undefined): Promise<string> {
     const data = await createEventData(payload, params, api_version);
     return JSON.stringify({
         workflow_id: params.workflow_id,
@@ -123,9 +131,68 @@ async function createEventData(payload: WorkflowExecutionBaseParams, params: Not
 }
 
 
-function getVersionedVertesiaClient(payload: WorkflowExecutionBaseParams, version: string | number | undefined) {
+function getVersionedVertesiaClient(payload: WorkflowExecutionBaseParams, version: string | number | undefined | null) {
     // set the api version header
     return new VertesiaClient(getVertesiaClientOptions(payload)).withApiVersion(version ? String(version) : null);
 }
 
 
+// ----------------- Compatibility code -----------------
+/* Before 2025-10-08 the notifyWebhook POST body was in the format:
+
+{
+    "workflowId": "generation:ExecuteInteractionWorkflow:WhatColor:ox8wu6t4",
+    "runId": "0199c2c6-818f-77eb-b931-c1ba8b9e5184",
+    "status": "completed",
+    "result": {
+        "run_id": "68e616274b0e9bb510462378",
+        "status": "completed",
+        "result": "{\n  \"Color\": \"white\"\n}"
+    }
+}
+
+After Versions.COMPLETION_RESULT_V1  (20250925) when the completion result interface changed we improved the
+payload to the current format:
+
+{
+    "workflow_id": "generation:ExecuteInteractionWorkflow:WhatColor:bdedqjqj6",
+    "workflow_name": "ExecuteInteraction",
+    "workflow_run_id": "0199c2d4-6b1d-7cf2-a1e5-4cac6778091e",
+    "event_name": "workflow_completed",
+    "detail": ExecutionRun
+}
+
+where ExecutionRun contains a result property with the new completion result format.
+
+"result": [
+    {
+        "type": "json",
+        "value": {
+            "Color": "white"
+        }
+    }
+],
+
+*/
+
+//@ts-ignore
+async function createOldRequestBody(payload: WorkflowExecutionBaseParams, params: NotifyWebhookParams): Promise<string> {
+    let data = params.detail;
+    if (data && data.run_id && params.event_name === "workflow_completed" && params.workflow_type === 'ExecuteInteractionWorkflow') {
+        const client = getVersionedVertesiaClient(payload, null); //ensure client is using no specific version
+        const run = await client.runs.retrieve(data.run_id);
+        // since we use an unversioned client the run will be in old format so we don't need to tranform the result
+        const result = run.result;
+        data = {
+            workflowId: params.workflow_id,
+            runId: params.workflow_run_id,
+            status: params.event_name === 'workflow_completed' ? 'completed' : params.event_name,
+            result: {
+                run_id: run.id,
+                status: run.status,
+                result: result ? JSON.stringify(result) : null
+            }
+        };
+    }
+    return JSON.stringify(data || {});
+}
