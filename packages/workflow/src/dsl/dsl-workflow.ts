@@ -275,7 +275,9 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         return;
     }
     const importParams = vars.createImportVars(activity.import);
-    const executionPayload = dslActivityPayload(basePayload, activity, importParams);
+    const resolvedParams = vars.resolveParams(activity.params || {});
+    const mergedParams = { ...resolvedParams, ...importParams };
+    const executionPayload = dslActivityPayload(basePayload, activity, mergedParams);
     log.info("Executing activity: " + activity.name, { payload: executionPayload });
 
     let proxy = defaultProxy;
