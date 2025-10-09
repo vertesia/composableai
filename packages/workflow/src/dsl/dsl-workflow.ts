@@ -276,7 +276,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
     }
     const importParams = vars.createImportVars(activity.import);
     const resolvedParams = vars.resolveParams(activity.params || {});
-    const mergedParams = { ...resolvedParams, ...importParams };
+    const mergedParams = { ...importParams, ...resolvedParams };
     const executionPayload = dslActivityPayload(basePayload, activity, mergedParams);
     log.info("Executing activity: " + activity.name, { payload: executionPayload });
 
