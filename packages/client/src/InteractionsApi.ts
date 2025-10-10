@@ -1,7 +1,8 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { AsyncExecutionPayload, ComputeInteractionFacetPayload, ExecutionRun, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery, InteractionExecutionPayload, InteractionExecutionResult, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionUpdatePayload, InteractionsExportPayload, RateLimitRequestPayload, RateLimitRequestResponse } from "@vertesia/common";
+import { AsyncExecutionPayload, ComputeInteractionFacetPayload, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery, InteractionExecutionPayload, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionsExportPayload, InteractionUpdatePayload, RateLimitRequestPayload, RateLimitRequestResponse } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
+import { EnhancedInteractionExecutionResult, enhanceInteractionExecutionResult } from "./ExecutionResult.js";
 
 export interface ComputeInteractionFacetsResponse {
     tags?: { _id: string, count: number }[];
@@ -132,15 +133,16 @@ export default class InteractionsApi extends ApiTopic {
      * @throws 500 if interaction execution fails
      * @throws 500 if interaction execution times out
      **/
-    execute<P = any>(id: string, payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<ExecutionRun<P>> {
-        return executeInteraction<P>(this.client as VertesiaClient, id, payload, onChunk).catch(err => {
+    async execute<ResultT = any, ParamsT = any>(id: string, payload: InteractionExecutionPayload = {},
+        onChunk?: (chunk: string) => void): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
+        const r = await executeInteraction<ParamsT>(this.client as VertesiaClient, id, payload, onChunk).catch(err => {
             if (err instanceof ServerError && err.payload?.id) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {
                 throw err;
             }
         });
+        return enhanceInteractionExecutionResult<ResultT, ParamsT>(r);
     }
 
     /**
@@ -158,15 +160,16 @@ export default class InteractionsApi extends ApiTopic {
      * @param onChunk
      * @returns
      */
-    executeByName<P = any>(nameWithTag: string, payload: InteractionExecutionPayload = {},
-        onChunk?: (chunk: string) => void): Promise<InteractionExecutionResult<P>> {
-        return executeInteractionByName<P>(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
+    async executeByName<ResultT = any, ParamsT = any>(nameWithTag: string, payload: InteractionExecutionPayload = {},
+        onChunk?: (chunk: string) => void): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
+        const r = await executeInteractionByName<ParamsT>(this.client as VertesiaClient, nameWithTag, payload, onChunk).catch(err => {
             if (err instanceof ServerError && err.payload?.id) {
                 throw err.updateDetails({ run_id: err.payload.id });
             } else {
                 throw err;
             }
         });
+        return enhanceInteractionExecutionResult<ResultT, ParamsT>(r);
     }
 
     /**
