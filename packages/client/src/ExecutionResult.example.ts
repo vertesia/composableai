@@ -5,7 +5,7 @@
  */
 
 import { CompletionResult } from '@llumiverse/common';
-import { InteractionOutput } from './ExecutionResult.js';
+import { InteractionOutput } from './InteractionOutput.js';
 
 // Sample data
 const sampleResults: CompletionResult[] = [

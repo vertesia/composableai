@@ -14,7 +14,7 @@ import {
 } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 import type { ExecutionResponse } from "@llumiverse/common";
-import { EnhancedExecutionRun, enhanceExecutionRun } from "./ExecutionResult.js";
+import { EnhancedExecutionRun, enhanceExecutionRun } from "./InteractionOutput.js";
 
 export interface FilterOption {
     id: string;
