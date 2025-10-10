@@ -225,7 +225,13 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
 }
 
 function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLActivityExecutionPayload<any>): RateLimitParams {
-    const params = executionPayload.params;
+    // resolve payload params
+    const vars = new Vars({
+        ...executionPayload.params, // imported params (doesn't contain expressions)
+        ...executionPayload.activity.params, // activity params (may contain expressions)
+    });
+    const params = vars.resolve();
+
     let interactionId: string;
 
     switch (activity.name) {
@@ -275,9 +281,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         return;
     }
     const importParams = vars.createImportVars(activity.import);
-    const resolvedParams = vars.resolveParams(activity.params || {});
-    const mergedParams = { ...importParams, ...resolvedParams };
-    const executionPayload = dslActivityPayload(basePayload, activity, mergedParams);
+    const executionPayload = dslActivityPayload(basePayload, activity, importParams);
     log.info("Executing activity: " + activity.name, { payload: executionPayload });
 
     let proxy = defaultProxy;
