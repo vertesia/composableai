@@ -32,6 +32,14 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
     };
     customFilterGroups.push(promptNameFilterGroup);
 
+    const ModelFilterGroup = {
+        name: 'model',
+        placeholder: 'Model',
+        type: 'text' as const,
+        multiple: false
+    };
+    customFilterGroups.push(ModelFilterGroup);
+
     // Add tags filter as stringList type (allows custom input)
     const tagsFilterGroup = {
         name: 'tags',
@@ -50,11 +58,14 @@ export function useInteractionsFilterHandler(search: SearchInterface) {
         if (newFilters.length === 0) {
             // Clear filters without applying defaults - user wants to remove all filters
             search.clearFilters(true, false);
+            search.query['status'] = 'draft';
+
             return;
         }
 
         // Clear all filters first without defaults, then apply new ones
         search.clearFilters(false, false);
+        search.query['status'] = 'draft';
 
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
