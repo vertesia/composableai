@@ -56,12 +56,8 @@ export function ChangeTypeActionComponent({ action, objectIds, children }: Actio
                 title="Change Content Type"
                 confirmLabel="Change Type"
             >
-                <div className="text-sm flex flex-col gap-x-2">
-                    <p>Choose a new Content Type for the selected object{objectIds.length > 1 ? 's' : ' '}
-                        or let the system choose or generate a type based on the content.</p>
-                    <p className="pt-2 text-xs">Note: This action will raise the <code>change_type</code> event and will trigger the standard intake workflows
-                        which may reset the object properties.</p>
-                </div>
+                <p className="pt-2 text-xs">Note: This action will raise the <code>change_type</code> event and will trigger the standard intake workflows
+                    which may reset the object properties.</p>
             </SelectContentTypeModal>
         </div>
     )
