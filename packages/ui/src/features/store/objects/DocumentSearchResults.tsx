@@ -16,6 +16,7 @@ import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearch
 import { useDocumentUploadHandler } from './upload/useUploadHandler';
 import { ContentOverview } from './components/ContentOverview';
 import { useDownloadDocument } from './components/useDownloadObject';
+import { SelectionActions } from "./selection";
 
 const defaultLayout: ColumnLayout[] = [
     { name: "ID", field: "id", type: "string?slice=-7" },
@@ -210,24 +211,20 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             {
                 error && <ErrorBox title="Error">{error.message}</ErrorBox>
             }
-            <div className="sticky top-0 z-10 bg-background pb-2">
+            <div className="sticky top-0 z-10 bg-background pb-2 flex items-center justify-between">
                 {
-                    allowFilter && (
+                    allowFilter ? (
                         <FilterProvider
                             filterGroups={filterGroups}
                             filters={filters}
                             setFilters={handleFilterChange}
                         >
-                            <div className="flex flex-row gap-4 items-center justify-between w-full">
-                                <div className="flex gap-2 items-center w-2/3">
+                            <div className="flex flex-row gap-4 items-center justify-between">
+                                <div className="flex gap-2 items-center max-w-2/3">
                                     {
                                         allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
                                     }
                                     <FilterBtn />
-                                </div>
-                                <div className="flex gap-1 items-center">
-                                    <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
-                                    <ContentDispositionButton onUpdate={setIsGridView} />
                                 </div>
                             </div>
                             <div className="flex gap-2 items-center">
@@ -235,23 +232,21 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                                 <FilterClear />
                             </div>
                         </FilterProvider>
-                    )
-                }
-                {
-                    !allowFilter && (
-                        <div className="flex flex-row gap-4 items-center justify-between w-full">
-                            <div className="flex gap-2 items-center w-2/3">
+                    ) : (
+                        <div className="flex flex-row gap-4 items-center justify-between">
+                            <div className="flex gap-2 items-center max-w-2/3">
                                 {
                                     allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} />
                                 }
                             </div>
-                            <div className="flex gap-1 items-center">
-                                <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
-                                <ContentDispositionButton onUpdate={setIsGridView} />
-                            </div>
                         </div>
                     )
                 }
+                <div className="flex gap-2 items-center">
+                    <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                    <ContentDispositionButton onUpdate={setIsGridView} />
+                    <SelectionActions />
+                </div>
             </div>
             <DocumentTable
                 objects={objects}

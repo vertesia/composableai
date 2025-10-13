@@ -55,9 +55,6 @@ function ActionsWrapper({ }: ActionsWrapperProps) {
 
 export function UploadObjectsButton({ collectionId }: { collectionId?: string }) {
     const [files, setFiles] = useState<File[]>([]);
-    const selection = useDocumentSelection();
-
-    const hasSelection = selection?.hasSelection();
 
     const selectFile = () => {
         const fileInput = document.createElement("input");
@@ -72,7 +69,6 @@ export function UploadObjectsButton({ collectionId }: { collectionId?: string })
     };
 
     return (
-        !hasSelection &&
         <>
             <Button onClick={() => selectFile()}>Upload</Button>
             <DocumentUploadModal
