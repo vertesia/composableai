@@ -16,5 +16,6 @@ export { handleDslError } from "./handleError.js";
 export { convertPdfToStructuredText } from "./media/processPdfWithTextract.js";
 export { transcribeMedia } from "./media/transcribeMediaWithGladia.js";
 export { notifyWebhook } from "./notifyWebhook.js";
+export { postUpdateMessage, type PostUpdateMessageParams } from "./postUpdateMessage.js";
 export { setDocumentStatus } from "./setDocumentStatus.js";
 export { checkRateLimit } from "./rateLimiter.js";

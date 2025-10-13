@@ -235,6 +235,11 @@ export interface DSLWorkflowSpecBase {
     // if not specified "result" will be assumed
     result?: string;
     debug_mode?: boolean;
+    /**
+     * When enabled, the workflow will send progress update messages
+     * before executing each activity, communicating the activity name and description
+     */
+    report_activity_progress?: boolean;
 }
 
 export interface DSLWorkflowSpecWithSteps extends DSLWorkflowSpecBase {
