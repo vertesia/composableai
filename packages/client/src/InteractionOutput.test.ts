@@ -1,6 +1,6 @@
 import { CompletionResult } from '@llumiverse/common';
 import { describe, expect, it } from 'vitest';
-import { InteractionOutput } from './InteractionOutput.js';
+import { InteractionOutput, IS_INTERACTION_OUTPUT } from './InteractionOutput.js';
 
 describe('InteractionOutput', () => {
     const sampleResults: CompletionResult[] = [
@@ -15,7 +15,7 @@ describe('InteractionOutput', () => {
     describe('text accessors', () => {
         it('should concatenate all text results', () => {
             const output = InteractionOutput.from(sampleResults);
-            expect(output.text()).toBe('Hello, World!');
+            expect(output.text('')).toBe('Hello, World!');
         });
 
         it('should return empty string when no text results exist', () => {
@@ -59,7 +59,7 @@ describe('InteractionOutput', () => {
             const output = InteractionOutput.from([
                 { type: 'text', value: 'not json' }
             ]);
-            expect(() => output.object()).toThrow('failed to parse text as JSON');
+            expect(() => output.object()).toThrow();
         });
 
         it('should throw error when no JSON result and no text', () => {
@@ -96,12 +96,66 @@ describe('InteractionOutput', () => {
     describe('utility methods', () => {
         it('should convert to string (concatenated text)', () => {
             const output = InteractionOutput.from(sampleResults);
-            expect(output.toString()).toBe('Hello, World!');
+            expect(output.toString()).toBe('Hello, \nWorld!');
         });
 
         it('should convert to JSON the resuilts array', () => {
             const output = InteractionOutput.from(sampleResults);
             expect(output.toJSON()).toEqual(sampleResults);
+        });
+
+        it('should stringify all parts with default separator and compact JSON', () => {
+            const output = InteractionOutput.from(sampleResults);
+            const result = output.stringify();
+
+            expect(result).toBe(
+                'Hello, \n' +
+                'World!\n' +
+                '{"name":"Alice","age":30}\n' +
+                '{"title":"Engineer","level":"Senior"}\n' +
+                'data:image/png;base64,iVBORw0K...\n' +
+                'https://example.com/image.jpg'
+            );
+        });
+
+        it('should stringify all parts with formatted JSON', () => {
+            const mixed: CompletionResult[] = [
+                { type: 'text', value: 'Result:' },
+                { type: 'json', value: { score: 95, status: 'pass' } }
+            ];
+            const output = InteractionOutput.from(mixed);
+            const result = output.stringify('\n', 2);
+
+            expect(result).toBe(
+                'Result:\n' +
+                '{\n' +
+                '  "score": 95,\n' +
+                '  "status": "pass"\n' +
+                '}'
+            );
+        });
+
+        it('should stringify with custom separator', () => {
+            const mixed: CompletionResult[] = [
+                { type: 'text', value: 'A' },
+                { type: 'json', value: { x: 1 } },
+                { type: 'text', value: 'B' }
+            ];
+            const output = InteractionOutput.from(mixed);
+            const result = output.stringify(' | ');
+
+            expect(result).toBe('A | {"x":1} | B');
+        });
+
+        it('should stringify with empty separator', () => {
+            const mixed: CompletionResult[] = [
+                { type: 'text', value: 'Hello' },
+                { type: 'text', value: 'World' }
+            ];
+            const output = InteractionOutput.from(mixed);
+            const result = output.stringify('');
+
+            expect(result).toBe('HelloWorld');
         });
 
     });
@@ -130,8 +184,42 @@ describe('InteractionOutput', () => {
 
             // Should work as array AND have custom methods
             expect(output.length).toBe(6);
-            expect(output.text()).toBe('Hello, World!');
+            expect(output.text('')).toBe('Hello, World!');
             expect(output.object()).toEqual({ name: 'Alice', age: 30 });
+        });
+
+        it('should be marked with IS_INTERACTION_OUTPUT symbol', () => {
+            const output = InteractionOutput.from(sampleResults);
+
+            // Check that the symbol marker is present
+            expect((output as any)[IS_INTERACTION_OUTPUT]).toBe(true);
+        });
+
+        it('should return the same instance when calling from() on an already wrapped array', () => {
+            const output1 = InteractionOutput.from(sampleResults);
+
+            // Calling from() again should return the same instance
+            const output2 = InteractionOutput.from(output1);
+
+            // Should be the exact same reference
+            expect(output2).toBe(output1);
+
+            // Verify it still works correctly
+            expect(output2.text()).toBe('Hello, \nWorld!');
+            expect(output2.length).toBe(6);
+        });
+
+        it('should not double-wrap when passing an InteractionOutputArray', () => {
+            const output1 = InteractionOutput.from<{ name: string; age: number }>(sampleResults);
+            const output2 = InteractionOutput.from(output1);
+            const output3 = InteractionOutput.from(output2);
+
+            // All should be the same reference
+            expect(output1).toBe(output2);
+            expect(output2).toBe(output3);
+
+            // Functionality should remain intact
+            expect(output3.object()).toEqual({ name: 'Alice', age: 30 });
         });
     });
 
@@ -139,7 +227,7 @@ describe('InteractionOutput', () => {
         it('should work when using class directly', () => {
             const wrapper = new InteractionOutput<{ name: string; age: number }>(sampleResults);
 
-            expect(wrapper.text()).toBe('Hello, World!');
+            expect(wrapper.text('')).toBe('Hello, World!');
             expect(wrapper.object()).toEqual({ name: 'Alice', age: 30 });
             expect(wrapper.results).toBe(sampleResults);
         });
@@ -159,13 +247,13 @@ describe('InteractionOutput', () => {
 
         it('should handle mixed content types', () => {
             const mixed: CompletionResult[] = [
-                { type: 'text', value: 'Start ' },
+                { type: 'text', value: 'Start' },
                 { type: 'json', value: { count: 5 } },
                 { type: 'text', value: 'End' }
             ];
 
             const output = InteractionOutput.from(mixed);
-            expect(output.text()).toBe('Start End');
+            expect(output.text()).toBe('Start\nEnd');
             expect(output.object()).toEqual({ count: 5 });
         });
 

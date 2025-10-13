@@ -1,6 +1,11 @@
 import { CompletionResult } from '@llumiverse/common';
 import { ExecutionRun, InteractionExecutionResult } from '@vertesia/common';
 
+/**
+ * Symbol used to mark InteractionOutputArray instances.
+ * This allows us to detect if a CompletionResult[] has already been wrapped.
+ */
+export const IS_INTERACTION_OUTPUT = Symbol('InteractionOutput');
 
 export function enhanceInteractionExecutionResult<ResultT = any, ParamsT = any>(r: InteractionExecutionResult<ParamsT>): EnhancedInteractionExecutionResult<ResultT, ParamsT> {
     (r as any).result = InteractionOutput.from<ResultT>(r.result);
@@ -68,19 +73,39 @@ export class InteractionOutput<T = any> {
      * const text = output.text();     // string
      * ```
      */
-    static from<T = any>(results: CompletionResult[]): InteractionOutputArray<T> {
+    static from<T = any>(results: CompletionResult[] | InteractionOutputArray<T>): InteractionOutputArray<T> {
+        // Check if already wrapped using the symbol marker
+        if ((results as any)[IS_INTERACTION_OUTPUT]) {
+            return results as InteractionOutputArray<T>;
+        }
         return createInteractionOutput<T>(results || []);
+    }
+
+    static isInteractionOutputArray(obj: any): boolean {
+        return obj && obj[IS_INTERACTION_OUTPUT] === true;
+    }
+
+    hasObject() {
+        return this.results.some(r => r.type === 'json');
+    }
+
+    hasText() {
+        return this.results.some(r => r.type === 'text');
+    }
+
+    hasImage() {
+        return this.results.some(r => r.type === 'image');
     }
 
     /**
      * Get the concatenated text from all text results.
      * Returns an empty string if no text results exist.
      */
-    text(): string {
+    text(delimiter = '\n'): string {
         return this.results
             .filter(r => r.type === 'text')
             .map(r => r.value)
-            .join('');
+            .join(delimiter);
     }
 
     /**
@@ -104,17 +129,8 @@ export class InteractionOutput<T = any> {
             return jsonResult.value as T;
         }
 
-        // Fallback: try to parse text as JSON for backward compatibility
-        const text = this.text();
-        if (text.length === 0) {
-            throw new Error('No JSON result found and no text available to parse');
-        }
-
-        try {
-            return JSON.parse(text) as T;
-        } catch (err) {
-            throw new Error(`No JSON result found and failed to parse text as JSON: ${err instanceof Error ? err.message : String(err)}`);
-        }
+        // Fallback: try to parse the other text parts as JSON
+        return parseCompletionResultAsJson(this.results);
     }
 
     /**
@@ -166,6 +182,36 @@ export class InteractionOutput<T = any> {
         return this.results
             .filter(r => r.type === 'image')
             .map(r => r.value);
+    }
+
+    /**
+     * Convert all results to a string representation.
+     * Text and image results are used as-is, JSON results are stringified with the specified indent.
+     * All parts are joined using the specified separator.
+     *
+     * @param separator - The separator to use between parts (default: '\n')
+     * @param indent - The indentation to use for JSON.stringify (default: 0 = no formatting)
+     * @returns A string representation of all results
+     *
+     * @example
+     * ```typescript
+     * const output = InteractionOutput.from(results);
+     * output.stringify();           // Each part on a new line, compact JSON
+     * output.stringify('\n\n', 2);  // Double newlines between parts, formatted JSON
+     * output.stringify(' ');        // Space-separated, compact JSON
+     * ```
+     */
+    stringify(separator = '\n', indent = 0): string {
+        return this.results
+            .map(r => {
+                switch (r.type) {
+                    case 'json':
+                        return JSON.stringify(r.value, null, indent);
+                    default:
+                        return String(r.value);
+                }
+            })
+            .join(separator);
     }
 
     /**
@@ -228,6 +274,11 @@ export function createInteractionOutput<T = any>(results: CompletionResult[]): I
 
     return new Proxy(results, {
         get(target, prop, receiver) {
+            // Return the marker symbol to identify wrapped arrays
+            if (prop === IS_INTERACTION_OUTPUT) {
+                return true;
+            }
+
             // Check if the wrapper has this property/method
             if (prop in wrapper) {
                 const value = (wrapper as any)[prop];
@@ -242,4 +293,23 @@ export function createInteractionOutput<T = any>(results: CompletionResult[]): I
             return Reflect.get(target, prop, receiver);
         }
     }) as InteractionOutputArray<T>;
+}
+
+
+function parseCompletionResultAsJson(data: CompletionResult[]) {
+    let lastError: Error | undefined;
+    for (const part of data) {
+        if (part.type === "text") {
+            const text = part.value.trim();
+            try {
+                return JSON.parse(text);
+            } catch (error: any) {
+                lastError = error;
+            }
+        }
+    }
+    if (!lastError) {
+        lastError = new Error("No JSON result found and no text available to parse");
+    }
+    throw lastError;
 }

@@ -1,7 +1,7 @@
+import { InteractionOutput } from "@vertesia/client";
 import { DSLActivityExecutionPayload, DSLActivitySpec, ExecutionRun } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError } from "../../errors.js";
-import { parseCompletionResultsToJson } from "@llumiverse/common";
 
 
 export interface UpdateDocumentFromInteractionRunParams {
@@ -23,15 +23,13 @@ export async function updateDocumentFromInteractionRun(payload: DSLActivityExecu
         throw new ActivityParamNotFoundError("run", payload.activity);
     }
 
-    const docProps = params.run.result;
+    const docProps = InteractionOutput.from(params.run.result).object();
 
     if (!docProps) {
         return { status: "failed", error: "no-props" };
     }
 
-    const jsonResult = parseCompletionResultsToJson(params.run.result);
-
-    await client.objects.update(objectId, jsonResult);
+    await client.objects.update(objectId, docProps);
 
     return { status: "success" };
 }
