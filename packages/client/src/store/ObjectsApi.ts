@@ -221,6 +221,7 @@ export class ObjectsApi extends ApiTopic {
         options?: {
             collection_id?: string;
             processing_priority?: ContentObjectProcessingPriority;
+            return_workflow_info?: boolean;
         },
     ): Promise<ContentObject> {
         const createPayload: CreateContentObjectPayload = {
@@ -236,9 +237,12 @@ export class ObjectsApi extends ApiTopic {
         const headers: Record<string, string> = {};
         if (options?.processing_priority) {
             headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
-        } 
+        }
         if (options?.collection_id) {
             headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
+        }
+        if (options?.return_workflow_info) {
+            headers[ContentObjectApiHeaders.RETURN_WORKFLOW_INFO] = 'true';
         }
 
         return await this.post("/", {
@@ -262,6 +266,7 @@ export class ObjectsApi extends ApiTopic {
         options?: {
             collection_id?: string;
             processing_priority?: ContentObjectProcessingPriority;
+            return_workflow_info?: boolean;
         },
     ): Promise<ContentObject> {
         const metadata = await (this.client as ZenoClient).files.getMetadata(
@@ -280,9 +285,12 @@ export class ObjectsApi extends ApiTopic {
         const headers: Record<string, string> = {};
         if (options?.processing_priority) {
             headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
-        } 
+        }
         if (options?.collection_id) {
             headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
+        }
+        if (options?.return_workflow_info) {
+            headers[ContentObjectApiHeaders.RETURN_WORKFLOW_INFO] = 'true';
         }
 
         return await this.post("/", {
