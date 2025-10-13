@@ -1,15 +1,16 @@
 import { useState, ReactNode } from "react";
 import {
     Button,
-    Modal,
-    ModalBody,
-    ModalFooter,
-    ModalTitle,
-    SelectBox,
+    VModal,
+    VModalBody,
+    VModalFooter,
+    VModalTitle,
+    VSelectBox,
+    VTooltip,
 } from "@vertesia/ui/core";
 import { ContentObjectTypeItem } from "@vertesia/common";
 import { useUserSession } from "@vertesia/ui/session";
-import { CheckCircleIcon } from "lucide-react";
+import { CheckCircleIcon, Info } from "lucide-react";
 
 /**
  * Props for the SelectTypeModal component
@@ -46,7 +47,6 @@ export function SelectContentTypeModal({
     title = "Select Content Type",
     children,
     initialSelectedType = null,
-    confirmLabel = "Select Type",
     allowNone = true,
 }: SelectContentTypeModalProps) {
     const { typeRegistry } = useUserSession();
@@ -63,16 +63,17 @@ export function SelectContentTypeModal({
     // Handle type selection and confirmation
     const handleConfirm = () => {
         onClose(selectedType?.id ?? null);
+        setSelectedType(null);
     };
 
     return (
-        <Modal
+        <VModal
             isOpen={isOpen}
             onClose={handleClose}
             className="w-full max-w-xl mx-auto"
         >
-            <ModalTitle>{title}</ModalTitle>
-            <ModalBody className="p-6">
+            <VModalTitle>{title}</VModalTitle>
+            <VModalBody>
                 {children}
 
                 {/* Type selection */}
@@ -81,7 +82,7 @@ export function SelectContentTypeModal({
                         Content Type {allowNone && <span className="text-gray-500 font-normal">(Optional)</span>}
                     </label>
                     {allowNone ? (
-                        <SelectBox
+                        <VSelectBox
                             options={types}
                             value={selectedType}
                             optionLabel={(type) => type ? type.name : 'Select a content type'}
@@ -91,7 +92,7 @@ export function SelectContentTypeModal({
                             isClearable={true}
                         />
                     ) : (
-                        <SelectBox
+                        <VSelectBox
                             options={types}
                             value={selectedType}
                             optionLabel={(type) => type ? type.name : 'Select a content type'}
@@ -100,43 +101,29 @@ export function SelectContentTypeModal({
                             filterBy="name"
                         />
                     )}
-
-                    {allowNone && (
-                        <div className="mt-2 text-sm text-blue-600 flex items-center">
-                            <CheckCircleIcon className="h-4 w-4 mr-1" />
-                            <span><strong>Type selection is optional.</strong> Leave empty to let Vertesia choose the appropriate type</span>
-                        </div>
-                    )}
                 </div>
 
-                {selectedType ? (
-                    <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md mb-4">
-                        <div className="font-medium">{selectedType.name}</div>
-                        {selectedType.description && (
-                            <div className="mt-1">{selectedType.description}</div>
-                        )}
-                    </div>
-                ) : allowNone && (
-                    <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded-md mb-4">
-                        <div className="font-medium">Automatic Type Detection</div>
-                        <div className="mt-1">
-                            Vertesia will analyze each file&apos;s content and automatically select the most appropriate type.
-                            <br />
-                            <span className="mt-1 block font-medium">This is recommended for most uploads.</span>
-                        </div>
+                {!selectedType && (
+                    <div className="flex items-center text-attention">
+                        <CheckCircleIcon className="size-4 mr-1" />
+                        Automatic Type Detection
+                        <VTooltip
+                            description="Vertesia will analyze the content and select the most appropriate type. This is recommended for most uploads and ensures optimal processing."
+                            placement="top" size="xs"
+                        >
+                            <Info className="size-3 ml-2" />
+                        </VTooltip>
                     </div>
                 )}
-            </ModalBody>
-            <ModalFooter>
-                <Button variant="ghost" onClick={handleClose}>
+            </VModalBody>
+            <VModalFooter>
+                <Button variant="ghost" onClick={handleClose} alt="Cancel">
                     Cancel
                 </Button>
-                <Button
-                    onClick={handleConfirm}
-                >
-                    {selectedType ? `${confirmLabel}: ${selectedType.name}` : allowNone ? "Let Vertesia Choose" : confirmLabel}
+                <Button onClick={handleConfirm} alt="Confirm selection">
+                    Confirm
                 </Button>
-            </ModalFooter>
-        </Modal>
+            </VModalFooter>
+        </VModal>
     );
 }
