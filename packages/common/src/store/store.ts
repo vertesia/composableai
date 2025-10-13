@@ -8,6 +8,7 @@ export enum ContentObjectApiHeaders {
     PROCESSING_PRIORITY = 'x-processing-priority',
     CREATE_REVISION = 'x-create-revision',
     REVISION_LABEL = 'x-revision-label',
+    RETURN_WORKFLOW_INFO = 'x-return-workflow-info',
 }
 
 export enum ContentObjectStatus {
