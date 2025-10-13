@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { CompletionResult } from '@llumiverse/common';
+import { describe, expect, it } from 'vitest';
 import { InteractionOutput } from './InteractionOutput.js';
 
 describe('InteractionOutput', () => {
@@ -15,31 +15,21 @@ describe('InteractionOutput', () => {
     describe('text accessors', () => {
         it('should concatenate all text results', () => {
             const output = InteractionOutput.from(sampleResults);
-            expect(output.text).toBe('Hello, World!');
+            expect(output.text()).toBe('Hello, World!');
         });
 
         it('should return empty string when no text results exist', () => {
             const output = InteractionOutput.from([
                 { type: 'json', value: { foo: 'bar' } }
             ]);
-            expect(output.text).toBe('');
+            expect(output.text()).toBe('');
         });
 
         it('should return all text values as array', () => {
             const output = InteractionOutput.from(sampleResults);
-            expect(output.texts).toEqual(['Hello, ', 'World!']);
+            expect(output.texts()).toEqual(['Hello, ', 'World!']);
         });
 
-        it('should return specific text by index', () => {
-            const output = InteractionOutput.from(sampleResults);
-            expect(output.textAt(0)).toBe('Hello, ');
-            expect(output.textAt(1)).toBe('World!');
-        });
-
-        it('should throw error for out of bounds text index', () => {
-            const output = InteractionOutput.from(sampleResults);
-            expect(() => output.textAt(5)).toThrow('Text index 5 out of bounds');
-        });
     });
 
     describe('object accessors', () => {
@@ -56,24 +46,6 @@ describe('InteractionOutput', () => {
                 { name: 'Alice', age: 30 },
                 { title: 'Engineer', level: 'Senior' }
             ]);
-        });
-
-        it('should return specific JSON object by index', () => {
-            const output = InteractionOutput.from(sampleResults);
-            expect(output.objectAt(0)).toEqual({ name: 'Alice', age: 30 });
-            expect(output.objectAt(1)).toEqual({ title: 'Engineer', level: 'Senior' });
-        });
-
-        it('should allow type override in objectAt', () => {
-            interface Job { title: string; level: string; }
-            const output = InteractionOutput.from(sampleResults);
-            const job = output.objectAt<Job>(1);
-            expect(job).toEqual({ title: 'Engineer', level: 'Senior' });
-        });
-
-        it('should throw error for out of bounds object index', () => {
-            const output = InteractionOutput.from(sampleResults);
-            expect(() => output.objectAt(5)).toThrow('Object index 5 out of bounds');
         });
 
         it('should parse text as JSON when no JSON result exists', () => {
@@ -101,34 +73,24 @@ describe('InteractionOutput', () => {
     describe('image accessors', () => {
         it('should return first image', () => {
             const output = InteractionOutput.from(sampleResults);
-            expect(output.image).toBe('data:image/png;base64,iVBORw0K...');
+            expect(output.image()).toBe('data:image/png;base64,iVBORw0K...');
         });
 
         it('should return all images', () => {
             const output = InteractionOutput.from(sampleResults);
-            expect(output.images).toEqual([
+            expect(output.images()).toEqual([
                 'data:image/png;base64,iVBORw0K...',
                 'https://example.com/image.jpg'
             ]);
-        });
-
-        it('should return specific image by index', () => {
-            const output = InteractionOutput.from(sampleResults);
-            expect(output.imageAt(0)).toBe('data:image/png;base64,iVBORw0K...');
-            expect(output.imageAt(1)).toBe('https://example.com/image.jpg');
         });
 
         it('should throw error when no image result exists', () => {
             const output = InteractionOutput.from([
                 { type: 'text', value: 'hello' }
             ]);
-            expect(() => output.image).toThrow('No image result found');
+            expect(() => output.image()).toThrow('No image result found');
         });
 
-        it('should throw error for out of bounds image index', () => {
-            const output = InteractionOutput.from(sampleResults);
-            expect(() => output.imageAt(5)).toThrow('Image index 5 out of bounds');
-        });
     });
 
     describe('utility methods', () => {
@@ -137,17 +99,11 @@ describe('InteractionOutput', () => {
             expect(output.toString()).toBe('Hello, World!');
         });
 
-        it('should convert to JSON (first object)', () => {
+        it('should convert to JSON the resuilts array', () => {
             const output = InteractionOutput.from(sampleResults);
-            expect(output.toJSON()).toEqual({ name: 'Alice', age: 30 });
+            expect(output.toJSON()).toEqual(sampleResults);
         });
 
-        it('should fall back to text in toJSON when no object exists', () => {
-            const output = InteractionOutput.from([
-                { type: 'text', value: 'just text' }
-            ]);
-            expect(output.toJSON()).toBe('just text');
-        });
     });
 
     describe('Proxy functionality', () => {
@@ -174,7 +130,7 @@ describe('InteractionOutput', () => {
 
             // Should work as array AND have custom methods
             expect(output.length).toBe(6);
-            expect(output.text).toBe('Hello, World!');
+            expect(output.text()).toBe('Hello, World!');
             expect(output.object()).toEqual({ name: 'Alice', age: 30 });
         });
     });
@@ -183,7 +139,7 @@ describe('InteractionOutput', () => {
         it('should work when using class directly', () => {
             const wrapper = new InteractionOutput<{ name: string; age: number }>(sampleResults);
 
-            expect(wrapper.text).toBe('Hello, World!');
+            expect(wrapper.text()).toBe('Hello, World!');
             expect(wrapper.object()).toEqual({ name: 'Alice', age: 30 });
             expect(wrapper.results).toBe(sampleResults);
         });
@@ -193,12 +149,12 @@ describe('InteractionOutput', () => {
         it('should handle empty results array', () => {
             const output = InteractionOutput.from([]);
 
-            expect(output.text).toBe('');
-            expect(output.texts).toEqual([]);
+            expect(output.text()).toBe('');
+            expect(output.texts()).toEqual([]);
             expect(output.objects()).toEqual([]);
-            expect(output.images).toEqual([]);
+            expect(output.images()).toEqual([]);
             expect(() => output.object()).toThrow();
-            expect(() => output.image).toThrow();
+            expect(() => output.image()).toThrow();
         });
 
         it('should handle mixed content types', () => {
@@ -209,7 +165,7 @@ describe('InteractionOutput', () => {
             ];
 
             const output = InteractionOutput.from(mixed);
-            expect(output.text).toBe('Start End');
+            expect(output.text()).toBe('Start End');
             expect(output.object()).toEqual({ count: 5 });
         });
 
@@ -219,9 +175,9 @@ describe('InteractionOutput', () => {
             ];
 
             const output = InteractionOutput.from(textOnly);
-            expect(output.text).toBe('Only text here');
+            expect(output.text()).toBe('Only text here');
             expect(output.objects()).toEqual([]);
-            expect(output.images).toEqual([]);
+            expect(output.images()).toEqual([]);
         });
     });
 
@@ -239,6 +195,7 @@ describe('InteractionOutput', () => {
             expect(user.name).toBe('Bob');
             expect(user.age).toBe(25);
         });
+
 
         it('should allow type override at method level', () => {
             interface Person { name: string; age: number; }

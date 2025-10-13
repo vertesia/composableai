@@ -28,7 +28,7 @@ export function enhanceExecutionRun<ResultT = any, ParamsT = any>(r: ExecutionRu
  * output[0];                        // CompletionResult (array access)
  * output.length;                    // number (array property)
  * const obj = output.object();      // MyResponse (custom method)
- * const text = output.text;         // string (custom getter)
+ * const text = output.text();         // string (custom getter)
  *
  * // Alternative: Using the class directly (less common)
  * const output = new InteractionOutput<MyResponse>(run.result);
@@ -37,7 +37,6 @@ export function enhanceExecutionRun<ResultT = any, ParamsT = any>(r: ExecutionRu
  *
  * // Override type for specific objects
  * interface OtherType { title: string; }
- * const other = output.objectAt<OtherType>(1);  // Returns OtherType
  * ```
  */
 export class InteractionOutput<T = any> {
@@ -66,7 +65,7 @@ export class InteractionOutput<T = any> {
      *
      * // Convenience methods
      * const obj = output.object();  // MyResponse
-     * const text = output.text;     // string
+     * const text = output.text();     // string
      * ```
      */
     static from<T = any>(results: CompletionResult[]): InteractionOutputArray<T> {
@@ -77,7 +76,7 @@ export class InteractionOutput<T = any> {
      * Get the concatenated text from all text results.
      * Returns an empty string if no text results exist.
      */
-    get text(): string {
+    text(): string {
         return this.results
             .filter(r => r.type === 'text')
             .map(r => r.value)
@@ -87,23 +86,10 @@ export class InteractionOutput<T = any> {
     /**
      * Get an array of all text values from text results.
      */
-    get texts(): string[] {
+    texts(): string[] {
         return this.results
             .filter(r => r.type === 'text')
             .map(r => r.value);
-    }
-
-    /**
-     * Get a specific text result by index.
-     * @param index - The zero-based index of the text result
-     * @throws Error if the index is out of bounds
-     */
-    textAt(index: number): string {
-        const texts = this.texts;
-        if (index < 0 || index >= texts.length) {
-            throw new Error(`Text index ${index} out of bounds (available: ${texts.length})`);
-        }
-        return texts[index];
     }
 
     /**
@@ -119,7 +105,7 @@ export class InteractionOutput<T = any> {
         }
 
         // Fallback: try to parse text as JSON for backward compatibility
-        const text = this.text;
+        const text = this.text();
         if (text.length === 0) {
             throw new Error('No JSON result found and no text available to parse');
         }
@@ -149,18 +135,23 @@ export class InteractionOutput<T = any> {
      * @throws Error if the index is out of bounds
      */
     objectAt<U = T>(index: number): U {
-        const jsonObjects = this.results.filter(r => r.type === 'json');
-        if (index < 0 || index >= jsonObjects.length) {
-            throw new Error(`Object index ${index} out of bounds (available: ${jsonObjects.length})`);
+        let i = 0;
+        for (const result of this.results) {
+            if (result.type === 'json') {
+                if (i === index) {
+                    return result.value as U;
+                }
+                i++;
+            }
         }
-        return jsonObjects[index].value as U;
+        throw new Error(`Object at index ${index} not found`);
     }
 
     /**
      * Get the first image result (base64 data URL or URL).
      * @throws Error if no image result exists
      */
-    get image(): string {
+    image(): string {
         const imageResult = this.results.find(r => r.type === 'image');
         if (!imageResult) {
             throw new Error('No image result found');
@@ -171,23 +162,10 @@ export class InteractionOutput<T = any> {
     /**
      * Get an array of all image values (base64 data URLs or URLs).
      */
-    get images(): string[] {
+    images(): string[] {
         return this.results
             .filter(r => r.type === 'image')
             .map(r => r.value);
-    }
-
-    /**
-     * Get a specific image result by index.
-     * @param index - The zero-based index of the image result
-     * @throws Error if the index is out of bounds
-     */
-    imageAt(index: number): string {
-        const images = this.images;
-        if (index < 0 || index >= images.length) {
-            throw new Error(`Image index ${index} out of bounds (available: ${images.length})`);
-        }
-        return images[index];
     }
 
     /**
@@ -195,19 +173,15 @@ export class InteractionOutput<T = any> {
      * Useful for template literals or string coercion.
      */
     toString(): string {
-        return this.text;
+        return this.text();
     }
 
     /**
      * Convert to JSON representation.
      * Attempts to return the first JSON object, falls back to concatenated text.
      */
-    toJSON(): any {
-        try {
-            return this.object();
-        } catch {
-            return this.text;
-        }
+    toJSON(): CompletionResult[] {
+        return this.results
     }
 }
 
@@ -245,8 +219,8 @@ export interface EnhancedExecutionRun<ResultT = any, ParamsT = any> extends Exec
  *
  * // Convenience methods
  * const obj = output.object();  // MyResponse
- * const text = output.text;     // string
- * const img = output.image;     // string
+ * const text = output.text();     // string
+ * const img = output.image();     // string
  * ```
  */
 export function createInteractionOutput<T = any>(results: CompletionResult[]): InteractionOutputArray<T> {
