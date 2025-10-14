@@ -3,10 +3,16 @@ import { useEffect, useState } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer } from "@vertesia/ui/widgets";
-import { ContentObject, ImageRenditionFormat } from "@vertesia/common";
+import { ContentObject, ImageRenditionFormat, VideoMetadata } from "@vertesia/common";
 import { Copy, Download, SquarePen } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
+
+enum PanelView {
+    Text = "text",
+    Image = "image",
+    Video = "video"
+}
 
 interface ContentOverviewProps {
     object: ContentObject;
@@ -157,9 +163,17 @@ function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObj
     const content = object.content;
     const isImage =
         content && content.type && content.type.startsWith("image/");
+    const isVideo =
+        content && content.type && content.type.startsWith("video/");
 
-    const [viewImage, setViewImage] = useState(isImage);
+    // Determine initial panel view
+    const getInitialView = (): PanelView => {
+        if (isVideo) return PanelView.Video;
+        if (isImage) return PanelView.Image;
+        return PanelView.Text;
+    };
 
+    const [currentPanel, setCurrentPanel] = useState<PanelView>(getInitialView());
 
     const [text, setText] = useState<string | undefined>(object.text);
     const [isLoadingText, setIsLoadingText] = useState<boolean>(false);
@@ -187,29 +201,41 @@ function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObj
                 <div className="flex items-center gap-1 bg-muted mb-2 p-1 rounded">
                     {isImage &&
                         <Button
-                            variant={`${viewImage ? "primary" : "ghost"}`}
+                            variant={currentPanel === PanelView.Image ? "primary" : "ghost"}
                             size="sm"
                             alt="View Image"
-                            onClick={() => setViewImage(true)}
+                            onClick={() => setCurrentPanel(PanelView.Image)}
                         >
                             Image
                         </Button>
                     }
+                    {isVideo &&
+                        <Button
+                            variant={currentPanel === PanelView.Video ? "primary" : "ghost"}
+                            size="sm"
+                            alt="View Video"
+                            onClick={() => setCurrentPanel(PanelView.Video)}
+                        >
+                            Video
+                        </Button>
+                    }
                     <Button
-                        variant={`${viewImage ? "ghost" : "primary"}`}
+                        variant={currentPanel === PanelView.Text ? "primary" : "ghost"}
                         size="sm"
                         alt="View Text"
-                        onClick={() => setViewImage(false)}
+                        onClick={() => setCurrentPanel(PanelView.Text)}
                     >
                         Text
                     </Button>
 
                 </div>
-                {!viewImage && <TextActions object={object} text={text} handleCopyContent={handleCopyContent} />}
+                {currentPanel === PanelView.Text && <TextActions object={object} text={text} handleCopyContent={handleCopyContent} />}
             </div>
             {
-                viewImage ? (
+                currentPanel === PanelView.Image ? (
                     <ImagePanel object={object} />
+                ) : currentPanel === PanelView.Video ? (
+                    <VideoPanel object={object} />
                 ) : (
                     isLoadingText ? (
                         <div className="flex justify-center items-center h-[calc(100vh-260px)]">
@@ -566,6 +592,72 @@ function ImagePanel({ object }: { object: ContentObject }) {
                 />
             ) : (
                 <Spinner size="md" />
+            )}
+        </div>
+    );
+}
+
+function VideoPanel({ object }: { object: ContentObject }) {
+    const { client } = useUserSession();
+    const [videoUrl, setVideoUrl] = useState<string>();
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    const content = object.content;
+    const isVideo =
+        content && content.type && content.type.startsWith("video/");
+
+    // Check if there are mp4 or webm renditions available in metadata
+    const metadata = object.metadata as VideoMetadata | undefined;
+    const renditions = metadata?.renditions || [];
+
+    // Find mp4 or webm rendition by mime type, preferring mp4
+    const webRendition = renditions.find(r => r.content.type === 'video/mp4') || renditions.find(r => r.content.type === 'video/webm');
+
+    useEffect(() => {
+        if (isVideo && webRendition?.content?.source) {
+            const loadVideoUrl = async () => {
+                try {
+                    // Get signed URL for the rendition
+                    const downloadUrl = await client.files.getDownloadUrl(webRendition.content.source!);
+                    setVideoUrl(downloadUrl.url);
+                } catch (error) {
+                    console.error("Failed to get video URL", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            loadVideoUrl();
+        } else {
+            setIsLoading(false);
+        }
+    }, []);
+
+    return (
+        <div className="mb-4 px-2">
+            {!webRendition ? (
+                <div className="flex justify-center items-center h-[400px] text-muted">
+                    <div className="text-center">
+                        <p>No web-compatible video rendition available</p>
+                        <p className="text-sm mt-2">MP4 or WebM format required</p>
+                    </div>
+                </div>
+            ) : isLoading ? (
+                <div className="flex justify-center items-center h-[400px]">
+                    <Spinner size="md" />
+                </div>
+            ) : videoUrl ? (
+                <video
+                    src={videoUrl}
+                    controls
+                    className="w-full max-h-[calc(100vh-260px)] object-contain"
+                >
+                    Your browser does not support the video tag.
+                </video>
+            ) : (
+                <div className="flex justify-center items-center h-[400px] text-muted">
+                    Failed to load video
+                </div>
             )}
         </div>
     );
