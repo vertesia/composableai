@@ -540,10 +540,8 @@ function ImagePanel({ object }: { object: ContentObject }) {
     const { client } = useUserSession();
     const [imageUrl, setImageUrl] = useState<string>();
 
-
     const content = object.content;
-    const isImage =
-        content && content.type && content.type.startsWith("image/");
+    const isImage = object.metadata && object.metadata.type === ContentNature.Image;
 
     useEffect(() => {
         if (isImage) {
@@ -599,7 +597,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
     const [videoUrl, setVideoUrl] = useState<string>();
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    const isVideo = object.metadata && object.metadata.type === "video";
+    const isVideo = object.metadata?.type === ContentNature.Video;
 
     // Check if there are mp4 or webm renditions available in metadata
     const metadata = object.metadata as VideoMetadata;
