@@ -605,7 +605,8 @@ function VideoPanel({ object }: { object: ContentObject }) {
     const renditions = metadata?.renditions || [];
 
     // Find mp4 or webm rendition by mime type, preferring mp4
-    const webRendition = renditions.find(r => r.content.type === 'video/mp4') || renditions.find(r => r.content.type === 'video/webm');
+    const webRendition = renditions.find(r => r.content.type === 'video/mp4') ||
+                         renditions.find(r => r.content.type === 'video/webm');
 
     // Check if original file is web-compatible
     const webSupportedFormats = ['video/mp4', 'video/webm'];
@@ -619,7 +620,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
                     if (webRendition?.content?.source) {
                         // Use rendition if available
                         downloadUrl = await client.files.getDownloadUrl(webRendition.content.source);
-                    } else if (isOriginalWebSupported && content.source) {
+                    } else if (isOriginalWebSupported && content?.source) {
                         // Fall back to original file if web-supported
                         downloadUrl = await client.files.getDownloadUrl(content.source);
                     }
@@ -636,11 +637,11 @@ function VideoPanel({ object }: { object: ContentObject }) {
         } else {
             setIsLoading(false);
         }
-    }, []);
+    }, [isVideo, webRendition, isOriginalWebSupported, content?.source, client]);
 
     return (
         <div className="mb-4 px-2">
-            {!webRendition && !webSupportedFormats ? (
+            {!webRendition && !isOriginalWebSupported ? (
                 <div className="flex justify-center items-center h-[400px] text-muted">
                     <div className="text-center">
                         <p>No web-compatible video rendition available</p>
