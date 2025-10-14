@@ -73,7 +73,7 @@ export class InteractionOutput<T = any> {
      * const text = output.text();     // string
      * ```
      */
-    static from<T = any>(results: CompletionResult[] | InteractionOutputArray<T> | null | undefined): InteractionOutputArray<T> {
+    static from<T = any>(results: CompletionResult[] | InteractionOutputArray<T> | Record<string, any> | string | null | undefined): InteractionOutputArray<T> {
         if (!results) {
             return createInteractionOutput<T>([]);
         }
@@ -81,7 +81,13 @@ export class InteractionOutput<T = any> {
         if ((results as any)[IS_INTERACTION_OUTPUT]) {
             return results as InteractionOutputArray<T>;
         }
-        return createInteractionOutput<T>(results);
+        if (Array.isArray(results)) {
+            return createInteractionOutput<T>(results as CompletionResult[]);
+        } else if (typeof results === 'object') {
+            return createInteractionOutput<T>([{ type: 'json', value: results }]);
+        } else {
+            return createInteractionOutput<T>([{ type: 'text', value: String(results) }]);
+        }
     }
 
     static isInteractionOutputArray(obj: any): boolean {
@@ -208,7 +214,7 @@ export class InteractionOutput<T = any> {
      * output.stringify(' ');        // Space-separated, compact JSON
      * ```
      */
-    stringify(separator = '\n', indent = 0): string {
+    stringify(separator = '\n', indent = 2): string {
         return this.results
             .map(r => {
                 switch (r.type) {
