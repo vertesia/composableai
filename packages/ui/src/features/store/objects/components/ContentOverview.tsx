@@ -597,22 +597,35 @@ function VideoPanel({ object }: { object: ContentObject }) {
     const [videoUrl, setVideoUrl] = useState<string>();
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
+    const content = object.content;
     const isVideo = object.metadata?.type === ContentNature.Video;
 
     // Check if there are mp4 or webm renditions available in metadata
     const metadata = object.metadata as VideoMetadata;
-    const renditions = metadata.renditions || [];
+    const renditions = metadata?.renditions || [];
 
     // Find mp4 or webm rendition by mime type, preferring mp4
     const webRendition = renditions.find(r => r.content.type === 'video/mp4') || renditions.find(r => r.content.type === 'video/webm');
 
+    // Check if original file is web-compatible
+    const webSupportedFormats = ['video/mp4', 'video/webm'];
+    const isOriginalWebSupported = content?.type && webSupportedFormats.includes(content.type);
+
     useEffect(() => {
-        if (isVideo && webRendition?.content?.source) {
+        if (isVideo && (webRendition?.content?.source || isOriginalWebSupported)) {
             const loadVideoUrl = async () => {
                 try {
-                    // Get signed URL for the rendition
-                    const downloadUrl = await client.files.getDownloadUrl(webRendition.content.source!);
-                    setVideoUrl(downloadUrl.url);
+                    let downloadUrl;
+                    if (webRendition?.content?.source) {
+                        // Use rendition if available
+                        downloadUrl = await client.files.getDownloadUrl(webRendition.content.source);
+                    } else if (isOriginalWebSupported && content.source) {
+                        // Fall back to original file if web-supported
+                        downloadUrl = await client.files.getDownloadUrl(content.source);
+                    }
+                    if (downloadUrl) {
+                        setVideoUrl(downloadUrl.url);
+                    }
                 } catch (error) {
                     console.error("Failed to get video URL", error);
                 } finally {
@@ -627,7 +640,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
 
     return (
         <div className="mb-4 px-2">
-            {!webRendition ? (
+            {!webRendition && !webSupportedFormats ? (
                 <div className="flex justify-center items-center h-[400px] text-muted">
                     <div className="text-center">
                         <p>No web-compatible video rendition available</p>
