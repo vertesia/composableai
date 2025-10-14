@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer } from "@vertesia/ui/widgets";
-import { ContentObject, ImageRenditionFormat, VideoMetadata } from "@vertesia/common";
+import { ContentNature, ContentObject, ImageRenditionFormat, VideoMetadata } from "@vertesia/common";
 import { Copy, Download, SquarePen } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
@@ -160,11 +160,8 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
     const { store } = useUserSession();
 
-    const content = object.content;
-    const isImage =
-        content && content.type && content.type.startsWith("image/");
-    const isVideo =
-        content && content.type && content.type.startsWith("video/");
+    const isImage = object?.metadata?.type === ContentNature.Image;
+    const isVideo = object?.metadata?.type === ContentNature.Video;
 
     // Determine initial panel view
     const getInitialView = (): PanelView => {
