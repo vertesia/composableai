@@ -73,16 +73,23 @@ export class InteractionOutput<T = any> {
      * const text = output.text();     // string
      * ```
      */
-    static from<T = any>(results: CompletionResult[] | InteractionOutputArray<T>): InteractionOutputArray<T> {
-        // Check if already wrapped using the symbol marker
+    static from<T = any>(results: CompletionResult[] | InteractionOutputArray<T> | null | undefined): InteractionOutputArray<T> {
+        if (!results) {
+            return createInteractionOutput<T>([]);
+        }
+        // Check if already wrapped using the symbol marker        
         if ((results as any)[IS_INTERACTION_OUTPUT]) {
             return results as InteractionOutputArray<T>;
         }
-        return createInteractionOutput<T>(results || []);
+        return createInteractionOutput<T>(results);
     }
 
     static isInteractionOutputArray(obj: any): boolean {
         return obj && obj[IS_INTERACTION_OUTPUT] === true;
+    }
+
+    get isEmpty() {
+        return this.results.length === 0;
     }
 
     hasObject() {
