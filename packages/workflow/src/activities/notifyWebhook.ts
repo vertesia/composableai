@@ -180,7 +180,7 @@ async function createOldRequestBody(payload: WorkflowExecutionBaseParams, params
     let data = params.detail;
     if (data && data.run_id && params.event_name === "workflow_completed" && params.workflow_type === 'ExecuteInteractionWorkflow') {
         const client = getVersionedVertesiaClient(payload, null); //ensure client is using no specific version
-        // we cannot use retrieve since it will transform the run result to the new format because of InteractionOutput
+        // Important Note: we cannot use client.runs.retrieve since it will transform the run result to the new format because of InteractionOutput
         const run = await client.runs.get(data.run_id);
         // since we use an unversioned client the run will be in old format so we don't need to tranform the result
         const result = run.result;
