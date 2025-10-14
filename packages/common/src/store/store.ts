@@ -85,9 +85,16 @@ export interface AudioMetadata extends TemporalMediaMetadata {
     type: ContentNature.Audio;
 }
 
+export interface VideoRendition {
+    name: string;
+    dimensions: Dimensions;
+    content: ContentSource
+}
+
 export interface VideoMetadata extends TemporalMediaMetadata {
     type: ContentNature.Video;
     dimensions?: Dimensions;
+    renditions?: VideoRendition[];
 }
 
 export interface TextSection {
