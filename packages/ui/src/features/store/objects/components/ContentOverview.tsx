@@ -602,13 +602,11 @@ function VideoPanel({ object }: { object: ContentObject }) {
     const [videoUrl, setVideoUrl] = useState<string>();
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    const content = object.content;
-    const isVideo =
-        content && content.type && content.type.startsWith("video/");
+    const isVideo = object.metadata && object.metadata.type === "video";
 
     // Check if there are mp4 or webm renditions available in metadata
-    const metadata = object.metadata as VideoMetadata | undefined;
-    const renditions = metadata?.renditions || [];
+    const metadata = object.metadata as VideoMetadata;
+    const renditions = metadata.renditions || [];
 
     // Find mp4 or webm rendition by mime type, preferring mp4
     const webRendition = renditions.find(r => r.content.type === 'video/mp4') || renditions.find(r => r.content.type === 'video/webm');
@@ -626,7 +624,6 @@ function VideoPanel({ object }: { object: ContentObject }) {
                     setIsLoading(false);
                 }
             };
-
             loadVideoUrl();
         } else {
             setIsLoading(false);
