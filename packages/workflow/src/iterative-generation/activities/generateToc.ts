@@ -3,7 +3,6 @@ import { getVertesiaClient } from "../../utils/client.js";
 import { buildAndPublishMemoryPack } from "../../utils/memory.js";
 import { IterativeGenerationPayload, OutputMemoryMeta, Toc, TocIndex } from "../types.js";
 import { executeWithVars, tocIndex } from "../utils.js";
-import { parseCompletionResultsToJson } from "@llumiverse/common";
 
 const defaultTocSchema = {
     "type": "object",
@@ -86,7 +85,7 @@ export async function it_gen_generateToc(payload: WorkflowExecutionPayload): Pro
     const run = await executeWithVars(client, vars.interaction, vars, undefined, schema);
 
     //Parse the CompletionResult[] to get a Toc object
-    const jsonResults = parseCompletionResultsToJson(run.result);
+    const jsonResults = run.result.object();
 
     const toc: Toc = {
         sections: jsonResults.sections
