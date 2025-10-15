@@ -106,7 +106,7 @@ describe('InteractionOutput', () => {
 
         it('should stringify all parts with default separator and compact JSON', () => {
             const output = InteractionOutput.from(sampleResults);
-            const result = output.stringify();
+            const result = output.stringify('\n', 0);  // Explicitly request compact JSON
 
             expect(result).toBe(
                 'Hello, \n' +
@@ -142,7 +142,7 @@ describe('InteractionOutput', () => {
                 { type: 'text', value: 'B' }
             ];
             const output = InteractionOutput.from(mixed);
-            const result = output.stringify(' | ');
+            const result = output.stringify(' | ', 0);  // Explicitly request compact JSON
 
             expect(result).toBe('A | {"x":1} | B');
         });
