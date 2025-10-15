@@ -7,6 +7,7 @@ interface InteractionsFacetsNavProps {
         tags?: any[];
     };
     search: SearchInterface;
+    env?: string;
 }
 
 // Hook to create filter groups for interactions
@@ -95,7 +96,7 @@ export function useInteractionsFilterHandler(search: SearchInterface) {
 }
 
 // Component for interactions filtering
-export function InteractionsFacetsNav({ facets, search }: InteractionsFacetsNavProps) {
+export function InteractionsFacetsNav({ facets, search, env }: InteractionsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const filterGroups = useInteractionsFilterGroups(facets);
     const handleFilterLogic = useInteractionsFilterHandler(search);
@@ -105,6 +106,10 @@ export function InteractionsFacetsNav({ facets, search }: InteractionsFacetsNavP
         setFilters(newFilters);
         handleFilterLogic(newFilters);
     };
+
+    if (env) {
+        search.query['environment'] = env;
+    }
 
     return (
         <FilterProvider
