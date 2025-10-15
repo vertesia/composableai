@@ -4,6 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../libs/utils"
 import { X } from "lucide-react";
 import { ChangeEvent } from "react";
+import { Button } from "@vertesia/ui/core";
 
 const variants = cva(
   "",
@@ -53,14 +54,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     return (
-      <div className="w-full" style={{ position: 'relative', display: 'inline-block' }}>
+      <div className="w-full relative inline-block [&:hover_.clear-button]:opacity-100">
         <input
           type={type}
           className={
             cn(
               variants({ size, variant }),
               className,
-              clearable && value ? "pr-6" : "",
+              clearable && value ? "pr-8" : "",
             )}
           ref={ref}
           value={value == null ? '' : value}
@@ -68,14 +69,17 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {clearable && value && !props.readOnly && !props.disabled && (
-          <button
-            onClick={_onClear}
-            className={`absolute ${type !== 'number' ? 'right-0' : 'right-7'} top-1/2 -translate-y-1/2 size-7 text-muted-foreground hover:text-destructive cursor-pointer flex items-center justify-center`}
+          <Button variant={"link"} size={"icon"}
             type="button"
-            aria-label="Clear input"
+            onClick={_onClear}
+            className={`clear-button opacity-0 transition-opacity duration-200
+              absolute top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive cursor-pointer
+              flex items-center justify-center w-6 h-6 rounded
+              ${type === 'number' ? 'right-6' : 'right-2'}`}
+            alt="Clear input"
           >
             <X size={16} />
-          </button>
+          </Button>
         )}
       </div>
     )
