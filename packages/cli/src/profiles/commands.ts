@@ -134,10 +134,7 @@ export async function createProfile(name?: string, options: CreateProfileOptions
     }
 
     if (options.apikey) {
-        if (!options.account || !options.project) {
-            console.error("When using --apikey you must provide the project and account IDs");
-            process.exit(1);
-        }
+        // Account and project are optional - the VertesiaClient will extract them from the API key automatically
         config.add({
             account: options.account,
             project: options.project,

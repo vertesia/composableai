@@ -20,6 +20,14 @@ const program = new Command();
 
 program.version(getVersion());
 
+// Global options for API configuration
+program
+    .option('--site <site>', 'Vertesia site (e.g., api.vertesia.io, api-preview.vertesia.io, api-staging.vertesia.io)')
+    .option('--studio-url <url>', 'Custom Studio server URL (overrides site)')
+    .option('--store-url <url>', 'Custom Store server URL (overrides site)')
+    .option('--sts-url <url>', 'Custom STS (Security Token Service) server URL (overrides site)')
+    .option('--apikey <key>', 'API key for authentication');
+
 program.command("upgrade")
     .description("Upgrade to the latest version of the CLI")
     .option("-y, --yes", "Skip the confirmation prompt")

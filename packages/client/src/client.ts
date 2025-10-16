@@ -40,6 +40,7 @@ export type VertesiaClientProps = {
     site?: 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api-staging.vertesia.io';
     serverUrl?: string;
     storeUrl?: string;
+    stsUrl?: string;
     apikey?: string;
     projectId?: string;
     sessionTags?: string | string[];
@@ -58,6 +59,11 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      * The store client
      */
     store: ZenoClient;
+
+    /**
+     * The STS (Security Token Service) server URL
+     */
+    stsUrl: string;
 
     /**
      * The session name will be sent when executing an interaction as a tag
@@ -94,6 +100,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     ) {
         let studioServerUrl: string;
         let zenoServerUrl: string;
+        let stsServerUrl: string;
 
         if (opts.serverUrl) {
             studioServerUrl = opts.serverUrl;
@@ -111,6 +118,23 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             throw new Error("Parameter 'site' or 'storeUrl' is required for VertesiaClient");
         }
 
+        if (opts.stsUrl) {
+            stsServerUrl = opts.stsUrl;
+        } else if (opts.site) {
+            // Derive STS URL from site
+            if (opts.site === 'api.vertesia.io') {
+                stsServerUrl = 'https://sts.vertesia.io';
+            } else if (opts.site === 'api-preview.vertesia.io') {
+                stsServerUrl = 'https://sts-preview.vertesia.io';
+            } else {
+                // api-staging.vertesia.io and all other sites
+                stsServerUrl = 'https://sts-staging.vertesia.io';
+            }
+        } else {
+            // For branch environments (custom URLs without site), default to staging STS
+            stsServerUrl = 'https://sts-staging.vertesia.io';
+        }
+
         super(studioServerUrl);
 
         this.store = new ZenoClient({
@@ -119,6 +143,8 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             onRequest: opts.onRequest,
             onResponse: opts.onResponse
         });
+
+        this.stsUrl = stsServerUrl;
 
         if (opts.apikey) {
             this.withApiKey(opts.apikey);
@@ -226,16 +252,40 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      *
      * Generate a token for use with other Composable's services
      *
+     * @param token: the API key to exchange for a JWT token
      * @param accountId: selected account to generate the token for
      * @returns AuthTokenResponse
      */
     async getAuthToken(token?: string, accountId?: string): Promise<AuthTokenResponse> {
-        const query = {
-            accountId,
-            token
+        // Use STS server to get the token
+        const url = new URL('/token/issue', this.stsUrl);
+
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
         };
 
-        return this.get('/auth/token', { query: query, headers: { "authorization": undefined } as any });
+        // Pass API key in Authorization header as Bearer token
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        // Build request body
+        const body: any = {};
+        if (accountId) {
+            body.accountId = accountId;
+        }
+
+        const response = await fetch(url.toString(), {
+            method: 'POST',
+            headers,
+            body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to get auth token from ${this.stsUrl}/token/issue: ${response.status} ${response.statusText}`);
+        }
+
+        return response.json();
     }
 
     get initialHeaders() {
