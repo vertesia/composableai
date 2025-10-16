@@ -42,6 +42,7 @@ export enum Permission {
 
     workflow_run = "workflow:run",
     workflow_admin = "workflow:admin",
+    workflow_superadmin = "workflow:superadmin",
 
     /**
      * whether the user has access to Sutdio App.
