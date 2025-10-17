@@ -350,7 +350,7 @@ const FilterBar = ({ className }: { className?: string }) => {
   );
 };
 
-const FilterClear = ({ className, defaultValue }: { className?: string, defaultValue?: Filter[] }) => {
+const FilterClear = ({ className }: { className?: string}) => {
   const { filters, setFilters } = React.useContext(FilterContext);
 
   const hasActiveFilters = filters.filter((filter) => filter.value?.length > 0).length > 0;
@@ -364,7 +364,7 @@ const FilterClear = ({ className, defaultValue }: { className?: string, defaultV
       variant="outline"
       size="xs"
       className={cn("transition group", className)}
-      onClick={() => setFilters(defaultValue || [])}
+      onClick={() => setFilters([])}
     >
       Clear All
     </Button>
