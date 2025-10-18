@@ -63,6 +63,7 @@ export interface DynamicCollection extends Collection {
 }
 
 export interface CollectionSearchPayload {
+    parent?: string | null;
     dynamic?: boolean;
     status?: CollectionStatus;
     limit?: number;
