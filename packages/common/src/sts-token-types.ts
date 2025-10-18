@@ -4,10 +4,13 @@
  */
 
 export type TokenType = 'apikey' | 'user' | 'project' | 'environment' | 'agent' | 'service_account';
+export type SigningAlgorithm = 'ES256' | 'RS256';
 
 interface BaseTokenRequest {
     type: TokenType;
     audience?: string;
+    /** Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility. */
+    algorithm?: SigningAlgorithm;
 }
 
 // API key doesn't need account/project as it's determined from the key
