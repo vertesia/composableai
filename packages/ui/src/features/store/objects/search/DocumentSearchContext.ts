@@ -55,6 +55,10 @@ export class DocumentSearch implements SearchInterface {
         this.search();
     }
 
+    setDefaultKeys(keys: any[]) {
+        void keys;
+    }
+
     clearFilters(autoSearch: boolean = true) {
         // Preserve search-related fields when clearing filters
         const { parent, full_text, vector, weights, score_aggregation, dynamic_scaling, limit, all_revisions } = this.query;
