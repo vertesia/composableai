@@ -27,22 +27,18 @@ import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
 import { ZenoClient } from "./client.js";
 
+
+interface ContentSourceWithId extends ContentSource {
+    id?: string;
+}
+
 export interface UploadContentObjectPayload
     extends Omit<CreateContentObjectPayload, "content"> {
     content?:
-        | StreamSource
-        | File
-        | {
-              // the source URI
-              source: string;
-              // the original name of the input file if any
-              name?: string;
-              // the mime type of the content source.
-              type?: string;
-
-              // the target id in the content store
-              id?: string;
-          };
+    | StreamSource
+    | File
+    | ContentSource
+    | ContentSourceWithId
 }
 
 export interface ComputeFacetsResponse {
