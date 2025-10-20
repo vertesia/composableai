@@ -1,6 +1,6 @@
 import { json } from "@codemirror/lang-json";
 import { Collection, CreateCollectionPayload } from "@vertesia/common";
-import { Button, ErrorBox, FormItem, Input, Styles, useFetch, useToast } from "@vertesia/ui/core";
+import { Button, ErrorBox, FormItem, Input, Styles, Textarea, useFetch, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject } from "@vertesia/ui/widgets";
 import { basicSetup } from "codemirror";
@@ -135,10 +135,9 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                 <Input value={metadata.name} onChange={(v) => setField("name", v)} />
             </FormItem>
             <FormItem label="Description">
-                <textarea
-                    className={Styles.INPUT}
+                <Textarea
                     value={metadata.description}
-                    onChange={(e) => setField("description", e.target.value)}
+                    onChange={(e) => setField("description", e)}
                 />
             </FormItem>
             {
@@ -159,10 +158,10 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             }
             {collection.dynamic && (
                 <FormItem label="Query" description="Define the query to dynamically fetch content for the collection.">
-                    <textarea
+                    <Textarea
                         className={Styles.INPUT}
                         value={metadata.query}
-                        onChange={(e) => setField("query", e.target.value)}
+                        onChange={(e) => setField("query", e)}
                     />
                 </FormItem>
             )}

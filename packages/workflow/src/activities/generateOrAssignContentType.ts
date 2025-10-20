@@ -15,7 +15,6 @@ import {
   InteractionExecutionParams,
   executeInteractionFromActivity,
 } from "./executeInteraction.js";
-import { parseCompletionResultsToJson } from "@llumiverse/common";
 
 const INT_SELECT_DOCUMENT_TYPE = "sys:SelectDocumentType";
 const INT_GENERATE_METADATA_MODEL = "sys:GenerateMetadataModel";
@@ -134,7 +133,7 @@ export async function generateOrAssignContentType(
     },
   );
 
-  const jsonResult = parseCompletionResultsToJson(res.result);
+  const jsonResult = res.result.object();
 
   log.info("Selected Content Type Result: " + JSON.stringify(jsonResult));
 
@@ -197,7 +196,7 @@ async function generateNewType(
     },
   );
 
-  const jsonResult = parseCompletionResultsToJson(genTypeRes.result);
+  const jsonResult = genTypeRes.result.object();
 
   if (!jsonResult.document_type) {
     log.error("No name generated for type", genTypeRes);

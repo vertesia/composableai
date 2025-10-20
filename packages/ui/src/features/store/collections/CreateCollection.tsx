@@ -1,5 +1,5 @@
 import { CreateCollectionPayload } from "@vertesia/common";
-import { useToast, VModalBody, FormItem, Styles, VModalFooter, Input, Switch, Button, VModal, VModalTitle } from "@vertesia/ui/core";
+import { useToast, VModalBody, FormItem, VModalFooter, Input, Switch, Button, VModal, VModalTitle, Textarea } from "@vertesia/ui/core";
 import { SelectContentType } from "../types/SelectContentType";
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
@@ -80,10 +80,9 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                     <Input type="text" value={payload.name || ""} onChange={(value) => setPayloadProp("name", value)} />
                 </FormItem>
                 <FormItem label="Description" className="mt-2">
-                    <textarea
-                        className={Styles.INPUT}
+                    <Textarea
                         value={payload.description || ""}
-                        onChange={(ev) => setPayloadProp("description", ev.target.value)}
+                        onChange={(ev) => setPayloadProp("description", ev)}
                     />
                 </FormItem>
                 <FormItem label="Dynamic Collection" className="mt-2" direction="row" description="Dynamically fetch content for the collection based on a query. If not enabled, then content must be added by users or agents.">

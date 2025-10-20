@@ -7,6 +7,7 @@ interface InteractionsFacetsNavProps {
         tags?: any[];
     };
     search: SearchInterface;
+    env?: string | null;
 }
 
 // Hook to create filter groups for interactions
@@ -32,6 +33,14 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
     };
     customFilterGroups.push(promptNameFilterGroup);
 
+    const ModelFilterGroup = {
+        name: 'model',
+        placeholder: 'Model',
+        type: 'text' as const,
+        multiple: false
+    };
+    customFilterGroups.push(ModelFilterGroup);
+
     // Add tags filter as stringList type (allows custom input)
     const tagsFilterGroup = {
         name: 'tags',
@@ -46,10 +55,11 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
 
 // Hook to create filter change handler for interactions
 export function useInteractionsFilterHandler(search: SearchInterface) {
+
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
-            // Clear filters without applying defaults - user wants to remove all filters
-            search.clearFilters(true, false);
+            search.clearFilters(true, true);
+
             return;
         }
 
@@ -79,7 +89,7 @@ export function useInteractionsFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search();
+        search.search(true);
     };
 }
 

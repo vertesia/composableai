@@ -350,7 +350,7 @@ const FilterBar = ({ className }: { className?: string }) => {
   );
 };
 
-const FilterClear = ({ className }: { className?: string }) => {
+const FilterClear = ({ className }: { className?: string}) => {
   const { filters, setFilters } = React.useContext(FilterContext);
 
   const hasActiveFilters = filters.filter((filter) => filter.value?.length > 0).length > 0;
