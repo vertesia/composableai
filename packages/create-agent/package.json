@@ -35,5 +35,10 @@
         "@types/hasbin": "^1.2.2",
         "@types/node": "^22.5.0",
         "typescript": "^5.7.2"
+    },
+    "repository": {
+        "type" : "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/create-agent"
     }
 }

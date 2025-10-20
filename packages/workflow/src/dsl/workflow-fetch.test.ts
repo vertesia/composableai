@@ -107,7 +107,7 @@ describe('DSL Workflow', () => {
             project_id: '123',
             timestamp: Date.now(),
             wf_rule_name: 'test',
-            auth_token: 'test',
+            auth_token: process.env.VERTESIA_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature',
             config: {
                 studio_url: process.env.CP_STUDIO_URL || "http://localhost:8081",
                 store_url: process.env.CP_STORE_URL || "http://localhost:8082",
