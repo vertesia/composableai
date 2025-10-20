@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ImageRenditionFormat, VideoMetadata } from "@vertesia/common";
+import { ContentNature, ContentObject, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME } from "@vertesia/common";
 import { Copy, Download, SquarePen } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
@@ -614,7 +614,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
     const isOriginalWebSupported = content?.type && webSupportedFormats.includes(content.type);
 
     // Get poster
-    const poster = renditions.find(r => r.name === 'Poster');
+    const poster = renditions.find(r => r.name === POSTER_RENDITION_NAME);
 
     useEffect(() => {
         const loadPoster = async () => {

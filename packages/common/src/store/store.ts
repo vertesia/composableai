@@ -91,6 +91,8 @@ export interface VideoRendition {
     content: ContentSource
 }
 
+export const POSTER_RENDITION_NAME = "Poster";
+
 export interface VideoMetadata extends TemporalMediaMetadata {
     type: ContentNature.Video;
     dimensions?: Dimensions;
