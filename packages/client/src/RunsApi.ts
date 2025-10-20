@@ -1,3 +1,4 @@
+import type { ExecutionResponse } from "@llumiverse/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     CheckpointConversationPayload,
@@ -5,6 +6,7 @@ import {
     ExecutionRun,
     ExecutionRunRef,
     FindPayload,
+    PopulatedExecutionRun,
     RunCreatePayload,
     RunListingFilters,
     RunListingQueryOptions,
@@ -13,7 +15,6 @@ import {
     UserMessagePayload,
 } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
-import type { ExecutionResponse } from "@llumiverse/common";
 import { EnhancedExecutionRun, enhanceExecutionRun } from "./InteractionOutput.js";
 
 export interface FilterOption {
@@ -67,6 +68,12 @@ export class RunsApi extends ApiTopic {
     async retrieve<ResultT = any, ParamsT = any>(id: string): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
         const r = await this.get("/" + id);
         return enhanceExecutionRun<ResultT, ParamsT>(r);
+    }
+
+    retrievePopulated<P = any>(id: string): Promise<PopulatedExecutionRun<P>> {
+        return this.get("/" + id, {
+            query: { populate: "true" },
+        });
     }
 
     /**
