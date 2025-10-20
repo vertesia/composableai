@@ -575,7 +575,7 @@ export interface BaseExecutionRun<P = any> {
 }
 
 export interface ExecutionRun<P = any> extends BaseExecutionRun<P> {
-    interaction?: string;
+    interaction?: Interaction;
 }
 
 export interface PopulatedExecutionRun<P = any> extends BaseExecutionRun<P> {
