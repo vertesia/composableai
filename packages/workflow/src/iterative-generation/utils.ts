@@ -1,8 +1,7 @@
-import { VertesiaClient } from "@vertesia/client";
-import { ExecutionRun } from "@vertesia/common";
-import { ApplicationFailure } from "@temporalio/workflow";
-import { OutputMemoryMeta, PartIndex, Toc, TocIndex, TocSection } from "./types.js";
 import { ModelOptions, TextFallbackOptions } from "@llumiverse/common";
+import { ApplicationFailure } from "@temporalio/workflow";
+import { VertesiaClient } from "@vertesia/client";
+import { OutputMemoryMeta, PartIndex, Toc, TocIndex, TocSection } from "./types.js";
 
 //TODO: For whole file, support for options beyond max_tokens and temperature and multiple modalities.
 export interface ExecuteOptions {
@@ -15,7 +14,7 @@ export interface ExecuteOptions {
     result_schema?: Record<string, any>;
 }
 
-export async function execute(client: VertesiaClient, options: ExecuteOptions): Promise<ExecutionRun> {
+export async function execute(client: VertesiaClient, options: ExecuteOptions) {
     return client.interactions.executeByName(options.interaction, {
         data: {
             ...options.memory_mapping,
@@ -30,7 +29,7 @@ export async function execute(client: VertesiaClient, options: ExecuteOptions): 
     });
 }
 
-export function executeWithVars(client: VertesiaClient, interaction: string, vars: Record<string, any>, mapping?: Record<string, any>, result_schema?: Record<string, any>): Promise<ExecutionRun> {
+export function executeWithVars(client: VertesiaClient, interaction: string, vars: Record<string, any>, mapping?: Record<string, any>, result_schema?: Record<string, any>) {
     if (mapping) {
         mapping = { ...vars.input_mapping, ...mapping };
     } else {

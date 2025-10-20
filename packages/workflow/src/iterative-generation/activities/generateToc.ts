@@ -8,7 +8,6 @@ import {
     TocIndex,
 } from "../types.js";
 import { executeWithVars, tocIndex } from "../utils.js";
-import { parseCompletionResultsToJson } from "@llumiverse/common";
 
 const defaultTocSchema = {
     type: "object",
@@ -95,7 +94,7 @@ export async function it_gen_generateToc(
     );
 
     //Parse the CompletionResult[] to get a Toc object
-    const jsonResults = parseCompletionResultsToJson(run.result);
+    const jsonResults = run.result.object();
 
     const toc: Toc = {
         sections: jsonResults.sections

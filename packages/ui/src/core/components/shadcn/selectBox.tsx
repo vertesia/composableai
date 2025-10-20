@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
 import { Input } from './input';
+import { Button } from '@vertesia/ui/core';
 
 interface VSelectBoxBaseProps<T> {
     options: T[] | undefined;
@@ -178,7 +179,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                     className={clsx(
                         className,
                         border && 'border border-border',
-                        'flex flex-row gap-2 items-center justify-between p-2 rounded-md group relative',
+                        'flex flex-row gap-2 items-center justify-between p-2 rounded-md group relative [&:hover_.clear-button]:opacity-100',
                         !disabled ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed text-muted",
                     )}
                 >
@@ -194,9 +195,10 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                             {multiple ? renderMultipleValue() : renderSingleValue()}
                         </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 group">
                         {isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && (
-                            <div
+                            <Button variant={"link"} size={"icon"}
+                                alt="Clear selection"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (multiple) {
@@ -205,10 +207,10 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                                         (onChange as (option: T) => void)(undefined as any);
                                     }
                                 }}
-                                className="cursor-pointer hover:bg-muted/20 rounded p-1"
+                                className="cursor-pointer hover:bg-muted/20 clear-button opacity-0 transition-opacity duration-200 rounded p-1"
                             >
                                 <X className="size-4" />
-                            </div>
+                            </Button>
                         )}
                         {!disabled && (
                             <ChevronsUpDown className="size-4 opacity-50" />
