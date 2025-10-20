@@ -595,6 +595,7 @@ function ImagePanel({ object }: { object: ContentObject }) {
 function VideoPanel({ object }: { object: ContentObject }) {
     const { client } = useUserSession();
     const [videoUrl, setVideoUrl] = useState<string>();
+    const [posterUrl, setPosterUrl] = useState<string>();
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const content = object.content;
@@ -611,6 +612,23 @@ function VideoPanel({ object }: { object: ContentObject }) {
     // Check if original file is web-compatible
     const webSupportedFormats = ['video/mp4', 'video/webm'];
     const isOriginalWebSupported = content?.type && webSupportedFormats.includes(content.type);
+
+    // Get poster
+    const poster = renditions.find(r => r.name === 'Poster');
+
+    useEffect(() => {
+        const loadPoster = async () => {
+            if (poster?.content?.source) {
+                try {
+                    const response = await client.files.getDownloadUrl(poster.content.source);
+                    setPosterUrl(response.url);
+                } catch (error) {
+                    console.error("Failed to load poster image", error);
+                }
+            }
+        };
+        loadPoster();
+    }, [poster, client]);
 
     useEffect(() => {
         if (isVideo && (webRendition?.content?.source || isOriginalWebSupported)) {
@@ -655,6 +673,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
             ) : videoUrl ? (
                 <video
                     src={videoUrl}
+                    poster={posterUrl}
                     controls
                     className="w-full max-h-[calc(100vh-260px)] object-contain"
                 >
