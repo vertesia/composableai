@@ -42,7 +42,7 @@ export function DocumentSearchProvider({ children, limit, parent, typeId, facets
         search.query.parent = parent;
         search.query.name = name;
         return search;
-    }, [typeId, limit]);
+    }, [typeId, limit, collectionId]);
 
     return (
         <SearchContext.Provider value={search}>{children}</SearchContext.Provider>
