@@ -250,6 +250,7 @@ function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObj
 function TextActions({ object, text, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, text: string | undefined }) {
     const { client } = useUserSession();
     const toast = useToast();
+    const [loadingFormat, setLoadingFormat] = useState<"docx" | "pdf" | null>(null);
 
     const content = object.content;
 
@@ -259,6 +260,19 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
         (content.type === "text/markdown" || content.type === "text/plain");
 
     const handleExportDocument = async (format: "docx" | "pdf") => {
+        // Prevent multiple concurrent exports
+        if (loadingFormat) return;
+
+        setLoadingFormat(format);
+
+        // Show immediate feedback
+        toast({
+            status: "info",
+            title: `Preparing ${format.toUpperCase()}`,
+            description: "Fetching your document...",
+            duration: 2000,
+        });
+
         try {
             // Request document rendition from the server
             const response = await client.objects.getRendition(object.id, {
@@ -322,6 +336,8 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
                 description: `Failed to export document to ${format.toUpperCase()} format`,
                 duration: 5000,
             });
+        } finally {
+            setLoadingFormat(null);
         }
     };
 
@@ -341,18 +357,28 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
                             variant="ghost"
                             size="sm"
                             onClick={handleExportDocx}
+                            disabled={loadingFormat !== null}
                             className="flex items-center gap-2"
                         >
-                            <Download className="size-4" />
+                            {loadingFormat === "docx" ? (
+                                <Spinner size="sm" />
+                            ) : (
+                                <Download className="size-4" />
+                            )}
                             DOCX
                         </Button>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleExportPdf}
+                            disabled={loadingFormat !== null}
                             className="flex items-center gap-2"
                         >
-                            <Download className="size-4" />
+                            {loadingFormat === "pdf" ? (
+                                <Spinner size="sm" />
+                            ) : (
+                                <Download className="size-4" />
+                            )}
                             PDF
                         </Button>
                     </>
