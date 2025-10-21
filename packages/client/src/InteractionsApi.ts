@@ -1,8 +1,13 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { AsyncExecutionPayload, ComputeInteractionFacetPayload, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload, Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery, InteractionExecutionPayload, InteractionForkPayload, InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery, InteractionsExportPayload, InteractionUpdatePayload, RateLimitRequestPayload, RateLimitRequestResponse } from "@vertesia/common";
+import {
+    AsyncExecutionPayload, ComputeInteractionFacetPayload, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload,
+    Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery, InteractionExecutionPayload, InteractionForkPayload,
+    InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery,
+    InteractionsExportPayload, InteractionUpdatePayload, RateLimitRequestPayload, RateLimitRequestResponse
+} from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
-import { EnhancedInteractionExecutionResult, enhanceInteractionExecutionResult } from "./InteractionOutput.js";
+import { EnhancedExecutionRun, EnhancedInteractionExecutionResult, enhanceExecutionRun, enhanceInteractionExecutionResult } from "./InteractionOutput.js";
 
 export interface ComputeInteractionFacetsResponse {
     tags?: { _id: string, count: number }[];
@@ -217,10 +222,11 @@ export default class InteractionsApi extends ApiTopic {
     /**
      * Suggest Improvement for a prompt
      */
-    suggestImprovements(id: string, payload: ImprovePromptPayload): Promise<{ result: string; }> {
-        return this.post(`${id}/suggest-prompt-improvements`, {
+    async suggestImprovements<ResultT = any, ParamsT = any>(id: string, payload: ImprovePromptPayload): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
+        const r = await this.post(`${id}/suggest-prompt-improvements`, {
             payload
         });
+        return enhanceExecutionRun<ResultT, ParamsT>(r);
     }
 
     /**
