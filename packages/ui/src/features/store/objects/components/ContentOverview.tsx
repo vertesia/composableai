@@ -258,15 +258,6 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
         content.type &&
         (content.type === "text/markdown" || content.type === "text/plain");
 
-    // Check for markdown indicators, ignoring any HTML comments
-    const seemsMarkdown =
-        text &&
-        // Look for markdown indicators
-        (text.includes("\n#") ||
-            text.includes("\n*") ||
-            text.includes("\n+") ||
-            text.includes("!["));
-
     const handleExportDocument = async (format: "docx" | "pdf") => {
         try {
             // Request document rendition from the server
@@ -344,7 +335,7 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
                         <Copy className="size-4" />
                     </Button>
                 )}
-                {(isMarkdownOrText || seemsMarkdown) && text && (
+                {isMarkdownOrText && text && (
                     <>
                         <Button
                             variant="ghost"
@@ -375,14 +366,13 @@ function TextPanel({ object, text }: { object: ContentObject, text: string | und
     const toast = useToast();
     const { client } = useUserSession();
 
-    // Check for markdown indicators, ignoring any HTML comments
-    const seemsMarkdown =
-        text &&
-        // Look for markdown indicators
-        (text.includes("\n#") ||
-            text.includes("\n*") ||
-            text.includes("\n+") ||
-            text.includes("!["));
+    const content = object.content;
+
+    // Only render as markdown if content type is explicitly markdown/text
+    const isMarkdownOrText =
+        content &&
+        content.type &&
+        (content.type === "text/markdown" || content.type === "text/plain");
 
     const handleExportDocument = async (format: "docx" | "pdf") => {
         try {
@@ -455,7 +445,7 @@ function TextPanel({ object, text }: { object: ContentObject, text: string | und
         text ? (
             <>
                 <div className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto">
-                    {seemsMarkdown ? (
+                    {isMarkdownOrText ? (
                         <div className="vprose prose-sm p-1">
                             <MarkdownRenderer
                                 components={{
