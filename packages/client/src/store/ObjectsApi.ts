@@ -27,20 +27,6 @@ import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
 import { ZenoClient } from "./client.js";
 
-
-interface ContentSourceWithId extends ContentSource {
-    id?: string;
-}
-
-export interface UploadContentObjectPayload
-    extends Omit<CreateContentObjectPayload, "content"> {
-    content?:
-    | StreamSource
-    | File
-    | ContentSource
-    | ContentSourceWithId
-}
-
 export interface ComputeFacetsResponse {
     type?: { _id: string; count: number }[];
     location?: { _id: string; count: number }[];
@@ -213,7 +199,7 @@ export class ObjectsApi extends ApiTopic {
     }
 
     async create(
-        payload: UploadContentObjectPayload,
+        payload: CreateContentObjectPayload,
         options?: {
             collection_id?: string;
             processing_priority?: ContentObjectProcessingPriority;
