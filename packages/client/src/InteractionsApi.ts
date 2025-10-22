@@ -9,6 +9,7 @@ import { CompletionResult } from "@llumiverse/common";
 import { VertesiaClient } from "./client.js";
 import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
 import { EnhancedInteractionExecutionResult, enhanceInteractionExecutionResult } from "./InteractionOutput.js";
+import { InteractionCatalogApi } from "./InteractionCatalogApi.js";
 
 export interface ComputeInteractionFacetsResponse {
     tags?: { _id: string, count: number }[];
@@ -21,8 +22,11 @@ export interface AsyncExecutionResult {
 }
 
 export default class InteractionsApi extends ApiTopic {
+    catalog: InteractionCatalogApi;
+
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/interactions");
+        this.catalog = new InteractionCatalogApi(parent);
     }
 
     /**

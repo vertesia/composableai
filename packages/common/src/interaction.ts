@@ -34,6 +34,17 @@ export interface InteractionExecutionError {
 
 
 // ------------------ in code interactions -----------------
+/**
+ * Reference to an interaction in the catalog.
+ * Used in catalog listing. The id is composed of the namespace and the interaction name.
+ * Stored interactions can use `oid:` prefix.
+ * If no prefix is used it fallback on `oid:`.
+ */
+export interface CatalogInteractionRef {
+    id: string;
+    title: string;
+    description?: string;
+}
 export interface InCodePrompt {
     role: PromptRole,
     content: string,
