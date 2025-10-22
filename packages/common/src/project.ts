@@ -78,6 +78,12 @@ export interface ProjectConfiguration {
     datacenter?: string;
     storage_bucket?: string;
 
+    /**
+     * Number of days to retain interaction runs and their data.
+     *
+     * @default 90
+     */
+    interaction_run_retention_days?: number;
 }
 
 // export interface ProjectConfigurationEmbeddings {
