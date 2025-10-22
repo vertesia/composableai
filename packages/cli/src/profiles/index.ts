@@ -30,11 +30,11 @@ export function getConfigUrl(value: ConfigUrlRef) {
             if (value.startsWith("http://") || value.startsWith("https://")) {
                 return value;
             } else {
-                throw new InvalidConfigUrlError("Custom targets must be a valid http or https URL.");
+                // Branch environments use staging STS for authentication
+                return "https://staging.cloud.vertesia.io/cli";
             }
     }
 }
-const getServiceUrl = (service: string, env: string) => `https://${service}-server-${env}.api.vertesia.io`;
 export function getServerUrls(value: ConfigUrlRef) {
     switch (value) {
         case "local":
@@ -43,18 +43,27 @@ export function getServerUrls(value: ConfigUrlRef) {
                 zeno_server_url: "http://localhost:8092",
             };
         case "staging":
+            return {
+                studio_server_url: "https://api-staging.vertesia.io",
+                zeno_server_url: "https://api-staging.vertesia.io",
+            };
         case "preview":
             return {
-                studio_server_url: getServiceUrl("studio", value),
-                zeno_server_url: getServiceUrl("zeno", value),
+                studio_server_url: "https://api-preview.vertesia.io",
+                zeno_server_url: "https://api-preview.vertesia.io",
             };
         case "prod":
             return {
-                studio_server_url: getServiceUrl("studio", "production"),
-                zeno_server_url: getServiceUrl("zeno", "production"),
+                studio_server_url: "https://api.vertesia.io",
+                zeno_server_url: "https://api.vertesia.io",
             };
         default:
-            throw new Error("Unable to detect server urls from custom target.");
+            // Support branch environments with service-specific subdomains
+            // e.g., studio-server-dev-feat-wf-progress.api.vertesia.io
+            return {
+                studio_server_url: `https://studio-server-${value}.api.vertesia.io`,
+                zeno_server_url: `https://zeno-server-${value}.api.vertesia.io`,
+            };
     }
 }
 export function getCloudTypeFromConfigUrl(url: string) {

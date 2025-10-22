@@ -149,6 +149,12 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
                 } else if (url.hostname === "api-staging.vertesia.io") {
                     // api-staging.vertesia.io -> sts-staging.vertesia.io
                     this.tokenServerUrl = "https://sts-staging.vertesia.io";
+                } else if (url.hostname.match(/^(studio|zeno)-server-.+\.api\.vertesia\.io$/)) {
+                    // Branch environments (studio-server-<branch>.api.vertesia.io) use staging STS
+                    this.tokenServerUrl = "https://sts-staging.vertesia.io";
+                } else if (url.hostname.startsWith("api-") && url.hostname.endsWith(".vertesia.io")) {
+                    // Old branch pattern (api-<branch>.vertesia.io) use staging STS
+                    this.tokenServerUrl = "https://sts-staging.vertesia.io";
                 } else if (url.hostname.startsWith("api")) {
                     // Generic api.* pattern replacement
                     url.hostname = url.hostname.replace(/^api/, "sts");
