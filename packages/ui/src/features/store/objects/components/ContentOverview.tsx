@@ -250,6 +250,7 @@ function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObj
 function TextActions({ object, text, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, text: string | undefined }) {
     const { client } = useUserSession();
     const toast = useToast();
+    const [loadingFormat, setLoadingFormat] = useState<"docx" | "pdf" | null>(null);
 
     const content = object.content;
 
@@ -258,16 +259,20 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
         content.type &&
         (content.type === "text/markdown" || content.type === "text/plain");
 
-    // Check for markdown indicators, ignoring any HTML comments
-    const seemsMarkdown =
-        text &&
-        // Look for markdown indicators
-        (text.includes("\n#") ||
-            text.includes("\n*") ||
-            text.includes("\n+") ||
-            text.includes("!["));
-
     const handleExportDocument = async (format: "docx" | "pdf") => {
+        // Prevent multiple concurrent exports
+        if (loadingFormat) return;
+
+        setLoadingFormat(format);
+
+        // Show immediate feedback
+        toast({
+            status: "info",
+            title: `Preparing ${format.toUpperCase()}`,
+            description: "Fetching your document...",
+            duration: 2000,
+        });
+
         try {
             // Request document rendition from the server
             const response = await client.objects.getRendition(object.id, {
@@ -331,6 +336,8 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
                 description: `Failed to export document to ${format.toUpperCase()} format`,
                 duration: 5000,
             });
+        } finally {
+            setLoadingFormat(null);
         }
     };
 
@@ -344,24 +351,34 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
                         <Copy className="size-4" />
                     </Button>
                 )}
-                {(isMarkdownOrText || seemsMarkdown) && text && (
+                {isMarkdownOrText && text && (
                     <>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleExportDocx}
+                            disabled={loadingFormat !== null}
                             className="flex items-center gap-2"
                         >
-                            <Download className="size-4" />
+                            {loadingFormat === "docx" ? (
+                                <Spinner size="sm" />
+                            ) : (
+                                <Download className="size-4" />
+                            )}
                             DOCX
                         </Button>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleExportPdf}
+                            disabled={loadingFormat !== null}
                             className="flex items-center gap-2"
                         >
-                            <Download className="size-4" />
+                            {loadingFormat === "pdf" ? (
+                                <Spinner size="sm" />
+                            ) : (
+                                <Download className="size-4" />
+                            )}
                             PDF
                         </Button>
                     </>
@@ -375,14 +392,13 @@ function TextPanel({ object, text }: { object: ContentObject, text: string | und
     const toast = useToast();
     const { client } = useUserSession();
 
-    // Check for markdown indicators, ignoring any HTML comments
-    const seemsMarkdown =
-        text &&
-        // Look for markdown indicators
-        (text.includes("\n#") ||
-            text.includes("\n*") ||
-            text.includes("\n+") ||
-            text.includes("!["));
+    const content = object.content;
+
+    // Only render as markdown if content type is explicitly markdown/text
+    const isMarkdownOrText =
+        content &&
+        content.type &&
+        (content.type === "text/markdown" || content.type === "text/plain");
 
     const handleExportDocument = async (format: "docx" | "pdf") => {
         try {
@@ -455,7 +471,7 @@ function TextPanel({ object, text }: { object: ContentObject, text: string | und
         text ? (
             <>
                 <div className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto">
-                    {seemsMarkdown ? (
+                    {isMarkdownOrText ? (
                         <div className="vprose prose-sm p-1">
                             <MarkdownRenderer
                                 components={{
