@@ -1,5 +1,5 @@
 import { JSONSchema4 } from "json-schema";
-import { InteractionRef } from "../interaction.js";
+import { ConversationVisibility, InteractionRef } from "../interaction.js";
 
 export enum ContentEventName {
     create = "create",
@@ -301,6 +301,12 @@ export interface WorkflowRun {
      * An interaction is used to start the agent, the data is stored on temporal "vars"
      */
     interactions?: InteractionRef[];
+    /**
+     * The visibility of the workflow run.
+     * - 'private': Only visible to the user who initiated the workflow
+     * - 'project': Visible to all users in the project
+     */
+    visibility?: ConversationVisibility;
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
