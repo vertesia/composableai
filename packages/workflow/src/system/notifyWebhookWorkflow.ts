@@ -1,6 +1,6 @@
 
-import { log } from "@temporalio/workflow";
-import { WorkflowExecutionPayload } from "@vertesia/common";
+import { log, workflowInfo } from "@temporalio/workflow";
+import { WebHookSpec, WorkflowExecutionPayload } from "@vertesia/common";
 import * as activities from "../activities/notifyWebhook.js";
 import { dslProxyActivities } from "../dsl/dslProxyActivities.js";
 import { WF_NON_RETRYABLE_ERRORS } from "../errors.js";
@@ -19,18 +19,24 @@ const {
 });
 
 export interface NotifyWebhookWorfklowParams {
-    endpoints: string[],
+    workflow_type: string;
+    endpoints: (string | WebHookSpec)[],
     data: Record<string, any>
 }
 
 
 export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload<NotifyWebhookWorfklowParams>): Promise<any> {
 
+    const info = workflowInfo();
     const { objectIds, vars } = payload;
     const notifications = [];
     const endpoints = vars.endpoints ?? (vars as any).webhooks ?? [];
     const data = vars.data ?? (vars as any).webhook_data ?? undefined;
+    const workflow_type = vars.workflow_type ?? info.workflowType;
     const eventName = payload.event;
+
+    const workflowId = info.parent?.workflowId || info.workflowId;
+    const workflowRunId = info.parent?.runId || info.runId;
 
     if (!endpoints.length) {
         log.info(`No webhooks to notify`);
@@ -39,11 +45,14 @@ export async function notifyWebhookWorkflow(payload: WorkflowExecutionPayload<No
 
     for (const ep of endpoints) {
         const n = notifyWebhook(payload, {
-            target_url: ep,
+            webhook: ep,
             method: 'POST',
-            payload: {
+            workflow_type,
+            workflow_id: workflowId,
+            workflow_run_id: workflowRunId,
+            event_name: eventName,
+            detail: {
                 object_ids: objectIds,
-                event: eventName,
                 data
             }
         }).then(res => {

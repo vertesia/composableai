@@ -31,7 +31,6 @@ export * from "./styles.js";
 export * from "./Switch.js";
 export * from "./table/index.js";
 export * from "./tabs/index.js";
-export * from "./Textarea.js";
 export * from "./toast/index.js";
 
 export type HeroIcon = React.ForwardRefExoticComponent<Omit<React.SVGProps<SVGSVGElement>, "ref"> & {

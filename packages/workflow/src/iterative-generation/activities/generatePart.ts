@@ -14,7 +14,6 @@ import {
     TocSection,
 } from "../types.js";
 import { executeWithVars, expectMemoryIsConsistent } from "../utils.js";
-import { completionResultToString } from "@llumiverse/common";
 
 export async function it_gen_generatePart(
     payload: WorkflowExecutionPayload,
@@ -86,7 +85,7 @@ export async function it_gen_generatePart(
         },
     });
 
-    const result = r.result.map(completionResultToString).join('\n');
+    const result = r.result.text();
     content[content.length - 1].content += result;
     meta.lastProcessedPart = path;
     await buildAndPublishMemoryPack(

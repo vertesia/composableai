@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Minus, X } from 'lucide-react';
 import { Button } from './shadcn/button';
 
 interface SidePanelProps {
@@ -68,9 +68,11 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
                                     <div className="relative flex h-full">
                                         {/* Drag Handle */}
                                         <div
-                                            className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-indigo-500 transition-colors"
+                                            className="absolute -left-1 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-indigo-500 transition-colors flex items-center justify-center"
                                             onMouseDown={handleDragStart}
-                                        />
+                                        >
+                                            <Minus className="rotate-90 font-semibold" strokeWidth={4} />
+                                        </div>
                                         <div className="flex-1 flex flex-col overflow-y-scroll gap-4 bg-background py-2 shadow-xl">
                                             {title && (
                                                 <div className="px-2 sm:px-4">
