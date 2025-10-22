@@ -308,7 +308,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
             </div>
             <Divider className="my-2" />
             <div className="pt-2">
-                <ContentOverview object={object as unknown as ContentObject} loadText />
+                <ContentOverview key={object.id} object={object as ContentObject} loadText />
             </div>
         </SidePanel>
     ) : null;

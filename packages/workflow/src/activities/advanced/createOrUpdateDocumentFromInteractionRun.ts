@@ -2,7 +2,6 @@ import { log } from "@temporalio/activity";
 import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError, DocumentNotFoundError } from "../../errors.js";
-import { parseCompletionResultsToJson, completionResultToString } from "@llumiverse/common";
 
 interface CreateOrUpdateObjectFromInteractionRunParams {
     /**
@@ -69,7 +68,7 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
 
 
     const result = run.result;
-    const jsonResult = parseCompletionResultsToJson(run.result);
+    const jsonResult = result.object();
     const inputData = run.parameters;
 
     const name = jsonResult['name'] || jsonResult["title"] || inputData['name'] || params.fallback_name || 'Untitled';
@@ -78,7 +77,7 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
         name,
         parent: params.parent ?? undefined,
         properties: jsonResult ? jsonResult : {},
-        text: !jsonResult ? result.map(completionResultToString).join('\n') : undefined,
+        text: !jsonResult ? result.text() : undefined,
         type: type?.id,
         status: ContentObjectStatus.completed,
         generation_run_info: {

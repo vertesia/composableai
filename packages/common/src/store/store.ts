@@ -35,13 +35,14 @@ export interface ContentObject<T = any> extends ContentObjectItem<T> {
     security?: Record<string, string[]>; // Security field for granular permissions
 }
 
-export type ContentNature =
-    | "video"
-    | "image"
-    | "audio"
-    | "document"
-    | "code"
-    | "other";
+export enum ContentNature {
+    Video = "video",
+    Image = "image",
+    Audio = "audio",
+    Document = "document",
+    Code = "code",
+    Other = "other"
+}
 
 export interface Dimensions {
     width: number;
@@ -77,17 +78,26 @@ export interface TemporalMediaMetadata extends ContentMetadata {
 }
 
 export interface ImageMetadata extends ContentMetadata {
-    type: "image";
+    type: ContentNature.Image;
     dimensions?: Dimensions;
 }
 
 export interface AudioMetadata extends TemporalMediaMetadata {
-    type: "audio";
+    type: ContentNature.Audio;
 }
 
+export interface VideoRendition {
+    name: string;
+    dimensions: Dimensions;
+    content: ContentSource
+}
+
+export const POSTER_RENDITION_NAME = "Poster";
+
 export interface VideoMetadata extends TemporalMediaMetadata {
-    type: "video";
+    type: ContentNature.Video;
     dimensions?: Dimensions;
+    renditions?: VideoRendition[];
 }
 
 export interface TextSection {
@@ -97,7 +107,7 @@ export interface TextSection {
 }
 
 export interface DocumentMetadata extends ContentMetadata {
-    type: "document";
+    type: ContentNature.Document;
     page_count?: number;
     content_processor?: {
         type?: string;

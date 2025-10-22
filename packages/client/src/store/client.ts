@@ -1,14 +1,15 @@
 import { AbstractFetchClient, RequestError } from "@vertesia/api-fetch-client";
 import { BulkOperationPayload, BulkOperationResult } from "@vertesia/common";
 import { AgentsApi } from "./AgentsApi.js";
+import { CollectionsApi } from "./CollectionsApi.js";
 import { CommandsApi } from "./CommandsApi.js";
 import { EmbeddingsApi } from "./EmbeddingsApi.js";
 import { ZenoClientNotFoundError } from "./errors.js";
 import { FilesApi } from "./FilesApi.js";
 import { ObjectsApi } from "./ObjectsApi.js";
 import { TypesApi } from "./TypesApi.js";
+import { VERSION, VERSION_HEADER } from "./version.js";
 import { WorkflowsApi } from "./WorkflowsApi.js";
-import { CollectionsApi } from "./CollectionsApi.js";
 
 export interface ZenoClientProps {
     serverUrl?: string;
@@ -45,6 +46,15 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
         }
     }
 
+    withApiVersion(version: string | number | null) {
+        if (!version) {
+            delete this.headers[VERSION_HEADER];
+        } else {
+            this.headers[VERSION_HEADER] = String(version);
+        }
+        return this;
+    }
+
     withApiKey(apiKey: string | null) {
         return this.withAuthCallback(
             apiKey ? () => Promise.resolve(`Bearer ${apiKey}`) : undefined
@@ -60,7 +70,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     get initialHeaders() {
         return {
             ...super.initialHeaders,
-            'X-Api-Version': '20250925' // YYYYMMDD, client versioning for API endpoints. Increment manually for breaking changes
+            [VERSION_HEADER]: VERSION
         }
     }
 

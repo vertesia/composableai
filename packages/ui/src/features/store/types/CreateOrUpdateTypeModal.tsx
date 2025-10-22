@@ -48,7 +48,7 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-muted">Description</label>
-                        <Textarea value={description} onChange={setDescription} />
+                        <Textarea value={description} onChange={e => setDescription(e.target.value)} />
                     </div>
                 </div>
             </ModalBody>
