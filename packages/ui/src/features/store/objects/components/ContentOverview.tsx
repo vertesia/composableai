@@ -254,10 +254,10 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
 
     const content = object.content;
 
-    const isMarkdownOrText =
+    const isMarkdown =
         content &&
         content.type &&
-        (content.type === "text/markdown" || content.type === "text/plain");
+        content.type === "text/markdown";
 
     const handleExportDocument = async (format: "docx" | "pdf") => {
         // Prevent multiple concurrent exports
@@ -351,7 +351,7 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
                         <Copy className="size-4" />
                     </Button>
                 )}
-                {isMarkdownOrText && text && (
+                {isMarkdown && text && (
                     <>
                         <Button
                             variant="ghost"
@@ -394,11 +394,11 @@ function TextPanel({ object, text }: { object: ContentObject, text: string | und
 
     const content = object.content;
 
-    // Only render as markdown if content type is explicitly markdown/text
-    const isMarkdownOrText =
+    // Only render as markdown if content type is explicitly markdown
+    const isMarkdown =
         content &&
         content.type &&
-        (content.type === "text/markdown" || content.type === "text/plain");
+        content.type === "text/markdown";
 
     const handleExportDocument = async (format: "docx" | "pdf") => {
         try {
@@ -471,7 +471,7 @@ function TextPanel({ object, text }: { object: ContentObject, text: string | und
         text ? (
             <>
                 <div className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto">
-                    {isMarkdownOrText ? (
+                    {isMarkdown ? (
                         <div className="vprose prose-sm p-1">
                             <MarkdownRenderer
                                 components={{
