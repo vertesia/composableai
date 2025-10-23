@@ -1,7 +1,7 @@
 import type { JSONSchema } from "@llumiverse/common";
 import { PromptRole } from "@llumiverse/common";
 import type { JSONSchema4 } from "json-schema";
-import { InteractionRefWithSchema, PopulatedInteraction } from "../interaction.js";
+import { InCodePrompt, InteractionRefWithSchema, PopulatedInteraction } from "../interaction.js";
 import { ExecutablePromptSegmentDef, PromptSegmentDefType } from "../prompt.js";
 
 
@@ -24,13 +24,13 @@ export function mergeJSONSchemas(schemas: JSONSchema[]) {
 
 export function _mergePromptsSchema(prompts: ExecutablePromptSegmentDef[]) {
     const props: Record<string, JSONSchema4> = {};
-    let required: string[] = [];
+    let required = new Set<String>();
     for (const prompt of prompts) {
         if (prompt.template?.inputSchema?.properties) {
             const schema = prompt.template?.inputSchema;
             if (schema.required) {
                 for (const prop of schema.required as string[]) {
-                    if (!required.includes(prop)) required.push(prop);
+                    required.add(prop);
                 }
             }
             Object.assign(props, schema.properties);
@@ -51,13 +51,36 @@ export function _mergePromptsSchema(prompts: ExecutablePromptSegmentDef[]) {
                     }
                 }
             });
-            required.push('chat');
+            required.add('chat');
         }
     }
-    return Object.keys(props).length > 0 ? { properties: props, required } as JSONSchema4 : null;
+    return Object.keys(props).length > 0 ? {
+        properties: props,
+        required: Array.from(required)
+    } as JSONSchema4 : null;
 }
 
 export function mergePromptsSchema(interaction: InteractionRefWithSchema | PopulatedInteraction) {
     if (!interaction.prompts) return null;
     return _mergePromptsSchema(interaction.prompts as ExecutablePromptSegmentDef[]);
+}
+
+export function mergeInCodePromptSchemas(prompts: InCodePrompt[]) {
+    const props: Record<string, JSONSchema> = {};
+    let required = new Set<String>();
+    for (const prompt of prompts) {
+        if (prompt.schema?.properties) {
+            const schema = prompt.schema;
+            if (schema.required) {
+                for (const prop of schema.required as string[]) {
+                    required.add(prop);
+                }
+            }
+            Object.assign(props, schema.properties);
+        }
+    }
+    return Object.keys(props).length > 0 ? {
+        properties: props,
+        required: Array.from(required)
+    } as JSONSchema : null;
 }
