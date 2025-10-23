@@ -111,8 +111,30 @@ export interface InCodeInteraction {
      */
     prompts: InCodePrompt[]
 
+    /**
+     * Runtime configuration (system use only)
+     *
+     * This field is populated by the system when converting stored interactions
+     * and contains runtime-specific defaults like target model/environment IDs.
+     *
+     * DO NOT set this field manually when writing interaction definitions.
+     * These values are environment-specific and not portable.
+     *
+     * @internal
+     */
+    runtime?: {
+        /**
+         * Default target environment for the interaction execution         
+         */
+        environment?: string;
+
+        /**
+         * Default (recommended) target model for the interaction execution
+         */
+        model?: string;
+    }
 }
-export interface InteractionSpec extends Omit<InCodeInteraction, 'id'> {
+export interface InteractionSpec extends Omit<InCodeInteraction, 'id' | 'runtime'> {
 }
 // ---------------------------------------------------------
 
