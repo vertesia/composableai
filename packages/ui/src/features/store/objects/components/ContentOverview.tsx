@@ -409,8 +409,8 @@ function TextPanel({ object, text }: { object: ContentObject, text: string | und
         text.includes("](")
     );
 
-    // Render as markdown if it's markdown/text type AND looks like markdown
-    const shouldRenderAsMarkdown = isMarkdownOrText && seemsMarkdown;
+    // Render as markdown if it's markdown/text type OR if text looks like markdown
+    const shouldRenderAsMarkdown = isMarkdownOrText || seemsMarkdown;
 
     return (
         text ? (
