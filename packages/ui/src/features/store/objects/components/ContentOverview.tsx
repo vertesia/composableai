@@ -389,89 +389,34 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
 }
 
 function TextPanel({ object, text }: { object: ContentObject, text: string | undefined }) {
-    const toast = useToast();
-    const { client } = useUserSession();
-
     const content = object.content;
 
-    // Only render as markdown if content type is explicitly markdown
-    const isMarkdown =
+    // Check if content type is markdown or plain text
+    const isMarkdownOrText =
         content &&
         content.type &&
-        content.type === "text/markdown";
+        (content.type === "text/markdown" || content.type === "text/plain");
 
-    const handleExportDocument = async (format: "docx" | "pdf") => {
-        try {
-            // Request document rendition from the server
-            const response = await client.objects.getRendition(object.id, {
-                format: format as any, // We're extending the format type
-                generate_if_missing: true,
-                sign_url: true,
-            });
+    // Check if text content looks like markdown
+    const seemsMarkdown = text && (
+        text.includes("\n# ") ||
+        text.includes("\n## ") ||
+        text.includes("\n### ") ||
+        text.includes("\n* ") ||
+        text.includes("\n- ") ||
+        text.includes("\n+ ") ||
+        text.includes("![") ||
+        text.includes("](")
+    );
 
-            if (response.status === "generating") {
-                toast({
-                    status: "info",
-                    title: "Generating document",
-                    description: `Please wait while we prepare your ${format.toUpperCase()} file...`,
-                    duration: 5000,
-                });
-
-                // Poll for completion
-                setTimeout(() => handleExportDocument(format), 3000);
-                return;
-            }
-
-            if (response.status === "failed") {
-                throw new Error("Document generation failed");
-            }
-
-            // Download the generated file or open in new window
-            if (response.renditions && response.renditions.length > 0) {
-                const downloadUrl = response.renditions[0];
-
-                if (format === 'pdf') {
-                    // Open PDF in new window
-                    window.open(downloadUrl, '_blank');
-                    toast({
-                        status: "success",
-                        title: "PDF opened",
-                        description: "PDF document opened in a new window",
-                        duration: 2000,
-                    });
-                } else {
-                    // Download DOCX file
-                    const link = document.createElement("a");
-                    link.href = downloadUrl;
-                    link.download = `${object.name || "document"}.${format}`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    toast({
-                        status: "success",
-                        title: "Document exported",
-                        description: `Successfully exported to ${format.toUpperCase()} format`,
-                        duration: 2000,
-                    });
-                }
-            }
-        } catch (err) {
-            console.error(`Failed to export document as ${format}:`, err);
-            toast({
-                status: "error",
-                title: "Export failed",
-                description: `Failed to export document to ${format.toUpperCase()} format`,
-                duration: 5000,
-            });
-        }
-    };
+    // Render as markdown if it's markdown/text type OR if text looks like markdown
+    const shouldRenderAsMarkdown = isMarkdownOrText || seemsMarkdown;
 
     return (
         text ? (
             <>
                 <div className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto">
-                    {isMarkdown ? (
+                    {shouldRenderAsMarkdown ? (
                         <div className="vprose prose-sm p-1">
                             <MarkdownRenderer
                                 components={{
