@@ -1,6 +1,6 @@
 import { DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations } from "@vertesia/common";
 import { activityInfo, CompleteAsyncError, log } from "@temporalio/activity";
-import { FetchClient } from "@vertesia/api-fetch-client";
+import { FetchClient, RequestError } from "@vertesia/api-fetch-client";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../../errors.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../index.js";
@@ -27,7 +27,12 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
 
     const gladiaConfig = await client.projects.integrations.retrieve(payload.project_id, SupportedIntegrations.gladia) as GladiaConfiguration | undefined;
     if (!gladiaConfig || !gladiaConfig.enabled) {
-        throw new DocumentNotFoundError("Gladia integration not enabled");
+        return {
+            hasText: false,
+            objectId,
+            status: TextExtractionStatus.error,
+            error: "Gladia integration not enabled",
+        }
     }
 
     const object = await client.objects.retrieve(objectId, "+text");
@@ -53,25 +58,37 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
 
     log.info(`Transcribing media ${mediaUrl} with Gladia`, { objectId, callbackUrl });
 
-    const res = await gladiaClient.post("/transcription", {
-        payload: {
-            audio_url: mediaUrl,
-            callback_url: callbackUrl,
-            diarization_enhanced: true,
-            enable_code_switching: true,
-            subtitles: true,
-            subtitles_config: {
-                formats: ["vtt"],
+    try {
+        const res = await gladiaClient.post("/transcription", {
+            payload: {
+                audio_url: mediaUrl,
+                callback_url: callbackUrl,
+                diarization_enhanced: true,
+                enable_code_switching: true,
+                subtitles: true,
+                subtitles_config: {
+                    formats: ["vtt"],
+                }
             }
+        }) as GladiaTranscriptRequestResponse;
+
+        log.info(`Transcription request sent to Gladia`, { objectId, res });
+        throw new CompleteAsyncError();
+
+    } catch (error: any) {
+        if (error instanceof RequestError && error.status === 422) {
+            return {
+                hasText: false,
+                objectId,
+                status: TextExtractionStatus.error,
+                error: `Gladia transcription error: ${error.message}`,
+            }
+        } else {
+            log.error(`Error sending transcription request to Gladia for object ${objectId}`, { error });
+            throw error;
         }
-    }) as GladiaTranscriptRequestResponse;
-
-    log.info(`Transcription request sent to Gladia`, { objectId, res });
-
-    throw new CompleteAsyncError();
-
+    }
 }
-
 
 function generateCallbackUrlForGladia(baseUrl: string, authToken: string, taskToken: string, objectId: string) {
     return `${baseUrl}/api/v1/webhooks/gladia/${objectId}?access_token=${authToken}&task_token=${taskToken}`;
