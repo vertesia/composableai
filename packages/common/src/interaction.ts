@@ -81,7 +81,7 @@ export interface InCodeInteraction {
     /**
      * The JSON schema to be used for the result if any.
      */
-    result_schema?: JSONSchema;
+    result_schema?: JSONSchema | SchemaRef;
 
     /**
      * The modality of the interaction output. 
