@@ -6,10 +6,30 @@ import os from 'os';
 import path from 'path';
 import { promisify } from 'util';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
-import { DocumentNotFoundError } from '../../errors.js';
+import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
+import { VertesiaClient } from '@vertesia/client';
+import { RequestError } from '@vertesia/api-fetch-client';
 
 const execAsync = promisify(exec);
+
+// Default configuration constants
+const DEFAULT_MAX_RESOLUTION = 1920; // Max resolution for video rendition (produces 1080p)
+const DEFAULT_THUMBNAIL_SIZE = 256; // Thumbnail longest side in pixels
+const DEFAULT_POSTER_SIZE = 1920; // Poster longest side in pixels
+const DEFAULT_GENERATE_AUDIO = true; // Generate audio-only rendition by default
+
+// Timestamp calculation constants for screenshots
+const THUMBNAIL_TIMESTAMP_RATIO = 0.25; // Extract thumbnail at 25% of video duration
+const POSTER_TIMESTAMP_RATIO = 0.05; // Extract poster at 5% of video duration
+const POSTER_TIMESTAMP_MAX = 2; // Maximum poster timestamp in seconds
+const MIN_SCREENSHOT_TIMESTAMP = 1; // Minimum timestamp for screenshots in seconds
+
+// FFmpeg configuration constants
+const FFMPEG_MAX_BUFFER = 1024 * 1024 * 10; // 10MB buffer for ffmpeg output
+const VIDEO_CRF = '23'; // Constant Rate Factor for video quality (18-28, lower = better)
+const AUDIO_BITRATE = '128k'; // Audio bitrate for AAC encoding
+const JPEG_QUALITY = '2'; // JPEG quality for screenshots (1-31, lower = better)
 
 export interface PrepareVideoParams {
     maxResolution?: number; // Max resolution (longest side) for video rendition, default 1920 (produces 1080p: 1920x1080 landscape or 1080x1920 portrait)
@@ -32,6 +52,24 @@ interface VideoMetadataExtended {
     hasAudio: boolean;
 }
 
+interface FFProbeStream {
+    codec_type: string;
+    codec_name?: string;
+    width?: number;
+    height?: number;
+    r_frame_rate?: string;
+}
+
+interface FFProbeFormat {
+    duration?: string;
+    bit_rate?: string;
+}
+
+interface FFProbeOutput {
+    streams: FFProbeStream[];
+    format: FFProbeFormat;
+}
+
 /**
  * Extract comprehensive video metadata using ffprobe
  */
@@ -39,21 +77,21 @@ async function getVideoMetadata(videoPath: string): Promise<VideoMetadataExtende
     try {
         const command = `ffprobe -v quiet -print_format json -show_format -show_streams "${videoPath}"`;
         const { stdout } = await execAsync(command);
-        const metadata = JSON.parse(stdout);
+        const metadata = JSON.parse(stdout) as FFProbeOutput;
 
         const videoStream = metadata.streams.find(
-            (stream: any) => stream.codec_type === 'video',
+            (stream) => stream.codec_type === 'video',
         );
 
         if (!videoStream) {
             throw new Error('No video stream found in file');
         }
 
-        const duration = parseFloat(metadata.format.duration) || 0;
+        const duration = parseFloat(metadata.format.duration ?? '0') || 0;
         const width = videoStream.width || 0;
         const height = videoStream.height || 0;
         const codec = videoStream.codec_name || 'unknown';
-        const bitrate = parseInt(metadata.format.bit_rate) || 0;
+        const bitrate = parseInt(metadata.format.bit_rate ?? '0', 10) || 0;
 
         // Calculate FPS from r_frame_rate (e.g., "30/1" or "24000/1001")
         let fps = 0;
@@ -64,7 +102,7 @@ async function getVideoMetadata(videoPath: string): Promise<VideoMetadataExtende
 
         // Check if video has an audio stream
         const audioStream = metadata.streams.find(
-            (stream: any) => stream.codec_type === 'audio',
+            (stream) => stream.codec_type === 'audio',
         );
         const hasAudio = !!audioStream;
 
@@ -116,6 +154,23 @@ interface MediaResult {
     height: number;
 }
 
+export interface PrepareVideoMetadata {
+    duration: number;
+    width: number;
+    height: number;
+    codec: string;
+    bitrate: number;
+    fps: number;
+    hasAudio: boolean;
+}
+
+export interface PrepareVideoResult {
+    objectId: string;
+    metadata: PrepareVideoMetadata;
+    renditions: VideoRendition[];
+    status: 'success';
+}
+
 /**
  * Generate a video rendition with resolution limited to maxResolution (e.g., 1080p)
  * Uses H.264 codec for broad compatibility
@@ -142,9 +197,9 @@ async function generateVideoRendition(
         '-vf', `"${scaleFilter}"`,
         '-c:v', 'libx264', // H.264 codec
         '-preset', 'medium', // Balance between speed and compression
-        '-crf', '23', // Constant Rate Factor (18-28, lower = better quality)
+        '-crf', VIDEO_CRF, // Constant Rate Factor (18-28, lower = better quality)
         '-c:a', 'aac', // Audio codec
-        '-b:a', '128k', // Audio bitrate
+        '-b:a', AUDIO_BITRATE, // Audio bitrate
         '-movflags', '+faststart', // Enable streaming
         '-max_muxing_queue_size', '1024', // Prevent muxing issues
         `"${outputFile}"`,
@@ -153,20 +208,22 @@ async function generateVideoRendition(
     log.info(`Generating ${maxResolution}p video rendition`, { command });
 
     try {
-        const { stderr } = await execAsync(command, { maxBuffer: 1024 * 1024 * 10 }); // 10MB buffer
+        const { stderr } = await execAsync(command, { maxBuffer: FFMPEG_MAX_BUFFER });
 
         if (stderr && !stderr.includes('frame=')) {
             log.debug(`FFmpeg stderr for video rendition: ${stderr}`);
         }
 
-        if (fs.existsSync(outputFile)) {
+        // Verify output file was created
+        try {
+            await fs.promises.access(outputFile, fs.constants.F_OK);
             log.info(`Generated ${maxResolution}p video rendition: ${outputFile}`);
             return {
                 file: outputFile,
                 width: dimensions.width,
                 height: dimensions.height,
             };
-        } else {
+        } catch {
             log.warn(`Video rendition not generated`);
             return null;
         }
@@ -193,23 +250,25 @@ async function generateAudioRendition(
         '-i', `"${videoPath}"`,
         '-vn', // No video
         '-c:a', 'aac', // Audio codec
-        '-b:a', '128k', // Audio bitrate
+        '-b:a', AUDIO_BITRATE, // Audio bitrate
         `"${outputFile}"`,
     ].join(' ');
 
     log.info('Generating audio-only rendition', { command });
 
     try {
-        const { stderr } = await execAsync(command, { maxBuffer: 1024 * 1024 * 10 }); // 10MB buffer
+        const { stderr } = await execAsync(command, { maxBuffer: FFMPEG_MAX_BUFFER });
 
         if (stderr && !stderr.includes('frame=')) {
             log.debug(`FFmpeg stderr for audio rendition: ${stderr}`);
         }
 
-        if (fs.existsSync(outputFile)) {
+        // Verify output file was created
+        try {
+            await fs.promises.access(outputFile, fs.constants.F_OK);
             log.info(`Generated audio rendition: ${outputFile}`);
             return outputFile;
-        } else {
+        } catch {
             log.warn('Audio rendition not generated');
             return null;
         }
@@ -246,7 +305,7 @@ async function generateScreenshot(
         '-i', `"${videoPath}"`,
         '-vframes', '1',
         '-vf', `"${scaleFilter}"`,
-        '-q:v', '2', // High quality JPEG
+        '-q:v', JPEG_QUALITY, // High quality JPEG
         `"${outputFile}"`,
     ].join(' ');
 
@@ -259,14 +318,16 @@ async function generateScreenshot(
             log.debug(`FFmpeg stderr for ${name}: ${stderr}`);
         }
 
-        if (fs.existsSync(outputFile)) {
+        // Verify output file was created
+        try {
+            await fs.promises.access(outputFile, fs.constants.F_OK);
             log.info(`Generated ${name}: ${outputFile}`);
             return {
                 file: outputFile,
                 width: dimensions.width,
                 height: dimensions.height,
             };
-        } else {
+        } catch {
             log.warn(`${name} not generated`);
             return null;
         }
@@ -282,7 +343,7 @@ async function generateScreenshot(
  * Upload a file to the storage and return its URI
  */
 async function uploadFile(
-    client: any,
+    client: VertesiaClient,
     filePath: string,
     mimeType: string,
     fileName: string,
@@ -295,7 +356,36 @@ async function uploadFile(
     const result = await client.files.uploadFile(source);
     log.info(`Uploaded file to ${storagePath}`, { result });
 
-    return result.uri;
+    return result;
+}
+
+/**
+ * Upload a media result and create a rendition entry
+ */
+async function uploadMediaAsRendition(
+    client: VertesiaClient,
+    result: MediaResult,
+    renditionName: string,
+    fileName: string,
+    mimeType: string,
+    etag: string,
+    pathSegment: string,
+): Promise<VideoRendition> {
+    const storagePath = `renditions/${etag}/${pathSegment}/${fileName}`;
+    const uri = await uploadFile(client, result.file, mimeType, fileName, storagePath);
+
+    return {
+        name: renditionName,
+        dimensions: {
+            width: result.width,
+            height: result.height,
+        },
+        content: {
+            source: uri,
+            type: mimeType,
+            name: fileName,
+        },
+    };
 }
 
 /**
@@ -303,17 +393,17 @@ async function uploadFile(
  */
 export async function prepareVideo(
     payload: DSLActivityExecutionPayload<PrepareVideoParams>,
-) {
+): Promise<PrepareVideoResult> {
     const {
         client,
         objectId,
         params,
     } = await setupActivity<PrepareVideoParams>(payload);
 
-    const maxResolution = params.maxResolution || 1920;
-    const thumbnailSize = params.thumbnailSize || 256;
-    const posterSize = params.posterSize || 1920;
-    const generateAudio = params.generateAudio !== false; // Default true
+    const maxResolution = params.maxResolution ?? DEFAULT_MAX_RESOLUTION;
+    const thumbnailSize = params.thumbnailSize ?? DEFAULT_THUMBNAIL_SIZE;
+    const posterSize = params.posterSize ?? DEFAULT_POSTER_SIZE;
+    const generateAudio = params.generateAudio ?? DEFAULT_GENERATE_AUDIO;
 
     log.info(`Preparing video for ${objectId}`, {
         maxResolution,
@@ -322,9 +412,9 @@ export async function prepareVideo(
     });
 
     // Retrieve the content object
-    const inputObject = await client.objects.retrieve(objectId).catch((err: any) => {
+    const inputObject = await client.objects.retrieve(objectId).catch((err: unknown) => {
         log.error(`Failed to retrieve document ${objectId}`, { err });
-        if (err.message.includes('not found')) {
+        if (err instanceof RequestError && err.status === 404) {
             throw new DocumentNotFoundError(`Document ${objectId} not found`, [objectId]);
         }
         throw err;
@@ -337,9 +427,10 @@ export async function prepareVideo(
 
     if (!inputObject.content.type || !inputObject.content.type.startsWith('video/')) {
         log.error(`Document ${objectId} is not a video: ${inputObject.content.type}`);
-        throw new DocumentNotFoundError(
-            `Document ${objectId} is not a video: ${inputObject.content.type}`,
-            [objectId],
+        throw new InvalidContentTypeError(
+            objectId,
+            'video/*',
+            inputObject.content.type || 'unknown',
         );
     }
 
@@ -361,29 +452,29 @@ export async function prepareVideo(
             maxResolution,
         );
 
-        // Step 3: Generate thumbnail (at 25% of video duration)
-        log.info('Generating thumbnail');
-        const thumbnailTimestamp = Math.max(metadata.duration * 0.25, 1);
-        const thumbnailResult = await generateScreenshot(
-            videoFile,
-            tempOutputDir,
-            thumbnailTimestamp,
-            thumbnailSize,
-            'thumbnail',
-            metadata,
-        );
+        // Step 3 & 4: Generate thumbnail and poster in parallel
+        log.info('Generating thumbnail and poster');
+        const thumbnailTimestamp = Math.max(metadata.duration * THUMBNAIL_TIMESTAMP_RATIO, MIN_SCREENSHOT_TIMESTAMP);
+        const posterTimestamp = Math.max(Math.min(metadata.duration * POSTER_TIMESTAMP_RATIO, POSTER_TIMESTAMP_MAX), MIN_SCREENSHOT_TIMESTAMP);
 
-        // Step 4: Generate poster (at 5% of duration or 2 seconds)
-        log.info('Generating poster');
-        const posterTimestamp = Math.max(Math.min(metadata.duration * 0.05, 2), 1);
-        const posterResult = await generateScreenshot(
-            videoFile,
-            tempOutputDir,
-            posterTimestamp,
-            posterSize,
-            'poster',
-            metadata,
-        );
+        const [thumbnailResult, posterResult] = await Promise.all([
+            generateScreenshot(
+                videoFile,
+                tempOutputDir,
+                thumbnailTimestamp,
+                thumbnailSize,
+                'thumbnail',
+                metadata,
+            ),
+            generateScreenshot(
+                videoFile,
+                tempOutputDir,
+                posterTimestamp,
+                posterSize,
+                'poster',
+                metadata,
+            ),
+        ]);
 
         // Step 5: Generate audio rendition (if video has audio and requested)
         let audioFile: string | null = null;
@@ -399,27 +490,16 @@ export async function prepareVideo(
         const etag = inputObject.content.etag ?? inputObject.id;
 
         if (renditionResult) {
-            const fileName = `${maxResolution}px.mp4`;
-            const storagePath = `renditions/${etag}/video/${fileName}`;
-            const renditionUri = await uploadFile(
+            const videoRendition = await uploadMediaAsRendition(
                 client,
-                renditionResult.file,
+                renditionResult,
+                `${maxResolution}p`,
+                `${maxResolution}px.mp4`,
                 'video/mp4',
-                fileName,
-                storagePath,
+                etag,
+                'video',
             );
-            renditions.push({
-                name: `${maxResolution}p`,
-                dimensions: {
-                    width: renditionResult.width,
-                    height: renditionResult.height,
-                },
-                content: {
-                    source: renditionUri,
-                    type: 'video/mp4',
-                    name: fileName,
-                },
-            });
+            renditions.push(videoRendition);
         }
 
         if (thumbnailResult) {
@@ -435,51 +515,29 @@ export async function prepareVideo(
         }
 
         if (posterResult) {
-            const fileName = 'poster.jpg';
-            const storagePath = `renditions/${etag}/${posterSize}/${fileName}`;
-            const posterUri = await uploadFile(
+            const posterRendition = await uploadMediaAsRendition(
                 client,
-                posterResult.file,
+                posterResult,
+                POSTER_RENDITION_NAME,
+                'poster.jpg',
                 'image/jpeg',
-                fileName,
-                storagePath,
+                etag,
+                `${posterSize}`,
             );
-            renditions.push({
-                name: POSTER_RENDITION_NAME,
-                dimensions: {
-                    width: posterResult.width,
-                    height: posterResult.height,
-                },
-                content: {
-                    source: posterUri,
-                    type: 'image/jpeg',
-                    name: fileName,
-                },
-            });
+            renditions.push(posterRendition);
         }
 
         if (audioFile) {
-            const fileName = 'audio.m4a';
-            const storagePath = `renditions/${etag}/audio/${fileName}`;
-            const audioUri = await uploadFile(
+            const audioRendition = await uploadMediaAsRendition(
                 client,
-                audioFile,
+                { file: audioFile, width: 0, height: 0 },
+                AUDIO_RENDITION_NAME,
+                'audio.m4a',
                 'audio/mp4',
-                fileName,
-                storagePath,
+                etag,
+                'audio',
             );
-            renditions.push({
-                name: AUDIO_RENDITION_NAME,
-                dimensions: {
-                    width: 0,
-                    height: 0,
-                },
-                content: {
-                    source: audioUri,
-                    type: 'audio/mp4',
-                    name: fileName,
-                },
-            });
+            renditions.push(audioRendition);
         }
 
         // Step 7: Update content object with metadata and renditions
@@ -520,28 +578,42 @@ export async function prepareVideo(
                 fps: metadata.fps,
                 hasAudio: metadata.hasAudio,
             },
-            renditions: renditions.map(r => ({
-                name: r.name,
-                dimensions: r.dimensions,
-            })),
+            renditions: renditions,
             status: 'success',
         };
     } catch (error) {
-        log.error(
-            `Error preparing video: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        log.error(`Error preparing video: ${errorMessage}`, { error });
+
+        // Re-throw known errors as-is
+        if (error instanceof DocumentNotFoundError || error instanceof InvalidContentTypeError) {
+            throw error;
+        }
+
+        // Wrap unknown errors in Error
+        throw new Error(
+            `Failed to prepare video ${objectId}: ${errorMessage}`,
         );
-        throw new Error(`Failed to prepare video: ${objectId}`);
     } finally {
         // Clean up temporary files
-        try {
-            if (fs.existsSync(videoFile)) {
-                fs.unlinkSync(videoFile);
-            }
-            if (fs.existsSync(tempOutputDir)) {
-                fs.rmSync(tempOutputDir, { recursive: true, force: true });
-            }
-        } catch (cleanupError) {
-            log.warn(`Failed to cleanup temporary files`);
+        const cleanupPromises: Promise<void>[] = [];
+
+        if (videoFile) {
+            cleanupPromises.push(
+                fs.promises.unlink(videoFile).catch((err) => {
+                    log.warn(`Failed to cleanup video file: ${videoFile}`, { err });
+                }),
+            );
         }
+
+        if (tempOutputDir) {
+            cleanupPromises.push(
+                fs.promises.rm(tempOutputDir, { recursive: true, force: true }).catch((err) => {
+                    log.warn(`Failed to cleanup temp directory: ${tempOutputDir}`, { err });
+                }),
+            );
+        }
+
+        await Promise.allSettled(cleanupPromises);
     }
 }

@@ -64,9 +64,24 @@ export class ResourceExhaustedError extends ApplicationFailure {
     }
 }
 
+export class InvalidContentTypeError extends ApplicationFailure {
+    constructor(
+        public objectId: string,
+        public expectedType: string,
+        public actualType: string,
+    ) {
+        super(
+            `Document ${objectId} has invalid content type. Expected ${expectedType}, got ${actualType}`,
+            "InvalidContentTypeError",
+            true, // non-retryable
+        );
+    }
+}
+
 export const WF_NON_RETRYABLE_ERRORS = [
     "DocumentNotFoundError",
     "ActivityParamInvalidError",
     "ActivityParamNotFoundError",
     "WorkflowParamNotFoundError",
+    "InvalidContentTypeError",
 ];
