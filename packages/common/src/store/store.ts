@@ -92,11 +92,13 @@ export interface VideoRendition {
 }
 
 export const POSTER_RENDITION_NAME = "Poster";
+export const AUDIO_RENDITION_NAME = "Audio";
 
 export interface VideoMetadata extends TemporalMediaMetadata {
     type: ContentNature.Video;
     dimensions?: Dimensions;
     renditions?: VideoRendition[];
+    hasAudio?: boolean;
 }
 
 export interface TextSection {
