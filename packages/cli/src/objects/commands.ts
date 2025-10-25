@@ -48,7 +48,7 @@ async function listFilesInDirectory(dir: string, recursive = false): Promise<str
     }).then((entries: Dirent[]) => entries.filter(ent => {
         // exclude hidden files and include only file with extensions
         return ent.isFile() && ent.name.lastIndexOf('.') > 0;
-    }).map(ent => join(ent.path || '', ent.name)));
+    }).map(ent => join(ent.parentPath || '', ent.name)));
 }
 
 export async function createObject(program: Command, files: string[], options: Record<string, any>) {

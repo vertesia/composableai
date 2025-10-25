@@ -20,6 +20,15 @@ const program = new Command();
 
 program.version(getVersion());
 
+// Global options for authentication and configuration
+program
+    .option('-k, --apikey <key>', 'API key for authentication (overrides profile)')
+    .option('--site <env>', 'Site environment: local, staging, preview, or prod (sets both server and store URLs)')
+    .option('-s, --server <url>', 'Server URL (overrides profile and --site)')
+    .option('-z, --store <url>', 'Store URL (overrides profile and --site)')
+    .option('-p, --project <id>', 'Project ID (overrides profile)')
+    .option('-a, --account <id>', 'Account ID (overrides profile)');
+
 program.command("upgrade")
     .description("Upgrade to the latest version of the CLI")
     .option("-y, --yes", "Skip the confirmation prompt")

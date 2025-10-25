@@ -90,7 +90,7 @@ export function SelectBox<T>({ clearTitle, ClearIcon = X, showFilter, filterBy, 
         }
     }
     return (
-        <Listbox value={value || null} onChange={onChange} by={by} disabled={disabled}>
+        <Listbox value={value ?? undefined} onChange={onChange} by={by} disabled={disabled}>
             {() => (
                 <div className={'overflow-y-visible ' + className}>
                     <div className="relative">
