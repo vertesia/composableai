@@ -188,16 +188,19 @@ async function generateVideoRendition(
 
     log.info(`Video rendition dimensions: ${metadata.width}x${metadata.height} -> ${dimensions.width}x${dimensions.height}`);
 
-    const scaleFilter = `scale=${dimensions.width}:${dimensions.height}`;
+    // Combine scale with color space conversion for maximum web compatibility
+    // format=yuv420p converts to 4:2:0 chroma subsampling (from ProRes 4:2:2 or higher)
+    const videoFilters = `scale=${dimensions.width}:${dimensions.height},format=yuv420p`;
 
     const command = [
         'ffmpeg',
         '-y', // Overwrite output
         '-i', `"${videoPath}"`,
-        '-vf', `"${scaleFilter}"`,
+        '-vf', `"${videoFilters}"`,
         '-c:v', 'libx264', // H.264 codec
         '-preset', 'medium', // Balance between speed and compression
         '-crf', VIDEO_CRF, // Constant Rate Factor (18-28, lower = better quality)
+        '-pix_fmt', 'yuv420p', // Explicitly set pixel format for compatibility
         '-c:a', 'aac', // Audio codec
         '-b:a', AUDIO_BITRATE, // Audio bitrate
         '-movflags', '+faststart', // Enable streaming
