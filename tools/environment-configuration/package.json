@@ -1,37 +1,37 @@
 {
-  "name": "environment-configuration",
-  "version": "0.0.1",
-  "description": "A collection of scripts to automate the configuration of execution environments in Vertesia",
-  "license": "APL-2.0",
-  "author": "Vertesia",
-  "type": "module",
-  "private": true,
-  "scripts": {
-    "lint": "npx eslint",
-    "format": "npx prettier --write \"**/*.{ts,js,json,md}\"",
-    "build": "tsc --build",
-    "clean": "tsc --build --clean",
-    "aws": "npx bun ./src/index.ts aws",
-    "gcp": "npx bun ./src/index.ts gcp"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.24.0",
-    "@eslint/markdown": "^6.3.0",
-    "@tsconfig/node-lts": "^22.0.1",
-    "@types/bun": "latest",
-    "eslint": "^9.24.0",
-    "eslint-config-prettier": "^10.1.1",
-    "eslint-plugin-prettier": "^5.2.3",
-    "globals": "^16.0.0",
-    "prettier": "3.5.3",
-    "typescript": "^5.8.2",
-    "typescript-eslint": "^8.38.0"
-  },
-  "dependencies": {
-    "@aws-sdk/client-iam": "^3.797.0",
-    "@vertesia/client": "^0.53.0",
-    "commander": "^13.1.0",
-    "dotenv": "^16.4.7",
-    "google-auth-library": "^10.0.0-rc.1"
-  }
+    "name": "environment-configuration",
+    "version": "0.0.1",
+    "description": "A collection of scripts to automate the configuration of execution environments in Vertesia",
+    "license": "APL-2.0",
+    "author": "Vertesia",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "lint": "npx eslint",
+        "format": "npx prettier --write \"**/*.{ts,js,json,md}\"",
+        "build": "tsc --build",
+        "clean": "tsc --build --clean",
+        "aws": "npx bun ./src/index.ts aws",
+        "gcp": "npx bun ./src/index.ts gcp"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.24.0",
+        "@eslint/markdown": "^6.3.0",
+        "@tsconfig/node-lts": "^22.0.1",
+        "@types/bun": "latest",
+        "eslint": "^9.24.0",
+        "eslint-config-prettier": "^10.1.1",
+        "eslint-plugin-prettier": "^5.2.3",
+        "globals": "^16.0.0",
+        "prettier": "3.5.3",
+        "typescript": "^5.8.2",
+        "typescript-eslint": "^8.38.0"
+    },
+    "dependencies": {
+        "@aws-sdk/client-iam": "^3.797.0",
+        "@vertesia/client": "^0.53.0",
+        "commander": "^13.1.0",
+        "dotenv": "^16.4.7",
+        "google-auth-library": "^9.15.1"
+    }
 }
