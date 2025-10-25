@@ -1,5 +1,5 @@
 import { log } from '@temporalio/activity';
-import { DSLActivityExecutionPayload, DSLActivitySpec, VideoMetadata, VideoRendition, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, ContentNature } from '@vertesia/common';
+import { DSLActivityExecutionPayload, DSLActivitySpec, VideoMetadata, VideoRendition, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WEB_VIDEO_RENDITION_NAME, ContentNature } from '@vertesia/common';
 import { exec } from 'child_process';
 import fs from 'fs';
 import os from 'os';
@@ -493,7 +493,7 @@ export async function prepareVideo(
             const videoRendition = await uploadMediaAsRendition(
                 client,
                 renditionResult,
-                `${maxResolution}p`,
+                WEB_VIDEO_RENDITION_NAME,
                 `${maxResolution}px.mp4`,
                 'video/mp4',
                 etag,
