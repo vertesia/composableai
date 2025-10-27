@@ -51,7 +51,7 @@ export interface InCodePrompt {
     content_type: TemplateType;
     schema?: JSONSchema;
     /**
-     * optional name of the prompt segment. For UI display purposes only
+     * optional name of the prompt segment. Use kebab case for prompt names
      */
     name?: string;
     /**
