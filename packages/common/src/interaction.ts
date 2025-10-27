@@ -346,7 +346,6 @@ export interface InteractionCreatePayload
         | "updated_by"
         | "project"
         | "formatter"
-        | "tags"
         | "parent"
         | "version"
         | "visibility"
