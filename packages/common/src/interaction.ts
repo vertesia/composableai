@@ -692,8 +692,15 @@ export interface GenerateTestDataPayload {
     config: InteractionExecutionConfiguration;
 }
 
-export interface ImprovePromptPayload {
+export interface ImprovePromptPayloadOld {
     config: InteractionExecutionConfiguration;
+}
+
+export interface ImprovePromptPayload {
+    description?: string; // interaction description
+    content: string; // prompt content,
+    schema?: JSONSchema, // optional prompt schema
+    config: InteractionExecutionConfiguration
 }
 
 export interface RateLimitRequestPayload {
