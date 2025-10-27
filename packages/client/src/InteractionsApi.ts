@@ -1,7 +1,7 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
 import {
     AsyncExecutionPayload, ComputeInteractionFacetPayload, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload,
-    ImprovePromptPayloadOld,
+    ImprovePromptPayloadConfig,
     Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery,
     InteractionExecutionPayload, InteractionForkPayload,
     InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery,
@@ -230,7 +230,7 @@ export default class InteractionsApi extends ApiTopic {
      * Suggest Improvement for a prompt
      * @deprecated use suggestPromptImprovements instead
      */
-    async suggestImprovements<ResultT = any, ParamsT = any>(id: string, payload: ImprovePromptPayloadOld): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
+    async suggestImprovements<ResultT = any, ParamsT = any>(id: string, payload: ImprovePromptPayloadConfig): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
         const r = await this.post(`${id}/suggest-prompt-improvements`, {
             payload
         });
@@ -238,7 +238,7 @@ export default class InteractionsApi extends ApiTopic {
     }
 
     async suggestPromptImprovements<ResultT = any, ParamsT = any>(payload: ImprovePromptPayload): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
-        const r = await this.post(`/suggest-prompt-improvements`, {
+        const r = await this.post(`/improve`, {
             payload
         });
         return enhanceInteractionExecutionResult<ResultT, ParamsT>(r);
