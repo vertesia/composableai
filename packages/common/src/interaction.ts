@@ -50,6 +50,15 @@ export interface InCodePrompt {
     content: string,
     content_type: TemplateType;
     schema?: JSONSchema;
+    /**
+     * optional name of the prompt segment. For UI display purposes only
+     */
+    name?: string;
+    /**
+     * optional reference to an external resource if any.
+     * Used internally by the system to synchronize stored prompts with in-code prompts.
+     */
+    externalId?: string;
 }
 export interface InCodeInteraction {
     /**
