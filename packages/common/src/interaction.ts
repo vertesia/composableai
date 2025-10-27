@@ -121,6 +121,12 @@ export interface InCodeInteraction {
     prompts: InCodePrompt[]
 
     /**
+     * Optional reference to an external resource if any.
+     * Used internally by the system to synchronize stored interactions with in-code interactions. 
+     */
+    externalId?: string;
+
+    /**
      * Runtime configuration (system use only)
      *
      * This field is populated by the system when converting stored interactions
