@@ -346,12 +346,14 @@ export interface InteractionCreatePayload
         | "updated_by"
         | "project"
         | "formatter"
+        | "tags"
         | "parent"
         | "version"
         | "visibility"
         | "endpoint"
     > {
     visibility?: InteractionVisibility;
+    tags?: string[];
 }
 
 export interface InteractionUpdatePayload
