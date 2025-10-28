@@ -15,6 +15,7 @@ export { getObjectFromStore } from "./getObjectFromStore.js";
 export { handleDslError } from "./handleError.js";
 export { convertPdfToStructuredText } from "./media/processPdfWithTextract.js";
 export { transcribeMedia } from "./media/transcribeMediaWithGladia.js";
+export { prepareVideo } from "./media/prepareVideo.js";
 export { notifyWebhook } from "./notifyWebhook.js";
 export { setDocumentStatus } from "./setDocumentStatus.js";
 export { checkRateLimit } from "./rateLimiter.js";

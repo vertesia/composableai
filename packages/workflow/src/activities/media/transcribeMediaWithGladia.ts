@@ -1,4 +1,4 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations } from "@vertesia/common";
+import { DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, AUDIO_RENDITION_NAME, VideoMetadata, ContentNature } from "@vertesia/common";
 import { activityInfo, CompleteAsyncError, log } from "@temporalio/activity";
 import { FetchClient, RequestError } from "@vertesia/api-fetch-client";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
@@ -47,11 +47,25 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
         throw new DocumentNotFoundError(`No source found for object ${objectId}`);
     }
 
-    const mediaUrl = await client.store.objects.getContentSource(objectId).then(res => res.source);
+    // Check for audio rendition in video metadata (preferred for videos)
+    let mediaSource: string = object.content.source;
+    if (object.metadata?.type === ContentNature.Video) {
+        const videoMetadata = object.metadata as VideoMetadata;
+        const audioRendition = videoMetadata.renditions?.find(r => r.name === AUDIO_RENDITION_NAME);
+        if (audioRendition?.content?.source) {
+            mediaSource = audioRendition.content.source;
+            log.info(`Found audio rendition for video object ${objectId}`, { mediaSource });
+        }
+    }
+
+    // Get download URL for the media source
+    const { url: mediaUrl } = await client.files.getDownloadUrl(mediaSource);
 
     if (!mediaUrl) {
-        throw new DocumentNotFoundError(`Error fetching source ${object.content.source}`);
+        throw new DocumentNotFoundError(`Error fetching media URL for ${mediaSource}`);
     }
+
+    log.info(`Using media URL for transcription`, { objectId, mediaUrl: mediaSource });
 
     const taskToken = Buffer.from(activityInfo().taskToken).toString('base64url');
     const callbackUrl = generateCallbackUrlForGladia(client.store.baseUrl, payload.auth_token, taskToken, objectId);
