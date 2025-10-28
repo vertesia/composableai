@@ -7,7 +7,7 @@ import { processVarsInFile } from "./template.js";
  *
  * @param sourceDir - The path to the source directory.
  * @param targetDir - The path to the target directory.
- * @param templateSuffix - Optional suffix to remvoe from file name after copying. Ex: .template, .tmpl
+ * @param templateSuffix - Optional suffix to remove from file name after copying. Ex: .template, .tmpl
  */
 export async function copyTree(sourceDir: string, targetDir: string, template?: {
     suffix?: string, // Suffix to remove from file name after copying
