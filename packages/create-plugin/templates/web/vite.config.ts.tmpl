@@ -115,8 +115,10 @@ function defineAppConfig(): UserConfig {
         resolve: {
             // For debug support in vertesia ui sources - link to the vertesia/ui location
             alias: VERTESIA_UI_PATH ? {
-                "@vertesia/ui/*": resolve(`${VERTESIA_UI_PATH}/src/*/index.ts`)
-            } : undefined
+                "@vertesia/ui": resolve(`${VERTESIA_UI_PATH}/src`)
+            } : undefined,
+            // Deduplicate React to prevent multiple instances
+            dedupe: ['react', 'react-dom']
         }
     }
 }
