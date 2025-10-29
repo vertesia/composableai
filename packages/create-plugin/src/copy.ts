@@ -27,7 +27,11 @@ export async function copyTree(sourceDir: string, targetDir: string, template?: 
 
         for (const item of items) {
             const isTemplate = template?.suffix ? item.name.endsWith(template.suffix) : false;
-            const targetName = isTemplate ? item.name.slice(0, -template!.suffix!.length) : item.name;
+            let targetName = isTemplate ? item.name.slice(0, -template!.suffix!.length) : item.name;
+            // Rename gitignore to .gitignore (npm excludes .gitignore from published packages)
+            if (targetName === 'gitignore') {
+                targetName = '.gitignore';
+            }
             const sourcePath = join(source, item.name);
             const targetPath = join(target, targetName);
 
