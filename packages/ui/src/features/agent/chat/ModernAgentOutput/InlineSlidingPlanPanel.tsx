@@ -150,12 +150,10 @@ export default function InlineSlidingPlanPanel({
                 // Determine status icon and style
                 let StatusIcon = Circle;
                 let statusColor = "text-muted";
-                let bgColor = "";
 
                 if (status === "in_progress") {
                   StatusIcon = Clock;
                   statusColor = "text-info";
-                  bgColor = "bg-info/20";
                 } else if (status === "completed") {
                   StatusIcon = CheckCircle;
                   statusColor = "text-success";
