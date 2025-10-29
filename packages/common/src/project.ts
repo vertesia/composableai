@@ -142,9 +142,7 @@ export interface EmbeddingsStatusResponse {
     status: string;
     embeddingRunsInProgress: number;
     totalRunsInProgress: number;
-    totalIndexableObjects: number;
     embeddingsModels: string[];
-    objectsWithEmbeddings: number;
     vectorIndex: {
         status: "READY" | "PENDING" | "DELETING" | "ABSENT",
         name?: string,

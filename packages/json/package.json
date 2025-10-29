@@ -31,5 +31,10 @@
     },
     "ts_dual_module": {
         "outDir": "lib"
+    },
+    "repository": {
+        "type" : "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/json"
     }
 }
