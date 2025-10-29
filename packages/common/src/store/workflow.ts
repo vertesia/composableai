@@ -335,11 +335,12 @@ export interface WorkflowInteraction {
     tools: [],
     interaction: string,
     environment: string,
-    prompt_data: JSONSchema4,
+    data: JSONSchema4,
     interactive: boolean,
     interactionParamsSchema?: JSONSchema4
     debug_mode?: boolean;
     collection_id?: string;
+    config: Record<string, any>;
 }
 
 export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, "config"> {

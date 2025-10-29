@@ -122,19 +122,7 @@ export default function AllMessagesMixed({
             ref={containerRef}
             className="flex-1 min-h-0 h-full overflow-y-auto py-2 px-4 sm:px-6 lg:px-8 flex flex-col relative"
             data-testid="all-messages-mixed"
-            style={showPlanPanel ? { paddingRight: "350px" } : {}} // Only make space when panel is showing
         >
-            {/* Plan panel - respect showPlanPanel flag
-            <InlineSlidingPlanPanel
-                plan={plan}
-                workstreamStatus={workstreamStatus}
-                isOpen={showPlanPanel}
-                onClose={onTogglePlanPanel}
-                plans={plans}
-                activePlanIndex={activePlanIndex}
-                onChangePlan={onChangePlan}
-            /> */}
-
 
             {/* Workstream tabs with completion indicators */}
             <div className="sticky top-0 bg-white dark:bg-gray-900 z-10">
