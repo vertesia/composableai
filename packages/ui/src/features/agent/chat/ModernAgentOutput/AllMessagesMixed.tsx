@@ -1,6 +1,5 @@
 import { AgentMessage, AgentMessageType, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState } from "react";
-import InlineSlidingPlanPanel from "./InlineSlidingPlanPanel";
 import MessageItem from "./MessageItem";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
 import { DONE_STATES, getWorkstreamId } from "./utils";
@@ -25,13 +24,7 @@ export default function AllMessagesMixed({
     bottomRef,
     viewMode = 'stacked',
     isCompleted = false,
-    plan = { plan: [] },
-    workstreamStatus = new Map(),
     showPlanPanel = false,
-    onTogglePlanPanel = () => { },
-    plans = [],
-    activePlanIndex = 0,
-    onChangePlan = () => { },
 }: AllMessagesMixedProps) {
     const containerRef = React.useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -131,7 +124,7 @@ export default function AllMessagesMixed({
             data-testid="all-messages-mixed"
             style={showPlanPanel ? { paddingRight: "350px" } : {}} // Only make space when panel is showing
         >
-            {/* Plan panel - respect showPlanPanel flag */}
+            {/* Plan panel - respect showPlanPanel flag
             <InlineSlidingPlanPanel
                 plan={plan}
                 workstreamStatus={workstreamStatus}
@@ -140,7 +133,7 @@ export default function AllMessagesMixed({
                 plans={plans}
                 activePlanIndex={activePlanIndex}
                 onChangePlan={onChangePlan}
-            />
+            /> */}
 
 
             {/* Workstream tabs with completion indicators */}

@@ -1,4 +1,5 @@
 import { Plan } from "@vertesia/common";
+import { Button } from "@vertesia/ui/core";
 import { AlertCircle, CheckCircle, Circle, Clock, X } from "lucide-react";
 
 interface InlinePlanPanelProps {
@@ -27,21 +28,15 @@ export default function InlineSlidingPlanPanel({
 
   // Render the normal panel
   return (
-    <div
-      className="fixed top-24 right-8 bottom-24 z-50 bg-white dark:bg-gray-900 shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-      style={{ width: "350px" }}
-    >
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-800">
-        <h3 className="font-bold text-gray-800 dark:text-gray-200 text-base">
+    <div className="h-full shadow-xl border border-muted/20 overflow-hidden">
+      <div className="flex items-center justify-between p-3 border-b border-muted/20">
+        <h3 className="font-bold text-base">
           Plan
         </h3>
-        <button
-          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-400"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4" />
+        <Button variant={"ghost"} onClick={onClose} >
+          <X className="size-4" />
           <span className="sr-only">Close</span>
-        </button>
+        </Button>
       </div>
       <div
         className="p-3 overflow-y-auto"
@@ -51,8 +46,8 @@ export default function InlineSlidingPlanPanel({
         }}
       >
         {/* Plan Summary - count only tasks, excluding main workstream */}
-        <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-100 dark:border-blue-800">
-          <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+        <div className="mb-3 p-2 bg-info rounded-md border border-info">
+          <div className="text-xs font-medium text-info mb-1">
             Task Progress
           </div>
           <div className="flex items-center gap-2">
@@ -89,11 +84,11 @@ export default function InlineSlidingPlanPanel({
                 <>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
-                      className="bg-blue-600 h-2 rounded-full"
+                      className="bg-info/20 h-2 rounded-full"
                       style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                  <span className="text-xs text-muted">
                     {totalTasks > 0 ? `${completedTasks}/${totalTasks}` : "0/0"}
                   </span>
                 </>
@@ -105,39 +100,37 @@ export default function InlineSlidingPlanPanel({
         {/* Plan selector - only shown when multiple plans exist */}
         {plans.length > 1 && (
           <div className="mb-3 flex items-center justify-between">
-            <button
-              className="text-xs px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 disabled:opacity-50"
+            <Button variant={"ghost"}
               onClick={() =>
                 onChangePlan(Math.min(plans.length - 1, activePlanIndex + 1))
               }
               disabled={activePlanIndex >= plans.length - 1}
             >
               Older Plan
-            </button>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            </Button>
+            <div className="text-xs text-muted">
               {plans[activePlanIndex]?.timestamp
                 ? new Date(
                   plans[activePlanIndex].timestamp,
                 ).toLocaleTimeString()
                 : "Unknown time"}
             </div>
-            <button
-              className="text-xs px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 disabled:opacity-50"
+            <Button variant={"ghost"}
               onClick={() => onChangePlan(Math.max(0, activePlanIndex - 1))}
               disabled={activePlanIndex <= 0}
             >
               Newer Plan
-            </button>
+            </Button>
           </div>
         )}
 
         {/* Detailed Plan Steps */}
-        <div className="rounded-md border border-gray-200 dark:border-gray-800">
-          <div className="p-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+        <div className="rounded-md border border-muted/30">
+          <div className="p-2 border-b border-muted/30 bg-muted">
             <div className="font-medium text-xs">Step-by-Step Plan</div>
           </div>
 
-          <div className="divide-y divide-gray-100 dark:divide-gray-800 max-h-[calc(100vh-350px)] overflow-y-auto">
+          <div className="divide-y divide-muted max-h-[calc(100vh-350px)] overflow-y-auto">
             {plan.plan && plan.plan.length > 0 ? (
               plan.plan.map((task, index) => {
                 // Extract task info with null checks
@@ -156,37 +149,37 @@ export default function InlineSlidingPlanPanel({
 
                 // Determine status icon and style
                 let StatusIcon = Circle;
-                let statusColor = "text-gray-400";
+                let statusColor = "text-muted";
                 let bgColor = "";
 
                 if (status === "in_progress") {
                   StatusIcon = Clock;
-                  statusColor = "text-blue-500";
-                  bgColor = "bg-blue-50/50 dark:bg-blue-900/10";
+                  statusColor = "text-info";
+                  bgColor = "bg-info/20";
                 } else if (status === "completed") {
                   StatusIcon = CheckCircle;
-                  statusColor = "text-green-500";
+                  statusColor = "text-success";
                 }
 
                 return (
                   <div key={index} className={`flex p-3 my-1 ${bgColor}`}>
                     <div className={`mr-2 mt-0.5 flex-shrink-0 ${statusColor}`}>
-                      <StatusIcon className="h-3.5 w-3.5" />
+                      <StatusIcon className="size-3.5" />
                     </div>
                     <div className="w-full">
-                      <div className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+                      <div className="text-sm font-medium mb-2 text-muted">
                         {taskGoal}
                       </div>
                       <div className="mt-1 flex justify-between items-center">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-muted/10 text-muted">
                           {taskId}
                         </span>
                         <span
                           className={`ml-2 text-xs px-2 py-0.5 rounded-full ${status === "completed"
-                              ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                              ? "bg-success text-success"
                               : status === "in_progress"
-                                ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                                : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                                ? "bg-info text-info"
+                                : "bg-muted text-muted"
                             }`}
                         >
                           {status === "completed"
@@ -201,8 +194,8 @@ export default function InlineSlidingPlanPanel({
                 );
               })
             ) : (
-              <div className="p-3 text-center text-gray-500 dark:text-gray-400 italic">
-                <AlertCircle className="h-4 w-4 mx-auto mb-2 text-amber-500" />
+              <div className="p-3 text-center text-muted italic">
+                <AlertCircle className="size-4 mx-auto mb-2 text-attention" />
                 <p className="text-xs">No plan has been detected yet</p>
                 <p className="text-xs mt-1">
                   Plans will appear here when the agent creates one
@@ -242,13 +235,13 @@ export default function InlineSlidingPlanPanel({
 
                     if (status === "in_progress") {
                       StatusIcon = Clock;
-                      statusColor = "text-blue-500";
-                      statusBg = "bg-blue-100 dark:bg-blue-800/30";
+                      statusColor = "text-info";
+                      statusBg = "bg-info/20";
                       statusText = "In Progress";
                     } else if (status === "completed") {
                       StatusIcon = CheckCircle;
-                      statusColor = "text-green-500";
-                      statusBg = "bg-green-100 dark:bg-green-800/30";
+                      statusColor = "text-success";
+                      statusBg = "bg-success/20";
                       statusText = "Completed";
                     }
 
