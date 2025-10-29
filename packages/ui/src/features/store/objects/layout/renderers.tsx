@@ -102,7 +102,7 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
         return (value: any, index: number) => {
             const displayValue = transforms.reduce((v, t) => t(v), value.id);
             return (
-                <td key={index}>
+                <td key={index} className="flex justify-between items-center gap-2">
                     {hasSlice ? '~' : ''}{displayValue}
                     <Button
                         variant="ghost"
