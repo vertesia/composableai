@@ -91,16 +91,19 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
     },
     objectId(params?: URLSearchParams, onClick?: (id: string) => void) {
         let transforms: ((value: string) => string)[] = [];
+        let hasSlice = false;
         if (params) {
             const slice = params.get("slice");
             if (slice) {
+                hasSlice = true;
                 transforms.push((value) => value.slice(parseInt(slice)));
             }
         }
         return (value: any, index: number) => {
+            const displayValue = transforms.reduce((v, t) => t(v), value.id);
             return (
                 <td key={index}>
-                    {transforms.reduce((v, t) => t(v), value.id)}
+                    {hasSlice ? '~' : ''}{displayValue}
                     <Button
                         variant="ghost"
                         alt="Preview Object"
