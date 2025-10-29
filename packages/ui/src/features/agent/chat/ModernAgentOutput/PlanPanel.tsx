@@ -7,6 +7,7 @@ interface PlanPanelProps {
     isVisible: boolean;
 }
 
+// todo: remove this file
 export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPanelProps) {
     if (!isVisible) return null;
 

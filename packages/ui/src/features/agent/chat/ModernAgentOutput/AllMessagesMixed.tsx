@@ -24,7 +24,6 @@ export default function AllMessagesMixed({
     bottomRef,
     viewMode = 'stacked',
     isCompleted = false,
-    showPlanPanel = false,
 }: AllMessagesMixedProps) {
     const containerRef = React.useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -125,7 +124,7 @@ export default function AllMessagesMixed({
         >
 
             {/* Workstream tabs with completion indicators */}
-            <div className="sticky top-0 bg-white dark:bg-gray-900 z-10">
+            <div className="sticky top-0 z-10">
                 <WorkstreamTabs
                     workstreams={workstreams}
                     activeWorkstream={activeWorkstream}
@@ -137,7 +136,7 @@ export default function AllMessagesMixed({
 
             {displayMessages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-center py-8">
-                    <div className="flex items-center px-4 py-3 text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center px-4 py-3 text-muted">
                         {activeWorkstream === "all"
                             ? "Waiting for agent response..."
                             : "No messages in this workstream yet..."}

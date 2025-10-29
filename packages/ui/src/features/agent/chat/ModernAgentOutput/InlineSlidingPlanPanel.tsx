@@ -1,5 +1,5 @@
 import { Plan } from "@vertesia/common";
-import { Button } from "@vertesia/ui/core";
+import { Badge, Button } from "@vertesia/ui/core";
 import { AlertCircle, CheckCircle, Circle, Clock, X } from "lucide-react";
 
 interface InlinePlanPanelProps {
@@ -130,7 +130,7 @@ export default function InlineSlidingPlanPanel({
             <div className="font-medium text-xs">Step-by-Step Plan</div>
           </div>
 
-          <div className="divide-y divide-muted max-h-[calc(100vh-350px)] overflow-y-auto">
+          <div className="divide-y divide-muted/20 max-h-[calc(100vh-350px)] overflow-y-auto">
             {plan.plan && plan.plan.length > 0 ? (
               plan.plan.map((task, index) => {
                 // Extract task info with null checks
@@ -162,32 +162,25 @@ export default function InlineSlidingPlanPanel({
                 }
 
                 return (
-                  <div key={index} className={`flex p-3 my-1 ${bgColor}`}>
-                    <div className={`mr-2 mt-0.5 flex-shrink-0 ${statusColor}`}>
-                      <StatusIcon className="size-3.5" />
+                  <div key={index} className={`flex p-3 my-1`}>
+                    <div className={`mr-2 mt-0.5 flex-shrink-0 text-muted`}>
+                      {taskId}
                     </div>
                     <div className="w-full">
                       <div className="text-sm font-medium mb-2 text-muted">
                         {taskGoal}
                       </div>
-                      <div className="mt-1 flex justify-between items-center">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-muted/10 text-muted">
-                          {taskId}
-                        </span>
-                        <span
-                          className={`ml-2 text-xs px-2 py-0.5 rounded-full ${status === "completed"
-                              ? "bg-success text-success"
-                              : status === "in_progress"
-                                ? "bg-info text-info"
-                                : "bg-muted text-muted"
-                            }`}
-                        >
+                      <div className="mt-1 flex justify-end items-center">
+                        <div className={`mr-2 mt-0.5 flex-shrink-0 ${statusColor}`}>
+                          <StatusIcon className="size-3.5" />
+                        </div>
+                        <Badge variant={status === "completed" ? "success" : status === "in_progress" ? "info" : "default"}>
                           {status === "completed"
                             ? "Completed"
                             : status === "in_progress"
                               ? "In Progress"
                               : "Pending"}
-                        </span>
+                        </Badge>
                       </div>
                     </div>
                   </div>
