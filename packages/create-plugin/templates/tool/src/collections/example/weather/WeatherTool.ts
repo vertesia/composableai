@@ -12,6 +12,8 @@ export async function weather(
     context: ToolExecutionContext
 ) {
     const { location } = payload.tool_use.tool_input!;
+
+    console.log(`Caller: ${context.payload.user_id}`);
     
     // Simulate fetching weather data
     // In a real implementation, you would call a weather API here
