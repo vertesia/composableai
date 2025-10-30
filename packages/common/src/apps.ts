@@ -87,12 +87,12 @@ export interface AppManifestData {
     tool_collections?: string[]
 
     /**
-     * An collections of URL providing interactions definitions in JSON format.
+     * An URL providing interactions definitions in JSON format.
      * The URL must provide 2 endpoints:
-     * 1. GET URL - must return a JSON array with the list of interactions
+     * 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[])
      * 2. GET URL/{interaction_name} - must return the full interaction definition for the specified interaction.
      */
-    interactions?: string[];
+    interactions?: string;
 
     /**
      * A JSON chema for the app installation settings.
