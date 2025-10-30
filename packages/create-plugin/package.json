@@ -32,10 +32,16 @@
     "devDependencies": {
         "@types/hasbin": "^1.2.2",
         "@types/node": "^22.5.0",
-        "typescript": "^5.7.2"
+        "typescript": "^5.7.2",
+        "hono": "^4.10.3",
+        "@hono/node-server": "^1.19.5",
+        "@llumiverse/common": "^0.22.0",
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*",
+        "@vertesia/tools-sdk": "workspace:*"
     },
     "repository": {
-        "type" : "git",
+        "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/create-plugin"
     }

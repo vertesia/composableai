@@ -1,31 +1,114 @@
-# Vertesia tools plugin
+# Tool Collections
 
-This plugin is exposing tools to vertesia. The tools as exposed on an external web server providing two endpoints:
-1. `GET /` - show tool descriptions
-2. `POST /` - execute a tool given an execution payload.
+This project contains custom tool collections for Vertesia.
 
-Note that when deployed on vercel the endpoints are:
+## Project Structure
 
-1. `GET /api`
-2. `POST /api`
+```
+src/
+├── collections/           # Tool collections
+│   ├── example/          # Example collection
+│   │   ├── icon.svg.ts   # Collection icon
+│   │   ├── index.ts      # Collection definition
+│   │   └── weather/      # Weather tool
+│   │       ├── manifest.ts     # Tool schema/metadata
+│   │       └── WeatherTool.ts  # Tool implementation
+│   └── index.ts          # Export all collections
+├── server.ts             # Hono server with collection endpoints
+└── index.ts              # Main exports
+```
 
-The payload used when executing a tool must conform to the following interface:
+## Development
 
-```ts
-interface ToolExecutionPayload<ParamsT extends Record<string, any>> {
-    context: {
-        serverUrl: string,
-        storeUrl: string,
-        apikey: string
+Start the development server:
+
+```bash
+pnpm install
+pnpm dev
+```
+
+The server will be available at `http://localhost:5174/api`
+
+### API Endpoints
+
+- `GET /api` - List all collections
+- `GET /api/{collection}` - Get collection metadata and tool definitions
+- `POST /api/{collection}` - Execute a tool in the collection
+
+### Testing the API
+
+Get the example collection tools:
+```bash
+curl http://localhost:5174/api/example
+```
+
+Execute the weather tool:
+```bash
+curl -X POST http://localhost:5174/api/example \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "tool_use": {
+      "id": "test-123",
+      "tool_name": "weather",
+      "tool_input": {
+        "location": "New York, NY"
+      }
     }
-    vars: Record<string, any>,
-    tool_input: ParamsT,
-    tool_name: string,
+  }'
+```
+
+## Creating New Tools
+
+### 1. Create a new tool in an existing collection
+
+1. Create a new directory under `src/collections/example/` (e.g., `my-tool/`)
+2. Create `manifest.ts` with your tool's schema
+3. Create `MyTool.ts` with the implementation
+4. Add the tool to `src/collections/example/index.ts`
+
+### 2. Create a new collection
+
+1. Create a new directory under `src/collections/` (e.g., `my-collection/`)
+2. Create `icon.svg.ts` with an SVG icon
+3. Create `index.ts` to define the collection
+4. Add your tools in subdirectories
+5. Export the collection in `src/collections/index.ts`
+
+## Building for Production
+
+Build the project:
+
+```bash
+pnpm build
+```
+
+This creates an optimized build in the `dist/` directory.
+
+## Authentication
+
+Tools receive authentication context through the `ToolExecutionContext` parameter:
+
+```typescript
+export async function myTool(
+    payload: ToolExecutionPayload<MyToolParams>,
+    context: ToolExecutionContext
+) {
+    // Access the decoded JWT token
+    const userId = context.payload.sub;
+    
+    // Get a Vertesia client instance
+    const client = await context.getClient();
+    
+    // Your tool logic here
+    return {
+        is_error: false,
+        content: "Tool result"
+    };
 }
 ```
 
-To launch the tools server you can start the vite dev server using `pnpm dev`.
+## Learn More
 
-If you want to **debug** and add breakpoints in the code you must run the vite dev server from VSCode by running the `Debug Tools Server` launch configuration.
-
-Vercel deployment is supported by wrapping the `hono` server using a vercel adapter.
+- [Vertesia Documentation](https://docs.vertesiahq.com)
+- [Tool SDK Reference](https://github.com/vertesia/composableai/tree/main/packages/tools-sdk)
