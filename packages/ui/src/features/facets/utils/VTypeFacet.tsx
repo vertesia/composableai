@@ -12,7 +12,7 @@ interface VTypeFacetProps {
 export function VTypeFacet({ buckets, typeRegistry, type = 'select', multiple = false }: VTypeFacetProps) {
     // Create a map for quick lookups of type names and counts
     const typeDataMap = new Map();
-    if (typeRegistry) {
+    if (!typeRegistry) {
         console.warn("Type names cannot be resolved");
     }
     buckets.forEach((bucket) => {
