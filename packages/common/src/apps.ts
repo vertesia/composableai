@@ -27,6 +27,11 @@ export interface AppInteractionRef {
     url: string;
 
     /**
+     * The tags associated with the interaction. Used for categorization and search.
+     */
+    tags: string[];
+
+    /**
      * The interaction title. Optional. To be used in studio UI when the interaction is displayed
      */
     title?: string;
@@ -82,11 +87,12 @@ export interface AppManifestData {
     tool_collections?: string[]
 
     /**
-     * An URL providing interactions definitions in JSON format.
-     * GET interactions_url should return a JSON object with the interactions definitions.
-     * GET `${interactions_url}/${endpoint}` should return a JSON object with the interaction definition for the specified endpoint.
+     * An collections of URL providing interactions definitions in JSON format.
+     * The URL must provide 2 endpoints:
+     * 1. GET URL - must return a JSON array with the list of interactions
+     * 2. GET URL/{interaction_name} - must return the full interaction definition for the specified interaction.
      */
-    interactions?: AppInteractionRef[];
+    interactions?: string[];
 
     /**
      * A JSON chema for the app installation settings.
