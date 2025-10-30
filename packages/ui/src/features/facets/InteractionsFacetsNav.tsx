@@ -7,7 +7,7 @@ interface InteractionsFacetsNavProps {
         tags?: any[];
     };
     search: SearchInterface;
-    env?: string;
+    env?: string | null;
 }
 
 // Hook to create filter groups for interactions
@@ -55,18 +55,16 @@ export function useInteractionsFilterGroups(facets: InteractionsFacetsNavProps['
 
 // Hook to create filter change handler for interactions
 export function useInteractionsFilterHandler(search: SearchInterface) {
+
     return (newFilters: BaseFilter[]) => {
         if (newFilters.length === 0) {
-            // Clear filters without applying defaults - user wants to remove all filters
-            search.clearFilters(true, false);
-            search.query['status'] = 'draft';
+            search.clearFilters(true, true);
 
             return;
         }
 
         // Clear all filters first without defaults, then apply new ones
         search.clearFilters(false, false);
-        search.query['status'] = 'draft';
 
         newFilters.forEach(filter => {
             if (filter.value && filter.value.length > 0) {
@@ -91,12 +89,12 @@ export function useInteractionsFilterHandler(search: SearchInterface) {
             }
         });
 
-        search.search();
+        search.search(true);
     };
 }
 
 // Component for interactions filtering
-export function InteractionsFacetsNav({ facets, search, env }: InteractionsFacetsNavProps) {
+export function InteractionsFacetsNav({ facets, search }: InteractionsFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const filterGroups = useInteractionsFilterGroups(facets);
     const handleFilterLogic = useInteractionsFilterHandler(search);
@@ -106,10 +104,6 @@ export function InteractionsFacetsNav({ facets, search, env }: InteractionsFacet
         setFilters(newFilters);
         handleFilterLogic(newFilters);
     };
-
-    if (env) {
-        search.query['environment'] = env;
-    }
 
     return (
         <FilterProvider

@@ -91,10 +91,15 @@ export interface VideoRendition {
     content: ContentSource
 }
 
+export const POSTER_RENDITION_NAME = "Poster";
+export const AUDIO_RENDITION_NAME = "Audio";
+export const WEB_VIDEO_RENDITION_NAME = "Web";
+
 export interface VideoMetadata extends TemporalMediaMetadata {
     type: ContentNature.Video;
     dimensions?: Dimensions;
     renditions?: VideoRendition[];
+    hasAudio?: boolean;
 }
 
 export interface TextSection {
@@ -346,6 +351,11 @@ export interface WorkflowRule extends WorkflowRuleItem {
      * When set to true the rule will not be updated by the system
      */
     customer_override?: boolean;
+
+    /**
+     * Optional task queue name to use when starting workflows for this rule
+     */
+    task_queue?: string; 
 }
 
 export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {

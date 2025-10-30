@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ImageRenditionFormat, VideoMetadata } from "@vertesia/common";
+import { ContentNature, ContentObject, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME } from "@vertesia/common";
 import { Copy, Download, SquarePen } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
@@ -250,24 +250,29 @@ function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObj
 function TextActions({ object, text, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, text: string | undefined }) {
     const { client } = useUserSession();
     const toast = useToast();
+    const [loadingFormat, setLoadingFormat] = useState<"docx" | "pdf" | null>(null);
 
     const content = object.content;
 
-    const isMarkdownOrText =
+    const isMarkdown =
         content &&
         content.type &&
-        (content.type === "text/markdown" || content.type === "text/plain");
-
-    // Check for markdown indicators, ignoring any HTML comments
-    const seemsMarkdown =
-        text &&
-        // Look for markdown indicators
-        (text.includes("\n#") ||
-            text.includes("\n*") ||
-            text.includes("\n+") ||
-            text.includes("!["));
+        content.type === "text/markdown";
 
     const handleExportDocument = async (format: "docx" | "pdf") => {
+        // Prevent multiple concurrent exports
+        if (loadingFormat) return;
+
+        setLoadingFormat(format);
+
+        // Show immediate feedback
+        toast({
+            status: "info",
+            title: `Preparing ${format.toUpperCase()}`,
+            description: "Fetching your document...",
+            duration: 2000,
+        });
+
         try {
             // Request document rendition from the server
             const response = await client.objects.getRendition(object.id, {
@@ -331,6 +336,8 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
                 description: `Failed to export document to ${format.toUpperCase()} format`,
                 duration: 5000,
             });
+        } finally {
+            setLoadingFormat(null);
         }
     };
 
@@ -344,24 +351,34 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
                         <Copy className="size-4" />
                     </Button>
                 )}
-                {(isMarkdownOrText || seemsMarkdown) && text && (
+                {isMarkdown && text && (
                     <>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleExportDocx}
+                            disabled={loadingFormat !== null}
                             className="flex items-center gap-2"
                         >
-                            <Download className="size-4" />
+                            {loadingFormat === "docx" ? (
+                                <Spinner size="sm" />
+                            ) : (
+                                <Download className="size-4" />
+                            )}
                             DOCX
                         </Button>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleExportPdf}
+                            disabled={loadingFormat !== null}
                             className="flex items-center gap-2"
                         >
-                            <Download className="size-4" />
+                            {loadingFormat === "pdf" ? (
+                                <Spinner size="sm" />
+                            ) : (
+                                <Download className="size-4" />
+                            )}
                             PDF
                         </Button>
                     </>
@@ -372,90 +389,34 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
 }
 
 function TextPanel({ object, text }: { object: ContentObject, text: string | undefined }) {
-    const toast = useToast();
-    const { client } = useUserSession();
+    const content = object.content;
 
-    // Check for markdown indicators, ignoring any HTML comments
-    const seemsMarkdown =
-        text &&
-        // Look for markdown indicators
-        (text.includes("\n#") ||
-            text.includes("\n*") ||
-            text.includes("\n+") ||
-            text.includes("!["));
+    // Check if content type is markdown or plain text
+    const isMarkdownOrText =
+        content &&
+        content.type &&
+        (content.type === "text/markdown" || content.type === "text/plain");
 
-    const handleExportDocument = async (format: "docx" | "pdf") => {
-        try {
-            // Request document rendition from the server
-            const response = await client.objects.getRendition(object.id, {
-                format: format as any, // We're extending the format type
-                generate_if_missing: true,
-                sign_url: true,
-            });
+    // Check if text content looks like markdown
+    const seemsMarkdown = text && (
+        text.includes("\n# ") ||
+        text.includes("\n## ") ||
+        text.includes("\n### ") ||
+        text.includes("\n* ") ||
+        text.includes("\n- ") ||
+        text.includes("\n+ ") ||
+        text.includes("![") ||
+        text.includes("](")
+    );
 
-            if (response.status === "generating") {
-                toast({
-                    status: "info",
-                    title: "Generating document",
-                    description: `Please wait while we prepare your ${format.toUpperCase()} file...`,
-                    duration: 5000,
-                });
-
-                // Poll for completion
-                setTimeout(() => handleExportDocument(format), 3000);
-                return;
-            }
-
-            if (response.status === "failed") {
-                throw new Error("Document generation failed");
-            }
-
-            // Download the generated file or open in new window
-            if (response.renditions && response.renditions.length > 0) {
-                const downloadUrl = response.renditions[0];
-
-                if (format === 'pdf') {
-                    // Open PDF in new window
-                    window.open(downloadUrl, '_blank');
-                    toast({
-                        status: "success",
-                        title: "PDF opened",
-                        description: "PDF document opened in a new window",
-                        duration: 2000,
-                    });
-                } else {
-                    // Download DOCX file
-                    const link = document.createElement("a");
-                    link.href = downloadUrl;
-                    link.download = `${object.name || "document"}.${format}`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    toast({
-                        status: "success",
-                        title: "Document exported",
-                        description: `Successfully exported to ${format.toUpperCase()} format`,
-                        duration: 2000,
-                    });
-                }
-            }
-        } catch (err) {
-            console.error(`Failed to export document as ${format}:`, err);
-            toast({
-                status: "error",
-                title: "Export failed",
-                description: `Failed to export document to ${format.toUpperCase()} format`,
-                duration: 5000,
-            });
-        }
-    };
+    // Render as markdown if it's markdown/text type OR if text looks like markdown
+    const shouldRenderAsMarkdown = isMarkdownOrText || seemsMarkdown;
 
     return (
         text ? (
             <>
                 <div className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto">
-                    {seemsMarkdown ? (
+                    {shouldRenderAsMarkdown ? (
                         <div className="vprose prose-sm p-1">
                             <MarkdownRenderer
                                 components={{
@@ -595,6 +556,7 @@ function ImagePanel({ object }: { object: ContentObject }) {
 function VideoPanel({ object }: { object: ContentObject }) {
     const { client } = useUserSession();
     const [videoUrl, setVideoUrl] = useState<string>();
+    const [posterUrl, setPosterUrl] = useState<string>();
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const content = object.content;
@@ -611,6 +573,23 @@ function VideoPanel({ object }: { object: ContentObject }) {
     // Check if original file is web-compatible
     const webSupportedFormats = ['video/mp4', 'video/webm'];
     const isOriginalWebSupported = content?.type && webSupportedFormats.includes(content.type);
+
+    // Get poster
+    const poster = renditions.find(r => r.name === POSTER_RENDITION_NAME);
+
+    useEffect(() => {
+        const loadPoster = async () => {
+            if (poster?.content?.source) {
+                try {
+                    const response = await client.files.getDownloadUrl(poster.content.source);
+                    setPosterUrl(response.url);
+                } catch (error) {
+                    console.error("Failed to load poster image", error);
+                }
+            }
+        };
+        loadPoster();
+    }, [poster, client]);
 
     useEffect(() => {
         if (isVideo && (webRendition?.content?.source || isOriginalWebSupported)) {
@@ -655,6 +634,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
             ) : videoUrl ? (
                 <video
                     src={videoUrl}
+                    poster={posterUrl}
                     controls
                     className="w-full max-h-[calc(100vh-260px)] object-contain"
                 >

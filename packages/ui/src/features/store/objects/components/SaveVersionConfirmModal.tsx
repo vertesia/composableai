@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Button,
     Modal,
@@ -65,9 +65,19 @@ export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading,
         }
     ];
 
-    const [selectedOption, setSelectedOption] = useState<SaveOptionType | undefined>(saveOptions[0]);
+    // Default to "create new version" when replacing a file, "update current version" when editing properties
+    const defaultOption = uploadedFileName ? saveOptions[1] : saveOptions[0];
+    const [selectedOption, setSelectedOption] = useState<SaveOptionType | undefined>(defaultOption);
     const [versionLabel, setVersionLabel] = useState('');
     const optionAdapter = new SaveOptionAdapter();
+
+    // Reset to default when modal opens or uploadedFileName changes
+    useEffect(() => {
+        if (isOpen) {
+            setSelectedOption(defaultOption);
+            setVersionLabel('');
+        }
+    }, [isOpen, uploadedFileName]);
 
     const createVersion = selectedOption?.id === "new-version";
 

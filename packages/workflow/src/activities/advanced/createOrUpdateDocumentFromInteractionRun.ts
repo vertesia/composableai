@@ -68,10 +68,17 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
 
 
     const result = run.result;
-    const jsonResult = result.object();
     const inputData = run.parameters;
 
-    const name = jsonResult['name'] || jsonResult["title"] || inputData['name'] || params.fallback_name || 'Untitled';
+    // Try to parse result as JSON, fallback to text if not valid JSON
+    let jsonResult: any = null;
+    try {
+        jsonResult = result.object();
+    } catch (e) {
+        log.info("Result is not valid JSON, will use text content instead", { error: e instanceof Error ? e.message : String(e) });
+    }
+
+    const name = jsonResult?.['name'] || jsonResult?.["title"] || inputData['name'] || params.fallback_name || undefined;
 
     const docPayload = {
         name,
