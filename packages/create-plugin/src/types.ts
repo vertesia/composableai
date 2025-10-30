@@ -14,6 +14,6 @@ export function getTemplateDisplayName(type: TemplateType): string {
         case TemplateType.WEB:
             return 'Web Application Plugin';
         case TemplateType.TOOL:
-            return 'Agent Tool Collection Plugin';
+            return 'Agent Tool Server';
     }
 }
