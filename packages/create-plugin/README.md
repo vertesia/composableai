@@ -1,17 +1,27 @@
 # @vertesia/create-plugin
 
-This package scaffolds a Vertesia plugin project. Vertesia plugins are used to extend the Vertesia Studio UI with custom functionality and integrations.
+This package scaffolds Vertesia plugin projects. Use it to create either:
+
+- **Web Application Plugins**: React-based web applications that extend Vertesia Studio
+- **Agent Tool Server**: Custom agent tools accessible via API endpoints
 
 Visit <https://vertesiahq.com> for more information about Vertesia.
 
-## What are Vertesia Plugins?
+## What Can You Create?
 
-Vertesia plugins are React-based UI components that can be embedded into the Vertesia Studio interface. They allow you to:
+### Web Application Plugin (UI Extensions)
 
-- Create custom UI pages and interfaces
-- Integrate with external services
-- Extend Vertesia's functionality with custom tools and workflows
-- Build reusable components for your organization
+Vertesia web plugins are React-based web application that can be embedded into the Vertesia Studio interface. They allow you to create custom user experiences focused on specific use cases and business processes, while seamlessly leveraging all the vertesia platform features.
+
+### Agent Tool Server
+
+An Agent Tool Server extends the capabilities of AI agents in Vertesia. It allows you to:
+
+- Create custom tools that agents can use
+- Integrate with external APIs and services
+- Organize tools into logical collections
+- Expose tools via REST API endpoints
+- Support authentication and context-aware execution
 
 ## Prerequisites
 
@@ -21,13 +31,13 @@ Before creating a plugin project, you need:
 - Vertesia CLI
 - An application manifest declared in Vertesia
 
-## Declaring Your App in Vertesia
+### Declaring Your Web Application Plugin in Vertesia
 
-Before you can develop and integrate your plugin with Vertesia, you must declare an application manifest in the Vertesia platform. This is done using the Vertesia CLI.
+Before you can develop and integrate your web application plugin with Vertesia, you must declare an application manifest in the Vertesia platform using the Vertesia CLI.
 
-### Install the Vertesia CLI
+#### Install the Vertesia CLI
 
-If not already done, install the vertesia CLI and create a profile
+If not already done, install the Vertesia CLI and create a profile:
 
 ```bash
 npm install -g @vertesia/cli
@@ -36,7 +46,7 @@ vertesia profiles create
 
 ### Create the App Manifest
 
-**Create the app manifest** using the Vertesia CLI:
+Create the app manifest using the Vertesia CLI:
 
 ```bash
 vertesia apps create --manifest '{
@@ -45,56 +55,51 @@ vertesia apps create --manifest '{
   "description": "A sample app",
   "publisher": "your-org",
   "private": true,
-  "status": "beta",
-  "ui": {
-    "src": "/plugins/my-app",
-    "isolation": "shadow"
-  }
+  "status": "beta"
 }' --install
 ```
 
 The `--install` flag will automatically install the app and grant permissions to the creator.
 
-**Important**: The `name` field from your manifest (e.g., `my-app`) is what you'll enter when running `create-plugin` to initialize your project.
+**Important**: The `name` field from your manifest (e.g., `my-app`) is what you'll use as your plugin name in the next step.
 
-For more information on managing apps, run:
+## Initialize a Plugin Project
 
-```bash
-vertesia apps --help
-```
-
-## Initialize a Vertesia Plugin Project
-
-Run the command line command:
+Run the initialization command:
 
 ```bash
 npm init @vertesia/plugin
+# or
+pnpm create @vertesia/plugin
 ```
 
-Follow the instructions on screen. You will be prompted for:
+You will be prompted to choose a template and provide configuration:
 
-1. **Package manager**: Choose between npm or pnpm
-2. **Plugin name**: Use kebab-case (e.g., my-plugin)
-3. **Plugin version**: Semantic version (e.g., 1.0.0)
-4. **Description**: Optional description of your plugin
-5. **Isolation strategy**: Choose between:
+### Prompts
+
+1. **Template type**: Choose between:
+   - **Web application plugin**: For UI extensions
+   - **Agent tool server**: For custom agent tools
+2. **Package manager**: Choose between npm or pnpm
+3. **Plugin name**: Use kebab-case (e.g., my-plugin or my-tools)
+4. **Plugin version**: Semantic version (e.g., 1.0.0)
+5. **Description**: Optional description of your plugin
+
+### Web Application Plugin Specific
+
+If you select the **Web application plugin** template, you'll also be asked:
+
+1. **Isolation strategy**:
    - **Shadow DOM**: Fully isolated plugin using Shadow DOM (recommended)
    - **CSS-only isolation**: Lighter isolation using CSS scope, but may have style conflicts
 
-## Project Structure
+## Working with Plugins
 
-The generated project is a TypeScript + React + Vite project with the following structure:
+After creating your project, see the README file in the generated project for comprehensive development instructions.
 
-- `src/plugin.tsx` - Main plugin component entry point
-- `src/routes.tsx` - Plugin routing configuration
-- `src/pages.tsx` - Plugin pages
-- `vite.config.ts` - Vite configuration for building the plugin
-- `package.json` - Package configuration with plugin metadata
+## Support
 
-## Developing and deploying Your Plugin
+For issues, questions, or feature requests:
 
-Look at the README file in the boostrapped project to learn how to develop and deploy your plugin.
-
-## Learn More
-
-- [Vertesia Documentation](https://docs.vertesiahq.com/)
+- [GitHub Issues](https://github.com/vertesia/composableai/issues)
+- [Documentation](https://docs.vertesiahq.com/)
