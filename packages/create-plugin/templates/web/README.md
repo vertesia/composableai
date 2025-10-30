@@ -28,6 +28,38 @@ src/
 
 - Node.js
 - pnpm (or npm)
+- Vertesia CLI (for declaring your app in Vertesia)
+
+### Declaring Your App in Vertesia
+
+Before you can develop and integrate your plugin with Vertesia, you must declare an application manifest in the Vertesia platform. This is done using the Vertesia CLI.
+
+1. **Create the app manifest** using the Vertesia CLI:
+
+    ```bash
+    vertesia apps create --manifest '{
+      "name": "my-app",
+      "title": "My App",
+      "description": "A sample app",
+      "publisher": "your-org",
+      "private": true,
+      "status": "beta",
+      "ui": {
+        "src": "/plugins/my-app",
+        "isolation": "shadow"
+      }
+    }' --install
+    ```
+
+    The `--install` flag will automatically install the app and grant permissions to the creator.
+
+2. **Use the app name** when bootstrapping your plugin. The `name` field from your manifest (e.g., `my-app`) is what you'll enter when running `create-plugin` to initialize your project.
+
+For more information on managing apps, run:
+
+```bash
+vertesia apps --help
+```
 
 ### Installation
 
@@ -63,20 +95,68 @@ pnpm build:app
 pnpm build:lib
 ```
 
-The plugin library will be output to the `lib/` directory.
+The plugin library will be output to the `dist/lib/` directory.
 
-## Plugin Configuration
+## Deployment
 
-The plugin metadata is defined in [package.json](package.json):
+Since this is a standard web application, you can deploy it to any static hosting provider (Vercel, Netlify, Cloudflare Pages, AWS S3, etc.).
 
-```json
-"plugin": {
-  "title": "Vertesia Custom App",
-  "publisher": "vertesia",
-  "external": false,
-  "status": "beta"
-}
+### Deploying to Vercel
+
+Vercel is a practical deployment option with a generous free tier. You can very simply deploy your standalone app using the Vercel CLI.
+
+#### Setup
+
+Install the Vercel CLI globally:
+
+```bash
+npm i -g vercel
 ```
+
+#### Deployment Steps
+
+1. **Login to Vercel**:
+
+    ```bash
+    vercel login
+    ```
+
+2. **Deploy to preview**:
+
+    ```bash
+    vercel
+    ```
+
+    This will create a preview deployment and provide you with a URL to test your app.
+
+3. **Deploy to production**:
+
+    ```bash
+    vercel --prod
+    ```
+
+For more information, visit the [Vercel CLI documentation](https://vercel.com/docs/cli).
+
+#### Update App Manifest with Deployment URL
+
+After deploying to Vercel, update your app manifest to point to the deployed URL:
+
+```bash
+vertesia apps update <appId> --manifest '{
+  "name": "my-app",
+  "title": "My App",
+  "description": "A sample app",
+  "publisher": "your-org",
+  "private": true,
+  "status": "beta",
+  "ui": {
+    "src": "https://your-app.vercel.app/lib/plugin.js",
+    "isolation": "shadow"
+  }
+}'
+```
+
+Replace `appId` by the actual ID and `https://your-app.vercel.app` with your actual Vercel deployment URL.
 
 ## Key Features
 
@@ -84,19 +164,6 @@ The plugin metadata is defined in [package.json](package.json):
 
 - **App Mode**: Builds a standalone application for development and testing
 - **Library Mode**: Builds a plugin that can be integrated into the Vertesia platform
-
-### Plugin Integration
-
-The plugin exports a component that responds to different slots:
-
-```tsx
-export default function VertesiaCustomAppPlugin({ slot }: { slot: string }) {
-  if (slot === "page") {
-    return <App />;
-  }
-  return null;
-}
-```
 
 ### External Dependencies
 
