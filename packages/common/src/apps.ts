@@ -15,38 +15,6 @@ export interface AppUIConfig {
     isolation?: "shadow" | "css";
 }
 
-export interface AppInteractionRef {
-    /**
-     * The interaction code name
-     */
-    name: string;
-
-    /**
-     * The url to get the interaction specification
-    */
-    url: string;
-
-    /**
-     * The tags associated with the interaction. Used for categorization and search.
-     */
-    tags: string[];
-
-    /**
-     * The interaction title. Optional. To be used in studio UI when the interaction is displayed
-     */
-    title?: string;
-
-    /**
-     * The interaction description. Optional. To be used in studio UI when the interaction is displayed
-     */
-    description?: string;
-}
-export interface ResolvedAppInteractionRef extends AppInteractionRef {
-    /**
-     * The interaction unique name (can also be used as an ID) that can be used to execute the interaction.
-     */
-    id: string;
-}
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.

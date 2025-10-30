@@ -41,8 +41,21 @@ export interface InteractionExecutionError {
  * If no prefix is used it fallback on `oid:`.
  */
 export interface CatalogInteractionRef {
+    /**
+     * the interaction id that can be used to execute the interaction.
+     */
     id: string;
+    /**
+     * The tags associated with the interaction.
+     */
+    tags: string[];
+    /**
+     * The name of the interaction. For display purposes only.
+     */
     title: string;
+    /**
+     * Optional description of the interaction.
+     */
     description?: string;
 }
 export interface InCodePrompt {
