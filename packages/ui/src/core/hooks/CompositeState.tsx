@@ -27,9 +27,6 @@ export class Property<V = any> {
 
     set value(value: V | undefined) {
         if (value !== this._value) {
-            if (import.meta.env.DEV && this.name) {
-                console.debug(`[CompositeState] ${this.name}:`, this._value, '→', value);
-            }
             this._value = value;
             for (const watcher of this.watchers) {
                 watcher(value);
@@ -256,9 +253,6 @@ export class ComputedProperty<V = any> {
     private recalculate() {
         const newValue = this.compute();
         if (newValue !== this._value) {
-            if (import.meta.env.DEV && this.name) {
-                console.debug(`[CompositeState] ${this.name} (computed):`, this._value, '→', newValue);
-            }
             this._value = newValue;
             for (const watcher of this.watchers) {
                 watcher(newValue);
