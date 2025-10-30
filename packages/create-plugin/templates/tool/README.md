@@ -1,6 +1,6 @@
 # Vertesia tools plugin
 
-This plugin is exposing tools to vertesia. The tools as exposed on an external webs erver providing two endpoints:
+This plugin is exposing tools to vertesia. The tools as exposed on an external web server providing two endpoints:
 1. `GET /` - show tool descriptions
 2. `POST /` - execute a tool given an execution payload.
 

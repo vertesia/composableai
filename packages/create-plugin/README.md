@@ -1,100 +1,100 @@
-# @vertesia/create-agent
+# @vertesia/create-plugin
 
-This package is scaffolding a vertesia agent project.
-Vertesia agents are used to deploy custom workflows to Vertesia cloud.
+This package scaffolds a Vertesia plugin project. Vertesia plugins are used to extend the Vertesia Studio UI with custom functionality and integrations.
 
-Visit https://vertesiahq.com for more information about Vertesia.
+Visit <https://vertesiahq.com> for more information about Vertesia.
 
-## Requirements:
-1. docker (with buildx support) installed locally.
-2. vertesia CLI application. The CLI will be automatically installed when initializing the agent project if you didn't installed it previously.
+## What are Vertesia Plugins?
 
-## Initialize a Vertesia agent project
+Vertesia plugins are React-based UI components that can be embedded into the Vertesia Studio interface. They allow you to:
+
+- Create custom UI pages and interfaces
+- Integrate with external services
+- Extend Vertesia's functionality with custom tools and workflows
+- Build reusable components for your organization
+
+## Prerequisites
+
+Before creating a plugin project, you need:
+
+- Node.js and pnpm (or npm)
+- Vertesia CLI
+- An application manifest declared in Vertesia
+
+## Declaring Your App in Vertesia
+
+Before you can develop and integrate your plugin with Vertesia, you must declare an application manifest in the Vertesia platform. This is done using the Vertesia CLI.
+
+### Install the Vertesia CLI
+
+If not already done, install the vertesia CLI and create a profile
+
+```bash
+npm install -g @vertesia/cli
+vertesia profiles create
+```
+
+### Create the App Manifest
+
+**Create the app manifest** using the Vertesia CLI:
+
+```bash
+vertesia apps create --manifest '{
+  "name": "my-app",
+  "title": "My App",
+  "description": "A sample app",
+  "publisher": "your-org",
+  "private": true,
+  "status": "beta",
+  "ui": {
+    "src": "/plugins/my-app",
+    "isolation": "shadow"
+  }
+}' --install
+```
+
+The `--install` flag will automatically install the app and grant permissions to the creator.
+
+**Important**: The `name` field from your manifest (e.g., `my-app`) is what you'll enter when running `create-plugin` to initialize your project.
+
+For more information on managing apps, run:
+
+```bash
+vertesia apps --help
+```
+
+## Initialize a Vertesia Plugin Project
 
 Run the command line command:
 
-```
-npm init @vertesia/agent
-```
-
-Follow the instructions on screen. You need to define an organization and a name for your agent. The organization must be unique inside Vertesia and is usually the name of your Vertesia organization account. The agent name is identifying the project in your organization.
-
-The generated project is a typescript project and is using [Temporal](https://temporal.io/) as the workflow system.
-
-You can implement your own workflows and activities anywhere in the src/ directory or even in a dependency project. The only requirement is that you need to export the workflows and the activities from the `src/workflow.ts` and `src/activities.ts` files.
-These generated files are containing a "Hello world!" workflow and activity as an example that you should remove and export your own definitions.
-
-
-## Developing your agent workflows / activities.
-
-Export your temporal workflows `from src/workflows.ts` and your activities from `src/activities.ts`
-
-## Test locally the workflows.
-
-There are two ways to test the agent worker:
-
-1. Using `npm start`. This will start the worker in your terminal.
-2. Using `vertesia agent run` from your project root. This will run the agent worker in side the docker image you previously built. See the [Build](build-the-agent-docker-image) section.
-
-**Important Note:** All `vertesia agent` commands must be executed in the agent project root.
-
-## Debugging locally the workflows.
-
-You can debug the workflows by replaying them locally using the temporal replayer that you can found in  `src/debug-replayer.ts`.
-
-See https://docs.temporal.io/develop/typescript/debugging for more information
-
-## Packaging and publishing your Vertesia agent
-
-When the workflows are working you will want to publish the agent to Vertesia.
-The agent should be packaged as a docker image and then published to the Vertesia cloud.
-
-### Build the agent docker image
-
-When you are ready to test the agent image you can built it using `vertesia agent build` from you project root.
-
-This will build a docker image tagged as `your-organization/your-agent-name:latest`.
-This image is only useable to test locally. You cannot push it to Vertesia.
-
-### Releasing the agent docker image
-
-When you already to push your agent to Vertesia you must first create a version using the following command:
-
-```
-vertesia agent release <version>
+```bash
+npm init @vertesia/plugin
 ```
 
-The version must be in the `major.minor.patch[-modifier]` format. \
-Examples: `1.0.0`, `1.0.0-rc1`.
+Follow the instructions on screen. You will be prompted for:
 
-This command is creating a new docker tag `your-organization/your-agent-name:version` from the `latest` image tag.
+1. **Package manager**: Choose between npm or pnpm
+2. **Plugin name**: Use kebab-case (e.g., my-plugin)
+3. **Plugin version**: Semantic version (e.g., 1.0.0)
+4. **Description**: Optional description of your plugin
+5. **Isolation strategy**: Choose between:
+   - **Shadow DOM**: Fully isolated plugin using Shadow DOM (recommended)
+   - **CSS-only isolation**: Lighter isolation using CSS scope, but may have style conflicts
 
-### Publishing the agent docker image to Vertesia
+## Project Structure
 
-Versioned images (using the `release` command) can be published to Vertesia. This can be done using the following command:
+The generated project is a TypeScript + React + Vite project with the following structure:
 
-```
-vertesia agent publish <version>
-```
+- `src/plugin.tsx` - Main plugin component entry point
+- `src/routes.tsx` - Plugin routing configuration
+- `src/pages.tsx` - Plugin pages
+- `vite.config.ts` - Vite configuration for building the plugin
+- `package.json` - Package configuration with plugin metadata
 
-where the version is the version of the image tag you want to publish.
+## Developing and deploying Your Plugin
 
-You can also only push the image to vertesia without deploying the agent by using the `--push-only` flag:
+Look at the README file in the boostrapped project to learn how to develop and deploy your plugin.
 
-```
-vertesia agent publish <version> --push-only
-```
+## Learn More
 
-The you can deploy an agent that you previously uploaded to Vertesia by using the command:
-
-```
-vertesia agent publish <version> --deploy-only
-```
-
-## Managing agent versions
-
-You can see the docker image versions you created using the following command:
-
-```
-vertesia agent versions
-```
+- [Vertesia Documentation](https://docs.vertesiahq.com/)
