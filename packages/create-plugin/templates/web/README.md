@@ -24,43 +24,6 @@ src/
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js
-- pnpm (or npm)
-- Vertesia CLI (for declaring your app in Vertesia)
-
-### Declaring Your App in Vertesia
-
-Before you can develop and integrate your plugin with Vertesia, you must declare an application manifest in the Vertesia platform. This is done using the Vertesia CLI.
-
-1. **Create the app manifest** using the Vertesia CLI:
-
-    ```bash
-    vertesia apps create --manifest '{
-      "name": "my-app",
-      "title": "My App",
-      "description": "A sample app",
-      "publisher": "your-org",
-      "private": true,
-      "status": "beta",
-      "ui": {
-        "src": "/plugins/my-app",
-        "isolation": "shadow"
-      }
-    }' --install
-    ```
-
-    The `--install` flag will automatically install the app and grant permissions to the creator.
-
-2. **Use the app name** when bootstrapping your plugin. The `name` field from your manifest (e.g., `my-app`) is what you'll enter when running `create-plugin` to initialize your project.
-
-For more information on managing apps, run:
-
-```bash
-vertesia apps --help
-```
-
 ### Installation
 
 ```bash
@@ -139,7 +102,7 @@ For more information, visit the [Vercel CLI documentation](https://vercel.com/do
 
 #### Update App Manifest with Deployment URL
 
-After deploying to Vercel, update your app manifest to point to the deployed URL:
+After deploying to Vercel, update your app manifest to point to the deployed URL using the vertesia CLI:
 
 ```bash
 vertesia apps update <appId> --manifest '{
