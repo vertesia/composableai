@@ -82,9 +82,9 @@ export default function InlineSlidingPlanPanel({
 
               return (
                 <>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div
-                      className="bg-info/20 h-2 rounded-full"
+                      className="bg-background h-2 rounded-full"
                       style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
