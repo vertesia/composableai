@@ -14,9 +14,9 @@ export class InteractionCatalogApi extends ApiTopic {
      * List all project interactions
      * @param latestPublished Whether to fetch the latest published version or the draft version. Defaults to false (draft).
      */
-    list(latestPublished = false): Promise<CatalogInteractionRef[]> {
+    list(query: { latestPublished?: boolean, tag?: string } = {}): Promise<CatalogInteractionRef[]> {
         return this.get("/", {
-            query: { latestPublished }
+            query
         });
     }
 
@@ -24,31 +24,43 @@ export class InteractionCatalogApi extends ApiTopic {
      * List all stored interactions
      * @param latestPublished Whether to fetch the latest published version or the draft version. Defaults to false (draft).
      */
-    listStoredInteractions(latestPublished = false): Promise<CatalogInteractionRef[]> {
+    listStoredInteractions(query: { latestPublished?: boolean, tag?: string } = {}): Promise<CatalogInteractionRef[]> {
         return this.get("/stored", {
-            query: { latestPublished }
+            query
         });
     }
 
     /**
      * List sys interactions
      */
-    listSysInteractions(): Promise<CatalogInteractionRef[]> {
-        return this.get(`/sys`);
+    listSysInteractions(tag?: string): Promise<CatalogInteractionRef[]> {
+        return this.get(`/sys`, {
+            query: {
+                tag
+            }
+        });
     }
 
     /**
      * List sys interactions
      */
-    listAppInteractions(appName: string): Promise<CatalogInteractionRef[]> {
-        return this.get(`/apps/${appName}`);
+    listAppInteractions(appName: string, tag?: string): Promise<CatalogInteractionRef[]> {
+        return this.get(`/apps/${appName}`, {
+            query: {
+                tag
+            }
+        });
     }
 
     /**
      * List all app interactions
      */
-    listAllAppInteractions(): Promise<CatalogInteractionRef[]> {
-        return this.get(`/apps`);
+    listAllAppInteractions(tag?: string): Promise<CatalogInteractionRef[]> {
+        return this.get(`/apps`, {
+            query: {
+                tag
+            }
+        });
     }
 
     /**
