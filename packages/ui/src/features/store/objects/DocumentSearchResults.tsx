@@ -6,7 +6,7 @@ import {
 } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
-import { Download, RefreshCw, Eye } from 'lucide-react';
+import { Download, RefreshCw, ExternalLink } from 'lucide-react';
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 import { ContentDispositionButton } from './components/ContentDispositionButton';
@@ -18,8 +18,8 @@ import { ContentOverview } from './components/ContentOverview';
 import { useDownloadDocument } from './components/useDownloadObject';
 
 const defaultLayout: ColumnLayout[] = [
-    { name: "ID", field: "id", type: "string?slice=-7" },
-    { name: "Name", field: ".", type: "objectLink" },
+    { name: "ID", field: "id", type: "objectId?slice=-7" },
+    { name: "Name", field: ".", type: "objectName" },
     { name: "Type", field: "type.name", type: "string" },
     { name: "Status", field: "status", type: "string" },
     { name: "Updated At", field: "updated_at", type: "date" },
@@ -218,60 +218,41 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         }
     }
 
+    const navigate = useNavigate();
+    const onRowClick = (object: ContentObjectItem) => {
+        navigate(`/objects/${object.id}`);
+    }
+
+    const previewObject = (objectId: string) => {
+        const obj = objects.find(o => o.id === objectId) || null;
+        setSelectedObject(obj);
+    }
+
     return (
         <div className="flex flex-col gap-y-2">
             <OverviewDrawer object={selectedObject} onClose={() => setSelectedObject(null)} />
             {
                 error && <ErrorBox title="Error">{error.message}</ErrorBox>
             }
-            <div className="sticky top-0 z-10 bg-background pb-2">
-                {
-                    allowFilter && (
-                        <FilterProvider
-                            filterGroups={filterGroups}
-                            filters={filters}
-                            setFilters={handleFilterChange}
-                        >
-                            <div className="flex flex-row gap-4 items-center justify-between w-full">
-                                <div className="flex gap-2 items-center w-2/3">
-                                    {
-                                        allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
-                                    }
-                                    <FilterBtn />
-                                </div>
-                                <div className="flex gap-1 items-center">
-                                    <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
-                                    <ContentDispositionButton onUpdate={setIsGridView} />
-                                </div>
-                            </div>
-                            <div className="flex gap-2 items-center">
-                                <FilterBar />
-                                <FilterClear />
-                            </div>
-                        </FilterProvider>
-                    )
-                }
-                {
-                    !allowFilter && (
-                        <div className="flex flex-row gap-4 items-center justify-between w-full">
-                            <div className="flex gap-2 items-center w-2/3">
-                                {
-                                    allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} />
-                                }
-                            </div>
-                            <div className="flex gap-1 items-center">
-                                <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
-                                <ContentDispositionButton onUpdate={setIsGridView} />
-                            </div>
-                        </div>
-                    )
-                }
-            </div>
+            <Toolsbar
+                isLoading={isLoading}
+                refreshTrigger={refreshTrigger}
+                allowFilter={allowFilter}
+                allowSearch={allowSearch}
+                filterGroups={filterGroups}
+                filters={filters}
+                handleFilterChange={handleFilterChange}
+                handleVectorSearch={handleVectorSearch}
+                handleRefetch={handleRefetch}
+                setIsGridView={setIsGridView}
+            />
             <DocumentTable
                 objects={objects}
                 isLoading={!objects.length && isLoading}
                 layout={actualLayout}
-                onRowClick={setSelectedObject}
+                onRowClick={onRowClick}
+                previewObject={previewObject}
+                selectedObject={selectedObject}
                 onUpload={onUpload}
                 isGridView={isGridView}
                 collectionId={searchContext.collectionId} // Pass the collection ID from context
@@ -280,6 +261,79 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 isLoading && <div className='flex justify-center'><Spinner size='xl' /></div>
             }
             <div ref={loadMoreRef} />
+        </div>
+    );
+}
+
+interface ToolsbarProps {
+    isLoading: boolean;
+    refreshTrigger: number;
+    allowFilter: boolean;
+    allowSearch: boolean;
+    filterGroups: ReturnType<typeof useDocumentFilterGroups>;
+    filters: BaseFilter[];
+    handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>>;
+    handleVectorSearch: (query?: ComplexSearchQuery) => void;
+    handleRefetch: () => void;
+    setIsGridView: React.Dispatch<React.SetStateAction<boolean>>;
+}
+function Toolsbar(props: ToolsbarProps) {
+    const {
+        isLoading,
+        refreshTrigger,
+        allowFilter,
+        allowSearch,
+        filterGroups,
+        filters,
+        handleFilterChange,
+        handleVectorSearch,
+        handleRefetch,
+        setIsGridView
+    } = props;
+
+    return (
+        <div className="sticky top-0 z-10 bg-background pb-2">
+            {
+                allowFilter && (
+                    <FilterProvider
+                        filterGroups={filterGroups}
+                        filters={filters}
+                        setFilters={handleFilterChange}
+                    >
+                        <div className="flex flex-row gap-4 items-center justify-between w-full">
+                            <div className="flex gap-2 items-center w-2/3">
+                                {
+                                    allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
+                                }
+                                <FilterBtn />
+                            </div>
+                            <div className="flex gap-1 items-center">
+                                <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                                <ContentDispositionButton onUpdate={setIsGridView} />
+                            </div>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                            <FilterBar />
+                            <FilterClear />
+                        </div>
+                    </FilterProvider>
+                )
+            }
+            {
+                !allowFilter && (
+                    <div className="flex flex-row gap-4 items-center justify-between w-full">
+                        <div className="flex gap-2 items-center w-2/3">
+                            {
+                                allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} />
+                            }
+                        </div>
+                        <div className="flex gap-1 items-center">
+                            <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                            <ContentDispositionButton onUpdate={setIsGridView} />
+                        </div>
+                    </div>
+                )
+            }
         </div>
     );
 }
@@ -298,7 +352,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
         <SidePanel title={object.properties?.title || object.name} isOpen={true} onClose={onClose}>
             <div className="flex items-center gap-x-2">
                 <Button variant="ghost" size="sm" title="Open Object" onClick={() => navigate(`/objects/${object.id}`)}>
-                    <Eye className="size-4" />
+                    <ExternalLink className="size-4" />
                 </Button>
                 {object.content?.source && (
                     <Button variant="ghost" size="sm" title="Download" onClick={onDownload}>

@@ -10,8 +10,8 @@ import { useDocumentSearch } from "./search/DocumentSearchContext";
 import { FileWithMetadata, DocumentUploadModal, useSmartFileUploadProcessing } from "./upload";
 
 const defaultLayout: ExtendedColumnLayout[] = [
-    { name: "ID", field: "id", type: "string?slice=-7" },
-    { name: "Name", field: ".", type: "objectLink" },
+    { name: "ID", field: "id", type: "objectId?slice=-7" },
+    { name: "Name", field: ".", type: "objectName" },
     { name: "Type", field: "type.name", type: "string" },
     { name: "Status", field: "status", type: "string" },
     { name: "Updated At", field: "updated_at", type: "date" },
@@ -19,6 +19,8 @@ const defaultLayout: ExtendedColumnLayout[] = [
 
 interface DocumentTableProps extends DocumentTableImplProps {
     isGridView?: boolean;
+    previewObject?: (objectId: string) => void;
+    selectedObject?: ContentObjectItem | null;
     onUpload?: (files: File[], type: string | null, collectionId?: string) => Promise<unknown>; // if defined, accept drag drop to upload
     collectionId?: string; // Important: Add collection ID to ensure uploads go to the right collection
 }
@@ -303,6 +305,8 @@ interface DocumentTableImplProps {
     onSelectionChange?: (selection: DocumentSelection) => void;
     highlightRow?: (item: ContentObjectItem) => boolean;
     rowActions?: (item: ContentObjectItem) => React.ReactNode[];
+    previewObject?: (objectId: string) => void;
+    selectedObject?: ContentObjectItem | null;
     isGridView?: boolean;
 }
 function DocumentTableImpl({
@@ -311,6 +315,8 @@ function DocumentTableImpl({
     isLoading,
     onRowClick,
     onSelectionChange,
+    previewObject,
+    selectedObject,
     isGridView,
 }: DocumentTableImplProps) {
     const selection = useOptionalDocumentSelection();
@@ -363,8 +369,8 @@ function DocumentTableImpl({
     const columns = useMemo(() => {
         // avoid rendering empty layouts
         const actualLayout = layout.length > 0 ? layout : defaultLayout;
-        return actualLayout.map((col) => new DocumentTableColumn(col));
-    }, [layout]);
+        return actualLayout.map((col) => new DocumentTableColumn(col, previewObject));
+    }, [layout, previewObject]);
 
     return isGridView ? (
         <DocumentGridView
@@ -372,6 +378,8 @@ function DocumentTableImpl({
             isLoading={isLoading}
             columns={columns}
             onRowClick={onRowClick}
+            previewObject={previewObject}
+            selectedObject={selectedObject}
             selection={selection}
             toggleAll={toggleAll}
             onSelectionChange={_onSelectionChange}
@@ -382,6 +390,8 @@ function DocumentTableImpl({
             isLoading={isLoading}
             columns={columns}
             onRowClick={onRowClick}
+            previewObject={previewObject}
+            selectedObject={selectedObject}
             selection={selection}
             toggleAll={toggleAll}
             onSelectionChange={_onSelectionChange}

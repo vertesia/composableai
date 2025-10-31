@@ -1,15 +1,7 @@
 import { AsyncExecutionResult } from "@vertesia/client";
 import { Button, Command, CommandGroup, CommandItem, CommandList, Popover, PopoverContent, PopoverTrigger, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import {
-    Bot,
-    ClipboardList,
-    CopyIcon,
-    DownloadCloudIcon,
-    ExternalLink,
-    MoreVertical,
-    XIcon,
-} from "lucide-react";
+import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, MoreVertical, XIcon } from "lucide-react";
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
 import { getConversationUrl } from "./utils";
 
