@@ -12,14 +12,14 @@ interface PlanPanelProps {
 export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClose }: PlanPanelProps) {
     return (
         plan && (
-            <SlideInPanel isOpen={isOpen} onClose={onClose} title="Agent Plan" width="350px">
+            <SlideInPanel isOpen={isOpen} onClose={onClose} title="Agent Plan">
                 {/* Plan Summary */}
-                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-100 dark:border-blue-800">
-                    <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">Plan Progress</div>
+                <div className="mb-4 p-3 bg-info rounded-md border border-info">
+                    <div className="text-sm font-medium text-info mb-1">Plan Progress</div>
                     <div className="flex items-center gap-2">
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                        <div className="w-full bg-muted rounded-full h-2.5">
                             <div
-                                className="bg-blue-600 h-2.5 rounded-full"
+                                className="bg-info h-2.5 rounded-full"
                                 style={{
                                     width: `${plan.plan && plan.plan.length
                                         ? Math.round(
@@ -34,7 +34,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                 }}
                             />
                         </div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                        <span className="text-xs text-muted">
                             {plan.plan && plan.plan.length
                                 ? `${Array.from(workstreamStatus.values()).filter((status) => status === "completed").length}/${workstreamStatus.size}`
                                 : "0/0"}
@@ -43,8 +43,8 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                 </div>
 
                 {/* Detailed Plan Steps */}
-                <div className="rounded-md border border-gray-200 dark:border-gray-800">
-                    <div className="p-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+                <div className="rounded-md border border-muted">
+                    <div className="p-3 border-b border-muted bg-muted/50">
                         <div className="font-medium text-sm">Step-by-Step Plan</div>
                     </div>
 

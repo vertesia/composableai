@@ -1,33 +1,17 @@
-import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import {
-    AgentMessage,
-    AgentMessageType,
-    Plan,
-    UserInputSignal
-} from "@vertesia/common";
-import { Button, MessageBox, Spinner, useToast } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
-import {
-    Bot,
-    Cpu,
-    SendIcon,
-    XIcon
-} from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-    AnimatedThinkingDots,
-    PulsatingCircle
-} from "./AnimatedThinkingDots";
+import { Bot, Cpu, SendIcon, XIcon } from "lucide-react";
+import { useUserSession } from "@vertesia/ui/session";
+import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
+import { AgentMessage, AgentMessageType, Plan, UserInputSignal } from "@vertesia/common";
+import { Button, MessageBox, Spinner, useToast } from "@vertesia/ui/core";
+
+import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
 import MessageInput from "./ModernAgentOutput/MessageInput";
-import PlanPanel from "./ModernAgentOutput/PlanPanel";
-import {
-    getWorkstreamId,
-    insertMessageInTimeline,
-    isInProgress,
-} from "./ModernAgentOutput/utils";
+import { getWorkstreamId, insertMessageInTimeline, isInProgress } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
+import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
 
 type StartWorkflowFn = (
     initialMessage?: string,
@@ -177,7 +161,7 @@ function StartWorkflowView({
             <div className="flex items-center justify-between py-2 px-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
                 <div className="flex items-center space-x-2">
                     <div className="p-1">
-                        <Cpu className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
+                        <Cpu className="size-3.5 text-muted" />
                     </div>
                     <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
                         {title}
@@ -193,7 +177,7 @@ function StartWorkflowView({
                         title="Close"
                         className="text-slate-500 hover:text-slate-700"
                     >
-                        <XIcon className="h-4 w-4" />
+                        <XIcon className="size-4" />
                     </Button>
                 )}
             </div>
@@ -239,7 +223,7 @@ function StartWorkflowView({
                         {isSending ? (
                             <Spinner size="sm" className="mr-1.5" />
                         ) : (
-                            <SendIcon className="h-3.5 w-3.5 mr-1.5" />
+                            <SendIcon className="size-3.5 mr-1.5" />
                         )}
                         {startButtonText}
                     </Button>
@@ -269,9 +253,7 @@ function ModernAgentConversationInner({
     const [inputValue, setInputValue] = useState<string>("");
     const [isSending, setIsSending] = useState(false);
     const [viewMode, setViewMode] = useState<"stacked" | "sliding">("sliding");
-    //TODO _setShowPlanPanel state not used
-    const [showPlanPanel, _setShowPlanPanel] = useState<boolean>(false);
-    const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(false);
+    const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(!isModal);
     // Keep track of multiple plans and their timestamps
     const [plans, setPlans] = useState<Array<{ plan: Plan; timestamp: number }>>(
         [],
@@ -602,103 +584,112 @@ function ModernAgentConversationInner({
     };
 
     return (
-        <div
-            className={`flex flex-col h-full min-h-0 ${isModal ? "rounded-lg overflow-hidden" : ""}`}
-        >
-            <Header
-                title={actualTitle}
-                isCompleted={isCompleted}
-                onClose={onClose}
-                isModal={isModal}
-                run={run}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                showPlanPanel={showSlidingPanel}
-                hasPlan={plans.length > 0}
-                onTogglePlanPanel={() => {
-                    setShowSlidingPanel(!showSlidingPanel);
-                    // When opening the plan panel, mark that we've shown it
-                    if (!showSlidingPanel) {
-                        sessionStorage.setItem("plan-panel-shown", "true");
-                    }
-                }}
-                onDownload={downloadConversation}
-                onCopyRunId={copyRunId}
-                resetWorkflow={resetWorkflow}
-            />
-
-            {/* Inline Plan Panel - only shown when toggle is clicked */}
-            {showPlanPanel && !showSlidingPanel && plans.length > 0 && (
-                <PlanPanel
-                    plan={getActivePlan.plan}
-                    workstreamStatus={getActivePlan.workstreamStatus}
-                    isVisible={true}
+        <div className="flex gap-2 h-full">
+            {/* Conversation Area - responsive width based on panel visibility */}
+            <div className={`flex flex-col h-full min-h-0 border-0 ${
+                showSlidingPanel ? 'lg:w-2/3 flex-1' : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
+            }`}>
+                <Header
+                    title={actualTitle}
+                    isCompleted={isCompleted}
+                    onClose={onClose}
+                    isModal={isModal}
+                    run={run}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                    showPlanPanel={showSlidingPanel}
+                    hasPlan={plans.length > 0}
+                    onTogglePlanPanel={() => {
+                        setShowSlidingPanel(!showSlidingPanel);
+                        // When opening the plan panel, mark that we've shown it
+                        if (!showSlidingPanel) {
+                            sessionStorage.setItem("plan-panel-shown", "true");
+                        }
+                    }}
+                    onDownload={downloadConversation}
+                    onCopyRunId={copyRunId}
+                    resetWorkflow={resetWorkflow}
                 />
-            )}
 
-            {messages.length === 0 && !isCompleted ? (
-                <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-6 bg-white dark:bg-gray-900">
-                    <div className="bg-white dark:bg-slate-800 p-5 max-w-md border border-blue-200 dark:border-blue-900/50 rounded-lg shadow-sm">
-                        <div className="flex items-center space-x-3 mb-3">
-                            <PulsatingCircle size="sm" color="blue" />
-                            <div className="text-sm text-slate-600 dark:text-slate-300 font-medium">
-                                {ThinkingMessages[thinkingMessageIndex]}
+                {messages.length === 0 && !isCompleted ? (
+                    <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-6">
+                        <div className="p-5 max-w-md border border-info rounded-lg shadow-sm">
+                            <div className="flex items-center space-x-3 mb-3">
+                                <PulsatingCircle size="sm" color="blue" />
+                                <div className="text-sm text-muted font-medium">
+                                    {ThinkingMessages[thinkingMessageIndex]}
+                                </div>
+                            </div>
+                            <div className="mt-4 flex justify-center">
+                                <AnimatedThinkingDots color="blue" className="mt-1" />
                             </div>
                         </div>
-                        <div className="mt-4 flex justify-center">
-                            <AnimatedThinkingDots color="blue" className="mt-1" />
-                        </div>
                     </div>
-                </div>
-            ) : (
-                <AllMessagesMixed
-                    messages={messages}
-                    bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
-                    viewMode={viewMode}
-                    isCompleted={isCompleted}
-                    plan={getActivePlan.plan}
-                    workstreamStatus={getActivePlan.workstreamStatus}
-                    showPlanPanel={showSlidingPanel}
-                    onTogglePlanPanel={() => {
-                        console.log(
-                            "Toggle plan panel called, current state:",
-                            showSlidingPanel,
-                        );
-                        setShowSlidingPanel(!showSlidingPanel);
-                    }}
-                    plans={plans}
-                    activePlanIndex={activePlanIndex}
-                    onChangePlan={(index) => setActivePlanIndex(index)}
-                    taskLabels={getActivePlan.plan.plan?.reduce((acc, task) => {
-                        if (task.id && task.goal) {
-                            acc.set(task.id.toString(), task.goal);
-                        }
-                        return acc;
-                    }, new Map<string, string>())}
-                />
-            )}
-
-            {workflowStatus && (
-                workflowStatus !== "RUNNING" ? (
-                    <MessageBox
-                        status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
-                        icon={null}
-                        className="flex-shrink-0 m-2"
-                    >
-                        This Workflow is {workflowStatus}
-                    </MessageBox>
-                ) : showInput && (
-                    <MessageInput
-                        value={inputValue}
-                        onChange={setInputValue}
-                        onSend={handleSendMessage}
-                        disabled={false}
-                        isSending={isSending}
+                ) : (
+                    <AllMessagesMixed
+                        messages={messages}
+                        bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
+                        viewMode={viewMode}
                         isCompleted={isCompleted}
-                        activeTaskCount={getActiveTaskCount()}
-                        placeholder={placeholder}
+                        plan={getActivePlan.plan}
+                        workstreamStatus={getActivePlan.workstreamStatus}
+                        showPlanPanel={showSlidingPanel}
+                        onTogglePlanPanel={() => {
+                            console.log(
+                                "Toggle plan panel called, current state:",
+                                showSlidingPanel,
+                            );
+                            setShowSlidingPanel(!showSlidingPanel);
+                        }}
+                        plans={plans}
+                        activePlanIndex={activePlanIndex}
+                        onChangePlan={(index) => setActivePlanIndex(index)}
+                        taskLabels={getActivePlan.plan.plan?.reduce((acc, task) => {
+                            if (task.id && task.goal) {
+                                acc.set(task.id.toString(), task.goal);
+                            }
+                            return acc;
+                        }, new Map<string, string>())}
                     />
-                ))}
+                )}
+
+                {workflowStatus && (
+                    workflowStatus !== "RUNNING" ? (
+                        <MessageBox
+                            status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
+                            icon={null}
+                            className="flex-shrink-0 m-2"
+                        >
+                            This Workflow is {workflowStatus}
+                        </MessageBox>
+                    ) : showInput && (
+                        <MessageInput
+                            value={inputValue}
+                            onChange={setInputValue}
+                            onSend={handleSendMessage}
+                            disabled={false}
+                            isSending={isSending}
+                            isCompleted={isCompleted}
+                            activeTaskCount={getActiveTaskCount()}
+                            placeholder={placeholder}
+                        />
+                    ))}
+            </div>
+
+            {/* Plan Panel Area - only rendered when panel should be shown */}
+            {showSlidingPanel && (
+                <div className="h-full lg:w-1/3 border-l">
+                    <InlineSlidingPlanPanel
+                        plan={getActivePlan.plan}
+                        workstreamStatus={getActivePlan.workstreamStatus}
+                        isOpen={showSlidingPanel}
+                        onClose={() => setShowSlidingPanel(false)}
+                        plans={plans}
+                        activePlanIndex={activePlanIndex}
+                        onChangePlan={setActivePlanIndex}
+                    />
+                </div>
+            )}
         </div>
     );
 }

@@ -15,10 +15,13 @@ export function useFieldSet() {
 export interface InputComponentProps {
     object: Node;
     type: string; // the editor/input type
+    onChange?: (event: any) => void;
+    disabled?: boolean;
 }
-class FormContext {
+export class FormContext {
     constructor(public object: ManagedObject,
-        public components: Record<string, ComponentType<InputComponentProps>> = {}) {
+        public components: Record<string, ComponentType<InputComponentProps>> = {},
+        public disabled: boolean = false) {
     }
 
 }
