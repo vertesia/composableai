@@ -4,6 +4,7 @@ import type {
     JSONSchema,
     Modalities,
     ModelOptions,
+    PromptRole,
     StatelessExecutionOptions,
     ToolDefinition,
     ToolUse,
@@ -15,10 +16,12 @@ import { ExecutionTokenUsage } from "@llumiverse/common";
 import { ExecutionEnvironmentRef } from "./environment.js";
 import { ProjectRef } from "./project.js";
 import {
+    ExecutablePromptSegmentDef,
     PopulatedPromptSegmentDef,
     PromptSegmentDef,
     PromptTemplateRef,
     PromptTemplateRefWithSchema,
+    TemplateType,
 } from "./prompt.js";
 import { ExecutionRunDocRef } from "./runs.js";
 import { AccountRef } from "./user.js";
@@ -28,6 +31,127 @@ export interface InteractionExecutionError {
     message: string;
     data?: any;
 }
+
+
+// ------------------ in code interactions -----------------
+/**
+ * Reference to an interaction in the catalog.
+ * Used in catalog listing. The id is composed of the namespace and the interaction name.
+ * Stored interactions can use `oid:` prefix.
+ * If no prefix is used it fallback on `oid:`.
+ */
+export interface CatalogInteractionRef {
+    id: string;
+    title: string;
+    description?: string;
+}
+export interface InCodePrompt {
+    role: PromptRole,
+    content: string,
+    content_type: TemplateType;
+    schema?: JSONSchema;
+    /**
+     * optional name of the prompt segment. Use kebab case for prompt names
+     */
+    name?: string;
+    /**
+     * optional reference to an external resource if any.
+     * Used internally by the system to synchronize stored prompts with in-code prompts.
+     */
+    externalId?: string;
+}
+export interface InCodeInteraction {
+    /**
+     * The id of the interaction. Required.
+     * The id is a unique identifier for the interaction.
+     * It is recommended to use a URL safe string and not include spaces. 
+     * The id composaed  by some namespace or prefix and the interaction name.
+     * Example: sys:generic_question, app:review_contract, tmp:my_temp_interaction
+     */
+    id: string;
+
+    /**
+     * The interaction code name. Required. 
+     * Should be a URL safe string and not include spaces. It is recommended to use kebab-case or camel-case.
+     * The endpoints must satisfy the following regexp: /^[a-zA-Z0-9-_]+$/. No whitespaces or special characters are allowed.
+     */
+    name: string;
+
+    /**
+     * A title for the interaction. If not provided, the endpoint will be used.
+     */
+    title?: string;
+
+    /**
+     * An optional description of the interaction.
+     */
+    description?: string;
+
+    /**
+     * The JSON schema to be used for the result if any.
+     */
+    result_schema?: JSONSchema | SchemaRef;
+
+    /**
+     * The modality of the interaction output. 
+     * If not specified Modalities.Text is assumed.
+     */
+    output_modality?: Modalities,
+
+    /**
+     * How to store the run data for executions of this interaction.
+     * Defaults to STANDARD.
+     */
+    storage?: RunDataStorageLevel;
+
+    /**
+     * Optional tags for the interaction.
+     */
+    tags?: string[];
+
+    /**
+     * Default options for the model to be used when executing this interaction.
+     * (like temperature etc)
+     */
+    model_options?: ModelOptions;
+
+    /**
+     * The prompts composing the interaction. Required.
+     */
+    prompts: InCodePrompt[]
+
+    /**
+     * Optional reference to an external resource if any.
+     * Used internally by the system to synchronize stored interactions with in-code interactions. 
+     */
+    externalId?: string;
+
+    /**
+     * Runtime configuration (system use only)
+     *
+     * This field is populated by the system when converting stored interactions
+     * and contains runtime-specific defaults like target model/environment IDs.
+     *
+     * DO NOT set this field manually when writing interaction definitions.
+     * These values are environment-specific and not portable.
+     *
+     * @internal
+     */
+    runtime?: {
+        /**
+         * Default target environment for the interaction execution         
+         */
+        environment?: string;
+
+        /**
+         * Default (recommended) target model for the interaction execution
+         */
+        model?: string;
+    }
+}
+export interface InteractionSpec extends Omit<InCodeInteraction, 'id' | 'runtime'> {
+}
+// ---------------------------------------------------------
 
 /**
  * The payload to query the interaction endpoints
@@ -167,28 +291,31 @@ export interface CachePolicy {
     ttl: number;
 }
 export type InteractionVisibility = "public" | "private";
-export interface Interaction {
+
+export interface InteractionData {
     readonly id: string;
     name: string;
     endpoint: string;
     description?: string;
+    project: string | ProjectRef;
+    tags: string[];
+    result_schema?: JSONSchema4 | SchemaRef;
+    environment?: string | ExecutionEnvironmentRef;
+    model?: string;
+    model_options?: ModelOptions;
+    restriction?: RunDataStorageLevel;
+    output_modality?: Modalities;
+}
+export interface Interaction extends InteractionData {
     status: InteractionStatus;
     parent?: string;
     // only used for versions (status === "published")
     visibility: InteractionVisibility;
     version: number;
-    tags: string[];
     test_data?: JSONObject;
     interaction_schema?: JSONSchema4 | SchemaRef;
-    result_schema?: JSONSchema4 | SchemaRef;
     cache_policy?: CachePolicy;
-    model: string;
-    model_options?: ModelOptions;
     prompts: PromptSegmentDef[];
-    output_modality?: Modalities;
-    environment: string | ExecutionEnvironmentRef;
-    restriction?: RunDataStorageLevel;
-    project: string | ProjectRef;
     // only for drafts - when it was last published
     last_published_at?: Date;
     created_by: string;
@@ -199,6 +326,14 @@ export interface Interaction {
 
 export interface PopulatedInteraction extends Omit<Interaction, "prompts"> {
     prompts: PopulatedPromptSegmentDef[];
+}
+
+/**
+ * Used to describe an interaction that can be executed. Contains only the interaction data useful
+ * to execute the interaction plus the prompt templates
+ */
+export interface ExecutableInteraction extends InteractionData {
+    prompts: ExecutablePromptSegmentDef[];
 }
 
 export interface InteractionCreatePayload
@@ -218,6 +353,7 @@ export interface InteractionCreatePayload
         | "endpoint"
     > {
     visibility?: InteractionVisibility;
+    tags?: string[];
 }
 
 export interface InteractionUpdatePayload
@@ -271,6 +407,12 @@ export interface InteractionExecutionPayload {
      * The workflow related to this Interaction Run.
      */
     workflow?: ExecutionRunWorkflow;
+
+    /**
+     * Only used by ad-hoc interactions which defines the prompt in the execution payload itself
+     * These are temporary interactions using "tmp:" suffix.
+     */
+    prompts?: InCodePrompt[];
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
@@ -424,7 +566,7 @@ export interface RunSource {
     client_ip: string;
 }
 
-export interface ExecutionRun<P = any> {
+export interface BaseExecutionRun<P = any> {
     readonly id: string;
     /**
      * Only used by runs that were created by a virtual run to point toward the virtual run parent
@@ -443,8 +585,12 @@ export interface ExecutionRun<P = any> {
      */
     parameters: P; //params used to create the interaction, only in varies on?
     tags?: string[];
-    //TODO a string is returned when executing not the interaction object
-    interaction: Interaction;
+    // only set when the target interaction is a stored interaction
+    //TODO check the code where Interaction type is used (should be in run details)
+    // TODO when execution string is passed as the type of interaction
+    interaction?: string | Interaction;
+    // only set when the target interaction is an in-code interaction
+    interaction_code?: string; // Interaction code name in case of in-code interaction (not stored in the DB as an Interaction document)
     //TODO a string is returned when execution not the env object
     environment: ExecutionEnvironmentRef;
     modelId: string;
@@ -475,6 +621,14 @@ export interface ExecutionRun<P = any> {
      * @since 0.60.0
      */
     workflow?: ExecutionRunWorkflow;
+}
+
+export interface ExecutionRun<P = any> extends BaseExecutionRun<P> {
+    interaction?: Interaction;
+}
+
+export interface PopulatedExecutionRun<P = any> extends BaseExecutionRun<P> {
+    interaction?: Interaction;
 }
 
 export interface ExecutionRunWorkflow {
@@ -510,7 +664,8 @@ export interface InteractionExecutionResult<P = any> extends ExecutionRun<P> {
 }
 
 export interface ExecutionRunRef extends Omit<ExecutionRun, "result" | "parameters" | "interaction"> {
-    interaction: InteractionRef;
+    interaction?: InteractionRef;
+    interaction_code?: string;
 }
 
 export const ExecutionRunRefSelect = "-result -parameters -result_schema -prompt";
@@ -553,8 +708,15 @@ export interface GenerateTestDataPayload {
     config: InteractionExecutionConfiguration;
 }
 
-export interface ImprovePromptPayload {
+export interface ImprovePromptPayloadConfig {
     config: InteractionExecutionConfiguration;
+}
+
+export interface ImprovePromptPayload extends ImprovePromptPayloadConfig {
+    interaction_name: string; // name of the interaction to improve
+    context?: string,
+    prompt: { name: string, content: string }[]; // prompt array
+    result_schema?: JSONSchema, // optional interactionr result schema
 }
 
 export interface RateLimitRequestPayload {
