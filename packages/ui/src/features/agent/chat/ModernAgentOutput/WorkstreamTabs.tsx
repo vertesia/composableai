@@ -62,14 +62,14 @@ export default function WorkstreamTabs({
   }
 
   return (
-    <div className="flex overflow-x-auto space-x-1 pb-2 mb-2 border-b-2 border-blue-200 dark:border-blue-900 sticky top-0 bg-white dark:bg-gray-900 z-10 pt-1">
+    <div className="flex overflow-x-auto space-x-1 mb-2 border-b-2 border-muted/20 sticky top-0 z-10 pt-1">
       {sortedWorkstreams.map(([id, name]) => (
         <button
           key={id}
           className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5
                         ${activeWorkstream === id
-              ? "bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200 border-b-2 border-blue-500"
-              : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800/30 border-b-2 border-transparent"
+              ? "bg-info text-info border-b-2 border-info"
+              : "text-muted hover:bg-muted border-b-2 border-transparent"
             }`}
           onClick={() => onSelectWorkstream(id)}
           title={name.length > 20 ? name : undefined}
@@ -79,10 +79,10 @@ export default function WorkstreamTabs({
           {count && count.has(id) && count.get(id)! > 0 && (
             <div className="flex items-center space-x-1">
               <span
-                className={`inline-flex items-center justify-center w-4 h-4 text-xs
+                className={`inline-flex items-center justify-center size-4 text-xs rounded-full
                                 ${activeWorkstream === id
-                    ? "bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200"
-                    : "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                    ? "bg-info text-info"
+                    : "bg-muted text-muted"
                   }`}
               >
                 {count.get(id)}
@@ -91,9 +91,9 @@ export default function WorkstreamTabs({
               {completionStatus &&
                 id !== "all" &&
                 (completionStatus.get(id) ? (
-                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  <CheckCircle className="size-3 text-success" />
                 ) : (
-                  <Clock className="h-3 w-3 text-amber-500" />
+                  <Clock className="size-3 text-attention" />
                 ))}
             </div>
           )}

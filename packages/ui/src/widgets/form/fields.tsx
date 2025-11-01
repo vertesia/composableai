@@ -1,14 +1,16 @@
+import { FormItem } from "@vertesia/ui/core";
+
 interface FormLabelProps {
-    htmlFor?: string;
+    label?: string;
     required?: boolean;
     children: React.ReactNode | React.ReactNode[];
 }
-export function FormLabel({ htmlFor, required, children }: FormLabelProps) {
+export function FormLabel({ label, required, children }: FormLabelProps) {
     return (
-        <label htmlFor={htmlFor} className="block text-sm font-medium leading-6 text-gray-900 dark:text-gray-200">
-            {children}{required && <sup className="text-red-600">*</sup>}
-        </label>
-    )
+        <FormItem label={label} required={required}>
+            {children}
+        </FormItem>
+    );
 }
 
 interface FormHelperProps {

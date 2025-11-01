@@ -37,9 +37,11 @@ export class DocumentTableColumn {
     renderer: (value: any, index: number) => React.ReactNode = defaultRenderer;
     path: string[];
     fallbackPath?: string[];
-    constructor(public layout: ExtendedColumnLayout) {
+    previewObject?: (objectId: string) => void;
+    constructor(public layout: ExtendedColumnLayout, previewObject?: (objectId: string) => void) {
         this.path = splitPath(layout.field || '');
         this.fallbackPath = layout.fallback ? splitPath(layout.fallback) : undefined;
+        this.previewObject = previewObject;
 
         // If there's a custom render function, use it
         if (layout.render) {
@@ -78,6 +80,19 @@ export class DocumentTableColumn {
         if (this.layout.render) {
             return <td key={index} className="whitespace-nowrap px-3 py-4 text-sm">{this.layout.render(object)}</td>;
         }
+        
+        const type = this.layout.type || 'string';
+        const baseType = type.indexOf('?') > 0 ? type.substring(0, type.indexOf('?')) : type;
+        
+        if (baseType === 'objectId' && this.previewObject) {
+            const i = type.indexOf('?');
+            const params = i > 0 ? new URLSearchParams(type.substring(i + 1)) : undefined;
+            const objectIdRenderer = renderers.objectId(params, (_id: string) => {
+                this.previewObject!(object.id);
+            });
+            return objectIdRenderer(object, index);
+        }
+        
         // Otherwise use the type-based renderer with the resolved value
         return this.renderer(this.resolveValue(object), index);
     }
