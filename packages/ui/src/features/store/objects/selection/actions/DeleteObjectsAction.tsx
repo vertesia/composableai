@@ -75,3 +75,14 @@ export const DeleteObjectsAction: ObjectsActionSpec = {
     component: DeleteObjectsActionComponent,
     destructive: true
 }
+
+
+export const DeleteObjectsFromCollectionsAction: ObjectsActionSpec = {
+    id: 'deleteFromCollections',
+    name: 'Delete Objects',
+    description: 'Delete the selected objects',
+    confirm: true,
+    confirmationText: 'Are you sure you want to delete the selected objects?\nThis is not removable from collections.',
+    component: DeleteObjectsActionComponent,
+    destructive: true
+}
