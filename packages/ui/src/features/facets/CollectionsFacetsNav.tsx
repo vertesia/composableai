@@ -28,7 +28,6 @@ export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['fa
     customFilterGroups.push(nameFilterGroup);
 
     // add type filter as select type
-    console.log('typeRegistry', typeRegistry);
     if (typeRegistry) {
         const typeOptions = typeRegistry.types.map(type => {
             return {
