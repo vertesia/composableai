@@ -210,7 +210,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             {
                 error && <ErrorBox title="Error">{error.message}</ErrorBox>
             }
-            <div className="sticky top-0 z-10 bg-background pb-2">
+            <div className="sticky top-0 z-10 bg-background py-2">
                 {
                     allowFilter && (
                         <FilterProvider
