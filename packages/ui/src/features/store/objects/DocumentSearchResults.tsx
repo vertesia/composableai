@@ -278,7 +278,7 @@ function Toolsbar(props: ToolsbarProps) {
     } = props;
 
     return (
-        <div className="sticky top-0 z-10 bg-background pb-2">
+        <div className="sticky top-0 z-10 bg-background py-2">
             {
                 allowFilter && (
                     <FilterProvider
