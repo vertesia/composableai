@@ -1,12 +1,7 @@
-import { Check, ChevronsUpDown } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback } from "react";
 
 import { CollectionItem } from "@vertesia/common";
-import {
-    Button, cn, ErrorBox, useDebounce, useFetch,
-    Popover, PopoverContent, PopoverTrigger,
-    Command, CommandEmpty, CommandGroup, CommandItem, CommandInput
-} from "@vertesia/ui/core";
+import { ErrorBox, useFetch, VSelectBox } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 
 /**
@@ -16,160 +11,94 @@ import { useUserSession } from "@vertesia/ui/session";
  * @returns A dropdown to select a collection.
 **/
 interface SelectCollectionProps {
-    value?: string; // Collection ID
-    onChange: (collectionId: string | undefined, collection?: CollectionItem) => void;
+    value?: string | string[];
+    onChange: (collectionId: string | string[] | undefined, collection?: CollectionItem | CollectionItem[]) => void;
     disabled?: boolean;
     placeholder?: string;
-    searchPlaceholder?: string;
+    filterOut?: string[]; // collection ID to filter out from the list
+    allowDynamic?: boolean;
+    multiple?: boolean;
 }
-export function SelectCollection({ onChange, value, disabled = false, placeholder = "Select a collection", searchPlaceholder = "Search collections" }: SelectCollectionProps) {
+
+function getLabel(option: CollectionItem) {
+    return option.name;
+}
+
+export function SelectCollection({ onChange, value, disabled = false, placeholder = "Select a collection", filterOut, allowDynamic = true, multiple = false }: SelectCollectionProps) {
     const { client } = useUserSession();
 
-    const [searchQuery, setSearchQuery] = useState('');
-    const [isSearching, setIsSearching] = useState(false);
-
-    // Debounce the search query to avoid excessive API calls
-    const debouncedSearchQuery = useDebounce(searchQuery, 300);
-
-    // Memoize the search function to prevent unnecessary re-renders
-    const searchCollections = useCallback(async (query: string) => {
-        setIsSearching(true);
-        const trimmedQuery = query.trim();
-
-        const collections = await client.store.collections.search({
-            dynamic: false,
-            name: trimmedQuery || undefined
-        });
-
-        setIsSearching(false);
-        return collections;
-    }, [client]);
-
-    // Fetch collections based on debounced search query
-    const { data: collections, error } = useFetch(
-        () => searchCollections(debouncedSearchQuery),
-        [debouncedSearchQuery, searchCollections]
-    );
-
-    // Memoize the selected collection to avoid recalculation on every render
-    const selectedCollection = useMemo(() => {
-        return collections?.find((collection: CollectionItem) => collection.id === value);
-    }, [collections, value]);
-
     // Handle collection selection
-    const handleSelect = useCallback((collection: CollectionItem) => {
-        onChange(collection.id, collection);
-    }, [onChange]);
+    const handleSelect = useCallback((collection: CollectionItem | CollectionItem[] | null) => {
+        if (multiple) {
+            // Multiple selection mode
+            const selectedCollections = collection as CollectionItem[] | null;
+            if (selectedCollections && selectedCollections.length > 0) {
+                const ids = selectedCollections.map(c => c.id);
+                onChange(ids, selectedCollections);
+            } else {
+                onChange(undefined);
+            }
+        } else {
+            // Single selection mode
+            const selectedCollection = collection as CollectionItem | null;
+            if (selectedCollection) {
+                onChange(selectedCollection.id, selectedCollection);
+            } else {
+                onChange(undefined);
+            }
+        }
+    }, [onChange, multiple]);
 
-    // Handle clear selection
-    const handleClear = useCallback(() => {
-        onChange(undefined, undefined);
-    }, [onChange]);
+    // Fetch collections
+    const { data: collections, error } = useFetch<CollectionItem[]>(async () => {
+        const allCollections = await client.store.collections.search({
+            dynamic: allowDynamic ? undefined : false
+        });
+        // Filter out collections if filterOut is provided
+        if (filterOut && filterOut.length > 0) {
+            return allCollections.filter(col => !filterOut.includes(col.id));
+        }
+        return allCollections;
+    }, [client, allowDynamic, filterOut]);
 
-    // Handle search input change
-    const handleSearchChange = useCallback((query: string) => {
-        setSearchQuery(query);
-    }, []);
-
-    // Show error state
     if (error) {
-        return (
-            <ErrorBox title="Collection fetch failed">
-                {error.message}
-            </ErrorBox>
-        );
+        return <ErrorBox title="Error">{error.message || String(error)}</ErrorBox>;
     }
 
-    const hasSearchQuery = searchQuery.trim().length > 0;
-    const showClearOption = selectedCollection && hasSearchQuery;
+    // Find the selected collection(s) from the value (collection ID(s))
+    const selectedCollection = multiple
+        ? collections?.filter(col => Array.isArray(value) && value.includes(col.id)) || []
+        : collections?.find(col => col.id === value) || null;
 
     return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-haspopup="listbox"
-                    className={cn("w-full justify-between min-w-0")}
-                    disabled={disabled}
-                >
-                    <span className="truncate flex-1 text-left min-w-0">
-                        {selectedCollection ? selectedCollection.name : placeholder}
-                    </span>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="mt-2 mb-2 w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                <Command shouldFilter={false}>
-                    <div className="flex justify-between items-center border-b px-3" cmdk-input-wrapper="">
-                        <CommandInput
-                            placeholder={searchPlaceholder}
-                            value={searchQuery}
-                            onValueChange={handleSearchChange}
-                            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                        {
-                            isSearching && (
-                                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            )
-                        }
-                    </div>
-                    <CommandEmpty>
-                        {
-                            isSearching
-                                ? "Searching..."
-                                : hasSearchQuery
-                                    ? "No collections found."
-                                    : "No collections available."
-                        }
-                    </CommandEmpty>
-                    <CommandGroup className="max-h-[300px] overflow-auto">
-                        {
-                            showClearOption && (
-                                <CommandItem
-                                    value="__clear__"
-                                    onSelect={handleClear}
-                                    className="text-muted-foreground"
-                                >
-                                    Clear selection
-                                </CommandItem>
-                            )
-                        }
-                        {
-                            collections?.map((collection: CollectionItem) => (
-                                <CommandItem
-                                    key={collection.id}
-                                    value={collection.id}
-                                    onSelect={() => handleSelect(collection)}
-                                    className={cn(
-                                        "flex items-center justify-between",
-                                        value === collection.id ? "bg-muted/20" : ""
-                                    )}
-                                >
-                                    <div className="flex flex-col flex-1 min-w-0">
-                                        <span className="truncate font-medium">
-                                            {collection.name}
-                                        </span>
-                                        {
-                                            collection.description && (
-                                                <span className="text-sm text-muted-foreground truncate">
-                                                    {collection.description}
-                                                </span>
-                                            )
-                                        }
-                                    </div>
-                                    <Check
-                                        className={cn(
-                                            "ml-2 h-4 w-4 shrink-0",
-                                            value === collection.id ? "opacity-100" : "opacity-0"
-                                        )}
-                                    />
-                                </CommandItem>
-                            ))
-                        }
-                    </CommandGroup>
-                </Command>
-            </PopoverContent>
-        </Popover>
+        multiple ? (
+            <VSelectBox<CollectionItem>
+                className="w-full"
+                by="id"
+                value={selectedCollection as CollectionItem[]}
+                filterBy="name"
+                options={collections || []}
+                disabled={disabled}
+                optionLabel={(option: CollectionItem) => getLabel(option)}
+                placeholder={placeholder}
+                onChange={handleSelect as (collection: CollectionItem[] | null) => void}
+                isClearable
+                multiple={multiple}
+            />
+        ) : (
+            <VSelectBox<CollectionItem>
+                className="w-full"
+                by="id"
+                value={selectedCollection as CollectionItem}
+                filterBy="name"
+                options={collections || []}
+                disabled={disabled}
+                optionLabel={(option: CollectionItem) => getLabel(option)}
+                placeholder={placeholder}
+                onChange={handleSelect as (collection: CollectionItem | null) => void}
+                isClearable
+                multiple={multiple}
+            />
+        )
     );
 }

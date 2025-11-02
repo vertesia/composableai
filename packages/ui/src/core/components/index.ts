@@ -26,6 +26,7 @@ export * from "./SelectList.js";
 export * from "./SelectStack.js";
 export * from "./shadcn/index.js";
 export * from "./SidePanel.js";
+export * from "./Panel.js";
 export * from "./Spinner.js";
 export * from "./styles.js";
 export * from "./Switch.js";

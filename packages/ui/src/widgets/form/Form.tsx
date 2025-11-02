@@ -1,16 +1,12 @@
 
 import { Plus, Trash2 } from "lucide-react";
-import { Button } from "@vertesia/ui/core";
+import { Button, FormItem } from "@vertesia/ui/core";
 import clsx from "clsx";
 import type { JSONSchemaObject } from "@vertesia/common";
 import { ComponentType, ReactNode, SyntheticEvent, useState } from "react";
 import { FormContext, FormContextProvider, InputComponentProps, useForm } from "./FormContext.js";
 import { ManagedListProperty, ManagedObject, ManagedObjectBase, ManagedProperty, Node } from "./ManagedObject.js";
-import { FormLabel, FormHelper } from "./fields.js";
 import { Input } from "./inputs.js";
-
-
-
 
 interface FormProps {
     object: ManagedObject;
@@ -56,24 +52,6 @@ export function GeneratedForm({ children, ...props }: FormProps) {
     )
 }
 
-
-// interface FieldSetProps {
-//     name: string;
-//     children?: ReactNode | ReactNode[];
-// }
-// export function FieldSet({ name, children }: FieldSetProps) {
-//     const ctx = useForm();
-//     const newCtx = {
-//         ...ctx,
-//         object: ctx.object.getProperty(name) as ManagedObjectProperty
-//     }
-//     return (
-//         <FormContextProvider value={newCtx}>
-//             {children}
-//         </FormContextProvider>
-//     )
-// }
-
 function renderProperty(prop: Node) {
     if (prop.isList) {
         return <ListField key={prop.name} object={prop as ManagedListProperty} />
@@ -117,18 +95,10 @@ export function ScalarField({ object, editor, inline = false }: ScalarFieldProps
     }
 
     return (
-        <div className="">
-            <div className={clsx('flex gap-2', inline ? 'flex-row items-center' : 'flex-col')}>
-                {!object.isListItem && (
-                    <FormLabel required={object.schema.isRequired} label={object.title}>
-                        <Component object={object} type={inputType} onChange={handleOnChange} disabled={disabled} />
-                    </FormLabel>)}
-
-            </div>
-            {
-                object.schema.description && <FormHelper>{object.schema.description}</FormHelper>
-            }
-        </div>
+        <FormItem label={object.title} required={object.schema.isRequired} description={object.schema.description}
+            className={clsx('flex', inline ? 'flex-row items-center' : 'flex-col')}>
+            {!object.isListItem && <Component object={object} type={inputType} onChange={handleOnChange} />}
+        </FormItem>
     )
 }
 

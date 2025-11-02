@@ -6,7 +6,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { useDocumentSearch, useDocumentSelection } from '../../../store';
 import { AddToCollectionAction } from './actions/AddToCollectionAction';
 import { ChangeTypeAction } from './actions/ChangeTypeAction';
-import { DeleteObjectsAction } from './actions/DeleteObjectsAction';
+import { DeleteObjectsAction, DeleteObjectsFromCollectionsAction } from './actions/DeleteObjectsAction';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
 import { RemoveFromCollectionAction } from './actions/RemoveFromCollectionAction';
 import { StartWorkflowAction, StartWorkflowComponent } from './actions/StartWorkflowComponent';
@@ -22,6 +22,7 @@ export class ObjectsActionContext {
         AddToCollectionAction,
         DeleteObjectsAction,
         RemoveFromCollectionAction,
+        DeleteObjectsFromCollectionsAction
     ];
     wfRules: ObjectsActionSpec[] = [];
     callbacks: Record<string, ObjectsActionCallback> = {};
@@ -38,7 +39,7 @@ export class ObjectsActionContext {
             );
         } else {
             return this.allActions.filter(action =>
-                action.id !== 'removeFromCollection'
+                action.id !== 'removeFromCollection' && action.id !== 'deleteFromCollections'
             );
         }
     }
