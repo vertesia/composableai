@@ -91,6 +91,30 @@ export class CollectionsApi extends ApiTopic {
         });
     }
 
+    addChildren(collectionId: string, children: string[]): Promise<{ count: number }> {
+        return this.post(`/${collectionId}/children`, {
+            payload: {
+                action: 'add',
+                children
+            }
+        });
+    }
+
+    deleteChildren(collectionId: string, children: string[]): Promise<{ count: number }> {
+        return this.post(`/${collectionId}/children`, {
+            payload: {
+                action: 'delete',
+                children
+            }
+        });
+    }
+
+    searchChildren(collectionId: string, query: ComplexCollectionSearchQuery = {}): Promise<CollectionItem[]> {
+        return this.post(`/${collectionId}/children/search`, {
+            payload: query
+        });
+    }
+
     delete(id: string) {
         return this.del(`/${id}`);
     }

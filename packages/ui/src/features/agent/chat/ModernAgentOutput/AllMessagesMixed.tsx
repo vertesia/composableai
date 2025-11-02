@@ -1,6 +1,5 @@
 import { AgentMessage, AgentMessageType, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState } from "react";
-import InlineSlidingPlanPanel from "./InlineSlidingPlanPanel";
 import MessageItem from "./MessageItem";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
 import { DONE_STATES, getWorkstreamId } from "./utils";
@@ -25,13 +24,6 @@ export default function AllMessagesMixed({
     bottomRef,
     viewMode = 'stacked',
     isCompleted = false,
-    plan = { plan: [] },
-    workstreamStatus = new Map(),
-    showPlanPanel = false,
-    onTogglePlanPanel = () => { },
-    plans = [],
-    activePlanIndex = 0,
-    onChangePlan = () => { },
 }: AllMessagesMixedProps) {
     const containerRef = React.useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -129,22 +121,10 @@ export default function AllMessagesMixed({
             ref={containerRef}
             className="flex-1 min-h-0 h-full overflow-y-auto py-2 px-4 sm:px-6 lg:px-8 flex flex-col relative"
             data-testid="all-messages-mixed"
-            style={showPlanPanel ? { paddingRight: "350px" } : {}} // Only make space when panel is showing
         >
-            {/* Plan panel - respect showPlanPanel flag */}
-            <InlineSlidingPlanPanel
-                plan={plan}
-                workstreamStatus={workstreamStatus}
-                isOpen={showPlanPanel}
-                onClose={onTogglePlanPanel}
-                plans={plans}
-                activePlanIndex={activePlanIndex}
-                onChangePlan={onChangePlan}
-            />
-
 
             {/* Workstream tabs with completion indicators */}
-            <div className="sticky top-0 bg-white dark:bg-gray-900 z-10">
+            <div className="sticky top-0 z-10">
                 <WorkstreamTabs
                     workstreams={workstreams}
                     activeWorkstream={activeWorkstream}
@@ -156,7 +136,7 @@ export default function AllMessagesMixed({
 
             {displayMessages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-center py-8">
-                    <div className="flex items-center px-4 py-3 text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center px-4 py-3 text-muted">
                         {activeWorkstream === "all"
                             ? "Waiting for agent response..."
                             : "No messages in this workstream yet..."}
