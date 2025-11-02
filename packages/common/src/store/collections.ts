@@ -31,9 +31,10 @@ export interface CollectionItem extends BaseObject {
     // A ref to the object type
     type?: ContentObjectTypeRef;
     /**
-     * The parent collection if any
+     * The parent collections if any.
+     * A collection can have multiple parents.
      */
-    parent?: string | null;
+    parents?: string[] | null;
     /**
      * The table layout to use for the collection.
      * The layout defined in the type could serve as a fallback if not defined here.
@@ -63,6 +64,7 @@ export interface DynamicCollection extends Collection {
 }
 
 export interface CollectionSearchPayload {
+    parent?: string | null;
     dynamic?: boolean;
     status?: CollectionStatus;
     limit?: number;
