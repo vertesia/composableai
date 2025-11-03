@@ -47,6 +47,11 @@
             "require": "./lib/cjs/nodejs/index.js"
         }
     },
+    "repository": {
+        "type" : "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/client"
+    },
     "typesVersions": {
         "*": {
             "node": [
