@@ -85,8 +85,14 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
         });
     }
 
-    const onCollectionChange = (collectionId: string | undefined) => {
-        setSelectedCollectionId(collectionId);
+    const onCollectionChange = (collectionId: string | string[] | undefined, _collection?: any) => {
+        if (typeof collectionId === "string" || typeof collectionId === "undefined") {
+            setSelectedCollectionId(collectionId);
+        } else if (Array.isArray(collectionId) && collectionId.length > 0) {
+            setSelectedCollectionId(collectionId[0]);
+        } else {
+            setSelectedCollectionId(undefined);
+        }
     };
 
     const tabs = [
