@@ -42,22 +42,49 @@ export interface InteractionExecutionError {
  */
 export interface CatalogInteractionRef {
     /**
+     * The type of interaction
+     */
+    type: "sys" | "app" | "stored" | "draft";
+
+    /**
      * the interaction id that can be used to execute the interaction.
      */
     id: string;
+
+    /**
+     * The interaction name which identify the interaction in the provider interaction list.
+     * For the stored interactions this is the same as the endpoint property.
+     * For other types of interactions this is the local name of the interaction.
+     */
+    name: string;
+
+    /**
+     * Only applies for stored interactions. The version of the interaction.
+     * Undefined for non stored interactions
+     */
+    version?: number;
+
+    /**
+     * Only applies for stored interactions. Whether the interaction is published or not.
+     */
+    published?: boolean;
+
     /**
      * The tags associated with the interaction.
      */
     tags: string[];
+
     /**
      * The name of the interaction. For display purposes only.
      */
     title: string;
+
     /**
      * Optional description of the interaction.
      */
     description?: string;
 }
+
 export interface InCodePrompt {
     role: PromptRole,
     content: string,
@@ -75,6 +102,11 @@ export interface InCodePrompt {
 }
 export interface InCodeInteraction {
     /**
+     * The interaction type.
+     */
+    type: "sys" | "app" | "stored" | "draft";
+
+    /**
      * The id of the interaction. Required.
      * The id is a unique identifier for the interaction.
      * It is recommended to use a URL safe string and not include spaces. 
@@ -89,6 +121,17 @@ export interface InCodeInteraction {
      * The endpoints must satisfy the following regexp: /^[a-zA-Z0-9-_]+$/. No whitespaces or special characters are allowed.
      */
     name: string;
+
+    /**
+     * Only applies for stored interactions. The version of the interaction.
+     * Undefined for non stored interactions
+     */
+    version?: number;
+
+    /**
+     * Only applies for stored interactions. Whether the interaction is published or not.
+     */
+    published?: boolean;
 
     /**
      * A title for the interaction. If not provided, the endpoint will be used.
@@ -162,7 +205,7 @@ export interface InCodeInteraction {
         model?: string;
     }
 }
-export interface InteractionSpec extends Omit<InCodeInteraction, 'id' | 'runtime'> {
+export interface InteractionSpec extends Omit<InCodeInteraction, 'id' | 'runtime' | 'type' | 'published' | 'version'> {
 }
 // ---------------------------------------------------------
 

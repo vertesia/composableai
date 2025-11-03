@@ -1,7 +1,8 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     CatalogInteractionRef,
-    InCodeInteraction
+    InCodeInteraction,
+    InteractionStatus
 } from "@vertesia/common";
 
 
@@ -12,9 +13,8 @@ export class InteractionCatalogApi extends ApiTopic {
 
     /**
      * List all project interactions
-     * @param latestPublished Whether to fetch the latest published version or the draft version. Defaults to false (draft).
      */
-    list(query: { latestPublished?: boolean, tag?: string } = {}): Promise<CatalogInteractionRef[]> {
+    list(query: { status?: InteractionStatus, tag?: string } = {}): Promise<CatalogInteractionRef[]> {
         return this.get("/", {
             query
         });
@@ -22,9 +22,8 @@ export class InteractionCatalogApi extends ApiTopic {
 
     /**
      * List all stored interactions
-     * @param latestPublished Whether to fetch the latest published version or the draft version. Defaults to false (draft).
      */
-    listStoredInteractions(query: { latestPublished?: boolean, tag?: string } = {}): Promise<CatalogInteractionRef[]> {
+    listStoredInteractions(query: { status?: InteractionStatus, tag?: string } = {}): Promise<CatalogInteractionRef[]> {
         return this.get("/stored", {
             query
         });
