@@ -71,7 +71,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
         params.delete('filters');
       }
 
-      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
       window.history.replaceState({}, '', newUrl);
     } catch (error) {
       console.error("Failed to update URL with filters:", error);
