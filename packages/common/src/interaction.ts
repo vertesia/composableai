@@ -62,7 +62,7 @@ export interface CatalogInteractionRef {
      * Only applies for stored interactions. The version of the interaction.
      * Undefined for non stored interactions
      */
-    version?: string;
+    version?: number;
 
     /**
      * Only applies for stored interactions. Whether the interaction is published or not.
@@ -126,7 +126,7 @@ export interface InCodeInteraction {
      * Only applies for stored interactions. The version of the interaction.
      * Undefined for non stored interactions
      */
-    version?: string;
+    version?: number;
 
     /**
      * Only applies for stored interactions. Whether the interaction is published or not.
