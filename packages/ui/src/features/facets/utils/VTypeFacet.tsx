@@ -1,9 +1,10 @@
 import { FacetBucket } from "@vertesia/common";
 import { FilterGroup } from "@vertesia/ui/core";
+import { TypeRegistry } from "@vertesia/ui/session";
 
 interface VTypeFacetProps {
     buckets: FacetBucket[];
-    typeRegistry: any;
+    typeRegistry?: TypeRegistry;
     type?: 'select';
     multiple?: boolean;
 }
@@ -11,6 +12,9 @@ interface VTypeFacetProps {
 export function VTypeFacet({ buckets, typeRegistry, type = 'select', multiple = false }: VTypeFacetProps) {
     // Create a map for quick lookups of type names and counts
     const typeDataMap = new Map();
+    if (!typeRegistry) {
+        console.warn("Type names cannot be resolved");
+    }
     buckets.forEach((bucket) => {
         let name;
         let typeId = bucket._id;
@@ -19,7 +23,7 @@ export function VTypeFacet({ buckets, typeRegistry, type = 'select', multiple = 
             typeId = "Document";
             name = "Document";
         } else {
-            name = typeRegistry.getTypeName(bucket._id);
+            name = typeRegistry?.getTypeName(bucket._id);
             if (!name) {
                 console.warn("Content Object Type not found", bucket._id);
                 name = bucket._id;

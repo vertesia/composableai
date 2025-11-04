@@ -332,21 +332,22 @@ export interface ListWorkflowRunsResponse {
 export interface ListWorkflowInteractionsResponse {
     workflow_id: string,
     run_id: string,
-    interaction: WorkflowInteraction
+    interaction: WorkflowInteractionVars
 }
 
-export interface WorkflowInteraction {
+export interface WorkflowInteractionVars {
     type: string,
-    model: string,
-    tools: [],
     interaction: string,
-    environment: string,
-    data: JSONSchema4,
     interactive: boolean,
+    debug_mode?: boolean,
+    data?: Record<string, any>,
+    tool_names: string[],
+    config: {
+        environment: string,
+        model: string
+    },
     interactionParamsSchema?: JSONSchema4
-    debug_mode?: boolean;
     collection_id?: string;
-    config: Record<string, any>;
 }
 
 export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, "config"> {
@@ -467,3 +468,13 @@ export type WebSocketServerMessage =
     | WebSocketAckMessage
     | WebSocketErrorMessage
     | AgentMessage;
+
+/**
+ * Payload for applying actions to a workflow run (e.g., cancel, terminate).
+ */
+export interface WorkflowActionPayload {
+    /**
+     * Optional reason for the action.
+     */
+    reason?: string;
+}
