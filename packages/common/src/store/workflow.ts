@@ -332,21 +332,22 @@ export interface ListWorkflowRunsResponse {
 export interface ListWorkflowInteractionsResponse {
     workflow_id: string,
     run_id: string,
-    interaction: WorkflowInteraction
+    interaction: WorkflowInteractionVars
 }
 
-export interface WorkflowInteraction {
+export interface WorkflowInteractionVars {
     type: string,
-    model: string,
-    tools: [],
     interaction: string,
-    environment: string,
-    data: JSONSchema4,
     interactive: boolean,
+    debug_mode?: boolean,
+    data?: Record<string, any>,
+    tool_names: string[],
+    config: {
+        environment: string,
+        model: string
+    },
     interactionParamsSchema?: JSONSchema4
-    debug_mode?: boolean;
     collection_id?: string;
-    config: Record<string, any>;
 }
 
 export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, "config"> {
@@ -428,6 +429,45 @@ export interface Plan {
 }
 
 export const LOW_PRIORITY_TASK_QUEUE = "low_priority";
+
+/**
+ * WebSocket message types for bidirectional communication
+ */
+export interface WebSocketSignalMessage {
+    type: 'signal';
+    signalName: string;
+    data: any;
+    requestId?: string | number;
+}
+
+export interface WebSocketPingMessage {
+    type: 'ping';
+}
+
+export interface WebSocketPongMessage {
+    type: 'pong';
+}
+
+export interface WebSocketAckMessage {
+    type: 'ack';
+    requestId: string | number;
+}
+
+export interface WebSocketErrorMessage {
+    type: 'error';
+    requestId?: string | number;
+    error: string;
+}
+
+export type WebSocketClientMessage =
+    | WebSocketSignalMessage
+    | WebSocketPingMessage;
+
+export type WebSocketServerMessage =
+    | WebSocketPongMessage
+    | WebSocketAckMessage
+    | WebSocketErrorMessage
+    | AgentMessage;
 
 /**
  * Payload for applying actions to a workflow run (e.g., cancel, terminate).

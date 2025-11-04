@@ -5,8 +5,8 @@ export interface PackageJson {
     version: string;
     description: string;
     type: string;
-    types: string;
-    main: string;
+    types?: string;
+    main?: string;
     files?: string[];
     module?: string;
     license?: string;

@@ -1,6 +1,5 @@
-import { ToolRegistry } from '@vertesia/agent-sdk';
-import { WeatherTool } from "./tools/WeatherTool.js";
+// Export collections for use in other modules or for programmatic access
+export { collections } from "./collections/index.js";
 
-export const registry = new ToolRegistry([
-    WeatherTool
-]);
+// Export server as default for deployment
+export { default } from "./server.js";
