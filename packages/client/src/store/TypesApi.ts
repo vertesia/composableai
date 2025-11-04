@@ -17,7 +17,7 @@ export class TypesApi extends ApiTopic {
      * @returns
      */
     list(payload: ObjectTypeSearchPayload = {}, options?: { layout?: boolean, schema?: boolean }): Promise<ContentObjectTypeItem[]> {
-        const limit = payload.limit || 100;
+        const limit = payload.limit || 2000;
         const offset = payload.offset || 0;
         const query = payload.query || {} as ObjectTypeSearchQuery;
 
