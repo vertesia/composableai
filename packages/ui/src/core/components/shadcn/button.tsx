@@ -108,7 +108,8 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
 
     const [isCopied, setIsCopied] = useState(false);
 
-    const handleCopy = () => {
+    const handleCopy = (e: React.MouseEvent) => {
+      e.stopPropagation();
       navigator.clipboard.writeText(content).then(() => {
         setIsCopied(true)
         setTimeout(() => setIsCopied(false), 2000)

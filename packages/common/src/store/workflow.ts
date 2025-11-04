@@ -1,5 +1,5 @@
 import { JSONSchema4 } from "json-schema";
-import { InteractionRef } from "../interaction.js";
+import { ConversationVisibility, InteractionRef } from "../interaction.js";
 
 export enum ContentEventName {
     create = "create",
@@ -301,6 +301,12 @@ export interface WorkflowRun {
      * An interaction is used to start the agent, the data is stored on temporal "vars"
      */
     interactions?: InteractionRef[];
+    /**
+     * The visibility of the workflow run.
+     * - 'private': Only visible to the user who initiated the workflow
+     * - 'project': Visible to all users in the project
+     */
+    visibility?: ConversationVisibility;
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
@@ -326,19 +332,21 @@ export interface ListWorkflowRunsResponse {
 export interface ListWorkflowInteractionsResponse {
     workflow_id: string,
     run_id: string,
-    interaction: WorkflowInteraction
+    interaction: WorkflowInteractionVars
 }
 
-export interface WorkflowInteraction {
+export interface WorkflowInteractionVars {
     type: string,
-    model: string,
-    tools: [],
     interaction: string,
-    environment: string,
-    prompt_data: JSONSchema4,
     interactive: boolean,
+    debug_mode?: boolean,
+    data?: Record<string, any>,
+    tool_names: string[],
+    config: {
+        environment: string,
+        model: string
+    },
     interactionParamsSchema?: JSONSchema4
-    debug_mode?: boolean;
     collection_id?: string;
 }
 
@@ -460,3 +468,13 @@ export type WebSocketServerMessage =
     | WebSocketAckMessage
     | WebSocketErrorMessage
     | AgentMessage;
+
+/**
+ * Payload for applying actions to a workflow run (e.g., cancel, terminate).
+ */
+export interface WorkflowActionPayload {
+    /**
+     * Optional reason for the action.
+     */
+    reason?: string;
+}

@@ -1,16 +1,12 @@
 
 import { Plus, Trash2 } from "lucide-react";
-import { Button } from "@vertesia/ui/core";
+import { Button, FormItem } from "@vertesia/ui/core";
 import clsx from "clsx";
 import type { JSONSchemaObject } from "@vertesia/common";
 import { ComponentType, ReactNode, SyntheticEvent, useState } from "react";
-import { FormContextProvider, InputComponentProps, useForm } from "./FormContext.js";
+import { FormContext, FormContextProvider, InputComponentProps, useForm } from "./FormContext.js";
 import { ManagedListProperty, ManagedObject, ManagedObjectBase, ManagedProperty, Node } from "./ManagedObject.js";
-import { FormLabel, FormHelper } from "./fields.js";
 import { Input } from "./inputs.js";
-
-
-
 
 interface FormProps {
     object: ManagedObject;
@@ -18,8 +14,9 @@ interface FormProps {
     children?: ReactNode | ReactNode[];
     onSubmit?: (data: JSONSchemaObject) => void;
     onChange?: (prop: Node) => void;
+    disabled?: boolean;
 }
-export function Form({ object, components, onSubmit, children, onChange }: FormProps) {
+export function Form({ object, components, onSubmit, children, onChange, disabled }: FormProps) {
     const _onSubmit = (evt: SyntheticEvent) => {
         evt.stopPropagation();
         evt.preventDefault();
@@ -27,10 +24,7 @@ export function Form({ object, components, onSubmit, children, onChange }: FormP
     }
     object.observer = onChange;
     return (
-        <FormContextProvider value={{
-            object,
-            components: components || {}
-        }}>
+        <FormContextProvider value={new FormContext(object, components || {}, disabled ?? false)}>
             <form className="w-full" onSubmit={_onSubmit}>
                 {children}
             </form>
@@ -57,24 +51,6 @@ export function GeneratedForm({ children, ...props }: FormProps) {
         </Form>
     )
 }
-
-
-// interface FieldSetProps {
-//     name: string;
-//     children?: ReactNode | ReactNode[];
-// }
-// export function FieldSet({ name, children }: FieldSetProps) {
-//     const ctx = useForm();
-//     const newCtx = {
-//         ...ctx,
-//         object: ctx.object.getProperty(name) as ManagedObjectProperty
-//     }
-//     return (
-//         <FormContextProvider value={newCtx}>
-//             {children}
-//         </FormContextProvider>
-//     )
-// }
 
 function renderProperty(prop: Node) {
     if (prop.isList) {
@@ -105,7 +81,7 @@ export function ScalarField({ object, editor, inline = false }: ScalarFieldProps
     if (!editor) {
         editor = object.schema.editor;
     }
-    const { components } = useForm();
+    const { components, disabled } = useForm();
     const Component = (editor && components[editor]) || Input;
     const inputType = object.getInputType();
     if (inputType === 'checkbox') {
@@ -113,20 +89,16 @@ export function ScalarField({ object, editor, inline = false }: ScalarFieldProps
     }
 
     const handleOnChange = (event: any) => {
+        if (disabled) return;
         const { value } = event.target;
         object.value = object.schema.isNumber ? parseFloat(value) : value
     }
 
     return (
-        <div className="">
-            <div className={clsx('flex gap-2', inline ? 'flex-row items-center' : 'flex-col')}>
-                {!object.isListItem && <FormLabel required={object.schema.isRequired}>{object.title}</FormLabel>}
-                <Component object={object} type={inputType} onChange={handleOnChange} />
-            </div>
-            {
-                object.schema.description && <FormHelper>{object.schema.description}</FormHelper>
-            }
-        </div>
+        <FormItem label={object.title} required={object.schema.isRequired} description={object.schema.description}
+            className={clsx('flex', inline ? 'flex-row items-center' : 'flex-col')}>
+            {!object.isListItem && <Component object={object} type={inputType} onChange={handleOnChange} />}
+        </FormItem>
     )
 }
 
@@ -149,13 +121,16 @@ interface ListFieldProps {
 }
 function ListField({ object }: ListFieldProps) {
     const [value, setValue] = useState<any[]>(object.value || []);
+    const { disabled } = useForm();
 
     const addItem = () => {
+        if (disabled) return;
         object.add();
         setValue([...object.value]);
     };
 
     const deleteItem = (index: number) => {
+        if (disabled) return;
         object.remove(index);
         setValue([...object.value]);
     };
@@ -165,11 +140,11 @@ function ListField({ object }: ListFieldProps) {
             {!object.isListItem && <div className='text-gray-900 dark:text-gray-200 font-semibold'>{object.title}</div>}
             {
                 object.items.map((item, index) => {
-                    return <ListItem key={`${index}-${value[index] ?? ''}`} object={item} list={object} onDelete={() => deleteItem(index)} />;
+                    return <ListItem key={`${index}-${value[index] ?? ''}`} object={item} list={object} onDelete={() => deleteItem(index)} disabled={disabled} />;
                 })
             }
             <div>
-                <Button variant='secondary' onClick={addItem}><Plus className="size-6" /> Add</Button>
+                <Button variant='secondary' onClick={addItem} disabled={disabled}><Plus className="size-6" /> Add</Button>
             </div>
         </div>
     )
@@ -179,8 +154,9 @@ interface ListItemProps {
     list: ManagedListProperty;
     object: Node & { index: number };
     onDelete: () => void;
+    disabled?: boolean;
 }
-function ListItem({ list, object, onDelete }: ListItemProps) {
+function ListItem({ list, object, onDelete, disabled }: ListItemProps) {
     return (
         <div className='flex gap-2 w-full'>
             <div className="flex-1">
@@ -188,7 +164,7 @@ function ListItem({ list, object, onDelete }: ListItemProps) {
                     renderItemProperty(object, list.schema.arraySchema.editor)
                 }
             </div>
-            <Button variant='secondary' onClick={onDelete}><Trash2 className='size-4' /></Button>
+            <Button variant='secondary' onClick={onDelete} disabled={disabled}><Trash2 className='size-4' /></Button>
         </div>
     )
 }

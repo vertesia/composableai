@@ -10,13 +10,15 @@ interface ViewProps {
     isLoading: boolean;
     layout?: ColumnLayout[];
     onRowClick?: (object: ContentObjectItem) => void;
+    previewObject?: (objectId: string) => void;
+    selectedObject?: ContentObjectItem | null;
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
     selection: DocumentSelection;
     toggleAll?: (ev: ChangeEvent<HTMLInputElement>) => void;
     columns: DocumentTableColumn[];
 }
 
-export function DocumentTableView({ objects, selection, isLoading, onRowClick, columns, toggleAll, onSelectionChange }: ViewProps) {
+export function DocumentTableView({ objects, selection, isLoading, columns, onRowClick, selectedObject, toggleAll, onSelectionChange }: ViewProps) {
     return (
         <Table className="w-full border-t">
             <thead>
@@ -31,12 +33,12 @@ export function DocumentTableView({ objects, selection, isLoading, onRowClick, c
                 {
                     objects?.map((obj: ContentObjectItem) => {
                         return (
-                            <tr key={obj.id} className='cursor-pointer hover:bg-muted' onClick={() => {
+                            <tr key={obj.id} className={`cursor-pointer hover:bg-muted group ${selectedObject?.id === obj.id ? 'bg-muted' : ''}`} onClick={() => {
                                 onRowClick && onRowClick(obj)
                             }}>
                                 {selection &&
                                     <td onClick={ev => ev.stopPropagation()}>
-                                        <input checked={selection.isSelected(obj.id)} type="checkbox"
+                                        <input checked={selection.isSelected(obj.id)} type="checkbox" className={`${!selection.isSelected(obj.id) ? 'hidden group-hover:block' : ''}`}
                                             onChange={(ev: ChangeEvent<HTMLInputElement>) => onSelectionChange(obj, ev)} />
                                     </td>
                                 }
@@ -51,13 +53,13 @@ export function DocumentTableView({ objects, selection, isLoading, onRowClick, c
     )
 }
 
-export function DocumentGridView({ objects, selection, isLoading, onSelectionChange, onRowClick }: ViewProps) {
+export function DocumentGridView({ objects, selection, isLoading, onSelectionChange, onRowClick, previewObject, selectedObject }: ViewProps) {
     return (
         <>
             <DocumentIconSkeleton isLoading={isLoading} />
             <div className="w-full gap-2 grid lg:grid-cols-6">
                 {objects.map((document) => (
-                    <DocumentIcon key={document.id} document={document} selection={selection} onSelectionChange={onSelectionChange} onRowClick={onRowClick} />
+                    <DocumentIcon key={document.id} document={document} selection={selection} onSelectionChange={onSelectionChange} onRowClick={onRowClick} previewObject={previewObject} selectedObject={selectedObject} />
                 ))}
             </div>
         </>

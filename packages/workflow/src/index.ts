@@ -25,6 +25,7 @@ export * from "./activities/notifyWebhook.js";
 export * from "./activities/rateLimiter.js";
 export * from "./activities/setDocumentStatus.js";
 export * from "./iterative-generation/activities/index.js";
+export * from "./activities/media/prepareVideo.js";
 
 export * from "./dsl/setup/ActivityContext.js";
 export * from "./errors.js";

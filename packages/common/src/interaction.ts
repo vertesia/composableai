@@ -34,13 +34,78 @@ export interface InteractionExecutionError {
 
 
 // ------------------ in code interactions -----------------
+/**
+ * Reference to an interaction in the catalog.
+ * Used in catalog listing. The id is composed of the namespace and the interaction name.
+ * Stored interactions can use `oid:` prefix.
+ * If no prefix is used it fallback on `oid:`.
+ */
+export interface CatalogInteractionRef {
+    /**
+     * The type of interaction
+     */
+    type: "sys" | "app" | "stored" | "draft";
+
+    /**
+     * the interaction id that can be used to execute the interaction.
+     */
+    id: string;
+
+    /**
+     * The interaction name which identify the interaction in the provider interaction list.
+     * For the stored interactions this is the same as the endpoint property.
+     * For other types of interactions this is the local name of the interaction.
+     */
+    name: string;
+
+    /**
+     * Only applies for stored interactions. The version of the interaction.
+     * Undefined for non stored interactions
+     */
+    version?: number;
+
+    /**
+     * Only applies for stored interactions. Whether the interaction is published or not.
+     */
+    published?: boolean;
+
+    /**
+     * The tags associated with the interaction.
+     */
+    tags: string[];
+
+    /**
+     * The name of the interaction. For display purposes only.
+     */
+    title: string;
+
+    /**
+     * Optional description of the interaction.
+     */
+    description?: string;
+}
+
 export interface InCodePrompt {
     role: PromptRole,
     content: string,
     content_type: TemplateType;
     schema?: JSONSchema;
+    /**
+     * optional name of the prompt segment. Use kebab case for prompt names
+     */
+    name?: string;
+    /**
+     * optional reference to an external resource if any.
+     * Used internally by the system to synchronize stored prompts with in-code prompts.
+     */
+    externalId?: string;
 }
 export interface InCodeInteraction {
+    /**
+     * The interaction type.
+     */
+    type: "sys" | "app" | "stored" | "draft";
+
     /**
      * The id of the interaction. Required.
      * The id is a unique identifier for the interaction.
@@ -58,6 +123,17 @@ export interface InCodeInteraction {
     name: string;
 
     /**
+     * Only applies for stored interactions. The version of the interaction.
+     * Undefined for non stored interactions
+     */
+    version?: number;
+
+    /**
+     * Only applies for stored interactions. Whether the interaction is published or not.
+     */
+    published?: boolean;
+
+    /**
      * A title for the interaction. If not provided, the endpoint will be used.
      */
     title?: string;
@@ -70,7 +146,7 @@ export interface InCodeInteraction {
     /**
      * The JSON schema to be used for the result if any.
      */
-    result_schema?: JSONSchema;
+    result_schema?: JSONSchema | SchemaRef;
 
     /**
      * The modality of the interaction output. 
@@ -100,8 +176,36 @@ export interface InCodeInteraction {
      */
     prompts: InCodePrompt[]
 
+    /**
+     * Optional reference to an external resource if any.
+     * Used internally by the system to synchronize stored interactions with in-code interactions. 
+     */
+    externalId?: string;
+
+    /**
+     * Runtime configuration (system use only)
+     *
+     * This field is populated by the system when converting stored interactions
+     * and contains runtime-specific defaults like target model/environment IDs.
+     *
+     * DO NOT set this field manually when writing interaction definitions.
+     * These values are environment-specific and not portable.
+     *
+     * @internal
+     */
+    runtime?: {
+        /**
+         * Default target environment for the interaction execution         
+         */
+        environment?: string;
+
+        /**
+         * Default (recommended) target model for the interaction execution
+         */
+        model?: string;
+    }
 }
-export interface InteractionSpec extends Omit<InCodeInteraction, 'id'> {
+export interface InteractionSpec extends Omit<InCodeInteraction, 'id' | 'runtime' | 'type' | 'published' | 'version'> {
 }
 // ---------------------------------------------------------
 
@@ -305,6 +409,7 @@ export interface InteractionCreatePayload
         | "endpoint"
     > {
     visibility?: InteractionVisibility;
+    tags?: string[];
 }
 
 export interface InteractionUpdatePayload
@@ -659,8 +764,15 @@ export interface GenerateTestDataPayload {
     config: InteractionExecutionConfiguration;
 }
 
-export interface ImprovePromptPayload {
+export interface ImprovePromptPayloadConfig {
     config: InteractionExecutionConfiguration;
+}
+
+export interface ImprovePromptPayload extends ImprovePromptPayloadConfig {
+    interaction_name: string; // name of the interaction to improve
+    context?: string,
+    prompt: { name: string, content: string }[]; // prompt array
+    result_schema?: JSONSchema, // optional interactionr result schema
 }
 
 export interface RateLimitRequestPayload {

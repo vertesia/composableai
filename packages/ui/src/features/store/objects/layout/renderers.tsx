@@ -1,13 +1,14 @@
-import { NavLink } from "@vertesia/ui/router";
 import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
 import RelativeTime from "dayjs/plugin/relativeTime";
 import { shortId } from "../../../utils";
+import { Eye } from "lucide-react";
+import { Button } from "@vertesia/ui/core";
 dayjs.extend(RelativeTime);
 dayjs.extend(LocalizedFormat);
 
-const renderers: Record<string, (params?: URLSearchParams) => (value: any, index: number) => React.ReactNode> = {
-    string(params?: URLSearchParams) {
+const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string) => void) => (value: any, index: number) => React.ReactNode> = {
+    string(params?: URLSearchParams, _onClick?: (id: string) => void) {
         let transforms: ((value: string) => string)[] = [];
         if (params) {
             const slice = params.get("slice");
@@ -48,7 +49,7 @@ const renderers: Record<string, (params?: URLSearchParams) => (value: any, index
         };
     },
 
-    fileSize(_params?: URLSearchParams) {
+    fileSize(_params?: URLSearchParams, _onClick?: (id: string) => void) {
         return (value: any, index: number) => {
             let fileSize = "";
             if (value) {
@@ -69,7 +70,7 @@ const renderers: Record<string, (params?: URLSearchParams) => (value: any, index
         };
     },
 
-    number(params?: URLSearchParams) {
+    number(params?: URLSearchParams, _onClick?: (id: string) => void) {
         let currency: string | undefined;
         let decimals: string | undefined;
         if (params) {
@@ -88,34 +89,54 @@ const renderers: Record<string, (params?: URLSearchParams) => (value: any, index
             return <td key={index}>{v}</td>;
         };
     },
-    // value must be the object itself
-    objectLink(params?: URLSearchParams) {
-        let title = "title";
-        //let underline = "hover";
+    objectId(params?: URLSearchParams, onClick?: (id: string) => void) {
+        let transforms: ((value: string) => string)[] = [];
+        let hasSlice = false;
         if (params) {
-            title = params.get("title") || "title";
-            //underline = params.get("underline") || "hover";
+            const slice = params.get("slice");
+            if (slice) {
+                hasSlice = true;
+                transforms.push((value) => value.slice(parseInt(slice)));
+            }
         }
         return (value: any, index: number) => {
+            const displayValue = transforms.reduce((v, t) => t(v), value.id);
             return (
-                <td key={index}>
-                    <NavLink
-                        topLevelNav
-                        className="underline text-indigo-800 dark:text-indigo-300"
-                        href={`/store/objects/${value.id}`}
+                <td key={index} className="flex justify-between items-center gap-2">
+                    {hasSlice ? '~' : ''}{displayValue}
+                    <Button
+                        variant="ghost"
+                        alt="Preview Object"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClick?.(value.id);
+                        }}
                     >
-                        {value.properties?.[title] || value.name || shortId(value.id)}
-                    </NavLink>
+                        <Eye className="size-4" />
+                    </Button>
                 </td>
             );
         };
     },
-    typeLink(_params?: URLSearchParams) {
+    objectName(params?: URLSearchParams, _onClick?: (id: string) => void) {
+        let title = "title";
+        if (params) {
+            title = params.get("title") || "title";
+        }
+        return (value: any, index: number) => {
+            return (
+                <td key={index}>
+                    {value.properties?.[title] || value.name || shortId(value.id)}
+                </td>
+            );
+        };
+    },
+    typeLink(_params?: URLSearchParams, _onClick?: (id: string) => void) {
         return (value: any, index: number) => {
             return <td key={index}>{value?.name || "n/a"}</td>;
         };
     },
-    date(params?: URLSearchParams) {
+    date(params?: URLSearchParams, _onClick?: (id: string) => void) {
         let method = "format";
         let arg: string | undefined = "LLL";
         if (params) {

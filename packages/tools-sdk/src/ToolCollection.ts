@@ -2,29 +2,10 @@ import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { authorize } from "./auth.js";
 import { ToolRegistry } from "./ToolRegistry.js";
-import type { Tool, ToolDefinition, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
+import type { CollectionProperties, ICollection, Tool, ToolDefinition, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
+import { kebabCaseToTitle } from "./utils.js";
 
-export interface ToolCollectionProperties {
-    /**
-     * A kebab case collection name. Must only contains alphanumeric and dash characters,
-     * The name can be used to generate the path where the collection is exposed.
-     * Example: my-collection
-     */
-    name: string;
-    /**
-     * Optional title for UI display. 
-     * If not provided the pascal case version of the name will be used
-     */
-    title?: string;
-    /**
-     * Optional icon for UI display
-     */
-    icon?: string;
-    /**
-     * A short description 
-     */
-    description: string;
-
+export interface ToolCollectionProperties extends CollectionProperties {
     /**
      * The tools
      */
@@ -34,7 +15,7 @@ export interface ToolCollectionProperties {
 /**
  * Implements a tools collection endpoint
  */
-export class ToolCollection implements Iterable<Tool<any>> {
+export class ToolCollection implements ICollection<Tool<any>> {
 
     /**
      * A kebab case collection name. Must only contains alphanumeric and dash characters,
@@ -54,7 +35,7 @@ export class ToolCollection implements Iterable<Tool<any>> {
     /**
      * A short description 
      */
-    description: string;
+    description?: string;
     /**
      * The tool registry
      */
@@ -126,6 +107,3 @@ async function readPayload(ctx: Context) {
     }
 }
 
-function kebabCaseToTitle(name: string) {
-    return name.split('-').map(p => p[0].toUpperCase() + p.substring(1)).join(' ');
-}
