@@ -468,3 +468,13 @@ export type WebSocketServerMessage =
     | WebSocketAckMessage
     | WebSocketErrorMessage
     | AgentMessage;
+
+/**
+ * Payload for applying actions to a workflow run (e.g., cancel, terminate).
+ */
+export interface WorkflowActionPayload {
+    /**
+     * Optional reason for the action.
+     */
+    reason?: string;
+}

@@ -12,6 +12,7 @@ import {
     ListWorkflowRunsResponse,
     WebSocketClientMessage,
     WebSocketServerMessage,
+    WorkflowActionPayload,
     WorkflowDefinitionRef,
     WorkflowRule,
     WorkflowRuleItem,
@@ -58,11 +59,13 @@ export class WorkflowsApi extends ApiTopic {
     }
 
     terminate(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
-        return this.post(`/runs/${workflowId}/${runId}/actions/terminate`, { payload: { reason } });
+        const payload: WorkflowActionPayload = { reason };
+        return this.post(`/runs/${workflowId}/${runId}/actions/terminate`, { payload });
     }
 
     cancel(workflowId: string, runId: string, reason?: string): Promise<{ message: string }> {
-        return this.post(`/runs/${workflowId}/${runId}/actions/cancel`, { payload: { reason } });
+        const payload: WorkflowActionPayload = { reason };
+        return this.post(`/runs/${workflowId}/${runId}/actions/cancel`, { payload });
     }
 
     execute(
