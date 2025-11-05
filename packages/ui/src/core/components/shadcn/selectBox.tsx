@@ -254,14 +254,14 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                                         {multiple ? (
                                             <div className='w-full flex justify-between items-center cursor-pointer'>
                                                 <div className='w-full truncate text-left'>
-                                                    {optionLabel ? optionLabel(opt) : opt as String}
+                                                    {optionLabel ? optionLabel(opt) : opt as string}
                                                 </div>
                                                 {isSelected && <Check className="size-4" />}
                                             </div>
                                         ) : (
                                             <PopoverClose className='w-full flex justify-between items-center'>
                                                 <div className='w-full truncate text-left'>
-                                                    {optionLabel ? optionLabel(opt) : opt as String}
+                                                    {optionLabel ? optionLabel(opt) : opt as string}
                                                 </div>
                                                 {isSelected && <Check className="size-4" />}
                                             </PopoverClose>

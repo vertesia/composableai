@@ -33,6 +33,7 @@ import { RateLimitParams } from "../activities/rateLimiter.js";
 interface BaseActivityPayload extends WorkflowExecutionPayload {
     workflow_name: string;
     debug_mode?: boolean;
+    report_activity_progress?: boolean;
 }
 
 function dslActivityPayload<ParamsT extends Record<string, any>>(basePayload: BaseActivityPayload, activity: DSLActivitySpec, params: ParamsT) {
@@ -54,6 +55,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
         ...payload,
         workflow_name: definition.name,
         debug_mode: !!definition.debug_mode,
+        report_activity_progress: !!definition.report_activity_progress,
     }
     delete (basePayload as any).workflow;
 
@@ -283,6 +285,29 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
     const importParams = vars.createImportVars(activity.import);
     const executionPayload = dslActivityPayload(basePayload, activity, importParams);
     log.info("Executing activity: " + activity.name, { payload: executionPayload });
+
+    // Send progress update if reporting is enabled
+    if (basePayload.report_activity_progress && activity.name !== 'postUpdateMessage') {
+        const activityLabel = activity.title || activity.name;
+        const message = activity.description
+            ? `${activityLabel}: ${activity.description}`
+            : `Running ${activityLabel}`;
+
+        try {
+            // Try to send progress message if the activity exists
+            if (typeof defaultProxy['postUpdateMessage'] === 'function') {
+                const messagePayload = dslActivityPayload(basePayload, {
+                    name: "postUpdateMessage",
+                } as DSLActivitySpec, {
+                    type: "update",
+                    message,
+                });
+                await defaultProxy['postUpdateMessage'](messagePayload);
+            }
+        } catch (err) {
+            log.warn("Failed to send activity progress message", { error: err, activity: activity.name });
+        }
+    }
 
     let proxy = defaultProxy;
     if (activity.options) {
