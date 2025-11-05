@@ -1,5 +1,5 @@
 import { onAuthStateChanged } from "firebase/auth";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { UserNotFoundError, getComposableToken } from "./auth/composable";
 import { getFirebaseAuth } from "./auth/firebase";
 import { useAuthState } from "./auth/useAuthState";
@@ -7,7 +7,7 @@ import { Env } from "@vertesia/ui/env";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from "./UserSession";
 
 const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app"];
-const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
+const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/?sts=https://sts-staging.vertesia.io";
 
 function shouldRedirectToCentralAuth() {
     // Authentication is not supported in Docker environment.
@@ -27,6 +27,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
     const state = hashParams.get("state");
     const [session, setSession] = useState<UserSession>(new UserSession());
     const { generateState, verifyState, clearState } = useAuthState();
+    const hasInitiatedAuthRef = useRef(false);
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
         const url = new URL(CENTRAL_AUTH_REDIRECT);
@@ -40,6 +41,13 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
     };
 
     useEffect(() => {
+        // Make this effect idempotent - only run auth flow once
+        if (hasInitiatedAuthRef.current) {
+            console.log("Auth: skipping duplicate auth flow initiation");
+            return;
+        }
+        hasInitiatedAuthRef.current = true;
+
         console.log("Auth: starting auth flow");
         Env.logger.info("Starting auth flow");
         const currentUrl = new URL(window.location.href);

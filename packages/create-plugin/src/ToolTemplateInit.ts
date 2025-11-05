@@ -26,8 +26,11 @@ export class ToolTemplateInit extends TemplateInit {
                 "lib"
             ],
             scripts: {
-                "dev": "vite",
-                "build": "tsc",
+                "dev": "vite --port 5174",
+                "build": "vite build && pnpm exec rollup -c",
+                "test": "vitest",
+                "test:ui": "vitest --ui",
+                "test:coverage": "vitest --coverage",
             }
         };
     }
@@ -35,19 +38,29 @@ export class ToolTemplateInit extends TemplateInit {
     getDevDependencies(): string[] {
         return [
             "@hono/vite-dev-server",
+            "@rollup/plugin-commonjs",
+            "@rollup/plugin-json",
+            "@rollup/plugin-node-resolve",
             "@types/node",
+            "@vitest/coverage-v8",
             "esbuild",
+            "rollup",
+            "rollup-plugin-terser",
             "typescript",
             "vite",
+            "vitest",
         ]
     }
 
     getRuntimeDependencies(): string[] {
         return [
-            "@vertesia/agent-sdk",
+            "@hono/node-server",
             "@vertesia/client",
             "@vertesia/common",
-            "hono"
+            "@vertesia/tools-sdk",
+            "dotenv",
+            "hono",
+            "jose"
         ]
     }
 

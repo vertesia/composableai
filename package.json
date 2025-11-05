@@ -7,14 +7,15 @@
         "release": "pnpm -r publish --access public",
         "build": "pnpm -r build",
         "test": "pnpm -r test",
-        "clean": "rimraf ./node_modules && pnpm -r clean"
+        "clean": "rimraf ./node_modules && pnpm -r clean",
+        "prepublishOnly": "pnpm build"
     },
     "devDependencies": {
         "eslint": "^9.32.0",
         "npm-ws-tools": "^0.3.0",
         "rimraf": "^5.0.5",
         "typescript": "^5.3.3",
-        "vite": "^6.3.5"
+        "vite": "^6.3.6"
     },
     "packageManager": "pnpm@10.8.1",
     "pnpm": {
@@ -29,7 +30,8 @@
             "esbuild@<0.25.0": "^0.25.0",
             "koa@>=2.0.0 <2.16.2": "^2.16.2",
             "undici@>=6.0.0 < 6.21.2": "^6.21.2",
-            "vite": "$vite"
+            "vite": "$vite",
+            "is-generator-function": "1.0.10"
         }
     }
 }
