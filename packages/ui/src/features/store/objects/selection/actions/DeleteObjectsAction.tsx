@@ -28,12 +28,21 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
             return Promise.resolve(false);
         }
 
+        function limitFilesName(names: string, maxLength: number) {
+            if (names.length <= maxLength) return names;
+            const extIndex = names.lastIndexOf('.');
+            const ext = extIndex !== -1 ? names.substring(extIndex) : '';
+            const baseName = extIndex !== -1 ? names.substring(0, extIndex) : names;
+            const limitedBaseName = baseName.substring(0, maxLength - ext.length - 3);
+            return `${limitedBaseName}...${ext}`;
+        }
+
         return Promise.all(objectIds.map(id => client.store.objects.delete(id))).then((res) => {
             const plural = res.length > 1 ? 's' : '';
             toast({
                 status: 'success',
                 title: `${res.length} object${plural} deleted`,
-                description: `Objects ${res.map(d => d.id).join(", ")} have been deleted`,
+                description: `Objects ${(limitFilesName(res.map(d => d.id).join(", "), 100))} have been deleted`,
                 duration: 2000
             });
 
@@ -71,7 +80,7 @@ export const DeleteObjectsAction: ObjectsActionSpec = {
     name: 'Delete',
     description: 'Delete the selected objects',
     confirm: true,
-    confirmationText: 'Are you sure you want to delete the selected objects?',
+    confirmationText: 'Are you sure you want to delete all the selected objects? This action cannot be undone.',
     component: DeleteObjectsActionComponent,
     destructive: true
 }
