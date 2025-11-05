@@ -51,6 +51,11 @@ export interface Collection extends CollectionItem {
     properties: Record<string, any>;
     query?: Record<string, any>;
     security?: Record<string, string[]>; // ACL for collection access
+    /**
+     * List of property names from the collection's properties that should be shared with (injected into) member objects.
+     * These properties will be propagated to all members of this collection and merged as arrays.
+     */
+    shared_properties?: string[];
 }
 
 export interface StaticCollection extends Collection {
