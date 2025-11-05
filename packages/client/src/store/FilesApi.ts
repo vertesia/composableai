@@ -59,12 +59,14 @@ export class FilesApi extends ApiTopic {
         });
     }
 
-    getDownloadUrl(file: string): Promise<GetFileUrlResponse> {
-        return this.post("/download-url", {
-            payload: {
-                file,
-            } satisfies GetFileUrlPayload,
-        });
+    // Strictly typed: provide either simple args or a full payload via a separate method
+    getDownloadUrl(file: string, name?: string, disposition?: "inline" | "attachment"): Promise<GetFileUrlResponse> {
+        const payload: GetFileUrlPayload = { file, name, disposition };
+        return this.post("/download-url", { payload });
+    }
+
+    getDownloadUrlWithOptions(payload: GetFileUrlPayload): Promise<GetFileUrlResponse> {
+        return this.post("/download-url", { payload });
     }
 
     /**
