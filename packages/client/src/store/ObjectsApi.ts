@@ -54,12 +54,14 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    getDownloadUrl(fileUri: string): Promise<{ url: string }> {
+    getDownloadUrl(fileUri: string, name?: string, disposition?: "inline" | "attachment"): Promise<{ url: string }> {
         return this.post("/download-url", {
-            payload: {
-                file: fileUri,
-            } satisfies GetFileUrlPayload,
+            payload: { file: fileUri, name, disposition } satisfies GetFileUrlPayload,
         });
+    }
+
+    getDownloadUrlWithOptions(payload: GetFileUrlPayload): Promise<{ url: string }> {
+        return this.post("/download-url", { payload });
     }
 
     getContentSource(objectId: string): Promise<ContentSource> {

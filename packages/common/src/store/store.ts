@@ -401,6 +401,10 @@ export interface GetUploadUrlPayload {
 
 export interface GetFileUrlPayload {
     file: string;
+    // Optional filename to use in Content-Disposition for downloads
+    name?: string;
+    // Optional disposition for downloads (default: attachment)
+    disposition?: "inline" | "attachment";
 }
 
 export interface GetFileUrlResponse {
