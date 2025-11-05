@@ -97,7 +97,7 @@ export function ScalarField({ object, editor, inline = false }: ScalarFieldProps
     return (
         <FormItem label={object.title} required={object.schema.isRequired} description={object.schema.description}
             className={clsx('flex', inline ? 'flex-row items-center' : 'flex-col')}>
-            {!object.isListItem && <Component object={object} type={inputType} onChange={handleOnChange} />}
+            {!object.isListItem && <Component object={object} type={inputType} onChange={handleOnChange} disabled={disabled} />}
         </FormItem>
     )
 }
