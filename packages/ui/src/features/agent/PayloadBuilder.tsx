@@ -110,6 +110,7 @@ export class PayloadBuilder {
 
 
         this.interactionParamsSchema = context.interactionParamsSchema ?? null;
+        // trigger the setter to update the corresponding interactionParamsSchema
         this.interaction = inter;
 
         this._tool_names = context.tool_names || [];
@@ -133,6 +134,7 @@ export class PayloadBuilder {
     set interaction(interaction: InCodeInteraction | undefined) {
         if (interaction?.id !== this._interaction?.id) {
             this._interaction = interaction;
+            // trigger the setter to update the onChange state
             this.interactionParamsSchema = interaction ? mergeInCodePromptSchemas(interaction.prompts) as JSONSchema4 : undefined;
             // Reset the validator when schema changes
             this._inputValidator = undefined;
