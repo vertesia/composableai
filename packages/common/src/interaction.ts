@@ -75,6 +75,21 @@ export interface CatalogInteractionRef {
     tags: string[];
 
     /**
+     * Whether this interaction is an agent.
+     */
+    is_agent?: boolean;
+
+    /**
+     * Whether this interaction is available as a tool.
+     */
+    is_tool?: boolean;
+
+    /**
+     * Array of default tool names.
+     */
+    tools?: string[];
+
+    /**
      * The name of the interaction. For display purposes only.
      */
     title: string;
@@ -164,6 +179,21 @@ export interface InCodeInteraction {
      * Optional tags for the interaction.
      */
     tags?: string[];
+
+    /**
+     * Whether this interaction is an agent.
+     */
+    is_agent?: boolean;
+
+    /**
+     * Whether this interaction is available as a tool.
+     */
+    is_tool?: boolean;
+
+    /**
+     * Array of default tool names.
+     */
+    tools?: string[];
 
     /**
      * Default options for the model to be used when executing this interaction.
@@ -258,6 +288,9 @@ export interface InteractionEndpoint {
     visibility?: InteractionVisibility;
     version: number;
     tags: string[];
+    is_agent?: boolean;
+    is_tool?: boolean;
+    tools?: string[];
     output_modality?: Modalities;
     result_schema?: JSONSchema;
     params_schema?: JSONSchema;
@@ -273,11 +306,14 @@ export interface InteractionRef {
     visibility?: InteractionVisibility;
     version: number;
     tags: string[];
+    is_agent?: boolean;
+    is_tool?: boolean;
+    tools?: string[];
     prompts?: PromptSegmentDef<PromptTemplateRef>[];
     updated_at: Date;
 }
 export const InteractionRefPopulate =
-    "id name endpoint parent description status version visibility tags updated_at prompts";
+    "id name endpoint parent description status version visibility tags is_agent is_tool tools updated_at prompts";
 
 export const InteractionRefWithSchemaPopulate =
     `${InteractionRefPopulate} result_schema`;
@@ -355,6 +391,9 @@ export interface InteractionData {
     description?: string;
     project: string | ProjectRef;
     tags: string[];
+    is_agent?: boolean;
+    is_tool?: boolean;
+    tools?: string[];
     result_schema?: JSONSchema4 | SchemaRef;
     environment?: string | ExecutionEnvironmentRef;
     model?: string;

@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer } from "@vertesia/ui/widgets";
 import { ContentNature, ContentObject, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME } from "@vertesia/common";
-import { Copy, Download, SquarePen } from "lucide-react";
+import { Copy, Download, SquarePen, AlertTriangle } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
+
+// Maximum text size before cropping (128K characters)
+const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
 
 enum PanelView {
     Text = "text",
@@ -174,6 +177,7 @@ function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObj
 
     const [text, setText] = useState<string | undefined>(object.text);
     const [isLoadingText, setIsLoadingText] = useState<boolean>(false);
+    const [isTextCropped, setIsTextCropped] = useState<boolean>(false);
 
     useEffect(() => {
         if (loadText && !text) {
@@ -181,7 +185,15 @@ function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObj
             store.objects
                 .getObjectText(object.id)
                 .then((res) => {
-                    setText(res.text);
+                    if (res.text.length > MAX_TEXT_DISPLAY_SIZE) {
+                        // Crop the text to 128K characters
+                        const croppedText = res.text.substring(0, MAX_TEXT_DISPLAY_SIZE);
+                        setText(croppedText);
+                        setIsTextCropped(true);
+                    } else {
+                        setText(res.text);
+                        setIsTextCropped(false);
+                    }
                 })
                 .catch((err) => {
                     console.error("Failed to load text", err);
@@ -239,7 +251,7 @@ function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObj
                             <Spinner size="lg" />
                         </div>
                     ) : (
-                        <TextPanel object={object} text={text} />
+                        <TextPanel object={object} text={text} isTextCropped={isTextCropped} />
                     )
                 )
             }
@@ -388,7 +400,7 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
     );
 }
 
-function TextPanel({ object, text }: { object: ContentObject, text: string | undefined }) {
+const TextPanel = memo(({ object, text, isTextCropped }: { object: ContentObject, text: string | undefined, isTextCropped: boolean }) => {
     const content = object.content;
 
     // Check if content type is markdown or plain text
@@ -415,6 +427,14 @@ function TextPanel({ object, text }: { object: ContentObject, text: string | und
     return (
         text ? (
             <>
+                {isTextCropped && (
+                    <div className="px-2 py-2 bg-attention/10 border-l-4 border-attention mx-2 mb-2 rounded">
+                        <div className="flex items-center gap-2 text-attention">
+                            <AlertTriangle className="size-4" />
+                            <span className="text-sm font-semibold">Showing first 128K characters only</span>
+                        </div>
+                    </div>
+                )}
                 <div className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto">
                     {shouldRenderAsMarkdown ? (
                         <div className="vprose prose-sm p-1">
@@ -495,7 +515,7 @@ function TextPanel({ object, text }: { object: ContentObject, text: string | und
                 <div>No content</div>
             </div>
     );
-}
+});
 
 function ImagePanel({ object }: { object: ContentObject }) {
     const { client } = useUserSession();
