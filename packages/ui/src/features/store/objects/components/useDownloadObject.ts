@@ -7,7 +7,12 @@ export function useDownloadDocument(client: VertesiaClient | ZenoClient, toast: 
             client.files
                 .getDownloadUrl(uri)
                 .then((r) => {
-                    window.open(r.url, "_blank");
+                    // Create detached anchor element to trigger download
+                    // Not appended to DOM - will be garbage collected after click
+                    const a = document.createElement('a');
+                    a.href = r.url;
+                    a.download = '';
+                    a.click();
                 })
                 .catch((err) => {
                     toast({
