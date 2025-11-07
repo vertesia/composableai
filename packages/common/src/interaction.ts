@@ -90,6 +90,17 @@ export interface CatalogInteractionRef {
     tool_names?: string[];
 
     /**
+     * On which scope should the searched by applied, by the search_tool.
+     * Only supports collection scope or null for now.
+     */
+    search_scope?: string;
+
+    /**
+     * The collection in which this workflow is executing
+     */
+    collection_id?: string;
+
+    /**
      * The name of the interaction. For display purposes only.
      */
     title: string;
@@ -196,6 +207,17 @@ export interface InCodeInteraction {
     tool_names?: string[];
 
     /**
+     * On which scope should the searched by applied, by the search_tool.
+     * Only supports collection scope or null for now.
+     */
+    search_scope?: string;
+
+    /**
+     * The collection in which this workflow is executing
+     */
+    collection_id?: string;
+
+    /**
      * Default options for the model to be used when executing this interaction.
      * (like temperature etc)
      */
@@ -291,6 +313,8 @@ export interface InteractionEndpoint {
     is_agent?: boolean;
     is_tool?: boolean;
     tool_names?: string[];
+    search_scope?: string;
+    collection_id?: string;
     output_modality?: Modalities;
     result_schema?: JSONSchema;
     params_schema?: JSONSchema;
@@ -394,6 +418,8 @@ export interface InteractionData {
     is_agent?: boolean;
     is_tool?: boolean;
     tool_names?: string[];
+    search_scope?: string;
+    collection_id?: string;
     result_schema?: JSONSchema4 | SchemaRef;
     environment?: string | ExecutionEnvironmentRef;
     model?: string;
