@@ -539,8 +539,9 @@ export interface AgentRunnerOptions {
     search_scope?: string;
 
     /**
-     * The collection in which this workflow is executing.
-     * When set, search_scope is automatically set to 'collection'.
+     * The ID of the collection to restrict agent operations to.
+     * When specified, the agent's search and retrieval operations are limited to documents
+     * within this collection'.
      */
     collection_id?: string;
 }
