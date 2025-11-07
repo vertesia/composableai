@@ -1,5 +1,5 @@
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { ExecutionEnvironmentRef, InCodeInteraction, mergeInCodePromptSchemas, supportsToolUse, WorkflowInteractionVars } from "@vertesia/common";
+import { AgentSearchScope, ExecutionEnvironmentRef, InCodeInteraction, mergeInCodePromptSchemas, supportsToolUse, WorkflowInteractionVars } from "@vertesia/common";
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
@@ -93,7 +93,7 @@ export class PayloadBuilder {
     }
 
     get search_scope() {
-        return this._collection ? "collection" : undefined;
+        return this._collection ? AgentSearchScope.Collection : undefined;
     }
 
     async restoreConversation(context: WorkflowInteractionVars) {

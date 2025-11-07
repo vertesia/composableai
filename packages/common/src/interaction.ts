@@ -510,6 +510,16 @@ interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayloa
 export type ConversationVisibility = 'private' | 'project';
 
 /**
+ * Defines the scope for agent search operations.
+ */
+export enum AgentSearchScope {
+    /**
+     * Search is scoped to a specific collection.
+     */
+    Collection = 'collection'
+}
+
+/**
  * Configuration options for Agent Runner functionality.
  * These options control how interactions are exposed and executed in the Agent Runner.
  */
@@ -536,7 +546,7 @@ export interface AgentRunnerOptions {
      * On which scope should the search be applied by the search_tool.
      * Only supports 'collection' scope or undefined for now.
      */
-    search_scope?: string;
+    search_scope?: AgentSearchScope;
 
     /**
      * The ID of the collection to restrict agent operations to.
@@ -580,7 +590,7 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * On which scope should the searched by applied, by the search_tool.
      * Only supports collection scope or null for now.
      */
-    search_scope?: string;
+    search_scope?: AgentSearchScope.Collection;
 
     /**
      * The collection in which this workflow is executing
