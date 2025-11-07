@@ -87,7 +87,7 @@ export interface CatalogInteractionRef {
     /**
      * Array of default tool names.
      */
-    tools?: string[];
+    tool_names?: string[];
 
     /**
      * The name of the interaction. For display purposes only.
@@ -193,7 +193,7 @@ export interface InCodeInteraction {
     /**
      * Array of default tool names.
      */
-    tools?: string[];
+    tool_names?: string[];
 
     /**
      * Default options for the model to be used when executing this interaction.
@@ -290,7 +290,7 @@ export interface InteractionEndpoint {
     tags: string[];
     is_agent?: boolean;
     is_tool?: boolean;
-    tools?: string[];
+    tool_names?: string[];
     output_modality?: Modalities;
     result_schema?: JSONSchema;
     params_schema?: JSONSchema;
@@ -308,12 +308,12 @@ export interface InteractionRef {
     tags: string[];
     is_agent?: boolean;
     is_tool?: boolean;
-    tools?: string[];
+    tool_names?: string[];
     prompts?: PromptSegmentDef<PromptTemplateRef>[];
     updated_at: Date;
 }
 export const InteractionRefPopulate =
-    "id name endpoint parent description status version visibility tags is_agent is_tool tools updated_at prompts";
+    "id name endpoint parent description status version visibility tags is_agent is_tool tool_names updated_at prompts";
 
 export const InteractionRefWithSchemaPopulate =
     `${InteractionRefPopulate} result_schema`;
@@ -393,7 +393,7 @@ export interface InteractionData {
     tags: string[];
     is_agent?: boolean;
     is_tool?: boolean;
-    tools?: string[];
+    tool_names?: string[];
     result_schema?: JSONSchema4 | SchemaRef;
     environment?: string | ExecutionEnvironmentRef;
     model?: string;
