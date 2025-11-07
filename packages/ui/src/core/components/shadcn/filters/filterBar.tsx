@@ -72,7 +72,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
       }
 
       const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
-      window.history.replaceState({}, '', newUrl);
+      window.history.replaceState(window.history.state || {}, '', newUrl);
     } catch (error) {
       console.error("Failed to update URL with filters:", error);
     }

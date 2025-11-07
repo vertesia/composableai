@@ -20,7 +20,7 @@ export function Nav({ children, onClick }: NavProps) {
         if (link && link.href) {
             ev.stopPropagation();
             ev.preventDefault();
-            navigate(link.href);
+            navigate(link.href, { replace: true });
             onClick?.(ev);
         }
     }
