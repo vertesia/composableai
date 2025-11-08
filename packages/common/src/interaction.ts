@@ -530,7 +530,7 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * On which scope should the searched by applied, by the search_tool.
      * Only supports collection scope or null for now.
      */
-    search_scope?: string;
+    search_scope?: "collection" | null;
 
     /**
      * The collection in which this workflow is executing
