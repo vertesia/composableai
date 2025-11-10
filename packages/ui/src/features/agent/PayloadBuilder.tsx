@@ -99,7 +99,19 @@ export class PayloadBuilder {
     async restoreConversation(context: WorkflowInteractionVars) {
         //TODO (context as any).model and (context as any).environment are there to support assistant format
         // we must align assiustant with studio and remove the 2  || (context as any)
-        const inter = await this.vertesia.interactions.catalog.resolve(context.interaction);
+        
+        // Handle version-specific interaction resolution
+        let interactionRef = context.interaction;
+        if (context.version) {
+            const objectIdRegex = /^[a-fA-F0-9]{24}$/;
+            if (!objectIdRegex.test(interactionRef)) {
+                // regex to check if interactionRef is an object id (24 hex characters), only append version if not an object id
+                interactionRef = `${interactionRef}@${context.version}`;
+            }
+        }
+        
+        const inter = await this.vertesia.interactions.catalog.resolve(interactionRef);
+        console.log("restoreConversation - context:", context, "resolved interaction:", inter);
         const envId = inter.runtime?.environment || context.config?.environment || (context as any).environment;
         const model = context.config?.environment || (context as any).model;
         const env = await (envId ?
