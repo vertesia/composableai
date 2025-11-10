@@ -4,6 +4,7 @@ import { ReactElement, ReactNode } from 'react';
 import { ChevronRight, Info } from 'lucide-react';
 import { VTooltip, Breadcrumbs } from '@vertesia/ui/core';
 import { capitalize } from 'lodash-es';
+import { useNavigate } from '@vertesia/ui/router';
 
 interface GenericPageNavHeaderProps {
     title: string | ReactElement;
@@ -39,7 +40,8 @@ export function GenericPageNavHeader({ className, children, title, description, 
 
     // Build breadcrumb items from history chain and current breadcrumbs
     const buildBreadcrumbItems = (): Array<{ label: string, href?: string, onClick?: () => void }> => {
-        const items: Array<{ label: string, href?: string, onClick?: () => void }> = [];
+        const items: Array<{ label: string, href?: string, onClick?: () => void, clearHistory?: boolean }> = [];
+        const navigate = useNavigate();
 
         // Add items from history chain
         if (useDynamicBreadcrumbs && typeof window !== 'undefined' && window.history.state?.historyChain) {
@@ -61,7 +63,12 @@ export function GenericPageNavHeader({ className, children, title, description, 
                 const label = typeof breadcrumb?.props?.children === 'string'
                     ? breadcrumb.props.children
                     : 'Page';
-                items.push({
+
+                items.push(( breadcrumb?.props?.href ) ? {
+                    href: breadcrumb?.props?.href,
+                    label: label,
+                    onClick: () => navigate(breadcrumb.props.href, { replace: breadcrumb.props.clearBreadcrumbs }),
+                } : {
                     label: label
                 });
             });

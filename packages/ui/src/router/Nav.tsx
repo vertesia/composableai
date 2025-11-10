@@ -40,14 +40,15 @@ interface NavLinkProps {
      * use the root router to navigate
      */
     topLevelNav?: boolean;
+    clearBreadcrumbs?: boolean;
 }
-export function NavLink({ children, href, className, topLevelNav }: NavLinkProps) {
+export function NavLink({ children, href, className, topLevelNav, clearBreadcrumbs = false }: NavLinkProps) {
     const { router } = useRouterContext();
     const _onClick = (ev: SyntheticEvent) => {
         ev.stopPropagation();
         ev.preventDefault();
         const actualRouter = topLevelNav ? router.getTopRouter() : router;
-        actualRouter.navigate(href);
+        actualRouter.navigate(href, { replace: clearBreadcrumbs  });
     }
     return (
         <a href={href} className={className} onClick={_onClick}>{children}</a>
