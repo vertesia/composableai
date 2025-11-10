@@ -6,28 +6,37 @@ import { cn } from "../libs/utils"
 interface BreadcrumbProps {
   label: string
   href?: string
+  onClick?: () => void
 }
 interface BreadcrumbItemProps {
-  children: BreadcrumbProps[]
+  path: BreadcrumbProps[]
   className?: string
   maxItems?: number
   separator?: React.ReactNode
 }
-export function Breadcrumbs({ children, maxItems = 3, className, separator }: BreadcrumbItemProps) {
-  if (children.length <= maxItems) {
+export function Breadcrumbs({ path, maxItems = 3, className, separator }: BreadcrumbItemProps) {
+  const items = path || [];
+
+  const renderBreadcrumbItem = (item: BreadcrumbProps) => {
+    if (item.onClick) {
+      return <BreadcrumbButton onClick={item.onClick} href={item.href}>{item.label}</BreadcrumbButton>;
+    } else if (item.href) {
+      return <BreadcrumbButton href={item.href}>{item.label}</BreadcrumbButton>;
+    } else {
+      return <BreadcrumbPage>{item.label}</BreadcrumbPage>;
+    }
+  };
+
+  if (items.length <= maxItems) {
     return (
       <Breadcrumb className={cn("w-full", className)}>
         <BreadcrumbList>
-          {children.map((item, index) => (
+          {items.map((item, index) => (
             <React.Fragment key={index}>
               <BreadcrumbItem>
-                {item.href ? (
-                  <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
-                ) : (
-                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                )}
+                {renderBreadcrumbItem(item)}
               </BreadcrumbItem>
-              {index < children.length - 1 &&
+              {index < items.length - 1 &&
                 <BreadcrumbSeparator>{separator ?? <ChevronRight />}</BreadcrumbSeparator>
               }
             </React.Fragment>
@@ -37,36 +46,22 @@ export function Breadcrumbs({ children, maxItems = 3, className, separator }: Br
     );
   }
 
-  const firstItem = children[0];
-  const lastItems = children.slice(-(maxItems - 2));
+  const lastThreeItems = items.slice(-(maxItems - 1));
 
   return (
     <Breadcrumb className={cn("w-full", className)}>
       <BreadcrumbList>
         <BreadcrumbItem>
-          {firstItem.href ? (
-            <BreadcrumbLink href={firstItem.href}>{firstItem.label}</BreadcrumbLink>
-          ) : (
-            <BreadcrumbPage>{firstItem.label}</BreadcrumbPage>
-          )}
-        </BreadcrumbItem>
-        <BreadcrumbSeparator>{separator ?? <ChevronRight />}</BreadcrumbSeparator>
-
-        <BreadcrumbItem>
           <BreadcrumbEllipsis />
         </BreadcrumbItem>
         <BreadcrumbSeparator>{separator ?? <ChevronRight />}</BreadcrumbSeparator>
 
-        {lastItems.map((item, index) => (
+        {lastThreeItems.map((item, index) => (
           <React.Fragment key={index}>
             <BreadcrumbItem>
-              {item.href ? (
-                <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
-              ) : (
-                <BreadcrumbPage>{item.label}</BreadcrumbPage>
-              )}
+              {renderBreadcrumbItem(item)}
             </BreadcrumbItem>
-            {index < lastItems.length - 1 && <BreadcrumbSeparator>{separator ?? <ChevronRight />}</BreadcrumbSeparator>
+            {index < lastThreeItems.length - 1 && <BreadcrumbSeparator>{separator ?? <ChevronRight />}</BreadcrumbSeparator>
             }
           </React.Fragment>
         ))}
@@ -104,7 +99,7 @@ const BreadcrumbItem = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <li
     ref={ref}
-    className={cn("inline-flex items-center gap-1.5", className)}
+    className={cn("inline-flex items-center gap-1.5 text-muted", className)}
     {...props}
   />
 ))
@@ -119,12 +114,36 @@ const BreadcrumbLink = React.forwardRef<
   return (
     <a
       ref={ref}
-      className={cn("transition-colors hover:text-foreground", className)}
+      className={cn("transition-colors hover:text-muted", className)}
       {...props}
     />
   )
 })
 BreadcrumbLink.displayName = "BreadcrumbLink"
+
+const BreadcrumbButton = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentPropsWithoutRef<"button"> & {
+    href?: string
+  }
+>(({ className, href, onClick, ...props }, ref) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (onClick) {
+      onClick(e);
+    }
+  };
+
+  return (
+    <button
+      ref={ref}
+      className={cn("transition-colors hover:text-foreground cursor-pointer", className)}
+      onClick={handleClick}
+      {...props}
+    />
+  );
+})
+BreadcrumbButton.displayName = "BreadcrumbButton"
 
 const BreadcrumbPage = React.forwardRef<
   HTMLSpanElement,
