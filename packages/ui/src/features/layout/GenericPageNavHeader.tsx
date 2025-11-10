@@ -18,6 +18,7 @@ interface GenericPageNavHeaderProps {
 }
 
 export function GenericPageNavHeader({ className, children, title, description, actions, breadcrumbs, isCompact = false, useDynamicBreadcrumbs = true }: GenericPageNavHeaderProps) {
+    const navigate = useNavigate();
 
     const buildBreadcrumbLabel = (entry: any): string => {
         const href = entry?.href || '';
@@ -41,7 +42,6 @@ export function GenericPageNavHeader({ className, children, title, description, 
     // Build breadcrumb items from history chain and current breadcrumbs
     const buildBreadcrumbItems = (): Array<{ label: string, href?: string, onClick?: () => void }> => {
         const items: Array<{ label: string, href?: string, onClick?: () => void, clearHistory?: boolean }> = [];
-        const navigate = useNavigate();
 
         // Add items from history chain
         if (useDynamicBreadcrumbs && typeof window !== 'undefined' && window.history.state?.historyChain) {
