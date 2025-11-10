@@ -21,11 +21,7 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
     if (item.onClick) {
       return <BreadcrumbButton onClick={item.onClick} href={item.href}>{item.label}</BreadcrumbButton>;
     } else if (item.href) {
-      // Create onClick handler that doesn't update history
-      const handleClick = () => {
-        // Custom navigation logic here
-      };
-      return <BreadcrumbButton onClick={handleClick} href={item.href}>{item.label}</BreadcrumbButton>;
+      return <BreadcrumbButton href={item.href}>{item.label}</BreadcrumbButton>;
     } else {
       return <BreadcrumbPage>{item.label}</BreadcrumbPage>;
     }
