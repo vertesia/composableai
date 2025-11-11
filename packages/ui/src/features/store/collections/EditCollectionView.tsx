@@ -8,6 +8,7 @@ import { Collection, CreateCollectionPayload } from "@vertesia/common";
 import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject } from "@vertesia/ui/widgets";
 import { Button, ErrorBox, FormItem, Input, Styles, Textarea, useFetch, useToast, Panel } from "@vertesia/ui/core";
 import { SelectContentType, stringifyTableLayout } from "../types";
+import { SharedPropsEditor } from "@vertesia/ui/features/store/collections/SharedPropsEditor";
 
 const extensions = [basicSetup, json()];
 
@@ -211,7 +212,14 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             </Panel>
 
             {typeId && <PropertiesEditor typeId={typeId} collection={collection} />}
-        </div>
+            {
+                !collection.dynamic &&
+                <FormItem label="Shared Properties" description="Add properties to share across all members in the collection. This feature requires to enable shared property synchronization on the project.">
+                    <SharedPropsEditor collection={collection} />
+                </FormItem>
+            }
+
+        </div >
     );
 }
 

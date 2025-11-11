@@ -18,6 +18,7 @@ export interface CreateCollectionPayload {
     table_layout?: ColumnLayout[] | null;
     allowed_types?: string[];
     updated_by?: string,
+    shared_properties?: string[];
 }
 
 export interface CollectionItem extends BaseObject {
