@@ -312,6 +312,10 @@ export interface WorkflowRun {
      * - 'project': Visible to all users in the project
      */
     visibility?: ConversationVisibility;
+    /**
+     * A brief summary of the conversation workflow.
+     */
+    topic?: string;
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
