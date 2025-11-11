@@ -204,7 +204,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 } else {
                     url.searchParams.delete('filters');
                 }
-                window.history.replaceState({}, '', url.toString());
+                window.history.replaceState(window.history.state || {}, '', url.toString());
             }
         } catch (error) {
             console.error("Failed to clean start/end filters from URL:", error);
@@ -310,7 +310,7 @@ function Toolsbar(props: ToolsbarProps) {
                                 <ContentDispositionButton onUpdate={setIsGridView} />
                             </div>
                         </div>
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-2 items-center pt-2">
                             <FilterBar />
                             <FilterClear />
                         </div>
