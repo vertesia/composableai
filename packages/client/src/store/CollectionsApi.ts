@@ -128,7 +128,6 @@ export class CollectionsApi extends ApiTopic {
     updatePermissions(collectionId: string, permissions: Record<string, string[]>): Promise<{
         id: string;
         security: Record<string, string[]>;
-        objectsUpdated: number;
     }> {
         return this.put(`/${collectionId}/permissions`, {
             payload: permissions
@@ -145,7 +144,6 @@ export class CollectionsApi extends ApiTopic {
         id: string;
         message: string;
         security?: Record<string, string[]>;
-        objectsUpdated: number;
     }> {
         return this.post(`/${collectionId}/propagate-permissions`);
     }
