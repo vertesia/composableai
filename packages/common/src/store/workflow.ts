@@ -357,6 +357,11 @@ export interface WorkflowInteractionVars {
     },
     interactionParamsSchema?: JSONSchema4
     collection_id?: string;
+    /**
+     * Optional version of the interaction to use when restoring conversations.
+     * If not specified, the latest version will be used.
+     */
+    version?: number;
 }
 
 export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, "config"> {
