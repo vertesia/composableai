@@ -96,12 +96,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const [isReady, setIsReady] = useState(false);
     const [selectedObject, setSelectedObject] = useState<ContentObjectItem | null>(null);
     const { typeRegistry } = useUserSession();
-    const { search, isLoading, error, objects } = useWatchDocumentSearchResult();
-
-    console.log('[DEBUG] DocumentSearchResults - layout prop:', layout);
-    console.log('[DEBUG] DocumentSearchResults - search.query.type:', search.query.type);
-    console.log('[DEBUG] DocumentSearchResults - typeRegistry exists?', !!typeRegistry);
-
+    const { search, isLoading, error, objects, hasMore } = useWatchDocumentSearchResult();
     const [actualLayout, setActualLayout] = useState<ColumnLayout[]>(
         typeRegistry ? layout || getTableLayout(typeRegistry, search.query.type) : defaultLayout,
     );
@@ -119,6 +114,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     // Trigger initial search when component mounts
     useEffect(() => {
         if (!isReady && objects.length === 0) {
+            setLoaded(0);
             // Manually set loading state to show spinner during initial load
             search._updateRunningState(true);
             search.search().then(() => {
@@ -129,6 +125,12 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             });
         }
     }, []);
+
+    useEffect(() => {
+        if (objects.length < loaded) {
+            setLoaded(objects.length);
+        }
+    }, [objects.length, loaded]);
 
     useIntersectionObserver(loadMoreRef, () => {
         if (isReady && objects.length > 0 && objects.length != loaded) {
@@ -211,7 +213,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 } else {
                     url.searchParams.delete('filters');
                 }
-                window.history.replaceState({}, '', url.toString());
+                window.history.replaceState(window.history.state || {}, '', url.toString());
             }
         } catch (error) {
             console.error("Failed to clean start/end filters from URL:", error);
@@ -257,10 +259,15 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 isGridView={isGridView}
                 collectionId={searchContext.collectionId} // Pass the collection ID from context
             />
-            {
-                isLoading && <div className='flex justify-center'><Spinner size='xl' /></div>
-            }
-            <div ref={loadMoreRef} />
+            {hasMore ? (
+                <div ref={loadMoreRef} className="w-full flex justify-center" >
+                    <Spinner size='xl' />
+                </div>
+            ) : (
+                <div className="text-muted text-center text-sm py-1">
+                    {`All ${objects.length} objects loaded.`}
+                </div>
+            )}
         </div>
     );
 }
@@ -312,7 +319,7 @@ function Toolsbar(props: ToolsbarProps) {
                                 <ContentDispositionButton onUpdate={setIsGridView} />
                             </div>
                         </div>
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-2 items-center pt-2">
                             <FilterBar />
                             <FilterClear />
                         </div>

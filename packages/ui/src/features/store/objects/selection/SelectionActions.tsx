@@ -62,6 +62,8 @@ export function UploadObjectsButton({ collectionId }: { collectionId?: string })
     const selectFile = () => {
         const fileInput = document.createElement("input");
         fileInput.type = "file";
+        fileInput.multiple = true;
+        fileInput.accept = "*";
         fileInput?.click();
         fileInput.onchange = (event) => {
             const files = (event.target as HTMLInputElement).files;

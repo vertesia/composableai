@@ -75,19 +75,9 @@ export interface CatalogInteractionRef {
     tags: string[];
 
     /**
-     * Whether this interaction is an agent.
+     * Agent Runner configuration options.
      */
-    is_agent?: boolean;
-
-    /**
-     * Whether this interaction is available as a tool.
-     */
-    is_tool?: boolean;
-
-    /**
-     * Array of default tool names.
-     */
-    tools?: string[];
+    agent_runner_options?: AgentRunnerOptions;
 
     /**
      * The name of the interaction. For display purposes only.
@@ -181,19 +171,9 @@ export interface InCodeInteraction {
     tags?: string[];
 
     /**
-     * Whether this interaction is an agent.
+     * Agent Runner configuration options.
      */
-    is_agent?: boolean;
-
-    /**
-     * Whether this interaction is available as a tool.
-     */
-    is_tool?: boolean;
-
-    /**
-     * Array of default tool names.
-     */
-    tools?: string[];
+    agent_runner_options?: AgentRunnerOptions;
 
     /**
      * Default options for the model to be used when executing this interaction.
@@ -288,9 +268,7 @@ export interface InteractionEndpoint {
     visibility?: InteractionVisibility;
     version: number;
     tags: string[];
-    is_agent?: boolean;
-    is_tool?: boolean;
-    tools?: string[];
+    agent_runner_options?: AgentRunnerOptions;
     output_modality?: Modalities;
     result_schema?: JSONSchema;
     params_schema?: JSONSchema;
@@ -306,14 +284,12 @@ export interface InteractionRef {
     visibility?: InteractionVisibility;
     version: number;
     tags: string[];
-    is_agent?: boolean;
-    is_tool?: boolean;
-    tools?: string[];
+    agent_runner_options?: AgentRunnerOptions;
     prompts?: PromptSegmentDef<PromptTemplateRef>[];
     updated_at: Date;
 }
 export const InteractionRefPopulate =
-    "id name endpoint parent description status version visibility tags is_agent is_tool tools updated_at prompts";
+    "id name endpoint parent description status version visibility tags agent_runner_options updated_at prompts";
 
 export const InteractionRefWithSchemaPopulate =
     `${InteractionRefPopulate} result_schema`;
@@ -391,9 +367,7 @@ export interface InteractionData {
     description?: string;
     project: string | ProjectRef;
     tags: string[];
-    is_agent?: boolean;
-    is_tool?: boolean;
-    tools?: string[];
+    agent_runner_options?: AgentRunnerOptions;
     result_schema?: JSONSchema4 | SchemaRef;
     environment?: string | ExecutionEnvironmentRef;
     model?: string;
@@ -535,11 +509,58 @@ interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayloa
 
 export type ConversationVisibility = 'private' | 'project';
 
+/**
+ * Defines the scope for agent search operations.
+ */
+export enum AgentSearchScope {
+    /**
+     * Search is scoped to a specific collection.
+     */
+    Collection = 'collection'
+}
+
+/**
+ * Configuration options for Agent Runner functionality.
+ * These options control how interactions are exposed and executed in the Agent Runner.
+ */
+export interface AgentRunnerOptions {
+    /**
+     * Whether this interaction is an agent (executable in Agent Runner).
+     */
+    is_agent?: boolean;
+
+    /**
+     * Whether this interaction is available as a tool (sub-agent).
+     */
+    is_tool?: boolean;
+
+    /**
+     * Array of default tool names available to this agent.
+     * For interactions: defines default tools.
+     * For execution payloads: you can use + and - to add or remove from default,
+     * if no sign, then list replaces default.
+     */
+    tool_names?: string[];
+
+    /**
+     * On which scope should the search be applied by the search_tool.
+     * Only supports 'collection' scope or undefined for now.
+     */
+    search_scope?: AgentSearchScope;
+
+    /**
+     * The ID of the collection to restrict agent operations to.
+     * When specified, the agent's search and retrieval operations are limited to documents
+     * within this collection'.
+     */
+    collection_id?: string;
+}
+
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
     type: "conversation";
 
-    /** 
-    * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project 
+    /**
+    * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project
     * If not specified, the default is project
     **/
     visibility?: ConversationVisibility;
@@ -569,7 +590,7 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * On which scope should the searched by applied, by the search_tool.
      * Only supports collection scope or null for now.
      */
-    search_scope?: string;
+    search_scope?: AgentSearchScope.Collection;
 
     /**
      * The collection in which this workflow is executing
