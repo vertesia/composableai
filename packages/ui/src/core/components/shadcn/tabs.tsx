@@ -106,7 +106,10 @@ const VTabs = ({
     
     // Update the URL hash when tab changes (only if updateHash is true and not controlled by parent)
     if (updateHash && !current) {
-      window.location.hash = newValue;
+      // Preserve existing history state when changing hash
+      const currentState = window.history.state;
+      const newUrl = window.location.pathname + window.location.search + '#' + newValue;
+      window.history.pushState(currentState, '', newUrl);
     }
     
     if (onTabChange) {
@@ -143,7 +146,9 @@ const VTabsBar = ({ className }: { className?: string }) => {
     const tab = tabs.find(t => t.name === tabName);
 
     if (tab?.href && updateHash) {
-      window.history.pushState(null, '', tab.href);
+      // Preserve existing history state when changing tabs
+      const currentState = window.history.state;
+      window.history.pushState(currentState, '', tab.href);
     }
 
     setTab(tabName);
@@ -236,7 +241,9 @@ const TabsTrigger = React.forwardRef<
   const handleClick = React.useCallback((event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     if (href) {
       event.preventDefault();
-      window.history.pushState(null, '', href);
+      // Preserve existing history state when changing tabs
+      const currentState = window.history.state;
+      window.history.pushState(currentState, '', href);
     }
     if (props.onClick) {
       (props.onClick as React.MouseEventHandler<HTMLButtonElement>)(event);

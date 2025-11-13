@@ -314,6 +314,7 @@ export function DocumentUploadModal({
 
         // Process files in batches of 50
         const BATCH_SIZE = 50;
+        const PROGRESS_UPDATE_INTERVAL = 5; // Update progress every 5 files
 
         // Helper function to process a batch of files
         const processBatch = async (files: FileWithMetadata[], action: "create" | "update") => {
@@ -337,7 +338,8 @@ export function DocumentUploadModal({
                     });
                 }
 
-                // Process the batch
+                // Process the batch with progress tracking
+                let filesProcessedInBatch = 0;
                 await Promise.all(
                     batch.map(async (fileInfo) => {
                         try {
@@ -446,16 +448,23 @@ export function DocumentUploadModal({
                             // Mark the overall success as false if any file fails
                             result.success = false;
                         }
+                        
+                        // Update progress every PROGRESS_UPDATE_INTERVAL files
+                        filesProcessedInBatch++;
+                        if (filesProcessedInBatch % PROGRESS_UPDATE_INTERVAL === 0 || filesProcessedInBatch === batch.length) {
+                            setFileStatuses((currentStatuses) => {
+                                const completedFiles = currentStatuses.filter(
+                                    (f) => f.status === "success" || f.status === "error",
+                                ).length;
+                                const totalFiles = currentStatuses.length;
+                                const progress = totalFiles > 0 ? Math.round((completedFiles / totalFiles) * 100) : 0;
+                                setOverallProgress(progress);
+                                return currentStatuses;
+                            });
+                        }
                     }),
                 );
 
-                // Calculate overall progress after each batch completion
-                const completedFiles = fileStatuses.filter(
-                    (f) => f.status === "success" || f.status === "error",
-                ).length;
-                const totalFiles = fileStatuses.length;
-                const progress = Math.round((completedFiles / totalFiles) * 100);
-                setOverallProgress(progress);
             }
         };
 
@@ -906,7 +915,7 @@ export function DocumentUploadModal({
     };
 
     return (
-        <VModal key={modalKey} isOpen={isOpen} onClose={handleClose} className="mx-auto">
+        <VModal key={modalKey} isOpen={isOpen} onClose={handleClose} className="mx-auto" disableCloseOnClickOutside>
             <VModalTitle description={_description}>{_title}</VModalTitle>
             {renderModalContent()}
             {renderModalFooter()}

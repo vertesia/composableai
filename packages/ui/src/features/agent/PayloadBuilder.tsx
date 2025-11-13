@@ -1,5 +1,5 @@
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { ExecutionEnvironmentRef, InCodeInteraction, mergeInCodePromptSchemas, supportsToolUse, WorkflowInteractionVars } from "@vertesia/common";
+import { AgentSearchScope, ExecutionEnvironmentRef, InCodeInteraction, mergeInCodePromptSchemas, supportsToolUse, WorkflowInteractionVars } from "@vertesia/common";
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
@@ -93,15 +93,24 @@ export class PayloadBuilder {
     }
 
     get search_scope() {
-        return this._collection ? "collection" : undefined;
+        return this._collection ? AgentSearchScope.Collection : undefined;
     }
 
     async restoreConversation(context: WorkflowInteractionVars) {
-        //TODO (context as any).model and (context as any).environment are there to support assistant format
-        // we must align assiustant with studio and remove the 2  || (context as any)
-        const inter = await this.vertesia.interactions.catalog.resolve(context.interaction);
-        const envId = inter.runtime?.environment || context.config?.environment || (context as any).environment;
-        const model = context.config?.environment || (context as any).model;
+        
+        // Handle version-specific interaction resolution
+        let interactionRef = context.interaction;
+        if (context.version) {
+            const objectIdRegex = /^[a-fA-F0-9]{24}$/;
+            if (!objectIdRegex.test(interactionRef)) {
+                // regex to check if interactionRef is an object id (24 hex characters), only append version if not an object id
+                interactionRef = `${interactionRef}@${context.version}`;
+            }
+        }
+        
+        const inter = await this.vertesia.interactions.catalog.resolve(interactionRef);
+        const envId = inter.runtime?.environment || context.config?.environment;
+        const model = context.config?.model;
         const env = await (envId ?
             this.vertesia.environments.retrieve(context.config?.environment)
             :

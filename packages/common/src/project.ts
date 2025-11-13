@@ -140,9 +140,11 @@ export const ProjectRefPopulate = "id name account";
 
 export interface EmbeddingsStatusResponse {
     status: string;
-    embeddingRunsInProgress: number;
-    totalRunsInProgress: number;
-    embeddingsModels: string[];
+    embeddingRunsInProgress?: number;
+    totalRunsInProgress?: number;
+    totalIndexableObjects?: number;
+    embeddingsModels?: string[];
+    objectsWithEmbeddings?: number;
     vectorIndex: {
         status: "READY" | "PENDING" | "DELETING" | "ABSENT",
         name?: string,

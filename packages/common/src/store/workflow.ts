@@ -203,6 +203,11 @@ export interface ListWorkflowRunsPayload {
     initiated_by?: string;
 
     /**
+     * The interaction name used to filter conversations.
+     */
+    interaction?: string;
+
+    /**
      * Lucene query string to search for the workflow runs.
      * This is a full text search on the workflow run history.
      */
@@ -307,6 +312,10 @@ export interface WorkflowRun {
      * - 'project': Visible to all users in the project
      */
     visibility?: ConversationVisibility;
+    /**
+     * A brief summary of the conversation workflow.
+     */
+    topic?: string;
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
@@ -348,6 +357,11 @@ export interface WorkflowInteractionVars {
     },
     interactionParamsSchema?: JSONSchema4
     collection_id?: string;
+    /**
+     * Optional version of the interaction to use when restoring conversations.
+     * If not specified, the latest version will be used.
+     */
+    version?: number;
 }
 
 export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, "config"> {
