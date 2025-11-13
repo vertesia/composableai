@@ -145,7 +145,6 @@ export class PayloadBuilder {
     }
     set interaction(interaction: InCodeInteraction | undefined) {
         if (interaction?.id !== this._interaction?.id) {
-            console.log("set interaction:", interaction);
             this._interaction = interaction;
             // trigger the setter to update the onChange state
             this.interactionParamsSchema = interaction ? mergeInCodePromptSchemas(interaction.prompts) as JSONSchema4 : undefined;
