@@ -8,7 +8,7 @@ import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '.
 import { Input } from './input';
 import { Button } from '@vertesia/ui/core';
 
-interface VSelectBoxBaseProps<T> {
+export interface VSelectBoxBaseProps<T> {
     options: T[] | undefined;
     optionLabel?: (option: T) => React.ReactNode;
     onBlur?: () => void;
@@ -24,6 +24,7 @@ interface VSelectBoxBaseProps<T> {
     popupClass?: string;
     isClearable?: boolean;
     border?: boolean;
+    inline?: boolean;
 }
 
 interface VSelectBoxSingleProps<T> extends VSelectBoxBaseProps<T> {
@@ -40,7 +41,7 @@ interface VSelectBoxMultipleProps<T> extends VSelectBoxBaseProps<T> {
 
 type VSelectBoxProps<T> = VSelectBoxSingleProps<T> | VSelectBoxMultipleProps<T>;
 
-export function VSelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by }: Readonly<VSelectBoxProps<T>>) {
+export function VSelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false }: Readonly<VSelectBoxProps<T>>) {
     const triggerRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [width, setWidth] = useState<number>(0);
@@ -170,6 +171,82 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
         );
     };
 
+    // Render the options list content
+    const renderOptionsContent = () => (
+        <>
+            {filterBy && (
+                <div className='flex justify-start items-center mb-1'>
+                    <div className='mx-2'>
+                        <SearchIcon className="size-4" />
+                    </div>
+                    <Input variant='unstyled' value={filterValue} onChange={setFilterValue} className="w-full p-1 rounded-md" placeholder="Search..." />
+                </div>
+            )}
+            <Command className="overflow-hidden">
+                <CommandList className={inline ? "max-h-full overflow-y-auto" : "max-h-[200px] overflow-y-auto"}>
+                    <CommandEmpty>No result found.</CommandEmpty>
+                    <CommandGroup className="overflow-visible">
+                        {filteredOptions?.map((opt, index) => {
+                            const isSelected = multiple
+                                ? isOptionSelected(opt, Array.isArray(value) ? value : [])
+                                : value != null ? isOptionsEqual(value as T, opt) : false;
+
+                            return (
+                                <CommandItem
+                                    key={index}
+                                    onSelect={() => _onClick(opt)}
+                                    className="w-full"
+                                >
+                                    {multiple || inline ? (
+                                        <div className='w-full flex justify-between items-center cursor-pointer'>
+                                            <div className='w-full truncate text-left'>
+                                                {optionLabel ? optionLabel(opt) : opt as String}
+                                            </div>
+                                            {isSelected && <Check className="size-4" />}
+                                        </div>
+                                    ) : (
+                                        <PopoverClose className='w-full flex justify-between items-center'>
+                                            <div className='w-full truncate text-left'>
+                                                {optionLabel ? optionLabel(opt) : opt as String}
+                                            </div>
+                                            {isSelected && <Check className="size-4" />}
+                                        </PopoverClose>
+                                    )}
+                                </CommandItem>
+                            );
+                        })}
+                    </CommandGroup>
+                </CommandList>
+            </Command>
+            {addNew && (
+                <div className='p-1'>
+                    <a
+                        onClick={addNew}
+                        className={clsx(
+                            'gap-x-2 px-2 py-1.5 truncate group flex rounded-md items-center text-sm cursor-pointer hover:bg-accent',
+                        )}
+                    >
+                        <SquarePlus size={16} strokeWidth={1.25} absoluteStrokeWidth />
+                        {addNewLabel}
+                    </a>
+                </div>
+            )}
+        </>
+    );
+
+    if (inline) {
+        return (
+            <div className={clsx(
+                className,
+                border && 'border border-border rounded-md',
+                "bg-popover p-1",
+                popupClass
+            )}>
+                {renderOptionsContent()}
+            </div>
+        );
+    }
+
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -227,66 +304,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                     popupClass
                 )}
             >
-                {filterBy && (
-
-                    <div className='flex justify-start items-center mb-1'>
-                        <div className='mx-2'>
-                            <SearchIcon className="size-4" />
-                        </div>
-                        <Input variant='unstyled' value={filterValue} onChange={setFilterValue} className="w-full p-1 rounded-md" placeholder="Search..." />
-                    </div>
-                )}
-                <Command className="overflow-hidden">
-                    <CommandList className="max-h-[200px] overflow-y-auto">
-                        <CommandEmpty>No result found.</CommandEmpty>
-                        <CommandGroup className="overflow-visible">
-                            {filteredOptions?.map((opt, index) => {
-                                const isSelected = multiple
-                                    ? isOptionSelected(opt, Array.isArray(value) ? value : [])
-                                    : value != null ? isOptionsEqual(value as T, opt) : false;
-
-                                return (
-                                    <CommandItem
-                                        key={index}
-                                        onSelect={() => _onClick(opt)}
-                                        className="w-full"
-                                    >
-                                        {multiple ? (
-                                            <div className='w-full flex justify-between items-center cursor-pointer'>
-                                                <div className='w-full truncate text-left'>
-                                                    {optionLabel ? optionLabel(opt) : opt as String}
-                                                </div>
-                                                {isSelected && <Check className="size-4" />}
-                                            </div>
-                                        ) : (
-                                            <PopoverClose className='w-full flex justify-between items-center'>
-                                                <div className='w-full truncate text-left'>
-                                                    {optionLabel ? optionLabel(opt) : opt as String}
-                                                </div>
-                                                {isSelected && <Check className="size-4" />}
-                                            </PopoverClose>
-                                        )}
-                                    </CommandItem>
-                                );
-                            })}
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-                {
-                    addNew && (
-                        <div className='p-1'>
-                            <a
-                                onClick={addNew}
-                                className={clsx(
-                                    'gap-x-2 px-2 py-1.5 truncate group flex rounded-md items-center text-sm cursor-pointer hover:bg-accent',
-                                )}
-                            >
-                                <SquarePlus size={16} strokeWidth={1.25} absoluteStrokeWidth />
-                                {addNewLabel}
-                            </a>
-                        </div>
-                    )
-                }
+                {renderOptionsContent()}
             </PopoverContent>
         </Popover>
     );
