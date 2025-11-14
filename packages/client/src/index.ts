@@ -7,3 +7,4 @@ export type { ComputeRunFacetsResponse, FilterOption } from './RunsApi.js';
 export type { GroupsQueryOptions } from './GroupsApi.js';
 export * from "./store/index.js";
 export * from "./StreamSource.js";
+export type { OrphanedAppInstallation } from "./AppsApi.js";

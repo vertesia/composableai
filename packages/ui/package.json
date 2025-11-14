@@ -168,5 +168,10 @@
                 "./lib/types/shell/index.d.ts"
             ]
         }
+    },
+    "repository": {
+        "type" : "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/ui"
     }
 }
