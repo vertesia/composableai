@@ -9,7 +9,7 @@ import CommandsApi from "./CommandsApi.js";
 import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
-import ProjectsApi from "./ProjectsApi.js";
+import { ProjectsApi } from "./ProjectsApi.js";
 import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
 import { RunsApi } from "./RunsApi.js";

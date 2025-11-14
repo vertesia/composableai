@@ -1,7 +1,7 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MagicPdfConfiguration, Project, ProjectIntegrationListEntry, ProjectRef, SupportedIntegrations } from "@vertesia/common";
 
-export default class ProjectsApi extends ApiTopic {
+export class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/projects");
     }
