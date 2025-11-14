@@ -32,6 +32,11 @@ export interface CollectionItem extends BaseObject {
     // A ref to the object type
     type?: ContentObjectTypeRef;
     /**
+     * A flag to indicate whether to track and sync member HEAD revisions. 
+     * The default is to sync HEAD revisions for collection members (skip_head_sync: false)
+     */
+    skip_head_sync: boolean;
+    /**
      * The parent collections if any.
      * A collection can have multiple parents.
      */
