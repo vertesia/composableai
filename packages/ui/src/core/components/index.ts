@@ -18,6 +18,7 @@ export * from "./MessageBox.js";
 export * from "./Modal.js";
 export * from "./NumberInput.js";
 export * from "./Overlay.js";
+export * from "./Panel.js";
 export * from "./popup/index.js";
 export * from "./Portal.js";
 export * from "./RadioGroup.js";
@@ -26,12 +27,12 @@ export * from "./SelectList.js";
 export * from "./SelectStack.js";
 export * from "./shadcn/index.js";
 export * from "./SidePanel.js";
-export * from "./Panel.js";
 export * from "./Spinner.js";
 export * from "./styles.js";
 export * from "./Switch.js";
 export * from "./table/index.js";
 export * from "./tabs/index.js";
+export * from "./TagsInput.js";
 export * from "./toast/index.js";
 
 export type HeroIcon = React.ForwardRefExoticComponent<Omit<React.SVGProps<SVGSVGElement>, "ref"> & {
