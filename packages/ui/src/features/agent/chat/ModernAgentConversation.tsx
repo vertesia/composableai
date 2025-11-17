@@ -271,6 +271,7 @@ function ModernAgentConversationInner({
     const toast = useToast();
     const [showInput, setShowInput] = useState(interactive);
     const [workflowStatus, setWorkflowStatus] = useState<string | null>(null);
+    const [isStopping, setIsStopping] = useState(false);
 
     // Helper function to get the current active plan and its workstream status
     const getActivePlan = useMemo(() => {
@@ -518,6 +519,37 @@ function ModernAgentConversationInner({
             });
     };
 
+    // Stop the agent's current tool execution
+    const handleStop = async () => {
+        if (isStopping) return;
+
+        setIsStopping(true);
+        try {
+            await client.store.workflows.sendSignal(
+                run.workflowId,
+                run.runId,
+                "Stop",
+                {}
+            );
+
+            toast({
+                status: "info",
+                title: "Agent Interrupted",
+                description: "Type your message to give new instructions",
+                duration: 3000,
+            });
+        } catch (err) {
+            toast({
+                status: "error",
+                title: "Failed to Interrupt",
+                description: err instanceof Error ? err.message : "Unknown error",
+                duration: 3000,
+            });
+        } finally {
+            setIsStopping(false);
+        }
+    };
+
     // Calculate number of active tasks for the status indicator
     const getActiveTaskCount = (): number => {
         if (!messages.length) return 0;
@@ -667,8 +699,10 @@ function ModernAgentConversationInner({
                             value={inputValue}
                             onChange={setInputValue}
                             onSend={handleSendMessage}
+                            onStop={handleStop}
                             disabled={false}
                             isSending={isSending}
+                            isStopping={isStopping}
                             isCompleted={isCompleted}
                             activeTaskCount={getActiveTaskCount()}
                             placeholder={placeholder}

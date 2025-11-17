@@ -1,5 +1,5 @@
 import { Button, Input, Spinner, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core";
-import { Activity, PaperclipIcon, SendIcon } from "lucide-react";
+import { Activity, PaperclipIcon, SendIcon, StopCircleIcon } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { SelectDocument } from "../../../store";
 
@@ -7,8 +7,10 @@ interface MessageInputProps {
     value: string;
     onChange: (v: string) => void;
     onSend: () => void;
+    onStop?: () => void;
     disabled?: boolean;
     isSending?: boolean;
+    isStopping?: boolean;
     isCompleted?: boolean;
     activeTaskCount?: number;
     placeholder?: string;
@@ -18,8 +20,10 @@ export default function MessageInput({
     value,
     onChange,
     onSend,
+    onStop,
     disabled = false,
     isSending = false,
+    isStopping = false,
     isCompleted = false,
     activeTaskCount = 0,
     placeholder = "Type your message..."
@@ -89,6 +93,23 @@ export default function MessageInput({
                         <PaperclipIcon className="size-4" />
                     </Button>
                 </div>
+                {/* Show stop button when agent is actively working */}
+                {!isCompleted && activeTaskCount > 0 && onStop && (
+                    <Button
+                        onClick={onStop}
+                        disabled={isStopping}
+                        variant="outline"
+                        className="px-4 py-2.5 border-destructive text-destructive hover:bg-destructive hover:text-white"
+                        title="Interrupt current task"
+                    >
+                        {isStopping ? (
+                            <Spinner size="sm" className="mr-2" />
+                        ) : (
+                            <StopCircleIcon className="size-4 mr-2" />
+                        )}
+                        Stop
+                    </Button>
+                )}
                 <Button
                     onClick={onSend}
                     disabled={disabled || isSending || !value.trim()}
