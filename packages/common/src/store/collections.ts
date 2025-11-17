@@ -10,6 +10,7 @@ export interface CreateCollectionPayload {
     name: string;
     dynamic: boolean;
     description?: string;
+    skip_head_sync?: boolean;
     tags?: string[];
     type?: string;
     query?: Record<string, any>;
@@ -18,6 +19,7 @@ export interface CreateCollectionPayload {
     table_layout?: ColumnLayout[] | null;
     allowed_types?: string[];
     updated_by?: string,
+    shared_properties?: string[];
 }
 
 export interface CollectionItem extends BaseObject {
@@ -30,6 +32,11 @@ export interface CollectionItem extends BaseObject {
     status: CollectionStatus;
     // A ref to the object type
     type?: ContentObjectTypeRef;
+    /**
+     * A flag to indicate whether to track and sync member HEAD revisions. 
+     * The default is to sync HEAD revisions for collection members (skip_head_sync: false)
+     */
+    skip_head_sync: boolean;
     /**
      * The parent collections if any.
      * A collection can have multiple parents.
@@ -51,6 +58,11 @@ export interface Collection extends CollectionItem {
     properties: Record<string, any>;
     query?: Record<string, any>;
     security?: Record<string, string[]>; // ACL for collection access
+    /**
+     * List of property names from the collection's properties that should be shared with (injected into) member objects.
+     * These properties will be propagated to all members of this collection and merged as arrays.
+     */
+    shared_properties?: string[];
 }
 
 export interface StaticCollection extends Collection {
