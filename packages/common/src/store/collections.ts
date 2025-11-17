@@ -10,6 +10,7 @@ export interface CreateCollectionPayload {
     name: string;
     dynamic: boolean;
     description?: string;
+    skip_head_sync?: boolean;
     tags?: string[];
     type?: string;
     query?: Record<string, any>;

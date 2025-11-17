@@ -1,14 +1,15 @@
 import { json } from "@codemirror/lang-json";
-import dayjs from "dayjs";
-import { basicSetup } from "codemirror";
-import { useMemo, useRef, useState } from "react";
-import { UserInfo } from "@vertesia/ui/features";
-import { useUserSession } from "@vertesia/ui/session";
 import { Collection, CreateCollectionPayload, JSONSchemaObject } from "@vertesia/common";
-import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
-import { Button, ErrorBox, FormItem, Input, Styles, Textarea, useFetch, useToast, Panel } from "@vertesia/ui/core";
-import { SelectContentType, stringifyTableLayout } from "../types";
+import { Button, ErrorBox, FormItem, Input, Panel, Styles, Textarea, useFetch, useToast } from "@vertesia/ui/core";
+import { UserInfo } from "@vertesia/ui/features";
 import { SharedPropsEditor } from "@vertesia/ui/features/store/collections/SharedPropsEditor";
+import { SyncMemberHeadsToggle } from "@vertesia/ui/features/store/collections/SyncMemberHeadsToggle";
+import { useUserSession } from "@vertesia/ui/session";
+import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
+import { basicSetup } from "codemirror";
+import dayjs from "dayjs";
+import { useMemo, useRef, useState } from "react";
+import { SelectContentType, stringifyTableLayout } from "../types";
 
 const extensions = [basicSetup, json()];
 
@@ -213,10 +214,12 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
 
             {typeId && <PropertiesEditor typeId={typeId} collection={collection} />}
             {
-                !collection.dynamic &&
-                <FormItem label="Shared Properties" description="Add properties to share across all members in the collection. This feature requires to enable shared property synchronization on the project.">
-                    <SharedPropsEditor collection={collection} />
-                </FormItem>
+                !collection.dynamic && (
+                    <>
+                        <SyncMemberHeadsToggle collection={collection} />
+                        <SharedPropsEditor collection={collection} />
+                    </>
+                )
             }
 
         </div >

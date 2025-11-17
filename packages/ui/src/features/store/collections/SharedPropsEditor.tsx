@@ -46,10 +46,11 @@ export function SharedPropsEditor({ collection }: SharedPropsEditorProps) {
     }
 
     return (
-        <Panel title="Shared Properties" action={
-            <Button size="lg" isLoading={false} onClick={onSave}>
-                Save
-            </Button>}
+        <Panel title="Shared Properties" description="Add properties to share across all members in the collection. This feature requires to enable shared property synchronization on the project."
+            action={
+                <Button size="lg" isLoading={false} onClick={onSave}>
+                    Save
+                </Button>}
         >
             <div className=''>
                 <TagsInput value={sharedProps} onChange={onSelect} options={options} placeholder="Select properties to share" />
