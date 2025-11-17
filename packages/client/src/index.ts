@@ -10,3 +10,4 @@ export * from "./store/index.js";
 export * from "./StreamSource.js";
 
 export { ProjectsApi } from './ProjectsApi.js';
+export { RunsApi } from './RunsApi.js';
