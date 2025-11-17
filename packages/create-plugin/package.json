@@ -22,7 +22,7 @@
     ],
     "scripts": {
         "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && pnpm run typecheck:templates && tsc --build",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && pnpm run typecheck:templates && pnpm exec tsc --build",
         "typecheck:templates": "tsc --noEmit --project templates/tool/tsconfig.json",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
