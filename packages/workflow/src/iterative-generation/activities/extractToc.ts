@@ -2,8 +2,16 @@ import { log } from "@temporalio/activity";
 import { WorkflowExecutionPayload } from "@vertesia/common";
 import { parse as parseYaml } from "yaml";
 import { getVertesiaClient } from "../../utils/client.js";
-import { buildAndPublishMemoryPack, loadMemoryPack } from "../../utils/memory.js";
-import { IterativeGenerationPayload, OutputMemoryMeta, Toc, TocIndex } from "../types.js";
+import {
+    buildAndPublishMemoryPack,
+    loadMemoryPack,
+} from "../../utils/memory.js";
+import {
+    IterativeGenerationPayload,
+    OutputMemoryMeta,
+    Toc,
+    TocIndex,
+} from "../types.js";
 import { tocIndex } from "../utils.js";
 
 /**
@@ -12,10 +20,12 @@ import { tocIndex } from "../utils.js";
  *
  * @param payload
  */
-export async function it_gen_extractToc(payload: WorkflowExecutionPayload): Promise<TocIndex | null> {
+export async function it_gen_extractToc(
+    payload: WorkflowExecutionPayload,
+): Promise<TocIndex | null> {
     const vars = payload.vars as IterativeGenerationPayload;
     const memory = vars.memory;
-    const client = getVertesiaClient(payload);
+    const client = await getVertesiaClient(payload);
 
     const inMemory = await loadMemoryPack(client, `${memory}/input`);
     let tocJson: string | null = null;
@@ -37,13 +47,17 @@ export async function it_gen_extractToc(payload: WorkflowExecutionPayload): Prom
 
     log.info(`Found a TOC in the input memory pack`);
 
-    await buildAndPublishMemoryPack(client, `${vars.memory}/output`, async () => {
-        return {
-            toc,
-            lastProcessedPart: undefined, // the part index (a number array)
-            previouslyGenerated: ""
-        } as OutputMemoryMeta
-    });
+    await buildAndPublishMemoryPack(
+        client,
+        `${vars.memory}/output`,
+        async () => {
+            return {
+                toc,
+                lastProcessedPart: undefined, // the part index (a number array)
+                previouslyGenerated: "",
+            } as OutputMemoryMeta;
+        },
+    );
 
     return tocIndex(toc);
 }
