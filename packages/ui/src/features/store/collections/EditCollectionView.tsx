@@ -3,7 +3,7 @@ import { Collection, CreateCollectionPayload, JSONSchemaObject } from "@vertesia
 import { Button, ErrorBox, FormItem, Input, Panel, Styles, Textarea, useFetch, useToast } from "@vertesia/ui/core";
 import { UserInfo } from "@vertesia/ui/features";
 import { SharedPropsEditor } from "@vertesia/ui/features";
-import { SyncMemberHeadsToggle } from "@vertesia/ui/features/store/collections/SyncMemberHeadsToggle";
+import { SyncMemberHeadsToggle } from "@vertesia/ui/features";
 import { useUserSession } from "@vertesia/ui/session";
 import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
 import { basicSetup } from "codemirror";
