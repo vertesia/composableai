@@ -3,3 +3,4 @@ export * from "./CollectionsTable";
 export * from "./EditCollectionView";
 export * from "./CreateCollection";
 export * from "./SelectCollection";
+export * from "./SharedPropsEditor";
