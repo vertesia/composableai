@@ -4,8 +4,8 @@ import { basicSetup } from "codemirror";
 import { useMemo, useRef, useState } from "react";
 import { UserInfo } from "@vertesia/ui/features";
 import { useUserSession } from "@vertesia/ui/session";
-import { Collection, CreateCollectionPayload } from "@vertesia/common";
-import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject } from "@vertesia/ui/widgets";
+import { Collection, CreateCollectionPayload, JSONSchemaObject } from "@vertesia/common";
+import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
 import { Button, ErrorBox, FormItem, Input, Styles, Textarea, useFetch, useToast, Panel } from "@vertesia/ui/core";
 import { SelectContentType, stringifyTableLayout } from "../types";
 import { SharedPropsEditor } from "@vertesia/ui/features/store/collections/SharedPropsEditor";
@@ -228,6 +228,7 @@ interface PropertiesEditorProps {
     collection: Collection;
 }
 function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
+    const [formData, setFormData] = useState<JSONSchemaObject>({});
     const toast = useToast();
     const { client } = useUserSession();
     const [isUpdating, setIsUpdating] = useState(false);
@@ -245,7 +246,10 @@ function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
     }
 
 
-    const _onSave = (data: any) => {
+    const _onSave = (data: JSONSchemaObject) => {
+        if (!data || !Object.keys(data).length) {
+            return;
+        }
         const payload = { properties: data || {} };
         setIsUpdating(true);
         client.store.collections
@@ -271,13 +275,19 @@ function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
             });
     };
 
+    const onDataChanged = (data: Node) => {
+        if (data instanceof ManagedObject) {
+            setFormData(data.value);
+        }
+    }
+
     return (
         <Panel title="Properties" action={
-            <Button size="lg" isLoading={isUpdating} type="submit">
+            <Button size="lg" isLoading={isUpdating} type="submit" onClick={() => _onSave(formData)}>
                 Save
             </Button>}
         >
-            <GeneratedForm object={object} onSubmit={_onSave} />
+            <GeneratedForm object={object} onChange={onDataChanged} />
         </Panel>
     );
 }
