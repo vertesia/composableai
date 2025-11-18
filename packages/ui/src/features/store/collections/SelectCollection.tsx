@@ -123,7 +123,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                 return selectedCollection[0].name;
             }
             return `${selectedCollection.length} collections selected`;
-        } else if (!multiple && selectedCollection && typeof selectedCollection === 'object') {
+        } else if (!multiple && selectedCollection && !Array.isArray(selectedCollection)) {
             return selectedCollection.name;
         }
         return placeholder;
