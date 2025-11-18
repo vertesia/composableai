@@ -49,7 +49,7 @@ if [ "$REF" = "main" ]; then
   pnpm -r --filter "./*" exec npm version ${llumiverse_dev_version} --no-git-tag-version
 
   # Publish all llumiverse packages
-  pnpm -r --filter "./*" exec npm publish --access public --tag dev ${DRY_RUN_FLAG}
+  pnpm -r --filter "./*" exec pnpm publish --access public --tag dev --no-git-checks ${DRY_RUN_FLAG}
 
   cd ..
 fi
@@ -98,16 +98,65 @@ for pkg_dir in packages/*; do
 
     # Publish
     if [ -n "$DRY_RUN_FLAG" ]; then
-      npm publish --access public --tag ${npm_tag} ${DRY_RUN_FLAG}
+      pnpm publish --access public --tag ${npm_tag} --no-git-checks ${DRY_RUN_FLAG}
     else
-      npm publish --access public --tag ${npm_tag}
+      pnpm publish --access public --tag ${npm_tag} --no-git-checks
     fi
 
     cd ../..
   fi
 done
 
-# Step 4: Commit version changes (only for preview + not dry-run)
+# Step 4: Verify published packages (only for main branch + dry-run)
+if [ "$REF" = "main" ] && [ "$DRY_RUN" = "true" ]; then
+  echo "=== Verifying package tarballs ==="
+
+  for pkg_dir in packages/*; do
+    if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
+      pkg_name=$(basename "$pkg_dir")
+      cd "$pkg_dir"
+
+      # Pack the package to create tarball (pnpm resolves workspace:* during pack)
+      echo "Packing ${pkg_name}..."
+      pnpm pack --pack-destination . > /dev/null 2>&1
+      tarball=$(ls -t *.tgz 2>/dev/null | head -1)
+
+      if [ -n "$tarball" ] && [ -f "$tarball" ]; then
+        # Extract package.json from tarball
+        echo "Checking dependencies in ${pkg_name}:"
+        packed_json=$(tar -xzOf "$tarball" package/package.json)
+
+        # Show all @llumiverse and @vertesia dependencies
+        echo "$packed_json" | grep -E '"@(llumiverse|vertesia)/' | head -20
+
+        # Verify llumiverse dependencies have correct dev version
+        if echo "$packed_json" | grep -q "@llumiverse/"; then
+          if echo "$packed_json" | grep "@llumiverse/" | grep -q "${llumiverse_dev_version}"; then
+            echo "  ✓ llumiverse dependencies: ${llumiverse_dev_version}"
+          else
+            echo "  ✗ WARNING: llumiverse dependencies version mismatch"
+          fi
+        fi
+
+        # Verify vertesia dependencies have correct dev version
+        if echo "$packed_json" | grep -q "@vertesia/"; then
+          if echo "$packed_json" | grep "@vertesia/" | grep -q "${dev_version}"; then
+            echo "  ✓ vertesia dependencies: ${dev_version}"
+          else
+            echo "  ✗ WARNING: vertesia dependencies version mismatch"
+          fi
+        fi
+
+        # Clean up tarball
+        rm -f "$tarball"
+      fi
+
+      cd ../..
+    fi
+  done
+fi
+
+# Step 5: Commit version changes (only for preview + not dry-run)
 if [ "$REF" = "preview" ] && [ "$DRY_RUN" = "false" ]; then
   echo "=== Committing version changes ==="
 
