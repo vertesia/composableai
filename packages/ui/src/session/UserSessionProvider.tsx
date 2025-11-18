@@ -30,7 +30,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
     const hasInitiatedAuthRef = useRef(false);
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
-        const url = new URL(CENTRAL_AUTH_REDIRECT);
+        const url = new URL(Env.endpoints.sts || CENTRAL_AUTH_REDIRECT);
         const currentUrl = new URL(window.location.href);
         currentUrl.hash = "";
         if (projectId) currentUrl.searchParams.set("p", projectId);
