@@ -52,6 +52,10 @@ if [ "$REF" = "main" ]; then
   pnpm -r --filter "./*" exec pnpm publish --access public --tag dev --no-git-checks ${DRY_RUN_FLAG}
 
   cd ..
+
+  # Update workspace links after llumiverse version changes
+  echo "=== Updating workspace links ==="
+  pnpm install --frozen-lockfile --force
 fi
 
 # Step 2: Update all composableai package versions first (before publishing)
@@ -75,8 +79,12 @@ elif [ "$REF" = "preview" ]; then
   # Update root package.json
   npm version ${VERSION_TYPE} --no-git-tag-version --workspaces=false
 
-  # Update all workspace packages
-  pnpm -r --filter "./packages/**" exec npm version ${VERSION_TYPE} --no-git-tag-version
+  # Get the new version from root
+  new_version=$(pnpm pkg get version | tr -d '"')
+  echo "Setting all packages to version ${new_version}"
+
+  # Set all workspace packages to the same version as root
+  pnpm -r --filter "./packages/**" exec npm version ${new_version} --no-git-tag-version
 fi
 
 # Step 3: Publish composableai packages (after all versions are updated)
@@ -107,9 +115,74 @@ for pkg_dir in packages/*; do
   fi
 done
 
-# Step 4: Verify published packages (only for main branch + dry-run)
-if [ "$REF" = "main" ] && [ "$DRY_RUN" = "true" ]; then
+# Step 4: Verify published packages (only dry-run mode)
+if [ "$DRY_RUN" = "true" ]; then
   echo "=== Verifying package tarballs ==="
+
+  # Array to track failed packages
+  failed_packages=()
+
+  # Verify llumiverse packages (only for main branch)
+  if [ "$REF" = "main" ]; then
+    echo ""
+    echo "=== Verifying llumiverse packages ==="
+    cd llumiverse
+    for pkg in common core drivers; do
+      if [ -d "$pkg" ]; then
+        cd "$pkg"
+        pkg_name="llumiverse-${pkg}"
+
+        echo "Packing ${pkg_name}..."
+        pnpm pack --pack-destination . > /dev/null 2>&1
+        tarball=$(ls -t *.tgz 2>/dev/null | head -1)
+
+        if [ -n "$tarball" ] && [ -f "$tarball" ]; then
+          echo "Checking ${pkg_name}:"
+          packed_json=$(tar -xzOf "$tarball" package/package.json)
+
+          # Check version
+          packed_version=$(echo "$packed_json" | grep '"version":' | head -1 | sed 's/.*: "\(.*\)".*/\1/')
+          has_issues=false
+
+          if [ "$packed_version" = "${llumiverse_dev_version}" ]; then
+            echo "  ✓ Version: ${packed_version}"
+          else
+            echo "  ✗ WARNING: Version mismatch (expected: ${llumiverse_dev_version}, got: ${packed_version})"
+            has_issues=true
+          fi
+
+          # Extract dependencies section
+          deps_section=$(echo "$packed_json" | sed -n '/"dependencies":/,/^  [}]/p')
+
+          # Check for @llumiverse dependencies
+          llumiverse_deps=$(echo "$deps_section" | grep '"@llumiverse/' || true)
+          if [ -n "$llumiverse_deps" ]; then
+            echo "$llumiverse_deps"
+            if echo "$llumiverse_deps" | grep -q "${llumiverse_dev_version}"; then
+              echo "  ✓ llumiverse dependencies: ${llumiverse_dev_version}"
+            else
+              echo "  ✗ WARNING: llumiverse dependencies version mismatch"
+              has_issues=true
+            fi
+          fi
+
+          # Add to failed packages if there were issues
+          if [ "$has_issues" = true ]; then
+            failed_packages+=("${pkg_name}")
+          fi
+
+          # Clean up tarball
+          rm -f "$tarball"
+        fi
+
+        cd ..
+      fi
+    done
+    cd ..
+    echo ""
+  fi
+
+  echo "=== Verifying composableai packages ==="
 
   for pkg_dir in packages/*; do
     if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
@@ -126,25 +199,47 @@ if [ "$REF" = "main" ] && [ "$DRY_RUN" = "true" ]; then
         echo "Checking dependencies in ${pkg_name}:"
         packed_json=$(tar -xzOf "$tarball" package/package.json)
 
-        # Show all @llumiverse and @vertesia dependencies
-        echo "$packed_json" | grep -E '"@(llumiverse|vertesia)/' | head -20
+        # Extract dependencies section
+        deps_section=$(echo "$packed_json" | sed -n '/"dependencies":/,/^  [}]/p')
 
-        # Verify llumiverse dependencies have correct dev version
-        if echo "$packed_json" | grep -q "@llumiverse/"; then
-          if echo "$packed_json" | grep "@llumiverse/" | grep -q "${llumiverse_dev_version}"; then
+        # Show all @llumiverse and @vertesia dependencies
+        echo "$deps_section" | grep -E '"@(llumiverse|vertesia)/' | head -20 || echo "  (no llumiverse or vertesia dependencies)"
+
+        # Track if this package has issues
+        has_issues=false
+
+        # Verify llumiverse dependencies (only for main branch)
+        llumiverse_deps=$(echo "$deps_section" | grep '"@llumiverse/' || true)
+        if [ "$REF" = "main" ] && [ -n "$llumiverse_deps" ]; then
+          if echo "$llumiverse_deps" | grep -q "${llumiverse_dev_version}"; then
             echo "  ✓ llumiverse dependencies: ${llumiverse_dev_version}"
           else
             echo "  ✗ WARNING: llumiverse dependencies version mismatch"
+            has_issues=true
           fi
         fi
 
-        # Verify vertesia dependencies have correct dev version
-        if echo "$packed_json" | grep -q "@vertesia/"; then
-          if echo "$packed_json" | grep "@vertesia/" | grep -q "${dev_version}"; then
-            echo "  ✓ vertesia dependencies: ${dev_version}"
+        # Verify vertesia dependencies
+        vertesia_deps=$(echo "$deps_section" | grep '"@vertesia/' || true)
+        if [ -n "$vertesia_deps" ]; then
+          if [ "$REF" = "main" ]; then
+            expected_version="${dev_version}"
+          else
+            # For preview, get the actual version from package.json
+            expected_version=$(pnpm pkg get version | tr -d '"')
+          fi
+
+          if echo "$vertesia_deps" | grep -q "${expected_version}"; then
+            echo "  ✓ vertesia dependencies: ${expected_version}"
           else
             echo "  ✗ WARNING: vertesia dependencies version mismatch"
+            has_issues=true
           fi
+        fi
+
+        # Add to failed packages if there were issues
+        if [ "$has_issues" = true ]; then
+          failed_packages+=("${pkg_name}")
         fi
 
         # Clean up tarball
@@ -154,6 +249,18 @@ if [ "$REF" = "main" ] && [ "$DRY_RUN" = "true" ]; then
       cd ../..
     fi
   done
+
+  # Print summary
+  echo ""
+  echo "=== Verification Summary ==="
+  if [ ${#failed_packages[@]} -eq 0 ]; then
+    echo "✓ All packages passed verification"
+  else
+    echo "✗ ${#failed_packages[@]} package(s) failed verification:"
+    for pkg in "${failed_packages[@]}"; do
+      echo "  - ${pkg}"
+    done
+  fi
 fi
 
 # Step 5: Commit version changes (only for preview + not dry-run)
