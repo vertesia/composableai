@@ -1,3 +1,5 @@
 packages:
     - llumiverse/common
+    - llumiverse/core
+    - llumiverse/drivers
     - packages/*
