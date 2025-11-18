@@ -110,17 +110,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
         setSearchQuery(query);
     }, []);
 
-    // Show error state
-    if (error) {
-        return (
-            <ErrorBox title="Collection fetch failed">
-                {error.message}
-            </ErrorBox>
-        );
-    }
-
     const hasSearchQuery = searchQuery.trim().length > 0;
-    const showClearOption = selectedCollection && hasSearchQuery;
 
     // Client-side filtering when not using server search
     const filteredCollections = useMemo(() => {
@@ -135,6 +125,17 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
         const queryLower = searchQuery.toLowerCase();
         return collections.filter(col => col.name.toLowerCase().includes(queryLower));
     }, [collections, useServerSearch, hasSearchQuery, searchQuery]);
+
+    const showClearOption = selectedCollection && hasSearchQuery;
+
+    // Show error state
+    if (error) {
+        return (
+            <ErrorBox title="Collection fetch failed">
+                {error.message}
+            </ErrorBox>
+        );
+    }
 
     // Get display text for the button
     const getDisplayText = () => {
