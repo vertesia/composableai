@@ -1,7 +1,7 @@
 {
     "name": "@vertesia/memory",
     "description": "Manipulate memory images for LLMs",
-    "version": "0.79.1",
+    "version": "0.80.0-dev-20251118",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -38,7 +38,7 @@
         "require": "./lib/cjs/index.js"
     },
     "repository": {
-        "type" : "git",
+        "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/memory"
     }

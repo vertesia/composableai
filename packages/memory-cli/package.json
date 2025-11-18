@@ -1,7 +1,7 @@
 {
     "name": "@vertesia/memory-cli",
     "description": "Vertesia memory builder CLI",
-    "version": "0.79.1",
+    "version": "0.80.0-dev-20251118",
     "type": "module",
     "bin": {
         "memo": "./bin/memo.js"
@@ -39,7 +39,7 @@
         "vitest": "^3.1.1"
     },
     "repository": {
-        "type" : "git",
+        "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/memory-cli"
     }

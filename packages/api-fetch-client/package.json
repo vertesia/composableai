@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/api-fetch-client",
-  "version": "0.79.1",
+  "version": "0.80.0-dev-20251118",
   "description": "HTTP client which wraps a fetch implementation and simplify the creation of REST API clients. Works both in browser and in node.",
   "type": "module",
   "types": "./lib/types/index.d.ts",
@@ -23,7 +23,7 @@
     "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
   },
   "repository": {
-    "type" : "git",
+    "type": "git",
     "url": "https://github.com/vertesia/composableai.git",
     "directory": "packages/api-fetch-client"
   },
