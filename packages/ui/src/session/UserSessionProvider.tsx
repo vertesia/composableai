@@ -7,7 +7,7 @@ import { Env } from "@vertesia/ui/env";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from "./UserSession";
 
 const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app"];
-const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/?sts=https://sts-staging.vertesia.io";
+const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
 
 function shouldRedirectToCentralAuth() {
     // Authentication is not supported in Docker environment.
@@ -30,7 +30,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
     const hasInitiatedAuthRef = useRef(false);
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
-        const url = new URL(CENTRAL_AUTH_REDIRECT);
+        const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? "https://sts.vertesia.io"}`);
         const currentUrl = new URL(window.location.href);
         currentUrl.hash = "";
         if (projectId) currentUrl.searchParams.set("p", projectId);
