@@ -4,7 +4,10 @@ This directory contains scripts for publishing packages to NPM with different ve
 
 ## Overview
 
-The `publish-all-packages.sh` script handles publishing both llumiverse and composableai packages with appropriate versioning based on the git branch.
+The `publish-all-packages.sh` script handles publishing packages with appropriate versioning based on the git branch:
+
+- **llumiverse packages**: Only published on the `main` branch
+- **composableai packages**: Published on both `main` and `preview` branches
 
 ## Usage
 
