@@ -31,8 +31,9 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [useServerSearch, setUseServerSearch] = useState(false);
 
-    // Debounce the search query to avoid excessive API calls
+    // Debounce the search query to avoid excessive API calls (only used for server-side search)
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
     // Memoize the search function to prevent unnecessary re-renders
@@ -42,22 +43,27 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
 
         const collections = await client.store.collections.search({
             dynamic: allowDynamic ? undefined : false,
-            name: trimmedQuery || undefined
+            name: useServerSearch ? (trimmedQuery || undefined) : undefined
         });
 
         setIsSearching(false);
+
+        // Check if we hit the maximum limit (1000 collections) - if so, enable server-side search
+        if (!useServerSearch && collections.length >= 1000) {
+            setUseServerSearch(true);
+        }
 
         // Filter out collections if filterOut is provided
         if (filterOut && filterOut.length > 0) {
             return collections.filter(col => !filterOut.includes(col.id));
         }
         return collections;
-    }, [client, allowDynamic, filterOut]);
+    }, [client, allowDynamic, filterOut, useServerSearch]);
 
-    // Fetch collections based on debounced search query
+    // Fetch collections based on search mode
     const { data: collections, error } = useFetch(
-        () => searchCollections(debouncedSearchQuery),
-        [debouncedSearchQuery, searchCollections]
+        () => searchCollections(useServerSearch ? debouncedSearchQuery : ''),
+        [useServerSearch ? debouncedSearchQuery : '', searchCollections]
     );
 
     // Memoize the selected collection(s)
@@ -115,6 +121,20 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
 
     const hasSearchQuery = searchQuery.trim().length > 0;
     const showClearOption = selectedCollection && hasSearchQuery;
+
+    // Client-side filtering when not using server search
+    const filteredCollections = useMemo(() => {
+        if (!collections) return [];
+
+        // If using server search, collections are already filtered by the server
+        if (useServerSearch) return collections;
+
+        // Otherwise, do client-side filtering
+        if (!hasSearchQuery) return collections;
+
+        const queryLower = searchQuery.toLowerCase();
+        return collections.filter(col => col.name.toLowerCase().includes(queryLower));
+    }, [collections, useServerSearch, hasSearchQuery, searchQuery]);
 
     // Get display text for the button
     const getDisplayText = () => {
@@ -182,7 +202,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                             )
                         }
                         {
-                            collections?.map((collection: CollectionItem) => {
+                            filteredCollections.map((collection: CollectionItem) => {
                                 const isSelected = multiple && Array.isArray(value)
                                     ? value.includes(collection.id)
                                     : value === collection.id;
