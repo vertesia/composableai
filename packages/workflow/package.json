@@ -16,11 +16,6 @@
         "build": "pnpm exec tsmod build && node ./bin/bundle-workflows.mjs lib/esm/workflows.js lib/workflows-bundle.js",
         "clean": "rm -rf ./lib tsconfig.tsbuildinfo"
     },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/vertesia/composableai.git",
-        "directory": "zeno/workflow"
-    },
     "license": "Apache-2.0",
     "devDependencies": {
         "@smithy/types": "^3.7.2",
@@ -56,7 +51,7 @@
         "seedrandom": "^3.0.5",
         "sharp": "^0.33.4",
         "tiktoken": "^1.0.15",
-        "tmp": "^0.2.3",
+        "tmp": "^0.2.4",
         "tmp-promise": "^3.0.3",
         "yaml": "^2.6.0"
     },
@@ -109,6 +104,11 @@
             "import": "./lib/esm/errors.js",
             "require": "./lib/cjs/errors.js"
         }
+    },
+    "repository": {
+        "type" : "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/workflow"
     },
     "types": "./lib/types/index.d.ts",
     "typesVersions": {

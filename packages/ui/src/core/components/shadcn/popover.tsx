@@ -5,13 +5,13 @@ import { cn } from "../libs/utils"
 import { JSX } from "react";
 import { useIsInModal } from "./dialog";
 
-interface PopoverContextValue {
+export interface PopoverContextValue {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   hover: boolean;
   click: boolean;
 }
-const PopoverContext = React.createContext<PopoverContextValue | null>(null);
+export const PopoverContext = React.createContext<PopoverContextValue | null>(null);
 
 interface PopoverProps {
   _open?: boolean;

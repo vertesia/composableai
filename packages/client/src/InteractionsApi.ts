@@ -1,12 +1,16 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
 import {
     AsyncExecutionPayload, ComputeInteractionFacetPayload, GenerateInteractionPayload, GenerateTestDataPayload, ImprovePromptPayload,
-    Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery, InteractionExecutionPayload, InteractionForkPayload,
+    ImprovePromptPayloadConfig,
+    Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery,
+    InteractionExecutionPayload, InteractionForkPayload,
     InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery,
-    InteractionsExportPayload, InteractionUpdatePayload, RateLimitRequestPayload, RateLimitRequestResponse
+    InteractionsExportPayload, InteractionUpdatePayload,
+    RateLimitRequestPayload, RateLimitRequestResponse
 } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
+import { InteractionCatalogApi } from "./InteractionCatalogApi.js";
 import { EnhancedExecutionRun, EnhancedInteractionExecutionResult, enhanceExecutionRun, enhanceInteractionExecutionResult } from "./InteractionOutput.js";
 
 export interface ComputeInteractionFacetsResponse {
@@ -20,8 +24,11 @@ export interface AsyncExecutionResult {
 }
 
 export default class InteractionsApi extends ApiTopic {
+    catalog: InteractionCatalogApi;
+
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/interactions");
+        this.catalog = new InteractionCatalogApi(parent);
     }
 
     /**
@@ -221,13 +228,22 @@ export default class InteractionsApi extends ApiTopic {
 
     /**
      * Suggest Improvement for a prompt
+     * @deprecated use suggestPromptImprovements instead
      */
-    async suggestImprovements<ResultT = any, ParamsT = any>(id: string, payload: ImprovePromptPayload): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
+    async suggestImprovements<ResultT = any, ParamsT = any>(id: string, payload: ImprovePromptPayloadConfig): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
         const r = await this.post(`${id}/suggest-prompt-improvements`, {
             payload
         });
         return enhanceExecutionRun<ResultT, ParamsT>(r);
     }
+
+    async suggestPromptImprovements<ResultT = any, ParamsT = any>(payload: ImprovePromptPayload): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
+        const r = await this.post(`/improve`, {
+            payload
+        });
+        return enhanceInteractionExecutionResult<ResultT, ParamsT>(r);
+    }
+
 
     /**
      * List the versions of the interaction. Returns an empty array if no versions are found

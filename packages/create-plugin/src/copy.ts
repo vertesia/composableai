@@ -7,7 +7,7 @@ import { processVarsInFile } from "./template.js";
  *
  * @param sourceDir - The path to the source directory.
  * @param targetDir - The path to the target directory.
- * @param templateSuffix - Optional suffix to remvoe from file name after copying. Ex: .template, .tmpl
+ * @param templateSuffix - Optional suffix to remove from file name after copying. Ex: .template, .tmpl
  */
 export async function copyTree(sourceDir: string, targetDir: string, template?: {
     suffix?: string, // Suffix to remove from file name after copying
@@ -27,7 +27,11 @@ export async function copyTree(sourceDir: string, targetDir: string, template?: 
 
         for (const item of items) {
             const isTemplate = template?.suffix ? item.name.endsWith(template.suffix) : false;
-            const targetName = isTemplate ? item.name.slice(0, -template!.suffix!.length) : item.name;
+            let targetName = isTemplate ? item.name.slice(0, -template!.suffix!.length) : item.name;
+            // Rename gitignore to .gitignore (npm excludes .gitignore from published packages)
+            if (targetName === 'gitignore') {
+                targetName = '.gitignore';
+            }
             const sourcePath = join(source, item.name);
             const targetPath = join(target, targetName);
 

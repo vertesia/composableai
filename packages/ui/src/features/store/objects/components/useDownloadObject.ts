@@ -1,11 +1,16 @@
 import { VertesiaClient, ZenoClient } from "@vertesia/client";
 import { ToastFn } from "@vertesia/ui/core";
 
-export function useDownloadDocument(client: VertesiaClient | ZenoClient, toast: ToastFn, uri: string | undefined) {
+export function useDownloadDocument(
+    client: VertesiaClient | ZenoClient,
+    toast: ToastFn,
+    uri: string | undefined,
+    name?: string,
+) {
     const onDownload = () => {
         if (uri) {
             client.files
-                .getDownloadUrl(uri)
+                .getDownloadUrlWithOptions({ file: uri, name })
                 .then((r) => {
                     window.open(r.url, "_blank");
                 })

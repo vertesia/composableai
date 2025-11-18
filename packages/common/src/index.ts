@@ -28,5 +28,6 @@ export * from './user.js';
 export * from './utils/auth.js';
 export * from './utils/schemas.js';
 export type * from './utils/type-helpers.js';
+export * from './sts-token-types.js';
 export * from './versions.js';
 
