@@ -24,6 +24,15 @@ export interface Embedding {
     etag?: string; // the etag of the text used for the embedding
 }
 
+/**
+ * Metadata about a single inherited property.
+ */
+export interface InheritedPropertyMetadata {
+    /** The property name that was inherited */
+    name: string;
+    /** The collection ID that provided this property */
+    collection: string;
+}
 export interface ContentObject<T = any> extends ContentObjectItem<T> {
     text?: string; // the text representation of the object
     text_etag?: string;
@@ -32,6 +41,12 @@ export interface ContentObject<T = any> extends ContentObjectItem<T> {
     parts_etag?: string; // the etag of the text used for the parts list
     transcript?: Transcript;
     security?: Record<string, string[]>; // Security field for granular permissions
+
+    /**
+     * Inherited properties metadata - tracks which properties were inherited from parent collections.
+     * Used to display readonly inherited properties in the UI and enable incremental sync optimization.
+     */
+    inherited_properties?: InheritedPropertyMetadata[];
 }
 
 export enum ContentNature {
@@ -105,7 +120,7 @@ export interface VideoMetadata extends TemporalMediaMetadata {
 export interface TextSection {
     description: string; // the description of the section
     first_line_index: number;
-    last_line_index: number; 
+    last_line_index: number;
 }
 
 export interface DocumentMetadata extends ContentMetadata {
@@ -355,7 +370,7 @@ export interface WorkflowRule extends WorkflowRuleItem {
     /**
      * Optional task queue name to use when starting workflows for this rule
      */
-    task_queue?: string; 
+    task_queue?: string;
 }
 
 export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {
@@ -400,6 +415,10 @@ export interface GetUploadUrlPayload {
 
 export interface GetFileUrlPayload {
     file: string;
+    // Optional filename to use in Content-Disposition for downloads
+    name?: string;
+    // Optional disposition for downloads (default: attachment)
+    disposition?: "inline" | "attachment";
 }
 
 export interface GetFileUrlResponse {

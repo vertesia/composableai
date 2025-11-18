@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/cli",
-    "version": "0.79.1",
+    "version": "0.80.0-dev-20251118",
     "description": "The Vertesia command-line interface (CLI) provides a set of commands to manage and interact with the Vertesia Platform.",
     "type": "module",
     "bin": {
@@ -63,5 +63,10 @@
     },
     "devDependencies": {
         "@types/jsonwebtoken": "^9.0.6"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/cli"
     }
 }
