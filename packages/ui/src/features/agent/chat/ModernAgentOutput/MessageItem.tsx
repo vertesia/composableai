@@ -10,6 +10,7 @@ import remarkGfm from "remark-gfm";
 import { AnimatedThinkingDots, PulsatingCircle } from "../AnimatedThinkingDots";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
+import { AgentChart, type AgentChartSpec } from "./AgentChart";
 
 interface MessageItemProps {
     message: AgentMessage;
@@ -304,6 +305,21 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                             const match = /language-(\w+)/.exec(className || "");
                             const isInline = !match;
                             const language = match ? match[1] : "";
+
+                            // Handle chart code blocks
+                            if (language === 'chart') {
+                                try {
+                                    const chartSpec = JSON.parse(String(children).trim()) as AgentChartSpec;
+                                    return <AgentChart spec={chartSpec} />;
+                                } catch (error) {
+                                    console.error('Failed to parse chart spec:', error);
+                                    return (
+                                        <div className="text-sm text-destructive p-2 border border-destructive rounded">
+                                            Failed to render chart: {error instanceof Error ? error.message : 'Invalid JSON'}
+                                        </div>
+                                    );
+                                }
+                            }
 
                             // Keep only the language indicator logic here, styling moved to CSS
                             return (
