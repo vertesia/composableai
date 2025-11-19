@@ -538,6 +538,7 @@ function ModernAgentConversationInner({
                 description: "Type your message to give new instructions",
                 duration: 3000,
             });
+            setIsCompleted(true);
         } catch (err) {
             toast({
                 status: "error",
