@@ -37,7 +37,7 @@ export default function Header({
 }: HeaderProps) {
     return (
         <PayloadBuilderProvider>
-            <div className="flex items-center justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0">
+            <div className="flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0">
                 <div className="flex flex-wrap items-center space-x-2">
                     <div className="flex items-center space-x-1">
                         <Bot className="size-5 text-muted" />
@@ -47,7 +47,7 @@ export default function Header({
                         (Run ID: {run.runId.substring(0, 8)}...)
                     </span>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex justify-end items-center space-x-2 ml-auto">
                     {/* View Mode Toggle */}
                     <div className="flex items-center space-x-1 bg-muted rounded p-0.5">
                         <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("stacked")}>

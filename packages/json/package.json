@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/json",
-    "version": "0.79.1",
+    "version": "0.80.0-dev-20251118",
     "description": "JSON utlities",
     "type": "module",
     "types": "./lib/types/index.d.ts",
@@ -31,5 +31,10 @@
     },
     "ts_dual_module": {
         "outDir": "lib"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/json"
     }
 }

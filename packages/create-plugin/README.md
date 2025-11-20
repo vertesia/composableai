@@ -1,100 +1,105 @@
-# @vertesia/create-agent
+# @vertesia/create-plugin
 
-This package is scaffolding a vertesia agent project.
-Vertesia agents are used to deploy custom workflows to Vertesia cloud.
+This package scaffolds Vertesia plugin projects. Use it to create either:
 
-Visit https://vertesiahq.com for more information about Vertesia.
+- **Web Application Plugins**: React-based web applications that extend Vertesia Studio
+- **Agent Tool Server**: Custom agent tools accessible via API endpoints
 
-## Requirements:
-1. docker (with buildx support) installed locally.
-2. vertesia CLI application. The CLI will be automatically installed when initializing the agent project if you didn't installed it previously.
+Visit <https://vertesiahq.com> for more information about Vertesia.
 
-## Initialize a Vertesia agent project
+## What Can You Create?
 
-Run the command line command:
+### Web Application Plugin (UI Extensions)
 
-```
-npm init @vertesia/agent
-```
+Vertesia web plugins are React-based web application that can be embedded into the Vertesia Studio interface. They allow you to create custom user experiences focused on specific use cases and business processes, while seamlessly leveraging all the vertesia platform features.
 
-Follow the instructions on screen. You need to define an organization and a name for your agent. The organization must be unique inside Vertesia and is usually the name of your Vertesia organization account. The agent name is identifying the project in your organization.
+### Agent Tool Server
 
-The generated project is a typescript project and is using [Temporal](https://temporal.io/) as the workflow system.
+An Agent Tool Server extends the capabilities of AI agents in Vertesia. It allows you to:
 
-You can implement your own workflows and activities anywhere in the src/ directory or even in a dependency project. The only requirement is that you need to export the workflows and the activities from the `src/workflow.ts` and `src/activities.ts` files.
-These generated files are containing a "Hello world!" workflow and activity as an example that you should remove and export your own definitions.
+- Create custom tools that agents can use
+- Integrate with external APIs and services
+- Organize tools into logical collections
+- Expose tools via REST API endpoints
+- Support authentication and context-aware execution
 
+## Prerequisites
 
-## Developing your agent workflows / activities.
+Before creating a plugin project, you need:
 
-Export your temporal workflows `from src/workflows.ts` and your activities from `src/activities.ts`
+- Node.js and pnpm (or npm)
+- Vertesia CLI
+- An application manifest declared in Vertesia
 
-## Test locally the workflows.
+### Declaring Your Web Application Plugin in Vertesia
 
-There are two ways to test the agent worker:
+Before you can develop and integrate your web application plugin with Vertesia, you must declare an application manifest in the Vertesia platform using the Vertesia CLI.
 
-1. Using `npm start`. This will start the worker in your terminal.
-2. Using `vertesia agent run` from your project root. This will run the agent worker in side the docker image you previously built. See the [Build](build-the-agent-docker-image) section.
+#### Install the Vertesia CLI
 
-**Important Note:** All `vertesia agent` commands must be executed in the agent project root.
+If not already done, install the Vertesia CLI and create a profile:
 
-## Debugging locally the workflows.
-
-You can debug the workflows by replaying them locally using the temporal replayer that you can found in  `src/debug-replayer.ts`.
-
-See https://docs.temporal.io/develop/typescript/debugging for more information
-
-## Packaging and publishing your Vertesia agent
-
-When the workflows are working you will want to publish the agent to Vertesia.
-The agent should be packaged as a docker image and then published to the Vertesia cloud.
-
-### Build the agent docker image
-
-When you are ready to test the agent image you can built it using `vertesia agent build` from you project root.
-
-This will build a docker image tagged as `your-organization/your-agent-name:latest`.
-This image is only useable to test locally. You cannot push it to Vertesia.
-
-### Releasing the agent docker image
-
-When you already to push your agent to Vertesia you must first create a version using the following command:
-
-```
-vertesia agent release <version>
+```bash
+npm install -g @vertesia/cli
+vertesia profiles create
 ```
 
-The version must be in the `major.minor.patch[-modifier]` format. \
-Examples: `1.0.0`, `1.0.0-rc1`.
+### Create the App Manifest
 
-This command is creating a new docker tag `your-organization/your-agent-name:version` from the `latest` image tag.
+Create the app manifest using the Vertesia CLI:
 
-### Publishing the agent docker image to Vertesia
-
-Versioned images (using the `release` command) can be published to Vertesia. This can be done using the following command:
-
-```
-vertesia agent publish <version>
-```
-
-where the version is the version of the image tag you want to publish.
-
-You can also only push the image to vertesia without deploying the agent by using the `--push-only` flag:
-
-```
-vertesia agent publish <version> --push-only
+```bash
+vertesia apps create --manifest '{
+  "name": "my-app",
+  "title": "My App",
+  "description": "A sample app",
+  "publisher": "your-org",
+  "private": true,
+  "status": "beta"
+}' --install
 ```
 
-The you can deploy an agent that you previously uploaded to Vertesia by using the command:
+The `--install` flag will automatically install the app and grant permissions to the creator.
 
-```
-vertesia agent publish <version> --deploy-only
+**Important**: The `name` field from your manifest (e.g., `my-app`) is what you'll use as your plugin name in the next step.
+
+## Initialize a Plugin Project
+
+Run the initialization command:
+
+```bash
+npm init @vertesia/plugin
+# or
+pnpm create @vertesia/plugin
 ```
 
-## Managing agent versions
+You will be prompted to choose a template and provide configuration:
 
-You can see the docker image versions you created using the following command:
+### Prompts
 
-```
-vertesia agent versions
-```
+1. **Template type**: Choose between:
+   - **Web application plugin**: For UI extensions
+   - **Agent tool server**: For custom agent tools
+2. **Package manager**: Choose between npm or pnpm
+3. **Plugin name**: Use kebab-case (e.g., my-plugin or my-tools)
+4. **Plugin version**: Semantic version (e.g., 1.0.0)
+5. **Description**: Optional description of your plugin
+
+### Web Application Plugin Specific
+
+If you select the **Web application plugin** template, you'll also be asked:
+
+1. **Isolation strategy**:
+   - **Shadow DOM**: Fully isolated plugin using Shadow DOM (recommended)
+   - **CSS-only isolation**: Lighter isolation using CSS scope, but may have style conflicts
+
+## Working with Plugins
+
+After creating your project, see the README file in the generated project for comprehensive development instructions.
+
+## Support
+
+For issues, questions, or feature requests:
+
+- [GitHub Issues](https://github.com/vertesia/composableai/issues)
+- [Documentation](https://docs.vertesiahq.com/)

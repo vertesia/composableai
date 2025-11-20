@@ -27,24 +27,6 @@ import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
 import { ZenoClient } from "./client.js";
 
-export interface UploadContentObjectPayload
-    extends Omit<CreateContentObjectPayload, "content"> {
-    content?:
-        | StreamSource
-        | File
-        | {
-              // the source URI
-              source: string;
-              // the original name of the input file if any
-              name?: string;
-              // the mime type of the content source.
-              type?: string;
-
-              // the target id in the content store
-              id?: string;
-          };
-}
-
 export interface ComputeFacetsResponse {
     type?: { _id: string; count: number }[];
     location?: { _id: string; count: number }[];
@@ -72,12 +54,14 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    getDownloadUrl(fileUri: string): Promise<{ url: string }> {
+    getDownloadUrl(fileUri: string, name?: string, disposition?: "inline" | "attachment"): Promise<{ url: string }> {
         return this.post("/download-url", {
-            payload: {
-                file: fileUri,
-            } satisfies GetFileUrlPayload,
+            payload: { file: fileUri, name, disposition } satisfies GetFileUrlPayload,
         });
+    }
+
+    getDownloadUrlWithOptions(payload: GetFileUrlPayload): Promise<{ url: string }> {
+        return this.post("/download-url", { payload });
     }
 
     getContentSource(objectId: string): Promise<ContentSource> {
@@ -217,7 +201,7 @@ export class ObjectsApi extends ApiTopic {
     }
 
     async create(
-        payload: UploadContentObjectPayload,
+        payload: CreateContentObjectPayload,
         options?: {
             collection_id?: string;
             processing_priority?: ContentObjectProcessingPriority;

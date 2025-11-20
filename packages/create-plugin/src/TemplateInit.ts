@@ -1,5 +1,6 @@
 import { addDevDependencies, addRuntimeDependencies } from "./deps.js";
 import { PackageJson } from "./Package.js";
+import { TemplateType } from "./types.js";
 
 export interface UserOptions {
     pm: "npm" | "pnpm";
@@ -7,7 +8,7 @@ export interface UserOptions {
     plugin_version: string;
     plugin_description?: string;
     isolation: "shadow" | "css";
-    template: string; // 'web' | 'tool' | 'activity'
+    template: TemplateType;
 }
 
 export abstract class TemplateInit {
