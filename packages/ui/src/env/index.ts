@@ -65,7 +65,7 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
     }
 
     get isStable() {
-        return this.type === "production" || this.type === "preview" || this.type === "dr";
+        return this.type === "production" || this.type === "preview" || this.type === "disaster-recovery";
     }
 
     get isDev() {
