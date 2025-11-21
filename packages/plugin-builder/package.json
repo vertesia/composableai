@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/plugin-builder",
-  "version": "0.80.0-dev-20251118",
+  "version": "0.80.0",
   "description": "A vite plugin to build vertesia UI plugins",
   "type": "module",
   "types": "./lib/index.d.ts",
