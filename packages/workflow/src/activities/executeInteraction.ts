@@ -1,4 +1,4 @@
-import { CompletionResult, Modalities, ModelOptions } from "@llumiverse/common";
+import { CompletionResult, ModelOptions } from "@llumiverse/common";
 import { activityInfo, log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
@@ -159,32 +159,37 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         let completionResult: CompletionResult[] = res.result;
 
         // Handle image uploads if the result contains base64 images
-        if (res.output_modality === Modalities.image) {
-            const images = res.result.images();
+        const imageResults = completionResult.filter(r => r.type === "image");
+        if (imageResults.length > 0) {
             const uploadedImages = await Promise.all(
-                images.map((image: string, index: number) => {
-                    // Extract base64 data and create buffer
-                    const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, "");
-                    const buffer = Buffer.from(base64Data, 'base64');
+                completionResult.map(async (item, index) => {
+                    if (item.type === "image") {
+                        const image = item.value;
+                        // Extract base64 data and create buffer
+                        const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, "");
+                        const buffer = Buffer.from(base64Data, 'base64');
 
-                    // Generate filename
-                    const { runId } = activityInfo().workflowExecution;
-                    const { activityId } = activityInfo();
-                    const filename = `generated-image-${runId}-${activityId}-${index}.png`;
+                        // Generate filename
+                        const { runId } = activityInfo().workflowExecution;
+                        const { activityId } = activityInfo();
+                        const filename = `generated-image-${runId}-${activityId}-${index}.png`;
 
-                    // Create a readable stream from the buffer
-                    const stream = Readable.from(buffer);
+                        // Create a readable stream from the buffer
+                        const stream = Readable.from(buffer);
 
-                    const source = new NodeStreamSource(
-                        stream,
-                        filename,
-                        "image/png",
-                    );
+                        const source = new NodeStreamSource(
+                            stream,
+                            filename,
+                            "image/png",
+                        );
 
-                    return client.files.uploadFile(source);
+                        const file = await client.files.uploadFile(source);
+                        return { type: "image", value: file } as CompletionResult;
+                    }
+                    return item;
                 })
             );
-            completionResult = uploadedImages.map(file => ({ type: "image", value: file }));
+            completionResult = uploadedImages;
         }
 
         return projectResult(payload, params, res, {
