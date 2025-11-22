@@ -269,6 +269,9 @@ export interface InteractionEndpoint {
     version: number;
     tags: string[];
     agent_runner_options?: AgentRunnerOptions;
+    /**
+     * @deprecated This is deprecated. Use CompletionResult.type information instead.
+     */
     output_modality?: Modalities;
     result_schema?: JSONSchema;
     params_schema?: JSONSchema;
@@ -373,6 +376,9 @@ export interface InteractionData {
     model?: string;
     model_options?: ModelOptions;
     restriction?: RunDataStorageLevel;
+    /**
+     * @deprecated This is deprecated. Use CompletionResult.type information instead.
+     */
     output_modality?: Modalities;
 }
 export interface Interaction extends InteractionData {
@@ -725,7 +731,11 @@ export interface BaseExecutionRun<P = any> {
     config: InteractionExecutionConfiguration;
     error?: InteractionExecutionError;
     source: RunSource;
-    output_modality: Modalities;
+
+    /**
+     * @deprecated This is deprecated. Use CompletionResult.type information instead.
+     */
+    output_modality?: Modalities;
     created_by: string;
     updated_by: string;
 
