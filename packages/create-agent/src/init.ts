@@ -86,7 +86,7 @@ export async function init(dirName?: string | undefined) {
         types: 'lib/index.d.ts',
         scripts: {
             "clean": "rimraf ./lib tsconfig.tsbuildinfo",
-            "build": "${npm_package_vertesia_pm} run clean && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
+            "build": "${npm_package_vertesia_pm} run clean && pnpm exec tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
             "start": "node lib/main.js",
             "connect": `${VERTESIA_CLI} agent connect`,
         },

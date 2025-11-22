@@ -19,7 +19,7 @@
         "hooks"
     ],
     "scripts": {
-        "build": "pnpm lint && pnpm exec rimraf ./lib && tsc -b && pnpm exec rollup -c",
+        "build": "pnpm lint && pnpm exec rimraf ./lib && pnpm exec tsc --build && pnpm exec rollup -c",
         "lint": "eslint \"src/**/*.{ts,tsx}\"",
         "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix"
     },
