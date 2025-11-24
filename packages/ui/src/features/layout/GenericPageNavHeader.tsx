@@ -51,7 +51,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
                 items.push({
                     label: buildBreadcrumbLabel(entry),
                     href: entry.href,
-                    onClick: () => window.history.go(-stepsBack)
+                    onClick: () => navigate(entry.href, { stepsBack: stepsBack })
                 });
             });
         }
