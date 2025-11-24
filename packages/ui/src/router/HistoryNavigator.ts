@@ -66,6 +66,10 @@ export interface NavigateOptions {
      * if defined, indicate whether the basePath will be used as a top-level base path or a nested base path.
      */
     isBasePathNested?: boolean;
+    // Number of steps to go back in history, which will pop the history stack instead of pushing a new entry
+    stepsBack?: number;
+    // the title to set for the new history entry
+    title?: string;
 }
 
 function getElementHrefAsUrl(elem: HTMLElement) {
@@ -113,6 +117,11 @@ export class HistoryNavigator {
     }
 
     navigate(to: string, options: NavigateOptions = {}) {
+        if (options.stepsBack && options.stepsBack > 0) {
+            this.stepBack(options.stepsBack, options);
+            return;
+        }
+
         if (options.basePath) {
             let basePath = options.basePath;
             if (!basePath.startsWith('/')) {
@@ -124,6 +133,24 @@ export class HistoryNavigator {
         this._navigate(new URL(to, window.location.href), 'navigate', options);
     }
 
+    stepBack(steps: number, options: NavigateOptions = {}) {
+        const historyChain = window.history.state.historyChain || [];
+        const to = historyChain.length >= steps
+            ? new URL(historyChain[historyChain.length - steps].href, window.location.href)
+            : new URL(window.location.origin, window.location.href);
+        this._navigate(to, 'popState', options);
+
+        const stateToStore = {
+            from: window.location.href,
+            historyChain: historyChain.slice(0, -steps),
+            data: options.state || undefined,
+            title: options.title || document.title
+        };
+        
+        window.history['replaceState'](stateToStore, '', to.href);
+        this.fireLocationChange(new AfterLocationChangeEvent('popState', to, options.state));
+    }
+
     _navigate(to: URL, type: LocationChangeType, options: NavigateOptions) {
         const beforeEvent = new BeforeLocationChangeEvent(type, to, options.state);
         this.fireLocationChange(beforeEvent);
@@ -133,7 +160,7 @@ export class HistoryNavigator {
         
         // Build navigation chain by preserving previous history
         const currentState = window.history.state;
-        const currentTitle = document.title;
+        const currentTitle = options.title || document.title;
         
         // Create new history chain entry
         const newChainEntry = {
@@ -160,7 +187,8 @@ export class HistoryNavigator {
         const stateToStore = {
             from: window.location.href,
             historyChain: historyChain,
-            data: options.state || undefined
+            data: options.state || undefined,
+            title: options.title || document.title
         };
         
         window.history[options.replace ? 'replaceState' : 'pushState'](stateToStore, '', to.href);
