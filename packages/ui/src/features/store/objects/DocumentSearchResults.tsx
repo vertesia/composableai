@@ -27,7 +27,8 @@ const defaultLayout: ColumnLayout[] = [
 
 function getTableLayout(registry: TypeRegistry, type: string | undefined): ColumnLayout[] {
     const layout = type ? registry.getTypeLayout(type) : defaultLayout;
-    return layout ?? defaultLayout;
+    const result = layout ?? defaultLayout;
+    return result;
 }
 
 interface DocumentSearchResultsWithDropZoneProps {
