@@ -27,7 +27,8 @@ const defaultLayout: ColumnLayout[] = [
 
 function getTableLayout(registry: TypeRegistry, type: string | undefined): ColumnLayout[] {
     const layout = type ? registry.getTypeLayout(type) : defaultLayout;
-    return layout ?? defaultLayout;
+    const result = layout ?? defaultLayout;
+    return result;
 }
 
 interface DocumentSearchResultsWithDropZoneProps {
@@ -94,6 +95,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const [actualLayout, setActualLayout] = useState<ColumnLayout[]>(
         typeRegistry ? layout || getTableLayout(typeRegistry, search.query.type) : defaultLayout,
     );
+
     //TODO _setRefreshTrigger state not used
     const [refreshTrigger, _setRefreshTrigger] = useState(0);
     const [loaded, setLoaded] = useState(0);
@@ -344,7 +346,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
     const { store } = useUserSession();
     const toast = useToast();
     const navigate = useNavigate();
-    const onDownload = useDownloadDocument(store, toast, object?.content?.source);
+    const onDownload = useDownloadDocument(store, toast, object?.content?.source, object?.name || object?.content?.name);
 
     return object ? (
         <SidePanel title={object.properties?.title || object.name} isOpen={true} onClose={onClose}>

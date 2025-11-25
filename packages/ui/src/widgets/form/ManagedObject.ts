@@ -10,6 +10,10 @@ function getInputType(_name: string, schema: PropertySchema) {
     if (schema.editor) {
         return schema.editor;
     }
+    // Check format as fallback (e.g., "document", "media", "date", etc.)
+    if (schema.schema.format) {
+        return schema.schema.format;
+    }
     switch (schema.type) {
         case 'number':
         case 'integer':

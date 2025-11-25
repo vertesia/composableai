@@ -119,7 +119,7 @@ export default function AllMessagesMixed({
     return (
         <div
             ref={containerRef}
-            className="flex-1 min-h-0 h-full overflow-y-auto py-2 px-4 sm:px-6 lg:px-8 flex flex-col relative"
+            className="flex-1 min-h-0 h-full overflow-y-auto px-4 sm:px-2 lg:px-4 flex flex-col relative"
             data-testid="all-messages-mixed"
         >
 
