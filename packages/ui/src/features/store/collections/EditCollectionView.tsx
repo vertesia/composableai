@@ -265,11 +265,11 @@ function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
 
     return (
         <Panel title="Properties" action={
-            <Button size="lg" isLoading={isUpdating} type="submit">
+            <Button size="lg" isLoading={isUpdating} type="submit" onClick={() => _onSave(object?.value)}>
                 Save
             </Button>}
         >
-            <GeneratedForm object={object} onSubmit={_onSave} />
+            <GeneratedForm object={object} />
         </Panel>
     );
 }
