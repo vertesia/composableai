@@ -97,11 +97,9 @@ export class PayloadBuilder {
     }
 
     async restoreConversation(context: WorkflowInteractionVars) {
-        //TODO (context as any).model and (context as any).environment are there to support assistant format
-        // we must align assiustant with studio and remove the 2  || (context as any)
         const inter = await this.vertesia.interactions.catalog.resolve(context.interaction);
-        const envId = inter.runtime?.environment || context.config?.environment || (context as any).environment;
-        const model = context.config?.environment || (context as any).model;
+        const envId = inter.runtime?.environment || context.config?.environment;
+        const model = context.config?.model;
         const env = await (envId ?
             this.vertesia.environments.retrieve(context.config?.environment)
             :
