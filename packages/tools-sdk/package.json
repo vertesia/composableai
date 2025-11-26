@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/tools-sdk",
-    "version": "0.79.3",
+    "version": "0.80.0",
     "description": "Tools SDK - utilities for building remote tools",
     "type": "module",
     "types": "./lib/types/index.d.ts",
@@ -28,12 +28,17 @@
         "outDir": "lib"
     },
     "peerDependencies": {
-        "hono": "^4.0.0"
+        "hono": "^4.9.6"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "jose": "^6.0.11"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/tools-sdk"
     }
 }
