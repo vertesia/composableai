@@ -13,6 +13,7 @@ export enum ContentObjectApiHeaders {
 export enum ContentObjectStatus {
     created = "created",
     processing = "processing", // the was created and still processing
+    ready = "ready", // the object is rendered and ready to be used
     completed = "completed",
     failed = "failed",
     archived = "archived",
