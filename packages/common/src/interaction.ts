@@ -255,7 +255,8 @@ export interface InteractionExecutionPayload {
      */
     data?: Record<string, any> | `memory:${string}`;
     config?: InteractionExecutionConfiguration;
-    result_schema?: JSONSchema4;
+    //Use null to explicitly state no schema, will not fallback to interaction schema
+    result_schema?: JSONSchema4 | null;
     stream?: boolean;
     do_validate?: boolean;
     tags?: string | string[]; // tags to be added to the execution run
