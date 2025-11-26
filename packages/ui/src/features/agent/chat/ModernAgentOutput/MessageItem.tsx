@@ -9,6 +9,7 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AnimatedThinkingDots, PulsatingCircle } from "../AnimatedThinkingDots";
 import { ThinkingMessages } from "../WaitingMessages";
+import { AgentChart, type AgentChartSpec } from "../AgentChart";
 import { getWorkstreamId } from "./utils";
 
 interface MessageItemProps {
@@ -304,6 +305,20 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                             const match = /language-(\w+)/.exec(className || "");
                             const isInline = !match;
                             const language = match ? match[1] : "";
+
+                            // Check for chart language
+                            if (!isInline && (language === 'chart' || className?.includes('language-chart'))) {
+                                try {
+                                    const raw = String(children || '').trim();
+                                    const spec = JSON.parse(raw) as AgentChartSpec;
+                                    if (spec && spec.chart && Array.isArray(spec.data)) {
+                                        return <AgentChart spec={spec} />;
+                                    }
+                                } catch (e) {
+                                    // Fall through to default code block rendering
+                                    console.warn('Failed to parse chart spec:', e);
+                                }
+                            }
 
                             // Keep only the language indicator logic here, styling moved to CSS
                             return (
