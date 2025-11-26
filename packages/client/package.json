@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/client",
-    "version": "0.79.1",
+    "version": "0.79.3",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [

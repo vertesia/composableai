@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/cli",
-    "version": "0.79.1",
+    "version": "0.79.3",
     "description": "The Vertesia command-line interface (CLI) provides a set of commands to manage and interact with the Vertesia Platform.",
     "type": "module",
     "bin": {

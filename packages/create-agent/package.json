@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/create-agent",
-    "version": "0.79.1",
+    "version": "0.79.3",
     "description": "Initialize workflow agent package",
     "type": "module",
     "bin": {

@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/react",
-    "version": "0.79.1",
+    "version": "0.79.3",
     "description": "React helpers for Composable AI",
     "type": "module",
     "types": "./lib/index.d.ts",

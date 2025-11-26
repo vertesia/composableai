@@ -78,6 +78,9 @@ export interface InteractionEndpoint {
     visibility?: InteractionVisibility;
     version: number;
     tags: string[];
+    /**
+     * @deprecated This is deprecated. Use CompletionResult.type information instead.
+     */
     output_modality?: Modalities;
     result_schema?: JSONSchema;
     params_schema?: JSONSchema;
@@ -185,6 +188,10 @@ export interface Interaction {
     model: string;
     model_options?: ModelOptions;
     prompts: PromptSegmentDef[];
+
+    /**
+     * @deprecated This is deprecated. Use CompletionResult.type information instead.
+     */
     output_modality?: Modalities;
     environment: string | ExecutionEnvironmentRef;
     restriction?: RunDataStorageLevel;
@@ -464,7 +471,11 @@ export interface ExecutionRun<P = any> {
     config: InteractionExecutionConfiguration;
     error?: InteractionExecutionError;
     source: RunSource;
-    output_modality: Modalities;
+
+    /**
+     * @deprecated This is deprecated. Use CompletionResult.type information instead.
+     */
+    output_modality?: Modalities;
     created_by: string;
     updated_by: string;
 
