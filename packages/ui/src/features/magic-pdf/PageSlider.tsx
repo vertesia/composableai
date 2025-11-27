@@ -1,4 +1,4 @@
-import { Center } from "@vertesia/ui/core";
+import { Button, Center } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
 import { useRef, useEffect, useState, KeyboardEvent } from "react";
@@ -76,10 +76,9 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
     return (
         <div ref={ref} className={clsx('flex flex-col items-stretch gap-y-2', className)}>
             <div className="relative flex h-9 items-center justify-center px-2">
-                <button className={BTN_CLASS}
-                    onClick={goPrev}>
-                    <ChevronsUp className='w-5 h-5' />
-                </button>
+                <Button variant="ghost" size="xs" onClick={goPrev} alt="Previous page">
+                    <ChevronsUp className='size-4' />
+                </Button>
                 <div className="absolute right-2">
                     <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
                 </div>
@@ -97,11 +96,10 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
                     ))}
                 </SharedPdfProvider>
             </div>
-            <div className="flex h-5 items-center justify-center">
-                <button className={BTN_CLASS}
-                    onClick={goNext}>
-                    <ChevronsDown className='size-5' />
-                </button>
+            <div className="flex h-9 items-center justify-center">
+                <Button variant="ghost" size="xs" onClick={goNext} alt="Next page">
+                    <ChevronsDown className='size-4' />
+                </Button>
             </div>
         </div>
     )
@@ -185,5 +183,3 @@ function PdfPageThumbnail({ pageNumber, currentPage, width, onSelect }: PdfPageT
         </div>
     )
 }
-
-const BTN_CLASS = "cursor-pointer text-muted-foreground hover:text-primary hover:font-semibold";
