@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
 import { Input } from './input';
 import { Button } from '@vertesia/ui/core';
+import { VTooltip } from './tooltip';
 
 export interface VSelectBoxBaseProps<T> {
     options: T[] | undefined;
@@ -45,7 +46,7 @@ interface VSelectBoxMultipleProps<T> extends VSelectBoxBaseProps<T> {
 
 type VSelectBoxProps<T> = VSelectBoxSingleProps<T> | VSelectBoxMultipleProps<T>;
 
-export function VSelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false, warnOnMissingValue = true, missingValueWarning = "This value is no longer available" }: Readonly<VSelectBoxProps<T>>) {
+export function VSelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false, warnOnMissingValue = true, missingValueWarning = "Value not in options list, may not be valid" }: Readonly<VSelectBoxProps<T>>) {
     const triggerRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [width, setWidth] = useState<number>(0);
@@ -272,7 +273,6 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                 <div
                     ref={triggerRef}
                     onClick={handleTriggerClick}
-                    title={isMissingValue ? missingValueWarning : undefined}
                     className={clsx(
                         className,
                         border && (isMissingValue ? 'border border-destructive' : 'border border-border'),
@@ -289,7 +289,11 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                     >
                         {label && <div className='w-full text-left text-xs font-semibold'>{label}</div>}
                         <div className={clsx('w-full text-left min-h-6', !disabled && '', isMissingValue && 'text-destructive')}>
-                            {isMissingValue && <AlertTriangle className="inline-block size-4 mr-1 -mt-0.5" />}
+                            {isMissingValue && (
+                                <VTooltip description={missingValueWarning} placement="top" asChild>
+                                    <AlertTriangle className="inline-block size-4 mr-1 -mt-0.5 cursor-help" />
+                                </VTooltip>
+                            )}
                             {multiple ? renderMultipleValue() : renderSingleValue()}
                         </div>
                     </div>
