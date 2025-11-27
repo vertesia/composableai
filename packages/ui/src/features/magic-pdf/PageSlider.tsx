@@ -1,7 +1,7 @@
 import { Center } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, KeyboardEvent } from "react";
 import { usePdfPagesInfo } from "./PdfPageProvider";
 import { SharedPdfProvider, VirtualizedPdfPage } from "./PdfPageRenderer";
 
@@ -52,38 +52,37 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
         };
     }, []);
 
+    // Jump to current page when it changes
+    useEffect(() => {
+        if (ref.current) {
+            ref.current.querySelector(`div[data-index="${currentPage - 1}"]`)?.scrollIntoView({
+                behavior: 'instant',
+                block: 'start'
+            });
+        }
+    }, [currentPage]);
+
     const goPrev = () => {
         if (currentPage > 1) {
             onChange(currentPage - 1);
-            if (ref.current) {
-                ref.current.querySelector(`div[data-index="${currentPage - 2}"]`)?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start',
-                    inline: 'center'
-                });
-            }
         }
     }
     const goNext = () => {
         if (currentPage < count) {
             onChange(currentPage + 1);
-            if (ref.current) {
-                ref.current.querySelector(`div[data-index="${currentPage}"]`)?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start',
-                    inline: 'center'
-                });
-            }
         }
     }
 
     return (
         <div ref={ref} className={clsx('flex flex-col items-stretch gap-y-2', className)}>
-            <div className="flex h-5 items-center justify-center">
+            <div className="relative flex h-9 items-center justify-center px-2">
                 <button className={BTN_CLASS}
                     onClick={goPrev}>
                     <ChevronsUp className='w-5 h-5' />
                 </button>
+                <div className="absolute right-2">
+                    <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
+                </div>
             </div>
             <div ref={scrollContainerRef} className='flex flex-col items-center gap-2 flex-1 overflow-y-auto px-2'>
                 <SharedPdfProvider pdfUrl={pdfUrl} urlLoading={pdfUrlLoading}>
@@ -106,6 +105,61 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
             </div>
         </div>
     )
+}
+
+interface PageNavigatorProps {
+    currentPage: number;
+    totalPages: number;
+    onChange: (page: number) => void;
+}
+function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps) {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [inputValue, setInputValue] = useState(String(currentPage));
+
+    // Sync input value when currentPage changes externally
+    useEffect(() => {
+        setInputValue(String(currentPage));
+    }, [currentPage]);
+
+    const handleSubmit = () => {
+        const page = parseInt(inputValue, 10);
+        if (!isNaN(page) && page >= 1 && page <= totalPages) {
+            onChange(page);
+        } else {
+            // Reset to current page if invalid
+            setInputValue(String(currentPage));
+        }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleSubmit();
+            inputRef.current?.blur();
+        } else if (e.key === 'Escape') {
+            setInputValue(String(currentPage));
+            inputRef.current?.blur();
+        }
+    };
+
+    const handleBlur = () => {
+        handleSubmit();
+    };
+
+    return (
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span>Page</span>
+            <input
+                ref={inputRef}
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={handleBlur}
+                className="w-8 h-5 text-center text-xs px-1 py-0 bg-background border border-border rounded focus:outline-none focus:border-primary"
+            />
+            <span>/ {totalPages}</span>
+        </div>
+    );
 }
 
 interface PdfPageThumbnailProps {

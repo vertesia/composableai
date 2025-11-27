@@ -1,4 +1,5 @@
 import { ContentObject, DocumentMetadata } from "@vertesia/common";
+import { Button } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Popover } from "@vertesia/ui/widgets";
 import { Download } from "lucide-react";
@@ -24,18 +25,18 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
     const processorType = getProcessorType();
 
     const buttonClass = "p-2 cursor-pointer hover:bg-muted text-left text-sm";
-    const iconButtonClass = "w-5 h-5 cursor-pointer text-muted-foreground hover:text-foreground flex items-center justify-center";
 
     // For markdown processor, only one download option - render simple button
     if (processorType === "markdown") {
         return (
-            <button
-                className={iconButtonClass}
+            <Button
+                variant="ghost"
+                size="xs"
                 onClick={() => onDownload("document.md")}
-                title="Download document.md"
+                alt="Download"
             >
                 <Download className='size-4' />
-            </button>
+            </Button>
         );
     }
 
@@ -43,9 +44,13 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
     return (
         <Popover strategy='absolute' placement='bottom-start' zIndex={100} offset={8}>
             <Popover.Trigger click>
-                <button className={iconButtonClass}>
+                <Button
+                    variant="ghost"
+                    size="xs"
+                    alt="Download"
+                >
                     <Download className='size-4' />
-                </button>
+                </Button>
             </Popover.Trigger>
             <Popover.Content>
                 <div className="rounded-md shadow-md border border-border bg-popover min-w-[200px] flex flex-col divide-y divide-border">
