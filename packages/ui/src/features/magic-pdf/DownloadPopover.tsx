@@ -1,7 +1,7 @@
 import { ContentObject, DocumentMetadata } from "@vertesia/common";
 import { useUserSession } from "@vertesia/ui/session";
 import { Popover } from "@vertesia/ui/widgets";
-import { CloudDownload } from "lucide-react";
+import { Download } from "lucide-react";
 import { getResourceUrl } from "./PdfPageProvider";
 
 interface DownloadPopoverProps {
@@ -12,7 +12,7 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
     const onDownload = (name: string) => {
         getResourceUrl(client, object.id, name).then(url => window.open(url, '_blank'));
     }
-    
+
     const getProcessorType = (): string => {
         if (object.metadata?.type === "document") {
             const docMetadata = object.metadata as DocumentMetadata;
@@ -20,46 +20,46 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
         }
         return "xml"; // default
     };
-    
+
     const processorType = getProcessorType();
-    
-    const renderDownloadOptions = () => {
-        if (processorType === "markdown") {
-            return (
-                <button className="p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-100" onClick={() => onDownload("document.md")}>
-                    document.md
-                </button>
-            );
-        }
-        
-        // Default XML processor options
+
+    const buttonClass = "p-2 cursor-pointer hover:bg-muted text-left text-sm";
+    const iconButtonClass = "w-5 h-5 cursor-pointer text-muted-foreground hover:text-foreground flex items-center justify-center";
+
+    // For markdown processor, only one download option - render simple button
+    if (processorType === "markdown") {
         return (
-            <>
-                <button className="p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-100" onClick={() => onDownload("annotated.pdf")}>
-                    annotated.pdf
-                </button>
-                <button className="p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-100" onClick={() => onDownload("document.xml")}>
-                    document.xml
-                </button>
-                <button className="p-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-100" onClick={() => onDownload("analyzed-pages.json")}>
-                    analyzed-pages.json
-                </button>
-            </>
+            <button
+                className={iconButtonClass}
+                onClick={() => onDownload("document.md")}
+                title="Download document.md"
+            >
+                <Download className='size-4' />
+            </button>
         );
-    };
-    
+    }
+
+    // Default XML processor - multiple options, use popover
     return (
-        <div className="absolute bottom-[58px] right-[20px] w-[36px] h-[36px] cursor-pointer text-indigo-400 border-indigo-400 hover:border-indigo-500 hover:text-indigo-500 border-2 rounded-full shadow-xs flex items-center justify-center">
-            <Popover strategy='absolute' placement='top-end' zIndex={100} offset={20}>
-                <Popover.Trigger click>
-                    <CloudDownload className='size-6' />
-                </Popover.Trigger>
-                <Popover.Content>
-                    <div className="rounded-md shadow-md border border-gray-100 bg-white dark:bg-slate-50 dark:border-slate-100 min-w-[200px] flex flex-col divide-y">
-                        {renderDownloadOptions()}
-                    </div>
-                </Popover.Content>
-            </Popover>
-        </div>
+        <Popover strategy='absolute' placement='bottom-start' zIndex={100} offset={8}>
+            <Popover.Trigger click>
+                <button className={iconButtonClass}>
+                    <Download className='size-4' />
+                </button>
+            </Popover.Trigger>
+            <Popover.Content>
+                <div className="rounded-md shadow-md border border-border bg-popover min-w-[200px] flex flex-col divide-y divide-border">
+                    <button className={buttonClass} onClick={() => onDownload("annotated.pdf")}>
+                        annotated.pdf
+                    </button>
+                    <button className={buttonClass} onClick={() => onDownload("document.xml")}>
+                        document.xml
+                    </button>
+                    <button className={buttonClass} onClick={() => onDownload("analyzed-pages.json")}>
+                        analyzed-pages.json
+                    </button>
+                </div>
+            </Popover.Content>
+        </Popover>
     )
 }

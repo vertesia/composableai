@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, createContext, useContext, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, createContext, useContext, useMemo } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Loader2 } from 'lucide-react';
 
@@ -86,12 +86,21 @@ export function PdfPageRenderer({
     );
 }
 
+// Page dimensions from PDF
+interface PageDimensions {
+    width: number;
+    height: number;
+    aspectRatio: number; // width / height
+}
+
 // Context for sharing a PDF document across multiple page renders
 interface SharedPdfContextValue {
     pdfUrl: string;
     numPages: number;
     loading: boolean;
     error: Error | null;
+    /** First page dimensions (most PDFs have uniform page sizes) */
+    pageDimensions: PageDimensions | null;
 }
 
 const SharedPdfContext = createContext<SharedPdfContextValue | null>(null);
@@ -113,11 +122,26 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
     const [numPages, setNumPages] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
+    const [pageDimensions, setPageDimensions] = useState<PageDimensions | null>(null);
 
-    const handleLoadSuccess = ({ numPages: pages }: { numPages: number }) => {
-        setNumPages(pages);
+    const handleLoadSuccess = async (pdf: { numPages: number; getPage: (pageNum: number) => Promise<{ getViewport: (options: { scale: number }) => { width: number; height: number } }> }) => {
+        setNumPages(pdf.numPages);
+        onLoadSuccess?.(pdf.numPages);
+
+        // Get first page dimensions using pdfjs
+        try {
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 1 });
+            setPageDimensions({
+                width: viewport.width,
+                height: viewport.height,
+                aspectRatio: viewport.width / viewport.height
+            });
+        } catch (err) {
+            console.error('Failed to get page dimensions:', err);
+        }
+
         setLoading(false);
-        onLoadSuccess?.(pages);
     };
 
     const handleError = (err: Error) => {
@@ -132,8 +156,9 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
         pdfUrl,
         numPages,
         loading: isLoading,
-        error
-    }), [pdfUrl, numPages, isLoading, error]);
+        error,
+        pageDimensions
+    }), [pdfUrl, numPages, isLoading, error, pageDimensions]);
 
     return (
         <SharedPdfContext.Provider value={value}>
@@ -255,7 +280,6 @@ export function VirtualizedPdfPage({
     const containerRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
     const [hasBeenVisible, setHasBeenVisible] = useState(false);
-    const [renderedHeight, setRenderedHeight] = useState<number | null>(null);
     const context = useSharedPdf();
 
     // Set up intersection observer
@@ -286,16 +310,6 @@ export function VirtualizedPdfPage({
         };
     }, [rootMargin]);
 
-    // Capture the rendered height when the page loads
-    const handlePageLoad = useCallback(() => {
-        if (containerRef.current) {
-            const pageElement = containerRef.current.querySelector('.react-pdf__Page');
-            if (pageElement) {
-                setRenderedHeight(pageElement.clientHeight);
-            }
-        }
-    }, []);
-
     if (!context) {
         return (
             <div className={`flex items-center justify-center text-red-500 text-sm ${className || ''}`}>
@@ -304,7 +318,7 @@ export function VirtualizedPdfPage({
         );
     }
 
-    const { pdfUrl, loading, error } = context;
+    const { pdfUrl, loading, error, pageDimensions } = context;
 
     if (error) {
         return (
@@ -314,10 +328,10 @@ export function VirtualizedPdfPage({
         );
     }
 
-    // Calculate placeholder height based on A4 aspect ratio if width is provided
-    // A4 portrait: height = width / A4_ASPECT_RATIO
-    const estimatedA4Height = width ? Math.round(width / A4_ASPECT_RATIO) : 200;
-    const placeholderHeight = renderedHeight ?? estimatedA4Height;
+    // Use actual PDF aspect ratio from context, fallback to A4
+    const aspectRatio = pageDimensions?.aspectRatio ?? A4_ASPECT_RATIO;
+    // Calculate placeholder height based on aspect ratio
+    const placeholderHeight = width ? Math.round(width / aspectRatio) : 200;
 
     // Show placeholder when:
     // 1. PDF is still loading globally
@@ -346,8 +360,16 @@ export function VirtualizedPdfPage({
 
     // Once visible, render the actual page
     // Keep rendering even when scrolled away to preserve the canvas (if hasBeenVisible)
+    // Use explicit dimensions to prevent layout shift during re-render
+    const containerStyle: React.CSSProperties = {
+        width: width || '100%',
+        // Set min-height based on aspect ratio to prevent collapse during re-render
+        minHeight: width ? Math.round(width / aspectRatio) : undefined,
+        overflow: 'hidden'
+    };
+
     return (
-        <div ref={containerRef} className={className}>
+        <div ref={containerRef} className={className} style={containerStyle}>
             <Document file={pdfUrl} loading={null}>
                 <Page
                     pageNumber={pageNumber}
@@ -356,7 +378,6 @@ export function VirtualizedPdfPage({
                     renderTextLayer={renderTextLayer}
                     renderAnnotationLayer={renderAnnotationLayer}
                     loading={<LoadingSpinner className="py-8" size="md" />}
-                    onRenderSuccess={handlePageLoad}
                 />
             </Document>
         </div>
