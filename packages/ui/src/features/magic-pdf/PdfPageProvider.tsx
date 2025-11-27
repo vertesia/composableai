@@ -20,6 +20,8 @@ interface PdfPagesInfo {
     markdownProvider: PageMarkdownProvider;
     xml: string;
     xmlPages: string[];
+    pdfUrl: string;
+    pdfUrlLoading: boolean;
 }
 
 class PageLayoutProvider {
@@ -57,36 +59,68 @@ class PageLayoutProvider {
 }
 
 class PageMarkdownProvider {
-    markdownUrls: string[] = [];
-    cache: string[];
-    constructor(public totalPages: number) {
-        this.cache = new Array<string>(totalPages);
+    private cache: Map<number, string> = new Map();
+    private pendingRequests: Map<number, Promise<string>> = new Map();
+    private vertesia: VertesiaClient | null = null;
+    private objectId: string | null = null;
+
+    constructor(public totalPages: number) {}
+
+    // Initialize with client and objectId for lazy loading
+    init(vertesia: VertesiaClient, objectId: string) {
+        this.vertesia = vertesia;
+        this.objectId = objectId;
     }
+
+    // Keep for backwards compatibility with non-markdown processors
     async loadUrls(vertesia: VertesiaClient, objectId: string) {
-        const markdownPromises: Promise<GetFileUrlResponse>[] = [];
-        for (let i = 0; i < this.totalPages; i++) {
-            markdownPromises.push(getMarkdownUrlForPage(vertesia, objectId, i + 1));
-        }
-        const markdownUrls = await Promise.all(markdownPromises);
-        this.markdownUrls = markdownUrls.map((r) => r.url);
+        this.init(vertesia, objectId);
     }
-    async getPageMarkdown(page: number) {
-        const index = page - 1;
-        let content = this.cache[index];
-        if (content === undefined) {
-            const url = this.markdownUrls[index];
-            content = await fetch(url, { method: "GET" }).then((r) => {
-                if (r.ok) {
-                    return r.text();
-                } else {
-                    throw new Error(
-                        "Failed to fetch markdown: " + r.statusText,
-                    );
-                }
-            });
-            this.cache[index] = content;
+
+    async getPageMarkdown(page: number): Promise<string> {
+        // Return from cache if available
+        const cached = this.cache.get(page);
+        if (cached !== undefined) {
+            return cached;
         }
-        return content;
+
+        // Return pending request if already in progress
+        const pending = this.pendingRequests.get(page);
+        if (pending) {
+            return pending;
+        }
+
+        // Lazy load the markdown for this page
+        if (!this.vertesia || !this.objectId) {
+            throw new Error("PageMarkdownProvider not initialized");
+        }
+
+        const request = this.fetchPageMarkdown(page);
+        this.pendingRequests.set(page, request);
+
+        try {
+            const content = await request;
+            this.cache.set(page, content);
+            return content;
+        } finally {
+            this.pendingRequests.delete(page);
+        }
+    }
+
+    private async fetchPageMarkdown(page: number): Promise<string> {
+        if (!this.vertesia || !this.objectId) {
+            throw new Error("PageMarkdownProvider not initialized");
+        }
+
+        // Get the download URL for this specific page
+        const urlResponse = await getMarkdownUrlForPage(this.vertesia, this.objectId, page);
+
+        // Fetch the markdown content
+        const response = await fetch(urlResponse.url, { method: "GET" });
+        if (!response.ok) {
+            throw new Error(`Failed to fetch markdown for page ${page}: ${response.statusText}`);
+        }
+        return response.text();
     }
 }
 
@@ -98,13 +132,54 @@ interface PdfPageProviderProps {
 }
 export function PdfPageProvider({ children, object }: PdfPageProviderProps) {
     const { client } = useUserSession();
-    const [info, setInfo] = useState<PdfPagesInfo>();
+    const [info, setInfo] = useState<PdfPagesInfo | undefined>(() => {
+        // For markdown processor, create initial info immediately (synchronously)
+        const isMarkdownProcessor = (object.metadata as DocumentMetadata)?.content_processor?.type === 'markdown';
+        if (isMarkdownProcessor) {
+            const page_count = (object.metadata as DocumentMetadata).page_count || DEFAULT_PAGE_COUNT;
+            const markdownProvider = new PageMarkdownProvider(page_count);
+            markdownProvider.init(client, object.id);
+            const xml = object.text ? cleanXml(object.text) : "";
+            return {
+                count: page_count,
+                urls: [],
+                originalUrls: [],
+                annotatedUrls: [],
+                instrumentedUrls: [],
+                layoutProvider: new PageLayoutProvider(page_count),
+                markdownProvider,
+                xml,
+                xmlPages: object.text ? extractXmlPages(xml) : [],
+                pdfUrl: '',
+                pdfUrlLoading: true,
+            };
+        }
+        return undefined;
+    });
+
     useEffect(() => {
-        const page_count =
-            (object.metadata as DocumentMetadata).page_count ||
-            DEFAULT_PAGE_COUNT;
-        getPdfPagesInfo(client, object, page_count).then(setInfo);
-    }, [object.id]);
+        const isMarkdownProcessor = (object.metadata as DocumentMetadata)?.content_processor?.type === 'markdown';
+        const page_count = (object.metadata as DocumentMetadata).page_count || DEFAULT_PAGE_COUNT;
+
+        if (isMarkdownProcessor) {
+            // For markdown processor, only fetch the PDF URL lazily
+            if (object.content?.source) {
+                client.store.objects.getDownloadUrl(object.content.source, undefined, 'inline')
+                    .then((response) => {
+                        setInfo(prev => prev ? { ...prev, pdfUrl: response.url, pdfUrlLoading: false } : prev);
+                    })
+                    .catch((e) => {
+                        console.warn('Failed to get PDF URL:', e);
+                        setInfo(prev => prev ? { ...prev, pdfUrlLoading: false } : prev);
+                    });
+            } else {
+                setInfo(prev => prev ? { ...prev, pdfUrlLoading: false } : prev);
+            }
+        } else {
+            // For non-markdown processors, use the original async loading
+            getPdfPagesInfo(client, object, page_count).then(setInfo);
+        }
+    }, [object.id, client]);
 
     return (
         info && (
@@ -230,6 +305,22 @@ async function getPdfPagesInfo(
     object: ContentObject,
     page_count: number,
 ): Promise<PdfPagesInfo> {
+    // Get the original PDF URL from content source
+    let pdfUrl = '';
+    if (object.content?.source) {
+        try {
+            const pdfUrlResponse = await vertesia.store.objects.getDownloadUrl(
+                object.content.source,
+                undefined,
+                'inline'
+            );
+            pdfUrl = pdfUrlResponse.url;
+        } catch (e) {
+            console.warn('Failed to get PDF URL:', e);
+        }
+    }
+
+    // For non-markdown processors, fetch all image URLs
     const imageUrlPromises: Promise<GetFileUrlResponse>[] = [];
     for (let i = 0; i < page_count; i++) {
         imageUrlPromises.push(getImageUrlForPage(vertesia, object.id, i + 1));
@@ -280,6 +371,8 @@ async function getPdfPagesInfo(
         markdownProvider,
         xml,
         xmlPages: object.text ? extractXmlPages(xml) : [],
+        pdfUrl,
+        pdfUrlLoading: false,
     };
 }
 
