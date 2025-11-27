@@ -1,7 +1,7 @@
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
-import { X, Check, ChevronsUpDownIcon } from "lucide-react";
+import { X, Check, ChevronsUpDownIcon, AlertTriangle } from "lucide-react";
 import clsx from "clsx";
-import { ComponentType, KeyboardEvent, ReactNode, SyntheticEvent, useState, useEffect, useRef } from "react";
+import { ComponentType, KeyboardEvent, ReactNode, SyntheticEvent, useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "./Button";
 import { Center } from "./Center";
 
@@ -26,6 +26,10 @@ interface SelectBoxBaseProps<T> {
     ClearIcon?: ComponentType<any>
     clearTitle?: string | undefined
     label?: string | undefined
+    /** Show warning when value is not in options list (default: true) */
+    warnOnMissingValue?: boolean
+    /** Custom warning message when value is not in options */
+    missingValueWarning?: string
 }
 interface ClearableSelectBoxProps<T> extends Omit<SelectBoxBaseProps<T>, 'isClearable' | 'onChange'> {
     onChange: OnChangeClearableSelectFn<T>
@@ -47,7 +51,7 @@ function getFilterByFn<T>(filterBy?: string | ((o: T) => string)) {
     }
 }
 
-export function SelectBox<T>({ clearTitle, ClearIcon = X, showFilter, filterBy, isClearable, disabled, by, options, value, onChange, className, addNew, addNewLabel, placeholder, optionLabel = (option) => String(option), label }: SelectBoxProps<T>) {
+export function SelectBox<T>({ clearTitle, ClearIcon = X, showFilter, filterBy, isClearable, disabled, by, options, value, onChange, className, addNew, addNewLabel, placeholder, optionLabel = (option) => String(option), label, warnOnMissingValue = true, missingValueWarning = "This value is no longer available" }: SelectBoxProps<T>) {
     const [filter, setFilter] = useState<string>();
     const buttonRef = useRef<HTMLButtonElement>(null);
     const [buttonWidth, setButtonWidth] = useState<number>();
@@ -61,6 +65,21 @@ export function SelectBox<T>({ clearTitle, ClearIcon = X, showFilter, filterBy, 
             return () => resizeObserver.disconnect();
         }
     }, []);
+
+    // Check if value is in options list
+    const isMissingValue = useMemo(() => {
+        if (!warnOnMissingValue || value == null || !options) return false;
+        // Use the 'by' comparator if provided
+        if (by) {
+            if (typeof by === 'function') {
+                return !options.some(opt => by(opt, value));
+            } else {
+                return !options.some(opt => (opt as any)[by] === (value as any)[by]);
+            }
+        }
+        // Default: direct equality check
+        return !options.includes(value);
+    }, [warnOnMissingValue, value, options, by]);
 
     const onClear = (e: SyntheticEvent) => {
         e.preventDefault();
@@ -96,10 +115,19 @@ export function SelectBox<T>({ clearTitle, ClearIcon = X, showFilter, filterBy, 
                     <div className="relative">
                         <ListboxButton
                             ref={buttonRef}
-                            className="relative w-full cursor-default rounded-md bg-white py-1.5 text-left text-gray-900 shadow-2xs ring-1 ring-inset ring-gray-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-600 dark:ring-slate-600 dark:text-slate-50 dark:bg-slate-800 sm:text-sm sm:leading-6 hover:cursor-pointer"
+                            className={clsx(
+                                "relative w-full cursor-default rounded-md bg-white py-1.5 text-left text-gray-900 shadow-2xs ring-1 ring-inset focus:outline-hidden focus:ring-2 dark:text-slate-50 dark:bg-slate-800 sm:text-sm sm:leading-6 hover:cursor-pointer",
+                                isMissingValue
+                                    ? "ring-destructive focus:ring-destructive"
+                                    : "ring-gray-300 focus:ring-indigo-600 dark:ring-slate-600"
+                            )}
+                            title={isMissingValue ? missingValueWarning : undefined}
                         >
                             {label && <div className='w-full text-gray-500 text-left px-2'>{label}</div>}
-                            <span className="block truncate pl-3 pr-14">{value ? optionLabel(value) : placeholder}</span>
+                            <span className={clsx("block truncate pl-3 pr-14 min-h-6", isMissingValue && "text-destructive")}>
+                                {isMissingValue && <AlertTriangle className="inline-block size-4 mr-1 -mt-0.5" />}
+                                {value ? optionLabel(value) : placeholder}
+                            </span>
                             {
                                 isClearable && value != null && <span className="absolute inset-y-0 right-0 mr-5 flex items-center pr-2" onClick={onClear}>
                                     <ClearIcon title={clearTitle} className="size-5 text-gray-400 hover:text-red-500 cursor-pointer" aria-hidden="true" />
