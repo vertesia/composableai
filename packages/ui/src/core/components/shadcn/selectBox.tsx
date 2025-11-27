@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { isEqual } from 'lodash-es';
-import { Check, ChevronsUpDown, SearchIcon, SquarePlus, X } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { AlertTriangle, Check, ChevronsUpDown, SearchIcon, SquarePlus, X } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
@@ -25,6 +25,10 @@ export interface VSelectBoxBaseProps<T> {
     isClearable?: boolean;
     border?: boolean;
     inline?: boolean;
+    /** Show warning when value is not in options list (default: true) */
+    warnOnMissingValue?: boolean;
+    /** Custom warning message when value is not in options */
+    missingValueWarning?: string;
 }
 
 interface VSelectBoxSingleProps<T> extends VSelectBoxBaseProps<T> {
@@ -41,11 +45,26 @@ interface VSelectBoxMultipleProps<T> extends VSelectBoxBaseProps<T> {
 
 type VSelectBoxProps<T> = VSelectBoxSingleProps<T> | VSelectBoxMultipleProps<T>;
 
-export function VSelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false }: Readonly<VSelectBoxProps<T>>) {
+export function VSelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false, warnOnMissingValue = true, missingValueWarning = "This value is no longer available" }: Readonly<VSelectBoxProps<T>>) {
     const triggerRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [width, setWidth] = useState<number>(0);
     const [filterValue, setFilterValue] = useState('');
+
+    // Check if value is in options list (for single select only)
+    const isMissingValue = useMemo(() => {
+        if (!warnOnMissingValue || multiple || value == null || !options) return false;
+        // Use the isOptionsEqual helper which respects the 'by' comparator
+        return !options.some(opt => {
+            if (typeof by === 'string') {
+                return (opt as any)[by] === (value as any)[by];
+            } else if (typeof by === 'function') {
+                return by(opt, value as T);
+            } else {
+                return isEqual(opt, value);
+            }
+        });
+    }, [warnOnMissingValue, multiple, value, options, by]);
 
     useEffect(() => {
         const element = triggerRef.current;
@@ -253,9 +272,10 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                 <div
                     ref={triggerRef}
                     onClick={handleTriggerClick}
+                    title={isMissingValue ? missingValueWarning : undefined}
                     className={clsx(
                         className,
-                        border && 'border border-border',
+                        border && (isMissingValue ? 'border border-destructive' : 'border border-border'),
                         'flex flex-row gap-2 items-center justify-between p-2 rounded-md group relative [&:hover_.clear-button]:opacity-100',
                         !disabled ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed text-muted",
                     )}
@@ -268,7 +288,8 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                         )}
                     >
                         {label && <div className='w-full text-left text-xs font-semibold'>{label}</div>}
-                        <div className={clsx('w-full text-left min-h-6', !disabled && '')}>
+                        <div className={clsx('w-full text-left min-h-6', !disabled && '', isMissingValue && 'text-destructive')}>
+                            {isMissingValue && <AlertTriangle className="inline-block size-4 mr-1 -mt-0.5" />}
                             {multiple ? renderMultipleValue() : renderSingleValue()}
                         </div>
                     </div>
