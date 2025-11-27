@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef, createContext, useContext, useMemo } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Loader2 } from 'lucide-react';
 
 // Configure PDF.js worker - use CDN for the worker
-// PDF.js automatically handles heavy operations in a Web Worker thread
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 // Loading spinner component
@@ -90,16 +89,21 @@ export function PdfPageRenderer({
 interface PageDimensions {
     width: number;
     height: number;
-    aspectRatio: number; // width / height
+    aspectRatio: number;
 }
 
-// Context for sharing a PDF document across multiple page renders
+// PDF document proxy type
+interface PDFDocumentProxy {
+    numPages: number;
+    getPage: (pageNum: number) => Promise<{ getViewport: (options: { scale: number }) => { width: number; height: number } }>;
+}
+
+// Context for sharing PDF state
 interface SharedPdfContextValue {
     pdfUrl: string;
     numPages: number;
     loading: boolean;
     error: Error | null;
-    /** First page dimensions (most PDFs have uniform page sizes) */
     pageDimensions: PageDimensions | null;
 }
 
@@ -107,16 +111,14 @@ const SharedPdfContext = createContext<SharedPdfContextValue | null>(null);
 
 interface SharedPdfProviderProps {
     pdfUrl: string;
-    /** Whether the PDF URL is still being fetched */
     urlLoading?: boolean;
-    children: React.ReactNode;
+    children: (renderPage: (pageNumber: number, width?: number) => React.ReactNode) => React.ReactNode;
     onLoadSuccess?: (numPages: number) => void;
 }
 
 /**
- * Provider that loads a PDF once and shares it across multiple page renderers.
- * Use this when rendering multiple thumbnails from the same PDF to avoid
- * loading the PDF multiple times.
+ * Provider that loads a PDF once using a single Document component.
+ * Children receive a renderPage function to render pages inside the Document.
  */
 export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoadSuccess }: SharedPdfProviderProps) {
     const [numPages, setNumPages] = useState(0);
@@ -124,11 +126,10 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
     const [error, setError] = useState<Error | null>(null);
     const [pageDimensions, setPageDimensions] = useState<PageDimensions | null>(null);
 
-    const handleLoadSuccess = async (pdf: { numPages: number; getPage: (pageNum: number) => Promise<{ getViewport: (options: { scale: number }) => { width: number; height: number } }> }) => {
+    const handleLoadSuccess = async (pdf: PDFDocumentProxy) => {
         setNumPages(pdf.numPages);
         onLoadSuccess?.(pdf.numPages);
 
-        // Get first page dimensions using pdfjs
         try {
             const page = await pdf.getPage(1);
             const viewport = page.getViewport({ scale: 1 });
@@ -149,31 +150,50 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
         setError(err);
     };
 
-    // Loading is true if URL is still being fetched OR if we have URL but document hasn't loaded
     const isLoading = urlLoading || (pdfUrl ? loading : true);
 
-    const value = useMemo(() => ({
+    const value: SharedPdfContextValue = {
         pdfUrl,
         numPages,
         loading: isLoading,
         error,
         pageDimensions
-    }), [pdfUrl, numPages, isLoading, error, pageDimensions]);
+    };
+
+    // Render function that children use to render pages
+    const renderPage = (pageNumber: number, width?: number) => (
+        <Page
+            key={pageNumber}
+            pageNumber={pageNumber}
+            width={width}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
+            loading={<LoadingSpinner className="py-4" size="sm" />}
+        />
+    );
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center text-red-500 text-sm py-4">
+                Failed to load PDF
+            </div>
+        );
+    }
 
     return (
         <SharedPdfContext.Provider value={value}>
-            {/* Hidden document loader - only render when URL is available */}
-            {pdfUrl && (
-                <div style={{ display: 'none' }}>
-                    <Document
-                        file={pdfUrl}
-                        onLoadSuccess={handleLoadSuccess}
-                        onLoadError={handleError}
-                        loading={null}
-                    />
-                </div>
+            {pdfUrl ? (
+                <Document
+                    file={pdfUrl}
+                    onLoadSuccess={handleLoadSuccess}
+                    onLoadError={handleError}
+                    loading={<LoadingSpinner className="py-4" size="md" />}
+                >
+                    {children(renderPage)}
+                </Document>
+            ) : (
+                <LoadingSpinner className="py-4" size="md" />
             )}
-            {children}
         </SharedPdfContext.Provider>
     );
 }
@@ -182,205 +202,127 @@ export function useSharedPdf() {
     return useContext(SharedPdfContext);
 }
 
-interface SharedPdfPageProps {
+// A4 portrait aspect ratio
+const A4_ASPECT_RATIO = 210 / 297;
+
+interface SimplePdfPageProps {
     pageNumber: number;
     width?: number;
-    height?: number;
     className?: string;
-    renderTextLayer?: boolean;
-    renderAnnotationLayer?: boolean;
 }
 
 /**
- * Renders a single page from a shared PDF document.
- * Must be used within a SharedPdfProvider.
+ * Simple wrapper for a PDF page that adds styling.
+ * Must be used inside SharedPdfProvider's children render function.
  */
-export function SharedPdfPage({
-    pageNumber,
-    width,
-    height,
-    className,
-    renderTextLayer = false,
-    renderAnnotationLayer = false
-}: SharedPdfPageProps) {
+export function SimplePdfPage({ pageNumber, width, className }: SimplePdfPageProps) {
     const context = useSharedPdf();
+    const aspectRatio = context?.pageDimensions?.aspectRatio ?? A4_ASPECT_RATIO;
+    const placeholderHeight = width ? Math.round(width / aspectRatio) : 200;
 
-    if (!context) {
+    if (context?.loading) {
         return (
-            <div className={`flex items-center justify-center text-red-500 text-sm ${className || ''}`}>
-                SharedPdfPage must be used within SharedPdfProvider
-            </div>
-        );
-    }
-
-    const { pdfUrl, loading, error } = context;
-
-    if (error) {
-        return (
-            <div className={`flex items-center justify-center text-red-500 text-sm ${className || ''}`}>
-                Failed to load PDF
-            </div>
-        );
-    }
-
-    if (loading) {
-        return (
-            <div className={`flex items-center justify-center py-8 ${className || ''}`}>
-                <LoadingSpinner size="lg" />
+            <div
+                className={`flex items-center justify-center bg-gray-100 dark:bg-gray-800 ${className || ''}`}
+                style={{ height: placeholderHeight, width: width || '100%' }}
+            >
+                <LoadingSpinner size="md" />
             </div>
         );
     }
 
     return (
         <div className={className}>
-            <Document file={pdfUrl} loading={null}>
-                <Page
-                    pageNumber={pageNumber}
-                    width={width}
-                    height={height}
-                    renderTextLayer={renderTextLayer}
-                    renderAnnotationLayer={renderAnnotationLayer}
-                    loading={<LoadingSpinner className="py-8" size="md" />}
-                />
-            </Document>
+            <Page
+                pageNumber={pageNumber}
+                width={width}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                loading={<LoadingSpinner className="py-4" size="sm" />}
+            />
         </div>
     );
 }
 
-// A4 portrait aspect ratio: width / height = 210mm / 297mm ≈ 0.707
-const A4_ASPECT_RATIO = 210 / 297;
-
-interface VirtualizedPdfPageProps {
-    pageNumber: number;
-    width?: number;
-    height?: number;
-    className?: string;
-    renderTextLayer?: boolean;
-    renderAnnotationLayer?: boolean;
-    /** Root margin for intersection observer (loads pages before they're visible) */
-    rootMargin?: string;
+interface PdfThumbnailListProps {
+    pdfUrl: string;
+    urlLoading?: boolean;
+    pageCount: number;
+    currentPage: number;
+    thumbnailWidth?: number;
+    onPageSelect: (pageNumber: number) => void;
+    renderThumbnail: (props: {
+        pageNumber: number;
+        isSelected: boolean;
+        pageElement: React.ReactNode;
+        onSelect: () => void;
+    }) => React.ReactNode;
 }
 
 /**
- * Virtualized PDF page that only renders when visible in the viewport.
- * Uses IntersectionObserver to detect visibility and renders a placeholder
- * when not visible. This significantly improves performance for large documents.
- *
- * Must be used within a SharedPdfProvider.
+ * Renders a list of PDF page thumbnails using a single Document.
+ * This ensures the PDF is only downloaded once.
  */
-export function VirtualizedPdfPage({
-    pageNumber,
-    width,
-    height,
-    className,
-    renderTextLayer = false,
-    renderAnnotationLayer = false,
-    rootMargin = '200px 0px' // Pre-load pages 200px before they enter viewport
-}: VirtualizedPdfPageProps) {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [isVisible, setIsVisible] = useState(false);
-    const [hasBeenVisible, setHasBeenVisible] = useState(false);
-    const context = useSharedPdf();
+export function PdfThumbnailList({
+    pdfUrl,
+    urlLoading = false,
+    pageCount,
+    currentPage,
+    thumbnailWidth,
+    onPageSelect,
+    renderThumbnail
+}: PdfThumbnailListProps) {
+    const [error, setError] = useState<Error | null>(null);
 
-    // Set up intersection observer
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                const entry = entries[0];
-                if (entry) {
-                    setIsVisible(entry.isIntersecting);
-                    if (entry.isIntersecting) {
-                        setHasBeenVisible(true);
-                    }
-                }
-            },
-            {
-                rootMargin,
-                threshold: 0
-            }
-        );
-
-        observer.observe(container);
-
-        return () => {
-            observer.disconnect();
-        };
-    }, [rootMargin]);
-
-    if (!context) {
-        return (
-            <div className={`flex items-center justify-center text-red-500 text-sm ${className || ''}`}>
-                VirtualizedPdfPage must be used within SharedPdfProvider
-            </div>
-        );
-    }
-
-    const { pdfUrl, loading, error, pageDimensions } = context;
+    const handleError = (err: Error) => {
+        setError(err);
+    };
 
     if (error) {
         return (
-            <div className={`flex items-center justify-center text-red-500 text-sm ${className || ''}`}>
+            <div className="flex items-center justify-center text-red-500 text-sm py-4">
                 Failed to load PDF
             </div>
         );
     }
 
-    // Use actual PDF aspect ratio from context, fallback to A4
-    const aspectRatio = pageDimensions?.aspectRatio ?? A4_ASPECT_RATIO;
-    // Calculate placeholder height based on aspect ratio
-    const placeholderHeight = width ? Math.round(width / aspectRatio) : 200;
-
-    // Show placeholder when:
-    // 1. PDF is still loading globally
-    // 2. Page has never been visible (not yet scrolled to)
-    // 3. Page was visible but is now out of view (keep placeholder with actual height)
-    const showPlaceholder = loading || (!isVisible && !hasBeenVisible);
-
-    if (showPlaceholder) {
-        return (
-            <div
-                ref={containerRef}
-                className={`flex items-center justify-center bg-gray-100 dark:bg-gray-800 ${className || ''}`}
-                style={{
-                    height: placeholderHeight,
-                    width: width || '100%'
-                }}
-            >
-                {loading ? (
-                    <LoadingSpinner size="md" />
-                ) : (
-                    <span className="text-gray-400 text-sm">Page {pageNumber}</span>
-                )}
-            </div>
-        );
+    if (urlLoading || !pdfUrl) {
+        return <LoadingSpinner className="py-4" size="md" />;
     }
 
-    // Once visible, render the actual page
-    // Keep rendering even when scrolled away to preserve the canvas (if hasBeenVisible)
-    // Use explicit dimensions to prevent layout shift during re-render
-    const containerStyle: React.CSSProperties = {
-        width: width || '100%',
-        // Set min-height based on aspect ratio to prevent collapse during re-render
-        minHeight: width ? Math.round(width / aspectRatio) : undefined,
-        overflow: 'hidden'
-    };
-
     return (
-        <div ref={containerRef} className={className} style={containerStyle}>
-            <Document file={pdfUrl} loading={null}>
-                <Page
-                    pageNumber={pageNumber}
-                    width={width}
-                    height={height}
-                    renderTextLayer={renderTextLayer}
-                    renderAnnotationLayer={renderAnnotationLayer}
-                    loading={<LoadingSpinner className="py-8" size="md" />}
-                />
-            </Document>
-        </div>
+        <Document
+            file={pdfUrl}
+            onLoadError={handleError}
+            loading={<LoadingSpinner className="py-4" size="md" />}
+        >
+            {Array.from({ length: pageCount }, (_, index) => {
+                const pageNumber = index + 1;
+                const pageElement = (
+                    <Page
+                        pageNumber={pageNumber}
+                        width={thumbnailWidth}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                        loading={
+                            <div
+                                className="flex items-center justify-center bg-gray-100 dark:bg-gray-800"
+                                style={{ height: thumbnailWidth ? Math.round(thumbnailWidth / A4_ASPECT_RATIO) : 200 }}
+                            >
+                                <LoadingSpinner size="sm" />
+                            </div>
+                        }
+                    />
+                );
+
+                return renderThumbnail({
+                    pageNumber,
+                    isSelected: pageNumber === currentPage,
+                    pageElement,
+                    onSelect: () => onPageSelect(pageNumber)
+                });
+            })}
+        </Document>
     );
 }
 
@@ -395,10 +337,6 @@ interface PdfDocumentRendererProps {
     onPageChange?: (pageNumber: number, totalPages: number) => void;
 }
 
-/**
- * A more complete PDF document renderer that manages the document state
- * and provides callbacks for page changes.
- */
 export function PdfDocumentRenderer({
     pdfUrl,
     pageNumber,

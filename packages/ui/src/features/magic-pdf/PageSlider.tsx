@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
 import { useRef, useEffect, useState, KeyboardEvent } from "react";
 import { usePdfPagesInfo } from "./PdfPageProvider";
-import { SharedPdfProvider, VirtualizedPdfPage } from "./PdfPageRenderer";
+import { PdfThumbnailList } from "./PdfPageRenderer";
 
 interface PageSliderProps {
     currentPage: number;
@@ -84,17 +84,25 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
                 </div>
             </div>
             <div ref={scrollContainerRef} className='flex flex-col items-center gap-2 flex-1 overflow-y-auto px-2'>
-                <SharedPdfProvider pdfUrl={pdfUrl} urlLoading={pdfUrlLoading}>
-                    {Array.from({ length: count }, (_, index) => (
-                        <PdfPageThumbnail
-                            key={index}
-                            currentPage={currentPage}
-                            pageNumber={index + 1}
-                            width={thumbnailWidth}
-                            onSelect={() => onChange(index + 1)}
-                        />
-                    ))}
-                </SharedPdfProvider>
+                <PdfThumbnailList
+                    pdfUrl={pdfUrl}
+                    urlLoading={pdfUrlLoading}
+                    pageCount={count}
+                    currentPage={currentPage}
+                    thumbnailWidth={thumbnailWidth}
+                    onPageSelect={onChange}
+                    renderThumbnail={({ pageNumber, isSelected, pageElement, onSelect }) => (
+                        <div key={pageNumber} className="p-2 hover:bg-muted rounded-md w-full" data-index={pageNumber - 1}>
+                            <div
+                                className={clsx('relative border-[2px] cursor-pointer overflow-hidden', isSelected ? "border-primary" : "border-border")}
+                                onClick={onSelect}
+                            >
+                                {pageElement}
+                            </div>
+                            <Center className="text-sm text-muted-foreground pt-1 font-semibold">{pageNumber}</Center>
+                        </div>
+                    )}
+                />
             </div>
             <div className="flex h-9 items-center justify-center">
                 <Button variant="ghost" size="xs" onClick={goNext} alt="Next page">
@@ -160,26 +168,3 @@ function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps
     );
 }
 
-interface PdfPageThumbnailProps {
-    pageNumber: number;
-    currentPage: number;
-    width?: number;
-    onSelect: () => void;
-}
-function PdfPageThumbnail({ pageNumber, currentPage, width, onSelect }: PdfPageThumbnailProps) {
-    return (
-        <div className="p-2 hover:bg-muted rounded-md w-full" data-index={pageNumber - 1}>
-            <div
-                className={clsx('relative border-[2px] cursor-pointer overflow-hidden', pageNumber === currentPage ? "border-primary" : "border-border")}
-                onClick={onSelect}
-            >
-                <VirtualizedPdfPage
-                    pageNumber={pageNumber}
-                    width={width}
-                    rootMargin="100px 0px"
-                />
-            </div>
-            <Center className="text-sm text-muted-foreground pt-1 font-semibold">{pageNumber}</Center>
-        </div>
-    )
-}
