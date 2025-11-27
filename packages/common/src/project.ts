@@ -62,12 +62,102 @@ export enum ResourceVisibility {
 }
 
 
+// ==========================================
+// Project Model Defaults Types
+// ==========================================
+
+/**
+ * Environment and model pair for a default configuration.
+ */
+export interface ModelDefault {
+    environment: string;
+    model: string;
+}
+
+/**
+ * Modality-specific default model overrides.
+ * These override the base default when specific input modalities are detected.
+ */
+export interface ModalityDefaults {
+    /** Override for inputs containing images */
+    image?: ModelDefault;
+    /** Override for inputs containing video (requires video-capable model) */
+    video?: ModelDefault;
+}
+
+/**
+ * System interaction category enum.
+ * Categories group one or more system interactions for default model assignment.
+ */
+export enum SystemInteractionCategory {
+    content_type = "content_type",
+    intake = "intake",
+    analysis = "analysis",
+    agent = "agent",
+    conversation = "conversation",
+    other = "other",
+}
+
+/**
+ * Map system interaction endpoints to categories.
+ * Uses sys: namespace endpoints (e.g., "sys:ExtractInformation").
+ */
+export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCategory> = {
+    "sys:ExtractInformation": SystemInteractionCategory.intake,
+    "sys:SelectDocumentType": SystemInteractionCategory.intake,
+    "sys:GenerateMetadataModel": SystemInteractionCategory.content_type,
+    "sys:ChunkDocument": SystemInteractionCategory.intake,
+    "sys:IdentifyTextSections": SystemInteractionCategory.intake,
+    "sys:AnalyzeDocument": SystemInteractionCategory.analysis,
+    "sys:ReduceTextSections": SystemInteractionCategory.analysis,
+    "sys:GenericAgent": SystemInteractionCategory.agent,
+    "sys:AdhocTaskAgent": SystemInteractionCategory.agent,
+    "sys:Mediator": SystemInteractionCategory.other,
+    "sys:AnalyzeConversation": SystemInteractionCategory.conversation,
+    "sys:GetAgentConversationTopic": SystemInteractionCategory.conversation,
+};
+
+/**
+ * Get category for a system interaction endpoint.
+ * Returns 'other' for unmapped sys: interactions, undefined for non-system interactions.
+ */
+export function getSystemInteractionCategory(endpoint: string): SystemInteractionCategory | undefined {
+    if (!endpoint.startsWith("sys:")) return undefined;
+    return SYSTEM_INTERACTION_CATEGORIES[endpoint] ?? SystemInteractionCategory.other;
+}
+
+export type SystemDefaults = {
+    [K in SystemInteractionCategory]?: ModelDefault;
+};
+
+/**
+ * Extensible project defaults using map/dictionary pattern.
+ */
+export interface ProjectModelDefaults {
+    /** Base default model - used when no other default applies */
+    base?: ModelDefault;
+    /** Modality-based overrides (image, video) - override base when specific input modalities detected */
+    modality?: ModalityDefaults;
+    /** System interaction category defaults */
+    system?: SystemDefaults;
+}
+
+// ==========================================
+// Project Configuration
+// ==========================================
+
 export interface ProjectConfiguration {
 
     human_context: string;
 
+    /** @deprecated Use defaults.base - kept for backward compatibility */
     default_environment?: string;
+    /** @deprecated Use defaults.base - kept for backward compatibility */
     default_model?: string;
+
+    defaults?: ProjectModelDefaults;
+
+    default_visibility?: ResourceVisibility;
 
     embeddings: {
         text?: ProjectConfigurationEmbeddings;
