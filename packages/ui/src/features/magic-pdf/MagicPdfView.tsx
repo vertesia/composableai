@@ -126,13 +126,13 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
 
     return (
         <ResizablePanelGroup direction="horizontal" className="absolute inset-0">
-            <ResizablePanel defaultSize={50} minSize={20} maxSize={80} className="bg-muted py-2">
+            <ResizablePanel defaultSize={50} minSize={20} maxSize={80} className="bg-muted">
                 <PageSlider className="h-full" currentPage={pageNumber} onChange={setPageNumber} />
             </ResizablePanel>
             <ResizableHandle className="w-[4px] bg-border cursor-ew-resize" />
             <ResizablePanel defaultSize={50} minSize={20} className="flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between shrink-0 bg-sidebar py-2 px-2 border-b border-sidebar-border">
+                <div className="flex h-9 items-center justify-between shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
                     <div className="flex items-center gap-x-2">
                         <DownloadPopover object={object} />
                     </div>
@@ -141,8 +141,7 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                         {!!onClose && (
                             <Button
                                 variant="ghost"
-                                size="icon"
-                                className="w-5 h-5"
+                                size="xs"
                                 onClick={onClose}
                                 alt="Close"
                             >
