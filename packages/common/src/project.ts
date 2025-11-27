@@ -93,9 +93,7 @@ export enum SystemInteractionCategory {
     content_type = "content_type",
     intake = "intake",
     analysis = "analysis",
-    agent = "agent",
-    conversation = "conversation",
-    other = "other",
+    non_applicable = "non_applicable"
 }
 
 /**
@@ -110,20 +108,24 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
     "sys:IdentifyTextSections": SystemInteractionCategory.intake,
     "sys:AnalyzeDocument": SystemInteractionCategory.analysis,
     "sys:ReduceTextSections": SystemInteractionCategory.analysis,
-    "sys:GenericAgent": SystemInteractionCategory.agent,
-    "sys:AdhocTaskAgent": SystemInteractionCategory.agent,
-    "sys:Mediator": SystemInteractionCategory.other,
-    "sys:AnalyzeConversation": SystemInteractionCategory.conversation,
-    "sys:GetAgentConversationTopic": SystemInteractionCategory.conversation,
+    "sys:GenericAgent": SystemInteractionCategory.non_applicable,
+    "sys:AdhocTaskAgent": SystemInteractionCategory.non_applicable,
+    "sys:Mediator": SystemInteractionCategory.non_applicable,
+    "sys:AnalyzeConversation": SystemInteractionCategory.analysis,
+    "sys:GetAgentConversationTopic": SystemInteractionCategory.analysis,
 };
 
 /**
  * Get category for a system interaction endpoint.
- * Returns 'other' for unmapped sys: interactions, undefined for non-system interactions.
+ * Returns undefined if not a system interaction or category is non-applicable.
  */
 export function getSystemInteractionCategory(endpoint: string): SystemInteractionCategory | undefined {
     if (!endpoint.startsWith("sys:")) return undefined;
-    return SYSTEM_INTERACTION_CATEGORIES[endpoint] ?? SystemInteractionCategory.other;
+    const category = SYSTEM_INTERACTION_CATEGORIES[endpoint];
+    if (category === SystemInteractionCategory.non_applicable) {
+        return undefined;
+    }
+    return category || undefined;
 }
 
 export type SystemDefaults = {
