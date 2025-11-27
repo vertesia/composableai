@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, useRef, createContext, useContext, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { Loader2 } from 'lucide-react';
 
@@ -260,7 +260,91 @@ interface PdfThumbnailListProps {
 }
 
 /**
+ * Virtualized PDF thumbnail that only renders the Page when visible.
+ * Uses IntersectionObserver for efficient visibility detection.
+ */
+function VirtualizedThumbnail({
+    pageNumber,
+    width,
+    isSelected,
+    onSelect,
+    renderThumbnail,
+    rootMargin = '200px 0px'
+}: {
+    pageNumber: number;
+    width?: number;
+    isSelected: boolean;
+    onSelect: () => void;
+    renderThumbnail: PdfThumbnailListProps['renderThumbnail'];
+    rootMargin?: string;
+}) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [hasBeenVisible, setHasBeenVisible] = useState(false);
+
+    // Set up intersection observer
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0];
+                if (entry?.isIntersecting) {
+                    setHasBeenVisible(true);
+                }
+            },
+            { rootMargin, threshold: 0 }
+        );
+
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [rootMargin]);
+
+    const placeholderHeight = width ? Math.round(width / A4_ASPECT_RATIO) : 200;
+
+    // Only render the actual Page component if visible or has been visible
+    // Once rendered, keep it rendered to preserve the canvas
+    const shouldRenderPage = hasBeenVisible;
+
+    const pageElement = shouldRenderPage ? (
+        <Page
+            pageNumber={pageNumber}
+            width={width}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
+            loading={
+                <div
+                    className="flex items-center justify-center bg-gray-100 dark:bg-gray-800"
+                    style={{ height: placeholderHeight }}
+                >
+                    <LoadingSpinner size="sm" />
+                </div>
+            }
+        />
+    ) : (
+        <div
+            className="flex items-center justify-center bg-gray-100 dark:bg-gray-800"
+            style={{ height: placeholderHeight, width: width || '100%' }}
+        >
+            <span className="text-gray-400 text-xs">{pageNumber}</span>
+        </div>
+    );
+
+    return (
+        <div ref={containerRef}>
+            {renderThumbnail({
+                pageNumber,
+                isSelected,
+                pageElement,
+                onSelect
+            })}
+        </div>
+    );
+}
+
+/**
  * Renders a list of PDF page thumbnails using a single Document.
+ * Uses virtualization to only render visible pages for better performance with large PDFs.
  * This ensures the PDF is only downloaded once.
  */
 export function PdfThumbnailList({
@@ -274,9 +358,9 @@ export function PdfThumbnailList({
 }: PdfThumbnailListProps) {
     const [error, setError] = useState<Error | null>(null);
 
-    const handleError = (err: Error) => {
+    const handleError = useCallback((err: Error) => {
         setError(err);
-    };
+    }, []);
 
     if (error) {
         return (
@@ -298,29 +382,16 @@ export function PdfThumbnailList({
         >
             {Array.from({ length: pageCount }, (_, index) => {
                 const pageNumber = index + 1;
-                const pageElement = (
-                    <Page
+                return (
+                    <VirtualizedThumbnail
+                        key={pageNumber}
                         pageNumber={pageNumber}
                         width={thumbnailWidth}
-                        renderTextLayer={false}
-                        renderAnnotationLayer={false}
-                        loading={
-                            <div
-                                className="flex items-center justify-center bg-gray-100 dark:bg-gray-800"
-                                style={{ height: thumbnailWidth ? Math.round(thumbnailWidth / A4_ASPECT_RATIO) : 200 }}
-                            >
-                                <LoadingSpinner size="sm" />
-                            </div>
-                        }
+                        isSelected={pageNumber === currentPage}
+                        onSelect={() => onPageSelect(pageNumber)}
+                        renderThumbnail={renderThumbnail}
                     />
                 );
-
-                return renderThumbnail({
-                    pageNumber,
-                    isSelected: pageNumber === currentPage,
-                    pageElement,
-                    onSelect: () => onPageSelect(pageNumber)
-                });
             })}
         </Document>
     );
