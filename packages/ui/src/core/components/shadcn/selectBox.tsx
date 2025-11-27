@@ -268,7 +268,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                         )}
                     >
                         {label && <div className='w-full text-left text-xs font-semibold'>{label}</div>}
-                        <div className={clsx('w-full text-left', !disabled && '')}>
+                        <div className={clsx('w-full text-left min-h-6', !disabled && '')}>
                             {multiple ? renderMultipleValue() : renderSingleValue()}
                         </div>
                     </div>
