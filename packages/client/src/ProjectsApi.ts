@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MagicPdfConfiguration, Project, ProjectIntegrationListEntry, ProjectRef, SupportedIntegrations } from "@vertesia/common";
+import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, SupportedIntegrations } from "@vertesia/common";
 
 export class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -22,6 +22,12 @@ export class ProjectsApi extends ApiTopic {
 
     update(projectId: string, payload: Partial<Project>): Promise<Project> {
         return this.put(`/${projectId}`, {
+            payload
+        });
+    }
+
+    updateConfiguration(projectId: string, payload: Partial<ProjectConfiguration>): Promise<ProjectConfiguration> {
+        return this.put(`/${projectId}/configuration`, {
             payload
         });
     }

@@ -134,7 +134,10 @@ export function useSmartFileUploadProcessing() {
 
                 let res: ContentObjectItem[];
 
-                const payload: ComplexSearchPayload = {query: {match: query}, select: undefined}
+                const payload: ComplexSearchPayload = {
+                    query: { match: query },
+                    select: "id content.etag" // Only fetch fields needed for comparison
+                };
 
                 if (limitToCollectionId) {
                     res = (await client.store.collections.searchMembers(limitToCollectionId, payload)).results;
@@ -164,24 +167,22 @@ export function useSmartFileUploadProcessing() {
                     const namesInLocation = unskippedFiles
                         .filter((file) => file.location === location)
                         .map((file) => file.name);
-                    const query = {
-                        location: location ?? "",
+                    const query: Record<string, any> = {
                         "content.name": { $in: namesInLocation },
+                        location: location || "/"
                     };
                     if (limitToCollectionId) {
                         const res = client.store.collections.searchMembers(limitToCollectionId, {
                             query: {
                                 match: query,
                             },
-                            select: undefined,
+                            select: "id content.name location" // Only fetch fields needed for comparison
                         }).then((response) => response.results);
                         queries.push(res);
                     } else {
                         const res = client.store.objects.find({
-                            query: {
-                                match: query,
-                            },
-                            select: undefined,
+                            query: query,
+                            select: "id content.name location" // Only fetch fields needed for comparison
                         });
                         queries.push(res);
                     }
@@ -193,10 +194,10 @@ export function useSmartFileUploadProcessing() {
                 //update fileWithMetadata
                 for (const doc of results) {
                     const file = filesWithMetadata.find(
-                        //name must be the same, and location must the same if present and if not, must be empty string
+                        //name must be the same, and location must match (default is "/")
                         (f) =>
                             f.name === doc.content.name &&
-                            (f.location ? f.location === doc.location : doc.location === ""),
+                            (f.location ? f.location === doc.location : doc.location === "/"),
                     );
                     if (file) {
                         file.existingId = doc.id;

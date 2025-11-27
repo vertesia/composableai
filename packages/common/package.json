@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/common",
-    "version": "0.79.0",
+    "version": "0.80.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -35,7 +35,7 @@
         "json-schema": "^0.4.0"
     },
     "repository": {
-        "type" : "git",
+        "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/common"
     },
