@@ -132,8 +132,9 @@ function MarkdownPageView({ pageNumber }: MarkdownPageViewProps) {
 
     if (loading) {
         return (
-            <div className="px-4 py-8">
+            <div className="h-full flex flex-col items-center justify-center gap-2">
                 <LoadingSpinner />
+                <span className="text-sm text-muted-foreground">Loading...</span>
             </div>
         );
     }

@@ -2,13 +2,57 @@ import { ContentObject, DocumentMetadata } from "@vertesia/common";
 import { Button, ErrorBox, ResizableHandle, ResizablePanel, ResizablePanelGroup, useFetch } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { X } from "lucide-react";
-import { useState } from "react";
+import { Component, ErrorInfo, ReactNode, useState } from "react";
 import { DownloadPopover } from "./DownloadPopover";
 import { PageSlider } from "./PageSlider";
 import { PdfPageProvider } from "./PdfPageProvider";
 import { TextPageView } from "./TextPageView";
 import { ViewType } from "./types";
 
+// Error boundary for PDF view
+interface ErrorBoundaryProps {
+    children: ReactNode;
+    onClose?: () => void;
+}
+interface ErrorBoundaryState {
+    hasError: boolean;
+    error: Error | null;
+}
+class PdfViewErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+    constructor(props: ErrorBoundaryProps) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error('PDF View error:', error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-4 p-8 max-w-md">
+                        <ErrorBox title="Failed to load PDF viewer">
+                            {this.state.error?.message || 'An unexpected error occurred'}
+                        </ErrorBox>
+                        {this.props.onClose && (
+                            <Button variant="outline" onClick={this.props.onClose}>
+                                Close
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
 
 interface MagicPdfViewProps {
     objectId: string;
@@ -20,17 +64,37 @@ export function MagicPdfView({ objectId, onClose }: MagicPdfViewProps) {
     const { data: object, error } = useFetch(() => client.store.objects.retrieve(objectId, "+text"), [objectId]);
 
     if (error) {
-        return <ErrorBox title='Fetching document failed'>{error.message}</ErrorBox>
+        return (
+            <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 p-8 max-w-md">
+                    <ErrorBox title="Fetching document failed">{error.message}</ErrorBox>
+                    {onClose && (
+                        <Button variant="outline" onClick={onClose}>
+                            Close
+                        </Button>
+                    )}
+                </div>
+            </div>
+        );
     }
 
-    return object ? (
-        <div className='fixed inset-0 bg-background z-50 flex items-center justify-center'>
-            <PdfPageProvider object={object}>
-                <MagicPdfViewImpl object={object} onClose={onClose} />
-            </PdfPageProvider >
-        </div>
-    ) : "Loading..."
+    if (!object) {
+        return (
+            <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+        );
+    }
 
+    return (
+        <PdfViewErrorBoundary onClose={onClose}>
+            <div className='fixed inset-0 bg-background z-50 flex items-center justify-center'>
+                <PdfPageProvider object={object}>
+                    <MagicPdfViewImpl object={object} onClose={onClose} />
+                </PdfPageProvider >
+            </div>
+        </PdfViewErrorBoundary>
+    );
 }
 
 interface _MagicPdfViewProps {
