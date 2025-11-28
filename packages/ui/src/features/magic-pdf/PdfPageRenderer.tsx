@@ -257,6 +257,10 @@ interface PdfThumbnailListProps {
         pageElement: React.ReactNode;
         onSelect: () => void;
     }) => React.ReactNode;
+    /** Optional ref to the scroll container. If not provided, will search for scrollable ancestor. */
+    scrollContainerRef?: React.RefObject<HTMLElement | null>;
+    /** Callback when aspect ratio is determined from the PDF. Useful for synchronizing placeholder sizing. */
+    onAspectRatioChange?: (aspectRatio: number) => void;
 }
 
 /**
@@ -269,6 +273,7 @@ function VirtualizedThumbnail({
     isSelected,
     onSelect,
     renderThumbnail,
+    aspectRatio = A4_ASPECT_RATIO,
     rootMargin = '200px 0px'
 }: {
     pageNumber: number;
@@ -276,6 +281,7 @@ function VirtualizedThumbnail({
     isSelected: boolean;
     onSelect: () => void;
     renderThumbnail: PdfThumbnailListProps['renderThumbnail'];
+    aspectRatio?: number;
     rootMargin?: string;
 }) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -300,7 +306,7 @@ function VirtualizedThumbnail({
         return () => observer.disconnect();
     }, [rootMargin]);
 
-    const placeholderHeight = width ? Math.round(width / A4_ASPECT_RATIO) : 200;
+    const placeholderHeight = width ? Math.round(width / aspectRatio) : 200;
 
     // Only render the actual Page component if visible or has been visible
     // Once rendered, keep it rendered to preserve the canvas
@@ -344,9 +350,25 @@ function VirtualizedThumbnail({
 
 /**
  * Renders a list of PDF page thumbnails using a single Document.
- * Uses virtualization to only render visible pages for better performance with large PDFs.
- * This ensures the PDF is only downloaded once.
+ * Uses windowed virtualization for better performance with large PDFs.
+ * Only renders components for pages within a window around the current scroll position.
  */
+// Helper to find the scrollable ancestor element
+function findScrollableAncestor(element: HTMLElement | null): HTMLElement | null {
+    if (!element) return null;
+
+    let current = element.parentElement;
+    while (current) {
+        const style = window.getComputedStyle(current);
+        const overflowY = style.overflowY;
+        if (overflowY === 'auto' || overflowY === 'scroll') {
+            return current;
+        }
+        current = current.parentElement;
+    }
+    return null;
+}
+
 export function PdfThumbnailList({
     pdfUrl,
     urlLoading = false,
@@ -354,13 +376,80 @@ export function PdfThumbnailList({
     currentPage,
     thumbnailWidth,
     onPageSelect,
-    renderThumbnail
+    renderThumbnail,
+    scrollContainerRef,
+    onAspectRatioChange
 }: PdfThumbnailListProps) {
     const [error, setError] = useState<Error | null>(null);
+    const [visibleRange, setVisibleRange] = useState({ start: 0, end: Math.min(15, pageCount) });
+    // Start with null to indicate we haven't loaded the PDF yet
+    const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const handleError = useCallback((err: Error) => {
         setError(err);
     }, []);
+
+    // Get actual page dimensions from PDF on load
+    const handleLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
+        try {
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 1 });
+            const ratio = viewport.width / viewport.height;
+            setAspectRatio(ratio);
+            onAspectRatioChange?.(ratio);
+        } catch (err) {
+            console.error('Failed to get page dimensions:', err);
+            // Fall back to A4 if we can't get dimensions
+            setAspectRatio(A4_ASPECT_RATIO);
+            onAspectRatioChange?.(A4_ASPECT_RATIO);
+        }
+    }, [onAspectRatioChange]);
+
+    // Use A4 as fallback if aspect ratio not yet determined
+    const effectiveAspectRatio = aspectRatio ?? A4_ASPECT_RATIO;
+
+    // Calculate placeholder height using actual aspect ratio from PDF
+    const placeholderHeight = thumbnailWidth ? Math.round(thumbnailWidth / effectiveAspectRatio) : 200;
+    // Total height per item including padding (p-2 = 8px top + 8px bottom) + page number text (~24px) + gap
+    const itemHeight = placeholderHeight + 16 + 24 + 8;
+
+    // Window size: how many pages to render above and below visible area
+    const WINDOW_BUFFER = 5;
+
+    // Track scroll position to update visible range
+    useEffect(() => {
+        // Find the scroll container - either from prop or by searching ancestors
+        const container = scrollContainerRef?.current || findScrollableAncestor(containerRef.current);
+        if (!container) return;
+
+        const updateVisibleRange = () => {
+            const scrollTop = container.scrollTop;
+            const viewportHeight = container.clientHeight;
+
+            // Calculate which pages are visible
+            const firstVisible = Math.floor(scrollTop / itemHeight);
+            const lastVisible = Math.ceil((scrollTop + viewportHeight) / itemHeight);
+
+            // Add buffer around visible range
+            const start = Math.max(0, firstVisible - WINDOW_BUFFER);
+            const end = Math.min(pageCount, lastVisible + WINDOW_BUFFER);
+
+            setVisibleRange(prev => {
+                if (prev.start !== start || prev.end !== end) {
+                    return { start, end };
+                }
+                return prev;
+            });
+        };
+
+        // Initial calculation
+        updateVisibleRange();
+
+        // Listen to scroll events
+        container.addEventListener('scroll', updateVisibleRange, { passive: true });
+        return () => container.removeEventListener('scroll', updateVisibleRange);
+    }, [itemHeight, pageCount, scrollContainerRef]);
 
     if (error) {
         return (
@@ -374,26 +463,56 @@ export function PdfThumbnailList({
         return <LoadingSpinner className="py-4" size="md" />;
     }
 
+    // Calculate spacer heights for virtual scrolling
+    const topSpacerHeight = visibleRange.start * itemHeight;
+    const bottomSpacerHeight = (pageCount - visibleRange.end) * itemHeight;
+
+    // Only render the virtualized list once we have the actual aspect ratio
+    // This prevents the total scroll height from changing after initial render
+    const hasAspectRatio = aspectRatio !== null;
+
     return (
-        <Document
-            file={pdfUrl}
-            onLoadError={handleError}
-            loading={<LoadingSpinner className="py-4" size="md" />}
-        >
-            {Array.from({ length: pageCount }, (_, index) => {
-                const pageNumber = index + 1;
-                return (
-                    <VirtualizedThumbnail
-                        key={pageNumber}
-                        pageNumber={pageNumber}
-                        width={thumbnailWidth}
-                        isSelected={pageNumber === currentPage}
-                        onSelect={() => onPageSelect(pageNumber)}
-                        renderThumbnail={renderThumbnail}
-                    />
-                );
-            })}
-        </Document>
+        <div ref={containerRef}>
+            <Document
+                file={pdfUrl}
+                onLoadSuccess={handleLoadSuccess}
+                onLoadError={handleError}
+                loading={<LoadingSpinner className="py-4" size="md" />}
+            >
+                {hasAspectRatio ? (
+                    <>
+                        {/* Top spacer for pages above visible window */}
+                        {topSpacerHeight > 0 && (
+                            <div style={{ height: topSpacerHeight }} />
+                        )}
+
+                        {/* Only render pages within the visible window */}
+                        {Array.from({ length: visibleRange.end - visibleRange.start }, (_, index) => {
+                            const pageNumber = visibleRange.start + index + 1;
+                            return (
+                                <div key={pageNumber} style={{ height: itemHeight, overflow: 'hidden' }}>
+                                    <VirtualizedThumbnail
+                                        pageNumber={pageNumber}
+                                        width={thumbnailWidth}
+                                        isSelected={pageNumber === currentPage}
+                                        onSelect={() => onPageSelect(pageNumber)}
+                                        renderThumbnail={renderThumbnail}
+                                        aspectRatio={effectiveAspectRatio}
+                                    />
+                                </div>
+                            );
+                        })}
+
+                        {/* Bottom spacer for pages below visible window */}
+                        {bottomSpacerHeight > 0 && (
+                            <div style={{ height: bottomSpacerHeight }} />
+                        )}
+                    </>
+                ) : (
+                    <LoadingSpinner className="py-4" size="md" />
+                )}
+            </Document>
+        </div>
     );
 }
 

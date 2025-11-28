@@ -5,6 +5,9 @@ import { useRef, useEffect, useState, KeyboardEvent } from "react";
 import { usePdfPagesInfo } from "./PdfPageProvider";
 import { PdfThumbnailList } from "./PdfPageRenderer";
 
+// A4 portrait aspect ratio - used as fallback
+const A4_ASPECT_RATIO = 210 / 297;
+
 interface PageSliderProps {
     currentPage: number;
     onChange: (pageNumber: number) => void;
@@ -15,6 +18,7 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const { pdfUrl, pdfUrlLoading, count } = usePdfPagesInfo();
     const [thumbnailWidth, setThumbnailWidth] = useState<number | undefined>(undefined);
+    const [aspectRatio, setAspectRatio] = useState<number>(A4_ASPECT_RATIO);
 
     // Single ResizeObserver at parent level to measure thumbnail width
     // Debounced to avoid excessive re-renders during resize
@@ -54,13 +58,20 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
 
     // Jump to current page when it changes
     useEffect(() => {
-        if (ref.current) {
-            ref.current.querySelector(`div[data-index="${currentPage - 1}"]`)?.scrollIntoView({
-                behavior: 'instant',
-                block: 'start'
-            });
-        }
-    }, [currentPage]);
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        // Calculate item height based on thumbnail width (matching PdfThumbnailList calculation)
+        const placeholderHeight = thumbnailWidth ? Math.round(thumbnailWidth / aspectRatio) : 200;
+        const itemHeight = placeholderHeight + 16 + 24 + 8; // padding + text + gap
+
+        // Scroll to the page position
+        const targetScrollTop = (currentPage - 1) * itemHeight;
+        container.scrollTo({
+            top: targetScrollTop,
+            behavior: 'instant'
+        });
+    }, [currentPage, thumbnailWidth, aspectRatio]);
 
     const goPrev = () => {
         if (currentPage > 1) {
@@ -91,6 +102,8 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
                     currentPage={currentPage}
                     thumbnailWidth={thumbnailWidth}
                     onPageSelect={onChange}
+                    scrollContainerRef={scrollContainerRef}
+                    onAspectRatioChange={setAspectRatio}
                     renderThumbnail={({ pageNumber, isSelected, pageElement, onSelect }) => (
                         <div key={pageNumber} className="p-2 hover:bg-muted rounded-md w-full" data-index={pageNumber - 1}>
                             <div
