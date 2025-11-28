@@ -261,6 +261,10 @@ interface PdfThumbnailListProps {
     scrollContainerRef?: React.RefObject<HTMLElement | null>;
     /** Callback when aspect ratio is determined from the PDF. Useful for synchronizing placeholder sizing. */
     onAspectRatioChange?: (aspectRatio: number) => void;
+    /** Callback when item height is calculated. Useful for scroll position calculations. */
+    onItemHeightChange?: (itemHeight: number) => void;
+    /** Custom function to calculate item height. Receives placeholder height and should return total item height. */
+    calculateItemHeight?: (placeholderHeight: number) => number;
 }
 
 /**
@@ -378,7 +382,9 @@ export function PdfThumbnailList({
     onPageSelect,
     renderThumbnail,
     scrollContainerRef,
-    onAspectRatioChange
+    onAspectRatioChange,
+    onItemHeightChange,
+    calculateItemHeight
 }: PdfThumbnailListProps) {
     const [error, setError] = useState<Error | null>(null);
     const [visibleRange, setVisibleRange] = useState({ start: 0, end: Math.min(15, pageCount) });
@@ -411,8 +417,18 @@ export function PdfThumbnailList({
 
     // Calculate placeholder height using actual aspect ratio from PDF
     const placeholderHeight = thumbnailWidth ? Math.round(thumbnailWidth / effectiveAspectRatio) : 200;
-    // Total height per item including padding (p-2 = 8px top + 8px bottom) + page number text (~24px) + gap
-    const itemHeight = placeholderHeight + 16 + 24 + 8;
+    // Total height per item - use custom calculator if provided, otherwise default formula
+    // Default: padding (p-2 = 8px top + 8px bottom) + page number text (~24px) + gap
+    const itemHeight = calculateItemHeight
+        ? calculateItemHeight(placeholderHeight)
+        : placeholderHeight + 16 + 24 + 8;
+
+    // Notify parent of item height changes for scroll calculations
+    useEffect(() => {
+        if (itemHeight > 0 && aspectRatio !== null) {
+            onItemHeightChange?.(itemHeight);
+        }
+    }, [itemHeight, aspectRatio, onItemHeightChange]);
 
     // Window size: how many pages to render above and below visible area
     const WINDOW_BUFFER = 5;
@@ -490,7 +506,7 @@ export function PdfThumbnailList({
                         {Array.from({ length: visibleRange.end - visibleRange.start }, (_, index) => {
                             const pageNumber = visibleRange.start + index + 1;
                             return (
-                                <div key={pageNumber} style={{ height: itemHeight, overflow: 'hidden' }}>
+                                <div key={pageNumber} data-page-index={pageNumber - 1} style={{ height: itemHeight, overflow: 'hidden' }}>
                                     <VirtualizedThumbnail
                                         pageNumber={pageNumber}
                                         width={thumbnailWidth}

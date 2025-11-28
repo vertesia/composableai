@@ -1,7 +1,7 @@
 import { Button, Center } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
-import { useRef, useEffect, useState, KeyboardEvent } from "react";
+import { useRef, useEffect, useState, useCallback, KeyboardEvent } from "react";
 import { usePdfPagesInfo } from "./PdfPageProvider";
 import { PdfThumbnailList } from "./PdfPageRenderer";
 
@@ -21,16 +21,23 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
     const { pdfUrl, pdfUrlLoading, count } = usePdfPagesInfo();
     const [thumbnailWidth, setThumbnailWidth] = useState<number | undefined>(undefined);
     const [aspectRatio, setAspectRatio] = useState<number>(A4_ASPECT_RATIO);
+    // Track the actual item height from PdfThumbnailList for accurate scroll calculations
+    const [itemHeight, setItemHeight] = useState<number | null>(null);
 
     // Track the previous item height to preserve scroll position during resize
     const prevItemHeightRef = useRef<number | null>(null);
 
-    // Calculate item height based on thumbnail width
-    const getItemHeight = (width: number | undefined, ratio: number) => {
-        const placeholderHeight = width ? Math.round(width / ratio) : 200;
-        // padding (p-1=8 or p-2=16) + text height (~16-20) + gap (gap-1=4 or gap-2=8)
+    // Calculate item height based on placeholder height - this must match the renderThumbnail layout
+    // padding (p-1=8 or p-2=16) + text height (~16-20 for compact, ~24 for normal) + gap (gap-1=4 or gap-2=8)
+    const calculateItemHeight = useCallback((placeholderHeight: number) => {
         const extraHeight = compact ? 8 + 16 + 4 : 16 + 24 + 8;
         return placeholderHeight + extraHeight;
+    }, [compact]);
+
+    // Legacy function for resize preservation - kept for backwards compatibility
+    const getItemHeight = (width: number | undefined, ratio: number) => {
+        const placeholderHeight = width ? Math.round(width / ratio) : 200;
+        return calculateItemHeight(placeholderHeight);
     };
 
     // Single ResizeObserver at parent level to measure thumbnail width
@@ -105,32 +112,31 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
     const prevPageRef = useRef(currentPage);
     useEffect(() => {
         const container = scrollContainerRef.current;
-        if (!container) return;
+        if (!container || !itemHeight) return;
 
         // Only scroll if the page actually changed (user navigation)
         if (prevPageRef.current !== currentPage) {
             prevPageRef.current = currentPage;
 
-            const itemHeight = getItemHeight(thumbnailWidth, aspectRatio);
-            const targetScrollTop = (currentPage - 1) * itemHeight;
-
             // Mark as programmatic scroll to avoid triggering onChange
             isProgrammaticScrollRef.current = true;
-            container.scrollTo({
-                top: targetScrollTop,
-                behavior: 'instant'
-            });
+
+            // Calculate scroll position directly using itemHeight
+            // This is more reliable than DOM queries since virtualization uses spacers
+            const targetScrollTop = (currentPage - 1) * itemHeight;
+            container.scrollTo({ top: targetScrollTop, behavior: 'instant' });
+
             // Reset after a short delay to allow scroll event to fire
             requestAnimationFrame(() => {
                 isProgrammaticScrollRef.current = false;
             });
         }
-    }, [currentPage, thumbnailWidth, aspectRatio]);
+    }, [currentPage, itemHeight]);
 
     // Update current page based on scroll position
     useEffect(() => {
         const container = scrollContainerRef.current;
-        if (!container || !thumbnailWidth) return;
+        if (!container || !itemHeight) return;
 
         let scrollDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -141,15 +147,13 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
             // Debounce scroll updates
             if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer);
             scrollDebounceTimer = setTimeout(() => {
-                const itemHeight = getItemHeight(thumbnailWidth, aspectRatio);
-                if (itemHeight <= 0) return;
-
-                // Calculate which page is at the top of the viewport
+                // Calculate current page from scroll position using itemHeight
+                // This is more reliable than DOM queries since virtualization uses spacers
                 const scrollTop = container.scrollTop;
-                const newPage = Math.round(scrollTop / itemHeight) + 1;
+                const calculatedPage = Math.round(scrollTop / itemHeight) + 1;
 
                 // Clamp to valid range and update if different
-                const clampedPage = Math.max(1, Math.min(newPage, count));
+                const clampedPage = Math.max(1, Math.min(calculatedPage, count));
                 if (clampedPage !== currentPage) {
                     prevPageRef.current = clampedPage;
                     onChange(clampedPage);
@@ -163,7 +167,7 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
             if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer);
             container.removeEventListener('scroll', handleScroll);
         };
-    }, [thumbnailWidth, aspectRatio, count, currentPage, onChange]);
+    }, [itemHeight, count, currentPage, onChange]);
 
     const goPrev = () => {
         if (currentPage > 1) {
@@ -196,8 +200,10 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
                     onPageSelect={onChange}
                     scrollContainerRef={scrollContainerRef}
                     onAspectRatioChange={setAspectRatio}
+                    onItemHeightChange={setItemHeight}
+                    calculateItemHeight={calculateItemHeight}
                     renderThumbnail={({ pageNumber, isSelected, pageElement, onSelect }) => (
-                        <div key={pageNumber} className={clsx("hover:bg-muted rounded-md w-full", compact ? "p-1" : "p-2")} data-index={pageNumber - 1}>
+                        <div key={pageNumber} className={clsx("hover:bg-muted rounded-md w-full", compact ? "p-1" : "p-2")}>
                             <div
                                 className={clsx('relative border-[2px] cursor-pointer overflow-hidden', isSelected ? "border-primary" : "border-border")}
                                 onClick={onSelect}
