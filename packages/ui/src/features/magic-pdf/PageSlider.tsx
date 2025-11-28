@@ -12,8 +12,10 @@ interface PageSliderProps {
     currentPage: number;
     onChange: (pageNumber: number) => void;
     className?: string;
+    /** Compact mode reduces padding and navigation bar heights */
+    compact?: boolean;
 }
-export function PageSlider({ className, currentPage, onChange }: PageSliderProps) {
+export function PageSlider({ className, currentPage, onChange, compact = false }: PageSliderProps) {
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const { pdfUrl, pdfUrlLoading, count } = usePdfPagesInfo();
@@ -26,7 +28,9 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
     // Calculate item height based on thumbnail width
     const getItemHeight = (width: number | undefined, ratio: number) => {
         const placeholderHeight = width ? Math.round(width / ratio) : 200;
-        return placeholderHeight + 16 + 24 + 8; // padding + text + gap
+        // padding (p-1=8 or p-2=16) + text height (~16-20) + gap (gap-1=4 or gap-2=8)
+        const extraHeight = compact ? 8 + 16 + 4 : 16 + 24 + 8;
+        return placeholderHeight + extraHeight;
     };
 
     // Single ResizeObserver at parent level to measure thumbnail width
@@ -125,8 +129,8 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
     }
 
     return (
-        <div ref={ref} className={clsx('flex flex-col items-stretch gap-y-2', className)}>
-            <div className="relative flex h-9 items-center justify-center px-2">
+        <div ref={ref} className={clsx('flex flex-col items-stretch', compact ? 'gap-y-1' : 'gap-y-2', className)}>
+            <div className={clsx("relative flex items-center justify-center px-2", compact ? "h-6" : "h-9")}>
                 <Button variant="ghost" size="xs" onClick={goPrev} alt="Previous page">
                     <ChevronsUp className='size-4' />
                 </Button>
@@ -134,7 +138,7 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
                     <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
                 </div>
             </div>
-            <div ref={scrollContainerRef} className='flex flex-col items-center gap-2 flex-1 overflow-y-auto px-2'>
+            <div ref={scrollContainerRef} className={clsx('flex flex-col items-center flex-1 overflow-y-auto px-2', compact ? 'gap-1' : 'gap-2')}>
                 <PdfThumbnailList
                     pdfUrl={pdfUrl}
                     urlLoading={pdfUrlLoading}
@@ -145,19 +149,19 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
                     scrollContainerRef={scrollContainerRef}
                     onAspectRatioChange={setAspectRatio}
                     renderThumbnail={({ pageNumber, isSelected, pageElement, onSelect }) => (
-                        <div key={pageNumber} className="p-2 hover:bg-muted rounded-md w-full" data-index={pageNumber - 1}>
+                        <div key={pageNumber} className={clsx("hover:bg-muted rounded-md w-full", compact ? "p-1" : "p-2")} data-index={pageNumber - 1}>
                             <div
                                 className={clsx('relative border-[2px] cursor-pointer overflow-hidden', isSelected ? "border-primary" : "border-border")}
                                 onClick={onSelect}
                             >
                                 {pageElement}
                             </div>
-                            <Center className="text-sm text-muted-foreground pt-1 font-semibold">{pageNumber}</Center>
+                            <Center className={clsx("text-muted-foreground font-semibold", compact ? "text-xs pt-0.5" : "text-sm pt-1")}>{pageNumber}</Center>
                         </div>
                     )}
                 />
             </div>
-            <div className="flex h-9 items-center justify-center">
+            <div className={clsx("flex items-center justify-center", compact ? "h-6" : "h-9")}>
                 <Button variant="ghost" size="xs" onClick={goNext} alt="Next page">
                     <ChevronsDown className='size-4' />
                 </Button>

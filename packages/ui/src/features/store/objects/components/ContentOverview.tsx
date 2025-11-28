@@ -8,6 +8,8 @@ import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-rea
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
 import { MagicPdfView } from "../../../magic-pdf";
+import { PdfPageProvider } from "../../../magic-pdf/PdfPageProvider";
+import { PageSlider } from "../../../magic-pdf/PageSlider";
 
 // Maximum text size before cropping (128K characters)
 const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
@@ -15,7 +17,8 @@ const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
 enum PanelView {
     Text = "text",
     Image = "image",
-    Video = "video"
+    Video = "video",
+    Pdf = "pdf"
 }
 
 interface ContentOverviewProps {
@@ -266,38 +269,50 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     const showPdfProcessing = isPdf && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
 
     return (
-        <>
-            <div className="flex justify-between items-center px-2">
-                <div className="flex items-center gap-1 bg-muted mb-2 p-1 rounded">
-                    {isImage &&
+        <div className="flex flex-col h-full">
+            <div className="flex justify-between items-center px-2 shrink-0">
+                <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-1 bg-muted p-1 rounded">
+                        {isImage &&
+                            <Button
+                                variant={currentPanel === PanelView.Image ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View Image"
+                                onClick={() => setCurrentPanel(PanelView.Image)}
+                            >
+                                Image
+                            </Button>
+                        }
+                        {isVideo &&
+                            <Button
+                                variant={currentPanel === PanelView.Video ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View Video"
+                                onClick={() => setCurrentPanel(PanelView.Video)}
+                            >
+                                Video
+                            </Button>
+                        }
                         <Button
-                            variant={currentPanel === PanelView.Image ? "primary" : "ghost"}
+                            variant={currentPanel === PanelView.Text ? "primary" : "ghost"}
                             size="sm"
-                            alt="View Image"
-                            onClick={() => setCurrentPanel(PanelView.Image)}
+                            alt="View Text"
+                            onClick={() => setCurrentPanel(PanelView.Text)}
                         >
-                            Image
+                            Text
                         </Button>
-                    }
-                    {isVideo &&
-                        <Button
-                            variant={currentPanel === PanelView.Video ? "primary" : "ghost"}
-                            size="sm"
-                            alt="View Video"
-                            onClick={() => setCurrentPanel(PanelView.Video)}
-                        >
-                            Video
-                        </Button>
-                    }
-                    <Button
-                        variant={currentPanel === PanelView.Text ? "primary" : "ghost"}
-                        size="sm"
-                        alt="View Text"
-                        onClick={() => setCurrentPanel(PanelView.Text)}
-                    >
-                        Text
-                    </Button>
-
+                        {isPdf &&
+                            <Button
+                                variant={currentPanel === PanelView.Pdf ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View PDF"
+                                onClick={() => setCurrentPanel(PanelView.Pdf)}
+                            >
+                                PDF
+                            </Button>
+                        }
+                    </div>
+                    <PdfActions object={object} />
                 </div>
                 {currentPanel === PanelView.Text && !showPdfProcessing && <TextActions object={object} text={displayText} fullText={fullText} handleCopyContent={handleCopyContent} />}
             </div>
@@ -306,11 +321,13 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     <ImagePanel object={object} />
                 ) : currentPanel === PanelView.Video ? (
                     <VideoPanel object={object} />
+                ) : currentPanel === PanelView.Pdf ? (
+                    <PdfPreviewPanel object={object} />
                 ) : showPdfProcessing ? (
                     <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} />
                 ) : (
                     isLoadingText ? (
-                        <div className="flex justify-center items-center h-[calc(100vh-260px)]">
+                        <div className="flex justify-center items-center flex-1">
                             <Spinner size="lg" />
                         </div>
                     ) : (
@@ -318,7 +335,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     )
                 )
             }
-        </>
+        </div>
     );
 }
 
@@ -326,7 +343,6 @@ function TextActions({ object, text, fullText, handleCopyContent }: { object: Co
     const { client } = useUserSession();
     const toast = useToast();
     const [loadingFormat, setLoadingFormat] = useState<"docx" | "pdf" | null>(null);
-    const [isPdfPreviewOpen, setPdfPreviewOpen] = useState(false);
 
     const content = object.content;
 
@@ -335,9 +351,8 @@ function TextActions({ object, text, fullText, handleCopyContent }: { object: Co
         content.type &&
         content.type === "text/markdown";
 
-    // Check if PDF has been processed (content_processor.type is xml or markdown)
+    // Get content processor type for file extension detection
     const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
-    const hasPdfAnalysis = contentProcessorType === "xml" || contentProcessorType === "markdown";
 
     const handleExportDocument = async (format: "docx" | "pdf") => {
         // Prevent multiple concurrent exports
@@ -500,23 +515,8 @@ function TextActions({ object, text, fullText, handleCopyContent }: { object: Co
                             </Button>
                         </>
                     )}
-                    {hasPdfAnalysis && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setPdfPreviewOpen(true)}
-                            title="Side by side view"
-                        >
-                            <FileSearch className="size-4" />
-                        </Button>
-                    )}
                 </div>
             </div>
-            {isPdfPreviewOpen && (
-                <Portal>
-                    <MagicPdfView objectId={object.id} onClose={() => setPdfPreviewOpen(false)} />
-                </Portal>
-            )}
         </>
     );
 }
@@ -787,6 +787,51 @@ function VideoPanel({ object }: { object: ContentObject }) {
                     Failed to load video
                 </div>
             )}
+        </div>
+    );
+}
+
+function PdfActions({ object }: { object: ContentObject }) {
+    const [isPdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+
+    // Check if PDF has been processed (content_processor.type is xml or markdown)
+    const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
+    const hasPdfAnalysis = contentProcessorType === "xml" || contentProcessorType === "markdown";
+
+    if (!hasPdfAnalysis) return null;
+
+    return (
+        <>
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPdfPreviewOpen(true)}
+                title="Side by side view"
+            >
+                <FileSearch className="size-4" />
+            </Button>
+            {isPdfPreviewOpen && (
+                <Portal>
+                    <MagicPdfView objectId={object.id} onClose={() => setPdfPreviewOpen(false)} />
+                </Portal>
+            )}
+        </>
+    );
+}
+
+function PdfPreviewPanel({ object }: { object: ContentObject }) {
+    const [currentPage, setCurrentPage] = useState(1);
+
+    return (
+        <div className="h-[calc(100vh-210px)]">
+            <PdfPageProvider object={object}>
+                <PageSlider
+                    className="h-full"
+                    currentPage={currentPage}
+                    onChange={setCurrentPage}
+                    compact
+                />
+            </PdfPageProvider>
         </div>
     );
 }
