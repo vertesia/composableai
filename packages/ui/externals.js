@@ -61,6 +61,7 @@ export const EXTERNALS = [
     "react-calendar",
     "framer-motion",
     "react-resizable-panels",
+    "recharts",
     /^framer-motion\/.*/,
     "react-pdf",
     /^react-pdf\/.*/,
