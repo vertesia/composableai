@@ -175,9 +175,17 @@ function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObj
 
     const [currentPanel, setCurrentPanel] = useState<PanelView>(getInitialView());
 
-    const [text, setText] = useState<string | undefined>(object.text);
+    // Initialize text state with cropping applied if needed
+    const [text, setText] = useState<string | undefined>(() => {
+        if (object.text && object.text.length > MAX_TEXT_DISPLAY_SIZE) {
+            return object.text.substring(0, MAX_TEXT_DISPLAY_SIZE);
+        }
+        return object.text;
+    });
     const [isLoadingText, setIsLoadingText] = useState<boolean>(false);
-    const [isTextCropped, setIsTextCropped] = useState<boolean>(false);
+    const [isTextCropped, setIsTextCropped] = useState<boolean>(
+        () => !!object.text && object.text.length > MAX_TEXT_DISPLAY_SIZE
+    );
 
     useEffect(() => {
         if (loadText && !text) {
