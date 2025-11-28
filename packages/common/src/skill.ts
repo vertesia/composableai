@@ -4,6 +4,10 @@
  * Skills are interactions with `agent_runner_options.is_skill = true`.
  * They provide contextual instructions to agents without executing code.
  * When a skill is called, its rendered prompt is returned as instructions.
+ *
+ * Skills can have associated scripts stored at:
+ *   skills/{skill_name}/*.py, *.js, etc.
+ * These are automatically synced to the sandbox when the skill is used.
  */
 
 /**
