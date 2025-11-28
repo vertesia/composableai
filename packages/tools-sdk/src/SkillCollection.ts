@@ -166,22 +166,15 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      */
     private async renderSkill(
         skill: SkillDefinition,
-        data: Record<string, any>
+        _data: Record<string, unknown>
     ): Promise<SkillExecutionResult> {
-        let instructions = skill.instructions;
+        const instructions = skill.instructions;
 
         if (skill.content_type === 'jst') {
-            // Dynamic JST template - needs rendering
-            // Import JST renderer dynamically to avoid circular deps
-            try {
-                const { renderJsTemplate } = await import("@dglabs/jst");
-                const globals = Object.keys(data);
-                instructions = renderJsTemplate(skill.instructions, globals, data);
-            } catch (err: any) {
-                throw new HTTPException(500, {
-                    message: `Failed to render JST template: ${err.message}`
-                });
-            }
+            // JST templates are not currently supported
+            throw new HTTPException(501, {
+                message: `JST templates are not currently supported. Use 'md' content type instead.`
+            });
         }
 
         return {
