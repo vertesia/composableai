@@ -300,7 +300,6 @@ The UI will render this as a regular code block.
  */
 export function generateTestData(periods: number) {
     const data = [];
-    const startDate = new Date('2024-01-01');
 
     for (let i = 0; i < periods; i++) {
         const quarter = Math.floor(i / 3) + 1;
