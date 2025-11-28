@@ -178,8 +178,9 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
 
     const [currentPanel, setCurrentPanel] = useState<PanelView>(getInitialView());
 
-    // Initialize text state with cropping applied if needed
-    const [text, setText] = useState<string | undefined>(() => {
+    // Store full text and cropped text separately
+    const [fullText, setFullText] = useState<string | undefined>(object.text);
+    const [displayText, setDisplayText] = useState<string | undefined>(() => {
         if (object.text && object.text.length > MAX_TEXT_DISPLAY_SIZE) {
             return object.text.substring(0, MAX_TEXT_DISPLAY_SIZE);
         }
@@ -231,12 +232,12 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         store.objects
             .getObjectText(object.id)
             .then((res) => {
+                setFullText(res.text);
                 if (res.text.length > MAX_TEXT_DISPLAY_SIZE) {
-                    const croppedText = res.text.substring(0, MAX_TEXT_DISPLAY_SIZE);
-                    setText(croppedText);
+                    setDisplayText(res.text.substring(0, MAX_TEXT_DISPLAY_SIZE));
                     setIsTextCropped(true);
                 } else {
-                    setText(res.text);
+                    setDisplayText(res.text);
                     setIsTextCropped(false);
                 }
             })
@@ -249,7 +250,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     };
 
     useEffect(() => {
-        if (loadText && !text) {
+        if (loadText && !displayText) {
             loadObjectText();
         }
     }, [loadText]);
@@ -298,7 +299,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     </Button>
 
                 </div>
-                {currentPanel === PanelView.Text && !showPdfProcessing && <TextActions object={object} text={text} handleCopyContent={handleCopyContent} />}
+                {currentPanel === PanelView.Text && !showPdfProcessing && <TextActions object={object} text={displayText} fullText={fullText} handleCopyContent={handleCopyContent} />}
             </div>
             {
                 currentPanel === PanelView.Image ? (
@@ -313,7 +314,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                             <Spinner size="lg" />
                         </div>
                     ) : (
-                        <TextPanel object={object} text={text} isTextCropped={isTextCropped} />
+                        <TextPanel object={object} text={displayText} isTextCropped={isTextCropped} />
                     )
                 )
             }
@@ -321,7 +322,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     );
 }
 
-function TextActions({ object, text, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, text: string | undefined }) {
+function TextActions({ object, text, fullText, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, text: string | undefined, fullText: string | undefined }) {
     const { client } = useUserSession();
     const toast = useToast();
     const [loadingFormat, setLoadingFormat] = useState<"docx" | "pdf" | null>(null);
@@ -422,14 +423,50 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
 
     const handleExportDocx = () => handleExportDocument("docx");
     const handleExportPdf = () => handleExportDocument("pdf");
+
+    const handleDownloadText = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!fullText) return;
+        // Determine file extension based on content processor type
+        let ext = "txt";
+        let mimeType = "text/plain";
+        if (contentProcessorType === "xml") {
+            ext = "xml";
+            mimeType = "text/xml";
+        } else if (contentProcessorType === "markdown" || isMarkdown) {
+            ext = "md";
+            mimeType = "text/markdown";
+        }
+        const blob = new Blob([fullText], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const filename = `${object.name || "document"}.${ext}`;
+
+        // Use the download attribute with an anchor, but avoid triggering navigation
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.style.display = "none";
+        // Temporarily remove from DOM event flow
+        setTimeout(() => {
+            link.click();
+            URL.revokeObjectURL(url);
+        }, 0);
+    };
+
     return (
         <>
             <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
                 <div className="flex items-center gap-2">
-                    {text && (
-                        <Button variant="ghost" size="sm" title="Copy text" className="flex items-center gap-2" onClick={() => handleCopyContent(text, "text")}>
-                            <Copy className="size-4" />
-                        </Button>
+                    {fullText && (
+                        <>
+                            <Button variant="ghost" size="sm" title="Copy text" onClick={() => handleCopyContent(fullText, "text")}>
+                                <Copy className="size-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" title="Download text" onClick={handleDownloadText}>
+                                <Download className="size-4" />
+                            </Button>
+                        </>
                     )}
                     {isMarkdown && text && (
                         <>
