@@ -4,24 +4,22 @@ import { Command } from "commander";
 import { getClient } from "../client.js";
 import { textToPascalCase } from "../codegen/utils.js";
 
-export function listInteractions(program: Command, interactionId: string | undefined, options: Record<string, any>) {
-    const client = getClient(program);
+export async function listInteractions(program: Command, interactionId: string | undefined, options: Record<string, any>) {
+    const client = await getClient(program);
     if (!interactionId) {
-        return client.interactions.list().then((interactions) => {
-            interactions.map(interaction => {
-                console.log(textToPascalCase(interaction.name) + ` [${interaction.id}]`);
-            });
+        const interactions = await client.interactions.list();
+        interactions.map(interaction => {
+            console.log(textToPascalCase(interaction.name) + ` [${interaction.id}]`);
         });
+        return;
     }
-    return client.interactions.retrieve(interactionId).then((interaction) => {
-        if (interaction.status === InteractionStatus.draft) {
-            client.interactions.listVersions(interactionId).then((versions) => {
-                printInteraction(interaction, versions, options);
-            });
-        } else {
-            printInteraction(interaction, [], options);
-        }
-    });
+    const interaction = await client.interactions.retrieve(interactionId);
+    if (interaction.status === InteractionStatus.draft) {
+        const versions = await client.interactions.listVersions(interactionId);
+        printInteraction(interaction, versions, options);
+    } else {
+        printInteraction(interaction, [], options);
+    }
 }
 
 

@@ -1,4 +1,4 @@
-import type { ToolDefinition, ToolUse } from "@llumiverse/common";
+import type { ToolDefinition, ToolScript, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
 import { AuthTokenPayload, ToolResult, ToolResultContent } from "@vertesia/common";
 
@@ -99,7 +99,7 @@ export interface ToolCollectionDefinition {
     tools: ToolDefinition[];
 }
 
-export type { ToolDefinition };
+export type { ToolDefinition, ToolScript };
 
 /**
  * The details of a connection to a MCP server - including the server URL and an authentication token

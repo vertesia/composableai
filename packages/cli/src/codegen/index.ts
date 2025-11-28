@@ -3,7 +3,7 @@ import { getClient } from "../client.js";
 import { CodeBuilder } from "./CodeBuilder.js";
 
 export default async function runExport(program: Command, interactionName: string | undefined, options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
     const project = await client.getProject();
     if (!project) {
         console.error('No project id specified');

@@ -7,10 +7,20 @@ import {
 import { StreamSource } from "../StreamSource.js";
 
 export const MEMORIES_PREFIX = "memories";
+export const ARTIFACTS_PREFIX = "agents";
 
 export function getMemoryFilePath(name: string) {
     const nameWithExt = name.endsWith(".tar.gz") ? name : name + ".tar.gz";
     return `${MEMORIES_PREFIX}/${nameWithExt}`;
+}
+
+/**
+ * Build the storage path for an agent artifact
+ * @param runId - The workflow run ID
+ * @param name - The artifact filename
+ */
+export function getAgentArtifactPath(runId: string, name: string): string {
+    return `${ARTIFACTS_PREFIX}/${runId}/${name}`;
 }
 
 export class FilesApi extends ApiTopic {
@@ -178,5 +188,75 @@ export class FilesApi extends ApiTopic {
             stream = stream.pipeThrough(ds);
         }
         return stream;
+    }
+
+    // ==================== Agent Artifact Methods ====================
+
+    /**
+     * List files by prefix
+     * @param prefix - Path prefix to filter files
+     * @returns Array of file paths matching the prefix
+     */
+    listByPrefix(prefix: string): Promise<{ files: string[] }> {
+        return this.get("/list", { query: { prefix } });
+    }
+
+    /**
+     * Upload an artifact for an agent run
+     * @param runId - The workflow run ID
+     * @param name - Artifact name (e.g., "output.json")
+     * @param source - File content source
+     * @returns The full path of the uploaded artifact
+     */
+    async uploadArtifact(runId: string, name: string, source: StreamSource | File): Promise<string> {
+        const artifactPath = getAgentArtifactPath(runId, name);
+        if (source instanceof File) {
+            const file = source as File;
+            return this.uploadFile(
+                new StreamSource(file.stream(), name, file.type, artifactPath)
+            );
+        } else {
+            return this.uploadFile(
+                new StreamSource(source.stream, name, source.type, artifactPath)
+            );
+        }
+    }
+
+    /**
+     * Download an artifact from an agent run
+     * @param runId - The workflow run ID
+     * @param name - Artifact name
+     * @returns ReadableStream of the artifact content
+     */
+    async downloadArtifact(runId: string, name: string): Promise<ReadableStream<Uint8Array>> {
+        const artifactPath = getAgentArtifactPath(runId, name);
+        return this.downloadFile(artifactPath);
+    }
+
+    /**
+     * Get download URL for an artifact
+     * @param runId - The workflow run ID
+     * @param name - Artifact name
+     * @param disposition - Content disposition (inline or attachment)
+     * @returns Signed URL response
+     */
+    getArtifactDownloadUrl(
+        runId: string,
+        name: string,
+        disposition?: "inline" | "attachment"
+    ): Promise<GetFileUrlResponse> {
+        const artifactPath = getAgentArtifactPath(runId, name);
+        return this.getDownloadUrl(artifactPath, name, disposition);
+    }
+
+    /**
+     * List artifacts for an agent run
+     * @param runId - The workflow run ID
+     * @returns Array of artifact file paths
+     */
+    async listArtifacts(runId: string): Promise<string[]> {
+        const prefix = `${ARTIFACTS_PREFIX}/${runId}/`;
+        const result = await this.listByPrefix(prefix);
+        return result.files;
     }
 }
