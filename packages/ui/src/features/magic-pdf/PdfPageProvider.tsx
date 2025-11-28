@@ -59,69 +59,73 @@ class PageLayoutProvider {
 }
 
 class PageMarkdownProvider {
-    private cache: Map<number, string> = new Map();
-    private pendingRequests: Map<number, Promise<string>> = new Map();
-    private vertesia: VertesiaClient | null = null;
-    private objectId: string | null = null;
+    private pages: string[] = [];
 
     constructor(public totalPages: number) {}
 
-    // Initialize with client and objectId for lazy loading
-    init(vertesia: VertesiaClient, objectId: string) {
-        this.vertesia = vertesia;
-        this.objectId = objectId;
+    // Initialize by parsing pages from the full markdown content
+    // Pages are delimited by <!-- {"page":N} --> markers
+    initFromContent(markdownContent: string) {
+        this.pages = extractMarkdownPages(markdownContent, this.totalPages);
     }
 
     // Keep for backwards compatibility with non-markdown processors
-    async loadUrls(vertesia: VertesiaClient, objectId: string) {
-        this.init(vertesia, objectId);
+    async loadUrls(_vertesia: VertesiaClient, _objectId: string) {
+        // No-op for markdown processor - content is already parsed
     }
 
     async getPageMarkdown(page: number): Promise<string> {
-        // Return from cache if available
-        const cached = this.cache.get(page);
-        if (cached !== undefined) {
-            return cached;
+        const index = page - 1;
+        if (index < 0 || index >= this.pages.length) {
+            return '';
         }
+        return this.pages[index];
+    }
+}
 
-        // Return pending request if already in progress
-        const pending = this.pendingRequests.get(page);
-        if (pending) {
-            return pending;
-        }
+// Extract markdown pages from content delimited by <!-- {"page":N} --> markers
+function extractMarkdownPages(content: string, totalPages: number): string[] {
+    const pages: string[] = new Array(totalPages).fill('');
 
-        // Lazy load the markdown for this page
-        if (!this.vertesia || !this.objectId) {
-            throw new Error("PageMarkdownProvider not initialized");
-        }
+    // Match page delimiters: <!-- {"page":N} -->
+    const pageDelimiterRegex = /<!--\s*\{\s*"page"\s*:\s*(\d+)\s*\}\s*-->/g;
 
-        const request = this.fetchPageMarkdown(page);
-        this.pendingRequests.set(page, request);
-
-        try {
-            const content = await request;
-            this.cache.set(page, content);
-            return content;
-        } finally {
-            this.pendingRequests.delete(page);
-        }
+    // Find all page markers and their positions
+    const markers: { page: number; index: number }[] = [];
+    let match;
+    while ((match = pageDelimiterRegex.exec(content)) !== null) {
+        markers.push({
+            page: parseInt(match[1], 10),
+            index: match.index + match[0].length,
+        });
     }
 
-    private async fetchPageMarkdown(page: number): Promise<string> {
-        if (!this.vertesia || !this.objectId) {
-            throw new Error("PageMarkdownProvider not initialized");
+    // Extract content between markers
+    for (let i = 0; i < markers.length; i++) {
+        const marker = markers[i];
+        const pageIndex = marker.page - 1;
+
+        if (pageIndex < 0 || pageIndex >= totalPages) {
+            continue;
         }
 
-        // Get the download URL for this specific page
-        const urlResponse = await getMarkdownUrlForPage(this.vertesia, this.objectId, page);
+        const startIndex = marker.index;
 
-        // Fetch the markdown content
-        const response = await fetch(urlResponse.url, { method: "GET" });
-        if (!response.ok) {
-            throw new Error(`Failed to fetch markdown for page ${page}: ${response.statusText}`);
-        }
-        return response.text();
+        // Find the actual end by looking for the next delimiter or end of content
+        const nextDelimiterMatch = content.slice(startIndex).match(/<!--\s*\{\s*"page"\s*:\s*\d+\s*\}\s*-->/);
+        const actualEndIndex = nextDelimiterMatch
+            ? startIndex + nextDelimiterMatch.index!
+            : content.length;
+
+        let pageContent = content.slice(startIndex, actualEndIndex).trim();
+
+        // Remove trailing --- separators if present
+        pageContent = pageContent.replace(/\n---\s*$/, '').trim();
+
+        pages[pageIndex] = pageContent;
     }
+
+    return pages;
 }
 
 const PdfPageContext = createContext<PdfPagesInfo | undefined>(undefined);
@@ -138,7 +142,10 @@ export function PdfPageProvider({ children, object }: PdfPageProviderProps) {
         if (isMarkdownProcessor) {
             const page_count = (object.metadata as DocumentMetadata).page_count || DEFAULT_PAGE_COUNT;
             const markdownProvider = new PageMarkdownProvider(page_count);
-            markdownProvider.init(client, object.id);
+            // Parse pages directly from the content text instead of fetching individual files
+            if (object.text) {
+                markdownProvider.initFromContent(object.text);
+            }
             const xml = object.text ? cleanXml(object.text) : "";
             return {
                 count: page_count,
@@ -226,9 +233,6 @@ function getLayoutJsonPath(objectId: string, pageNumber: number) {
     return `${getBasePath(objectId)}/pages/page-${pageNumber}.layout.json`;
 }
 
-function getMarkdownPath(objectId: string, pageNumber: number) {
-    return `${getBasePath(objectId)}/pages/page-${pageNumber}.md`;
-}
 
 export function getResourceUrl(
     vertesia: VertesiaClient,
@@ -287,16 +291,6 @@ function getLayoutUrlForPage(
 ): Promise<GetFileUrlResponse> {
     return vertesia.files.getDownloadUrl(
         getLayoutJsonPath(objectId, pageNumber),
-    );
-}
-
-function getMarkdownUrlForPage(
-    vertesia: VertesiaClient,
-    objectId: string,
-    pageNumber: number,
-): Promise<GetFileUrlResponse> {
-    return vertesia.files.getDownloadUrl(
-        getMarkdownPath(objectId, pageNumber),
     );
 }
 
