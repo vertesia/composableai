@@ -20,6 +20,15 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
     const [thumbnailWidth, setThumbnailWidth] = useState<number | undefined>(undefined);
     const [aspectRatio, setAspectRatio] = useState<number>(A4_ASPECT_RATIO);
 
+    // Track the previous item height to preserve scroll position during resize
+    const prevItemHeightRef = useRef<number | null>(null);
+
+    // Calculate item height based on thumbnail width
+    const getItemHeight = (width: number | undefined, ratio: number) => {
+        const placeholderHeight = width ? Math.round(width / ratio) : 200;
+        return placeholderHeight + 16 + 24 + 8; // padding + text + gap
+    };
+
     // Single ResizeObserver at parent level to measure thumbnail width
     // Debounced to avoid excessive re-renders during resize
     useEffect(() => {
@@ -34,12 +43,40 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
         };
 
         const updateWidth = () => {
-            const availableWidth = getAvailableWidth();
-            setThumbnailWidth(availableWidth > 0 ? availableWidth : undefined);
+            const newWidth = getAvailableWidth();
+            if (newWidth <= 0) return;
+
+            // Before updating width, preserve scroll position by calculating which page is at top
+            const oldItemHeight = prevItemHeightRef.current;
+            if (oldItemHeight && oldItemHeight > 0) {
+                const currentScrollTop = container.scrollTop;
+                const currentTopPage = Math.round(currentScrollTop / oldItemHeight);
+
+                // Calculate new item height and adjust scroll position
+                const newItemHeight = getItemHeight(newWidth, aspectRatio);
+                const newScrollTop = currentTopPage * newItemHeight;
+
+                // Update width first, then scroll
+                setThumbnailWidth(newWidth);
+
+                // Use requestAnimationFrame to scroll after the DOM updates
+                requestAnimationFrame(() => {
+                    container.scrollTo({ top: newScrollTop, behavior: 'instant' });
+                });
+
+                prevItemHeightRef.current = newItemHeight;
+            } else {
+                setThumbnailWidth(newWidth);
+                prevItemHeightRef.current = getItemHeight(newWidth, aspectRatio);
+            }
         };
 
         // Initial width update
-        updateWidth();
+        const initialWidth = getAvailableWidth();
+        if (initialWidth > 0) {
+            setThumbnailWidth(initialWidth);
+            prevItemHeightRef.current = getItemHeight(initialWidth, aspectRatio);
+        }
 
         const handleResize = () => {
             // Debounce width updates to avoid re-rendering PDFs during resize
@@ -54,23 +91,26 @@ export function PageSlider({ className, currentPage, onChange }: PageSliderProps
             if (debounceTimer) clearTimeout(debounceTimer);
             resizeObserver.disconnect();
         };
-    }, []);
+    }, [aspectRatio]);
 
-    // Jump to current page when it changes
+    // Jump to current page when it changes (user navigation)
+    // Use a ref to track the previous page to avoid scrolling on resize
+    const prevPageRef = useRef(currentPage);
     useEffect(() => {
         const container = scrollContainerRef.current;
         if (!container) return;
 
-        // Calculate item height based on thumbnail width (matching PdfThumbnailList calculation)
-        const placeholderHeight = thumbnailWidth ? Math.round(thumbnailWidth / aspectRatio) : 200;
-        const itemHeight = placeholderHeight + 16 + 24 + 8; // padding + text + gap
+        // Only scroll if the page actually changed (user navigation)
+        if (prevPageRef.current !== currentPage) {
+            prevPageRef.current = currentPage;
 
-        // Scroll to the page position
-        const targetScrollTop = (currentPage - 1) * itemHeight;
-        container.scrollTo({
-            top: targetScrollTop,
-            behavior: 'instant'
-        });
+            const itemHeight = getItemHeight(thumbnailWidth, aspectRatio);
+            const targetScrollTop = (currentPage - 1) * itemHeight;
+            container.scrollTo({
+                top: targetScrollTop,
+                behavior: 'instant'
+            });
+        }
     }, [currentPage, thumbnailWidth, aspectRatio]);
 
     const goPrev = () => {
