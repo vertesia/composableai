@@ -97,6 +97,9 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
         };
     }, [aspectRatio]);
 
+    // Track whether we're programmatically scrolling to avoid feedback loops
+    const isProgrammaticScrollRef = useRef(false);
+
     // Jump to current page when it changes (user navigation)
     // Use a ref to track the previous page to avoid scrolling on resize
     const prevPageRef = useRef(currentPage);
@@ -110,12 +113,57 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
 
             const itemHeight = getItemHeight(thumbnailWidth, aspectRatio);
             const targetScrollTop = (currentPage - 1) * itemHeight;
+
+            // Mark as programmatic scroll to avoid triggering onChange
+            isProgrammaticScrollRef.current = true;
             container.scrollTo({
                 top: targetScrollTop,
                 behavior: 'instant'
             });
+            // Reset after a short delay to allow scroll event to fire
+            requestAnimationFrame(() => {
+                isProgrammaticScrollRef.current = false;
+            });
         }
     }, [currentPage, thumbnailWidth, aspectRatio]);
+
+    // Update current page based on scroll position
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container || !thumbnailWidth) return;
+
+        let scrollDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const handleScroll = () => {
+            // Skip if this is a programmatic scroll
+            if (isProgrammaticScrollRef.current) return;
+
+            // Debounce scroll updates
+            if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer);
+            scrollDebounceTimer = setTimeout(() => {
+                const itemHeight = getItemHeight(thumbnailWidth, aspectRatio);
+                if (itemHeight <= 0) return;
+
+                // Calculate which page is at the top of the viewport
+                const scrollTop = container.scrollTop;
+                const newPage = Math.round(scrollTop / itemHeight) + 1;
+
+                // Clamp to valid range and update if different
+                const clampedPage = Math.max(1, Math.min(newPage, count));
+                if (clampedPage !== currentPage) {
+                    prevPageRef.current = clampedPage;
+                    onChange(clampedPage);
+                }
+            }, 50);
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer);
+            container.removeEventListener('scroll', handleScroll);
+        };
+    }, [thumbnailWidth, aspectRatio, count, currentPage, onChange]);
 
     const goPrev = () => {
         if (currentPage > 1) {
@@ -224,4 +272,3 @@ function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps
         </div>
     );
 }
-
