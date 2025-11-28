@@ -164,6 +164,20 @@ export interface SkillExecution {
 }
 
 /**
+ * Script file bundled with a skill
+ */
+export interface SkillScript {
+    /**
+     * Filename (e.g., "analyze.py")
+     */
+    name: string;
+    /**
+     * Script content
+     */
+    content: string;
+}
+
+/**
  * Skill definition - parsed from SKILL.md or SKILL.jst
  */
 export interface SkillDefinition {
@@ -208,6 +222,10 @@ export interface SkillDefinition {
      * Related tools that work well with this skill
      */
     related_tools?: string[];
+    /**
+     * Scripts bundled with this skill (synced to sandbox when skill is used)
+     */
+    scripts?: SkillScript[];
 }
 
 /**

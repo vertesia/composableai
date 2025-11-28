@@ -204,6 +204,48 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
         } satisfies ToolCollectionDefinition);
     });
 
+    // Get scripts for a specific skill
+    // Returns all scripts bundled with the skill
+    endpoint.get('/:name/scripts', (c: Context) => {
+        const name = c.req.param('name');
+        const skillName = name.startsWith('skill_') ? name.slice(6) : name;
+        const skill = coll.getSkill(skillName);
+        if (!skill) {
+            throw new HTTPException(404, {
+                message: `Skill not found: ${skillName}`
+            });
+        }
+        return c.json({
+            skill_name: skill.name,
+            scripts: skill.scripts || []
+        });
+    });
+
+    // Get a specific script file
+    endpoint.get('/:name/scripts/:filename', (c: Context) => {
+        const name = c.req.param('name');
+        const filename = c.req.param('filename');
+        const skillName = name.startsWith('skill_') ? name.slice(6) : name;
+        const skill = coll.getSkill(skillName);
+        if (!skill) {
+            throw new HTTPException(404, {
+                message: `Skill not found: ${skillName}`
+            });
+        }
+        const script = skill.scripts?.find(s => s.name === filename);
+        if (!script) {
+            throw new HTTPException(404, {
+                message: `Script not found: ${filename}`
+            });
+        }
+        // Return as plain text with appropriate content type
+        const contentType = filename.endsWith('.py') ? 'text/x-python'
+            : filename.endsWith('.sh') ? 'text/x-shellscript'
+            : filename.endsWith('.js') ? 'text/javascript'
+            : 'text/plain';
+        return c.text(script.content, 200, { 'Content-Type': contentType });
+    });
+
     // Get a specific skill by name
     endpoint.get('/:name', (c: Context) => {
         const name = c.req.param('name');
