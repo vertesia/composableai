@@ -1,12 +1,13 @@
 import { useEffect, useState, memo } from "react";
 
 import { useUserSession } from "@vertesia/ui/session";
-import { Button, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
+import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME } from "@vertesia/common";
-import { Copy, Download, SquarePen, AlertTriangle } from "lucide-react";
+import { ContentNature, ContentObject, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME } from "@vertesia/common";
+import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
+import { MagicPdfView } from "../../../magic-pdf";
 
 // Maximum text size before cropping (128K characters)
 const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
@@ -271,6 +272,7 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
     const { client } = useUserSession();
     const toast = useToast();
     const [loadingFormat, setLoadingFormat] = useState<"docx" | "pdf" | null>(null);
+    const [isPdfPreviewOpen, setPdfPreviewOpen] = useState(false);
 
     const content = object.content;
 
@@ -278,6 +280,10 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
         content &&
         content.type &&
         content.type === "text/markdown";
+
+    // Check if PDF has been processed (content_processor.type is xml or markdown)
+    const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
+    const hasPdfAnalysis = contentProcessorType === "xml" || contentProcessorType === "markdown";
 
     const handleExportDocument = async (format: "docx" | "pdf") => {
         // Prevent multiple concurrent exports
@@ -364,47 +370,64 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
     const handleExportDocx = () => handleExportDocument("docx");
     const handleExportPdf = () => handleExportDocument("pdf");
     return (
-        <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
-            <div className="flex items-center gap-2">
-                {text && (
-                    <Button variant="ghost" size="sm" title="Copy text" className="flex items-center gap-2" onClick={() => handleCopyContent(text, "text")}>
-                        <Copy className="size-4" />
-                    </Button>
-                )}
-                {isMarkdown && text && (
-                    <>
+        <>
+            <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
+                <div className="flex items-center gap-2">
+                    {text && (
+                        <Button variant="ghost" size="sm" title="Copy text" className="flex items-center gap-2" onClick={() => handleCopyContent(text, "text")}>
+                            <Copy className="size-4" />
+                        </Button>
+                    )}
+                    {isMarkdown && text && (
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleExportDocx}
+                                disabled={loadingFormat !== null}
+                                className="flex items-center gap-2"
+                            >
+                                {loadingFormat === "docx" ? (
+                                    <Spinner size="sm" />
+                                ) : (
+                                    <Download className="size-4" />
+                                )}
+                                DOCX
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleExportPdf}
+                                disabled={loadingFormat !== null}
+                                className="flex items-center gap-2"
+                            >
+                                {loadingFormat === "pdf" ? (
+                                    <Spinner size="sm" />
+                                ) : (
+                                    <Download className="size-4" />
+                                )}
+                                PDF
+                            </Button>
+                        </>
+                    )}
+                    {hasPdfAnalysis && (
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={handleExportDocx}
-                            disabled={loadingFormat !== null}
-                            className="flex items-center gap-2"
+                            onClick={() => setPdfPreviewOpen(true)}
+                            title="Side by side view"
                         >
-                            {loadingFormat === "docx" ? (
-                                <Spinner size="sm" />
-                            ) : (
-                                <Download className="size-4" />
-                            )}
-                            DOCX
+                            <FileSearch className="size-4" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleExportPdf}
-                            disabled={loadingFormat !== null}
-                            className="flex items-center gap-2"
-                        >
-                            {loadingFormat === "pdf" ? (
-                                <Spinner size="sm" />
-                            ) : (
-                                <Download className="size-4" />
-                            )}
-                            PDF
-                        </Button>
-                    </>
-                )}
+                    )}
+                </div>
             </div>
-        </div>
+            {isPdfPreviewOpen && (
+                <Portal>
+                    <MagicPdfView objectId={object.id} onClose={() => setPdfPreviewOpen(false)} />
+                </Portal>
+            )}
+        </>
     );
 }
 
