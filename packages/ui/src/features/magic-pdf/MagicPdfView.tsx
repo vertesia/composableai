@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { Component, ErrorInfo, ReactNode, useState } from "react";
 import { DownloadPopover } from "./DownloadPopover";
 import { PageSlider } from "./PageSlider";
-import { PdfPageProvider } from "./PdfPageProvider";
+import { PdfPageProvider, usePdfPagesInfo } from "./PdfPageProvider";
 import { TextPageView } from "./TextPageView";
 import { ViewType } from "./types";
 
@@ -102,6 +102,8 @@ interface _MagicPdfViewProps {
     onClose?: () => void;
 }
 function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
+    const { count: totalPages } = usePdfPagesInfo();
+
     const getInitialViewType = (): ViewType => {
         if (object.metadata?.type === "document") {
             const docMetadata = object.metadata as DocumentMetadata;
@@ -136,6 +138,9 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                     <div className="flex items-center gap-x-2">
                         <DownloadPopover object={object} />
                     </div>
+                    <span className="text-xs text-muted-foreground">
+                        Page {pageNumber} / {totalPages}
+                    </span>
                     <div className="flex items-center gap-x-2">
                         {processorType === "xml" && <ContentSwitcher type={viewType} onSwitch={setViewType} />}
                         {!!onClose && (
