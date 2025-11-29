@@ -126,13 +126,17 @@ export function createToolServer(config: ToolServerConfig): Hono {
 
     // Add base API route
     app.get(prefix, (c) => {
+        // Skills are exposed as tools, so include them in the tools list
+        const allToolEndpoints = [
+            ...tools.map(col => `${prefix}/tools/${col.name}`),
+            ...skills.map(col => `${prefix}/skills/${col.name}`),
+        ];
         return c.json({
             message: 'Vertesia Tools API',
             version: '1.0.0',
             endpoints: {
-                tools: tools.map(col => `${prefix}/tools/${col.name}`),
+                tools: allToolEndpoints,
                 interactions: interactions.map(col => `${prefix}/interactions/${col.name}`),
-                skills: skills.map(col => `${prefix}/skills/${col.name}`),
                 mcp: mcpProviders.map(p => `${prefix}/mcp/${p.name}`),
             }
         });
