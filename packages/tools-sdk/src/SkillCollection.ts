@@ -195,6 +195,7 @@ interface SkillFrontmatter {
     data_patterns?: string[];
     language?: string;
     packages?: string[];
+    system_packages?: string[];
 }
 
 /**
@@ -260,6 +261,7 @@ export function parseSkillFile(
         skill.execution = {
             language: frontmatter.language,
             packages: frontmatter.packages,
+            system_packages: frontmatter.system_packages,
         };
 
         // Extract code template from instructions if present

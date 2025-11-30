@@ -158,6 +158,10 @@ export interface SkillExecution {
      */
     packages?: string[];
     /**
+     * System-level packages to install (e.g., apt-get packages)
+     */
+    system_packages?: string[];
+    /**
      * Code template to execute
      */
     template?: string;
