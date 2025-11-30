@@ -3,6 +3,7 @@ import {
     GetFileUrlPayload,
     GetFileUrlResponse,
     GetUploadUrlPayload,
+    SetFileMetadataPayload,
 } from "@vertesia/common";
 import { StreamSource } from "../StreamSource.js";
 
@@ -46,12 +47,24 @@ export class FilesApi extends ApiTopic {
         contentType: string;
         contentDisposition?: string;
         etag?: string;
+        customMetadata?: Record<string, string>;
     }> {
         return this.get("/metadata", {
             query: {
                 file: uri,
             },
         });
+    }
+
+    /**
+     * Set custom metadata on a file
+     * @param file - The file path or URI
+     * @param metadata - Custom metadata key-value pairs
+     * @returns Success status
+     */
+    setFileMetadata(file: string, metadata: Record<string, string>): Promise<{ success: boolean; file: string }> {
+        const payload: SetFileMetadataPayload = { file, metadata };
+        return this.put("/metadata", { payload });
     }
 
     /**

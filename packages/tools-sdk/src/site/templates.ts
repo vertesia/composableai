@@ -4,6 +4,11 @@ import type { ToolCollection } from "../ToolCollection.js";
 import type { ICollection, SkillDefinition, Tool } from "../types.js";
 import { baseStyles } from "./styles.js";
 
+type MCPProviderMeta = {
+  name: string;
+  description?: string;
+};
+
 /**
  * Default icon SVG for collections without a custom icon
  */
@@ -431,6 +436,17 @@ export function toolCard(tool: Tool<Record<string, unknown>>): string {
 }
 
 /**
+ * Render an MCP provider card
+ */
+export function mcpProviderCard(provider: MCPProviderMeta): string {
+  return /*html*/`
+<a class="card" href="/api/mcp/${provider.name}">
+    <div class="card-title">${provider.name}</div>
+    <div class="card-desc">${provider.description || ''}</div>
+</a>`;
+}
+
+/**
  * Render a detailed tool card
  */
 export function toolDetailCard(tool: Tool<Record<string, unknown>>, collectionName: string): string {
@@ -615,6 +631,7 @@ export function indexPage(
     tools: ToolCollection[],
     skills: SkillCollection[],
     interactions: InteractionCollection[],
+    mcpProviders: MCPProviderMeta[],
     title = "Tools Server"
 ): string {
     return /*html*/`
@@ -643,6 +660,7 @@ export function indexPage(
                         ${tools.length ? /*html*/`<span><dot></dot> ${tools.length} tool collection${tools.length !== 1 ? 's' : ''}</span>` : ''}
                         ${skills.length ? /*html*/`<span><dot></dot> ${skills.length} skill collection${skills.length !== 1 ? 's' : ''}</span>` : ''}
                         ${interactions.length ? /*html*/`<span><dot></dot> ${interactions.length} interaction collection${interactions.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${mcpProviders.length ? /*html*/`<span><dot></dot> ${mcpProviders.length} MCP provider${mcpProviders.length !== 1 ? 's' : ''}</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -710,6 +728,19 @@ export function indexPage(
             </div>
             <div class="card-grid">
                 ${interactions.map(i => collectionCard(i, 'interactions')).join('')}
+            </div>
+        </section>
+        ` : ''}
+
+        ${mcpProviders.length > 0 ? /*html*/`
+        <section data-section="mcp">
+            <hr>
+            <div class="section-header">
+                <h2>MCP Providers</h2>
+                <p class="section-subtitle">Remote MCP servers available through this tools server.</p>
+            </div>
+            <div class="card-grid">
+                ${mcpProviders.map(p => mcpProviderCard(p)).join('')}
             </div>
         </section>
         ` : ''}

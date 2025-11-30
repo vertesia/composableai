@@ -5,10 +5,10 @@ import { HTTPException } from "hono/http-exception";
 import { authorize } from "./auth.js";
 import { InteractionCollection } from "./InteractionCollection.js";
 import {
-    indexPage,
-    interactionCollectionPage,
-    skillCollectionPage,
-    toolCollectionPage
+  indexPage,
+  interactionCollectionPage,
+  skillCollectionPage,
+  toolCollectionPage
 } from "./site/templates.js";
 import { SkillCollection } from "./SkillCollection.js";
 import { ToolCollection } from "./ToolCollection.js";
@@ -81,13 +81,13 @@ export interface ToolServerConfig {
  */
 export function createToolServer(config: ToolServerConfig): Hono {
     const {
-        title = 'Tools Server',
-        prefix = '/api',
-        tools = [],
-        interactions = [],
-        skills = [],
-        mcpProviders = [],
-        disableHtml = false,
+      title = 'Tools Server',
+      prefix = '/api',
+      tools = [],
+      interactions = [],
+      skills = [],
+      mcpProviders = [],
+      disableHtml = false,
     } = config;
 
     const app = new Hono();
@@ -99,7 +99,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
     if (!disableHtml) {
         // Index page
         app.get('/', (c) => {
-            return c.html(indexPage(tools, skills, interactions, title));
+          return c.html(indexPage(tools, skills, interactions, mcpProviders, title));
         });
 
         // Tool collection pages
