@@ -57,6 +57,14 @@ body {
         0 12px 30px rgba(37, 99, 235, 0.6);
 }
 
+.hero-logo-initial {
+    font-size: 1.1rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #eff6ff;
+}
+
 .hero-logo img {
     display: block;
     max-width: 80%;

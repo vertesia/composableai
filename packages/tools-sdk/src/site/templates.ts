@@ -596,6 +596,19 @@ function escapeHtml(str: string): string {
 }
 
 /**
+ * Derive simple initials from a title for use in the hero avatar.
+ */
+function getInitials(title: string): string {
+    const words = title.trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return "TS";
+    const initials = words
+        .slice(0, 2)
+        .map((word) => word.charAt(0).toUpperCase())
+        .join("");
+    return initials || "TS";
+}
+
+/**
  * Render the main index page
  */
 export function indexPage(
@@ -618,14 +631,13 @@ export function indexPage(
         <header class="hero">
             <div class="hero-main">
                 <div class="hero-logo">
-                    <img src="/logo-light.png" alt="Vertesia" class="logo-light" />
-                    <img src="/logo-dark.png" alt="Vertesia" class="logo-dark" />
+                    <span class="hero-logo-initial">${escapeHtml(getInitials(title))}</span>
                 </div>
                 <div class="hero-meta">
-                    <p class="hero-eyebrow">Vertesia Platform</p>
+                    <p class="hero-eyebrow">Tools Server</p>
                     <h1 class="hero-title">${title}</h1>
                     <p class="hero-tagline">
-                        Discover the tools, skills, and interactions exposed by this Vertesia deployment.
+                        Discover the tools, skills, and interactions exposed by this server.
                     </p>
                     <div class="hero-summary">
                         ${tools.length ? /*html*/`<span><dot></dot> ${tools.length} tool collection${tools.length !== 1 ? 's' : ''}</span>` : ''}
