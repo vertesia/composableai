@@ -250,7 +250,6 @@ function ModernAgentConversationInner({
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
-    const [inputValue, setInputValue] = useState<string>("");
     const [isSending, setIsSending] = useState(false);
     const [viewMode, setViewMode] = useState<"stacked" | "sliding">("sliding");
     const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(!isModal);
@@ -486,16 +485,15 @@ function ModernAgentConversationInner({
     }, [messages, plans, activePlanIndex]);
 
     // Send a message to the agent
-    const handleSendMessage = () => {
-        const message = inputValue.trim();
-        if (!message || isSending) return;
+    const handleSendMessage = (message: string) => {
+        const trimmed = message.trim();
+        if (!trimmed || isSending) return;
 
         setIsSending(true);
-        setInputValue("");
 
         client.store.workflows
             .sendSignal(run.workflowId, run.runId, "UserInput", {
-                message,
+                message: trimmed,
             } as UserInputSignal)
             .then(() => {
                 setIsCompleted(false);
@@ -664,8 +662,6 @@ function ModernAgentConversationInner({
                         </MessageBox>
                     ) : showInput && (
                         <MessageInput
-                            value={inputValue}
-                            onChange={setInputValue}
                             onSend={handleSendMessage}
                             disabled={false}
                             isSending={isSending}
