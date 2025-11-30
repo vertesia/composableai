@@ -284,6 +284,14 @@ hr {
     color: #6b7280;
 }
 
+.card-meta {
+    margin-top: 0.45rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9ca3af;
+}
+
 .item-list {
     display: flex;
     flex-direction: column;
@@ -536,6 +544,10 @@ hr {
 
     .card-desc {
         color: #9ca3af;
+    }
+
+    .card-meta {
+        color: #6b7280;
     }
 
     .item-card {

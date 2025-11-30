@@ -406,12 +406,13 @@ const fileIcon = /*html*/`
 /**
  * Render a collection card for the index page
  */
-export function collectionCard(collection: ICollection, pathPrefix: string): string {
+export function collectionCard(collection: ICollection, pathPrefix: string, meta?: string): string {
     return /*html*/`
 <a class="card" href="/${pathPrefix}/${collection.name}" data-collection-type="${pathPrefix}" data-collection-name="${collection.name}">
     <div class="card-icon">${collection.icon || defaultIcon}</div>
     <div class="card-title">${collection.title || collection.name}</div>
     <div class="card-desc">${collection.description || ''}</div>
+    ${meta ? `<div class="card-meta">${meta}</div>` : ''}
 </a>`;
 }
 
@@ -511,7 +512,7 @@ export function skillCard(skill: SkillDefinition): string {
 /**
  * Render a detailed skill card
  */
-export function skillDetailCard(skill: SkillDefinition, collectionName: string): string {
+export function skillDetailCard(skill: SkillDefinition): string {
     const hasKeywords = skill.context_triggers?.keywords?.length;
     const hasPackages = skill.execution?.packages?.length;
     const hasScripts = skill.scripts?.length;
@@ -680,7 +681,10 @@ export function indexPage(
                 <p class="section-subtitle">Reusable instructions and scripts packaged as tools.</p>
             </div>
             <div class="card-grid">
-                ${skills.map(s => collectionCard(s, 'skills')).join('')}
+                ${skills.map(s => {
+                    const count = Array.from(s).length;
+                    return collectionCard(s, 'skills', `${count} skill${count !== 1 ? 's' : ''}`);
+                }).join('')}
             </div>
         </section>
         ` : ''}
@@ -830,7 +834,7 @@ export function skillCollectionPage(collection: SkillCollection): string {
     <h2>${skillsArray.length} Skill${skillsArray.length !== 1 ? 's' : ''}</h2>
 
     ${skillsArray.length > 0 ?
-        skillsArray.map(skill => skillDetailCard(skill, collection.name)).join('') :
+        skillsArray.map(skill => skillDetailCard(skill)).join('') :
         '<div class="empty-state">No skills in this collection</div>'
     }
 </body>
