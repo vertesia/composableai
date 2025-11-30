@@ -626,14 +626,32 @@ function getInitials(title: string): string {
 
 /**
  * Render the main index page
+ *
+ * Note: The fourth argument is backward compatible:
+ * - If a string is passed, it is treated as the title.
+ * - If an array is passed, it is treated as MCP providers and the fifth argument (if any) is the title.
  */
 export function indexPage(
     tools: ToolCollection[],
     skills: SkillCollection[],
     interactions: InteractionCollection[],
-    mcpProviders: MCPProviderMeta[],
-    title = "Tools Server"
+    mcpProvidersOrTitle?: MCPProviderMeta[] | string,
+    titleParam?: string
 ): string {
+    let mcpProviders: MCPProviderMeta[] = [];
+    let title = "Tools Server";
+
+    if (Array.isArray(mcpProvidersOrTitle)) {
+        mcpProviders = mcpProvidersOrTitle;
+        if (typeof titleParam === "string" && titleParam.length > 0) {
+            title = titleParam;
+        }
+    } else if (typeof mcpProvidersOrTitle === "string" && mcpProvidersOrTitle.length > 0) {
+        title = mcpProvidersOrTitle;
+    } else if (typeof titleParam === "string" && titleParam.length > 0) {
+        title = titleParam;
+    }
+
     return /*html*/`
 <!DOCTYPE html>
 <html lang="en">
