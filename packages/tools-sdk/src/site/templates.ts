@@ -275,6 +275,93 @@ ${baseStyles}
     background: #10b981;
     color: white;
 }
+
+@media (prefers-color-scheme: dark) {
+    .nav a {
+        color: #9ca3af;
+    }
+
+    .nav a:hover {
+        color: #60a5fa;
+    }
+
+    .detail-card {
+        background: rgba(15, 23, 42, 0.96);
+        box-shadow:
+            0 18px 40px rgba(15, 23, 42, 0.9),
+            0 0 0 1px rgba(15, 23, 42, 0.9);
+    }
+
+    .detail-header {
+        border-bottom-color: rgba(55, 65, 81, 0.9);
+    }
+
+    .detail-title {
+        color: #e5e7eb;
+    }
+
+    .detail-desc {
+        color: #9ca3af;
+    }
+
+    .detail-section-title {
+        color: #9ca3af;
+    }
+
+    .info-item {
+        background: rgba(15, 23, 42, 0.9);
+    }
+
+    .info-value {
+        color: #e5e7eb;
+    }
+
+    .info-value code {
+        background: rgba(31, 41, 55, 0.9);
+        color: #e5e7eb;
+    }
+
+    .script-item {
+        background: rgba(15, 23, 42, 0.9);
+    }
+
+    .script-name {
+        color: #e5e7eb;
+    }
+
+    .keyword-tag {
+        background: rgba(250, 204, 21, 0.12);
+        color: #facc15;
+    }
+
+    .instructions-preview {
+        background: rgba(15, 23, 42, 0.9);
+        border-color: rgba(55, 65, 81, 0.9);
+        color: #e5e7eb;
+    }
+
+    .endpoint-box {
+        background: rgba(31, 41, 55, 0.95);
+    }
+
+    .endpoint-box code {
+        color: #e5e7eb;
+    }
+
+    .copy-btn {
+        background: rgba(55, 65, 81, 0.95);
+        color: #e5e7eb;
+    }
+
+    .copy-btn:hover {
+        background: rgba(75, 85, 99, 0.98);
+        color: #f9fafb;
+    }
+
+    .empty-state {
+        color: #9ca3af;
+    }
+}
 `;
 
 /**
@@ -321,7 +408,7 @@ const fileIcon = /*html*/`
  */
 export function collectionCard(collection: ICollection, pathPrefix: string): string {
     return /*html*/`
-<a class="card" href="/${pathPrefix}/${collection.name}">
+<a class="card" href="/${pathPrefix}/${collection.name}" data-collection-type="${pathPrefix}" data-collection-name="${collection.name}">
     <div class="card-icon">${collection.icon || defaultIcon}</div>
     <div class="card-title">${collection.title || collection.name}</div>
     <div class="card-desc">${collection.description || ''}</div>
@@ -442,16 +529,6 @@ export function skillDetailCard(skill: SkillDefinition, collectionName: string):
         </div>
     </div>
     <div class="detail-body">
-        <div class="detail-section">
-            <h4 class="detail-section-title">Endpoint</h4>
-            <div class="endpoint-box">
-                <code>POST /api/skills/${collectionName}</code>
-                <button class="copy-btn" onclick="navigator.clipboard.writeText('/api/skills/${collectionName}')" title="Copy">
-                    ${copyIcon}
-                </button>
-            </div>
-        </div>
-
         <div class="info-grid">
             <div class="info-item">
                 <div class="info-label">Content Type</div>
@@ -536,30 +613,140 @@ export function indexPage(
     <style>${baseStyles}</style>
 </head>
 <body>
-    <h1>${title}</h1>
+    <div class="page">
+        <header class="hero">
+            <div class="hero-main">
+                <div class="hero-logo">
+                    <img src="/logo-light.png" alt="Vertesia" class="logo-light" />
+                    <img src="/logo-dark.png" alt="Vertesia" class="logo-dark" />
+                </div>
+                <div class="hero-meta">
+                    <p class="hero-eyebrow">Vertesia Platform</p>
+                    <h1 class="hero-title">${title}</h1>
+                    <p class="hero-tagline">
+                        Discover the tools, skills, and interactions exposed by this Vertesia deployment.
+                    </p>
+                    <div class="hero-summary">
+                        ${tools.length ? /*html*/`<span><dot></dot> ${tools.length} tool collection${tools.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${skills.length ? /*html*/`<span><dot></dot> ${skills.length} skill collection${skills.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${interactions.length ? /*html*/`<span><dot></dot> ${interactions.length} interaction collection${interactions.length !== 1 ? 's' : ''}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+            <aside class="hero-panel">
+                <div class="hero-panel-label">Base endpoint</div>
+                <div class="hero-panel-endpoint"><code>/api</code></div>
+                <p class="hero-panel-hint">
+                    Use <strong>POST /api/tools/&lt;collection&gt;</strong> or
+                    <strong>POST /api/skills/&lt;collection&gt;</strong> to call these from your apps or agents.
+                </p>
+            </aside>
+        </header>
 
-    ${tools.length > 0 ? /*html*/`
-    <h2>Tool Collections</h2>
-    <div class="card-grid">
-        ${tools.map(t => collectionCard(t, 'tools')).join('')}
-    </div>
-    ` : ''}
+        <div class="search-bar">
+            <input
+                type="search"
+                id="collection-search"
+                class="search-input"
+                placeholder="Search tools, skills, interactions..."
+                aria-label="Search collections"
+                autocomplete="off"
+            />
+            <p class="search-hint">
+                Filter collections by name or description. Search runs locally in your browser.
+            </p>
+            <p id="search-empty" class="search-empty" style="display: none;">
+                No collections match this search.
+            </p>
+        </div>
 
-    ${skills.length > 0 ? /*html*/`
-    <hr>
-    <h2>Skill Collections</h2>
-    <div class="card-grid">
-        ${skills.map(s => collectionCard(s, 'skills')).join('')}
-    </div>
-    ` : ''}
+        ${tools.length > 0 ? /*html*/`
+        <section data-section="tools">
+            <div class="section-header">
+                <h2>Tool Collections</h2>
+                <p class="section-subtitle">Remote tools available to agents via Vertesia.</p>
+            </div>
+            <div class="card-grid">
+                ${tools.map(t => collectionCard(t, 'tools')).join('')}
+            </div>
+        </section>
+        ` : ''}
 
-    ${interactions.length > 0 ? /*html*/`
-    <hr>
-    <h2>Interaction Collections</h2>
-    <div class="card-grid">
-        ${interactions.map(i => collectionCard(i, 'interactions')).join('')}
+        ${skills.length > 0 ? /*html*/`
+        <section data-section="skills">
+            <hr>
+            <div class="section-header">
+                <h2>Skill Collections</h2>
+                <p class="section-subtitle">Reusable instructions and scripts packaged as tools.</p>
+            </div>
+            <div class="card-grid">
+                ${skills.map(s => collectionCard(s, 'skills')).join('')}
+            </div>
+        </section>
+        ` : ''}
+
+        ${interactions.length > 0 ? /*html*/`
+        <section data-section="interactions">
+            <hr>
+            <div class="section-header">
+                <h2>Interaction Collections</h2>
+                <p class="section-subtitle">Conversation blueprints surfaced in the Vertesia UI.</p>
+            </div>
+            <div class="card-grid">
+                ${interactions.map(i => collectionCard(i, 'interactions')).join('')}
+            </div>
+        </section>
+        ` : ''}
     </div>
-    ` : ''}
+    <script>
+    (function () {
+        var input = document.getElementById('collection-search');
+        if (!input) return;
+
+        var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+        if (!cards.length) return;
+
+        var sections = Array.prototype.slice.call(document.querySelectorAll('[data-section]'));
+        var emptyState = document.getElementById('search-empty');
+
+        function normalize(value) {
+            return (value || '').toString().toLowerCase();
+        }
+
+        function update(query) {
+            var q = normalize(query).trim();
+            var anyVisible = false;
+
+            cards.forEach(function (card) {
+                var text = normalize(card.textContent);
+                var match = !q || text.indexOf(q) !== -1;
+                card.style.display = match ? '' : 'none';
+                if (match) anyVisible = true;
+            });
+
+            sections.forEach(function (section) {
+                var visibleCards = section.querySelectorAll('.card');
+                var hasVisible = false;
+                for (var i = 0; i < visibleCards.length; i++) {
+                    var style = window.getComputedStyle(visibleCards[i]);
+                    if (style.display !== 'none') {
+                        hasVisible = true;
+                        break;
+                    }
+                }
+                section.style.display = hasVisible ? '' : 'none';
+            });
+
+            if (emptyState) {
+                emptyState.style.display = q && !anyVisible ? '' : 'none';
+            }
+        }
+
+        input.addEventListener('input', function () {
+            update(input.value);
+        });
+    }());
+    </script>
 </body>
 </html>`;
 }
