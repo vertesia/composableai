@@ -20,6 +20,7 @@
         "require": "./lib/cjs/index.js"
     },
     "devDependencies": {
+        "@types/node": "^24.10.1",
         "ts-dual-module": "^0.6.3",
         "typescript": "^5.0.2",
         "vitest": "^3.0.9"

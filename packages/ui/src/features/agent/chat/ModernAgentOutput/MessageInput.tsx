@@ -4,9 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { SelectDocument } from "../../../store";
 
 interface MessageInputProps {
-    value: string;
-    onChange: (v: string) => void;
-    onSend: () => void;
+    onSend: (message: string) => void;
     disabled?: boolean;
     isSending?: boolean;
     isCompleted?: boolean;
@@ -15,8 +13,6 @@ interface MessageInputProps {
 }
 
 export default function MessageInput({
-    value,
-    onChange,
     onSend,
     disabled = false,
     isSending = false,
@@ -25,16 +21,25 @@ export default function MessageInput({
     placeholder = "Type your message..."
 }: MessageInputProps) {
     const ref = useRef<HTMLInputElement | null>(null);
+    const [value, setValue] = useState("");
     const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
 
     useEffect(() => {
         if (!disabled && isCompleted) ref.current?.focus();
     }, [disabled, isCompleted]);
 
+    const handleSend = () => {
+        const message = value.trim();
+        if (!message || disabled || isSending) return;
+
+        onSend(message);
+        setValue("");
+    };
+
     const keyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            onSend();
+            handleSend();
         }
     };
 
@@ -50,7 +55,7 @@ export default function MessageInput({
         const newValue = currentValue.substring(0, cursorPos) + markdownLink + currentValue.substring(cursorPos);
 
         // Update the input value
-        onChange(newValue);
+        setValue(newValue);
 
         // Close the modal
         setIsObjectModalOpen(false);
@@ -74,7 +79,7 @@ export default function MessageInput({
                         ref={ref}
                         value={value}
                         onKeyDown={keyDown}
-                        onChange={onChange}
+                        onChange={setValue}
                         disabled={disabled || isSending}
                         placeholder={placeholder}
                         className="pr-12 py-2.5"
@@ -90,7 +95,7 @@ export default function MessageInput({
                     </Button>
                 </div>
                 <Button
-                    onClick={onSend}
+                    onClick={handleSend}
                     disabled={disabled || isSending || !value.trim()}
                     className="px-4 py-2.5"
                 >

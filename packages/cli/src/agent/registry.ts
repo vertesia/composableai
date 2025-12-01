@@ -18,7 +18,7 @@ export async function getGoogleToken(program: Command, profileName?: string) {
     if (profileName) {
         config.use(profileName);
     }
-    const client = getClient(program);
+    const client = await getClient(program);
     console.log((await client.account.getGoogleToken()).token);
 }
 
@@ -26,7 +26,7 @@ export async function getGooglePrincipal(program: Command, profileName?: string)
     if (profileName) {
         config.use(profileName);
     }
-    const client = getClient(program);
+    const client = await getClient(program);
     console.log((await client.account.getGoogleToken()).principal);
 }
 
@@ -36,7 +36,7 @@ export async function updateNpmrc(project: AgentProject, profile: string) {
 }
 
 export async function createOrUpdateNpmRegistry(npmrcFile: string) {
-    const client = getClient();
+    const client = await getClient();
     const gtok = await client.account.getGoogleToken();
 
     npmrcFile = resolve(npmrcFile);

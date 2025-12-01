@@ -5,7 +5,7 @@ import { readFile } from "fs/promises";
 import { getClient } from "../client.js";
 
 export async function listApps(program: Command, _options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
     const apps = await client.apps.list();
 
     if (apps.length === 0) {
@@ -24,7 +24,7 @@ export async function listApps(program: Command, _options: Record<string, any>) 
 }
 
 export async function getApp(program: Command, appId: string, _options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
     const apps = await client.apps.list();
 
     const app = apps.find(a => a.id === appId || a.name === appId);
@@ -38,7 +38,7 @@ export async function getApp(program: Command, appId: string, _options: Record<s
 }
 
 export async function createApp(program: Command, options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
 
     let manifest: AppManifestData;
 
@@ -98,7 +98,7 @@ export async function createApp(program: Command, options: Record<string, any>) 
 }
 
 export async function updateApp(program: Command, appId: string, options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
 
     let manifest: AppManifestData;
 
@@ -132,7 +132,7 @@ export async function updateApp(program: Command, appId: string, options: Record
 }
 
 export async function installApp(program: Command, appId: string, options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
 
     let settings: Record<string, any> | undefined;
 
@@ -163,14 +163,14 @@ export async function installApp(program: Command, appId: string, options: Recor
 }
 
 export async function deleteAppInstallation(program: Command, installationId: string, _options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
 
     await client.apps.uninstall(installationId);
     console.log(`${colors.green('✓')} App uninstalled successfully`);
 }
 
 export async function listInstalledApps(program: Command, options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
     const kind = options.kind as AppInstallationKind | undefined;
 
     const apps = await client.apps.getInstalledApps(kind);
@@ -192,7 +192,7 @@ export async function listInstalledApps(program: Command, options: Record<string
 }
 
 export async function getAppInstallation(program: Command, appName: string, _options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
 
     const installation = await client.apps.getAppInstallationByName(appName);
 
@@ -235,7 +235,7 @@ export async function getAppInstallation(program: Command, appName: string, _opt
 }
 
 export async function updateAppInstallationSettings(program: Command, appId: string, options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
 
     let settings: Record<string, any>;
 

@@ -429,6 +429,13 @@ export interface GetFileUrlResponse {
     path: string;
 }
 
+export interface SetFileMetadataPayload {
+    /** The file path (relative to bucket) or full URI */
+    file: string;
+    /** Custom metadata key-value pairs to set on the file */
+    metadata: Record<string, string>;
+}
+
 export enum ContentObjectProcessingPriority {
     normal = "normal",
     low = "low",

@@ -1,7 +1,7 @@
-import { useEffect, useState, memo } from "react";
+import { useEffect, useState, memo, useRef, type RefObject } from "react";
 
 import { useUserSession } from "@vertesia/ui/session";
-import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
+import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer, Progress } from "@vertesia/ui/widgets";
 import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus } from "@vertesia/common";
 import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
@@ -19,6 +19,50 @@ enum PanelView {
     Image = "image",
     Video = "video",
     Pdf = "pdf"
+}
+
+function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+        return false;
+    }
+
+    // Use a hidden iframe to avoid opening a new window
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+
+    const iframeWindow = iframe.contentWindow;
+    if (!iframeWindow) {
+        iframe.parentNode?.removeChild(iframe);
+        return false;
+    }
+
+    const doc = iframeWindow.document;
+    doc.open();
+    doc.write(`<!doctype html><html><head><title>${title}</title></head><body></body></html>`);
+    doc.close();
+    doc.title = title;
+
+    const styles = document.querySelectorAll<HTMLLinkElement | HTMLStyleElement>("link[rel=\"stylesheet\"], style");
+    styles.forEach((node) => {
+        doc.head.appendChild(node.cloneNode(true));
+    });
+
+    doc.body.innerHTML = sourceElement.innerHTML;
+    iframeWindow.focus();
+    iframeWindow.print();
+
+    setTimeout(() => {
+        iframe.parentNode?.removeChild(iframe);
+    }, 1000);
+
+    return true;
 }
 
 interface ContentOverviewProps {
@@ -268,6 +312,8 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     // Show PDF processing panel when workflow is running
     const showPdfProcessing = isPdf && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
 
+    const textContainerRef = useRef<HTMLDivElement | null>(null);
+
     return (
         <div className="flex flex-col h-full">
             <div className="flex justify-between items-center px-2 shrink-0">
@@ -314,7 +360,15 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     </div>
                     <PdfActions object={object} />
                 </div>
-                {currentPanel === PanelView.Text && !showPdfProcessing && <TextActions object={object} text={displayText} fullText={fullText} handleCopyContent={handleCopyContent} />}
+                {currentPanel === PanelView.Text && !showPdfProcessing && (
+                    <TextActions
+                        object={object}
+                        text={displayText}
+                        fullText={fullText}
+                        handleCopyContent={handleCopyContent}
+                        textContainerRef={textContainerRef}
+                    />
+                )}
             </div>
             {
                 currentPanel === PanelView.Image ? (
@@ -331,7 +385,12 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                             <Spinner size="lg" />
                         </div>
                     ) : (
-                        <TextPanel object={object} text={displayText} isTextCropped={isTextCropped} />
+                        <TextPanel
+                            object={object}
+                            text={displayText}
+                            isTextCropped={isTextCropped}
+                            textContainerRef={textContainerRef}
+                        />
                     )
                 )
             }
@@ -339,10 +398,23 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     );
 }
 
-function TextActions({ object, text, fullText, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, text: string | undefined, fullText: string | undefined }) {
+function TextActions({
+    object,
+    text,
+    fullText,
+    handleCopyContent,
+    textContainerRef,
+}: {
+    object: ContentObject;
+    handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>;
+    text: string | undefined;
+    fullText: string | undefined;
+    textContainerRef: RefObject<HTMLDivElement | null>;
+}) {
     const { client } = useUserSession();
     const toast = useToast();
     const [loadingFormat, setLoadingFormat] = useState<"docx" | "pdf" | null>(null);
+    const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
     const content = object.content;
 
@@ -437,7 +509,53 @@ function TextActions({ object, text, fullText, handleCopyContent }: { object: Co
     };
 
     const handleExportDocx = () => handleExportDocument("docx");
-    const handleExportPdf = () => handleExportDocument("pdf");
+
+    const handleClientPdfExport = () => {
+        if (!textContainerRef.current) {
+            toast({
+                status: "error",
+                title: "PDF export failed",
+                description: "No content available to export",
+                duration: 3000,
+            });
+            return;
+        }
+        setIsPdfModalOpen(true);
+    };
+
+    const handleConfirmClientPdfExport = () => {
+        if (!textContainerRef.current) {
+            toast({
+                status: "error",
+                title: "PDF export failed",
+                description: "No content available to export",
+                duration: 3000,
+            });
+            return;
+        }
+
+        const baseName = object.name || object.id;
+        const pdfTitle = `${baseName || "document"} - content`;
+        const success = printElementToPdf(textContainerRef.current, pdfTitle);
+
+        if (!success) {
+            toast({
+                status: "error",
+                title: "PDF export failed",
+                description: "Unable to open print preview",
+                duration: 4000,
+            });
+            return;
+        }
+
+        toast({
+            status: "success",
+            title: "PDF export ready",
+            description: "Use your browser's Print dialog to save as PDF",
+            duration: 4000,
+        });
+        setIsPdfModalOpen(false);
+    };
 
     const handleDownloadText = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -502,26 +620,50 @@ function TextActions({ object, text, fullText, handleCopyContent }: { object: Co
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={handleExportPdf}
-                                disabled={loadingFormat !== null}
+                                onClick={handleClientPdfExport}
                                 className="flex items-center gap-2"
                             >
-                                {loadingFormat === "pdf" ? (
-                                    <Spinner size="sm" />
-                                ) : (
-                                    <Download className="size-4" />
-                                )}
+                                <Download className="size-4" />
                                 PDF
                             </Button>
                         </>
                     )}
                 </div>
             </div>
+            <VModal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
+                <VModalTitle>Export document as PDF</VModalTitle>
+                <VModalBody>
+                    <p className="mb-2">
+                        This will open your browser&apos;s print dialog with the current document content.
+                    </p>
+                    <p className="text-sm text-muted">
+                        To save a PDF, choose &quot;Save as PDF&quot; or a similar option in the print dialog.
+                    </p>
+                </VModalBody>
+                <VModalFooter align="right">
+                    <Button variant="ghost" size="sm" onClick={() => setIsPdfModalOpen(false)}>
+                        Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleConfirmClientPdfExport}>
+                        Open print dialog
+                    </Button>
+                </VModalFooter>
+            </VModal>
         </>
     );
 }
 
-const TextPanel = memo(({ object, text, isTextCropped }: { object: ContentObject, text: string | undefined, isTextCropped: boolean }) => {
+const TextPanel = memo(({
+    object,
+    text,
+    isTextCropped,
+    textContainerRef,
+}: {
+    object: ContentObject;
+    text: string | undefined;
+    isTextCropped: boolean;
+    textContainerRef: RefObject<HTMLDivElement | null>;
+}) => {
     const content = object.content;
     const isCreatedOrProcessing = object?.status === ContentObjectStatus.created || object?.status === ContentObjectStatus.processing;
 
@@ -557,7 +699,10 @@ const TextPanel = memo(({ object, text, isTextCropped }: { object: ContentObject
                         </div>
                     </div>
                 )}
-                <div className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto">
+                <div
+                    className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto"
+                    ref={textContainerRef}
+                >
                     {shouldRenderAsMarkdown ? (
                         <div className="vprose prose-sm p-1">
                             <MarkdownRenderer
