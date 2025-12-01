@@ -2,6 +2,7 @@ import { getTenantIdFromProject } from "@vertesia/common";
 import { VTabs, VTabsBar, VTabsPanel, VTooltip } from "@vertesia/ui/core";
 import { Env } from "@vertesia/ui/env";
 import { useUserSession } from "@vertesia/ui/session";
+import pkg from "../../../package.json" with {type: 'json'};
 import { Check, CopyIcon } from "lucide-react";
 import { useState } from "react";
 
@@ -61,6 +62,7 @@ export default function InfoList() {
                     <InfoItems title="Server" value={server} />
                     <InfoItems title="Store" value={store} />
                     <InfoItems title="App Version" value={Env.version} />
+                    <InfoItems title="SDK Version" value={pkg.version} />
                 </div>
         }
     ];
