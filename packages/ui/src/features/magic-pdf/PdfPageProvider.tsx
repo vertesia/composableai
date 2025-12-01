@@ -34,18 +34,75 @@ function getPdfSourcePath(object: ContentObject): string | null {
     return null;
 }
 
+/**
+ * Lazy image URL provider that fetches URLs on demand and caches them.
+ */
+export class LazyImageUrlProvider {
+    private cache: Map<number, string> = new Map();
+    private pending: Map<number, Promise<string>> = new Map();
+
+    constructor(
+        private client: VertesiaClient,
+        private objectId: string,
+        private getPath: (objectId: string, pageNumber: number) => string
+    ) {}
+
+    async getUrl(pageNumber: number): Promise<string> {
+        // Check cache first
+        const cached = this.cache.get(pageNumber);
+        if (cached) return cached;
+
+        // Check if already fetching
+        const pendingPromise = this.pending.get(pageNumber);
+        if (pendingPromise) return pendingPromise;
+
+        // Fetch the URL
+        const promise = this.client.files
+            .getDownloadUrl(this.getPath(this.objectId, pageNumber))
+            .then((r) => {
+                this.cache.set(pageNumber, r.url);
+                this.pending.delete(pageNumber);
+                return r.url;
+            })
+            .catch((e) => {
+                this.pending.delete(pageNumber);
+                throw e;
+            });
+
+        this.pending.set(pageNumber, promise);
+        return promise;
+    }
+
+    // Preload a range of URLs (for visible pages)
+    async preloadRange(start: number, end: number): Promise<void> {
+        const promises: Promise<string>[] = [];
+        for (let i = start; i <= end; i++) {
+            if (!this.cache.has(i) && !this.pending.has(i)) {
+                promises.push(this.getUrl(i).catch(() => '')); // Ignore errors during preload
+            }
+        }
+        await Promise.all(promises);
+    }
+}
+
 interface PdfPagesInfo {
     count: number;
     urls: string[];
     originalUrls: string[];
     annotatedUrls: string[];
     instrumentedUrls: string[];
+    /** Lazy provider for annotated image URLs */
+    annotatedImageProvider?: LazyImageUrlProvider;
+    /** Lazy provider for original image URLs */
+    originalImageProvider?: LazyImageUrlProvider;
     layoutProvider: PageLayoutProvider;
     markdownProvider: PageMarkdownProvider;
     xml: string;
     xmlPages: string[];
     pdfUrl: string;
     pdfUrlLoading: boolean;
+    /** Whether this is an XML processor type (uses annotated images) */
+    isXmlProcessor: boolean;
     /** Update the page count when actual count is determined from PDF */
     setActualPageCount?: (count: number) => void;
 }
@@ -168,30 +225,38 @@ export function PdfPageProvider({ children, object }: PdfPageProviderProps) {
     const hasBeenProcessed = isMarkdownProcessor || isXmlProcessor;
 
     const [info, setInfo] = useState<PdfPagesInfo | undefined>(() => {
-        // For markdown processor or unprocessed documents, create initial info immediately
-        if (isMarkdownProcessor || !hasBeenProcessed) {
-            const page_count = (object.metadata as DocumentMetadata).page_count || DEFAULT_PAGE_COUNT;
-            const markdownProvider = new PageMarkdownProvider(page_count);
-            // Parse pages directly from the content text instead of fetching individual files
-            if (object.text && isMarkdownProcessor) {
-                markdownProvider.initFromContent(object.text);
-            }
-            const xml = object.text ? cleanXml(object.text) : "";
-            return {
-                count: page_count,
-                urls: [],
-                originalUrls: [],
-                annotatedUrls: [],
-                instrumentedUrls: [],
-                layoutProvider: new PageLayoutProvider(page_count),
-                markdownProvider,
-                xml,
-                xmlPages: object.text ? extractXmlPages(xml) : [],
-                pdfUrl: '',
-                pdfUrlLoading: true,
-            };
+        const page_count = (object.metadata as DocumentMetadata).page_count || DEFAULT_PAGE_COUNT;
+        const markdownProvider = new PageMarkdownProvider(page_count);
+
+        // Parse pages directly from the content text for markdown processor
+        if (object.text && isMarkdownProcessor) {
+            markdownProvider.initFromContent(object.text);
         }
-        return undefined;
+
+        const xml = object.text ? cleanXml(object.text) : "";
+
+        // Create initial info for all processor types
+        // This allows the UI to render immediately while async data loads
+        return {
+            count: page_count,
+            urls: [],
+            originalUrls: [],
+            annotatedUrls: [],
+            instrumentedUrls: [],
+            annotatedImageProvider: isXmlProcessor
+                ? new LazyImageUrlProvider(client, object.id, getPageAnnotatedImagePath)
+                : undefined,
+            originalImageProvider: isXmlProcessor
+                ? new LazyImageUrlProvider(client, object.id, getPageOriginalImagePath)
+                : undefined,
+            layoutProvider: new PageLayoutProvider(page_count),
+            markdownProvider,
+            xml,
+            xmlPages: object.text ? extractXmlPages(xml) : [],
+            pdfUrl: '',
+            pdfUrlLoading: true,
+            isXmlProcessor,
+        };
     });
 
     // Callback to update page count when actual count is determined from PDF
@@ -246,24 +311,12 @@ function getBasePath(objectId: string) {
     return `${ADVANCED_PROCESSING_PREFIX}/${objectId}`;
 }
 
-function getPageImagePath(objectId: string, pageNumber: number, ext = ".jpg") {
-    return `${getBasePath(objectId)}/pages/page-${pageNumber}${ext}`;
-}
-
 function getPageAnnotatedImagePath(
     objectId: string,
     pageNumber: number,
     ext = ".jpg",
 ) {
     return `${getBasePath(objectId)}/pages/page-${pageNumber}-annotated${ext}`;
-}
-
-function getPageInstrumentedImagePath(
-    objectId: string,
-    pageNumber: number,
-    ext = ".jpg",
-) {
-    return `${getBasePath(objectId)}/pages/page-${pageNumber}.instrumented${ext}`;
 }
 
 function getPageOriginalImagePath(
@@ -287,46 +340,6 @@ export function getResourceUrl(
     return vertesia.files
         .getDownloadUrl(`${getBasePath(objectId)}/${name}`)
         .then((r) => r.url);
-}
-
-function getImageUrlForPage(
-    vertesia: VertesiaClient,
-    objectId: string,
-    pageNumber: number,
-): Promise<GetFileUrlResponse> {
-    return vertesia.files.getDownloadUrl(
-        getPageImagePath(objectId, pageNumber),
-    );
-}
-
-function getAnnotatedImageUrlForPage(
-    vertesia: VertesiaClient,
-    objectId: string,
-    pageNumber: number,
-): Promise<GetFileUrlResponse> {
-    return vertesia.files.getDownloadUrl(
-        getPageAnnotatedImagePath(objectId, pageNumber),
-    );
-}
-
-function getInstrumentedImageUrlForPage(
-    vertesia: VertesiaClient,
-    objectId: string,
-    pageNumber: number,
-): Promise<GetFileUrlResponse> {
-    return vertesia.files.getDownloadUrl(
-        getPageInstrumentedImagePath(objectId, pageNumber),
-    );
-}
-
-function getOriginalImageUrlForPage(
-    vertesia: VertesiaClient,
-    objectId: string,
-    pageNumber: number,
-): Promise<GetFileUrlResponse> {
-    return vertesia.files.getDownloadUrl(
-        getPageOriginalImagePath(objectId, pageNumber),
-    );
 }
 
 function getLayoutUrlForPage(
@@ -360,59 +373,40 @@ async function getPdfPagesInfo(
         }
     }
 
-    // For non-markdown processors, fetch all image URLs
-    const imageUrlPromises: Promise<GetFileUrlResponse>[] = [];
-    for (let i = 0; i < page_count; i++) {
-        imageUrlPromises.push(getImageUrlForPage(vertesia, object.id, i + 1));
-    }
-    const imageUrls = await Promise.all(imageUrlPromises);
-
-    const annotatedImageUrlPromises: Promise<GetFileUrlResponse>[] = [];
-    for (let i = 0; i < page_count; i++) {
-        annotatedImageUrlPromises.push(
-            getAnnotatedImageUrlForPage(vertesia, object.id, i + 1),
-        );
-    }
-    const annotatedImageUrls = await Promise.all(annotatedImageUrlPromises);
-
-    const instrumentedImageUrlPromises: Promise<GetFileUrlResponse>[] = [];
-    for (let i = 0; i < page_count; i++) {
-        instrumentedImageUrlPromises.push(
-            getInstrumentedImageUrlForPage(vertesia, object.id, i + 1),
-        );
-    }
-    const instrumentedImageUrls = await Promise.all(
-        instrumentedImageUrlPromises,
+    // Create lazy providers for image URLs - they will be fetched on demand
+    const annotatedImageProvider = new LazyImageUrlProvider(
+        vertesia,
+        object.id,
+        getPageAnnotatedImagePath
+    );
+    const originalImageProvider = new LazyImageUrlProvider(
+        vertesia,
+        object.id,
+        getPageOriginalImagePath
     );
 
-    const originalImageUrlPromises: Promise<GetFileUrlResponse>[] = [];
-    for (let i = 0; i < page_count; i++) {
-        originalImageUrlPromises.push(
-            getOriginalImageUrlForPage(vertesia, object.id, i + 1),
-        );
-    }
-    const originalImageUrls = await Promise.all(originalImageUrlPromises);
-
     const layoutProvider = new PageLayoutProvider(page_count);
-    await layoutProvider.loadUrls(vertesia, object.id);
+    // Don't load all layout URLs upfront - they will be loaded on demand
 
     const markdownProvider = new PageMarkdownProvider(page_count);
-    await markdownProvider.loadUrls(vertesia, object.id);
 
     const xml = object.text ? cleanXml(object.text) : "";
 
     return {
         count: page_count,
-        urls: imageUrls.map((r) => r.url),
-        originalUrls: originalImageUrls.map((r) => r.url),
-        annotatedUrls: annotatedImageUrls.map((r) => r.url),
-        instrumentedUrls: instrumentedImageUrls.map((r) => r.url),
+        urls: [], // Deprecated - use lazy providers instead
+        originalUrls: [], // Deprecated - use lazy providers instead
+        annotatedUrls: [], // Deprecated - use lazy providers instead
+        instrumentedUrls: [], // Deprecated - use lazy providers instead
+        annotatedImageProvider,
+        originalImageProvider,
         layoutProvider,
         markdownProvider,
         xml,
         xmlPages: object.text ? extractXmlPages(xml) : [],
         pdfUrl,
         pdfUrlLoading: false,
+        isXmlProcessor: true,
     };
 }
 

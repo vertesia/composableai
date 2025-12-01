@@ -245,12 +245,13 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         store.objects
             .getObjectText(object.id)
             .then((res) => {
-                setFullText(res.text);
-                if (res.text.length > MAX_TEXT_DISPLAY_SIZE) {
-                    setDisplayText(res.text.substring(0, MAX_TEXT_DISPLAY_SIZE));
+                const text = res.text ?? '';
+                setFullText(text);
+                if (text.length > MAX_TEXT_DISPLAY_SIZE) {
+                    setDisplayText(text.substring(0, MAX_TEXT_DISPLAY_SIZE));
                     setIsTextCropped(true);
                 } else {
-                    setDisplayText(res.text);
+                    setDisplayText(text);
                     setIsTextCropped(false);
                 }
             })

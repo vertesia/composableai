@@ -1,12 +1,205 @@
-import { Button, Center } from "@vertesia/ui/core";
+import { Button, Center, Spinner } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
 import { useRef, useEffect, useState, useCallback, KeyboardEvent } from "react";
-import { usePdfPagesInfo } from "./PdfPageProvider";
+import { LazyImageUrlProvider, usePdfPagesInfo } from "./PdfPageProvider";
 import { PdfThumbnailList } from "./PdfPageRenderer";
 
 // A4 portrait aspect ratio - used as fallback
 const A4_ASPECT_RATIO = 210 / 297;
+
+interface LazyImageThumbnailListProps {
+    imageProvider: LazyImageUrlProvider;
+    pageCount: number;
+    currentPage: number;
+    thumbnailWidth?: number;
+    onPageSelect: (pageNumber: number) => void;
+    scrollContainerRef?: React.RefObject<HTMLElement | null>;
+    onAspectRatioChange?: (aspectRatio: number) => void;
+    onItemHeightChange?: (itemHeight: number) => void;
+    calculateItemHeight?: (placeholderHeight: number) => number;
+    onReady?: () => void;
+    compact?: boolean;
+}
+
+/**
+ * Renders a list of image thumbnails for XML processor type.
+ * Uses virtualization and lazy loading for performance with large documents.
+ */
+function LazyImageThumbnailList({
+    imageProvider,
+    pageCount,
+    currentPage,
+    thumbnailWidth,
+    onPageSelect,
+    scrollContainerRef,
+    onAspectRatioChange,
+    onItemHeightChange,
+    calculateItemHeight,
+    onReady,
+    compact = false,
+}: LazyImageThumbnailListProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+    const [visibleRange, setVisibleRange] = useState({ start: 0, end: Math.min(15, pageCount) });
+    const [ready, setReady] = useState(false);
+    // Cache for loaded image URLs
+    const [imageUrls, setImageUrls] = useState<Map<number, string>>(new Map());
+
+    // Load first image to get aspect ratio
+    useEffect(() => {
+        if (aspectRatio !== null) return;
+
+        imageProvider.getUrl(1)
+            .then((url) => {
+                setImageUrls(prev => new Map(prev).set(1, url));
+                const img = new Image();
+                img.onload = () => {
+                    const ratio = img.width / img.height;
+                    setAspectRatio(ratio);
+                    onAspectRatioChange?.(ratio);
+                    setReady(true);
+                    onReady?.();
+                };
+                img.onerror = () => {
+                    // Fallback to A4 ratio
+                    setAspectRatio(A4_ASPECT_RATIO);
+                    onAspectRatioChange?.(A4_ASPECT_RATIO);
+                    setReady(true);
+                    onReady?.();
+                };
+                img.src = url;
+            })
+            .catch(() => {
+                // Fallback to A4 ratio on error
+                setAspectRatio(A4_ASPECT_RATIO);
+                onAspectRatioChange?.(A4_ASPECT_RATIO);
+                setReady(true);
+                onReady?.();
+            });
+    }, [imageProvider, aspectRatio, onAspectRatioChange, onReady]);
+
+    const effectiveAspectRatio = aspectRatio ?? A4_ASPECT_RATIO;
+    const placeholderHeight = thumbnailWidth ? Math.round(thumbnailWidth / effectiveAspectRatio) : 200;
+    const itemHeight = calculateItemHeight
+        ? calculateItemHeight(placeholderHeight)
+        : placeholderHeight + 16 + 24 + 8;
+
+    // Notify parent of item height changes
+    useEffect(() => {
+        if (itemHeight > 0 && aspectRatio !== null) {
+            onItemHeightChange?.(itemHeight);
+        }
+    }, [itemHeight, aspectRatio, onItemHeightChange]);
+
+    // Window size for virtualization
+    const WINDOW_BUFFER = 5;
+
+    // Track scroll position to update visible range
+    useEffect(() => {
+        const container = scrollContainerRef?.current;
+        if (!container) return;
+
+        const updateVisibleRange = () => {
+            const scrollTop = container.scrollTop;
+            const viewportHeight = container.clientHeight;
+
+            const firstVisible = Math.floor(scrollTop / itemHeight);
+            const lastVisible = Math.ceil((scrollTop + viewportHeight) / itemHeight);
+
+            const start = Math.max(0, firstVisible - WINDOW_BUFFER);
+            const end = Math.min(pageCount, lastVisible + WINDOW_BUFFER);
+
+            setVisibleRange(prev => {
+                if (prev.start !== start || prev.end !== end) {
+                    return { start, end };
+                }
+                return prev;
+            });
+        };
+
+        updateVisibleRange();
+        container.addEventListener('scroll', updateVisibleRange, { passive: true });
+        return () => container.removeEventListener('scroll', updateVisibleRange);
+    }, [itemHeight, pageCount, scrollContainerRef]);
+
+    // Load URLs for visible pages
+    useEffect(() => {
+        const loadVisibleUrls = async () => {
+            const promises: Promise<void>[] = [];
+            for (let i = visibleRange.start; i < visibleRange.end; i++) {
+                const pageNumber = i + 1;
+                if (!imageUrls.has(pageNumber)) {
+                    promises.push(
+                        imageProvider.getUrl(pageNumber)
+                            .then((url) => {
+                                setImageUrls(prev => new Map(prev).set(pageNumber, url));
+                            })
+                            .catch(() => {
+                                // Ignore errors for individual pages
+                            })
+                    );
+                }
+            }
+            await Promise.all(promises);
+        };
+        loadVisibleUrls();
+    }, [visibleRange, imageProvider, imageUrls]);
+
+    if (!ready) {
+        return (
+            <div className="flex items-center justify-center py-4">
+                <Spinner size="md" />
+            </div>
+        );
+    }
+
+    const topSpacerHeight = visibleRange.start * itemHeight;
+    const bottomSpacerHeight = (pageCount - visibleRange.end) * itemHeight;
+
+    return (
+        <div ref={containerRef} className="w-full">
+            {topSpacerHeight > 0 && <div style={{ height: topSpacerHeight }} />}
+
+            {Array.from({ length: visibleRange.end - visibleRange.start }, (_, index) => {
+                const pageNumber = visibleRange.start + index + 1;
+                const imageUrl = imageUrls.get(pageNumber);
+                const isSelected = pageNumber === currentPage;
+
+                return (
+                    <div key={pageNumber} style={{ height: itemHeight, overflow: 'hidden' }}>
+                        <div className={clsx("hover:bg-muted rounded-md w-full", compact ? "p-1" : "p-2")}>
+                            <div
+                                className={clsx('relative border-[2px] cursor-pointer overflow-hidden', isSelected ? "border-primary" : "border-border")}
+                                onClick={() => onPageSelect(pageNumber)}
+                            >
+                                {imageUrl ? (
+                                    <img
+                                        src={imageUrl}
+                                        alt={`Page ${pageNumber}`}
+                                        width={thumbnailWidth}
+                                        style={{ height: placeholderHeight, objectFit: 'cover' }}
+                                        loading="lazy"
+                                    />
+                                ) : (
+                                    <div
+                                        className="flex items-center justify-center bg-gray-100 dark:bg-gray-800"
+                                        style={{ height: placeholderHeight, width: thumbnailWidth || '100%' }}
+                                    >
+                                        <Spinner size="sm" />
+                                    </div>
+                                )}
+                            </div>
+                            <Center className={clsx("text-muted-foreground font-semibold", compact ? "text-xs pt-0.5" : "text-sm pt-1")}>{pageNumber}</Center>
+                        </div>
+                    </div>
+                );
+            })}
+
+            {bottomSpacerHeight > 0 && <div style={{ height: bottomSpacerHeight }} />}
+        </div>
+    );
+}
 
 interface PageSliderProps {
     currentPage: number;
@@ -18,7 +211,7 @@ interface PageSliderProps {
 export function PageSlider({ className, currentPage, onChange, compact = false }: PageSliderProps) {
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const { pdfUrl, pdfUrlLoading, count, setActualPageCount } = usePdfPagesInfo();
+    const { pdfUrl, pdfUrlLoading, count, setActualPageCount, annotatedImageProvider, isXmlProcessor } = usePdfPagesInfo();
     const [thumbnailWidth, setThumbnailWidth] = useState<number | undefined>(undefined);
     const [aspectRatio, setAspectRatio] = useState<number>(A4_ASPECT_RATIO);
     // Track the actual item height from PdfThumbnailList for accurate scroll calculations
@@ -201,30 +394,49 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
                 </div>
             )}
             <div ref={scrollContainerRef} className={clsx('flex flex-col items-center flex-1 overflow-y-auto px-2', compact ? 'gap-1' : 'gap-2')}>
-                <PdfThumbnailList
-                    pdfUrl={pdfUrl}
-                    urlLoading={pdfUrlLoading}
-                    pageCount={count}
-                    currentPage={currentPage}
-                    thumbnailWidth={thumbnailWidth}
-                    onPageSelect={onChange}
-                    scrollContainerRef={scrollContainerRef}
-                    onAspectRatioChange={setAspectRatio}
-                    onItemHeightChange={setItemHeight}
-                    calculateItemHeight={calculateItemHeight}
-                    onPageCountChange={handlePageCountChange}
-                    renderThumbnail={({ pageNumber, isSelected, pageElement, onSelect }) => (
-                        <div key={pageNumber} className={clsx("hover:bg-muted rounded-md w-full", compact ? "p-1" : "p-2")}>
-                            <div
-                                className={clsx('relative border-[2px] cursor-pointer overflow-hidden', isSelected ? "border-primary" : "border-border")}
-                                onClick={onSelect}
-                            >
-                                {pageElement}
+                {isXmlProcessor && annotatedImageProvider ? (
+                    <LazyImageThumbnailList
+                        imageProvider={annotatedImageProvider}
+                        pageCount={count}
+                        currentPage={currentPage}
+                        thumbnailWidth={thumbnailWidth}
+                        onPageSelect={onChange}
+                        scrollContainerRef={scrollContainerRef}
+                        onAspectRatioChange={setAspectRatio}
+                        onItemHeightChange={setItemHeight}
+                        calculateItemHeight={calculateItemHeight}
+                        onReady={() => {
+                            setPageCountConfirmed(true);
+                            setActualPageCount?.(count);
+                        }}
+                        compact={compact}
+                    />
+                ) : (
+                    <PdfThumbnailList
+                        pdfUrl={pdfUrl}
+                        urlLoading={pdfUrlLoading}
+                        pageCount={count}
+                        currentPage={currentPage}
+                        thumbnailWidth={thumbnailWidth}
+                        onPageSelect={onChange}
+                        scrollContainerRef={scrollContainerRef}
+                        onAspectRatioChange={setAspectRatio}
+                        onItemHeightChange={setItemHeight}
+                        calculateItemHeight={calculateItemHeight}
+                        onPageCountChange={handlePageCountChange}
+                        renderThumbnail={({ pageNumber, isSelected, pageElement, onSelect }) => (
+                            <div key={pageNumber} className={clsx("hover:bg-muted rounded-md w-full", compact ? "p-1" : "p-2")}>
+                                <div
+                                    className={clsx('relative border-[2px] cursor-pointer overflow-hidden', isSelected ? "border-primary" : "border-border")}
+                                    onClick={onSelect}
+                                >
+                                    {pageElement}
+                                </div>
+                                <Center className={clsx("text-muted-foreground font-semibold", compact ? "text-xs pt-0.5" : "text-sm pt-1")}>{pageNumber}</Center>
                             </div>
-                            <Center className={clsx("text-muted-foreground font-semibold", compact ? "text-xs pt-0.5" : "text-sm pt-1")}>{pageNumber}</Center>
-                        </div>
-                    )}
-                />
+                        )}
+                    />
+                )}
             </div>
             {pageCountConfirmed && (
                 <div className={clsx("flex items-center justify-center", compact ? "h-6" : "h-9")}>
