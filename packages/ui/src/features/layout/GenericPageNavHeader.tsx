@@ -20,6 +20,14 @@ interface GenericPageNavHeaderProps {
 export function GenericPageNavHeader({ className, children, title, description, actions, breadcrumbs, isCompact = false, useDynamicBreadcrumbs = true }: GenericPageNavHeaderProps) {
     const navigate = useNavigate();
 
+    function formatTitle(title: string): string {
+        return title
+            .replace(/[-_]/g, ' ')
+            .split(' ')
+            .map(word => capitalize(word))
+            .join(' ');
+    }
+
     const buildBreadcrumbLabel = (entry: any): string => {
         const href = entry?.href || '';
         if (!href) return 'Page';
@@ -32,11 +40,11 @@ export function GenericPageNavHeader({ className, children, title, description, 
                 return entry.title;
             }
             const secondSegment = pathSegments[1];
-            return `${capitalize(secondSegment)} Detail (...${pathSegments[2].slice(-6)})`;
+            return `${formatTitle(secondSegment)} Detail (...${pathSegments[2].slice(-6)})`;
         } else if (pathSegments.length >= 2) {
-            return capitalize(pathSegments[pathSegments.length - 1]);
+            return formatTitle(pathSegments[pathSegments.length - 1]);
         } else if (pathSegments.length === 1) {
-            return capitalize(pathSegments[0]);
+            return formatTitle(pathSegments[0]);
         }
         
         return 'Page';
