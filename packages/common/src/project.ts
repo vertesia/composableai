@@ -98,29 +98,33 @@ export enum SystemInteractionCategory {
 
 /**
  * Map system interaction endpoints to categories.
- * Uses sys: namespace endpoints (e.g., "sys:ExtractInformation").
  */
 export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCategory> = {
-    "sys:ExtractInformation": SystemInteractionCategory.intake,
-    "sys:SelectDocumentType": SystemInteractionCategory.intake,
-    "sys:GenerateMetadataModel": SystemInteractionCategory.content_type,
-    "sys:ChunkDocument": SystemInteractionCategory.intake,
-    "sys:IdentifyTextSections": SystemInteractionCategory.intake,
-    "sys:AnalyzeDocument": SystemInteractionCategory.analysis,
-    "sys:ReduceTextSections": SystemInteractionCategory.analysis,
-    "sys:GenericAgent": SystemInteractionCategory.non_applicable,
-    "sys:AdhocTaskAgent": SystemInteractionCategory.non_applicable,
-    "sys:Mediator": SystemInteractionCategory.non_applicable,
-    "sys:AnalyzeConversation": SystemInteractionCategory.analysis,
-    "sys:GetAgentConversationTopic": SystemInteractionCategory.analysis,
+    "ExtractInformation": SystemInteractionCategory.intake,
+    "SelectDocumentType": SystemInteractionCategory.intake,
+    "GenerateMetadataModel": SystemInteractionCategory.content_type,
+    "ChunkDocument": SystemInteractionCategory.intake,
+    "IdentifyTextSections": SystemInteractionCategory.intake,
+    "AnalyzeDocument": SystemInteractionCategory.analysis,
+    "ReduceTextSections": SystemInteractionCategory.analysis,
+    "GenericAgent": SystemInteractionCategory.non_applicable,
+    "AdhocTaskAgent": SystemInteractionCategory.non_applicable,
+    "Mediator": SystemInteractionCategory.non_applicable,
+    "AnalyzeConversation": SystemInteractionCategory.analysis,
+    "GetAgentConversationTopic": SystemInteractionCategory.analysis,
 };
 
 /**
  * Get category for a system interaction endpoint.
- * Returns undefined if not a system interaction or category is non-applicable.
+ * Returns undefined if category is non-applicable or endpoint is not recognized.
+ * Note: Caller is responsible for determining if the interaction is a system interaction.
+ * @param endpoint - The interaction endpoint name
  */
 export function getSystemInteractionCategory(endpoint: string): SystemInteractionCategory | undefined {
-    if (!endpoint.startsWith("sys:")) return undefined;
+    if (!endpoint.startsWith("sys:")) {
+        //Strip sys: 
+        endpoint = endpoint.substring(4);
+    }
     const category = SYSTEM_INTERACTION_CATEGORIES[endpoint];
     if (category === SystemInteractionCategory.non_applicable) {
         return undefined;
