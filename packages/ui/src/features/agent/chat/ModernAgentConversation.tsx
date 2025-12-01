@@ -3,7 +3,7 @@ import { Bot, Cpu, SendIcon, XIcon } from "lucide-react";
 import { useUserSession } from "@vertesia/ui/session";
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
 import { AgentMessage, AgentMessageType, Plan, UserInputSignal } from "@vertesia/common";
-import { Button, MessageBox, Spinner, useToast } from "@vertesia/ui/core";
+import { Button, MessageBox, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
@@ -16,6 +16,50 @@ import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
 type StartWorkflowFn = (
     initialMessage?: string,
 ) => Promise<{ run_id: string; workflow_id: string } | undefined>;
+
+function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+        return false;
+    }
+
+    // Use a hidden iframe to avoid opening a new window
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+
+    const iframeWindow = iframe.contentWindow;
+    if (!iframeWindow) {
+        iframe.parentNode?.removeChild(iframe);
+        return false;
+    }
+
+    const doc = iframeWindow.document;
+    doc.open();
+    doc.write(`<!doctype html><html><head><title>${title}</title></head><body></body></html>`);
+    doc.close();
+    doc.title = title;
+
+    const styles = document.querySelectorAll<HTMLLinkElement | HTMLStyleElement>("link[rel=\"stylesheet\"], style");
+    styles.forEach((node) => {
+        doc.head.appendChild(node.cloneNode(true));
+    });
+
+    doc.body.innerHTML = sourceElement.innerHTML;
+    iframeWindow.focus();
+    iframeWindow.print();
+
+    setTimeout(() => {
+        iframe.parentNode?.removeChild(iframe);
+    }, 1000);
+
+    return true;
+}
 
 interface ModernAgentConversationProps {
     run?: AsyncExecutionResult | { workflow_id: string; run_id: string };
@@ -248,6 +292,7 @@ function ModernAgentConversationInner({
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
     const bottomRef = useRef<HTMLDivElement | null>(null);
+    const conversationRef = useRef<HTMLDivElement | null>(null);
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -581,12 +626,63 @@ function ModernAgentConversationInner({
         });
     };
 
+    const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+
+    const exportConversationPdf = () => {
+        if (!conversationRef.current) {
+            toast({
+                status: "error",
+                title: "PDF export failed",
+                description: "No conversation content available to export",
+                duration: 3000,
+            });
+            return;
+        }
+        setIsPdfModalOpen(true);
+    };
+
+    const handleConfirmExportPdf = () => {
+        if (!conversationRef.current) {
+            toast({
+                status: "error",
+                title: "PDF export failed",
+                description: "No conversation content available to export",
+                duration: 3000,
+            });
+            return;
+        }
+
+        const pdfTitle = `${actualTitle} - ${run.runId}`;
+        const success = printElementToPdf(conversationRef.current, pdfTitle);
+
+        if (!success) {
+            toast({
+                status: "error",
+                title: "PDF export failed",
+                description: "Unable to open print preview",
+                duration: 4000,
+            });
+            return;
+        }
+
+        toast({
+            status: "success",
+            title: "PDF export ready",
+            description: "Use your browser's Print dialog to save as PDF",
+            duration: 4000,
+        });
+        setIsPdfModalOpen(false);
+    };
+
     return (
         <div className="flex gap-2 h-full">
             {/* Conversation Area - responsive width based on panel visibility */}
-            <div className={`flex flex-col h-full min-h-0 border-0 ${
+            <div
+                ref={conversationRef}
+                className={`flex flex-col h-full min-h-0 border-0 ${
                 showSlidingPanel ? 'lg:w-2/3 flex-1' : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
-            }`}>
+            }`}
+            >
                 <Header
                     title={actualTitle}
                     isCompleted={isCompleted}
@@ -607,6 +703,7 @@ function ModernAgentConversationInner({
                     onDownload={downloadConversation}
                     onCopyRunId={copyRunId}
                     resetWorkflow={resetWorkflow}
+                    onExportPdf={exportConversationPdf}
                 />
 
                 {messages.length === 0 && !isCompleted ? (
@@ -686,6 +783,25 @@ function ModernAgentConversationInner({
                     />
                 </div>
             )}
+            <VModal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
+                <VModalTitle>Export conversation as PDF</VModalTitle>
+                <VModalBody>
+                    <p className="mb-2">
+                        This will open your browser&apos;s print dialog with the current conversation.
+                    </p>
+                    <p className="text-sm text-muted">
+                        To save a PDF, choose &quot;Save as PDF&quot; or a similar option in the print dialog.
+                    </p>
+                </VModalBody>
+                <VModalFooter align="right">
+                    <Button variant="ghost" size="sm" onClick={() => setIsPdfModalOpen(false)}>
+                        Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleConfirmExportPdf}>
+                        Open print dialog
+                    </Button>
+                </VModalFooter>
+            </VModal>
         </div>
     );
 }
