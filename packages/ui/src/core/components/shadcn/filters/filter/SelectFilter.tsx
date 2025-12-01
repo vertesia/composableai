@@ -3,6 +3,7 @@ import { CommandItem, CommandEmpty } from "../../command";
 import { Button } from "../../button";
 import { Filter, FilterGroup, FilterGroupOption, FilterOption } from "../types";
 import { DynamicLabel } from "../DynamicLabel";
+import { useEffect } from "react";
 
 interface SelectFilterProps {
   selectedView: string | null;
@@ -51,13 +52,12 @@ export default function SelectFilter({
     return null;
   }
 
-  const options = getFilteredOptions(selectedView);
+  let options = getFilteredOptions(selectedView);
+  useEffect(() => {
+    options = getFilteredOptions(selectedView);
+  }, [commandInput, selectedView]);
+
   const selectedGroup = filterGroups.find(g => g.name === selectedView);
-
-  if (options.length === 0) {
-    return <CommandEmpty>No matching options</CommandEmpty>;
-  }
-
   const groupTitle = selectedGroup?.placeholder || selectedGroup?.name;
 
   const handleApply = () => {
@@ -117,35 +117,39 @@ export default function SelectFilter({
   };
 
   return (
-    <>
-      <div className="flex items-center p-1.5 text-xs text-muted">
+    <div className="flex flex-col h-full">
+      <div className="flex items-center p-1.5 text-xs text-muted shrink-0">
         <span>{groupTitle}</span>
       </div>
-      <div className="max-h-50 overflow-y-auto">
-        {options.map((option: FilterGroupOption) => {
-          const isSelected = selectedOptions.some(opt => opt.value === option.value);
+      <div className="flex-1 overflow-hidden min-h-0">
+        <div className="max-h-[200px] overflow-y-auto">
+          {options.length > 0 && (
+            options.map((option: FilterGroupOption) => {
+              const isSelected = selectedOptions.some(opt => opt.value === option.value);
 
-          return (
-            <CommandItem
-              key={option.value || `option-${Math.random()}`}
-              className={`group flex gap-2 items-center w-full hover:bg-muted ${selectedGroup?.multiple && isSelected ? 'bg-muted' : ''
-                }`}
-              onSelect={() => handleOptionToggle(option)}
-            >
-              <DynamicLabel
-                value={option.value || ''}
-                labelRenderer={option.labelRenderer || selectedGroup?.labelRenderer}
-                fallbackLabel={option.label}
-              />
-              {selectedGroup?.multiple && isSelected && (
-                <span className="ml-auto text-xs text-success">✓</span>
-              )}
-            </CommandItem>
-          );
-        })}
+              return (
+                <CommandItem
+                  key={option.value || `option-${Math.random()}`}
+                  className={`group flex gap-2 items-center w-full hover:bg-muted ${selectedGroup?.multiple && isSelected ? 'bg-muted' : ''
+                    }`}
+                  onSelect={() => handleOptionToggle(option)}
+                >
+                  <DynamicLabel
+                    value={option.value || ''}
+                    labelRenderer={option.labelRenderer || selectedGroup?.labelRenderer}
+                    fallbackLabel={option.label}
+                  />
+                  {selectedGroup?.multiple && isSelected && (
+                    <span className="ml-auto text-xs text-success">✓</span>
+                  )}
+                </CommandItem>
+              );
+            })
+          )}
+        </div>
       </div>
       {selectedGroup?.multiple && (
-        <div className="p-2 border-t">
+        <div className="p-2 border-t shrink-0">
           <div className="flex gap-2 justify-end">
             <Button variant="ghost" size="sm" onClick={handleClose}>
               Cancel
@@ -156,6 +160,6 @@ export default function SelectFilter({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
