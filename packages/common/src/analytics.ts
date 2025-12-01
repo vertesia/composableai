@@ -47,3 +47,23 @@ export interface RunAnalyticsResult {
         max: number
     },
 }
+
+/** Entity with status breakdown (requires compound index for covered queries) */
+export interface EntityStatusCounts {
+    id: string;
+    name: string;
+    total: number;
+    byStatus: Record<string, number>;
+}
+
+/** Lightweight analytics summary using covered queries - scalable to 1M+ documents */
+export interface RunsAnalyticsSummary {
+    /** Total count of runs (from estimatedDocumentCount) */
+    total: number;
+    /** Counts by status: { completed: 1000, failed: 50, ... } */
+    byStatus: Record<string, number>;
+    /** Counts by environment with status breakdown (uses { environment: 1, status: 1 } compound index) */
+    byEnvironment: EntityStatusCounts[];
+    /** Counts by interaction with status breakdown (uses { interaction: 1, status: 1 } compound index) */
+    byInteraction: EntityStatusCounts[];
+}
