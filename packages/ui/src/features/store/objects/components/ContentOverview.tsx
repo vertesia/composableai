@@ -3,7 +3,7 @@ import { useEffect, useState, memo } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer, Progress } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus } from "@vertesia/common";
+import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, PDF_RENDITION_NAME, Rendition, WorkflowExecutionStatus } from "@vertesia/common";
 import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
@@ -164,12 +164,21 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
     );
 }
 
+// Helper function to check if document has a PDF rendition
+function hasPdfRendition(object: ContentObject): boolean {
+    const renditions = (object.metadata as DocumentMetadata)?.renditions as Rendition[] | undefined;
+    return renditions?.some(r => r.name === PDF_RENDITION_NAME && r.content?.type === 'application/pdf') ?? false;
+}
+
 function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, refetch?: () => Promise<unknown> }) {
     const { store, client } = useUserSession();
 
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
-    const isPdf = object?.content?.type === 'application/pdf';
+    const isPdfContent = object?.content?.type === 'application/pdf';
+    const hasPdfRenditionAvailable = hasPdfRendition(object);
+    // Show PDF tab if either content is PDF or has PDF rendition (e.g., converted from Word/PowerPoint)
+    const canShowPdf = isPdfContent || hasPdfRenditionAvailable;
     const isCreatedOrProcessing = object?.status === ContentObjectStatus.created || object?.status === ContentObjectStatus.processing;
 
     // Determine initial panel view
@@ -200,8 +209,9 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     const [processingComplete, setProcessingComplete] = useState(false);
 
     // Poll for PDF processing status when object is created or processing
+    // Only poll for actual PDF content or documents with PDF renditions
     useEffect(() => {
-        if (!isPdf || !isCreatedOrProcessing || processingComplete) return;
+        if (!canShowPdf || !isCreatedOrProcessing || processingComplete) return;
 
         let interrupted = false;
         function poll() {
@@ -227,7 +237,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         }
         poll();
         return () => { interrupted = true; };
-    }, [isPdf, isCreatedOrProcessing, processingComplete, object.id, client]);
+    }, [canShowPdf, isCreatedOrProcessing, processingComplete, object.id, client]);
 
     // Load text when requested or when processing completes
     const loadObjectText = () => {
@@ -266,7 +276,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     }, [processingComplete, pdfStatus]);
 
     // Show PDF processing panel when workflow is running
-    const showPdfProcessing = isPdf && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
+    const showPdfProcessing = canShowPdf && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
 
     return (
         <div className="flex flex-col h-full">
@@ -301,20 +311,21 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                         >
                             Text
                         </Button>
-                        {isPdf &&
+                        {canShowPdf &&
                             <Button
                                 variant={currentPanel === PanelView.Pdf ? "primary" : "ghost"}
                                 size="sm"
                                 alt="View PDF"
                                 onClick={() => setCurrentPanel(PanelView.Pdf)}
                             >
-                                PDF
+                                Preview
                             </Button>
                         }
                     </div>
                     <PdfActions object={object} />
                 </div>
                 {currentPanel === PanelView.Text && !showPdfProcessing && <TextActions object={object} text={displayText} fullText={fullText} handleCopyContent={handleCopyContent} />}
+                {currentPanel === PanelView.Pdf && <PdfPreviewActions object={object} />}
             </div>
             {
                 currentPanel === PanelView.Image ? (
@@ -816,6 +827,78 @@ function PdfActions({ object }: { object: ContentObject }) {
                 </Portal>
             )}
         </>
+    );
+}
+
+function PdfPreviewActions({ object }: { object: ContentObject }) {
+    const { client } = useUserSession();
+    const toast = useToast();
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    // Check if this is a PDF rendition (not a native PDF)
+    const isPdfRendition = object.content?.type !== 'application/pdf' && hasPdfRendition(object);
+
+    if (!isPdfRendition) return null;
+
+    const handleDownloadPdf = async () => {
+        if (isDownloading) return;
+
+        setIsDownloading(true);
+        try {
+            // Get the PDF rendition source
+            const renditions = (object.metadata as DocumentMetadata)?.renditions as Rendition[] | undefined;
+            const pdfRendition = renditions?.find(r => r.name === PDF_RENDITION_NAME && r.content?.type === 'application/pdf');
+
+            if (!pdfRendition?.content?.source) {
+                throw new Error('PDF rendition not found');
+            }
+
+            // Get download URL with attachment disposition to force download
+            const filename = `${object.name || 'document'}.pdf`;
+            const response = await client.files.getDownloadUrl(pdfRendition.content.source, filename, 'attachment');
+
+            // Create download link
+            const link = document.createElement('a');
+            link.href = response.url;
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast({
+                status: 'success',
+                title: 'PDF downloaded',
+                description: 'PDF file has been downloaded',
+                duration: 2000,
+            });
+        } catch (err) {
+            console.error('Failed to download PDF:', err);
+            toast({
+                status: 'error',
+                title: 'Download failed',
+                description: 'Failed to download PDF file',
+                duration: 5000,
+            });
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    return (
+        <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
+            <div className="flex items-center gap-2">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Download PDF"
+                    onClick={handleDownloadPdf}
+                    disabled={isDownloading}
+                >
+                    {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
+                </Button>
+            </div>
+        </div>
     );
 }
 

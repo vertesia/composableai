@@ -18,11 +18,19 @@ interface PageSliderProps {
 export function PageSlider({ className, currentPage, onChange, compact = false }: PageSliderProps) {
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const { pdfUrl, pdfUrlLoading, count } = usePdfPagesInfo();
+    const { pdfUrl, pdfUrlLoading, count, setActualPageCount } = usePdfPagesInfo();
     const [thumbnailWidth, setThumbnailWidth] = useState<number | undefined>(undefined);
     const [aspectRatio, setAspectRatio] = useState<number>(A4_ASPECT_RATIO);
     // Track the actual item height from PdfThumbnailList for accurate scroll calculations
     const [itemHeight, setItemHeight] = useState<number | null>(null);
+    // Track whether the actual page count has been confirmed from the PDF
+    const [pageCountConfirmed, setPageCountConfirmed] = useState(false);
+
+    // Wrapper to track when page count is confirmed
+    const handlePageCountChange = useCallback((actualCount: number) => {
+        setPageCountConfirmed(true);
+        setActualPageCount?.(actualCount);
+    }, [setActualPageCount]);
 
     // Track the previous item height to preserve scroll position during resize
     const prevItemHeightRef = useRef<number | null>(null);
@@ -182,14 +190,16 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
 
     return (
         <div ref={ref} className={clsx('flex flex-col items-stretch', compact ? 'gap-y-1' : 'gap-y-2', className)}>
-            <div className={clsx("relative flex items-center justify-center px-2", compact ? "h-6" : "h-9")}>
-                <Button variant="ghost" size="xs" onClick={goPrev} alt="Previous page">
-                    <ChevronsUp className='size-4' />
-                </Button>
-                <div className="absolute right-2">
-                    <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
+            {pageCountConfirmed && (
+                <div className={clsx("relative flex items-center justify-center px-2", compact ? "h-6" : "h-9")}>
+                    <Button variant="ghost" size="xs" onClick={goPrev} alt="Previous page">
+                        <ChevronsUp className='size-4' />
+                    </Button>
+                    <div className="absolute right-2">
+                        <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
+                    </div>
                 </div>
-            </div>
+            )}
             <div ref={scrollContainerRef} className={clsx('flex flex-col items-center flex-1 overflow-y-auto px-2', compact ? 'gap-1' : 'gap-2')}>
                 <PdfThumbnailList
                     pdfUrl={pdfUrl}
@@ -202,6 +212,7 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
                     onAspectRatioChange={setAspectRatio}
                     onItemHeightChange={setItemHeight}
                     calculateItemHeight={calculateItemHeight}
+                    onPageCountChange={handlePageCountChange}
                     renderThumbnail={({ pageNumber, isSelected, pageElement, onSelect }) => (
                         <div key={pageNumber} className={clsx("hover:bg-muted rounded-md w-full", compact ? "p-1" : "p-2")}>
                             <div
@@ -215,11 +226,13 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
                     )}
                 />
             </div>
-            <div className={clsx("flex items-center justify-center", compact ? "h-6" : "h-9")}>
-                <Button variant="ghost" size="xs" onClick={goNext} alt="Next page">
-                    <ChevronsDown className='size-4' />
-                </Button>
-            </div>
+            {pageCountConfirmed && (
+                <div className={clsx("flex items-center justify-center", compact ? "h-6" : "h-9")}>
+                    <Button variant="ghost" size="xs" onClick={goNext} alt="Next page">
+                        <ChevronsDown className='size-4' />
+                    </Button>
+                </div>
+            )}
         </div>
     )
 }

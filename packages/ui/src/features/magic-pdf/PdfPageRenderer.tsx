@@ -265,6 +265,8 @@ interface PdfThumbnailListProps {
     onItemHeightChange?: (itemHeight: number) => void;
     /** Custom function to calculate item height. Receives placeholder height and should return total item height. */
     calculateItemHeight?: (placeholderHeight: number) => number;
+    /** Callback when actual page count is determined from the PDF. Useful when initial count is estimated. */
+    onPageCountChange?: (pageCount: number) => void;
 }
 
 /**
@@ -384,7 +386,8 @@ export function PdfThumbnailList({
     scrollContainerRef,
     onAspectRatioChange,
     onItemHeightChange,
-    calculateItemHeight
+    calculateItemHeight,
+    onPageCountChange
 }: PdfThumbnailListProps) {
     const [error, setError] = useState<Error | null>(null);
     const [visibleRange, setVisibleRange] = useState({ start: 0, end: Math.min(15, pageCount) });
@@ -396,8 +399,11 @@ export function PdfThumbnailList({
         setError(err);
     }, []);
 
-    // Get actual page dimensions from PDF on load
+    // Get actual page dimensions and count from PDF on load
     const handleLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
+        // Report actual page count from PDF
+        onPageCountChange?.(pdf.numPages);
+
         try {
             const page = await pdf.getPage(1);
             const viewport = page.getViewport({ scale: 1 });
@@ -410,7 +416,7 @@ export function PdfThumbnailList({
             setAspectRatio(A4_ASPECT_RATIO);
             onAspectRatioChange?.(A4_ASPECT_RATIO);
         }
-    }, [onAspectRatioChange]);
+    }, [onAspectRatioChange, onPageCountChange]);
 
     // Use A4 as fallback if aspect ratio not yet determined
     const effectiveAspectRatio = aspectRatio ?? A4_ASPECT_RATIO;

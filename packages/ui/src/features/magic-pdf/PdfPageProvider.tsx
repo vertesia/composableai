@@ -4,11 +4,35 @@ import {
     ContentObject,
     DocumentMetadata,
     GetFileUrlResponse,
+    PDF_RENDITION_NAME,
+    Rendition,
 } from "@vertesia/common";
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useEffect, useMemo, useState } from "react";
 
 const DEFAULT_PAGE_COUNT = 10;
 const ADVANCED_PROCESSING_PREFIX = "magic-pdf";
+
+/**
+ * Get the PDF source path from a ContentObject.
+ * Returns the content source if it's a PDF, or the PDF rendition source if available.
+ */
+function getPdfSourcePath(object: ContentObject): string | null {
+    // First, check if content type is PDF
+    if (object.content?.type === 'application/pdf' && object.content?.source) {
+        return object.content.source;
+    }
+
+    // Otherwise, check for a PDF rendition (e.g., from Office document conversion)
+    const renditions = (object.metadata as DocumentMetadata)?.renditions as Rendition[] | undefined;
+    const pdfRendition = renditions?.find(
+        (r) => r.name === PDF_RENDITION_NAME && r.content?.type === 'application/pdf'
+    );
+    if (pdfRendition?.content?.source) {
+        return pdfRendition.content.source;
+    }
+
+    return null;
+}
 
 interface PdfPagesInfo {
     count: number;
@@ -22,6 +46,8 @@ interface PdfPagesInfo {
     xmlPages: string[];
     pdfUrl: string;
     pdfUrlLoading: boolean;
+    /** Update the page count when actual count is determined from PDF */
+    setActualPageCount?: (count: number) => void;
 }
 
 class PageLayoutProvider {
@@ -136,14 +162,18 @@ interface PdfPageProviderProps {
 }
 export function PdfPageProvider({ children, object }: PdfPageProviderProps) {
     const { client } = useUserSession();
+    const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
+    const isMarkdownProcessor = contentProcessorType === 'markdown';
+    const isXmlProcessor = contentProcessorType === 'xml';
+    const hasBeenProcessed = isMarkdownProcessor || isXmlProcessor;
+
     const [info, setInfo] = useState<PdfPagesInfo | undefined>(() => {
-        // For markdown processor, create initial info immediately (synchronously)
-        const isMarkdownProcessor = (object.metadata as DocumentMetadata)?.content_processor?.type === 'markdown';
-        if (isMarkdownProcessor) {
+        // For markdown processor or unprocessed documents, create initial info immediately
+        if (isMarkdownProcessor || !hasBeenProcessed) {
             const page_count = (object.metadata as DocumentMetadata).page_count || DEFAULT_PAGE_COUNT;
             const markdownProvider = new PageMarkdownProvider(page_count);
             // Parse pages directly from the content text instead of fetching individual files
-            if (object.text) {
+            if (object.text && isMarkdownProcessor) {
                 markdownProvider.initFromContent(object.text);
             }
             const xml = object.text ? cleanXml(object.text) : "";
@@ -164,14 +194,23 @@ export function PdfPageProvider({ children, object }: PdfPageProviderProps) {
         return undefined;
     });
 
+    // Callback to update page count when actual count is determined from PDF
+    const setActualPageCount = useCallback((actualCount: number) => {
+        setInfo(prev => {
+            if (!prev || prev.count === actualCount) return prev;
+            return { ...prev, count: actualCount };
+        });
+    }, []);
+
     useEffect(() => {
-        const isMarkdownProcessor = (object.metadata as DocumentMetadata)?.content_processor?.type === 'markdown';
         const page_count = (object.metadata as DocumentMetadata).page_count || DEFAULT_PAGE_COUNT;
 
-        if (isMarkdownProcessor) {
-            // For markdown processor, only fetch the PDF URL lazily
-            if (object.content?.source) {
-                client.store.objects.getDownloadUrl(object.content.source, undefined, 'inline')
+        if (isMarkdownProcessor || !hasBeenProcessed) {
+            // For markdown processor or unprocessed documents, only fetch the PDF URL
+            // Use getPdfSourcePath to support both native PDFs and PDF renditions (from Office conversions)
+            const pdfSource = getPdfSourcePath(object);
+            if (pdfSource) {
+                client.store.objects.getDownloadUrl(pdfSource, undefined, 'inline')
                     .then((response) => {
                         setInfo(prev => prev ? { ...prev, pdfUrl: response.url, pdfUrlLoading: false } : prev);
                     })
@@ -182,15 +221,21 @@ export function PdfPageProvider({ children, object }: PdfPageProviderProps) {
             } else {
                 setInfo(prev => prev ? { ...prev, pdfUrlLoading: false } : prev);
             }
-        } else {
-            // For non-markdown processors, use the original async loading
+        } else if (isXmlProcessor) {
+            // For XML processors, use the full async loading with page images
             getPdfPagesInfo(client, object, page_count).then(setInfo);
         }
-    }, [object.id, client]);
+    }, [object.id, client, isMarkdownProcessor, isXmlProcessor, hasBeenProcessed]);
+
+    // Memoize context value to include setActualPageCount
+    const contextValue = useMemo(() => {
+        if (!info) return undefined;
+        return { ...info, setActualPageCount };
+    }, [info, setActualPageCount]);
 
     return (
-        info && (
-            <PdfPageContext.Provider value={info}>
+        contextValue && (
+            <PdfPageContext.Provider value={contextValue}>
                 {children}
             </PdfPageContext.Provider>
         )
@@ -299,12 +344,13 @@ async function getPdfPagesInfo(
     object: ContentObject,
     page_count: number,
 ): Promise<PdfPagesInfo> {
-    // Get the original PDF URL from content source
+    // Get the PDF URL from content source or PDF rendition
     let pdfUrl = '';
-    if (object.content?.source) {
+    const pdfSource = getPdfSourcePath(object);
+    if (pdfSource) {
         try {
             const pdfUrlResponse = await vertesia.store.objects.getDownloadUrl(
-                object.content.source,
+                pdfSource,
                 undefined,
                 'inline'
             );
