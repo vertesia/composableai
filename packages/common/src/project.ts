@@ -121,8 +121,8 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
  * @param endpoint - The interaction endpoint name
  */
 export function getSystemInteractionCategory(endpoint: string): SystemInteractionCategory | undefined {
-    if (!endpoint.startsWith("sys:")) {
-        //Strip sys: 
+    if (endpoint.startsWith("sys:")) {
+        // Strip sys: prefix
         endpoint = endpoint.substring(4);
     }
     const category = SYSTEM_INTERACTION_CATEGORIES[endpoint];
