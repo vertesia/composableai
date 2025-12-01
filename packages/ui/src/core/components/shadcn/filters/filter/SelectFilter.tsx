@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { CommandItem, CommandEmpty } from "../../command";
+import React, { useState } from "react";
+import { CommandItem } from "../../command";
 import { Button } from "../../button";
 import { Filter, FilterGroup, FilterGroupOption, FilterOption } from "../types";
 import { DynamicLabel } from "../DynamicLabel";
