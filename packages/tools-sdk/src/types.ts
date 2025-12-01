@@ -2,6 +2,30 @@ import type { ToolDefinition, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
 import { AuthTokenPayload, ToolResult, ToolResultContent } from "@vertesia/common";
 
+export type ICollection<T = any> = CollectionProperties & Iterable<T>
+
+export interface CollectionProperties {
+    /**
+     * A kebab case collection name. Must only contains alphanumeric and dash characters,
+     * The name can be used to generate the path where the collection is exposed.
+     * Example: my-collection
+     */
+    name: string;
+    /**
+     * Optional title for UI display. 
+     * If not provided the pascal case version of the name will be used
+     */
+    title?: string;
+    /**
+     * Optional icon for UI display
+     */
+    icon?: string;
+    /**
+     * A short description 
+     */
+    description?: string;
+}
+
 export interface ToolExecutionContext {
     /**
      * The raw JWT token to the tool execution request

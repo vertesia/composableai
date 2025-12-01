@@ -1,7 +1,7 @@
 {
     "name": "@vertesia/memory-commands",
     "description": "Memory commands for memory recipe scripts",
-    "version": "0.79.3",
+    "version": "0.80.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -30,5 +30,10 @@
         "types": "./lib/types/index.d.ts",
         "import": "./lib/esm/index.js",
         "require": "./lib/cjs/index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/memory-commands"
     }
 }

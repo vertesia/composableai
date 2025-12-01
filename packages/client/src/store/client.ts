@@ -13,6 +13,7 @@ import { WorkflowsApi } from "./WorkflowsApi.js";
 
 export interface ZenoClientProps {
     serverUrl?: string;
+    tokenServerUrl?: string;
     apikey?: string;
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
