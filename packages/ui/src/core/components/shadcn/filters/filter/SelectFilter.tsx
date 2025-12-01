@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CommandItem, CommandEmpty } from "../../command";
 import { Button } from "../../button";
 import { Filter, FilterGroup, FilterGroupOption, FilterOption } from "../types";
 import { DynamicLabel } from "../DynamicLabel";
-import { useEffect } from "react";
 
 interface SelectFilterProps {
   selectedView: string | null;
@@ -52,10 +51,7 @@ export default function SelectFilter({
     return null;
   }
 
-  let options = getFilteredOptions(selectedView);
-  useEffect(() => {
-    options = getFilteredOptions(selectedView);
-  }, [commandInput, selectedView]);
+  const options = getFilteredOptions(selectedView);
 
   const selectedGroup = filterGroups.find(g => g.name === selectedView);
   const groupTitle = selectedGroup?.placeholder || selectedGroup?.name;
