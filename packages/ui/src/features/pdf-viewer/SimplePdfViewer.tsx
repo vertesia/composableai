@@ -1,6 +1,7 @@
 import { ContentObject } from "@vertesia/common";
-import { Spinner } from "@vertesia/ui/core";
+import { Button, Spinner, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
+import { Maximize2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PdfPageSlider } from "./PdfPageSlider";
 
@@ -22,6 +23,7 @@ export function SimplePdfViewer({ object, className }: SimplePdfViewerProps) {
     const [pdfUrl, setPdfUrl] = useState<string>("");
     const [pdfUrlLoading, setPdfUrlLoading] = useState(true);
     const [pageCount, setPageCount] = useState(0);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     // Fetch the PDF URL from the content object
     useEffect(() => {
@@ -74,15 +76,50 @@ export function SimplePdfViewer({ object, className }: SimplePdfViewerProps) {
         );
     }
 
+    // Fullscreen overlay
+    if (isFullscreen) {
+        return (
+            <div className="fixed inset-0 bg-background z-50 flex flex-col overflow-hidden">
+                {/* Header with close button */}
+                <div className="flex h-9 items-center justify-end shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
+                    <Button variant="ghost" size="xs" onClick={() => setIsFullscreen(false)} alt="Close fullscreen">
+                        <X className="size-4" />
+                    </Button>
+                </div>
+                {/* PDF viewer - min-h-0 allows flex child to shrink below content size */}
+                <PdfPageSlider
+                    pdfUrl={pdfUrl}
+                    pdfUrlLoading={pdfUrlLoading}
+                    pageCount={pageCount || 100}
+                    currentPage={currentPage}
+                    onChange={setCurrentPage}
+                    className="flex-1 min-h-0"
+                />
+            </div>
+        );
+    }
+
     return (
-        <PdfPageSlider
-            pdfUrl={pdfUrl}
-            pdfUrlLoading={pdfUrlLoading}
-            pageCount={pageCount || 100} // Use a high default if we don't know the count
-            currentPage={currentPage}
-            onChange={setCurrentPage}
-            className={className}
-            compact
-        />
+        <div className="relative h-full flex flex-col">
+            <PdfPageSlider
+                pdfUrl={pdfUrl}
+                pdfUrlLoading={pdfUrlLoading}
+                pageCount={pageCount || 100}
+                currentPage={currentPage}
+                onChange={setCurrentPage}
+                className={className}
+                compact
+                headerExtra={
+                    <VTooltip description="Fullscreen" placement="bottom" size="xs">
+                        <button
+                            className="p-1 rounded cursor-pointer transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+                            onClick={() => setIsFullscreen(true)}
+                        >
+                            <Maximize2 className="size-4" />
+                        </button>
+                    </VTooltip>
+                }
+            />
+        </div>
     );
 }

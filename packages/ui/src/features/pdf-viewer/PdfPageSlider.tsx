@@ -1,7 +1,7 @@
 import { Button, Center, VTooltip } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp, Maximize, Minus, Plus } from "lucide-react";
-import { useRef, useEffect, useState, useCallback, KeyboardEvent } from "react";
+import { ReactNode, useRef, useEffect, useState, useCallback, KeyboardEvent } from "react";
 import { PdfThumbnailList } from "./PdfPageRenderer";
 
 // A4 portrait aspect ratio - used as fallback
@@ -26,6 +26,8 @@ interface PdfPageSliderProps {
     className?: string;
     /** Compact mode reduces padding and navigation bar heights */
     compact?: boolean;
+    /** Extra content to render in the header (e.g., fullscreen button) */
+    headerExtra?: ReactNode;
 }
 
 /**
@@ -40,7 +42,8 @@ export function PdfPageSlider({
     currentPage,
     onChange,
     className,
-    compact = false
+    compact = false,
+    headerExtra
 }: PdfPageSliderProps) {
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -188,6 +191,30 @@ export function PdfPageSlider({
         }
     }, [itemHeight]);
 
+    // Track if we've done the initial scroll on mount
+    const hasInitialScrolledRef = useRef(false);
+
+    // Initial scroll to current page when component mounts and itemHeight becomes available
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container || !itemHeight || hasInitialScrolledRef.current) return;
+
+        // Only do initial scroll if not on page 1
+        if (currentPage > 1) {
+            hasInitialScrolledRef.current = true;
+            isProgrammaticScrollRef.current = true;
+
+            const targetScrollTop = (currentPage - 1) * itemHeight;
+            container.scrollTo({ top: targetScrollTop, behavior: 'instant' });
+
+            requestAnimationFrame(() => {
+                isProgrammaticScrollRef.current = false;
+            });
+        } else {
+            hasInitialScrolledRef.current = true;
+        }
+    }, [itemHeight, currentPage]);
+
     // Jump to current page when it changes (user navigation)
     // Use a ref to track the previous page to avoid scrolling on resize
     const prevPageRef = useRef(currentPage);
@@ -276,6 +303,12 @@ export function PdfPageSlider({
                         canZoomIn={zoom < ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
                         canZoomOut={zoom > ZOOM_LEVELS[0]}
                     />
+                    {headerExtra && (
+                        <>
+                            <div className="w-px h-4 bg-border mx-1" />
+                            {headerExtra}
+                        </>
+                    )}
                 </div>
                 <div className="absolute right-2">
                     <PageNavigator currentPage={currentPage} totalPages={pageCount} onChange={onChange} />
