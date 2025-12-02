@@ -2,7 +2,7 @@ import { useEffect, useState, memo, useRef, type RefObject } from "react";
 
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
-import { JSONDisplay, MarkdownRenderer, Progress } from "@vertesia/ui/widgets";
+import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
 import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus } from "@vertesia/common";
 import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
@@ -667,6 +667,10 @@ const TextPanel = memo(({
     const content = object.content;
     const isCreatedOrProcessing = object?.status === ContentObjectStatus.created || object?.status === ContentObjectStatus.processing;
 
+    // Check content processor type for XML
+    const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
+    const isXml = contentProcessorType === "xml";
+
     // Check if content type is markdown or plain text
     const isMarkdownOrText =
         content &&
@@ -685,8 +689,8 @@ const TextPanel = memo(({
         text.includes("](")
     );
 
-    // Render as markdown if it's markdown/text type OR if text looks like markdown
-    const shouldRenderAsMarkdown = isMarkdownOrText || seemsMarkdown;
+    // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
+    const shouldRenderAsMarkdown = !isXml && (isMarkdownOrText || seemsMarkdown);
 
     return (
         text ? (
@@ -703,7 +707,11 @@ const TextPanel = memo(({
                     className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto"
                     ref={textContainerRef}
                 >
-                    {shouldRenderAsMarkdown ? (
+                    {isXml ? (
+                        <div className="px-4 py-2">
+                            <XMLViewer xml={text} collapsible />
+                        </div>
+                    ) : shouldRenderAsMarkdown ? (
                         <div className="vprose prose-sm p-1">
                             <MarkdownRenderer
                                 components={{

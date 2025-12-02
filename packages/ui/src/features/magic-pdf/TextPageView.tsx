@@ -1,6 +1,6 @@
-import { JSONCode, Theme, XMLViewer, MarkdownRenderer } from '@vertesia/ui/widgets';
+import { JSONCode, XMLViewer, MarkdownRenderer } from '@vertesia/ui/widgets';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePdfPagesInfo } from "./PdfPageProvider";
 import { ViewType } from "./types";
 
@@ -10,17 +10,6 @@ function LoadingSpinner({ className }: { className?: string }) {
             <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
     );
-}
-
-
-const darkTheme: Theme = {
-    attributeKeyColor: '#FFD700',
-    attributeValueColor: '#FF4500',
-    tagColor: '#87CEFA',
-    textColor: '#00FF00',
-    separatorColor: '#FFD700',
-    commentColor: "#BEBEBE",
-    cdataColor: "#33CC66",
 }
 
 
@@ -43,22 +32,10 @@ interface XmlPageViewProps {
     pageNumber: number;
 }
 function XmlPageView({ pageNumber }: XmlPageViewProps) {
-    const [theme, setTheme] = useState<Theme>();
     const { xmlPages: pages } = usePdfPagesInfo();
-    useLayoutEffect(() => {
-        const media = window.matchMedia('(prefers-color-scheme: dark)');
-        const onMediaChange = (event: MediaQueryListEvent) => {
-            setTheme(event.matches ? darkTheme : undefined);
-        };
-        media.addEventListener('change', onMediaChange);
-        media.matches && setTheme(darkTheme);
-        return () => {
-            media.removeEventListener('change', onMediaChange);
-        }
-    }, []);
     return (
         <div className="px-4 py-2">
-            <XMLViewer xml={pages[pageNumber - 1]} collapsible theme={theme} />
+            <XMLViewer xml={pages[pageNumber - 1]} collapsible />
         </div>
     )
 }
