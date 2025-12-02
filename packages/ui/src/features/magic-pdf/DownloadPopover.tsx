@@ -3,7 +3,7 @@ import { Button } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Popover } from "@vertesia/ui/widgets";
 import { Download } from "lucide-react";
-import { getResourceUrl } from "./PdfPageProvider";
+import { getResourceUrl } from "./MagicPdfProvider";
 
 interface DownloadPopoverProps {
     object: ContentObject;

@@ -2,14 +2,13 @@ import { useEffect, useState, memo, useRef, type RefObject } from "react";
 
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
-import { JSONDisplay, MarkdownRenderer, Progress } from "@vertesia/ui/widgets";
+import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
 import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus } from "@vertesia/common";
 import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
 import { MagicPdfView } from "../../../magic-pdf";
-import { PdfPageProvider } from "../../../magic-pdf/PdfPageProvider";
-import { PageSlider } from "../../../magic-pdf/PageSlider";
+import { SimplePdfViewer } from "../../../pdf-viewer";
 
 // Maximum text size before cropping (128K characters)
 const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
@@ -667,6 +666,10 @@ const TextPanel = memo(({
     const content = object.content;
     const isCreatedOrProcessing = object?.status === ContentObjectStatus.created || object?.status === ContentObjectStatus.processing;
 
+    // Check content processor type for XML
+    const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
+    const isXml = contentProcessorType === "xml";
+
     // Check if content type is markdown or plain text
     const isMarkdownOrText =
         content &&
@@ -685,8 +688,8 @@ const TextPanel = memo(({
         text.includes("](")
     );
 
-    // Render as markdown if it's markdown/text type OR if text looks like markdown
-    const shouldRenderAsMarkdown = isMarkdownOrText || seemsMarkdown;
+    // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
+    const shouldRenderAsMarkdown = !isXml && (isMarkdownOrText || seemsMarkdown);
 
     return (
         text ? (
@@ -703,7 +706,11 @@ const TextPanel = memo(({
                     className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto"
                     ref={textContainerRef}
                 >
-                    {shouldRenderAsMarkdown ? (
+                    {isXml ? (
+                        <div className="px-4 py-2">
+                            <XMLViewer xml={text} collapsible />
+                        </div>
+                    ) : shouldRenderAsMarkdown ? (
                         <div className="vprose prose-sm p-1">
                             <MarkdownRenderer
                                 components={{
@@ -965,18 +972,12 @@ function PdfActions({ object }: { object: ContentObject }) {
 }
 
 function PdfPreviewPanel({ object }: { object: ContentObject }) {
-    const [currentPage, setCurrentPage] = useState(1);
-
     return (
         <div className="h-[calc(100vh-210px)]">
-            <PdfPageProvider object={object}>
-                <PageSlider
-                    className="h-full"
-                    currentPage={currentPage}
-                    onChange={setCurrentPage}
-                    compact
-                />
-            </PdfPageProvider>
+            <SimplePdfViewer
+                object={object}
+                className="h-full"
+            />
         </div>
     );
 }

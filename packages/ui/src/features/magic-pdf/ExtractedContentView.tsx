@@ -1,7 +1,7 @@
-import { JSONCode, Theme, XMLViewer, MarkdownRenderer } from '@vertesia/ui/widgets';
+import { JSONCode, XMLViewer, MarkdownRenderer } from '@vertesia/ui/widgets';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useLayoutEffect, useState } from "react";
-import { usePdfPagesInfo } from "./PdfPageProvider";
+import { useEffect, useState } from "react";
+import { useMagicPdfContext } from "./MagicPdfProvider";
 import { ViewType } from "./types";
 
 function LoadingSpinner({ className }: { className?: string }) {
@@ -13,22 +13,11 @@ function LoadingSpinner({ className }: { className?: string }) {
 }
 
 
-const darkTheme: Theme = {
-    attributeKeyColor: '#FFD700',
-    attributeValueColor: '#FF4500',
-    tagColor: '#87CEFA',
-    textColor: '#00FF00',
-    separatorColor: '#FFD700',
-    commentColor: "#BEBEBE",
-    cdataColor: "#33CC66",
-}
-
-
-interface TextPageViewProps {
+interface ExtractedContentViewProps {
     pageNumber: number;
     viewType: ViewType;
 }
-export function TextPageView({ viewType, pageNumber }: TextPageViewProps) {
+export function ExtractedContentView({ viewType, pageNumber }: ExtractedContentViewProps) {
     switch (viewType) {
         case "json":
             return <JsonPageLayoutView pageNumber={pageNumber} />;
@@ -43,22 +32,10 @@ interface XmlPageViewProps {
     pageNumber: number;
 }
 function XmlPageView({ pageNumber }: XmlPageViewProps) {
-    const [theme, setTheme] = useState<Theme>();
-    const { xmlPages: pages } = usePdfPagesInfo();
-    useLayoutEffect(() => {
-        const media = window.matchMedia('(prefers-color-scheme: dark)');
-        const onMediaChange = (event: MediaQueryListEvent) => {
-            setTheme(event.matches ? darkTheme : undefined);
-        };
-        media.addEventListener('change', onMediaChange);
-        media.matches && setTheme(darkTheme);
-        return () => {
-            media.removeEventListener('change', onMediaChange);
-        }
-    }, []);
+    const { xmlPages: pages } = useMagicPdfContext();
     return (
         <div className="px-4 py-2">
-            <XMLViewer xml={pages[pageNumber - 1]} collapsible theme={theme} />
+            <XMLViewer xml={pages[pageNumber - 1]} collapsible />
         </div>
     )
 }
@@ -70,7 +47,7 @@ function JsonPageLayoutView({ pageNumber }: JsonPageLayoutViewProps) {
     const [content, setContent] = useState<unknown>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { layoutProvider } = usePdfPagesInfo();
+    const { layoutProvider } = useMagicPdfContext();
 
     useEffect(() => {
         setLoading(true);
@@ -113,7 +90,7 @@ function MarkdownPageView({ pageNumber }: MarkdownPageViewProps) {
     const [content, setContent] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { markdownProvider } = usePdfPagesInfo();
+    const { markdownProvider } = useMagicPdfContext();
 
     useEffect(() => {
         setLoading(true);

@@ -1,31 +1,85 @@
-import { Button, Center } from "@vertesia/ui/core";
+import { Button, Center, VTooltip } from "@vertesia/ui/core";
 import clsx from "clsx";
-import { ChevronsDown, ChevronsUp } from "lucide-react";
-import { useRef, useEffect, useState, useCallback, KeyboardEvent } from "react";
-import { usePdfPagesInfo } from "./PdfPageProvider";
+import { ChevronsDown, ChevronsUp, Maximize, Minus, Plus } from "lucide-react";
+import { ReactNode, useRef, useEffect, useState, useCallback, KeyboardEvent } from "react";
 import { PdfThumbnailList } from "./PdfPageRenderer";
 
 // A4 portrait aspect ratio - used as fallback
 const A4_ASPECT_RATIO = 210 / 297;
 
-interface PageSliderProps {
+// Zoom levels as percentages (100 = fit to width)
+const ZOOM_LEVELS = [50, 75, 100, 125, 150, 200, 300];
+const DEFAULT_ZOOM = 100;
+
+interface PdfPageSliderProps {
+    /** URL to the PDF file */
+    pdfUrl: string;
+    /** Whether the PDF URL is still loading */
+    pdfUrlLoading?: boolean;
+    /** Total number of pages in the PDF */
+    pageCount: number;
+    /** Currently selected page number (1-indexed) */
     currentPage: number;
+    /** Callback when page selection changes */
     onChange: (pageNumber: number) => void;
+    /** Additional CSS class names */
     className?: string;
     /** Compact mode reduces padding and navigation bar heights */
     compact?: boolean;
+    /** Extra content to render in the header (e.g., fullscreen button) */
+    headerExtra?: ReactNode;
 }
-export function PageSlider({ className, currentPage, onChange, compact = false }: PageSliderProps) {
+
+/**
+ * Standalone PDF thumbnail slider component.
+ * Displays a vertical list of PDF page thumbnails with navigation controls.
+ * Does not depend on any context - all data is passed via props.
+ */
+export function PdfPageSlider({
+    pdfUrl,
+    pdfUrlLoading = false,
+    pageCount,
+    currentPage,
+    onChange,
+    className,
+    compact = false,
+    headerExtra
+}: PdfPageSliderProps) {
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const { pdfUrl, pdfUrlLoading, count } = usePdfPagesInfo();
-    const [thumbnailWidth, setThumbnailWidth] = useState<number | undefined>(undefined);
+    const [baseWidth, setBaseWidth] = useState<number | undefined>(undefined);
+    const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM);
     const [aspectRatio, setAspectRatio] = useState<number>(A4_ASPECT_RATIO);
     // Track the actual item height from PdfThumbnailList for accurate scroll calculations
     const [itemHeight, setItemHeight] = useState<number | null>(null);
 
     // Track the previous item height to preserve scroll position during resize
     const prevItemHeightRef = useRef<number | null>(null);
+
+    // Calculate thumbnail width based on zoom level
+    const thumbnailWidth = baseWidth ? Math.round(baseWidth * zoom / 100) : undefined;
+
+    const zoomIn = useCallback(() => {
+        let currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        if (currentIndex === -1) {
+            currentIndex = ZOOM_LEVELS.length - 1;
+        }
+        const nextIndex = Math.min(currentIndex + 1, ZOOM_LEVELS.length - 1);
+        setZoom(ZOOM_LEVELS[nextIndex]);
+    }, [zoom]);
+
+    const zoomOut = useCallback(() => {
+        let currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        if (currentIndex === -1) {
+            currentIndex = ZOOM_LEVELS.length - 1;
+        }
+        const prevIndex = Math.max(currentIndex - 1, 0);
+        setZoom(ZOOM_LEVELS[prevIndex]);
+    }, [zoom]);
+
+    const fitToView = useCallback(() => {
+        setZoom(DEFAULT_ZOOM);
+    }, []);
 
     // Calculate item height based on placeholder height - this must match the renderThumbnail layout
     // padding (p-1=8 or p-2=16) + text height (~16-20 for compact, ~24 for normal) + gap (gap-1=4 or gap-2=8)
@@ -68,7 +122,7 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
                 const newScrollTop = currentTopPage * newItemHeight;
 
                 // Update width first, then scroll
-                setThumbnailWidth(newWidth);
+                setBaseWidth(newWidth);
 
                 // Use requestAnimationFrame to scroll after the DOM updates
                 requestAnimationFrame(() => {
@@ -77,7 +131,7 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
 
                 prevItemHeightRef.current = newItemHeight;
             } else {
-                setThumbnailWidth(newWidth);
+                setBaseWidth(newWidth);
                 prevItemHeightRef.current = getItemHeight(newWidth, aspectRatio);
             }
         };
@@ -85,7 +139,7 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
         // Initial width update
         const initialWidth = getAvailableWidth();
         if (initialWidth > 0) {
-            setThumbnailWidth(initialWidth);
+            setBaseWidth(initialWidth);
             prevItemHeightRef.current = getItemHeight(initialWidth, aspectRatio);
         }
 
@@ -106,6 +160,66 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
 
     // Track whether we're programmatically scrolling to avoid feedback loops
     const isProgrammaticScrollRef = useRef(false);
+
+    // Track pending zoom scroll - we need to wait for itemHeight to update after zoom change
+    const pendingZoomScrollRef = useRef<{ targetPage: number } | null>(null);
+
+    // When zoom changes, mark that we need to scroll after itemHeight updates
+    const prevZoomRef = useRef(zoom);
+    useEffect(() => {
+        if (prevZoomRef.current !== zoom) {
+            prevZoomRef.current = zoom;
+            // Mark that we need to scroll to current page after itemHeight updates
+            pendingZoomScrollRef.current = { targetPage: currentPage };
+            isProgrammaticScrollRef.current = true;
+        }
+    }, [zoom, currentPage]);
+
+    // When itemHeight changes (after zoom), perform the pending scroll
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        const pendingScroll = pendingZoomScrollRef.current;
+
+        if (pendingScroll && container && itemHeight) {
+            pendingZoomScrollRef.current = null;
+
+            // Calculate scroll position using the NEW itemHeight
+            const targetScrollTop = (pendingScroll.targetPage - 1) * itemHeight;
+
+            // Use requestAnimationFrame to ensure DOM is updated
+            requestAnimationFrame(() => {
+                container.scrollTo({ top: targetScrollTop, behavior: 'instant' });
+                // Reset after scroll completes
+                requestAnimationFrame(() => {
+                    isProgrammaticScrollRef.current = false;
+                });
+            });
+        }
+    }, [itemHeight]);
+
+    // Track if we've done the initial scroll on mount
+    const hasInitialScrolledRef = useRef(false);
+
+    // Initial scroll to current page when component mounts and itemHeight becomes available
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container || !itemHeight || hasInitialScrolledRef.current) return;
+
+        // Only do initial scroll if not on page 1
+        if (currentPage > 1) {
+            hasInitialScrolledRef.current = true;
+            isProgrammaticScrollRef.current = true;
+
+            const targetScrollTop = (currentPage - 1) * itemHeight;
+            container.scrollTo({ top: targetScrollTop, behavior: 'instant' });
+
+            requestAnimationFrame(() => {
+                isProgrammaticScrollRef.current = false;
+            });
+        } else {
+            hasInitialScrolledRef.current = true;
+        }
+    }, [itemHeight, currentPage]);
 
     // Jump to current page when it changes (user navigation)
     // Use a ref to track the previous page to avoid scrolling on resize
@@ -153,7 +267,7 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
                 const calculatedPage = Math.round(scrollTop / itemHeight) + 1;
 
                 // Clamp to valid range and update if different
-                const clampedPage = Math.max(1, Math.min(calculatedPage, count));
+                const clampedPage = Math.max(1, Math.min(calculatedPage, pageCount));
                 if (clampedPage !== currentPage) {
                     prevPageRef.current = clampedPage;
                     onChange(clampedPage);
@@ -167,7 +281,7 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
             if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer);
             container.removeEventListener('scroll', handleScroll);
         };
-    }, [itemHeight, count, currentPage, onChange]);
+    }, [itemHeight, pageCount, currentPage, onChange]);
 
     const goPrev = () => {
         if (currentPage > 1) {
@@ -175,7 +289,7 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
         }
     }
     const goNext = () => {
-        if (currentPage < count) {
+        if (currentPage < pageCount) {
             onChange(currentPage + 1);
         }
     }
@@ -186,15 +300,31 @@ export function PageSlider({ className, currentPage, onChange, compact = false }
                 <Button variant="ghost" size="xs" onClick={goPrev} alt="Previous page">
                     <ChevronsUp className='size-4' />
                 </Button>
+                <div className="absolute left-2 flex items-center gap-x-1">
+                    <ZoomControls
+                        zoom={zoom}
+                        onZoomIn={zoomIn}
+                        onZoomOut={zoomOut}
+                        onFitToView={fitToView}
+                        canZoomIn={zoom < ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
+                        canZoomOut={zoom > ZOOM_LEVELS[0]}
+                    />
+                    {headerExtra && (
+                        <>
+                            <div className="w-px h-4 bg-border mx-1" />
+                            {headerExtra}
+                        </>
+                    )}
+                </div>
                 <div className="absolute right-2">
-                    <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
+                    <PageNavigator currentPage={currentPage} totalPages={pageCount} onChange={onChange} />
                 </div>
             </div>
             <div ref={scrollContainerRef} className={clsx('flex flex-col items-center flex-1 overflow-y-auto px-2', compact ? 'gap-1' : 'gap-2')}>
                 <PdfThumbnailList
                     pdfUrl={pdfUrl}
                     urlLoading={pdfUrlLoading}
-                    pageCount={count}
+                    pageCount={pageCount}
                     currentPage={currentPage}
                     thumbnailWidth={thumbnailWidth}
                     onPageSelect={onChange}
@@ -275,6 +405,65 @@ function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps
                 className="w-8 h-5 text-center text-xs px-1 py-0 bg-background border border-border rounded focus:outline-none focus:border-primary"
             />
             <span>/ {totalPages}</span>
+        </div>
+    );
+}
+
+interface ZoomControlsProps {
+    zoom: number;
+    onZoomIn: () => void;
+    onZoomOut: () => void;
+    onFitToView: () => void;
+    canZoomIn: boolean;
+    canZoomOut: boolean;
+}
+function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZoomOut }: ZoomControlsProps) {
+    return (
+        <div className="flex items-center gap-x-0.5">
+            <VTooltip description="Zoom out" placement="bottom" size="xs">
+                <button
+                    className={clsx(
+                        "p-1 rounded cursor-pointer transition-colors",
+                        canZoomOut
+                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            : "text-muted-foreground/40 cursor-not-allowed"
+                    )}
+                    onClick={onZoomOut}
+                    disabled={!canZoomOut}
+                >
+                    <Minus className="size-4" />
+                </button>
+            </VTooltip>
+            <span className="text-xs text-muted-foreground min-w-[32px] text-center">
+                {zoom}%
+            </span>
+            <VTooltip description="Zoom in" placement="bottom" size="xs">
+                <button
+                    className={clsx(
+                        "p-1 rounded cursor-pointer transition-colors",
+                        canZoomIn
+                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            : "text-muted-foreground/40 cursor-not-allowed"
+                    )}
+                    onClick={onZoomIn}
+                    disabled={!canZoomIn}
+                >
+                    <Plus className="size-4" />
+                </button>
+            </VTooltip>
+            <VTooltip description="Fit to width" placement="bottom" size="xs">
+                <button
+                    className={clsx(
+                        "p-1 rounded cursor-pointer transition-colors",
+                        zoom !== DEFAULT_ZOOM
+                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            : "text-muted-foreground/40"
+                    )}
+                    onClick={onFitToView}
+                >
+                    <Maximize className="size-4" />
+                </button>
+            </VTooltip>
         </div>
     );
 }
