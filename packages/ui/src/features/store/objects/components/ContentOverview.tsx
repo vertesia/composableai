@@ -1,12 +1,14 @@
-import { useEffect, useState, memo } from "react";
+import { useEffect, useState, memo, useRef, type RefObject } from "react";
 
 import { useUserSession } from "@vertesia/ui/session";
-import { Button, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
-import { JSONDisplay, MarkdownRenderer } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME } from "@vertesia/common";
-import { Copy, Download, SquarePen, AlertTriangle } from "lucide-react";
+import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
+import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
+import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus } from "@vertesia/common";
+import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
+import { MagicPdfView } from "../../../magic-pdf";
+import { SimplePdfViewer } from "../../../pdf-viewer";
 
 // Maximum text size before cropping (128K characters)
 const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
@@ -14,7 +16,52 @@ const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
 enum PanelView {
     Text = "text",
     Image = "image",
-    Video = "video"
+    Video = "video",
+    Pdf = "pdf"
+}
+
+function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+        return false;
+    }
+
+    // Use a hidden iframe to avoid opening a new window
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+
+    const iframeWindow = iframe.contentWindow;
+    if (!iframeWindow) {
+        iframe.parentNode?.removeChild(iframe);
+        return false;
+    }
+
+    const doc = iframeWindow.document;
+    doc.open();
+    doc.write(`<!doctype html><html><head><title>${title}</title></head><body></body></html>`);
+    doc.close();
+    doc.title = title;
+
+    const styles = document.querySelectorAll<HTMLLinkElement | HTMLStyleElement>("link[rel=\"stylesheet\"], style");
+    styles.forEach((node) => {
+        doc.head.appendChild(node.cloneNode(true));
+    });
+
+    doc.body.innerHTML = sourceElement.innerHTML;
+    iframeWindow.focus();
+    iframeWindow.print();
+
+    setTimeout(() => {
+        iframe.parentNode?.removeChild(iframe);
+    }, 1000);
+
+    return true;
 }
 
 interface ContentOverviewProps {
@@ -61,7 +108,7 @@ export function ContentOverview({
                 <ResizableHandle withHandle />
 
                 <ResizablePanel className="min-w-[100px]">
-                    <DataPanel object={object} loadText={loadText ?? false} handleCopyContent={handleCopyContent} />
+                    <DataPanel object={object} loadText={loadText ?? false} handleCopyContent={handleCopyContent} refetch={refetch} />
                 </ResizablePanel>
             </ResizablePanelGroup>
 
@@ -160,11 +207,13 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
     );
 }
 
-function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
-    const { store } = useUserSession();
+function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, refetch?: () => Promise<unknown> }) {
+    const { store, client } = useUserSession();
 
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
+    const isPdf = object?.content?.type === 'application/pdf';
+    const isCreatedOrProcessing = object?.status === ContentObjectStatus.created || object?.status === ContentObjectStatus.processing;
 
     // Determine initial panel view
     const getInitialView = (): PanelView => {
@@ -175,94 +224,196 @@ function DataPanel({ object, loadText, handleCopyContent }: { object: ContentObj
 
     const [currentPanel, setCurrentPanel] = useState<PanelView>(getInitialView());
 
-    const [text, setText] = useState<string | undefined>(object.text);
+    // Store full text and cropped text separately
+    const [fullText, setFullText] = useState<string | undefined>(object.text);
+    const [displayText, setDisplayText] = useState<string | undefined>(() => {
+        if (object.text && object.text.length > MAX_TEXT_DISPLAY_SIZE) {
+            return object.text.substring(0, MAX_TEXT_DISPLAY_SIZE);
+        }
+        return object.text;
+    });
     const [isLoadingText, setIsLoadingText] = useState<boolean>(false);
-    const [isTextCropped, setIsTextCropped] = useState<boolean>(false);
+    const [isTextCropped, setIsTextCropped] = useState<boolean>(
+        () => !!object.text && object.text.length > MAX_TEXT_DISPLAY_SIZE
+    );
+
+    // PDF processing state
+    const [pdfProgress, setPdfProgress] = useState<DocAnalyzerProgress | undefined>();
+    const [pdfStatus, setPdfStatus] = useState<WorkflowExecutionStatus | undefined>();
+    const [processingComplete, setProcessingComplete] = useState(false);
+
+    // Poll for PDF processing status when object is created or processing
+    useEffect(() => {
+        if (!isPdf || !isCreatedOrProcessing || processingComplete) return;
+
+        let interrupted = false;
+        function poll() {
+            if (interrupted) return;
+            client.objects.analyze(object.id).getStatus().then((r) => {
+                setPdfProgress(r.progress);
+                setPdfStatus(r.status);
+                if (r.status === WorkflowExecutionStatus.RUNNING) {
+                    // Workflow is running, poll every 2 seconds for progress
+                    if (!interrupted) {
+                        setTimeout(poll, 2000);
+                    }
+                } else {
+                    // Workflow completed or terminal state
+                    setProcessingComplete(true);
+                }
+            }).catch(() => {
+                // No workflow found yet, poll every 10 seconds to check if one starts
+                if (!interrupted) {
+                    setTimeout(poll, 10000);
+                }
+            });
+        }
+        poll();
+        return () => { interrupted = true; };
+    }, [isPdf, isCreatedOrProcessing, processingComplete, object.id, client]);
+
+    // Load text when requested or when processing completes
+    const loadObjectText = () => {
+        setIsLoadingText(true);
+        store.objects
+            .getObjectText(object.id)
+            .then((res) => {
+                setFullText(res.text);
+                if (res.text.length > MAX_TEXT_DISPLAY_SIZE) {
+                    setDisplayText(res.text.substring(0, MAX_TEXT_DISPLAY_SIZE));
+                    setIsTextCropped(true);
+                } else {
+                    setDisplayText(res.text);
+                    setIsTextCropped(false);
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to load text", err);
+            })
+            .finally(() => {
+                setIsLoadingText(false);
+            });
+    };
 
     useEffect(() => {
-        if (loadText && !text) {
-            setIsLoadingText(true);
-            store.objects
-                .getObjectText(object.id)
-                .then((res) => {
-                    if (res.text.length > MAX_TEXT_DISPLAY_SIZE) {
-                        // Crop the text to 128K characters
-                        const croppedText = res.text.substring(0, MAX_TEXT_DISPLAY_SIZE);
-                        setText(croppedText);
-                        setIsTextCropped(true);
-                    } else {
-                        setText(res.text);
-                        setIsTextCropped(false);
-                    }
-                })
-                .catch((err) => {
-                    console.error("Failed to load text", err);
-                })
-                .finally(() => {
-                    setIsLoadingText(false);
-                });
+        if (loadText && !displayText) {
+            loadObjectText();
         }
     }, [loadText]);
 
-    return (
-        <>
-            <div className="flex justify-between items-center px-2">
-                <div className="flex items-center gap-1 bg-muted mb-2 p-1 rounded">
-                    {isImage &&
-                        <Button
-                            variant={currentPanel === PanelView.Image ? "primary" : "ghost"}
-                            size="sm"
-                            alt="View Image"
-                            onClick={() => setCurrentPanel(PanelView.Image)}
-                        >
-                            Image
-                        </Button>
-                    }
-                    {isVideo &&
-                        <Button
-                            variant={currentPanel === PanelView.Video ? "primary" : "ghost"}
-                            size="sm"
-                            alt="View Video"
-                            onClick={() => setCurrentPanel(PanelView.Video)}
-                        >
-                            Video
-                        </Button>
-                    }
-                    <Button
-                        variant={currentPanel === PanelView.Text ? "primary" : "ghost"}
-                        size="sm"
-                        alt="View Text"
-                        onClick={() => setCurrentPanel(PanelView.Text)}
-                    >
-                        Text
-                    </Button>
+    // Reload object when PDF processing completes
+    useEffect(() => {
+        if (processingComplete && pdfStatus === WorkflowExecutionStatus.COMPLETED) {
+            refetch?.();
+        }
+    }, [processingComplete, pdfStatus]);
 
+    // Show PDF processing panel when workflow is running
+    const showPdfProcessing = isPdf && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
+
+    const textContainerRef = useRef<HTMLDivElement | null>(null);
+
+    return (
+        <div className="flex flex-col h-full">
+            <div className="flex justify-between items-center px-2 shrink-0">
+                <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-1 bg-muted p-1 rounded">
+                        {isImage &&
+                            <Button
+                                variant={currentPanel === PanelView.Image ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View Image"
+                                onClick={() => setCurrentPanel(PanelView.Image)}
+                            >
+                                Image
+                            </Button>
+                        }
+                        {isVideo &&
+                            <Button
+                                variant={currentPanel === PanelView.Video ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View Video"
+                                onClick={() => setCurrentPanel(PanelView.Video)}
+                            >
+                                Video
+                            </Button>
+                        }
+                        <Button
+                            variant={currentPanel === PanelView.Text ? "primary" : "ghost"}
+                            size="sm"
+                            alt="View Text"
+                            onClick={() => setCurrentPanel(PanelView.Text)}
+                        >
+                            Text
+                        </Button>
+                        {isPdf &&
+                            <Button
+                                variant={currentPanel === PanelView.Pdf ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View PDF"
+                                onClick={() => setCurrentPanel(PanelView.Pdf)}
+                            >
+                                PDF
+                            </Button>
+                        }
+                    </div>
+                    <PdfActions object={object} />
                 </div>
-                {currentPanel === PanelView.Text && <TextActions object={object} text={text} handleCopyContent={handleCopyContent} />}
+                {currentPanel === PanelView.Text && !showPdfProcessing && (
+                    <TextActions
+                        object={object}
+                        text={displayText}
+                        fullText={fullText}
+                        handleCopyContent={handleCopyContent}
+                        textContainerRef={textContainerRef}
+                    />
+                )}
             </div>
             {
                 currentPanel === PanelView.Image ? (
                     <ImagePanel object={object} />
                 ) : currentPanel === PanelView.Video ? (
                     <VideoPanel object={object} />
+                ) : currentPanel === PanelView.Pdf ? (
+                    <PdfPreviewPanel object={object} />
+                ) : showPdfProcessing ? (
+                    <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} />
                 ) : (
                     isLoadingText ? (
-                        <div className="flex justify-center items-center h-[calc(100vh-260px)]">
+                        <div className="flex justify-center items-center flex-1">
                             <Spinner size="lg" />
                         </div>
                     ) : (
-                        <TextPanel object={object} text={text} isTextCropped={isTextCropped} />
+                        <TextPanel
+                            object={object}
+                            text={displayText}
+                            isTextCropped={isTextCropped}
+                            textContainerRef={textContainerRef}
+                        />
                     )
                 )
             }
-        </>
+        </div>
     );
 }
 
-function TextActions({ object, text, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, text: string | undefined }) {
+function TextActions({
+    object,
+    text,
+    fullText,
+    handleCopyContent,
+    textContainerRef,
+}: {
+    object: ContentObject;
+    handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>;
+    text: string | undefined;
+    fullText: string | undefined;
+    textContainerRef: RefObject<HTMLDivElement | null>;
+}) {
     const { client } = useUserSession();
     const toast = useToast();
     const [loadingFormat, setLoadingFormat] = useState<"docx" | "pdf" | null>(null);
+    const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
     const content = object.content;
 
@@ -270,6 +421,9 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
         content &&
         content.type &&
         content.type === "text/markdown";
+
+    // Get content processor type for file extension detection
+    const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
 
     const handleExportDocument = async (format: "docx" | "pdf") => {
         // Prevent multiple concurrent exports
@@ -354,54 +508,167 @@ function TextActions({ object, text, handleCopyContent }: { object: ContentObjec
     };
 
     const handleExportDocx = () => handleExportDocument("docx");
-    const handleExportPdf = () => handleExportDocument("pdf");
+
+    const handleClientPdfExport = () => {
+        if (!textContainerRef.current) {
+            toast({
+                status: "error",
+                title: "PDF export failed",
+                description: "No content available to export",
+                duration: 3000,
+            });
+            return;
+        }
+        setIsPdfModalOpen(true);
+    };
+
+    const handleConfirmClientPdfExport = () => {
+        if (!textContainerRef.current) {
+            toast({
+                status: "error",
+                title: "PDF export failed",
+                description: "No content available to export",
+                duration: 3000,
+            });
+            return;
+        }
+
+        const baseName = object.name || object.id;
+        const pdfTitle = `${baseName || "document"} - content`;
+        const success = printElementToPdf(textContainerRef.current, pdfTitle);
+
+        if (!success) {
+            toast({
+                status: "error",
+                title: "PDF export failed",
+                description: "Unable to open print preview",
+                duration: 4000,
+            });
+            return;
+        }
+
+        toast({
+            status: "success",
+            title: "PDF export ready",
+            description: "Use your browser's Print dialog to save as PDF",
+            duration: 4000,
+        });
+        setIsPdfModalOpen(false);
+    };
+
+    const handleDownloadText = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!fullText) return;
+        // Determine file extension based on content processor type
+        let ext = "txt";
+        let mimeType = "text/plain";
+        if (contentProcessorType === "xml") {
+            ext = "xml";
+            mimeType = "text/xml";
+        } else if (contentProcessorType === "markdown" || isMarkdown) {
+            ext = "md";
+            mimeType = "text/markdown";
+        }
+        const blob = new Blob([fullText], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const filename = `${object.name || "document"}.${ext}`;
+
+        // Use the download attribute with an anchor, but avoid triggering navigation
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.style.display = "none";
+        // Temporarily remove from DOM event flow
+        setTimeout(() => {
+            link.click();
+            URL.revokeObjectURL(url);
+        }, 0);
+    };
+
     return (
-        <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
-            <div className="flex items-center gap-2">
-                {text && (
-                    <Button variant="ghost" size="sm" title="Copy text" className="flex items-center gap-2" onClick={() => handleCopyContent(text, "text")}>
-                        <Copy className="size-4" />
-                    </Button>
-                )}
-                {isMarkdown && text && (
-                    <>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleExportDocx}
-                            disabled={loadingFormat !== null}
-                            className="flex items-center gap-2"
-                        >
-                            {loadingFormat === "docx" ? (
-                                <Spinner size="sm" />
-                            ) : (
+        <>
+            <div className="h-[41px] text-lg font-semibold flex justify-between items-center px-2">
+                <div className="flex items-center gap-2">
+                    {fullText && (
+                        <>
+                            <Button variant="ghost" size="sm" title="Copy text" onClick={() => handleCopyContent(fullText, "text")}>
+                                <Copy className="size-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" title="Download text" onClick={handleDownloadText}>
                                 <Download className="size-4" />
-                            )}
-                            DOCX
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleExportPdf}
-                            disabled={loadingFormat !== null}
-                            className="flex items-center gap-2"
-                        >
-                            {loadingFormat === "pdf" ? (
-                                <Spinner size="sm" />
-                            ) : (
+                            </Button>
+                        </>
+                    )}
+                    {isMarkdown && text && (
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleExportDocx}
+                                disabled={loadingFormat !== null}
+                                className="flex items-center gap-2"
+                            >
+                                {loadingFormat === "docx" ? (
+                                    <Spinner size="sm" />
+                                ) : (
+                                    <Download className="size-4" />
+                                )}
+                                DOCX
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleClientPdfExport}
+                                className="flex items-center gap-2"
+                            >
                                 <Download className="size-4" />
-                            )}
-                            PDF
-                        </Button>
-                    </>
-                )}
+                                PDF
+                            </Button>
+                        </>
+                    )}
+                </div>
             </div>
-        </div>
+            <VModal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
+                <VModalTitle>Export document as PDF</VModalTitle>
+                <VModalBody>
+                    <p className="mb-2">
+                        This will open your browser&apos;s print dialog with the current document content.
+                    </p>
+                    <p className="text-sm text-muted">
+                        To save a PDF, choose &quot;Save as PDF&quot; or a similar option in the print dialog.
+                    </p>
+                </VModalBody>
+                <VModalFooter align="right">
+                    <Button variant="ghost" size="sm" onClick={() => setIsPdfModalOpen(false)}>
+                        Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleConfirmClientPdfExport}>
+                        Open print dialog
+                    </Button>
+                </VModalFooter>
+            </VModal>
+        </>
     );
 }
 
-const TextPanel = memo(({ object, text, isTextCropped }: { object: ContentObject, text: string | undefined, isTextCropped: boolean }) => {
+const TextPanel = memo(({
+    object,
+    text,
+    isTextCropped,
+    textContainerRef,
+}: {
+    object: ContentObject;
+    text: string | undefined;
+    isTextCropped: boolean;
+    textContainerRef: RefObject<HTMLDivElement | null>;
+}) => {
     const content = object.content;
+    const isCreatedOrProcessing = object?.status === ContentObjectStatus.created || object?.status === ContentObjectStatus.processing;
+
+    // Check content processor type for XML
+    const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
+    const isXml = contentProcessorType === "xml";
 
     // Check if content type is markdown or plain text
     const isMarkdownOrText =
@@ -421,8 +688,8 @@ const TextPanel = memo(({ object, text, isTextCropped }: { object: ContentObject
         text.includes("](")
     );
 
-    // Render as markdown if it's markdown/text type OR if text looks like markdown
-    const shouldRenderAsMarkdown = isMarkdownOrText || seemsMarkdown;
+    // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
+    const shouldRenderAsMarkdown = !isXml && (isMarkdownOrText || seemsMarkdown);
 
     return (
         text ? (
@@ -435,8 +702,15 @@ const TextPanel = memo(({ object, text, isTextCropped }: { object: ContentObject
                         </div>
                     </div>
                 )}
-                <div className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto">
-                    {shouldRenderAsMarkdown ? (
+                <div
+                    className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto"
+                    ref={textContainerRef}
+                >
+                    {isXml ? (
+                        <div className="px-4 py-2">
+                            <XMLViewer xml={text} collapsible />
+                        </div>
+                    ) : shouldRenderAsMarkdown ? (
                         <div className="vprose prose-sm p-1">
                             <MarkdownRenderer
                                 components={{
@@ -512,7 +786,7 @@ const TextPanel = memo(({ object, text, isTextCropped }: { object: ContentObject
             </>
         ) :
             <div className="px-2">
-                <div>No content</div>
+                <div>{isCreatedOrProcessing ? "Extracting content..." : "No content"}</div>
             </div>
     );
 });
@@ -665,6 +939,118 @@ function VideoPanel({ object }: { object: ContentObject }) {
                     Failed to load video
                 </div>
             )}
+        </div>
+    );
+}
+
+function PdfActions({ object }: { object: ContentObject }) {
+    const [isPdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+
+    // Check if PDF has been processed (content_processor.type is xml or markdown)
+    const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
+    const hasPdfAnalysis = contentProcessorType === "xml" || contentProcessorType === "markdown";
+
+    if (!hasPdfAnalysis) return null;
+
+    return (
+        <>
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPdfPreviewOpen(true)}
+                title="Side by side view"
+            >
+                <FileSearch className="size-4" />
+            </Button>
+            {isPdfPreviewOpen && (
+                <Portal>
+                    <MagicPdfView objectId={object.id} onClose={() => setPdfPreviewOpen(false)} />
+                </Portal>
+            )}
+        </>
+    );
+}
+
+function PdfPreviewPanel({ object }: { object: ContentObject }) {
+    return (
+        <div className="h-[calc(100vh-210px)]">
+            <SimplePdfViewer
+                object={object}
+                className="h-full"
+            />
+        </div>
+    );
+}
+
+function PdfProcessingPanel({ progress, status }: { progress?: DocAnalyzerProgress, status?: WorkflowExecutionStatus }) {
+    const statusColor = (() => {
+        switch (status) {
+            case WorkflowExecutionStatus.RUNNING:
+                return "text-info";
+            case WorkflowExecutionStatus.COMPLETED:
+                return "text-success";
+            case WorkflowExecutionStatus.FAILED:
+                return "text-destructive";
+            case WorkflowExecutionStatus.TERMINATED:
+            case WorkflowExecutionStatus.CANCELED:
+                return "text-attention";
+            default:
+                return "text-muted";
+        }
+    })();
+
+    const statusName = (() => {
+        switch (status) {
+            case WorkflowExecutionStatus.RUNNING: return 'Running';
+            case WorkflowExecutionStatus.COMPLETED: return 'Completed';
+            case WorkflowExecutionStatus.FAILED: return 'Failed';
+            case WorkflowExecutionStatus.CONTINUED_AS_NEW: return 'Continued As New';
+            case WorkflowExecutionStatus.TERMINATED: return 'Terminated';
+            case WorkflowExecutionStatus.TIMED_OUT: return 'Timed Out';
+            case WorkflowExecutionStatus.CANCELED: return 'Canceled';
+            default: return 'Unknown';
+        }
+    })();
+
+    return (
+        <div className="px-4 py-4">
+            {progress && (
+                <div className="space-y-2">
+                    <div className="flex flex-col gap-1">
+                        <ProgressLine name="Analyze Page" progress={progress.pages} />
+                        {/* <ProgressLine name="Extract Tables" progress={progress.tables} />
+                        <ProgressLine name="Describe Images" progress={progress.images} />
+                        <ProgressLine name="Process Visually" progress={progress.visuals} /> */}
+                    </div>
+                    <div className="pt-2 text-sm text-muted">
+                        Progress: {progress.percent}%
+                        <span className="px-2">&bull;</span>
+                        <span className={statusColor}>{statusName}</span>
+                        {progress.started_at && (
+                            <>
+                                <span className="px-2">&bull;</span>
+                                <span>{((Date.now() - progress.started_at) / 1000).toFixed(0)} sec. elapsed</span>
+                            </>
+                        )}
+                    </div>
+                    <Progress percent={progress.percent} />
+                </div>
+            )}
+            {!progress && (
+                <div className="flex items-center gap-2 text-muted">
+                    <Spinner size="sm" />
+                    <span>Loading processing status...</span>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ProgressLine({ name, progress }: { name: string, progress: { total: number; processed: number } }) {
+    return (
+        <div className="flex gap-2 text-sm">
+            <span className="text-muted min-w-36">{name}:</span>
+            <span>{progress.processed} of {progress.total}</span>
         </div>
     );
 }

@@ -46,7 +46,7 @@ async function pushImage(project: AgentProject, version: string) {
 
 async function triggerDeploy(profile: Profile, project: AgentProject, version: string) {
     const environment = getCloudTypeFromConfigUrl(profile.config_url);
-    const client = getClient();
+    const client = await getClient();
     const agentId = project.getAgentId();
     console.log(`Deploy agent ${agentId}:${version} to ${environment}`);
     await client.store.agents.deploy({
