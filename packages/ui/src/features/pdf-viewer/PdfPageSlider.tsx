@@ -60,13 +60,19 @@ export function PdfPageSlider({
     const thumbnailWidth = baseWidth ? Math.round(baseWidth * zoom / 100) : undefined;
 
     const zoomIn = useCallback(() => {
-        const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        let currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        if (currentIndex === -1) {
+            currentIndex = ZOOM_LEVELS.length - 1;
+        }
         const nextIndex = Math.min(currentIndex + 1, ZOOM_LEVELS.length - 1);
         setZoom(ZOOM_LEVELS[nextIndex]);
     }, [zoom]);
 
     const zoomOut = useCallback(() => {
-        const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        let currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        if (currentIndex === -1) {
+            currentIndex = ZOOM_LEVELS.length - 1;
+        }
         const prevIndex = Math.max(currentIndex - 1, 0);
         setZoom(ZOOM_LEVELS[prevIndex]);
     }, [zoom]);
