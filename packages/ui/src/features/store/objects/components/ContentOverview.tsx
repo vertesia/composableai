@@ -330,17 +330,18 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         setOfficePdfConverting(true);
         setOfficePdfError(undefined);
 
-        const pollForPdf = async () => {
+        const pollForPdf = async (isFirstCall: boolean) => {
             try {
                 const response = await client.objects.getRendition(object.id, {
                     format: MarkdownRenditionFormat.pdf,
-                    generate_if_missing: true,
+                    generate_if_missing: isFirstCall, // Only trigger workflow on first call
                     sign_url: true,
+                    block_on_generation: false,
                 });
 
                 if (response.status === "generating") {
                     // Poll every 5 seconds
-                    setTimeout(pollForPdf, 5000);
+                    setTimeout(() => pollForPdf(false), 5000);
                 } else if (response.status === "found" && response.renditions?.length) {
                     setOfficePdfUrl(response.renditions[0]);
                     setOfficePdfConverting(false);
@@ -357,7 +358,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
             }
         };
 
-        await pollForPdf();
+        await pollForPdf(true);
     };
 
     const textContainerRef = useRef<HTMLDivElement | null>(null);
