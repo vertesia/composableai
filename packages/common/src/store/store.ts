@@ -412,6 +412,7 @@ export interface GetRenditionParams {
     max_hw?: number;
     generate_if_missing?: boolean;
     sign_url?: boolean;
+    block_on_generation?: boolean;
 }
 
 export interface GetRenditionResponse {
