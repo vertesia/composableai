@@ -1,8 +1,12 @@
 import { Button, Center, VTooltip } from "@vertesia/ui/core";
 import clsx from "clsx";
-import { ChevronsDown, ChevronsUp, Image, Loader2, ScanSearch } from "lucide-react";
-import { useRef, KeyboardEvent, useState, useEffect } from "react";
+import { ChevronsDown, ChevronsUp, Image, Loader2, Maximize, Minus, Plus, ScanSearch } from "lucide-react";
+import { useRef, KeyboardEvent, useState, useEffect, useCallback } from "react";
 import { ImageType, useMagicPdfContext } from "./MagicPdfProvider";
+
+// Zoom levels as percentages (100 = fit to width)
+const ZOOM_LEVELS = [50, 75, 100, 125, 150, 200, 300];
+const DEFAULT_ZOOM = 100;
 
 // Default aspect ratio (letter size) used before first image loads
 const DEFAULT_ASPECT_RATIO = 11 / 8.5; // height / width
@@ -41,11 +45,28 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
     const [imageType, setImageType] = useState<ImageType>(ImageType.instrumented);
     const [aspectRatio, setAspectRatio] = useState<number>(DEFAULT_ASPECT_RATIO);
     const [loadedUrls, setLoadedUrls] = useState<Map<number, string>>(new Map());
+    const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM);
     const loadedPagesRef = useRef<Set<number>>(new Set());
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const isProgrammaticScrollRef = useRef(false);
     const { imageProvider, count } = useMagicPdfContext();
+
+    const zoomIn = useCallback(() => {
+        const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        const nextIndex = Math.min(currentIndex + 1, ZOOM_LEVELS.length - 1);
+        setZoom(ZOOM_LEVELS[nextIndex]);
+    }, [zoom]);
+
+    const zoomOut = useCallback(() => {
+        const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        const prevIndex = Math.max(currentIndex - 1, 0);
+        setZoom(ZOOM_LEVELS[prevIndex]);
+    }, [zoom]);
+
+    const fitToView = useCallback(() => {
+        setZoom(DEFAULT_ZOOM);
+    }, []);
 
     // Load first image to determine aspect ratio
     useEffect(() => {
@@ -99,6 +120,34 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
         loadedPagesRef.current = new Set();
         setLoadedUrls(new Map());
     }, [imageType]);
+
+    // Scroll to current page when zoom changes to preserve position
+    const prevZoomRef = useRef(zoom);
+    useEffect(() => {
+        if (prevZoomRef.current !== zoom && scrollContainerRef.current) {
+            prevZoomRef.current = zoom;
+
+            // Mark as programmatic scroll to avoid triggering onChange
+            isProgrammaticScrollRef.current = true;
+
+            const thumbnail = scrollContainerRef.current.querySelector(`[data-page="${currentPage}"]`);
+            if (thumbnail) {
+                // Use requestAnimationFrame to wait for DOM to update with new sizes
+                requestAnimationFrame(() => {
+                    thumbnail.scrollIntoView({
+                        behavior: 'instant',
+                        block: 'center',
+                    });
+                    // Reset after scroll completes
+                    requestAnimationFrame(() => {
+                        isProgrammaticScrollRef.current = false;
+                    });
+                });
+            } else {
+                isProgrammaticScrollRef.current = false;
+            }
+        }
+    }, [zoom, currentPage]);
 
     // Jump to current page when it changes (user navigation via buttons/input)
     const prevPageRef = useRef(currentPage);
@@ -192,7 +241,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                 <Button variant="ghost" size="xs" onClick={goPrev} alt="Previous page">
                     <ChevronsUp className='size-4' />
                 </Button>
-                <div className="absolute left-2 flex gap-x-1">
+                <div className="absolute left-2 flex items-center gap-x-1">
                     <ImageTypeButton
                         type={ImageType.original}
                         currentType={imageType}
@@ -207,6 +256,15 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                         icon={<ScanSearch className="size-4" />}
                         tooltip="Instrumented images"
                     />
+                    <div className="w-px h-4 bg-border mx-1" />
+                    <ZoomControls
+                        zoom={zoom}
+                        onZoomIn={zoomIn}
+                        onZoomOut={zoomOut}
+                        onFitToView={fitToView}
+                        canZoomIn={zoom < ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
+                        canZoomOut={zoom > ZOOM_LEVELS[0]}
+                    />
                 </div>
                 <div className="absolute right-2">
                     <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
@@ -219,6 +277,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                         currentPage={currentPage}
                         pageNumber={index + 1}
                         aspectRatio={aspectRatio}
+                        zoom={zoom}
                         url={loadedUrls.get(index + 1)}
                         onSelect={() => onChange(index + 1)}
                     />
@@ -259,24 +318,86 @@ function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTyp
     );
 }
 
+interface ZoomControlsProps {
+    zoom: number;
+    onZoomIn: () => void;
+    onZoomOut: () => void;
+    onFitToView: () => void;
+    canZoomIn: boolean;
+    canZoomOut: boolean;
+}
+function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZoomOut }: ZoomControlsProps) {
+    return (
+        <div className="flex items-center gap-x-0.5">
+            <VTooltip description="Zoom out" placement="bottom" size="xs">
+                <button
+                    className={clsx(
+                        "p-1 rounded cursor-pointer transition-colors",
+                        canZoomOut
+                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            : "text-muted-foreground/40 cursor-not-allowed"
+                    )}
+                    onClick={onZoomOut}
+                    disabled={!canZoomOut}
+                >
+                    <Minus className="size-4" />
+                </button>
+            </VTooltip>
+            <span className="text-xs text-muted-foreground min-w-[32px] text-center">
+                {zoom}%
+            </span>
+            <VTooltip description="Zoom in" placement="bottom" size="xs">
+                <button
+                    className={clsx(
+                        "p-1 rounded cursor-pointer transition-colors",
+                        canZoomIn
+                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            : "text-muted-foreground/40 cursor-not-allowed"
+                    )}
+                    onClick={onZoomIn}
+                    disabled={!canZoomIn}
+                >
+                    <Plus className="size-4" />
+                </button>
+            </VTooltip>
+            <VTooltip description="Fit to width" placement="bottom" size="xs">
+                <button
+                    className={clsx(
+                        "p-1 rounded cursor-pointer transition-colors",
+                        zoom !== DEFAULT_ZOOM
+                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            : "text-muted-foreground/40"
+                    )}
+                    onClick={onFitToView}
+                >
+                    <Maximize className="size-4" />
+                </button>
+            </VTooltip>
+        </div>
+    );
+}
+
 interface PageThumbnailProps {
     pageNumber: number;
     currentPage: number;
     aspectRatio: number;
+    zoom: number;
     url?: string;
     onSelect: () => void;
 }
-function PageThumbnail({ pageNumber, currentPage, aspectRatio, url, onSelect }: PageThumbnailProps) {
+function PageThumbnail({ pageNumber, currentPage, aspectRatio, zoom, url, onSelect }: PageThumbnailProps) {
     const isSelected = pageNumber === currentPage;
+    const widthPercent = zoom;
 
     return (
         <div
-            className="p-2 hover:bg-muted rounded-md w-full"
+            className="p-2 hover:bg-muted rounded-md flex flex-col items-center"
             data-page={pageNumber}
+            style={{ width: `${widthPercent}%` }}
         >
             <div
                 className={clsx(
-                    'relative border-[2px] cursor-pointer overflow-hidden flex items-center justify-center bg-muted/50',
+                    'relative border-[2px] cursor-pointer overflow-hidden flex items-center justify-center bg-muted/50 w-full',
                     isSelected ? "border-primary" : "border-border"
                 )}
                 style={{ aspectRatio: `1 / ${aspectRatio}` }}
