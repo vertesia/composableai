@@ -1,9 +1,32 @@
 import React from "react";
-import Markdown from "react-markdown";
+import Markdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { visit, SKIP } from "unist-util-visit";
 import { AgentChart, type AgentChartSpec } from "../../features/agent/chat/AgentChart";
 import { useUserSession } from "@vertesia/ui/session";
+
+// Custom URL schemes that we handle in our components
+const ALLOWED_CUSTOM_SCHEMES = [
+    'artifact:',
+    'image:',
+    'store:',
+    'document:',
+    'document://',
+    'collection:',
+];
+
+/**
+ * Custom URL transform that allows our custom schemes while using
+ * the default transform for standard URLs (which sanitizes unsafe schemes).
+ */
+function customUrlTransform(url: string): string {
+    // Allow our custom schemes - they're handled by our custom components
+    if (ALLOWED_CUSTOM_SCHEMES.some(scheme => url.startsWith(scheme))) {
+        return url;
+    }
+    // Fall back to default sanitization for other URLs
+    return defaultUrlTransform(url);
+}
 
 function remarkRemoveComments() {
     return (tree: any) => {
@@ -355,9 +378,10 @@ export function MarkdownRenderer({
     }, [components, client, artifactRunId]);
 
     return (
-        <Markdown 
+        <Markdown
             remarkPlugins={plugins}
             components={componentsWithCharts}
+            urlTransform={customUrlTransform}
         >
             {children}
         </Markdown>
