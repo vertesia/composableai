@@ -326,11 +326,11 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     apps = new AppsApi(this);
 }
 
-function isApiKey(apiKey: string) {
+export function isApiKey(apiKey: string) {
     return apiKey.startsWith("pk-") || apiKey.startsWith("sk-");
 }
 
-function isTokenExpired(token: string | null) {
+export function isTokenExpired(token: string | null) {
     if (!token) {
         return true;
     }
