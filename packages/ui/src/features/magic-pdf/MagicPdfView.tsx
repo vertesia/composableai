@@ -80,8 +80,23 @@ export function MagicPdfView({ objectId, onClose }: MagicPdfViewProps) {
 
     if (!object) {
         return (
-            <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            <div className="fixed inset-0 bg-background z-50 flex flex-col">
+                {/* Header matching the main view layout */}
+                <div className="flex h-9 items-center justify-end shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
+                    {onClose && (
+                        <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={onClose}
+                            alt="Close"
+                        >
+                            <X className='size-4' />
+                        </Button>
+                    )}
+                </div>
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                </div>
             </div>
         );
     }
