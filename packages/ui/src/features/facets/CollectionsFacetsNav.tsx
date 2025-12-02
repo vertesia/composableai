@@ -40,7 +40,11 @@ export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['fa
             placeholder: 'Type',
             type: 'select' as const,
             multiple: true,
-            options: typeOptions
+            options: typeOptions,
+            filterBy: (value: string, searchText: string) => {
+                const option = typeOptions.find(opt => opt.value === value);
+                return option?.label?.toLowerCase().includes(searchText.toLowerCase()) ?? false;
+            }
         };
         customFilterGroups.push(typeFilterGroup);
     }

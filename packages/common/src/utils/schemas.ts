@@ -5,6 +5,28 @@ import { InCodePrompt, InteractionRefWithSchema, PopulatedInteraction } from "..
 import { ExecutablePromptSegmentDef, PromptSegmentDefType } from "../prompt.js";
 
 
+// Remove custom properties from the JSON before sending further down execution pipeline
+export function removeExtraProperties<T>(schema: T): T {
+    if (!schema) return schema;
+    if (Array.isArray(schema)) {
+        for (const item of schema) {
+            removeExtraProperties(item);
+        }
+    } else if (typeof schema === 'object') {
+        const obj = schema as Record<string, any>;
+        for (const [key, value] of Object.entries(obj)) {
+            if (key === 'editor' && (value === 'textarea' || value === 'document' || value === 'media')) {
+                delete obj[key];
+            } else if (key === 'format' && (value === 'textarea' || value === 'document' || value === 'media')) {
+                delete obj[key];
+            } else if (typeof value === 'object') {
+                removeExtraProperties(value)
+            }
+        }
+    }
+    return schema;
+}
+
 export function mergeJSONSchemas(schemas: JSONSchema[]) {
     const props: Record<string, JSONSchema4> = {};
     let required: string[] = [];

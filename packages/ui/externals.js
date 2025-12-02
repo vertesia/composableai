@@ -61,7 +61,12 @@ export const EXTERNALS = [
     "react-calendar",
     "framer-motion",
     "react-resizable-panels",
-    /^framer-motion\/.*/
+    "recharts",
+    /^framer-motion\/.*/,
+    "react-pdf",
+    /^react-pdf\/.*/,
+    "pdfjs-dist",
+    /^pdfjs-dist\/.*/
 ];
 
 // Put here exceptions - deps that shuld be inlined

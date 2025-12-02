@@ -459,7 +459,8 @@ export interface InteractionExecutionPayload {
      */
     data?: Record<string, any> | `memory:${string}`;
     config?: InteractionExecutionConfiguration;
-    result_schema?: JSONSchema4;
+    //Use null to explicitly state no schema, will not fallback to interaction schema
+    result_schema?: JSONSchema4 | null;
     stream?: boolean;
     do_validate?: boolean;
     tags?: string | string[]; // tags to be added to the execution run
@@ -526,6 +527,27 @@ export enum AgentSearchScope {
 }
 
 /**
+ * Context triggers for auto-injection of skills.
+ * When these conditions match, the skill is automatically injected into the agent context.
+ */
+export interface SkillContextTriggers {
+    /**
+     * Keywords in user input that should trigger this skill
+     */
+    keywords?: string[];
+
+    /**
+     * If these tools are being used, suggest this skill
+     */
+    tool_names?: string[];
+
+    /**
+     * Regex patterns to match against input data
+     */
+    data_patterns?: string[];
+}
+
+/**
  * Configuration options for Agent Runner functionality.
  * These options control how interactions are exposed and executed in the Agent Runner.
  */
@@ -539,6 +561,24 @@ export interface AgentRunnerOptions {
      * Whether this interaction is available as a tool (sub-agent).
      */
     is_tool?: boolean;
+
+    /**
+     * Whether this interaction is a skill (provides instructions without execution).
+     * Skills are injected into the agent's context based on context_triggers.
+     */
+    is_skill?: boolean;
+
+    /**
+     * Context triggers for auto-injection of this skill.
+     * Only used when is_skill is true.
+     */
+    context_triggers?: SkillContextTriggers;
+
+    /**
+     * Injection priority for skills (higher = more likely to be selected when multiple match).
+     * Only used when is_skill is true.
+     */
+    skill_priority?: number;
 
     /**
      * Array of default tool names available to this agent.

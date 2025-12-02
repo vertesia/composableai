@@ -13,6 +13,7 @@ export enum ContentObjectApiHeaders {
 export enum ContentObjectStatus {
     created = "created",
     processing = "processing", // the was created and still processing
+    ready = "ready", // the object is rendered and ready to be used
     completed = "completed",
     failed = "failed",
     archived = "archived",
@@ -426,6 +427,13 @@ export interface GetFileUrlResponse {
     id: string;
     mime_type: string;
     path: string;
+}
+
+export interface SetFileMetadataPayload {
+    /** The file path (relative to bucket) or full URI */
+    file: string;
+    /** Custom metadata key-value pairs to set on the file */
+    metadata: Record<string, string>;
 }
 
 export enum ContentObjectProcessingPriority {
