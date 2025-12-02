@@ -977,7 +977,6 @@ function PdfPreviewPanel({ object }: { object: ContentObject }) {
             <SimplePdfViewer
                 object={object}
                 className="h-full"
-                compact
             />
         </div>
     );

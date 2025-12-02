@@ -9,8 +9,6 @@ interface SimplePdfViewerProps {
     object: ContentObject;
     /** Additional CSS class names */
     className?: string;
-    /** Compact mode reduces padding and navigation bar heights */
-    compact?: boolean;
 }
 
 /**
@@ -18,7 +16,7 @@ interface SimplePdfViewerProps {
  * Fetches the PDF URL from the content object and displays it using PdfThumbnailSlider.
  * Does not depend on any magic-pdf context.
  */
-export function SimplePdfViewer({ object, className, compact = false }: SimplePdfViewerProps) {
+export function SimplePdfViewer({ object, className }: SimplePdfViewerProps) {
     const { client } = useUserSession();
     const [currentPage, setCurrentPage] = useState(1);
     const [pdfUrl, setPdfUrl] = useState<string>("");
@@ -84,7 +82,7 @@ export function SimplePdfViewer({ object, className, compact = false }: SimplePd
             currentPage={currentPage}
             onChange={setCurrentPage}
             className={className}
-            compact={compact}
+            compact
         />
     );
 }
