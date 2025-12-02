@@ -3,8 +3,9 @@ import { useEffect, useState, memo, useRef, type RefObject } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus } from "@vertesia/common";
+import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME, MarkdownRenditionFormat } from "@vertesia/common";
 import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
+import { isPreviewableAsPdf } from "../../../utils/mimeType.js";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
 import { MagicPdfView } from "../../../magic-pdf";
@@ -213,7 +214,12 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
     const isPdf = object?.content?.type === 'application/pdf';
+    const isPreviewableAsPdfDoc = object?.content?.type ? isPreviewableAsPdf(object.content.type) : false;
     const isCreatedOrProcessing = object?.status === ContentObjectStatus.created || object?.status === ContentObjectStatus.processing;
+
+    // Check if PDF rendition exists for Office documents
+    const metadata = object.metadata as DocumentMetadata;
+    const pdfRendition = metadata?.renditions?.find(r => r.name === PDF_RENDITION_NAME);
 
     // Determine initial panel view
     const getInitialView = (): PanelView => {
@@ -311,6 +317,49 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     // Show PDF processing panel when workflow is running
     const showPdfProcessing = isPdf && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
 
+    // Office document PDF conversion state
+    // URL will be set by useEffect after resolving from source, or from getRendition response
+    const [officePdfUrl, setOfficePdfUrl] = useState<string | undefined>();
+    const [officePdfConverting, setOfficePdfConverting] = useState(false);
+    const [officePdfError, setOfficePdfError] = useState<string | undefined>();
+
+    // Trigger PDF conversion for Office documents
+    const triggerOfficePdfConversion = async () => {
+        if (!isPreviewableAsPdfDoc || officePdfConverting) return;
+
+        setOfficePdfConverting(true);
+        setOfficePdfError(undefined);
+
+        const pollForPdf = async () => {
+            try {
+                const response = await client.objects.getRendition(object.id, {
+                    format: MarkdownRenditionFormat.pdf,
+                    generate_if_missing: true,
+                    sign_url: true,
+                });
+
+                if (response.status === "generating") {
+                    // Poll every 5 seconds
+                    setTimeout(pollForPdf, 5000);
+                } else if (response.status === "found" && response.renditions?.length) {
+                    setOfficePdfUrl(response.renditions[0]);
+                    setOfficePdfConverting(false);
+                    // Refetch to update metadata with new rendition
+                    refetch?.();
+                } else if (response.status === "failed") {
+                    setOfficePdfError("PDF conversion failed");
+                    setOfficePdfConverting(false);
+                }
+            } catch (err) {
+                console.error("Failed to convert Office document to PDF:", err);
+                setOfficePdfError("Failed to convert to PDF");
+                setOfficePdfConverting(false);
+            }
+        };
+
+        await pollForPdf();
+    };
+
     const textContainerRef = useRef<HTMLDivElement | null>(null);
 
     return (
@@ -356,6 +405,22 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                                 PDF
                             </Button>
                         }
+                        {isPreviewableAsPdfDoc && (
+                            <Button
+                                variant={currentPanel === PanelView.Pdf ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View as PDF"
+                                onClick={() => {
+                                    setCurrentPanel(PanelView.Pdf);
+                                    if (!officePdfUrl && !officePdfConverting) {
+                                        triggerOfficePdfConversion();
+                                    }
+                                }}
+                                disabled={officePdfConverting}
+                            >
+                                {officePdfConverting ? <Spinner size="sm" /> : "PDF"}
+                            </Button>
+                        )}
                     </div>
                     <PdfActions object={object} />
                 </div>
@@ -375,7 +440,35 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                 ) : currentPanel === PanelView.Video ? (
                     <VideoPanel object={object} />
                 ) : currentPanel === PanelView.Pdf ? (
-                    <PdfPreviewPanel object={object} />
+                    isPdf ? (
+                        <PdfPreviewPanel object={object} />
+                    ) : isPreviewableAsPdfDoc ? (
+                        officePdfConverting ? (
+                            <div className="flex flex-col justify-center items-center flex-1 gap-2">
+                                <Spinner size="lg" />
+                                <span className="text-muted">Converting to PDF...</span>
+                            </div>
+                        ) : officePdfError ? (
+                            <div className="flex flex-col justify-center items-center flex-1 gap-2 text-destructive">
+                                <AlertTriangle className="size-8" />
+                                <span>{officePdfError}</span>
+                            </div>
+                        ) : pdfRendition ? (
+                            <div className="h-[calc(100vh-210px)]">
+                                <SimplePdfViewer source={pdfRendition.content?.source} className="h-full" />
+                            </div>
+                        ) : officePdfUrl ? (
+                            <div className="h-[calc(100vh-210px)]">
+                                <SimplePdfViewer url={officePdfUrl} className="h-full" />
+                            </div>
+                        ) : (
+                            <div className="flex flex-col justify-center items-center flex-1 gap-2">
+                                <Button onClick={triggerOfficePdfConversion}>
+                                    Convert to PDF
+                                </Button>
+                            </div>
+                        )
+                    ) : null
                 ) : showPdfProcessing ? (
                     <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} />
                 ) : (

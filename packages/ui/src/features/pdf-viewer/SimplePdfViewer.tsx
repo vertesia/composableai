@@ -6,8 +6,12 @@ import { useEffect, useState } from "react";
 import { PdfPageSlider } from "./PdfPageSlider";
 
 interface SimplePdfViewerProps {
-    /** The content object containing the PDF */
-    object: ContentObject;
+    /** The content object containing the PDF (optional if url or source is provided) */
+    object?: ContentObject;
+    /** Direct signed URL to the PDF (ready to use, no resolution needed) */
+    url?: string;
+    /** Storage source path that needs to be resolved to a download URL */
+    source?: string;
     /** Additional CSS class names */
     className?: string;
 }
@@ -17,24 +21,32 @@ interface SimplePdfViewerProps {
  * Fetches the PDF URL from the content object and displays it using PdfThumbnailSlider.
  * Does not depend on any magic-pdf context.
  */
-export function SimplePdfViewer({ object, className }: SimplePdfViewerProps) {
+export function SimplePdfViewer({ object, url, source, className }: SimplePdfViewerProps) {
     const { client } = useUserSession();
     const [currentPage, setCurrentPage] = useState(1);
-    const [pdfUrl, setPdfUrl] = useState<string>("");
-    const [pdfUrlLoading, setPdfUrlLoading] = useState(true);
+    const [pdfUrl, setPdfUrl] = useState<string>(url || "");
+    const [pdfUrlLoading, setPdfUrlLoading] = useState(!url);
     const [pageCount, setPageCount] = useState(0);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
-    // Fetch the PDF URL from the content object
+    // Fetch the PDF URL - priority: url > source > object.content.source
     useEffect(() => {
-        const source = object.content?.source;
-        if (!source) {
+        // If url prop is provided, use it directly (already signed)
+        if (url) {
+            setPdfUrl(url);
+            setPdfUrlLoading(false);
+            return;
+        }
+
+        // Determine the source to resolve
+        const sourceToResolve = source || object?.content?.source;
+        if (!sourceToResolve) {
             setPdfUrlLoading(false);
             return;
         }
 
         setPdfUrlLoading(true);
-        client.files.getDownloadUrl(source)
+        client.files.getDownloadUrl(sourceToResolve)
             .then((result) => {
                 setPdfUrl(result.url);
             })
@@ -44,12 +56,12 @@ export function SimplePdfViewer({ object, className }: SimplePdfViewerProps) {
             .finally(() => {
                 setPdfUrlLoading(false);
             });
-    }, [object.content?.source, client]);
+    }, [url, source, object?.content?.source, client]);
 
     // Get page count from metadata or default to a reasonable number
     useEffect(() => {
         // Try to get page count from metadata
-        const metadata = object.metadata as { pages?: number; page_count?: number } | undefined;
+        const metadata = object?.metadata as { pages?: number; page_count?: number } | undefined;
         const count = metadata?.pages || metadata?.page_count || 0;
 
         if (count > 0) {
@@ -58,7 +70,7 @@ export function SimplePdfViewer({ object, className }: SimplePdfViewerProps) {
             // Default to 1 page - the PdfThumbnailList will update this when the PDF loads
             setPageCount(1);
         }
-    }, [object.metadata]);
+    }, [object?.metadata]);
 
     if (pdfUrlLoading) {
         return (
