@@ -1,11 +1,15 @@
-import { Button, Center } from "@vertesia/ui/core";
+import { Button, Center, VTooltip } from "@vertesia/ui/core";
 import clsx from "clsx";
-import { ChevronsDown, ChevronsUp } from "lucide-react";
+import { ChevronsDown, ChevronsUp, Maximize, Minus, Plus } from "lucide-react";
 import { useRef, useEffect, useState, useCallback, KeyboardEvent } from "react";
 import { PdfThumbnailList } from "./PdfPageRenderer";
 
 // A4 portrait aspect ratio - used as fallback
 const A4_ASPECT_RATIO = 210 / 297;
+
+// Zoom levels as percentages (100 = fit to width)
+const ZOOM_LEVELS = [50, 75, 100, 125, 150, 200, 300];
+const DEFAULT_ZOOM = 100;
 
 interface PdfPageSliderProps {
     /** URL to the PDF file */
@@ -40,13 +44,33 @@ export function PdfPageSlider({
 }: PdfPageSliderProps) {
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const [thumbnailWidth, setThumbnailWidth] = useState<number | undefined>(undefined);
+    const [baseWidth, setBaseWidth] = useState<number | undefined>(undefined);
+    const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM);
     const [aspectRatio, setAspectRatio] = useState<number>(A4_ASPECT_RATIO);
     // Track the actual item height from PdfThumbnailList for accurate scroll calculations
     const [itemHeight, setItemHeight] = useState<number | null>(null);
 
     // Track the previous item height to preserve scroll position during resize
     const prevItemHeightRef = useRef<number | null>(null);
+
+    // Calculate thumbnail width based on zoom level
+    const thumbnailWidth = baseWidth ? Math.round(baseWidth * zoom / 100) : undefined;
+
+    const zoomIn = useCallback(() => {
+        const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        const nextIndex = Math.min(currentIndex + 1, ZOOM_LEVELS.length - 1);
+        setZoom(ZOOM_LEVELS[nextIndex]);
+    }, [zoom]);
+
+    const zoomOut = useCallback(() => {
+        const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoom);
+        const prevIndex = Math.max(currentIndex - 1, 0);
+        setZoom(ZOOM_LEVELS[prevIndex]);
+    }, [zoom]);
+
+    const fitToView = useCallback(() => {
+        setZoom(DEFAULT_ZOOM);
+    }, []);
 
     // Calculate item height based on placeholder height - this must match the renderThumbnail layout
     // padding (p-1=8 or p-2=16) + text height (~16-20 for compact, ~24 for normal) + gap (gap-1=4 or gap-2=8)
@@ -89,7 +113,7 @@ export function PdfPageSlider({
                 const newScrollTop = currentTopPage * newItemHeight;
 
                 // Update width first, then scroll
-                setThumbnailWidth(newWidth);
+                setBaseWidth(newWidth);
 
                 // Use requestAnimationFrame to scroll after the DOM updates
                 requestAnimationFrame(() => {
@@ -98,7 +122,7 @@ export function PdfPageSlider({
 
                 prevItemHeightRef.current = newItemHeight;
             } else {
-                setThumbnailWidth(newWidth);
+                setBaseWidth(newWidth);
                 prevItemHeightRef.current = getItemHeight(newWidth, aspectRatio);
             }
         };
@@ -106,7 +130,7 @@ export function PdfPageSlider({
         // Initial width update
         const initialWidth = getAvailableWidth();
         if (initialWidth > 0) {
-            setThumbnailWidth(initialWidth);
+            setBaseWidth(initialWidth);
             prevItemHeightRef.current = getItemHeight(initialWidth, aspectRatio);
         }
 
@@ -127,6 +151,42 @@ export function PdfPageSlider({
 
     // Track whether we're programmatically scrolling to avoid feedback loops
     const isProgrammaticScrollRef = useRef(false);
+
+    // Track pending zoom scroll - we need to wait for itemHeight to update after zoom change
+    const pendingZoomScrollRef = useRef<{ targetPage: number } | null>(null);
+
+    // When zoom changes, mark that we need to scroll after itemHeight updates
+    const prevZoomRef = useRef(zoom);
+    useEffect(() => {
+        if (prevZoomRef.current !== zoom) {
+            prevZoomRef.current = zoom;
+            // Mark that we need to scroll to current page after itemHeight updates
+            pendingZoomScrollRef.current = { targetPage: currentPage };
+            isProgrammaticScrollRef.current = true;
+        }
+    }, [zoom, currentPage]);
+
+    // When itemHeight changes (after zoom), perform the pending scroll
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        const pendingScroll = pendingZoomScrollRef.current;
+
+        if (pendingScroll && container && itemHeight) {
+            pendingZoomScrollRef.current = null;
+
+            // Calculate scroll position using the NEW itemHeight
+            const targetScrollTop = (pendingScroll.targetPage - 1) * itemHeight;
+
+            // Use requestAnimationFrame to ensure DOM is updated
+            requestAnimationFrame(() => {
+                container.scrollTo({ top: targetScrollTop, behavior: 'instant' });
+                // Reset after scroll completes
+                requestAnimationFrame(() => {
+                    isProgrammaticScrollRef.current = false;
+                });
+            });
+        }
+    }, [itemHeight]);
 
     // Jump to current page when it changes (user navigation)
     // Use a ref to track the previous page to avoid scrolling on resize
@@ -207,6 +267,16 @@ export function PdfPageSlider({
                 <Button variant="ghost" size="xs" onClick={goPrev} alt="Previous page">
                     <ChevronsUp className='size-4' />
                 </Button>
+                <div className="absolute left-2 flex items-center gap-x-1">
+                    <ZoomControls
+                        zoom={zoom}
+                        onZoomIn={zoomIn}
+                        onZoomOut={zoomOut}
+                        onFitToView={fitToView}
+                        canZoomIn={zoom < ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
+                        canZoomOut={zoom > ZOOM_LEVELS[0]}
+                    />
+                </div>
                 <div className="absolute right-2">
                     <PageNavigator currentPage={currentPage} totalPages={pageCount} onChange={onChange} />
                 </div>
@@ -296,6 +366,65 @@ function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps
                 className="w-8 h-5 text-center text-xs px-1 py-0 bg-background border border-border rounded focus:outline-none focus:border-primary"
             />
             <span>/ {totalPages}</span>
+        </div>
+    );
+}
+
+interface ZoomControlsProps {
+    zoom: number;
+    onZoomIn: () => void;
+    onZoomOut: () => void;
+    onFitToView: () => void;
+    canZoomIn: boolean;
+    canZoomOut: boolean;
+}
+function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZoomOut }: ZoomControlsProps) {
+    return (
+        <div className="flex items-center gap-x-0.5">
+            <VTooltip description="Zoom out" placement="bottom" size="xs">
+                <button
+                    className={clsx(
+                        "p-1 rounded cursor-pointer transition-colors",
+                        canZoomOut
+                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            : "text-muted-foreground/40 cursor-not-allowed"
+                    )}
+                    onClick={onZoomOut}
+                    disabled={!canZoomOut}
+                >
+                    <Minus className="size-4" />
+                </button>
+            </VTooltip>
+            <span className="text-xs text-muted-foreground min-w-[32px] text-center">
+                {zoom}%
+            </span>
+            <VTooltip description="Zoom in" placement="bottom" size="xs">
+                <button
+                    className={clsx(
+                        "p-1 rounded cursor-pointer transition-colors",
+                        canZoomIn
+                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            : "text-muted-foreground/40 cursor-not-allowed"
+                    )}
+                    onClick={onZoomIn}
+                    disabled={!canZoomIn}
+                >
+                    <Plus className="size-4" />
+                </button>
+            </VTooltip>
+            <VTooltip description="Fit to width" placement="bottom" size="xs">
+                <button
+                    className={clsx(
+                        "p-1 rounded cursor-pointer transition-colors",
+                        zoom !== DEFAULT_ZOOM
+                            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            : "text-muted-foreground/40"
+                    )}
+                    onClick={onFitToView}
+                >
+                    <Maximize className="size-4" />
+                </button>
+            </VTooltip>
         </div>
     );
 }
