@@ -8,8 +8,7 @@ import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-rea
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
 import { MagicPdfView } from "../../../magic-pdf";
-import { PdfPageProvider } from "../../../magic-pdf/PdfPageProvider";
-import { PageSlider } from "../../../magic-pdf/PageSlider";
+import { SimplePdfViewer } from "../../../pdf-viewer";
 
 // Maximum text size before cropping (128K characters)
 const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
@@ -973,18 +972,13 @@ function PdfActions({ object }: { object: ContentObject }) {
 }
 
 function PdfPreviewPanel({ object }: { object: ContentObject }) {
-    const [currentPage, setCurrentPage] = useState(1);
-
     return (
         <div className="h-[calc(100vh-210px)]">
-            <PdfPageProvider object={object}>
-                <PageSlider
-                    className="h-full"
-                    currentPage={currentPage}
-                    onChange={setCurrentPage}
-                    compact
-                />
-            </PdfPageProvider>
+            <SimplePdfViewer
+                object={object}
+                className="h-full"
+                compact
+            />
         </div>
     );
 }
