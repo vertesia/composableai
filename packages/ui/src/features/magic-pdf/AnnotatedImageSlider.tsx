@@ -1,6 +1,6 @@
-import { Button, Center } from "@vertesia/ui/core";
+import { Button, Center, VTooltip } from "@vertesia/ui/core";
 import clsx from "clsx";
-import { AtSignIcon, ChevronsDown, ChevronsUp, ImageIcon, InfoIcon, Loader2 } from "lucide-react";
+import { ChevronsDown, ChevronsUp, Image, Loader2, ScanSearch } from "lucide-react";
 import { useRef, KeyboardEvent, useState, useEffect } from "react";
 import { ImageType, useMagicPdfContext, PageImageProvider } from "./MagicPdfProvider";
 
@@ -8,20 +8,14 @@ interface AnnotatedImageSliderProps {
     currentPage: number;
     onChange: (pageNumber: number) => void;
     className?: string;
-    /** Whether to show original/instrumented images (markdown processor) or default/instrumented/annotated (xml processor) */
-    processorType: "xml" | "markdown";
 }
 
 /**
  * Image-based page slider that displays annotated/instrumented page images.
  * Used for XML processor to show annotated images instead of PDF thumbnails.
  */
-export function AnnotatedImageSlider({ className, currentPage, onChange, processorType }: AnnotatedImageSliderProps) {
-    const getDefaultImageType = (): ImageType => {
-        return processorType === "markdown" ? ImageType.original : ImageType.default;
-    };
-
-    const [imageType, setImageType] = useState<ImageType>(getDefaultImageType());
+export function AnnotatedImageSlider({ className, currentPage, onChange }: AnnotatedImageSliderProps) {
+    const [imageType, setImageType] = useState<ImageType>(ImageType.instrumented);
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const { imageProvider, count } = useMagicPdfContext();
@@ -59,51 +53,23 @@ export function AnnotatedImageSlider({ className, currentPage, onChange, process
                 <Button variant="ghost" size="xs" onClick={goPrev} alt="Previous page">
                     <ChevronsUp className='size-4' />
                 </Button>
-                <div className="absolute right-2 flex gap-x-1">
-                    {processorType === "markdown" ? (
-                        <>
-                            <ImageTypeButton
-                                type={ImageType.original}
-                                currentType={imageType}
-                                onClick={() => setImageType(ImageType.original)}
-                                icon={<ImageIcon className="size-4" />}
-                                title="Original images"
-                            />
-                            <ImageTypeButton
-                                type={ImageType.instrumented}
-                                currentType={imageType}
-                                onClick={() => setImageType(ImageType.instrumented)}
-                                icon={<InfoIcon className="size-4" />}
-                                title="Instrumented images"
-                            />
-                        </>
-                    ) : (
-                        <>
-                            <ImageTypeButton
-                                type={ImageType.default}
-                                currentType={imageType}
-                                onClick={() => setImageType(ImageType.default)}
-                                icon={<ImageIcon className="size-4" />}
-                                title="Default images"
-                            />
-                            <ImageTypeButton
-                                type={ImageType.instrumented}
-                                currentType={imageType}
-                                onClick={() => setImageType(ImageType.instrumented)}
-                                icon={<InfoIcon className="size-4" />}
-                                title="Instrumented images"
-                            />
-                            <ImageTypeButton
-                                type={ImageType.annotated}
-                                currentType={imageType}
-                                onClick={() => setImageType(ImageType.annotated)}
-                                icon={<AtSignIcon className="size-4" />}
-                                title="Annotated images"
-                            />
-                        </>
-                    )}
+                <div className="absolute left-2 flex gap-x-1">
+                    <ImageTypeButton
+                        type={ImageType.original}
+                        currentType={imageType}
+                        onClick={() => setImageType(ImageType.original)}
+                        icon={<Image className="size-4" />}
+                        tooltip="Original images"
+                    />
+                    <ImageTypeButton
+                        type={ImageType.instrumented}
+                        currentType={imageType}
+                        onClick={() => setImageType(ImageType.instrumented)}
+                        icon={<ScanSearch className="size-4" />}
+                        tooltip="Instrumented images"
+                    />
                 </div>
-                <div className="absolute left-2">
+                <div className="absolute right-2">
                     <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
                 </div>
             </div>
@@ -133,23 +99,24 @@ interface ImageTypeButtonProps {
     currentType: ImageType;
     onClick: () => void;
     icon: React.ReactNode;
-    title: string;
+    tooltip: string;
 }
-function ImageTypeButton({ type, currentType, onClick, icon, title }: ImageTypeButtonProps) {
+function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTypeButtonProps) {
     const isSelected = type === currentType;
     return (
-        <button
-            className={clsx(
-                "p-1 rounded cursor-pointer transition-colors",
-                isSelected
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            )}
-            onClick={onClick}
-            title={title}
-        >
-            {icon}
-        </button>
+        <VTooltip description={tooltip} placement="bottom" size="xs">
+            <button
+                className={clsx(
+                    "p-1 rounded cursor-pointer transition-colors",
+                    isSelected
+                        ? "text-primary bg-primary/10"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+                onClick={onClick}
+            >
+                {icon}
+            </button>
+        </VTooltip>
     );
 }
 

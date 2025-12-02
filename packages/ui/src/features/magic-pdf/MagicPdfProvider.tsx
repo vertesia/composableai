@@ -10,9 +10,7 @@ const DEFAULT_PAGE_COUNT = 10;
 const ADVANCED_PROCESSING_PREFIX = "magic-pdf";
 
 export enum ImageType {
-    default = 'default',
     original = 'original',
-    annotated = 'annotated',
     instrumented = 'instrumented',
 }
 
@@ -76,12 +74,8 @@ export class PageImageProvider {
     private getImagePath(page: number, type: ImageType): string {
         const basePath = `${ADVANCED_PROCESSING_PREFIX}/${this.objectId}/pages`;
         switch (type) {
-            case ImageType.default:
-                return `${basePath}/page-${page}.jpg`;
             case ImageType.original:
                 return `${basePath}/page-${page}.original.jpg`;
-            case ImageType.annotated:
-                return `${basePath}/page-${page}-annotated.jpg`;
             case ImageType.instrumented:
                 return `${basePath}/page-${page}.instrumented.jpg`;
         }
