@@ -2,7 +2,29 @@ import { Button, Center, VTooltip } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp, Image, Loader2, ScanSearch } from "lucide-react";
 import { useRef, KeyboardEvent, useState, useEffect } from "react";
-import { ImageType, useMagicPdfContext, PageImageProvider } from "./MagicPdfProvider";
+import { ImageType, useMagicPdfContext } from "./MagicPdfProvider";
+
+// Default aspect ratio (letter size) used before first image loads
+const DEFAULT_ASPECT_RATIO = 11 / 8.5; // height / width
+
+// Generate page order radiating outward from current page
+// e.g., if current=5 and total=10: [5, 6, 4, 7, 3, 8, 2, 9, 1, 10]
+function getPageLoadOrder(currentPage: number, totalPages: number): number[] {
+    const order: number[] = [currentPage];
+    let offset = 1;
+
+    while (order.length < totalPages) {
+        const next = currentPage + offset;
+        const prev = currentPage - offset;
+
+        if (next <= totalPages) order.push(next);
+        if (prev >= 1) order.push(prev);
+
+        offset++;
+    }
+
+    return order;
+}
 
 interface AnnotatedImageSliderProps {
     currentPage: number;
@@ -12,13 +34,70 @@ interface AnnotatedImageSliderProps {
 
 /**
  * Image-based page slider that displays annotated/instrumented page images.
- * Used for XML processor to show annotated images instead of PDF thumbnails.
+ * Progressively loads images starting from current page and radiating outward.
+ * Loads first image immediately to determine aspect ratio for stable layout.
  */
 export function AnnotatedImageSlider({ className, currentPage, onChange }: AnnotatedImageSliderProps) {
     const [imageType, setImageType] = useState<ImageType>(ImageType.instrumented);
+    const [aspectRatio, setAspectRatio] = useState<number>(DEFAULT_ASPECT_RATIO);
+    const [loadedUrls, setLoadedUrls] = useState<Map<number, string>>(new Map());
+    const loadedPagesRef = useRef<Set<number>>(new Set());
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const { imageProvider, count } = useMagicPdfContext();
+
+    // Load first image to determine aspect ratio
+    useEffect(() => {
+        imageProvider.getPageImageUrl(1, imageType)
+            .then((url) => {
+                const img = new window.Image();
+                img.onload = () => {
+                    if (img.width > 0 && img.height > 0) {
+                        setAspectRatio(img.height / img.width);
+                    }
+                };
+                img.src = url;
+            })
+            .catch(() => {
+                // Keep default aspect ratio on error
+            });
+    }, [imageProvider, imageType]);
+
+    // Progressive loading: load pages in parallel, prioritized from current page outward
+    useEffect(() => {
+        let cancelled = false;
+        const loadOrder = getPageLoadOrder(currentPage, count);
+
+        // Load all pages in parallel, but they're already prioritized by loadOrder
+        // The imageProvider handles deduplication via its pending map
+        const loadPage = async (page: number) => {
+            if (cancelled || loadedPagesRef.current.has(page)) return;
+
+            try {
+                const url = await imageProvider.getPageImageUrl(page, imageType);
+                if (!cancelled) {
+                    loadedPagesRef.current.add(page);
+                    setLoadedUrls(prev => new Map(prev).set(page, url));
+                }
+            } catch {
+                // Skip failed pages
+            }
+        };
+
+        // Start all loads in parallel - prioritized pages will update state first
+        // since they're fetched first in the loadOrder
+        loadOrder.forEach(page => loadPage(page));
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentPage, count, imageType, imageProvider]);
+
+    // Reset loaded URLs when image type changes
+    useEffect(() => {
+        loadedPagesRef.current = new Set();
+        setLoadedUrls(new Map());
+    }, [imageType]);
 
     // Jump to current page when it changes
     const prevPageRef = useRef(currentPage);
@@ -75,12 +154,12 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
             </div>
             <div ref={scrollContainerRef} className='flex flex-col items-center gap-2 flex-1 overflow-y-auto px-2'>
                 {Array.from({ length: count }, (_, index) => (
-                    <LazyPageThumbnail
+                    <PageThumbnail
                         key={index}
-                        imageProvider={imageProvider}
-                        imageType={imageType}
                         currentPage={currentPage}
                         pageNumber={index + 1}
+                        aspectRatio={aspectRatio}
+                        url={loadedUrls.get(index + 1)}
                         onSelect={() => onChange(index + 1)}
                     />
                 ))}
@@ -120,32 +199,15 @@ function ImageTypeButton({ type, currentType, onClick, icon, tooltip }: ImageTyp
     );
 }
 
-interface LazyPageThumbnailProps {
-    imageProvider: PageImageProvider;
-    imageType: ImageType;
+interface PageThumbnailProps {
     pageNumber: number;
     currentPage: number;
+    aspectRatio: number;
+    url?: string;
     onSelect: () => void;
 }
-function LazyPageThumbnail({ imageProvider, imageType, pageNumber, currentPage, onSelect }: LazyPageThumbnailProps) {
-    const [url, setUrl] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
+function PageThumbnail({ pageNumber, currentPage, aspectRatio, url, onSelect }: PageThumbnailProps) {
     const isSelected = pageNumber === currentPage;
-
-    useEffect(() => {
-        setLoading(true);
-        setError(false);
-        imageProvider.getPageImageUrl(pageNumber, imageType)
-            .then((imageUrl) => {
-                setUrl(imageUrl);
-                setLoading(false);
-            })
-            .catch(() => {
-                setError(true);
-                setLoading(false);
-            });
-    }, [imageProvider, pageNumber, imageType]);
 
     return (
         <div
@@ -154,19 +216,16 @@ function LazyPageThumbnail({ imageProvider, imageType, pageNumber, currentPage, 
         >
             <div
                 className={clsx(
-                    'relative border-[2px] cursor-pointer overflow-hidden min-h-[100px] flex items-center justify-center',
+                    'relative border-[2px] cursor-pointer overflow-hidden flex items-center justify-center bg-muted/50',
                     isSelected ? "border-primary" : "border-border"
                 )}
+                style={{ aspectRatio: `1 / ${aspectRatio}` }}
                 onClick={onSelect}
             >
-                {loading && (
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                )}
-                {error && !loading && (
-                    <span className="text-xs text-muted-foreground">Failed to load</span>
-                )}
-                {url && !loading && !error && (
+                {url ? (
                     <img src={url} alt={`Page ${pageNumber}`} className="w-full" />
+                ) : (
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 )}
             </div>
             <Center className="text-sm text-muted-foreground pt-1 font-semibold">{pageNumber}</Center>
