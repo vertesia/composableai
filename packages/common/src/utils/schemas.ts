@@ -6,8 +6,8 @@ import { PopulatedPromptSegmentDef, PromptSegmentDef, PromptSegmentDefType, Prom
 
 
 // Remove custom properties from the JSON before sending further down execution pipeline
-export function removeExtraProperties<T>(schema?: T): T | undefined {
-    if (!schema) return undefined;
+export function removeExtraProperties<T>(schema: T): T {
+    if (!schema) return schema;
     if (Array.isArray(schema)) {
         for (const item of schema) {
             removeExtraProperties(item);
