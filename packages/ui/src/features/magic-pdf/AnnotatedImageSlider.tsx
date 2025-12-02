@@ -1,15 +1,8 @@
 import { Button, Center } from "@vertesia/ui/core";
 import clsx from "clsx";
-import { AtSignIcon, ChevronsDown, ChevronsUp, ImageIcon, InfoIcon } from "lucide-react";
+import { AtSignIcon, ChevronsDown, ChevronsUp, ImageIcon, InfoIcon, Loader2 } from "lucide-react";
 import { useRef, KeyboardEvent, useState, useEffect } from "react";
-import { useMagicPdfContext } from "./MagicPdfProvider";
-
-enum ImageType {
-    default,
-    original,
-    instrumented,
-    annotated,
-}
+import { ImageType, useMagicPdfContext, PageImageProvider } from "./MagicPdfProvider";
 
 interface AnnotatedImageSliderProps {
     currentPage: number;
@@ -31,7 +24,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange, process
     const [imageType, setImageType] = useState<ImageType>(getDefaultImageType());
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const { urls, originalUrls, annotatedUrls, instrumentedUrls, count } = useMagicPdfContext();
+    const { imageProvider, count } = useMagicPdfContext();
 
     // Jump to current page when it changes
     const prevPageRef = useRef(currentPage);
@@ -59,10 +52,6 @@ export function AnnotatedImageSlider({ className, currentPage, onChange, process
             onChange(currentPage + 1);
         }
     };
-
-    const actualUrls = imageType === ImageType.instrumented ? instrumentedUrls :
-        (imageType === ImageType.annotated ? annotatedUrls :
-            (imageType === ImageType.original ? originalUrls : urls));
 
     return (
         <div ref={ref} className={clsx('flex flex-col items-stretch gap-y-2', className)}>
@@ -119,10 +108,11 @@ export function AnnotatedImageSlider({ className, currentPage, onChange, process
                 </div>
             </div>
             <div ref={scrollContainerRef} className='flex flex-col items-center gap-2 flex-1 overflow-y-auto px-2'>
-                {actualUrls.map((url, index) => (
-                    <PageThumbnail
+                {Array.from({ length: count }, (_, index) => (
+                    <LazyPageThumbnail
                         key={index}
-                        url={url}
+                        imageProvider={imageProvider}
+                        imageType={imageType}
                         currentPage={currentPage}
                         pageNumber={index + 1}
                         onSelect={() => onChange(index + 1)}
@@ -163,14 +153,33 @@ function ImageTypeButton({ type, currentType, onClick, icon, title }: ImageTypeB
     );
 }
 
-interface PageThumbnailProps {
-    url: string;
+interface LazyPageThumbnailProps {
+    imageProvider: PageImageProvider;
+    imageType: ImageType;
     pageNumber: number;
     currentPage: number;
     onSelect: () => void;
 }
-function PageThumbnail({ url, pageNumber, currentPage, onSelect }: PageThumbnailProps) {
+function LazyPageThumbnail({ imageProvider, imageType, pageNumber, currentPage, onSelect }: LazyPageThumbnailProps) {
+    const [url, setUrl] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
     const isSelected = pageNumber === currentPage;
+
+    useEffect(() => {
+        setLoading(true);
+        setError(false);
+        imageProvider.getPageImageUrl(pageNumber, imageType)
+            .then((imageUrl) => {
+                setUrl(imageUrl);
+                setLoading(false);
+            })
+            .catch(() => {
+                setError(true);
+                setLoading(false);
+            });
+    }, [imageProvider, pageNumber, imageType]);
+
     return (
         <div
             className="p-2 hover:bg-muted rounded-md w-full"
@@ -178,12 +187,20 @@ function PageThumbnail({ url, pageNumber, currentPage, onSelect }: PageThumbnail
         >
             <div
                 className={clsx(
-                    'relative border-[2px] cursor-pointer overflow-hidden',
+                    'relative border-[2px] cursor-pointer overflow-hidden min-h-[100px] flex items-center justify-center',
                     isSelected ? "border-primary" : "border-border"
                 )}
                 onClick={onSelect}
             >
-                <img src={url} alt={`Page ${pageNumber}`} className="w-full" />
+                {loading && (
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                )}
+                {error && !loading && (
+                    <span className="text-xs text-muted-foreground">Failed to load</span>
+                )}
+                {url && !loading && !error && (
+                    <img src={url} alt={`Page ${pageNumber}`} className="w-full" />
+                )}
             </div>
             <Center className="text-sm text-muted-foreground pt-1 font-semibold">{pageNumber}</Center>
         </div>
