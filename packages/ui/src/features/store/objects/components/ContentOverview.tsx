@@ -53,6 +53,93 @@ function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
         doc.head.appendChild(node.cloneNode(true));
     });
 
+    // Add dedicated print styles so markdown exports (especially tables)
+    // look good and are independent from the app theme.
+    const printStyle = doc.createElement("style");
+    printStyle.textContent = `
+@media print {
+  body {
+    margin: 24px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #111827;
+    background-color: #ffffff;
+  }
+
+  .vprose {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .vprose h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 1.5rem 0 0.75rem;
+  }
+
+  .vprose h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 1.25rem 0 0.75rem;
+  }
+
+  .vprose h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+  }
+
+  .vprose p {
+    margin: 0 0 0.5rem;
+  }
+
+  .vprose ul,
+  .vprose ol {
+    margin: 0.5rem 0 0.5rem 1.5rem;
+    padding: 0;
+  }
+
+  .vprose li {
+    margin: 0.25rem 0;
+  }
+
+  .vprose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+
+  .vprose th,
+  .vprose td {
+    border: 1px solid #d1d5db;
+    padding: 0.5rem 0.75rem;
+    vertical-align: top;
+  }
+
+  .vprose thead th {
+    background-color: #f3f4f6;
+    font-weight: 600;
+  }
+
+  .vprose pre,
+  .vprose code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 12px;
+  }
+
+  .vprose pre {
+    padding: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+    `;
+    doc.head.appendChild(printStyle);
+
     doc.body.innerHTML = sourceElement.innerHTML;
     iframeWindow.focus();
     iframeWindow.print();

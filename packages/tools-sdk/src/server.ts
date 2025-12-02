@@ -14,7 +14,8 @@ import { SkillCollection } from "./SkillCollection.js";
 import { ToolCollection } from "./ToolCollection.js";
 import type {
     SkillDefinition,
-    ToolCollectionDefinition
+    ToolCollectionDefinition,
+    ToolDefinition
 } from "./types.js";
 
 /**
@@ -139,6 +140,82 @@ export function createToolServer(config: ToolServerConfig): Hono {
                 interactions: interactions.map(col => `${prefix}/interactions/${col.name}`),
                 mcp: mcpProviders.map(p => `${prefix}/mcp/${p.name}`),
             }
+        });
+    });
+
+    // ================== Aggregate Endpoints ==================
+    // These must be registered BEFORE collection-specific routes
+
+    // GET /api/skills - Returns all skills from all collections
+    app.get(`${prefix}/skills`, (c) => {
+        const url = new URL(c.req.url);
+        const allSkills: ToolDefinition[] = [];
+
+        for (const coll of skills) {
+            allSkills.push(...coll.getToolDefinitions());
+        }
+
+        return c.json({
+            src: `${url.origin}${url.pathname}`,
+            title: 'All Skills',
+            description: 'All available skills across all collections',
+            tools: allSkills,
+            collections: skills.map(s => ({
+                name: s.name,
+                title: s.title,
+                description: s.description,
+            })),
+        } satisfies ToolCollectionDefinition & { collections: any[] });
+    });
+
+    // GET /api/tools - Returns all tools from all collections
+    app.get(`${prefix}/tools`, (c) => {
+        const url = new URL(c.req.url);
+        const allTools: ToolDefinition[] = [];
+
+        for (const coll of tools) {
+            allTools.push(...coll.getToolDefinitions());
+        }
+
+        return c.json({
+            src: `${url.origin}${url.pathname}`,
+            title: 'All Tools',
+            description: 'All available tools across all collections',
+            tools: allTools,
+            collections: tools.map(t => ({
+                name: t.name,
+                title: t.title,
+                description: t.description,
+            })),
+        } satisfies ToolCollectionDefinition & { collections: any[] });
+    });
+
+    // GET /api/interactions - Returns all interactions from all collections
+    app.get(`${prefix}/interactions`, (c) => {
+        const allInteractions: CatalogInteractionRef[] = [];
+
+        for (const coll of interactions) {
+            for (const inter of coll.interactions) {
+                allInteractions.push({
+                    type: "app",
+                    id: inter.name,
+                    name: inter.name,
+                    title: inter.title || inter.name,
+                    description: inter.description,
+                    tags: inter.tags || [],
+                });
+            }
+        }
+
+        return c.json({
+            title: 'All Interactions',
+            description: 'All available interactions across all collections',
+            interactions: allInteractions,
+            collections: interactions.map(i => ({
+                name: i.name,
+                title: i.title,
+                description: i.description,
+            })),
         });
     });
 
