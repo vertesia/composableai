@@ -3,11 +3,11 @@ import { Button, ErrorBox, ResizableHandle, ResizablePanel, ResizablePanelGroup,
 import { useUserSession } from "@vertesia/ui/session";
 import { X } from "lucide-react";
 import { Component, ErrorInfo, ReactNode, useState } from "react";
+import { PdfPageSlider } from "../pdf-viewer/PdfPageSlider";
+import { AnnotatedImageSlider } from "./AnnotatedImageSlider";
 import { DownloadPopover } from "./DownloadPopover";
-import { ImageSlider } from "./ImageSlider";
-import { PageSlider } from "./PageSlider";
-import { PdfPageProvider, usePdfPagesInfo } from "./PdfPageProvider";
-import { TextPageView } from "./TextPageView";
+import { ExtractedContentView } from "./ExtractedContentView";
+import { MagicPdfProvider, useMagicPdfContext } from "./MagicPdfProvider";
 import { ViewType } from "./types";
 
 // Error boundary for PDF view
@@ -90,9 +90,9 @@ export function MagicPdfView({ objectId, onClose }: MagicPdfViewProps) {
     return (
         <PdfViewErrorBoundary onClose={onClose}>
             <div className='fixed inset-0 bg-background z-50 flex items-center justify-center'>
-                <PdfPageProvider object={object}>
+                <MagicPdfProvider object={object}>
                     <MagicPdfViewImpl object={object} onClose={onClose} />
-                </PdfPageProvider >
+                </MagicPdfProvider>
             </div>
         </PdfViewErrorBoundary>
     );
@@ -103,7 +103,7 @@ interface _MagicPdfViewProps {
     onClose?: () => void;
 }
 function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
-    const { count: totalPages } = usePdfPagesInfo();
+    const { count: totalPages, pdfUrl, pdfUrlLoading } = useMagicPdfContext();
 
     const getProcessorType = (): "xml" | "markdown" => {
         if (object.metadata?.type === "document") {
@@ -124,7 +124,7 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
         return (
             <ResizablePanelGroup direction="horizontal" className="absolute inset-0">
                 <ResizablePanel defaultSize={50} minSize={20} maxSize={80} className="bg-muted">
-                    <ImageSlider
+                    <AnnotatedImageSlider
                         className="h-full"
                         currentPage={pageNumber}
                         onChange={setPageNumber}
@@ -157,7 +157,7 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                     </div>
                     {/* Content */}
                     <div className="flex-1 overflow-auto px-2">
-                        <TextPageView pageNumber={pageNumber} viewType={viewType} />
+                        <ExtractedContentView pageNumber={pageNumber} viewType={viewType} />
                     </div>
                 </ResizablePanel>
             </ResizablePanelGroup>
@@ -168,7 +168,14 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
     return (
         <ResizablePanelGroup direction="horizontal" className="absolute inset-0">
             <ResizablePanel defaultSize={50} minSize={20} maxSize={80} className="bg-muted">
-                <PageSlider className="h-full" currentPage={pageNumber} onChange={setPageNumber} />
+                <PdfPageSlider
+                        pdfUrl={pdfUrl}
+                        pdfUrlLoading={pdfUrlLoading}
+                        pageCount={totalPages}
+                        className="h-full"
+                        currentPage={pageNumber}
+                        onChange={setPageNumber}
+                    />
             </ResizablePanel>
             <ResizableHandle className="w-[4px] bg-border cursor-ew-resize" />
             <ResizablePanel defaultSize={50} minSize={20} className="flex flex-col">
@@ -195,7 +202,7 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                 </div>
                 {/* Content */}
                 <div className="flex-1 overflow-auto px-2">
-                    <TextPageView pageNumber={pageNumber} viewType="markdown" />
+                    <ExtractedContentView pageNumber={pageNumber} viewType="markdown" />
                 </div>
             </ResizablePanel>
         </ResizablePanelGroup>

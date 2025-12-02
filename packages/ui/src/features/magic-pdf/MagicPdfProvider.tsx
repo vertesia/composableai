@@ -10,7 +10,7 @@ import React, { createContext, useEffect, useState } from "react";
 const DEFAULT_PAGE_COUNT = 10;
 const ADVANCED_PROCESSING_PREFIX = "magic-pdf";
 
-interface PdfPagesInfo {
+interface MagicPdfContextValue {
     count: number;
     urls: string[];
     originalUrls: string[];
@@ -128,15 +128,15 @@ function extractMarkdownPages(content: string, totalPages: number): string[] {
     return pages;
 }
 
-const PdfPageContext = createContext<PdfPagesInfo | undefined>(undefined);
+const MagicPdfContext = createContext<MagicPdfContextValue | undefined>(undefined);
 
-interface PdfPageProviderProps {
+interface MagicPdfProviderProps {
     object: ContentObject;
     children: React.ReactNode;
 }
-export function PdfPageProvider({ children, object }: PdfPageProviderProps) {
+export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
     const { client } = useUserSession();
-    const [info, setInfo] = useState<PdfPagesInfo | undefined>(() => {
+    const [info, setInfo] = useState<MagicPdfContextValue | undefined>(() => {
         // For markdown processor, create initial info immediately (synchronously)
         const isMarkdownProcessor = (object.metadata as DocumentMetadata)?.content_processor?.type === 'markdown';
         if (isMarkdownProcessor) {
@@ -184,15 +184,15 @@ export function PdfPageProvider({ children, object }: PdfPageProviderProps) {
             }
         } else {
             // For non-markdown processors, use the original async loading
-            getPdfPagesInfo(client, object, page_count).then(setInfo);
+            getMagicPdfContextValue(client, object, page_count).then(setInfo);
         }
     }, [object.id, client]);
 
     return (
         info && (
-            <PdfPageContext.Provider value={info}>
+            <MagicPdfContext.Provider value={info}>
                 {children}
-            </PdfPageContext.Provider>
+            </MagicPdfContext.Provider>
         )
     );
 }
@@ -294,11 +294,11 @@ function getLayoutUrlForPage(
     );
 }
 
-async function getPdfPagesInfo(
+async function getMagicPdfContextValue(
     vertesia: VertesiaClient,
     object: ContentObject,
     page_count: number,
-): Promise<PdfPagesInfo> {
+): Promise<MagicPdfContextValue> {
     // Get the original PDF URL from content source
     let pdfUrl = '';
     if (object.content?.source) {
@@ -370,11 +370,11 @@ async function getPdfPagesInfo(
     };
 }
 
-export function usePdfPagesInfo() {
-    const context = React.useContext(PdfPageContext);
+export function useMagicPdfContext() {
+    const context = React.useContext(MagicPdfContext);
     if (!context) {
         throw new Error(
-            "usePdfPagesInfo must be used within a PdfPageProvider",
+            "useMagicPdfContext must be used within a MagicPdfProvider",
         );
     }
     return context;

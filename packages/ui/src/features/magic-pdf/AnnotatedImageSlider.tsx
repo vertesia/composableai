@@ -2,7 +2,7 @@ import { Button, Center } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { AtSignIcon, ChevronsDown, ChevronsUp, ImageIcon, InfoIcon } from "lucide-react";
 import { useRef, KeyboardEvent, useState, useEffect } from "react";
-import { usePdfPagesInfo } from "./PdfPageProvider";
+import { useMagicPdfContext } from "./MagicPdfProvider";
 
 enum ImageType {
     default,
@@ -11,7 +11,7 @@ enum ImageType {
     annotated,
 }
 
-interface ImageSliderProps {
+interface AnnotatedImageSliderProps {
     currentPage: number;
     onChange: (pageNumber: number) => void;
     className?: string;
@@ -23,7 +23,7 @@ interface ImageSliderProps {
  * Image-based page slider that displays annotated/instrumented page images.
  * Used for XML processor to show annotated images instead of PDF thumbnails.
  */
-export function ImageSlider({ className, currentPage, onChange, processorType }: ImageSliderProps) {
+export function AnnotatedImageSlider({ className, currentPage, onChange, processorType }: AnnotatedImageSliderProps) {
     const getDefaultImageType = (): ImageType => {
         return processorType === "markdown" ? ImageType.original : ImageType.default;
     };
@@ -31,7 +31,7 @@ export function ImageSlider({ className, currentPage, onChange, processorType }:
     const [imageType, setImageType] = useState<ImageType>(getDefaultImageType());
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const { urls, originalUrls, annotatedUrls, instrumentedUrls, count } = usePdfPagesInfo();
+    const { urls, originalUrls, annotatedUrls, instrumentedUrls, count } = useMagicPdfContext();
 
     // Jump to current page when it changes
     const prevPageRef = useRef(currentPage);

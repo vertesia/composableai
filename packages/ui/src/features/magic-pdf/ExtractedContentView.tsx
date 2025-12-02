@@ -1,7 +1,7 @@
 import { JSONCode, XMLViewer, MarkdownRenderer } from '@vertesia/ui/widgets';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from "react";
-import { usePdfPagesInfo } from "./PdfPageProvider";
+import { useMagicPdfContext } from "./MagicPdfProvider";
 import { ViewType } from "./types";
 
 function LoadingSpinner({ className }: { className?: string }) {
@@ -13,11 +13,11 @@ function LoadingSpinner({ className }: { className?: string }) {
 }
 
 
-interface TextPageViewProps {
+interface ExtractedContentViewProps {
     pageNumber: number;
     viewType: ViewType;
 }
-export function TextPageView({ viewType, pageNumber }: TextPageViewProps) {
+export function ExtractedContentView({ viewType, pageNumber }: ExtractedContentViewProps) {
     switch (viewType) {
         case "json":
             return <JsonPageLayoutView pageNumber={pageNumber} />;
@@ -32,7 +32,7 @@ interface XmlPageViewProps {
     pageNumber: number;
 }
 function XmlPageView({ pageNumber }: XmlPageViewProps) {
-    const { xmlPages: pages } = usePdfPagesInfo();
+    const { xmlPages: pages } = useMagicPdfContext();
     return (
         <div className="px-4 py-2">
             <XMLViewer xml={pages[pageNumber - 1]} collapsible />
@@ -47,7 +47,7 @@ function JsonPageLayoutView({ pageNumber }: JsonPageLayoutViewProps) {
     const [content, setContent] = useState<unknown>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { layoutProvider } = usePdfPagesInfo();
+    const { layoutProvider } = useMagicPdfContext();
 
     useEffect(() => {
         setLoading(true);
@@ -90,7 +90,7 @@ function MarkdownPageView({ pageNumber }: MarkdownPageViewProps) {
     const [content, setContent] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { markdownProvider } = usePdfPagesInfo();
+    const { markdownProvider } = useMagicPdfContext();
 
     useEffect(() => {
         setLoading(true);
