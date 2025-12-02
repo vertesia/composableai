@@ -44,6 +44,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
     const loadedPagesRef = useRef<Set<number>>(new Set());
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const isProgrammaticScrollRef = useRef(false);
     const { imageProvider, count } = useMagicPdfContext();
 
     // Load first image to determine aspect ratio
@@ -99,11 +100,15 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
         setLoadedUrls(new Map());
     }, [imageType]);
 
-    // Jump to current page when it changes
+    // Jump to current page when it changes (user navigation via buttons/input)
     const prevPageRef = useRef(currentPage);
     useEffect(() => {
         if (prevPageRef.current !== currentPage && scrollContainerRef.current) {
             prevPageRef.current = currentPage;
+
+            // Mark as programmatic scroll to avoid triggering onChange
+            isProgrammaticScrollRef.current = true;
+
             const thumbnail = scrollContainerRef.current.querySelector(`[data-page="${currentPage}"]`);
             if (thumbnail) {
                 thumbnail.scrollIntoView({
@@ -111,8 +116,63 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                     block: 'nearest',
                 });
             }
+
+            // Reset after a short delay to allow scroll event to fire
+            requestAnimationFrame(() => {
+                isProgrammaticScrollRef.current = false;
+            });
         }
     }, [currentPage]);
+
+    // Update current page based on scroll position (when user scrolls manually)
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        let scrollDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const handleScroll = () => {
+            // Skip if this is a programmatic scroll
+            if (isProgrammaticScrollRef.current) return;
+
+            // Debounce scroll updates
+            if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer);
+            scrollDebounceTimer = setTimeout(() => {
+                // Find the page element closest to the center of the viewport
+                const containerRect = container.getBoundingClientRect();
+                const containerCenter = containerRect.top + containerRect.height / 2;
+
+                let closestPage = currentPage;
+                let closestDistance = Infinity;
+
+                for (let i = 1; i <= count; i++) {
+                    const pageEl = container.querySelector(`[data-page="${i}"]`);
+                    if (pageEl) {
+                        const pageRect = pageEl.getBoundingClientRect();
+                        const pageCenter = pageRect.top + pageRect.height / 2;
+                        const distance = Math.abs(pageCenter - containerCenter);
+
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestPage = i;
+                        }
+                    }
+                }
+
+                if (closestPage !== currentPage) {
+                    prevPageRef.current = closestPage;
+                    onChange(closestPage);
+                }
+            }, 50);
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer);
+            container.removeEventListener('scroll', handleScroll);
+        };
+    }, [count, currentPage, onChange]);
 
     const goPrev = () => {
         if (currentPage > 1) {
