@@ -6,6 +6,7 @@ import { AuthTokenPayload } from "@vertesia/common";
 export interface EnvProps {
     name: string; // the app name
     version: string,
+    sdkVersion?: string, // the @vertesia/ui package version
     isLocalDev: boolean,
     isDocker: boolean,
     type: "production" | "staging" | "preview" | "development" | string,
@@ -51,6 +52,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     get version() {
         return this.prop("version");
+    }
+
+    get sdkVersion() {
+        return this._props?.sdkVersion;
     }
 
     get name() {

@@ -1,6 +1,5 @@
 import { Collection, ContentObjectType } from "@vertesia/common";
-import { Button, Panel, useToast } from "@vertesia/ui/core";
-import { TagsInput } from "@vertesia/ui/core";
+import { Button, Panel, TagsInput, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
 

@@ -10,6 +10,7 @@ import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
 import ProjectsApi from "./ProjectsApi.js";
+import SkillsApi from "./SkillsApi.js";
 import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
 import { RunsApi } from "./RunsApi.js";
@@ -310,6 +311,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     projects = new ProjectsApi(this);
     environments = new EnvironmentsApi(this);
     interactions = new InteractionsApi(this);
+    skills = new SkillsApi(this);
     prompts = new PromptsApi(this);
     runs = new RunsApi(this);
     account = new AccountApi(this);

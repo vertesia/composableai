@@ -19,7 +19,7 @@ interface AllMessagesMixedProps {
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
 }
 
-export default function AllMessagesMixed({
+function AllMessagesMixedComponent({
     messages,
     bottomRef,
     viewMode = 'stacked',
@@ -225,3 +225,7 @@ export default function AllMessagesMixed({
         </div>
     );
 }
+
+const AllMessagesMixed = React.memo(AllMessagesMixedComponent);
+
+export default AllMessagesMixed;

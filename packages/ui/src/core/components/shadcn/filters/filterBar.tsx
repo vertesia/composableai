@@ -330,6 +330,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
             )
           }
           <CommandList>
+            <CommandEmpty>No matching filters</CommandEmpty>
             <CommandGroup>
               {!selectedView ? getAvailableFilterGroups() : renderFilterOptions()}
             </CommandGroup>

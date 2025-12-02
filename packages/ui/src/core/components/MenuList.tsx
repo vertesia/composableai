@@ -7,7 +7,7 @@ interface MenuListProps {
 }
 export function MenuList({ className, children }: MenuListProps) {
     return (
-        <ul className={`${className} space-y-1 flex flex-col items-start dark:px-2`}>
+        <ul className={`${className} space-y-1 flex flex-col items-start`}>
             {children}
         </ul>
     )
@@ -21,11 +21,8 @@ interface MenuListItemProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
 const MenuListItem = forwardRef<HTMLAnchorElement, MenuListItemProps>(function _MenuListItem(props, ref) {
     const { current, children, className, href = '#', onClick, ...others } = props;
     return (
-        <li className={clsx(className, current ?
-            'bg-gray-50 text-indigo-600'
-            :
-            'text-gray-700 dark:dark:text-slate-300  hover:text-indigo-600 hover:bg-gray-50  dark:hover:bg-slate-800 dark:hover:text-slate-50 dark:border dark:border-transparent dark:hover:border-slate-50',
-            'w-full rounded-md p-2 pl-3 text-sm leading-6 font-semibold')}>
+        <li className={clsx(className, current ? 'bg-muted' : '',
+            'w-full p-2 pl-3 text-sm leading-6 font-semibold hover:bg-muted')}>
             <a ref={ref} href={href} onClick={(e) => {
                 if (onClick) {
                     e.preventDefault();
