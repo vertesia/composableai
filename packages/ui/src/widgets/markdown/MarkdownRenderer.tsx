@@ -98,35 +98,46 @@ export function MarkdownRenderer({
             const rawHref = href || "";
             const isArtifactLink = rawHref.startsWith("artifact:");
             const artifactPath = isArtifactLink ? rawHref.replace(/^artifact:/, "").trim() : "";
+            const isImageLink = rawHref.startsWith("image:");
+            const imagePath = isImageLink ? rawHref.replace(/^image:/, "").trim() : "";
             const [resolvedHref, setResolvedHref] = React.useState<string | undefined>(undefined);
 
             React.useEffect(() => {
                 let cancelled = false;
                 const resolve = async () => {
-                    if (!isArtifactLink) {
+                    if (!isArtifactLink && !isImageLink) {
                         setResolvedHref(undefined);
                         return;
                     }
                     try {
-                        // If we have a run id and the path looks like a shorthand (e.g. out/...), use artifact API.
-                        if (artifactRunId && !artifactPath.startsWith("agents/")) {
-                            const { url } = await client.files.getArtifactDownloadUrl(
-                                artifactRunId,
-                                artifactPath,
-                                "attachment",
-                            );
-                            if (!cancelled) {
-                                setResolvedHref(url);
+                        if (isArtifactLink) {
+                            // If we have a run id and the path looks like a shorthand (e.g. out/...), use artifact API.
+                            if (artifactRunId && !artifactPath.startsWith("agents/")) {
+                                const { url } = await client.files.getArtifactDownloadUrl(
+                                    artifactRunId,
+                                    artifactPath,
+                                    "attachment",
+                                );
+                                if (!cancelled) {
+                                    setResolvedHref(url);
+                                }
+                            } else {
+                                // Otherwise, treat it as a direct file path.
+                                const { url } = await client.files.getDownloadUrl(artifactPath);
+                                if (!cancelled) {
+                                    setResolvedHref(url);
+                                }
                             }
-                        } else {
-                            // Otherwise, treat it as a direct file path.
-                            const { url } = await client.files.getDownloadUrl(artifactPath);
+                        } else if (isImageLink) {
+                            // image:<path> is treated as a direct file path resolved via files API
+                            const { url } = await client.files.getDownloadUrl(imagePath);
                             if (!cancelled) {
                                 setResolvedHref(url);
                             }
                         }
                     } catch (err) {
-                        console.error("Failed to resolve artifact link in MarkdownRenderer:", artifactPath, err);
+                        const contextPath = isArtifactLink ? artifactPath : imagePath;
+                        console.error("Failed to resolve link in MarkdownRenderer:", contextPath, err);
                         if (!cancelled) {
                             setResolvedHref(undefined);
                         }
@@ -136,7 +147,7 @@ export function MarkdownRenderer({
                 return () => {
                     cancelled = true;
                 };
-            }, [isArtifactLink, artifactPath, artifactRunId, client]);
+            }, [isArtifactLink, artifactPath, isImageLink, imagePath, artifactRunId, client]);
 
             // Handle document://<id> links by mapping them to /store/objects/<id>
             if (rawHref.startsWith("document://")) {
@@ -159,13 +170,71 @@ export function MarkdownRenderer({
                 );
             }
 
+            // Handle store:<id> links by mapping them to /store/objects/<id>
+            if (rawHref.startsWith("store:")) {
+                const id = rawHref.replace(/^store:/, "").trim();
+                const mappedHref = id ? `/store/objects/${id}` : rawHref;
+
+                if (typeof ExistingLink === "function") {
+                    return <ExistingLink node={node} href={mappedHref} {...rest}>{children}</ExistingLink>;
+                }
+
+                return (
+                    <a
+                        href={mappedHref}
+                        {...rest}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {children}
+                    </a>
+                );
+            }
+
+            // Handle collection:<id> links by mapping them to /store/collections/<id>
+            if (rawHref.startsWith("collection:")) {
+                const id = rawHref.replace(/^collection:/, "").trim();
+                const mappedHref = id ? `/store/collections/${id}` : rawHref;
+
+                if (typeof ExistingLink === "function") {
+                    return <ExistingLink node={node} href={mappedHref} {...rest}>{children}</ExistingLink>;
+                }
+
+                return (
+                    <a
+                        href={mappedHref}
+                        {...rest}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {children}
+                    </a>
+                );
+            }
+
             // Defer to existing link component if provided and not an artifact: URL
-            if (!isArtifactLink && typeof ExistingLink === "function") {
+            if (!isArtifactLink && !isImageLink && typeof ExistingLink === "function") {
                 return <ExistingLink node={node} href={href} {...rest}>{children}</ExistingLink>;
             }
 
             // Handle artifact: links generically by resolving to a signed URL when possible.
             if (isArtifactLink) {
+                const finalHref = resolvedHref || "#";
+
+                return (
+                    <a
+                        href={finalHref}
+                        {...rest}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        {children}
+                    </a>
+                );
+            }
+
+            // Handle image: links by resolving to a signed URL when possible.
+            if (isImageLink) {
                 const finalHref = resolvedHref || "#";
 
                 return (
@@ -196,7 +265,9 @@ export function MarkdownRenderer({
         const ImageComponent = (props: { node?: any; src?: string; alt?: string }) => {
             const { node, src, alt, ...rest } = props as any;
             const rawSrc = src || "";
-            const isArtifactOrImageRef = rawSrc.startsWith("artifact:") || rawSrc.startsWith("image:");
+            const isArtifactRef = rawSrc.startsWith("artifact:");
+            const isImageRef = rawSrc.startsWith("image:");
+            const isArtifactOrImageRef = isArtifactRef || isImageRef;
             const path = isArtifactOrImageRef ? rawSrc.replace(/^artifact:/, "").replace(/^image:/, "").trim() : "";
             const [resolvedSrc, setResolvedSrc] = React.useState<string | undefined>(undefined);
 
@@ -208,17 +279,25 @@ export function MarkdownRenderer({
                         return;
                     }
                     try {
-                        // Allow shorthand artifact paths when we have a run id
-                        if (artifactRunId && !path.startsWith("agents/")) {
-                            const { url } = await client.files.getArtifactDownloadUrl(
-                                artifactRunId,
-                                path,
-                                "inline",
-                            );
-                            if (!cancelled) {
-                                setResolvedSrc(url);
+                        if (isArtifactRef) {
+                            // Allow shorthand artifact paths when we have a run id
+                            if (artifactRunId && !path.startsWith("agents/")) {
+                                const { url } = await client.files.getArtifactDownloadUrl(
+                                    artifactRunId,
+                                    path,
+                                    "inline",
+                                );
+                                if (!cancelled) {
+                                    setResolvedSrc(url);
+                                }
+                            } else {
+                                const { url } = await client.files.getDownloadUrl(path);
+                                if (!cancelled) {
+                                    setResolvedSrc(url);
+                                }
                             }
-                        } else {
+                        } else if (isImageRef) {
+                            // image:<path> is always resolved via files API
                             const { url } = await client.files.getDownloadUrl(path);
                             if (!cancelled) {
                                 setResolvedSrc(url);
