@@ -2,12 +2,12 @@ import { Button, Center } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
 import { useRef, useEffect, useState, useCallback, KeyboardEvent } from "react";
-import { PdfThumbnailList } from "../magic-pdf/PdfPageRenderer";
+import { PdfThumbnailList } from "./PdfPageRenderer";
 
 // A4 portrait aspect ratio - used as fallback
 const A4_ASPECT_RATIO = 210 / 297;
 
-interface PdfThumbnailSliderProps {
+interface PdfPageSliderProps {
     /** URL to the PDF file */
     pdfUrl: string;
     /** Whether the PDF URL is still loading */
@@ -29,7 +29,7 @@ interface PdfThumbnailSliderProps {
  * Displays a vertical list of PDF page thumbnails with navigation controls.
  * Does not depend on any context - all data is passed via props.
  */
-export function PdfThumbnailSlider({
+export function PdfPageSlider({
     pdfUrl,
     pdfUrlLoading = false,
     pageCount,
@@ -37,7 +37,7 @@ export function PdfThumbnailSlider({
     onChange,
     className,
     compact = false
-}: PdfThumbnailSliderProps) {
+}: PdfPageSliderProps) {
     const ref = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [thumbnailWidth, setThumbnailWidth] = useState<number | undefined>(undefined);

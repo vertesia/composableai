@@ -4,6 +4,7 @@ import { useUserSession } from "@vertesia/ui/session";
 import { X } from "lucide-react";
 import { Component, ErrorInfo, ReactNode, useState } from "react";
 import { DownloadPopover } from "./DownloadPopover";
+import { ImageSlider } from "./ImageSlider";
 import { PageSlider } from "./PageSlider";
 import { PdfPageProvider, usePdfPagesInfo } from "./PdfPageProvider";
 import { TextPageView } from "./TextPageView";
@@ -104,28 +105,66 @@ interface _MagicPdfViewProps {
 function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
     const { count: totalPages } = usePdfPagesInfo();
 
-    const getInitialViewType = (): ViewType => {
+    const getProcessorType = (): "xml" | "markdown" => {
         if (object.metadata?.type === "document") {
             const docMetadata = object.metadata as DocumentMetadata;
-            const processorType = docMetadata.content_processor?.type;
-            if (processorType === "markdown") return "markdown";
-            if (processorType === "xml") return "xml";
+            const type = docMetadata.content_processor?.type;
+            if (type === "markdown") return "markdown";
         }
         return "xml"; // default
     };
 
-    const getProcessorType = (): string => {
-        if (object.metadata?.type === "document") {
-            const docMetadata = object.metadata as DocumentMetadata;
-            return docMetadata.content_processor?.type || "xml";
-        }
-        return "xml"; // default
-    };
-
-    const [viewType, setViewType] = useState<ViewType>(getInitialViewType());
+    const [viewType, setViewType] = useState<ViewType>("xml");
     const [pageNumber, setPageNumber] = useState(1);
     const processorType = getProcessorType();
 
+    // XML processor: ImageSlider (annotated images) on left, XML/JSON/Markdown text on right
+    // Markdown processor: PageSlider (PDF thumbnails) on left, Markdown on right
+    if (processorType === "xml") {
+        return (
+            <ResizablePanelGroup direction="horizontal" className="absolute inset-0">
+                <ResizablePanel defaultSize={50} minSize={20} maxSize={80} className="bg-muted">
+                    <ImageSlider
+                        className="h-full"
+                        currentPage={pageNumber}
+                        onChange={setPageNumber}
+                        processorType="xml"
+                    />
+                </ResizablePanel>
+                <ResizableHandle className="w-[4px] bg-border cursor-ew-resize" />
+                <ResizablePanel defaultSize={50} minSize={20} className="flex flex-col">
+                    {/* Header */}
+                    <div className="flex h-9 items-center justify-between shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
+                        <div className="flex items-center gap-x-2">
+                            <DownloadPopover object={object} />
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                            Page {pageNumber} / {totalPages}
+                        </span>
+                        <div className="flex items-center gap-x-2">
+                            <ContentSwitcher type={viewType} onSwitch={setViewType} />
+                            {!!onClose && (
+                                <Button
+                                    variant="ghost"
+                                    size="xs"
+                                    onClick={onClose}
+                                    alt="Close"
+                                >
+                                    <X className='size-4' />
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                    {/* Content */}
+                    <div className="flex-1 overflow-auto px-2">
+                        <TextPageView pageNumber={pageNumber} viewType={viewType} />
+                    </div>
+                </ResizablePanel>
+            </ResizablePanelGroup>
+        );
+    }
+
+    // Markdown processor: PDF thumbnails on left, Markdown on right
     return (
         <ResizablePanelGroup direction="horizontal" className="absolute inset-0">
             <ResizablePanel defaultSize={50} minSize={20} maxSize={80} className="bg-muted">
@@ -142,7 +181,6 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                         Page {pageNumber} / {totalPages}
                     </span>
                     <div className="flex items-center gap-x-2">
-                        {processorType === "xml" && <ContentSwitcher type={viewType} onSwitch={setViewType} />}
                         {!!onClose && (
                             <Button
                                 variant="ghost"
@@ -157,11 +195,11 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                 </div>
                 {/* Content */}
                 <div className="flex-1 overflow-auto px-2">
-                    <TextPageView pageNumber={pageNumber} viewType={viewType} />
+                    <TextPageView pageNumber={pageNumber} viewType="markdown" />
                 </div>
             </ResizablePanel>
         </ResizablePanelGroup>
-    )
+    );
 }
 
 

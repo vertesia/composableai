@@ -1,5 +1,5 @@
 import { usePdfPagesInfo } from "./PdfPageProvider";
-import { PdfThumbnailSlider } from "../pdf-viewer/PdfThumbnailSlider";
+import { PdfPageSlider } from "../pdf-viewer/PdfPageSlider";
 
 interface PageSliderProps {
     currentPage: number;
@@ -11,13 +11,13 @@ interface PageSliderProps {
 
 /**
  * PDF page slider that uses the PdfPageProvider context.
- * This is a thin wrapper around PdfThumbnailSlider that gets data from context.
+ * This is a thin wrapper around PdfPageSlider that gets data from context.
  */
 export function PageSlider({ className, currentPage, onChange, compact = false }: PageSliderProps) {
     const { pdfUrl, pdfUrlLoading, count } = usePdfPagesInfo();
 
     return (
-        <PdfThumbnailSlider
+        <PdfPageSlider
             pdfUrl={pdfUrl}
             pdfUrlLoading={pdfUrlLoading}
             pageCount={count}

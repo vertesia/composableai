@@ -1,2 +1,3 @@
+export * from './PdfPageRenderer';
+export * from './PdfPageSlider';
 export * from './SimplePdfViewer';
-export * from './PdfThumbnailSlider';

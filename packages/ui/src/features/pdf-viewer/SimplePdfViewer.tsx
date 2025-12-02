@@ -2,7 +2,7 @@ import { ContentObject } from "@vertesia/common";
 import { Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
-import { PdfThumbnailSlider } from "./PdfThumbnailSlider";
+import { PdfPageSlider } from "./PdfPageSlider";
 
 interface SimplePdfViewerProps {
     /** The content object containing the PDF */
@@ -75,7 +75,7 @@ export function SimplePdfViewer({ object, className }: SimplePdfViewerProps) {
     }
 
     return (
-        <PdfThumbnailSlider
+        <PdfPageSlider
             pdfUrl={pdfUrl}
             pdfUrlLoading={pdfUrlLoading}
             pageCount={pageCount || 100} // Use a high default if we don't know the count
