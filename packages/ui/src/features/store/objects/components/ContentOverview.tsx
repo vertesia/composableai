@@ -412,7 +412,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                                 alt="View as PDF"
                                 onClick={() => {
                                     setCurrentPanel(PanelView.Pdf);
-                                    if (!officePdfUrl && !officePdfConverting) {
+                                    if (!pdfRendition && !officePdfUrl && !officePdfConverting) {
                                         triggerOfficePdfConversion();
                                     }
                                 }}
