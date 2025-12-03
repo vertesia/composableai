@@ -3,7 +3,7 @@ import { useEffect, useState, memo, useRef, type RefObject } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME, MarkdownRenditionFormat } from "@vertesia/common";
+import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME, MarkdownRenditionFormat } from "@vertesia/common";
 import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
 import { isPreviewableAsPdf } from "../../../utils/mimeType.js";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
@@ -246,11 +246,15 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     // PDF processing state
     const [pdfProgress, setPdfProgress] = useState<DocAnalyzerProgress | undefined>();
     const [pdfStatus, setPdfStatus] = useState<WorkflowExecutionStatus | undefined>();
+    const [pdfOutputFormat, setPdfOutputFormat] = useState<DocProcessorOutputFormat | undefined>();
     const [processingComplete, setProcessingComplete] = useState(false);
 
-    // Poll for PDF processing status when object is created or processing
+    // Poll for PDF/document processing status when object is created or processing
+    // This applies to both native PDFs and Office documents that use semantic layer processing
+    const shouldPollProgress = (isPdf || isPreviewableAsPdfDoc) && isCreatedOrProcessing && !processingComplete;
+
     useEffect(() => {
-        if (!isPdf || !isCreatedOrProcessing || processingComplete) return;
+        if (!shouldPollProgress) return;
 
         let interrupted = false;
         function poll() {
@@ -258,6 +262,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
             client.objects.analyze(object.id).getStatus().then((r) => {
                 setPdfProgress(r.progress);
                 setPdfStatus(r.status);
+                setPdfOutputFormat(r.output_format ?? r.progress?.output_format);
                 if (r.status === WorkflowExecutionStatus.RUNNING) {
                     // Workflow is running, poll every 2 seconds for progress
                     if (!interrupted) {
@@ -276,7 +281,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         }
         poll();
         return () => { interrupted = true; };
-    }, [isPdf, isCreatedOrProcessing, processingComplete, object.id, client]);
+    }, [shouldPollProgress, object.id, client]);
 
     // Load text when requested or when processing completes
     const loadObjectText = () => {
@@ -314,8 +319,8 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         }
     }, [processingComplete, pdfStatus]);
 
-    // Show PDF processing panel when workflow is running
-    const showPdfProcessing = isPdf && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
+    // Show processing panel when workflow is running (for both PDFs and Office documents)
+    const showProcessingPanel = (isPdf || isPreviewableAsPdfDoc) && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
 
     // Office document PDF conversion state
     // URL will be set by useEffect after resolving from source, or from getRendition response
@@ -425,7 +430,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     </div>
                     <PdfActions object={object} />
                 </div>
-                {currentPanel === PanelView.Text && !showPdfProcessing && (
+                {currentPanel === PanelView.Text && !showProcessingPanel && (
                     <TextActions
                         object={object}
                         text={displayText}
@@ -477,8 +482,8 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                             </div>
                         )
                     ) : null
-                ) : showPdfProcessing ? (
-                    <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} />
+                ) : showProcessingPanel ? (
+                    <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
                 ) : (
                     isLoadingText ? (
                         <div className="flex justify-center items-center flex-1">
@@ -1143,7 +1148,7 @@ function PdfPreviewPanel({ object }: { object: ContentObject }) {
     );
 }
 
-function PdfProcessingPanel({ progress, status }: { progress?: DocAnalyzerProgress, status?: WorkflowExecutionStatus }) {
+function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: DocAnalyzerProgress, status?: WorkflowExecutionStatus, outputFormat?: DocProcessorOutputFormat }) {
     const statusColor = (() => {
         switch (status) {
             case WorkflowExecutionStatus.RUNNING:
@@ -1173,18 +1178,28 @@ function PdfProcessingPanel({ progress, status }: { progress?: DocAnalyzerProgre
         }
     })();
 
+    // Show detailed progress (tables, images, visuals) for XML processing
+    const isXmlProcessing = outputFormat === "xml";
+
+    // Ensure percent is a valid number (handle undefined and NaN from division by zero)
+    const percent = progress?.percent != null && !isNaN(progress.percent) ? progress.percent : 0;
+
     return (
         <div className="px-4 py-4">
             {progress && (
                 <div className="space-y-2">
                     <div className="flex flex-col gap-1">
-                        <ProgressLine name="Analyze Page" progress={progress.pages} />
-                        {/* <ProgressLine name="Extract Tables" progress={progress.tables} />
-                        <ProgressLine name="Describe Images" progress={progress.images} />
-                        <ProgressLine name="Process Visually" progress={progress.visuals} /> */}
+                        <ProgressLine name={isXmlProcessing ? "Analyze Layouts" : "Analyze Page"} progress={progress.pages} />
+                        {isXmlProcessing && (
+                            <>
+                                <ProgressLine name="Extract Tables" progress={progress.tables} />
+                                <ProgressLine name="Describe Images" progress={progress.images} />
+                                <ProgressLine name="Process Visually" progress={progress.visuals} />
+                            </>
+                        )}
                     </div>
                     <div className="pt-2 text-sm text-muted">
-                        Progress: {progress.percent}%
+                        Progress: {percent}%
                         <span className="px-2">&bull;</span>
                         <span className={statusColor}>{statusName}</span>
                         {progress.started_at && (
@@ -1194,7 +1209,7 @@ function PdfProcessingPanel({ progress, status }: { progress?: DocAnalyzerProgre
                             </>
                         )}
                     </div>
-                    <Progress percent={progress.percent} />
+                    <Progress percent={percent} />
                 </div>
             )}
             {!progress && (
