@@ -132,7 +132,7 @@ export function getTypeSignature(schema: JSONSchema): TypeSignature {
         typeName = getItemTypeName(schema.items);
     }
     let displayTypeName: string = typeName;
-    switch (schema.editor || schema.format) {
+    switch (schema.editor) {
         case 'textarea': {
             displayTypeName = 'text'; break;
         }
