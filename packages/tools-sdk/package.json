@@ -19,6 +19,9 @@
         "import": "./lib/esm/index.js",
         "require": "./lib/cjs/index.js"
     },
+    "bin": {
+        "tools-sdk-copy-assets": "./lib/esm/copy-assets.js"
+    },
     "devDependencies": {
         "@types/node": "^24.10.1",
         "ts-dual-module": "^0.6.3",
