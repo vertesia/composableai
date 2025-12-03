@@ -3,6 +3,7 @@ import { VertesiaClient } from "@vertesia/client";
 import {
     ContentObject,
     DocumentMetadata,
+    PDF_RENDITION_NAME,
 } from "@vertesia/common";
 import React, { createContext, useEffect, useState } from "react";
 
@@ -227,9 +228,15 @@ export function MagicPdfProvider({ children, object }: MagicPdfProviderProps) {
 
     useEffect(() => {
         if (isMarkdownProcessor) {
-            // For markdown processor, only fetch the PDF URL lazily
-            if (object.content?.source) {
-                client.store.objects.getDownloadUrl(object.content.source, undefined, 'inline')
+            // For markdown processor, fetch the PDF URL lazily
+            // Priority: PDF rendition > source (only if source is PDF)
+            const metadata = object.metadata as DocumentMetadata;
+            const pdfRendition = metadata?.renditions?.find(r => r.name === PDF_RENDITION_NAME);
+            const isPdfSource = object.content?.type === 'application/pdf';
+            const sourceToResolve = pdfRendition?.content?.source || (isPdfSource ? object.content?.source : undefined);
+
+            if (sourceToResolve) {
+                client.store.objects.getDownloadUrl(sourceToResolve, undefined, 'inline')
                     .then((response) => {
                         setInfo(prev => ({ ...prev, pdfUrl: response.url, pdfUrlLoading: false }));
                     })

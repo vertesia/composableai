@@ -14,7 +14,7 @@ function LoadingSpinner({ className, size = 'md' }: { className?: string; size?:
     };
     return (
         <div className={`flex items-center justify-center ${className || ''}`}>
-            <Loader2 className={`${sizeClasses[size]} animate-spin text-gray-400`} />
+            <Loader2 className={`${sizeClasses[size]} animate-spin text-muted-foreground`} />
         </div>
     );
 }
@@ -56,7 +56,7 @@ export function PdfPageRenderer({
 
     if (error) {
         return (
-            <div className={`flex items-center justify-center text-red-500 text-sm ${className || ''}`}>
+            <div className={`flex items-center justify-center text-destructive text-sm ${className || ''}`}>
                 Failed to load PDF
             </div>
         );
@@ -174,7 +174,7 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
 
     if (error) {
         return (
-            <div className="flex items-center justify-center text-red-500 text-sm py-4">
+            <div className="flex items-center justify-center text-destructive text-sm py-4">
                 Failed to load PDF
             </div>
         );
@@ -223,7 +223,7 @@ export function SimplePdfPage({ pageNumber, width, className }: SimplePdfPagePro
     if (context?.loading) {
         return (
             <div
-                className={`flex items-center justify-center bg-gray-100 dark:bg-gray-800 ${className || ''}`}
+                className={`flex items-center justify-center bg-muted ${className || ''}`}
                 style={{ height: placeholderHeight, width: width || '100%' }}
             >
                 <LoadingSpinner size="md" />
@@ -265,6 +265,8 @@ interface PdfThumbnailListProps {
     onItemHeightChange?: (itemHeight: number) => void;
     /** Custom function to calculate item height. Receives placeholder height and should return total item height. */
     calculateItemHeight?: (placeholderHeight: number) => number;
+    /** Callback when actual page count is determined from the PDF. Useful when initial count is estimated. */
+    onPageCountChange?: (pageCount: number) => void;
 }
 
 /**
@@ -324,7 +326,7 @@ function VirtualizedThumbnail({
             renderAnnotationLayer={false}
             loading={
                 <div
-                    className="flex items-center justify-center bg-gray-100 dark:bg-gray-800"
+                    className="flex items-center justify-center bg-muted"
                     style={{ height: placeholderHeight }}
                 >
                     <LoadingSpinner size="sm" />
@@ -333,10 +335,10 @@ function VirtualizedThumbnail({
         />
     ) : (
         <div
-            className="flex items-center justify-center bg-gray-100 dark:bg-gray-800"
+            className="flex items-center justify-center bg-muted"
             style={{ height: placeholderHeight, width: width || '100%' }}
         >
-            <span className="text-gray-400 text-xs">{pageNumber}</span>
+            <span className="text-muted-foreground text-xs">{pageNumber}</span>
         </div>
     );
 
@@ -384,7 +386,8 @@ export function PdfThumbnailList({
     scrollContainerRef,
     onAspectRatioChange,
     onItemHeightChange,
-    calculateItemHeight
+    calculateItemHeight,
+    onPageCountChange
 }: PdfThumbnailListProps) {
     const [error, setError] = useState<Error | null>(null);
     const [visibleRange, setVisibleRange] = useState({ start: 0, end: Math.min(15, pageCount) });
@@ -396,8 +399,11 @@ export function PdfThumbnailList({
         setError(err);
     }, []);
 
-    // Get actual page dimensions from PDF on load
+    // Get actual page dimensions and count from PDF on load
     const handleLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
+        // Report actual page count from PDF
+        onPageCountChange?.(pdf.numPages);
+
         try {
             const page = await pdf.getPage(1);
             const viewport = page.getViewport({ scale: 1 });
@@ -410,7 +416,7 @@ export function PdfThumbnailList({
             setAspectRatio(A4_ASPECT_RATIO);
             onAspectRatioChange?.(A4_ASPECT_RATIO);
         }
-    }, [onAspectRatioChange]);
+    }, [onAspectRatioChange, onPageCountChange]);
 
     // Use A4 as fallback if aspect ratio not yet determined
     const effectiveAspectRatio = aspectRatio ?? A4_ASPECT_RATIO;
@@ -469,7 +475,7 @@ export function PdfThumbnailList({
 
     if (error) {
         return (
-            <div className="flex items-center justify-center text-red-500 text-sm py-4">
+            <div className="flex items-center justify-center text-destructive text-sm py-4">
                 Failed to load PDF
             </div>
         );
@@ -575,7 +581,7 @@ export function PdfDocumentRenderer({
 
     if (error) {
         return (
-            <div className={`flex items-center justify-center text-red-500 ${className || ''}`}>
+            <div className={`flex items-center justify-center text-destructive ${className || ''}`}>
                 <span>Failed to load PDF: {error.message}</span>
             </div>
         );
