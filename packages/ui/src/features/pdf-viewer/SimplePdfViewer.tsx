@@ -58,19 +58,22 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
             });
     }, [url, source, object?.content?.source, client]);
 
-    // Get page count from metadata or default to a reasonable number
+    // Get initial page count from metadata, but actual count will be updated when PDF loads
     useEffect(() => {
-        // Try to get page count from metadata
+        // Try to get page count from metadata as initial estimate
         const metadata = object?.metadata as { pages?: number; page_count?: number } | undefined;
         const count = metadata?.pages || metadata?.page_count || 0;
 
         if (count > 0) {
             setPageCount(count);
-        } else {
-            // Default to 1 page - the PdfThumbnailList will update this when the PDF loads
-            setPageCount(1);
         }
+        // If no metadata, keep pageCount at 0 - it will be set when PDF loads
     }, [object?.metadata]);
+
+    // Callback to update page count when PDF loads
+    const handlePageCountChange = (count: number) => {
+        setPageCount(count);
+    };
 
     if (pdfUrlLoading) {
         return (
@@ -105,6 +108,7 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
                     pageCount={pageCount || 100}
                     currentPage={currentPage}
                     onChange={setCurrentPage}
+                    onPageCountChange={handlePageCountChange}
                     className="flex-1 min-h-0"
                 />
             </div>
@@ -119,6 +123,7 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
                 pageCount={pageCount || 100}
                 currentPage={currentPage}
                 onChange={setCurrentPage}
+                onPageCountChange={handlePageCountChange}
                 className={className}
                 compact
                 headerExtra={

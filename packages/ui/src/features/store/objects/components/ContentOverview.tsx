@@ -345,8 +345,8 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                 } else if (response.status === "found" && response.renditions?.length) {
                     setOfficePdfUrl(response.renditions[0]);
                     setOfficePdfConverting(false);
-                    // Refetch to update metadata with new rendition
-                    refetch?.();
+                    // Note: Not calling refetch() here to avoid resetting UI state
+                    // The PDF URL is already available from the getRendition response
                 } else if (response.status === "failed") {
                     setOfficePdfError("PDF conversion failed");
                     setOfficePdfConverting(false);
@@ -432,6 +432,13 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                         fullText={fullText}
                         handleCopyContent={handleCopyContent}
                         textContainerRef={textContainerRef}
+                    />
+                )}
+                {currentPanel === PanelView.Pdf && isPreviewableAsPdfDoc && (pdfRendition || officePdfUrl) && (
+                    <OfficePdfActions
+                        object={object}
+                        pdfRendition={pdfRendition}
+                        officePdfUrl={officePdfUrl}
                     />
                 )}
             </div>
@@ -1062,6 +1069,66 @@ function PdfActions({ object }: { object: ContentObject }) {
                 </Portal>
             )}
         </>
+    );
+}
+
+function OfficePdfActions({
+    object,
+    pdfRendition,
+    officePdfUrl,
+}: {
+    object: ContentObject;
+    pdfRendition?: { name: string; content: { source?: string } };
+    officePdfUrl?: string;
+}) {
+    const { client } = useUserSession();
+    const toast = useToast();
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleDownloadPdf = async () => {
+        setIsDownloading(true);
+        try {
+            let downloadUrl = officePdfUrl;
+
+            // If we have a rendition source but no signed URL yet, get a signed URL
+            if (!downloadUrl && pdfRendition?.content?.source) {
+                const response = await client.files.getDownloadUrl(
+                    pdfRendition.content.source,
+                    `${object.name || 'document'}.pdf`,
+                    'attachment'
+                );
+                downloadUrl = response.url;
+            }
+
+            if (downloadUrl) {
+                // Open in new tab - browser will handle as download due to content-disposition
+                window.open(downloadUrl, '_blank');
+            }
+        } catch (err) {
+            console.error('Failed to download PDF:', err);
+            toast({
+                status: 'error',
+                title: 'Download failed',
+                description: 'Failed to download the PDF file',
+                duration: 5000,
+            });
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-2">
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDownloadPdf}
+                disabled={isDownloading}
+                title="Download PDF"
+            >
+                {isDownloading ? <Spinner size="sm" /> : <Download className="size-4" />}
+            </Button>
+        </div>
     );
 }
 
