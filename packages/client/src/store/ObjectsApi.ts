@@ -364,6 +364,7 @@ export class ObjectsApi extends ApiTopic {
             max_hw: options.max_hw,
             generate_if_missing: options.generate_if_missing,
             sign_url: options.sign_url,
+            block_on_generation: options.block_on_generation,
         };
 
         return this.get(`/${documentId}/renditions/${options.format}`, {
