@@ -3,153 +3,154 @@ import { useEffect, useState, memo, useRef, type RefObject } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME, MarkdownRenditionFormat } from "@vertesia/common";
+import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME } from "@vertesia/common";
 import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
-import { isPreviewableAsPdf } from "../../../utils/mimeType.js";
+import { isPreviewableAsPdf, printElementToPdf, getWorkflowStatusColor, getWorkflowStatusName } from "../../../utils/index.js";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
 import { NavLink } from "@vertesia/ui/router";
 import { MagicPdfView } from "../../../magic-pdf";
 import { SimplePdfViewer } from "../../../pdf-viewer";
+import { useObjectText, usePdfProcessingStatus, useOfficePdfConversion } from "./useContentPanelHooks.js";
 
-// Maximum text size before cropping (128K characters)
-const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
+// Web-supported image formats for browser display
+const WEB_SUPPORTED_IMAGE_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+
+// Web-supported video formats for browser display
+const WEB_SUPPORTED_VIDEO_FORMATS = ['video/mp4', 'video/webm'];
+
+// Panel height constants for consistent layout
+const PANEL_HEIGHTS = {
+    /** Main resizable panel group */
+    main: "h-[calc(100vh-208px)]",
+    /** Properties panel content area */
+    properties: "h-[calc(100vh-228px)]",
+    /** Text/PDF content panel */
+    content: "h-[calc(100vh-218px)]",
+    /** Video max height */
+    video: "max-h-[calc(100vh-268px)]",
+} as const;
+
+// ----- Type Definitions -----
+
+interface TextActionsProps {
+    object: ContentObject;
+    text: string | undefined;
+    fullText: string | undefined;
+    handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>;
+    textContainerRef: RefObject<HTMLDivElement | null>;
+}
+
+interface TextPanelProps {
+    object: ContentObject;
+    text: string | undefined;
+    isTextCropped: boolean;
+    textContainerRef: RefObject<HTMLDivElement | null>;
+}
+
+interface OfficePdfPreviewPanelProps {
+    pdfRendition?: { content?: { source?: string } };
+    officePdfUrl?: string;
+    officePdfConverting: boolean;
+    officePdfError?: string;
+    onConvert: () => void;
+}
+
+interface OfficePdfActionsProps {
+    object: ContentObject;
+    pdfRendition?: { name: string; content: { source?: string } };
+    officePdfUrl?: string;
+}
+
+// ----- Markdown Components Configuration -----
+
+/** Common props for markdown component overrides */
+interface MarkdownComponentProps {
+    node?: unknown;
+    children?: React.ReactNode;
+}
+
+/**
+ * Custom markdown components for the content overview.
+ * Handles internal links to store objects and provides consistent styling.
+ */
+const createMarkdownComponents = () => ({
+    a: ({ node, ...props }: MarkdownComponentProps & { href?: string }) => {
+        const href = props.href || "";
+        if (href.includes("/store/objects/")) {
+            return (
+                <NavLink topLevelNav href={href} className="text-info">
+                    {props.children}
+                </NavLink>
+            );
+        }
+        return <a {...props} target="_blank" rel="noopener noreferrer" />;
+    },
+    p: ({ node, ...props }: MarkdownComponentProps) => (
+        <p {...props} className="my-0" />
+    ),
+    pre: ({ node, ...props }: MarkdownComponentProps) => (
+        <pre {...props} className="my-2 p-2 rounded" />
+    ),
+    code: ({ node, className, children, ...props }: MarkdownComponentProps & { className?: string }) => {
+        const match = /language-(\w+)/.exec(className || "");
+        const isInline = !match;
+        return (
+            <code
+                {...props}
+                className={isInline ? "px-1.5 py-0.5 rounded" : "text-muted"}
+            >
+                {children}
+            </code>
+        );
+    },
+    h1: ({ node, ...props }: MarkdownComponentProps) => (
+        <h1 {...props} className="font-bold text-2xl my-2" />
+    ),
+    h2: ({ node, ...props }: MarkdownComponentProps) => (
+        <h2 {...props} className="font-bold text-xl my-2" />
+    ),
+    h3: ({ node, ...props }: MarkdownComponentProps) => (
+        <h3 {...props} className="font-bold text-lg my-2" />
+    ),
+    li: ({ node, ...props }: MarkdownComponentProps) => <li {...props} />,
+});
+
+/**
+ * Check if an object is in created or processing status.
+ */
+function isCreatedOrProcessingStatus(status?: ContentObjectStatus): boolean {
+    return status === ContentObjectStatus.created || status === ContentObjectStatus.processing;
+}
+
+/**
+ * Get the content processor type from object metadata.
+ */
+function getContentProcessorType(object: ContentObject): string | undefined {
+    return (object.metadata as DocumentMetadata)?.content_processor?.type;
+}
+
+/**
+ * Check if text content appears to be markdown based on common patterns.
+ */
+function looksLikeMarkdown(text: string | undefined): boolean {
+    if (!text) return false;
+    return (
+        text.includes("\n# ") ||
+        text.includes("\n## ") ||
+        text.includes("\n### ") ||
+        text.includes("\n* ") ||
+        text.includes("\n- ") ||
+        text.includes("\n+ ") ||
+        text.includes("![") ||
+        text.includes("](")
+    );
+}
 
 enum PanelView {
     Text = "text",
     Image = "image",
     Video = "video",
     Pdf = "pdf"
-}
-
-function printElementToPdf(sourceElement: HTMLElement, title: string): boolean {
-    if (typeof window === "undefined" || typeof document === "undefined") {
-        return false;
-    }
-
-    // Use a hidden iframe to avoid opening a new window
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
-    iframe.style.visibility = "hidden";
-    document.body.appendChild(iframe);
-
-    const iframeWindow = iframe.contentWindow;
-    if (!iframeWindow) {
-        iframe.parentNode?.removeChild(iframe);
-        return false;
-    }
-
-    const doc = iframeWindow.document;
-    doc.open();
-    doc.write(`<!doctype html><html><head><title>${title}</title></head><body></body></html>`);
-    doc.close();
-    doc.title = title;
-
-    const styles = document.querySelectorAll<HTMLLinkElement | HTMLStyleElement>("link[rel=\"stylesheet\"], style");
-    styles.forEach((node) => {
-        doc.head.appendChild(node.cloneNode(true));
-    });
-
-    // Add dedicated print styles so markdown exports (especially tables)
-    // look good and are independent from the app theme.
-    const printStyle = doc.createElement("style");
-    printStyle.textContent = `
-@media print {
-  body {
-    margin: 24px;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #111827;
-    background-color: #ffffff;
-  }
-
-  .vprose {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-
-  .vprose h1 {
-    font-size: 24px;
-    font-weight: 700;
-    margin: 1.5rem 0 0.75rem;
-  }
-
-  .vprose h2 {
-    font-size: 20px;
-    font-weight: 600;
-    margin: 1.25rem 0 0.75rem;
-  }
-
-  .vprose h3 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 1rem 0 0.5rem;
-  }
-
-  .vprose p {
-    margin: 0 0 0.5rem;
-  }
-
-  .vprose ul,
-  .vprose ol {
-    margin: 0.5rem 0 0.5rem 1.5rem;
-    padding: 0;
-  }
-
-  .vprose li {
-    margin: 0.25rem 0;
-  }
-
-  .vprose table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-  }
-
-  .vprose th,
-  .vprose td {
-    border: 1px solid #d1d5db;
-    padding: 0.5rem 0.75rem;
-    vertical-align: top;
-  }
-
-  .vprose thead th {
-    background-color: #f3f4f6;
-    font-weight: 600;
-  }
-
-  .vprose pre,
-  .vprose code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    font-size: 12px;
-  }
-
-  .vprose pre {
-    padding: 0.75rem;
-    border-radius: 4px;
-    border: 1px solid #e5e7eb;
-    background-color: #f9fafb;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-}
-    `;
-    doc.head.appendChild(printStyle);
-
-    doc.body.innerHTML = sourceElement.innerHTML;
-    iframeWindow.focus();
-    iframeWindow.print();
-
-    setTimeout(() => {
-        iframe.parentNode?.removeChild(iframe);
-    }, 1000);
-
-    return true;
 }
 
 interface ContentOverviewProps {
@@ -189,7 +190,7 @@ export function ContentOverview({
 
     return (
         <>
-            <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-200px)]">
+            <ResizablePanelGroup direction="horizontal" className={PANEL_HEIGHTS.main}>
                 <ResizablePanel className="min-w-[100px]">
                     <PropertiesPanel object={object} refetch={refetch ?? (() => Promise.resolve())} handleCopyContent={handleCopyContent} />
                 </ResizablePanel>
@@ -271,7 +272,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 
             {
                 object.properties ? (
-                    <div className="h-[calc(100vh-220px)] overflow-auto px-2">
+                    <div className={`${PANEL_HEIGHTS.properties} overflow-auto px-2`}>
                         <JSONDisplay
                             value={object.properties}
                             viewCode={viewCode}
@@ -279,7 +280,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
                         />
                     </div>
                 ) : (
-                    <div className="h-[calc(100vh-220px)] overflow-auto px-2">
+                    <div className={`${PANEL_HEIGHTS.properties} overflow-auto px-2`}>
                         <div>No properties defined</div>
                     </div>
                 )
@@ -296,13 +297,11 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 }
 
 function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, refetch?: () => Promise<unknown> }) {
-    const { store, client } = useUserSession();
-
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
     const isPdf = object?.content?.type === 'application/pdf';
     const isPreviewableAsPdfDoc = object?.content?.type ? isPreviewableAsPdf(object.content.type) : false;
-    const isCreatedOrProcessing = object?.status === ContentObjectStatus.created || object?.status === ContentObjectStatus.processing;
+    const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
 
     // Check if PDF rendition exists for Office documents
     const metadata = object.metadata as DocumentMetadata;
@@ -317,141 +316,40 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
 
     const [currentPanel, setCurrentPanel] = useState<PanelView>(getInitialView());
 
-    // Store full text and cropped text separately
-    const [fullText, setFullText] = useState<string | undefined>(object.text);
-    const [displayText, setDisplayText] = useState<string | undefined>(() => {
-        if (object.text && object.text.length > MAX_TEXT_DISPLAY_SIZE) {
-            return object.text.substring(0, MAX_TEXT_DISPLAY_SIZE);
-        }
-        return object.text;
-    });
-    const [isLoadingText, setIsLoadingText] = useState<boolean>(false);
-    const [isTextCropped, setIsTextCropped] = useState<boolean>(
-        () => !!object.text && object.text.length > MAX_TEXT_DISPLAY_SIZE
-    );
-
-    // PDF processing state
-    const [pdfProgress, setPdfProgress] = useState<DocAnalyzerProgress | undefined>();
-    const [pdfStatus, setPdfStatus] = useState<WorkflowExecutionStatus | undefined>();
-    const [pdfOutputFormat, setPdfOutputFormat] = useState<DocProcessorOutputFormat | undefined>();
-    const [processingComplete, setProcessingComplete] = useState(false);
+    // Use custom hooks for text loading, PDF processing, and Office conversion
+    const {
+        fullText,
+        displayText,
+        isLoading: isLoadingText,
+        isCropped: isTextCropped,
+    } = useObjectText(object.id, object.text, loadText);
 
     // Poll for PDF/document processing status when object is created or processing
-    // This applies to both native PDFs and Office documents that use semantic layer processing
-    const shouldPollProgress = (isPdf || isPreviewableAsPdfDoc) && isCreatedOrProcessing && !processingComplete;
+    const shouldPollProgress = (isPdf || isPreviewableAsPdfDoc) && isCreatedOrProcessing;
+    const {
+        progress: pdfProgress,
+        status: pdfStatus,
+        outputFormat: pdfOutputFormat,
+        isComplete: processingComplete,
+    } = usePdfProcessingStatus(object.id, shouldPollProgress);
 
-    useEffect(() => {
-        if (!shouldPollProgress) return;
-
-        let interrupted = false;
-        function poll() {
-            if (interrupted) return;
-            client.objects.analyze(object.id).getStatus().then((r) => {
-                setPdfProgress(r.progress);
-                setPdfStatus(r.status);
-                setPdfOutputFormat(r.output_format ?? r.progress?.output_format);
-                if (r.status === WorkflowExecutionStatus.RUNNING) {
-                    // Workflow is running, poll every 2 seconds for progress
-                    if (!interrupted) {
-                        setTimeout(poll, 2000);
-                    }
-                } else {
-                    // Workflow completed or terminal state
-                    setProcessingComplete(true);
-                }
-            }).catch(() => {
-                // No workflow found yet, poll every 10 seconds to check if one starts
-                if (!interrupted) {
-                    setTimeout(poll, 10000);
-                }
-            });
-        }
-        poll();
-        return () => { interrupted = true; };
-    }, [shouldPollProgress, object.id, client]);
-
-    // Load text when requested or when processing completes
-    const loadObjectText = () => {
-        setIsLoadingText(true);
-        store.objects
-            .getObjectText(object.id)
-            .then((res) => {
-                setFullText(res.text);
-                if (res.text.length > MAX_TEXT_DISPLAY_SIZE) {
-                    setDisplayText(res.text.substring(0, MAX_TEXT_DISPLAY_SIZE));
-                    setIsTextCropped(true);
-                } else {
-                    setDisplayText(res.text);
-                    setIsTextCropped(false);
-                }
-            })
-            .catch((err) => {
-                console.error("Failed to load text", err);
-            })
-            .finally(() => {
-                setIsLoadingText(false);
-            });
-    };
-
-    useEffect(() => {
-        if (loadText && !displayText) {
-            loadObjectText();
-        }
-    }, [loadText]);
+    // Office document PDF conversion
+    const {
+        pdfUrl: officePdfUrl,
+        isConverting: officePdfConverting,
+        error: officePdfError,
+        triggerConversion: triggerOfficePdfConversion,
+    } = useOfficePdfConversion(object.id, isPreviewableAsPdfDoc);
 
     // Reload object when PDF processing completes
     useEffect(() => {
         if (processingComplete && pdfStatus === WorkflowExecutionStatus.COMPLETED) {
             refetch?.();
         }
-    }, [processingComplete, pdfStatus]);
+    }, [processingComplete, pdfStatus, refetch]);
 
     // Show processing panel when workflow is running (for both PDFs and Office documents)
     const showProcessingPanel = (isPdf || isPreviewableAsPdfDoc) && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
-
-    // Office document PDF conversion state
-    // URL will be set by useEffect after resolving from source, or from getRendition response
-    const [officePdfUrl, setOfficePdfUrl] = useState<string | undefined>();
-    const [officePdfConverting, setOfficePdfConverting] = useState(false);
-    const [officePdfError, setOfficePdfError] = useState<string | undefined>();
-
-    // Trigger PDF conversion for Office documents
-    const triggerOfficePdfConversion = async () => {
-        if (!isPreviewableAsPdfDoc || officePdfConverting) return;
-
-        setOfficePdfConverting(true);
-        setOfficePdfError(undefined);
-
-        const pollForPdf = async (isFirstCall: boolean) => {
-            try {
-                const response = await client.objects.getRendition(object.id, {
-                    format: MarkdownRenditionFormat.pdf,
-                    generate_if_missing: isFirstCall, // Only trigger workflow on first call
-                    sign_url: true,
-                    block_on_generation: false,
-                });
-
-                if (response.status === "generating") {
-                    // Poll every 5 seconds
-                    setTimeout(() => pollForPdf(false), 5000);
-                } else if (response.status === "found" && response.renditions?.length) {
-                    setOfficePdfUrl(response.renditions[0]);
-                    setOfficePdfConverting(false);
-                    // Note: Not calling refetch() here to avoid resetting UI state
-                    // The PDF URL is already available from the getRendition response
-                } else if (response.status === "failed") {
-                    setOfficePdfError("PDF conversion failed");
-                    setOfficePdfConverting(false);
-                }
-            } catch (err) {
-                console.error("Failed to convert Office document to PDF:", err);
-                setOfficePdfError("Failed to convert to PDF");
-                setOfficePdfConverting(false);
-            }
-        };
-
-        await pollForPdf(true);
-    };
 
     const textContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -534,58 +432,40 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     />
                 )}
             </div>
-            {
-                currentPanel === PanelView.Image ? (
-                    <ImagePanel object={object} />
-                ) : currentPanel === PanelView.Video ? (
-                    <VideoPanel object={object} />
-                ) : currentPanel === PanelView.Pdf ? (
-                    isPdf ? (
-                        <PdfPreviewPanel object={object} />
-                    ) : isPreviewableAsPdfDoc ? (
-                        officePdfConverting ? (
-                            <div className="flex flex-col justify-center items-center flex-1 gap-2">
-                                <Spinner size="lg" />
-                                <span className="text-muted">Converting to PDF...</span>
-                            </div>
-                        ) : officePdfError ? (
-                            <div className="flex flex-col justify-center items-center flex-1 gap-2 text-destructive">
-                                <AlertTriangle className="size-8" />
-                                <span>{officePdfError}</span>
-                            </div>
-                        ) : pdfRendition ? (
-                            <div className="h-[calc(100vh-210px)]">
-                                <SimplePdfViewer source={pdfRendition.content?.source} className="h-full" />
-                            </div>
-                        ) : officePdfUrl ? (
-                            <div className="h-[calc(100vh-210px)]">
-                                <SimplePdfViewer url={officePdfUrl} className="h-full" />
-                            </div>
-                        ) : (
-                            <div className="flex flex-col justify-center items-center flex-1 gap-2">
-                                <Button onClick={triggerOfficePdfConversion}>
-                                    Convert to PDF
-                                </Button>
-                            </div>
-                        )
-                    ) : null
-                ) : showProcessingPanel ? (
-                    <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
-                ) : (
-                    isLoadingText ? (
-                        <div className="flex justify-center items-center flex-1">
-                            <Spinner size="lg" />
-                        </div>
-                    ) : (
-                        <TextPanel
-                            object={object}
-                            text={displayText}
-                            isTextCropped={isTextCropped}
-                            textContainerRef={textContainerRef}
-                        />
-                    )
-                )
-            }
+            {currentPanel === PanelView.Image && (
+                <ImagePanel object={object} />
+            )}
+            {currentPanel === PanelView.Video && (
+                <VideoPanel object={object} />
+            )}
+            {currentPanel === PanelView.Pdf && isPdf && (
+                <PdfPreviewPanel object={object} />
+            )}
+            {currentPanel === PanelView.Pdf && isPreviewableAsPdfDoc && (
+                <OfficePdfPreviewPanel
+                    pdfRendition={pdfRendition}
+                    officePdfUrl={officePdfUrl}
+                    officePdfConverting={officePdfConverting}
+                    officePdfError={officePdfError}
+                    onConvert={triggerOfficePdfConversion}
+                />
+            )}
+            {currentPanel === PanelView.Text && showProcessingPanel && (
+                <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
+            )}
+            {currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText && (
+                <div className="flex justify-center items-center flex-1">
+                    <Spinner size="lg" />
+                </div>
+            )}
+            {currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText && (
+                <TextPanel
+                    object={object}
+                    text={displayText}
+                    isTextCropped={isTextCropped}
+                    textContainerRef={textContainerRef}
+                />
+            )}
         </div>
     );
 }
@@ -596,13 +476,7 @@ function TextActions({
     fullText,
     handleCopyContent,
     textContainerRef,
-}: {
-    object: ContentObject;
-    handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>;
-    text: string | undefined;
-    fullText: string | undefined;
-    textContainerRef: RefObject<HTMLDivElement | null>;
-}) {
+}: TextActionsProps) {
     const { client } = useUserSession();
     const toast = useToast();
     const [loadingFormat, setLoadingFormat] = useState<"docx" | "pdf" | null>(null);
@@ -616,7 +490,7 @@ function TextActions({
         content.type === "text/markdown";
 
     // Get content processor type for file extension detection
-    const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
+    const contentProcessorType = getContentProcessorType(object);
 
     const handleExportDocument = async (format: "docx" | "pdf") => {
         // Prevent multiple concurrent exports
@@ -850,17 +724,12 @@ const TextPanel = memo(({
     text,
     isTextCropped,
     textContainerRef,
-}: {
-    object: ContentObject;
-    text: string | undefined;
-    isTextCropped: boolean;
-    textContainerRef: RefObject<HTMLDivElement | null>;
-}) => {
+}: TextPanelProps) => {
     const content = object.content;
-    const isCreatedOrProcessing = object?.status === ContentObjectStatus.created || object?.status === ContentObjectStatus.processing;
+    const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
 
     // Check content processor type for XML
-    const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
+    const contentProcessorType = getContentProcessorType(object);
     const isXml = contentProcessorType === "xml";
 
     // Check if content type is markdown or plain text
@@ -869,20 +738,8 @@ const TextPanel = memo(({
         content.type &&
         (content.type === "text/markdown" || content.type === "text/plain");
 
-    // Check if text content looks like markdown
-    const seemsMarkdown = text && (
-        text.includes("\n# ") ||
-        text.includes("\n## ") ||
-        text.includes("\n### ") ||
-        text.includes("\n* ") ||
-        text.includes("\n- ") ||
-        text.includes("\n+ ") ||
-        text.includes("![") ||
-        text.includes("](")
-    );
-
     // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
-    const shouldRenderAsMarkdown = !isXml && (isMarkdownOrText || seemsMarkdown);
+    const shouldRenderAsMarkdown = !isXml && (isMarkdownOrText || looksLikeMarkdown(text));
 
     return (
         text ? (
@@ -896,7 +753,7 @@ const TextPanel = memo(({
                     </div>
                 )}
                 <div
-                    className="max-w-7xl px-2 h-[calc(100vh-210px)] overflow-auto"
+                    className={`max-w-7xl px-2 ${PANEL_HEIGHTS.content} overflow-auto`}
                     ref={textContainerRef}
                 >
                     {isXml ? (
@@ -905,68 +762,7 @@ const TextPanel = memo(({
                         </div>
                     ) : shouldRenderAsMarkdown ? (
                         <div className="vprose prose-sm p-1">
-                            <MarkdownRenderer
-                                components={{
-                                    a: ({ node, ...props }: { node?: any; href?: string; children?: React.ReactNode }) => {
-                                        const href = props.href || "";
-                                        if (href.includes("/store/objects/")) {
-                                            return (
-                                                <NavLink
-                                                    topLevelNav
-                                                    href={href}
-                                                    className="text-info"
-                                                >
-                                                    {props.children}
-                                                </NavLink>
-                                            );
-                                        }
-                                        return <a {...props} data-debug="test" target="_blank" rel="noopener noreferrer" />;
-                                    },
-                                    p: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                        <p {...props} className={`my-0`} />
-                                    ),
-                                    pre: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                        <pre {...props} className={`my-2 p-2 rounded`} />
-                                    ),
-                                    code: ({
-                                        node,
-                                        className,
-                                        children,
-                                        ...props
-                                    }: {
-                                        node?: any;
-                                        className?: string;
-                                        children?: React.ReactNode;
-                                    }) => {
-                                        const match = /language-(\w+)/.exec(className || "");
-                                        const isInline = !match;
-                                        return (
-                                            <code
-                                                {...props}
-                                                className={
-                                                    isInline
-                                                        ? `px-1.5 py-0.5 rounded`
-                                                        : "text-muted"
-                                                }
-                                            >
-                                                {children}
-                                            </code>
-                                        );
-                                    },
-                                    h1: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                        <h1 {...props} className={`font-bold text-2xl my-2`} />
-                                    ),
-                                    h2: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                        <h2 {...props} className={`font-bold text-xl my-2`} />
-                                    ),
-                                    h3: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                        <h3 {...props} className={`font-bold text-lg my-2`} />
-                                    ),
-                                    li: ({ node, ...props }: { node?: any; children?: React.ReactNode }) => (
-                                        <li {...props} />
-                                    ),
-                                }}
-                            >
+                            <MarkdownRenderer components={createMarkdownComponents()}>
                                 {text}
                             </MarkdownRenderer>
                         </div>
@@ -994,8 +790,7 @@ function ImagePanel({ object }: { object: ContentObject }) {
     useEffect(() => {
         if (isImage) {
             const loadImage = async () => {
-                const webSupportedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-                const isOriginalWebSupported = content?.type && webSupportedFormats.includes(content.type);
+                const isOriginalWebSupported = content?.type && WEB_SUPPORTED_IMAGE_FORMATS.includes(content.type);
 
                 try {
                     const rendition = await client.objects.getRendition(object.id, {
@@ -1058,8 +853,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
                          renditions.find(r => r.content.type === 'video/webm');
 
     // Check if original file is web-compatible
-    const webSupportedFormats = ['video/mp4', 'video/webm'];
-    const isOriginalWebSupported = content?.type && webSupportedFormats.includes(content.type);
+    const isOriginalWebSupported = content?.type && WEB_SUPPORTED_VIDEO_FORMATS.includes(content.type);
 
     // Get poster
     const poster = renditions.find(r => r.name === POSTER_RENDITION_NAME);
@@ -1123,7 +917,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
                     src={videoUrl}
                     poster={posterUrl}
                     controls
-                    className="w-full max-h-[calc(100vh-260px)] object-contain"
+                    className={`w-full ${PANEL_HEIGHTS.video} object-contain`}
                 >
                     Your browser does not support the video tag.
                 </video>
@@ -1140,7 +934,7 @@ function PdfActions({ object }: { object: ContentObject }) {
     const [isPdfPreviewOpen, setPdfPreviewOpen] = useState(false);
 
     // Check if PDF has been processed (content_processor.type is xml or markdown)
-    const contentProcessorType = (object.metadata as DocumentMetadata)?.content_processor?.type;
+    const contentProcessorType = getContentProcessorType(object);
     const hasPdfAnalysis = contentProcessorType === "xml" || contentProcessorType === "markdown";
 
     if (!hasPdfAnalysis) return null;
@@ -1168,11 +962,7 @@ function OfficePdfActions({
     object,
     pdfRendition,
     officePdfUrl,
-}: {
-    object: ContentObject;
-    pdfRendition?: { name: string; content: { source?: string } };
-    officePdfUrl?: string;
-}) {
+}: OfficePdfActionsProps) {
     const { client } = useUserSession();
     const toast = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
@@ -1226,7 +1016,7 @@ function OfficePdfActions({
 
 function PdfPreviewPanel({ object }: { object: ContentObject }) {
     return (
-        <div className="h-[calc(100vh-210px)]">
+        <div className={PANEL_HEIGHTS.content}>
             <SimplePdfViewer
                 object={object}
                 className="h-full"
@@ -1235,35 +1025,63 @@ function PdfPreviewPanel({ object }: { object: ContentObject }) {
     );
 }
 
-function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: DocAnalyzerProgress, status?: WorkflowExecutionStatus, outputFormat?: DocProcessorOutputFormat }) {
-    const statusColor = (() => {
-        switch (status) {
-            case WorkflowExecutionStatus.RUNNING:
-                return "text-info";
-            case WorkflowExecutionStatus.COMPLETED:
-                return "text-success";
-            case WorkflowExecutionStatus.FAILED:
-                return "text-destructive";
-            case WorkflowExecutionStatus.TERMINATED:
-            case WorkflowExecutionStatus.CANCELED:
-                return "text-attention";
-            default:
-                return "text-muted";
-        }
-    })();
+/**
+ * Panel for displaying Office documents converted to PDF.
+ * Handles the various states: converting, error, showing PDF.
+ */
+function OfficePdfPreviewPanel({
+    pdfRendition,
+    officePdfUrl,
+    officePdfConverting,
+    officePdfError,
+    onConvert,
+}: OfficePdfPreviewPanelProps) {
+    if (officePdfConverting) {
+        return (
+            <div className="flex flex-col justify-center items-center flex-1 gap-2">
+                <Spinner size="lg" />
+                <span className="text-muted">Converting to PDF...</span>
+            </div>
+        );
+    }
 
-    const statusName = (() => {
-        switch (status) {
-            case WorkflowExecutionStatus.RUNNING: return 'Running';
-            case WorkflowExecutionStatus.COMPLETED: return 'Completed';
-            case WorkflowExecutionStatus.FAILED: return 'Failed';
-            case WorkflowExecutionStatus.CONTINUED_AS_NEW: return 'Continued As New';
-            case WorkflowExecutionStatus.TERMINATED: return 'Terminated';
-            case WorkflowExecutionStatus.TIMED_OUT: return 'Timed Out';
-            case WorkflowExecutionStatus.CANCELED: return 'Canceled';
-            default: return 'Unknown';
-        }
-    })();
+    if (officePdfError) {
+        return (
+            <div className="flex flex-col justify-center items-center flex-1 gap-2 text-destructive">
+                <AlertTriangle className="size-8" />
+                <span>{officePdfError}</span>
+            </div>
+        );
+    }
+
+    if (pdfRendition?.content?.source) {
+        return (
+            <div className={PANEL_HEIGHTS.content}>
+                <SimplePdfViewer source={pdfRendition.content.source} className="h-full" />
+            </div>
+        );
+    }
+
+    if (officePdfUrl) {
+        return (
+            <div className={PANEL_HEIGHTS.content}>
+                <SimplePdfViewer url={officePdfUrl} className="h-full" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col justify-center items-center flex-1 gap-2">
+            <Button onClick={onConvert}>
+                Convert to PDF
+            </Button>
+        </div>
+    );
+}
+
+function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: DocAnalyzerProgress, status?: WorkflowExecutionStatus, outputFormat?: DocProcessorOutputFormat }) {
+    const statusColor = getWorkflowStatusColor(status);
+    const statusName = getWorkflowStatusName(status);
 
     // Show detailed progress (tables, images, visuals) for XML processing
     const isXmlProcessing = outputFormat === "xml";
