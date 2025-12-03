@@ -91,9 +91,21 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
             });
     }, [imageProvider, imageType]);
 
+    // Track the current imageType for change detection
+    const prevImageTypeRef = useRef(imageType);
+
     // Progressive loading: load pages in parallel, prioritized from current page outward
     useEffect(() => {
         let cancelled = false;
+
+        // Check if imageType changed - if so, reset and reload all pages
+        const imageTypeChanged = prevImageTypeRef.current !== imageType;
+        if (imageTypeChanged) {
+            prevImageTypeRef.current = imageType;
+            loadedPagesRef.current = new Set();
+            setLoadedUrls(new Map());
+        }
+
         const loadOrder = getPageLoadOrder(currentPage, count);
 
         // Load all pages in parallel, but they're already prioritized by loadOrder
@@ -120,12 +132,6 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
             cancelled = true;
         };
     }, [currentPage, count, imageType, imageProvider]);
-
-    // Reset loaded URLs when image type changes
-    useEffect(() => {
-        loadedPagesRef.current = new Set();
-        setLoadedUrls(new Map());
-    }, [imageType]);
 
     // Scroll to current page when zoom changes to preserve position
     const prevZoomRef = useRef(zoom);
