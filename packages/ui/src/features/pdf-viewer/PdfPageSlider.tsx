@@ -16,12 +16,14 @@ interface PdfPageSliderProps {
     pdfUrl: string;
     /** Whether the PDF URL is still loading */
     pdfUrlLoading?: boolean;
-    /** Total number of pages in the PDF */
+    /** Total number of pages in the PDF (initial estimate, will be updated when PDF loads) */
     pageCount: number;
     /** Currently selected page number (1-indexed) */
     currentPage: number;
     /** Callback when page selection changes */
     onChange: (pageNumber: number) => void;
+    /** Callback when actual page count is determined from the PDF */
+    onPageCountChange?: (pageCount: number) => void;
     /** Additional CSS class names */
     className?: string;
     /** Compact mode reduces padding and navigation bar heights */
@@ -41,6 +43,7 @@ export function PdfPageSlider({
     pageCount,
     currentPage,
     onChange,
+    onPageCountChange,
     className,
     compact = false,
     headerExtra
@@ -328,6 +331,7 @@ export function PdfPageSlider({
                     currentPage={currentPage}
                     thumbnailWidth={thumbnailWidth}
                     onPageSelect={onChange}
+                    onPageCountChange={onPageCountChange}
                     scrollContainerRef={scrollContainerRef}
                     onAspectRatioChange={setAspectRatio}
                     onItemHeightChange={setItemHeight}

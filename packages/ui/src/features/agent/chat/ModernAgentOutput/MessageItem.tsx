@@ -99,46 +99,17 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
 
     const messageStyles = getMessageStyles();
 
-    // Convert links in the content (async to handle image URLs and store/collection links)
+    // Convert links in the content.
+    // Special schemes like store:, collection:, image:, and artifact:
+    // are now handled centrally in MarkdownRenderer, so this function
+    // only preserves the async shape for backwards compatibility.
     const convertLinks = async (content: string | object): Promise<string | object> => {
         // If content is not a string, return it as is
         if (typeof content !== "string") {
             return content;
         }
 
-        let processedContent = content;
-
-        // First, handle store and collection links
-        processedContent = processedContent.replace(/\[([^\]]+)\]\((store|collection):([a-f\d]{24})\)/gi, (_, text, type, id) => {
-            const path = type === 'store' ? 'objects' : 'collections';
-            return `[${text}](/store/${path}/${id})`;
-        });
-
-        // Then, handle image links by finding all image:<gcspath> patterns
-        const imageRegex = /!\[([^\]]*)\]\(image:([^)]+)\)/g;
-        const imageMatches = Array.from(processedContent.matchAll(imageRegex));
-
-        // Process all image URLs in parallel
-        const imageReplacements = await Promise.all(
-            imageMatches.map(async (match) => {
-                const [fullMatch, altText, gcsPath] = match;
-                try {
-                    const response = await client.files.getDownloadUrl(gcsPath);
-                    return { fullMatch, replacement: `![${altText}](${response.url})` };
-                } catch (error) {
-                    console.error(`Failed to get download URL for image: ${gcsPath}`, error);
-                    // Return original on error
-                    return { fullMatch, replacement: fullMatch };
-                }
-            })
-        );
-
-        // Apply all replacements
-        for (const { fullMatch, replacement } of imageReplacements) {
-            processedContent = processedContent.replace(fullMatch, replacement);
-        }
-
-        return processedContent;
+        return content;
     };
 
     // Get the message content to display with thinking message replacement
