@@ -14,7 +14,7 @@ function LoadingSpinner({ className, size = 'md' }: { className?: string; size?:
     };
     return (
         <div className={`flex items-center justify-center ${className || ''}`}>
-            <Loader2 className={`${sizeClasses[size]} animate-spin text-gray-400`} />
+            <Loader2 className={`${sizeClasses[size]} animate-spin text-muted-foreground`} />
         </div>
     );
 }
@@ -56,7 +56,7 @@ export function PdfPageRenderer({
 
     if (error) {
         return (
-            <div className={`flex items-center justify-center text-red-500 text-sm ${className || ''}`}>
+            <div className={`flex items-center justify-center text-destructive text-sm ${className || ''}`}>
                 Failed to load PDF
             </div>
         );
@@ -174,7 +174,7 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
 
     if (error) {
         return (
-            <div className="flex items-center justify-center text-red-500 text-sm py-4">
+            <div className="flex items-center justify-center text-destructive text-sm py-4">
                 Failed to load PDF
             </div>
         );
@@ -223,7 +223,7 @@ export function SimplePdfPage({ pageNumber, width, className }: SimplePdfPagePro
     if (context?.loading) {
         return (
             <div
-                className={`flex items-center justify-center bg-gray-100 dark:bg-gray-800 ${className || ''}`}
+                className={`flex items-center justify-center bg-muted ${className || ''}`}
                 style={{ height: placeholderHeight, width: width || '100%' }}
             >
                 <LoadingSpinner size="md" />
@@ -326,7 +326,7 @@ function VirtualizedThumbnail({
             renderAnnotationLayer={false}
             loading={
                 <div
-                    className="flex items-center justify-center bg-gray-100 dark:bg-gray-800"
+                    className="flex items-center justify-center bg-muted"
                     style={{ height: placeholderHeight }}
                 >
                     <LoadingSpinner size="sm" />
@@ -335,10 +335,10 @@ function VirtualizedThumbnail({
         />
     ) : (
         <div
-            className="flex items-center justify-center bg-gray-100 dark:bg-gray-800"
+            className="flex items-center justify-center bg-muted"
             style={{ height: placeholderHeight, width: width || '100%' }}
         >
-            <span className="text-gray-400 text-xs">{pageNumber}</span>
+            <span className="text-muted-foreground text-xs">{pageNumber}</span>
         </div>
     );
 
@@ -475,7 +475,7 @@ export function PdfThumbnailList({
 
     if (error) {
         return (
-            <div className="flex items-center justify-center text-red-500 text-sm py-4">
+            <div className="flex items-center justify-center text-destructive text-sm py-4">
                 Failed to load PDF
             </div>
         );
@@ -581,7 +581,7 @@ export function PdfDocumentRenderer({
 
     if (error) {
         return (
-            <div className={`flex items-center justify-center text-red-500 ${className || ''}`}>
+            <div className={`flex items-center justify-center text-destructive ${className || ''}`}>
                 <span>Failed to load PDF: {error.message}</span>
             </div>
         );
