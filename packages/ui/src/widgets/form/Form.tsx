@@ -94,10 +94,15 @@ export function ScalarField({ object, editor, inline = false }: ScalarFieldProps
         object.value = object.schema.isNumber ? parseFloat(value) : value
     }
 
+    if (object.isListItem) {
+        // List items don't need the FormItem wrapper (no label, description, etc.)
+        return <Component object={object} type={inputType} onChange={handleOnChange} />;
+    }
+
     return (
         <FormItem label={object.title} required={object.schema.isRequired} description={object.schema.description}
             className={clsx('flex', inline ? 'flex-row items-center' : 'flex-col')}>
-            {!object.isListItem && <Component object={object} type={inputType} onChange={handleOnChange} />}
+            <Component object={object} type={inputType} onChange={handleOnChange} />
         </FormItem>
     )
 }
