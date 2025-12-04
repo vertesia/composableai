@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Component, useState, type ReactNode, type ErrorInfo } from 'react';
 import {
     ResponsiveContainer,
     BarChart,
@@ -34,6 +34,51 @@ import {
 
 // Default color palette for charts
 const COLORS = ['#4f46e5', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+
+// Error boundary for chart rendering
+type ChartErrorBoundaryProps = {
+    chartType: string;
+    children: ReactNode;
+};
+
+type ChartErrorBoundaryState = {
+    hasError: boolean;
+    error: Error | null;
+};
+
+class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, ChartErrorBoundaryState> {
+    constructor(props: ChartErrorBoundaryProps) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error: Error): ChartErrorBoundaryState {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error(`Chart rendering error (${this.props.chartType}):`, error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="flex items-center justify-center h-full bg-red-50 dark:bg-red-950 rounded-md p-4">
+                    <div className="text-center">
+                        <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                            Cannot render {this.props.chartType} chart
+                        </p>
+                        <p className="text-xs text-red-500 dark:text-red-500 mt-1 max-w-xs truncate">
+                            {this.state.error?.message || 'Unknown error'}
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
 
 export type AgentChartSpec = {
     version?: '1.0';
@@ -110,6 +155,10 @@ export function AgentChart({ spec }: AgentChartProps) {
     } = spec;
     const [collapsed, setCollapsed] = useState<boolean>(options?.collapseInitially ?? false);
 
+    // Safe arrays - default to empty array if undefined
+    const safeSeries = series || [];
+    const safeData = data || [];
+
     const commonAxes = (
         <>
             <XAxis dataKey={xKey} tick={{ fontSize: 12 }} />
@@ -118,7 +167,7 @@ export function AgentChart({ spec }: AgentChartProps) {
                 tickFormatter={formatNumber}
                 label={yAxis?.left?.label ? { value: yAxis.left.label, angle: -90, position: 'insideLeft' } : undefined}
             />
-            {series.some((s) => s.yAxisId === 'right') && (
+            {safeSeries.some((s) => s.yAxisId === 'right') && (
                 <YAxis
                     yAxisId="right"
                     orientation="right"
@@ -139,7 +188,7 @@ export function AgentChart({ spec }: AgentChartProps) {
     );
 
     const renderSeries = () =>
-        series.map((s, idx) => {
+        safeSeries.map((s, idx) => {
             const color = s.color || COLORS[idx % COLORS.length];
             const yAxisId = s.yAxisId || 'left';
             if (chart === 'line') {
@@ -219,7 +268,7 @@ export function AgentChart({ spec }: AgentChartProps) {
         return (
             <PieChart>
                 <Pie
-                    data={data}
+                    data={safeData}
                     dataKey={vKey}
                     nameKey={nKey}
                     cx="50%"
@@ -228,7 +277,7 @@ export function AgentChart({ spec }: AgentChartProps) {
                     outerRadius={100}
                     label={options?.showLabels !== false}
                 >
-                    {data.map((_, index) => (
+                    {safeData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                 </Pie>
@@ -249,17 +298,17 @@ export function AgentChart({ spec }: AgentChartProps) {
                 <YAxis dataKey={yDataKey} name={yDataKey} tickFormatter={formatNumber} />
                 <Tooltip formatter={(value) => (typeof value === 'number' ? formatNumber(value) : String(value))} />
                 <Legend />
-                {series.length > 0 ? (
-                    series.map((s, idx) => (
+                {safeSeries.length > 0 ? (
+                    safeSeries.map((s, idx) => (
                         <Scatter
                             key={s.key}
                             name={s.label || s.key}
-                            data={data}
+                            data={safeData}
                             fill={s.color || COLORS[idx % COLORS.length]}
                         />
                     ))
                 ) : (
-                    <Scatter name="Data" data={data} fill={COLORS[0]} />
+                    <Scatter name="Data" data={safeData} fill={COLORS[0]} />
                 )}
             </ScatterChart>
         );
@@ -269,11 +318,11 @@ export function AgentChart({ spec }: AgentChartProps) {
     const renderRadarChart = () => {
         const aKey = axisKey || xKey || 'axis';
         return (
-            <RadarChart cx="50%" cy="50%" outerRadius={100} data={data}>
+            <RadarChart cx="50%" cy="50%" outerRadius={100} data={safeData}>
                 <PolarGrid />
                 <PolarAngleAxis dataKey={aKey} tick={{ fontSize: 11 }} />
                 <PolarRadiusAxis tickFormatter={formatNumber} />
-                {series.map((s, idx) => (
+                {safeSeries.map((s, idx) => (
                     <Radar
                         key={s.key}
                         name={s.label || s.key}
@@ -303,7 +352,7 @@ export function AgentChart({ spec }: AgentChartProps) {
                 innerRadius={innerRadius}
                 outerRadius={100}
                 barSize={15}
-                data={data}
+                data={safeData}
                 startAngle={startAngle}
                 endAngle={endAngle}
             >
@@ -312,7 +361,7 @@ export function AgentChart({ spec }: AgentChartProps) {
                     background
                     dataKey={vKey}
                 >
-                    {data.map((_, index) => (
+                    {safeData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                 </RadialBar>
@@ -323,7 +372,7 @@ export function AgentChart({ spec }: AgentChartProps) {
                     verticalAlign="middle"
                     align="right"
                     formatter={(value, entry) => {
-                        const item = data.find((d) => d[nKey] === value || d[vKey] === entry.payload?.value);
+                        const item = safeData.find((d) => d[nKey] === value || d[vKey] === entry.payload?.value);
                         return item ? item[nKey] : value;
                     }}
                 />
@@ -338,8 +387,8 @@ export function AgentChart({ spec }: AgentChartProps) {
         return (
             <FunnelChart>
                 <Tooltip formatter={(value) => (typeof value === 'number' ? formatNumber(value) : String(value))} />
-                <Funnel dataKey={vKey} data={data} isAnimationActive>
-                    {data.map((_, index) => (
+                <Funnel dataKey={vKey} data={safeData} isAnimationActive>
+                    {safeData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                     {options?.showLabels !== false && (
@@ -355,7 +404,7 @@ export function AgentChart({ spec }: AgentChartProps) {
         const dKey = dataKey || valueKey || 'value';
         return (
             <Treemap
-                data={data}
+                data={safeData}
                 dataKey={dKey}
                 aspectRatio={4 / 3}
                 stroke="#fff"
@@ -405,7 +454,7 @@ export function AgentChart({ spec }: AgentChartProps) {
         switch (chart) {
             case 'bar':
                 return (
-                    <BarChart data={data}>
+                    <BarChart data={safeData}>
                         {commonAxes}
                         {commonOverlays}
                         {renderSeries()}
@@ -413,7 +462,7 @@ export function AgentChart({ spec }: AgentChartProps) {
                 );
             case 'line':
                 return (
-                    <LineChart data={data}>
+                    <LineChart data={safeData}>
                         {commonAxes}
                         {commonOverlays}
                         {renderSeries()}
@@ -421,7 +470,7 @@ export function AgentChart({ spec }: AgentChartProps) {
                 );
             case 'area':
                 return (
-                    <AreaChart data={data}>
+                    <AreaChart data={safeData}>
                         {commonAxes}
                         {commonOverlays}
                         {renderSeries()}
@@ -429,7 +478,7 @@ export function AgentChart({ spec }: AgentChartProps) {
                 );
             case 'composed':
                 return (
-                    <ComposedChart data={data}>
+                    <ComposedChart data={safeData}>
                         {commonAxes}
                         {commonOverlays}
                         {renderSeries()}
@@ -449,7 +498,7 @@ export function AgentChart({ spec }: AgentChartProps) {
                 return renderTreemap();
             default:
                 return (
-                    <ComposedChart data={data}>
+                    <ComposedChart data={safeData}>
                         {commonAxes}
                         {commonOverlays}
                         {renderSeries()}
@@ -484,10 +533,12 @@ export function AgentChart({ spec }: AgentChartProps) {
                     </span>
                 )}
                 {!collapsed && (
-                    <div style={{ width: '100%', height: 280 }}>
-                        <ResponsiveContainer>
-                            {renderChart()}
-                        </ResponsiveContainer>
+                    <div style={{ width: '100%', height: 280, minWidth: 0 }}>
+                        <ChartErrorBoundary chartType={chart}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                {renderChart()}
+                            </ResponsiveContainer>
+                        </ChartErrorBoundary>
                     </div>
                 )}
             </div>
