@@ -275,6 +275,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                     <div className="flex items-center gap-1 group">
                         {isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && (
                             <Button variant={"link"} size={"icon"}
+                                disabled={disabled}
                                 alt="Clear selection"
                                 onClick={(e) => {
                                     e.stopPropagation();
