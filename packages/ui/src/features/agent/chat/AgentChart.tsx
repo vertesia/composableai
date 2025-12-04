@@ -1,4 +1,4 @@
-import { Component, useState, type ReactNode, type ErrorInfo } from 'react';
+import { Component, memo, useState, type ReactNode, type ErrorInfo } from 'react';
 import {
     ResponsiveContainer,
     BarChart,
@@ -136,7 +136,8 @@ function formatNumber(n: number): string {
     return n.toLocaleString();
 }
 
-export function AgentChart({ spec }: AgentChartProps) {
+// Memoized chart component to prevent unnecessary re-renders
+export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
     const {
         chart,
         title,
@@ -544,4 +545,7 @@ export function AgentChart({ spec }: AgentChartProps) {
             </div>
         </div>
     );
-}
+}, (prevProps, nextProps) => {
+    // Deep compare the spec to prevent re-renders when data hasn't changed
+    return JSON.stringify(prevProps.spec) === JSON.stringify(nextProps.spec);
+});
