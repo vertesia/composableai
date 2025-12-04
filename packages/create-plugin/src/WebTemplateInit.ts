@@ -22,9 +22,6 @@ export class WebTemplateInit extends TemplateInit {
             version: answer.plugin_version || '1.0.0',
             description: answer.plugin_description || '',
             type: 'module',
-            main: `dist/${answer.plugin_name}.js`,
-            module: `dist/${answer.plugin_name}.js`,
-            types: "dist/index.d.ts",
             files: [
                 "dist"
             ],
@@ -40,12 +37,6 @@ export class WebTemplateInit extends TemplateInit {
                 "react": "^19.0.0",
                 "react-dom": "^19.0.0"
             },
-            plugin: {
-                title: this.pluginName.title,
-                publisher: this.pluginName.scope || "vertesia",
-                external: false,
-                status: "beta",
-            }
         };
     }
 

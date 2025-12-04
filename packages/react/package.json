@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/react",
-    "version": "0.79.3",
+    "version": "0.80.0",
     "description": "React helpers for Composable AI",
     "type": "module",
     "types": "./lib/index.d.ts",
@@ -36,5 +36,10 @@
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "json-schema": "^0.4.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/react"
     }
 }
