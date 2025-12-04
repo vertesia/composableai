@@ -21,115 +21,127 @@ Charts are created using JSON specifications in markdown code blocks:
 
 \`\`\`chart
 {
-  "version": "1.0",
-  "chart": "bar" | "line" | "composed",
+  "chart": "bar|line|area|composed|pie|scatter|radar|radialBar|funnel|treemap",
   "title": "Chart Title",
-  "data": [{ "x": "value", "y": 100 }],
-  "xKey": "x",
-  "series": [{ "key": "y", "label": "Y Values" }]
+  "data": [...],
+  ...
 }
 \`\`\`
 
-CHART TYPES:
-- "bar" - Bar charts for comparisons
-- "line" - Line charts for trends over time
-- "composed" - Mixed bar and line charts
+## CHART TYPES & WHEN TO USE
 
-WHEN TO USE:
-- User explicitly asks for a chart/graph/visualization
-- You have time-series or comparative data (8+ data points)
-- Visual representation would clarify the data
-- Keywords: "show me", "chart", "graph", "visualize", "trend", "compare"
+| Type | Use Case | Data Shape |
+|------|----------|------------|
+| bar | Category comparisons | \`[{x, y1, y2}]\` |
+| line | Trends over time | \`[{x, y1, y2}]\` |
+| area | Trends with volume emphasis | \`[{x, y1, y2}]\` |
+| composed | Mix bars + lines | \`[{x, y1, y2}]\` with series.type |
+| pie | Part-to-whole (%) | \`[{name, value}]\` |
+| scatter | Correlation analysis | \`[{x, y}]\` |
+| radar | Multi-dimensional comparison | \`[{axis, A, B}]\` |
+| radialBar | Progress/gauges | \`[{name, value}]\` |
+| funnel | Conversion stages | \`[{name, value}]\` |
+| treemap | Hierarchical proportions | \`[{name, value}]\` |
 
-EXAMPLE - Bar Chart:
+## EXAMPLES
+
+### Bar Chart
 \`\`\`chart
-{
-  "chart": "bar",
-  "title": "Revenue by Quarter",
-  "data": [
-    {"quarter": "Q1", "revenue": 100000},
-    {"quarter": "Q2", "revenue": 150000}
-  ],
-  "xKey": "quarter",
-  "series": [{"key": "revenue", "label": "Revenue"}]
-}
+{"chart":"bar","title":"Revenue by Quarter","data":[{"quarter":"Q1","revenue":100000},{"quarter":"Q2","revenue":150000}],"xKey":"quarter","series":[{"key":"revenue","label":"Revenue"}]}
 \`\`\`
 
-EXAMPLE - Line Chart (Performance):
+### Line Chart
 \`\`\`chart
-{
-  "chart": "line",
-  "title": "Fund Performance",
-  "data": [
-    {"period": "2024-Q1", "tvpi": 1.2, "dpi": 0.3},
-    {"period": "2024-Q2", "tvpi": 1.5, "dpi": 0.5}
-  ],
-  "xKey": "period",
-  "series": [
-    {"key": "tvpi", "label": "TVPI", "color": "#4f46e5"},
-    {"key": "dpi", "label": "DPI", "color": "#16a34a"}
-  ],
-  "yAxis": {"left": {"label": "Multiple (x)"}}
-}
+{"chart":"line","title":"Performance","data":[{"period":"Q1","tvpi":1.2},{"period":"Q2","tvpi":1.5}],"xKey":"period","series":[{"key":"tvpi","label":"TVPI","color":"#4f46e5"}]}
 \`\`\`
 
-EXAMPLE - Composed Chart (Cashflow):
+### Area Chart
 \`\`\`chart
-{
-  "chart": "composed",
-  "title": "Cashflow Timeline",
-  "data": [
-    {"period": "2024-Q1", "calls": 1000000, "distributions": 500000, "net": -500000},
-    {"period": "2024-Q2", "calls": 800000, "distributions": 1200000, "net": 400000}
-  ],
-  "xKey": "period",
-  "series": [
-    {"key": "calls", "label": "Calls", "type": "bar", "color": "#ef4444"},
-    {"key": "distributions", "label": "Distributions", "type": "bar", "color": "#22c55e"},
-    {"key": "net", "label": "Net CF", "type": "line", "color": "#0ea5e9", "yAxisId": "right"}
-  ],
-  "yAxis": {"left": {"label": "Amount"}, "right": {"label": "Net"}},
-  "options": {"referenceZero": true}
-}
+{"chart":"area","title":"Sales Volume","data":[{"month":"Jan","sales":1000},{"month":"Feb","sales":1500}],"xKey":"month","series":[{"key":"sales","label":"Sales"}],"options":{"stacked":true}}
 \`\`\`
 
-SERIES CONFIGURATION:
+### Composed Chart (Bar + Line)
+\`\`\`chart
+{"chart":"composed","title":"Cashflow","data":[{"period":"Q1","calls":1000000,"net":-500000}],"xKey":"period","series":[{"key":"calls","type":"bar","color":"#ef4444"},{"key":"net","type":"line","yAxisId":"right"}],"yAxis":{"left":{"label":"Amount"},"right":{"label":"Net"}}}
+\`\`\`
+
+### Pie Chart
+\`\`\`chart
+{"chart":"pie","title":"Market Share","data":[{"name":"Product A","value":400},{"name":"Product B","value":300},{"name":"Product C","value":200}],"nameKey":"name","valueKey":"value"}
+\`\`\`
+
+### Donut Chart (Pie with innerRadius)
+\`\`\`chart
+{"chart":"pie","title":"Revenue Split","data":[{"name":"Services","value":60},{"name":"Products","value":40}],"nameKey":"name","valueKey":"value","options":{"innerRadius":50}}
+\`\`\`
+
+### Scatter Chart
+\`\`\`chart
+{"chart":"scatter","title":"Price vs Volume","data":[{"price":100,"volume":500},{"price":150,"volume":400}],"xKey":"price","yKey":"volume","series":[{"key":"data","label":"Products"}]}
+\`\`\`
+
+### Radar Chart
+\`\`\`chart
+{"chart":"radar","title":"Skills Comparison","data":[{"skill":"Speed","A":120,"B":110},{"skill":"Power","A":98,"B":130}],"axisKey":"skill","series":[{"key":"A","label":"Team A"},{"key":"B","label":"Team B"}]}
+\`\`\`
+
+### RadialBar Chart (Progress)
+\`\`\`chart
+{"chart":"radialBar","title":"Goal Progress","data":[{"name":"Sales","value":80},{"name":"Users","value":65}],"nameKey":"name","valueKey":"value"}
+\`\`\`
+
+### Funnel Chart
+\`\`\`chart
+{"chart":"funnel","title":"Conversion Funnel","data":[{"name":"Visits","value":5000},{"name":"Cart","value":2500},{"name":"Purchase","value":1000}],"nameKey":"name","valueKey":"value"}
+\`\`\`
+
+### Treemap
+\`\`\`chart
+{"chart":"treemap","title":"Budget Allocation","data":[{"name":"Engineering","value":500000},{"name":"Marketing","value":200000},{"name":"Sales","value":300000}],"nameKey":"name","dataKey":"value"}
+\`\`\`
+
+## CONFIGURATION
+
+### Series (for bar/line/area/composed/radar)
 - key: (required) Field name in data
-- label: Display name in legend
-- type: "bar" | "line" (for composed charts)
-- color: Hex color (e.g., "#4f46e5")
-- yAxisId: "left" (default) | "right"
-- dot: true/false (for line charts)
+- label: Display name
+- type: "bar"|"line"|"area" (composed only)
+- color: Hex color
+- yAxisId: "left"|"right"
+- dot: Show dots on lines
 
-COLORS:
-- Red (#ef4444) - Negative/costs
-- Green (#22c55e) - Positive/gains
-- Blue (#4f46e5) - Primary metrics
-- Cyan (#0ea5e9) - Secondary metrics
-- Amber (#f59e0b) - Warnings/highlights
+### Keys (for pie/scatter/radar/funnel/treemap)
+- nameKey: Field for labels (default: "name")
+- valueKey: Field for values (default: "value")
+- xKey/yKey: For scatter charts
+- axisKey: For radar axis labels
+- dataKey: For treemap values
 
-OPTIONS:
-- referenceZero: Show line at y=0 (useful for +/- values)
-- collapsible: Allow collapse (default: true)
-- collapseInitially: Start collapsed (default: false)
-- stacked: Stack bars (for bar charts)
+### Options
+- stacked: Stack bars/areas
+- referenceZero: Show y=0 line
+- innerRadius: For donut charts (0-100)
+- showLabels: Show value labels
+- startAngle/endAngle: For radialBar
 
-BEST PRACTICES:
-1. Always include a descriptive title
-2. Use appropriate chart type for the data
-3. Limit to 20-30 data points for readability
-4. Add axis labels for clarity
-5. Use consistent colors (green=positive, red=negative)
-6. Add description for complex charts
+## COLORS
+- Blue #4f46e5 - Primary
+- Cyan #06b6d4 - Secondary
+- Green #22c55e - Positive
+- Amber #f59e0b - Warning
+- Red #ef4444 - Negative
+- Purple #8b5cf6 - Accent
+- Pink #ec4899 - Highlight
+- Teal #14b8a6 - Alternative
 
-Remember: Numbers are auto-formatted (1K, 1M, 1B)`,
+Numbers auto-format: 1K, 1M, 1B`,
 
     input_schema: {
         type: 'object',
         properties: {
             chart: {
                 type: 'string',
-                enum: ['bar', 'line', 'composed'],
+                enum: ['bar', 'line', 'area', 'composed', 'pie', 'scatter', 'radar', 'radialBar', 'funnel', 'treemap'],
                 description: 'Type of chart to create',
             },
             title: {
@@ -150,11 +162,31 @@ Remember: Numbers are auto-formatted (1K, 1M, 1B)`,
             },
             xKey: {
                 type: 'string',
-                description: 'Field name to use for X-axis',
+                description: 'Field name to use for X-axis (for bar/line/area/composed/scatter)',
+            },
+            yKey: {
+                type: 'string',
+                description: 'Field name for Y values (for scatter charts)',
+            },
+            nameKey: {
+                type: 'string',
+                description: 'Field name for labels (for pie/funnel/radialBar/treemap, default: "name")',
+            },
+            valueKey: {
+                type: 'string',
+                description: 'Field name for values (for pie/funnel/radialBar, default: "value")',
+            },
+            axisKey: {
+                type: 'string',
+                description: 'Field name for radar axis labels',
+            },
+            dataKey: {
+                type: 'string',
+                description: 'Field name for treemap values',
             },
             series: {
                 type: 'array',
-                description: 'Array of series to plot',
+                description: 'Array of series to plot (for bar/line/area/composed/radar)',
                 items: {
                     type: 'object',
                     properties: {
@@ -168,7 +200,7 @@ Remember: Numbers are auto-formatted (1K, 1M, 1B)`,
                         },
                         type: {
                             type: 'string',
-                            enum: ['bar', 'line'],
+                            enum: ['bar', 'line', 'area'],
                             description: 'Series type (for composed charts)',
                         },
                         color: {
@@ -212,7 +244,7 @@ Remember: Numbers are auto-formatted (1K, 1M, 1B)`,
                 properties: {
                     stacked: {
                         type: 'boolean',
-                        description: 'Stack bars',
+                        description: 'Stack bars/areas',
                     },
                     referenceZero: {
                         type: 'boolean',
@@ -226,10 +258,26 @@ Remember: Numbers are auto-formatted (1K, 1M, 1B)`,
                         type: 'boolean',
                         description: 'Start collapsed',
                     },
+                    innerRadius: {
+                        type: 'number',
+                        description: 'Inner radius for donut/radialBar charts (0-100)',
+                    },
+                    showLabels: {
+                        type: 'boolean',
+                        description: 'Show value labels on pie/funnel',
+                    },
+                    startAngle: {
+                        type: 'number',
+                        description: 'Start angle for radialBar (default: 180)',
+                    },
+                    endAngle: {
+                        type: 'number',
+                        description: 'End angle for radialBar (default: 0)',
+                    },
                 },
             },
         },
-        required: ['chart', 'data', 'xKey', 'series'],
+        required: ['chart', 'data'],
     },
 };
 
@@ -242,29 +290,33 @@ export const chartSystemPromptAddition = `
 
 You can create interactive charts by including markdown code blocks with the language "chart".
 
-Format:
-\`\`\`chart
-{
-  "chart": "bar|line|composed",
-  "title": "Chart Title",
-  "data": [...],
-  "xKey": "fieldName",
-  "series": [{"key": "fieldName", "label": "Display Name"}]
-}
-\`\`\`
+## Chart Types
+
+| Type | Use Case | Required Fields |
+|------|----------|-----------------|
+| bar | Category comparisons | xKey, series |
+| line | Trends over time | xKey, series |
+| area | Trends with volume | xKey, series |
+| composed | Mix bars + lines | xKey, series with type |
+| pie | Part-to-whole | nameKey, valueKey |
+| scatter | Correlation | xKey, yKey |
+| radar | Multi-dimensional | axisKey, series |
+| radialBar | Progress/gauges | nameKey, valueKey |
+| funnel | Conversion stages | nameKey, valueKey |
+| treemap | Hierarchical data | nameKey, dataKey |
+
+## Quick Examples
+
+Bar: \`{"chart":"bar","data":[{"x":"A","y":10}],"xKey":"x","series":[{"key":"y"}]}\`
+Pie: \`{"chart":"pie","data":[{"name":"A","value":60},{"name":"B","value":40}]}\`
+Scatter: \`{"chart":"scatter","data":[{"x":1,"y":2}],"xKey":"x","yKey":"y"}\`
 
 Use charts when:
-- User explicitly requests visualization
-- You have 8+ data points to display
-- Visual representation clarifies the information
-- Showing trends, comparisons, or time-series data
+- User requests visualization
+- 3+ data points to display
+- Visual form clarifies comparisons/trends
 
-Chart types:
-- bar: Comparisons across categories
-- line: Trends over time
-- composed: Mix of bars and lines (e.g., cashflow with net line)
-
-Always include descriptive titles and use appropriate colors (green for positive, red for negative).
+Colors: Blue #4f46e5 (primary), Green #22c55e (positive), Red #ef4444 (negative)
 `;
 
 /**
