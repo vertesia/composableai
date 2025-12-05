@@ -6,3 +6,4 @@ export * from "./ToolRegistry.js";
 export * from "./types.js";
 export * from "./server.js";
 export * from "./site/templates.js";
+export { copyRuntimeAssets } from "./copy-assets.js";
