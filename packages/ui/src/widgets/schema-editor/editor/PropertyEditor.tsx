@@ -49,7 +49,7 @@ export function PropertyEditor({ value, onChange, onCancel, onSave }: DataEditor
                 <PropertyTypeEditor value={value.type} onChange={onTypeChange} onCancel={onCancel} onSave={onSave} />
             </div>
             <div>
-                <Button variant={"ghost"} size={"xs"} onClick={() => setModalOpen(true)}  title="Edit description">
+                <Button variant={"ghost"} size={"xs"} onClick={() => setModalOpen(true)} title="Edit description">
                     <AlignLeft className="size-4" />
                 </Button>
                 <EditDescriptionModal value={value.description} isOpen={isModalOpen} onClose={onDescriptionChange} />
@@ -82,8 +82,12 @@ export function PropertyNameEditor({ value, onChange, onCancel, onSave }: DataEd
         onChange(e.target.value);
     }
 
+    const onBlur = () => {
+        onSave?.();
+    };
+
     return (
-        <input onKeyUp={onKeyUp} ref={ref} value={value} onChange={_onChange} className={Styles.INPUT_UNSTYLED} style={{ fontSize: "inherit", width: "", display: "inline" }} />
+        <input onKeyUp={onKeyUp} onBlur={onBlur} ref={ref} value={value} onChange={_onChange} className={Styles.INPUT_UNSTYLED} style={{ fontSize: "inherit", width: "", display: "inline" }} />
     )
 }
 
@@ -101,7 +105,7 @@ function PropertyTypeEditor({ value, onChange, onCancel, onSave }: DataEditorPro
         }
     }
     return (
-        <VSelectBox 
+        <VSelectBox
             className={Styles.INPUT_UNSTYLED}
             options={TYPE_OPTIONS}
             value={value || ''}
