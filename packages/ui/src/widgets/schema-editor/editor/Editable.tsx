@@ -227,8 +227,12 @@ export function TextDataEditor({ value, onChange, onCancel, onSave }: DataEditor
         onChange(e.target.value);
     };
 
+    const onBlur = () => {
+        onSave?.();
+    };
+
     return (
-        <input onKeyUp={onKeyUp} ref={ref} value={value} onChange={_onChange} className={Styles.INPUT_UNSTYLED} style={{ fontSize: "inherit" }} />
+        <input onKeyUp={onKeyUp} onBlur={onBlur} ref={ref} value={value} onChange={_onChange} className={Styles.INPUT_UNSTYLED} style={{ fontSize: "inherit" }} />
     );
 }
 
