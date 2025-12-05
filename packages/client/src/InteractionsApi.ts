@@ -5,7 +5,7 @@ import {
     Interaction, InteractionCreatePayload, InteractionEndpoint, InteractionEndpointQuery,
     InteractionExecutionPayload, InteractionForkPayload,
     InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery,
-    InteractionsExportPayload, InteractionUpdatePayload,
+    InteractionsExportPayload, InteractionTags, InteractionUpdatePayload,
     RateLimitRequestPayload, RateLimitRequestResponse
 } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
@@ -61,6 +61,19 @@ export default class InteractionsApi extends ApiTopic {
      */
     listVersionsByName(name: string): Promise<InteractionRef[]> {
         return this.get(`/versions/${name}`);
+    }
+
+    /**
+     * Get the list of all interaction tags in the current project
+     * @param query optional query parameters to filter the tags
+     * @returns InteractionTags[]
+     **/
+    listTags(query?: InteractionSearchQuery): Promise<InteractionTags[]> {
+        return this.get("/tags", {
+            query: {
+                ...query
+            }
+        });
     }
 
     /**
