@@ -48,11 +48,6 @@ export interface Account {
     name: string;
 
     email_domains: string[];
-    members: {
-        role: ProjectRoles;
-        user: UserRef;
-        disabled: boolean;
-    }[];
 
     onboarding: {
         completed: boolean,
