@@ -9,8 +9,8 @@
   "scripts": {
     "lint": "npx eslint",
     "format": "npx prettier --write \"**/*.{ts,js,json,md}\"",
-    "build": "tsc --build",
-    "clean": "tsc --build --clean",
+    "build": "pnpm exec tsc --build",
+    "clean": "pnpm exec tsc --build --clean",
     "aws": "npx bun ./src/index.ts aws",
     "gcp": "npx bun ./src/index.ts gcp"
   },
