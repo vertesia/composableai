@@ -278,8 +278,9 @@ export interface InteractionEndpoint {
 }
 
 export interface InteractionTags{
-    tags: string;
+    tag: string;
     count: number;
+    interactions: InteractionRef[];
 }
 
 export interface InteractionRef {

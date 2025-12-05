@@ -65,10 +65,15 @@ export default class InteractionsApi extends ApiTopic {
 
     /**
      * Get the list of all interaction tags in the current project
-     * @returns string[]
+     * @param query optional query parameters to filter the tags
+     * @returns InteractionTags[]
      **/
-    listTags(): Promise<InteractionTags[]> {
-        return this.get('/tags');
+    listTags(query?: InteractionSearchQuery): Promise<InteractionTags[]> {
+        return this.get("/tags", {
+            query: {
+                ...query
+            }
+        });
     }
 
     /**
