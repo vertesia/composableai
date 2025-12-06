@@ -156,7 +156,6 @@ export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
         axisKey,
         dataKey,
     } = spec;
-    const [collapsed, setCollapsed] = useState<boolean>(options?.collapseInitially ?? false);
     const [isExporting, setIsExporting] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     const chartRef = useRef<HTMLDivElement>(null);
@@ -553,53 +552,46 @@ export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
         }
     };
 
-    const isCollapsible = options?.collapsible !== false; // default true
-
     return (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
             <div className="flex flex-col gap-2 p-3">
-                {(title || isCollapsible) && (
-                    <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                            {title || 'Chart'}
-                        </span>
-                        <div className="flex items-center gap-2">
-                            {!collapsed && (
-                                <button
-                                    onClick={handleExport}
-                                    disabled={isExporting}
-                                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                                    title="Export as PNG"
-                                >
-                                    <Download className="w-3 h-3" />
-                                    {isExporting ? 'Exporting...' : 'Export'}
-                                </button>
-                            )}
-                            {isCollapsible && (
-                                <button
-                                    onClick={() => setCollapsed(!collapsed)}
-                                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                                >
-                                    {collapsed ? 'Show' : 'Hide'}
-                                </button>
-                            )}
-                        </div>
+                <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                        {title || 'Chart'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleCopy}
+                            disabled={isCopied}
+                            className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 flex items-center gap-1"
+                            title="Copy to clipboard"
+                        >
+                            {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                            {isCopied ? 'Copied' : 'Copy'}
+                        </button>
+                        <button
+                            onClick={handleExport}
+                            disabled={isExporting}
+                            className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            title="Export as PNG"
+                        >
+                            <Download className="w-3 h-3" />
+                            {isExporting ? 'Exporting...' : 'Export'}
+                        </button>
                     </div>
-                )}
+                </div>
                 {description && (
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                         {description}
                     </span>
                 )}
-                {!collapsed && (
-                    <div ref={chartRef} className="bg-white dark:bg-gray-900 rounded" style={{ width: '100%', height: 280, minWidth: 0 }}>
-                        <ChartErrorBoundary chartType={chart}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                {renderChart()}
-                            </ResponsiveContainer>
-                        </ChartErrorBoundary>
-                    </div>
-                )}
+                <div ref={chartRef} className="bg-white dark:bg-gray-900 rounded" style={{ width: '100%', height: 280, minWidth: 0 }}>
+                    <ChartErrorBoundary chartType={chart}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            {renderChart()}
+                        </ResponsiveContainer>
+                    </ChartErrorBoundary>
+                </div>
             </div>
         </div>
     );
