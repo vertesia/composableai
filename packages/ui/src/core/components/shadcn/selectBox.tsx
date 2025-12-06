@@ -185,7 +185,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
             <Command className="overflow-hidden">
                 <CommandList className={inline ? "max-h-full overflow-y-auto" : "max-h-[200px] overflow-y-auto"}>
                     <CommandEmpty>No result found.</CommandEmpty>
-                    <CommandGroup className="overflow-visible">
+                    <CommandGroup>
                         {filteredOptions?.map((opt, index) => {
                             const isSelected = multiple
                                 ? isOptionSelected(opt, Array.isArray(value) ? value : [])

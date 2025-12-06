@@ -52,6 +52,7 @@
         "fast-xml-parser": "^5.2.3",
         "firebase": "^10.12.2",
         "framer-motion": "^12.23.12",
+        "html-to-image": "^1.11.13",
         "json-schema": "^0.4.0",
         "jwt-decode": "^4.0.0",
         "lodash-es": "^4.17.21",

@@ -83,6 +83,51 @@ const PRINT_STYLES = `
     white-space: pre-wrap;
     word-break: break-word;
   }
+
+  /* Hide chart action buttons when printing */
+  .chart-actions {
+    display: none !important;
+  }
+
+  /* Hide interactive elements in agent conversation when printing */
+  .print-hidden,
+  [class*="print:hidden"],
+  button[title="Copy message"],
+  button[title="Copy to clipboard"],
+  button[title="Export as PNG"],
+  .message-actions {
+    display: none !important;
+  }
+
+  /* Prevent page breaks inside elements */
+  .vprose table,
+  .vprose pre,
+  .vprose blockquote,
+  .vprose figure,
+  .vprose img,
+  .recharts-wrapper,
+  [class*="chart"],
+  [class*="Chart"] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Keep headings with following content */
+  .vprose h1,
+  .vprose h2,
+  .vprose h3,
+  .vprose h4,
+  .vprose h5,
+  .vprose h6 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Keep list items together when possible */
+  .vprose li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }
 `;
 

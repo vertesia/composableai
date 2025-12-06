@@ -62,6 +62,7 @@ export const EXTERNALS = [
     "framer-motion",
     "react-resizable-panels",
     "recharts",
+    "html-to-image",
     /^framer-motion\/.*/,
     "react-pdf",
     /^react-pdf\/.*/,
