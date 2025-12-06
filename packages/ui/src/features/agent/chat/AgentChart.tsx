@@ -1,4 +1,6 @@
-import { Component, memo, useState, type ReactNode, type ErrorInfo } from 'react';
+import { Component, memo, useState, useRef, useCallback, type ReactNode, type ErrorInfo } from 'react';
+import { toPng } from 'html-to-image';
+import { Download } from 'lucide-react';
 import {
     ResponsiveContainer,
     BarChart,
@@ -155,6 +157,28 @@ export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
         dataKey,
     } = spec;
     const [collapsed, setCollapsed] = useState<boolean>(options?.collapseInitially ?? false);
+    const [isExporting, setIsExporting] = useState(false);
+    const chartRef = useRef<HTMLDivElement>(null);
+
+    const handleExport = useCallback(async () => {
+        if (!chartRef.current || isExporting) return;
+
+        setIsExporting(true);
+        try {
+            const dataUrl = await toPng(chartRef.current, {
+                backgroundColor: '#ffffff',
+                pixelRatio: 2,
+            });
+            const link = document.createElement('a');
+            link.download = `${title || 'chart'}.png`;
+            link.href = dataUrl;
+            link.click();
+        } catch (err) {
+            console.error('Failed to export chart:', err);
+        } finally {
+            setIsExporting(false);
+        }
+    }, [title, isExporting]);
 
     // Safe arrays - default to empty array if undefined
     const safeSeries = series || [];
@@ -518,14 +542,27 @@ export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
                         <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                             {title || 'Chart'}
                         </span>
-                        {isCollapsible && (
-                            <button
-                                onClick={() => setCollapsed(!collapsed)}
-                                className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                            >
-                                {collapsed ? 'Show' : 'Hide'}
-                            </button>
-                        )}
+                        <div className="flex items-center gap-2">
+                            {!collapsed && (
+                                <button
+                                    onClick={handleExport}
+                                    disabled={isExporting}
+                                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                    title="Export as PNG"
+                                >
+                                    <Download className="w-3 h-3" />
+                                    {isExporting ? 'Exporting...' : 'Export'}
+                                </button>
+                            )}
+                            {isCollapsible && (
+                                <button
+                                    onClick={() => setCollapsed(!collapsed)}
+                                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                                >
+                                    {collapsed ? 'Show' : 'Hide'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
                 {description && (
@@ -534,7 +571,7 @@ export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
                     </span>
                 )}
                 {!collapsed && (
-                    <div style={{ width: '100%', height: 280, minWidth: 0 }}>
+                    <div ref={chartRef} className="bg-white dark:bg-gray-900 rounded" style={{ width: '100%', height: 280, minWidth: 0 }}>
                         <ChartErrorBoundary chartType={chart}>
                             <ResponsiveContainer width="100%" height="100%">
                                 {renderChart()}

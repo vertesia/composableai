@@ -3,7 +3,6 @@ import * as PopoverPrimitive from "@radix-ui/react-popover";
 
 import { cn } from "../libs/utils"
 import { JSX } from "react";
-import { useIsInModal } from "./dialog";
 
 export interface PopoverContextValue {
   open: boolean;
@@ -22,7 +21,6 @@ interface PopoverProps {
 }
 const Popover = ({ hover = false, click = false, children, _open, onOpenChange }: PopoverProps): JSX.Element => {
   const [open, setOpen] = React.useState(_open || false);
-  const insideModal = useIsInModal();
 
   const handleOpenChange = (open: boolean) => {
     setOpen(open);
@@ -31,9 +29,13 @@ const Popover = ({ hover = false, click = false, children, _open, onOpenChange }
     }
   };
 
+  // Always use modal={false} for Popovers:
+  // - modal={true} traps focus and blocks pointer events, which breaks scrolling
+  // - Popovers still close on outside click without modal behavior
+  // - Inside modals, the parent dialog handles focus trapping
   return (
     <PopoverContext.Provider value={{ open, setOpen, hover, click }}>
-      <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange} modal={insideModal}>
+      <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange} modal={false}>
         {children}
       </PopoverPrimitive.Root>
     </PopoverContext.Provider>
