@@ -32,7 +32,12 @@ const Popover = ({ hover = false, click = false, children, _open, onOpenChange }
   // Always use modal={false} for Popovers:
   // - modal={true} traps focus and blocks pointer events, which breaks scrolling
   // - Popovers still close on outside click without modal behavior
-  // - Inside modals, the parent dialog handles focus trapping
+  // - Inside modals, the parent dialog already handles focus trapping and aria-hidden
+  //
+  // Historical note: The original code used modal={insideModal} (May 2025, PR #215),
+  // which caused aria-hidden conflicts and blocked interactions when a Popover
+  // (e.g., VSelectBox) was used inside a VModal - both components tried to manage
+  // focus trapping simultaneously.
   return (
     <PopoverContext.Provider value={{ open, setOpen, hover, click }}>
       <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange} modal={false}>
