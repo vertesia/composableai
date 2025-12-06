@@ -3,6 +3,7 @@ import * as PopoverPrimitive from "@radix-ui/react-popover";
 
 import { cn } from "../libs/utils"
 import { JSX } from "react";
+import { useIsInModal } from "./dialog";
 
 export interface PopoverContextValue {
   open: boolean;
@@ -21,6 +22,7 @@ interface PopoverProps {
 }
 const Popover = ({ hover = false, click = false, children, _open, onOpenChange }: PopoverProps): JSX.Element => {
   const [open, setOpen] = React.useState(_open || false);
+  const insideModal = useIsInModal();
 
   const handleOpenChange = (open: boolean) => {
     setOpen(open);
@@ -29,18 +31,15 @@ const Popover = ({ hover = false, click = false, children, _open, onOpenChange }
     }
   };
 
-  // Always use modal={false} for Popovers:
-  // - modal={true} traps focus and blocks pointer events, which breaks scrolling
-  // - Popovers still close on outside click without modal behavior
-  // - Inside modals, the parent dialog already handles focus trapping and aria-hidden
+  // Use modal={true} when inside a VModal to ensure clicks inside the Popover work correctly.
+  // Without modal={true}, Radix's DismissableLayer treats Popover clicks as outside interactions.
+  // See: https://github.com/radix-ui/primitives/issues/2121
   //
-  // Historical note: The original code used modal={insideModal} (May 2025, PR #215),
-  // which caused aria-hidden conflicts and blocked interactions when a Popover
-  // (e.g., VSelectBox) was used inside a VModal - both components tried to manage
-  // focus trapping simultaneously.
+  // Note: This may cause aria-hidden console warnings when the Popover opens inside a Dialog,
+  // but it's necessary for the Popover to function. The warnings don't block functionality.
   return (
     <PopoverContext.Provider value={{ open, setOpen, hover, click }}>
-      <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange} modal={false}>
+      <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange} modal={insideModal}>
         {children}
       </PopoverPrimitive.Root>
     </PopoverContext.Provider>
@@ -103,7 +102,14 @@ const PopoverContent = React.forwardRef<
         side={side}
         onMouseEnter={() => handleHover(hover, setOpen, "enter")}
         onMouseLeave={() => handleHover(hover, setOpen, "leave")}
-        // onClick={() => {setOpen(false)}}
+        onInteractOutside={(e) => {
+          // Prevent the default behavior which can cause issues inside modals
+          // when clicking on other elements within the same modal
+          const target = e.target as HTMLElement;
+          if (target?.closest('[role="dialog"]')) {
+            e.preventDefault();
+          }
+        }}
         className={cn(
           "z-50 w-72 rounded-md border-popover bg-popover text-popover-foreground ring-1 ring-gray-200 dark:ring-slate-700 shadow-md focus:outline-none animate-in",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
