@@ -31,12 +31,6 @@ const Popover = ({ hover = false, click = false, children, _open, onOpenChange }
     }
   };
 
-  // Use modal={true} when inside a VModal to ensure clicks inside the Popover work correctly.
-  // Without modal={true}, Radix's DismissableLayer treats Popover clicks as outside interactions.
-  // See: https://github.com/radix-ui/primitives/issues/2121
-  //
-  // Note: This may cause aria-hidden console warnings when the Popover opens inside a Dialog,
-  // but it's necessary for the Popover to function. The warnings don't block functionality.
   return (
     <PopoverContext.Provider value={{ open, setOpen, hover, click }}>
       <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange} modal={insideModal}>
@@ -102,14 +96,7 @@ const PopoverContent = React.forwardRef<
         side={side}
         onMouseEnter={() => handleHover(hover, setOpen, "enter")}
         onMouseLeave={() => handleHover(hover, setOpen, "leave")}
-        onInteractOutside={(e) => {
-          // Prevent the default behavior which can cause issues inside modals
-          // when clicking on other elements within the same modal
-          const target = e.target as HTMLElement;
-          if (target?.closest('[role="dialog"]')) {
-            e.preventDefault();
-          }
-        }}
+        // onClick={() => {setOpen(false)}}
         className={cn(
           "z-50 w-72 rounded-md border-popover bg-popover text-popover-foreground ring-1 ring-gray-200 dark:ring-slate-700 shadow-md focus:outline-none animate-in",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
