@@ -559,7 +559,7 @@ export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
                     <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                         {title || 'Chart'}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 print:hidden chart-actions">
                         <button
                             onClick={handleCopy}
                             disabled={isCopied}
