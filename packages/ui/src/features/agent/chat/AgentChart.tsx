@@ -1,6 +1,6 @@
 import { Component, memo, useState, useRef, useCallback, type ReactNode, type ErrorInfo } from 'react';
 import { toPng } from 'html-to-image';
-import { Download } from 'lucide-react';
+import { Download, Copy, Check } from 'lucide-react';
 import {
     ResponsiveContainer,
     BarChart,
@@ -158,7 +158,28 @@ export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
     } = spec;
     const [collapsed, setCollapsed] = useState<boolean>(options?.collapseInitially ?? false);
     const [isExporting, setIsExporting] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
     const chartRef = useRef<HTMLDivElement>(null);
+
+    const handleCopy = useCallback(async () => {
+        if (!chartRef.current || isCopied) return;
+
+        try {
+            const dataUrl = await toPng(chartRef.current, {
+                backgroundColor: '#ffffff',
+                pixelRatio: 2,
+            });
+            const response = await fetch(dataUrl);
+            const blob = await response.blob();
+            await navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+            ]);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy chart:', err);
+        }
+    }, [isCopied]);
 
     const handleExport = useCallback(async () => {
         if (!chartRef.current || isExporting) return;
