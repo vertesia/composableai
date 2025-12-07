@@ -12,6 +12,7 @@ import MessageInput from "./ModernAgentOutput/MessageInput";
 import { getWorkstreamId, insertMessageInTimeline, isInProgress } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
+import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
 
 type StartWorkflowFn = (
     initialMessage?: string,
@@ -675,6 +676,7 @@ function ModernAgentConversationInner({
     };
 
     return (
+        <ArtifactUrlCacheProvider>
         <div className="flex gap-2 h-full">
             {/* Conversation Area - responsive width based on panel visibility */}
             <div
@@ -803,6 +805,7 @@ function ModernAgentConversationInner({
                 </VModalFooter>
             </VModal>
         </div>
+        </ArtifactUrlCacheProvider>
     );
 }
 
