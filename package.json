@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/packages",
-    "version": "0.79.3",
+    "version": "0.79.4",
     "private": true,
     "scripts": {
         "bump": "pnpm exec wst bump minor -x llumiverse",
