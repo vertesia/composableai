@@ -131,6 +131,10 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
             );
         };
     },
+    // objectLink is deprecated (alias kept for backward compatibility)
+    objectLink(params?: URLSearchParams, onClick?: (id: string) => void) {
+        return renderers.objectName(params, onClick);
+    },
     typeLink(_params?: URLSearchParams, _onClick?: (id: string) => void) {
         return (value: any, index: number) => {
             return <td key={index}>{value?.name || "n/a"}</td>;
