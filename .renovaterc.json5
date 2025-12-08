@@ -1,0 +1,229 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  // Clone composableai and llumiverse, otherwise dependencies cannot be analyzed correctly
+  "cloneSubmodules": true,
+  // "auto": we use this by default.
+  //
+  //     We want to allow Renovate to choose the most adapted rangeStrategy based on its
+  //     understanding.
+  //
+  // "bump": we use this in specific package rules that we know well.
+  //
+  //     When Renovate suggests updates, not only it should update the lockfile, but it should also
+  //     update the version range in `package.json` files to match the new version. This allows us to:
+  //       - Enforce stricter version requirements. We don't need more flexibility because we are not
+  //         building a SDK here.
+  //       - Have clearer documentation on versions that we support.
+  //       - Avoid repetitive lockfile updates: sometimes one PR updates one group of dependencies,
+  //         while another PR updates another group. Some changes were erased since they are only
+  //         present in the lockfile.
+  //
+  // See https://docs.renovatebot.com/configuration-options/#rangestrategy
+  "rangeStrategy": "auto",
+  "extends": [
+    // We don't want to update major versions of Docker images automatically.
+    // 
+    // Major versions are tightly coupled with the node.js version, e.g. node:22, node:23. We want
+    // to keep the same major used in CI, local development, and production. We also want to use a
+    // LTS version. Upgrading to a new major version will be handled manually.
+    //
+    // See https://github.com/vertesia/studio/wiki/Node
+    "docker:disableMajor"
+  ],
+  "prConcurrentLimit": 40,
+  "labels": ["dependencies"],
+  "packageRules": [
+    // Catch-all npm dependencies, later groups take precedence
+    {
+      "groupName": "node dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "*"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 3" // Wednesday
+    },
+    // Github Actions dependencies
+    {
+      "groupName": "gh-actions deps",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "schedule": "* * * * 2" // Tuesday
+    },
+    // Docker dependencies
+    {
+      "groupName": "docker",
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "schedule": "* * * * 5" // Friday
+    },
+    // Group dependencies by mono-repo(s) or similarity to reduce the number of updates.
+    {
+      "groupName": "backend dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        // cloud provider
+        "@aws-sdk/**",
+        // workflow
+        "@temporalio/**",
+        // database
+        "bson",
+        "mongodb**",
+        "mongodb",
+        "mongoose",
+        // web
+        "@koa-stack/**",
+        "koa"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 4" // Thursday
+    },
+    {
+      "groupName": "codemirror dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "@codemirror/**",
+        "codemirror"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 2" // Tuesday
+    },
+    {
+      "groupName": "eslint dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "@eslint/**",
+        "@typescript-eslint/**",
+        "typescript-eslint",
+        "eslint**"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 4" // Thursday
+    },
+    {
+      "groupName": "UI Component dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "chart.js",
+        "@floating-ui/**",
+        "@headlessui/**",
+        "lucide-react",
+        "@radix-ui/**",
+        "@tailwindcss/**",
+        "tailwind**",
+        "shiki",
+        "@xyflow/react",
+        "framer-motion",
+        "motion",
+        "react**",
+        "sonner",
+        "zustand",
+        "clsx",
+        "cmdk",
+        "downshift",
+        "use-debounce",
+        "remark",
+        "remark-gfm",
+        "postcss"
+      ],
+      "addLabels": ["ui/ux"],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 1" // Monday
+    },
+    {
+      "groupName": "UI Infrastructure dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "@next/**",
+        "next**",
+        "@vercel/**",
+        "react",
+        "react-dom",
+        "@types/react**",
+        "@vitejs/**",
+        "vite**"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 2" // Tuesday
+    },
+    {
+      "groupName": "google-cloud dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "@google-cloud/**",
+        "@googleapis/**",
+        "googleapis",
+        "googleapis/**",
+        "googleapis-common",
+        "google-auth-library",
+        "google-artifactregistry-auth"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 2" // Tuesday
+    },
+    {
+      "groupName": "tsconfig dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "@tsconfig/**"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 5" // Friday
+    },
+    {
+      "groupName": "package manager dependencies",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "npm",
+        "pnpm"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 2" // Tuesday
+    },
+    // Overrides go at the bottom, highest precedence
+    {
+      "groupName": "Package Overrides",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "overrides"
+      ],
+      "rangeStrategy": "bump",
+      "schedule": "* * * * 4" // Thursday
+    },
+    // Disable automatic updates for node engines
+    {
+      "matchPackageNames": [
+        "node"
+      ],
+      "matchDatasources": [
+        "node"
+      ],
+      "matchDepTypes": [
+        "engines"
+      ],
+      "enabled": false
+    }
+  ]
+}

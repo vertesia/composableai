@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/common",
-    "version": "0.79.4",
+    "version": "0.80.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -33,6 +33,11 @@
         "@llumiverse/common": "workspace:*",
         "ajv": "^8.16.0",
         "json-schema": "^0.4.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/common"
     },
     "ts_dual_module": {
         "outDir": "lib"

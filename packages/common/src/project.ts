@@ -69,6 +69,8 @@ export interface ProjectConfiguration {
     default_environment?: string;
     default_model?: string;
 
+    sync_content_properties?: boolean;
+
     embeddings: {
         text?: ProjectConfigurationEmbeddings;
         image?: ProjectConfigurationEmbeddings;

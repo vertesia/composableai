@@ -32,95 +32,96 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
         throw new Error('No id token found');
     }
 
-    console.log('Fetching composable token from ' + Env.endpoints.studio);
-    Env.logger.info('Fetching composable token from' + Env.endpoints.studio, {
+    // Use STS endpoint - either configured or default to sts.vertesia.io
+    const stsEndpoint = Env.endpoints.sts;
+    console.log('Using STS for token generation:', stsEndpoint);
+    Env.logger.info('Using STS for token generation', {
         vertesia: {
             account_id: accountId,
             project_id: projectId,
+            sts_url: stsEndpoint,
         },
     });
 
-    const url = new URL(Env.endpoints.studio + '/auth/token');
-    if (accountId) url.searchParams.set('accountId', accountId);
-    if (projectId) url.searchParams.set('projectId', projectId);
-    if (ttl) url.searchParams.set('ttl', String(ttl));
-
-    console.log(`Getting composable token for account ${accountId} and project ${projectId}`);
-    Env.logger.info('Getting composable token', {
-        vertesia: {
+    try {
+        // Call STS to generate a user token
+        const stsUrl = new URL(stsEndpoint + '/token/issue');
+        const requestBody = {
+            type: 'user',
             account_id: accountId,
             project_id: projectId,
-        },
-    });
+            expires_at: ttl ? Math.floor(Date.now() / 1000) + ttl : undefined,
+        };
 
-    const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
+        const stsRes = await fetch(stsUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}` // Firebase token for authentication
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (idToken && stsRes?.status === 412) {
+            console.log("412: auth succeeded but user doesn't exist - signup required", stsRes?.status);
+            Env.logger.error("412: auth succeeded but user doesn't exist - signup required", {
+                vertesia: {
+                    account_id: accountId,
+                    project_id: projectId,
+                    status: stsRes?.status
+                },
+            });
+            const idTokenDecoded = jwtDecode(idToken) as any;
+            if (!idTokenDecoded?.email) {
+                Env.logger.error('No email found in id token');
+                throw new Error('No email found in id token');
+            }
+            Env.logger.error('User not found', {
+                vertesia: {
+                    account_id: accountId,
+                    project_id: projectId,
+                    email: idTokenDecoded.email
+                }
+            });
+            throw new UserNotFoundError('User not found', idTokenDecoded.email);
         }
-    }).catch(err => {
+
+        if (!stsRes.ok) {
+            const errorText = await stsRes.text();
+            console.error('STS token generation failed:', stsRes.status, errorText);
+            Env.logger.error('STS token generation failed', {
+                vertesia: {
+                    status: stsRes.status,
+                    error: errorText,
+                    account_id: accountId,
+                    project_id: projectId,
+                },
+            });
+            throw new Error(`Failed to get token from STS: ${stsRes.status}`);
+        }
+
+        const { token } = await stsRes.json();
+        console.log('Successfully got token from STS');
+        Env.logger.info('Successfully got token from STS');
+        return token;
+
+    } catch (error) {
+        if (error instanceof UserNotFoundError) {
+            throw error; // Re-throw UserNotFoundError
+        }
+
         localStorage.removeItem(LastSelectedAccountId_KEY);
         localStorage.removeItem(LastSelectedProjectId_KEY);
-        console.error('Failed to get composable token', err);
-        Env.logger.error('Failed to get composable token', {
+        console.error('Failed to get composable token from STS', error);
+        Env.logger.error('Failed to get composable token from STS', {
             vertesia: {
                 account_id: accountId,
                 project_id: projectId,
-                error: err,
-            },
-        });
-        throw new Error('Failed to get composable token');
-    });
-
-    if (idToken && res?.status === 412) {
-        console.log("412: auth succeeded but user doesn't exist - signup required", res?.status);
-        Env.logger.error("412: auth succeeded but user doesn't exist - signup required", {
-            vertesia: {
-                account_id: accountId,
-                project_id: projectId,
-                status: res?.status
-            },
-        });
-        const idTokenDecoded = jwtDecode(idToken) as any;
-        if (!idTokenDecoded?.email) {
-            Env.logger.error('No email found in id token');
-            throw new Error('No email found in id token');
-        }
-        Env.logger.error('User not found', {
-            vertesia: {
-                account_id: accountId,
-                project_id: projectId,
-                email: idTokenDecoded.email
-            }
-        });
-        throw new UserNotFoundError('User not found', idTokenDecoded.email);
-    }
-
-    if (!res || !res.ok) {
-        console.error('Failed to get composable token', res);
-        Env.logger.error('Failed to get composable token', {
-            vertesia: {
-                account_id: accountId,
-                project_id: projectId,
-                status: res?.status,
+                error: error,
             },
         });
         throw new Error('Failed to get composable token');
     }
-
-    const { token } = await res.json().catch(err => {
-        Env.logger.error('Failed to parse composable token', {
-            vertesia: {
-                account_id: accountId,
-                project_id: projectId,
-                error: err,
-            },
-        });
-        console.error('Failed to parse composable token', err);
-    });
-
-    return token;
 }
 
 /**
