@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/api-fetch-client",
-  "version": "0.79.4",
+  "version": "0.80.0",
   "description": "HTTP client which wraps a fetch implementation and simplify the creation of REST API clients. Works both in browser and in node.",
   "type": "module",
   "types": "./lib/types/index.d.ts",
@@ -24,7 +24,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vertesia/composableai/tree/main/packages/api-fetch-client.git"
+    "url": "https://github.com/vertesia/composableai.git",
+    "directory": "packages/api-fetch-client"
   },
   "keywords": [
     "fetch",

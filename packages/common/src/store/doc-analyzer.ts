@@ -56,10 +56,17 @@ export interface DocTableJson extends DocTable {
 }
 
 /**
+ * Output format for document processing workflows
+ */
+export type DocProcessorOutputFormat = "xml" | "markdown";
+
+/**
  * Represents a document analysis run status
  */
 export interface DocAnalyzeRunStatusResponse extends WorkflowRunStatus {
     progress?: DocAnalyzerProgress;
+    /** The output format being used for processing (markdown or xml) */
+    output_format?: DocProcessorOutputFormat;
 }
 
 export interface DocAnalyzerResultResponse {
@@ -76,6 +83,8 @@ export interface DocAnalyzerProgress {
     visuals: DocAnalyzerProgressStatus;
     started_at?: number;
     percent: number;
+    /** The output format being used for processing (markdown or xml) */
+    output_format?: DocProcessorOutputFormat;
 }
 
 interface DocAnalyzerProgressStatus {

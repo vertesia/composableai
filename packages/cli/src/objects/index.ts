@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { createObject, deleteObject, getObject, listObjects, updateObject } from "./commands.js";
+import { createObject, deleteObject, downloadObjectContent, getObject, listObjects, updateObject } from "./commands.js";
 
 export function registerObjectsCommand(program: Command) {
 
@@ -22,19 +22,25 @@ export function registerObjectsCommand(program: Command) {
         });
     store.command('delete <objectId>')
         .description("Delete an existing object given its ID")
-        .action((objectId: string, options: Record<string, any>) => {
-            deleteObject(program, objectId, options);
+        .action(async (objectId: string, options: Record<string, any>) => {
+            await deleteObject(program, objectId, options);
         });
     store.command('get <objectId>')
         .description("Get an existing object given its ID")
-        .action((objectId: string, options: Record<string, any>) => {
-            getObject(program, objectId, options);
+        .action(async (objectId: string, options: Record<string, any>) => {
+            await getObject(program, objectId, options);
+        });
+    store.command('download <objectId>')
+        .description("Download an object's content to a file")
+        .option('-o, --output [path]', 'Output file path (defaults to object name)')
+        .action(async (objectId: string, options: Record<string, any>) => {
+            await downloadObjectContent(program, objectId, options);
         });
     store.command('list [folderPath]')
         .description("List the objects inside a folder. If no folder is specified all the objects are listed.")
         .option('-l,--limit [limit]', 'Limit the number of objects returned. The default limit is 100. Useful for pagination.')
         .option('-s,--skip [skip]', 'Skip the number of objects to skip. Default is 0. Useful for pagination.')
-        .action((folderPath: string | undefined, options: Record<string, any>) => {
-            listObjects(program, folderPath, options);
+        .action(async (folderPath: string | undefined, options: Record<string, any>) => {
+            await listObjects(program, folderPath, options);
         });
 }
