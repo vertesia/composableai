@@ -322,12 +322,30 @@ importers:
         specifier: ^1.2.3
         version: 1.2.3
     devDependencies:
+      '@hono/node-server':
+        specifier: ^1.19.5
+        version: 1.19.6(hono@4.10.7)
+      '@llumiverse/common':
+        specifier: ^0.22.0
+        version: 0.22.0
       '@types/hasbin':
         specifier: ^1.2.2
         version: 1.2.2
       '@types/node':
         specifier: ^22.5.0
         version: 22.17.1
+      '@vertesia/client':
+        specifier: workspace:*
+        version: link:../client
+      '@vertesia/common':
+        specifier: workspace:*
+        version: link:../common
+      '@vertesia/tools-sdk':
+        specifier: workspace:*
+        version: link:../tools-sdk
+      hono:
+        specifier: ^4.10.3
+        version: 4.10.7
       typescript:
         specifier: ^5.7.2
         version: 5.9.2
@@ -487,8 +505,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       hono:
-        specifier: ^4.0.0
-        version: 4.9.1
+        specifier: ^4.10.0
+        version: 4.10.7
       jose:
         specifier: ^6.0.11
         version: 6.0.12
@@ -1466,6 +1484,12 @@ packages:
       react: 19.1.2
       react-dom: 19.1.2
 
+  '@hono/node-server@1.19.6':
+    resolution: {integrity: sha512-Shz/KjlIeAhfiuE93NDKVdZ7HdBVLQAfdbaXEaoAVO3ic9ibRSLGIQGkcBbFyuLr+7/1D5ZCINM8B+6IvXeMtw==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
+
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
     engines: {node: '>=18.18.0'}
@@ -1663,6 +1687,9 @@ packages:
 
   '@lezer/lr@1.4.2':
     resolution: {integrity: sha512-pu0K1jCIdnQ12aWNaAVU5bzi7Bd1w54J3ECgANPmYLtQKP0HBj2cE/5coBD66MT10xbtIuUr7tg0Shbsvk0mDA==}
+
+  '@llumiverse/common@0.22.0':
+    resolution: {integrity: sha512-BcqIkn6PaqhUGP4RkDH67GlOQE5hP8H4GrS8SHdR3jZp4DnY0Ccgbvs4gWF+TKWWiJM00g3DJ5zckSJs7FqBCQ==}
 
   '@marijn/find-cluster-break@1.0.2':
     resolution: {integrity: sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g==}
@@ -4061,8 +4088,8 @@ packages:
     resolution: {integrity: sha512-trFMIq3PATiFRiQmNNeHtsrkwYRByIXUbYNbotiY9RLVfMkdwZdd2eQ38mGt7BRiCKBaj1DyBAIHmm7mmXPuuw==}
     engines: {node: '>=10.0.0'}
 
-  hono@4.9.1:
-    resolution: {integrity: sha512-qfvdJ42t6CQE0N/iSCa8KsW8SQqYD67YB+TYbwPHlnALvX+s7ynh8otR1NEk5jXtUg73gpV/B82OSufDmwtX3w==}
+  hono@4.10.7:
+    resolution: {integrity: sha512-icXIITfw/07Q88nLSkB9aiUrd8rYzSweK681Kjo/TSggaGbOX4RRyxxm71v+3PC8C/j+4rlxGeoTRxQDkaJkUw==}
     engines: {node: '>=16.9.0'}
 
   html-url-attributes@3.0.1:
@@ -7134,6 +7161,10 @@ snapshots:
       react-dom: 19.1.2(react@19.1.2)
       use-sync-external-store: 1.5.0(react@19.1.2)
 
+  '@hono/node-server@1.19.6(hono@4.10.7)':
+    dependencies:
+      hono: 4.10.7
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.6':
@@ -7318,6 +7349,8 @@ snapshots:
   '@lezer/lr@1.4.2':
     dependencies:
       '@lezer/common': 1.2.3
+
+  '@llumiverse/common@0.22.0': {}
 
   '@marijn/find-cluster-break@1.0.2': {}
 
@@ -10049,7 +10082,7 @@ snapshots:
 
   heap-js@2.6.0: {}
 
-  hono@4.9.1: {}
+  hono@4.10.7: {}
 
   html-url-attributes@3.0.1: {}
 
