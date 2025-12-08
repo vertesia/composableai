@@ -326,8 +326,8 @@ importers:
         specifier: ^1.19.5
         version: 1.19.6(hono@4.10.7)
       '@llumiverse/common':
-        specifier: ^0.22.0
-        version: 0.22.0
+        specifier: workspace:*
+        version: link:../../llumiverse/common
       '@types/hasbin':
         specifier: ^1.2.2
         version: 1.2.2
@@ -1687,9 +1687,6 @@ packages:
 
   '@lezer/lr@1.4.2':
     resolution: {integrity: sha512-pu0K1jCIdnQ12aWNaAVU5bzi7Bd1w54J3ECgANPmYLtQKP0HBj2cE/5coBD66MT10xbtIuUr7tg0Shbsvk0mDA==}
-
-  '@llumiverse/common@0.22.0':
-    resolution: {integrity: sha512-BcqIkn6PaqhUGP4RkDH67GlOQE5hP8H4GrS8SHdR3jZp4DnY0Ccgbvs4gWF+TKWWiJM00g3DJ5zckSJs7FqBCQ==}
 
   '@marijn/find-cluster-break@1.0.2':
     resolution: {integrity: sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g==}
@@ -7349,8 +7346,6 @@ snapshots:
   '@lezer/lr@1.4.2':
     dependencies:
       '@lezer/common': 1.2.3
-
-  '@llumiverse/common@0.22.0': {}
 
   '@marijn/find-cluster-break@1.0.2': {}
 
