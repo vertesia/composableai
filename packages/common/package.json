@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/common",
-    "version": "0.79.3",
+    "version": "0.79.4",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
