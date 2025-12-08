@@ -36,7 +36,7 @@
         "typescript": "^5.7.2",
         "hono": "^4.10.3",
         "@hono/node-server": "^1.19.5",
-        "@llumiverse/common": "workspace:*",
+        "@llumiverse/common": "^0.22.0",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "@vertesia/tools-sdk": "workspace:*"
