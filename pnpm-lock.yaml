@@ -505,8 +505,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       hono:
-        specifier: ^4.0.0
-        version: 4.9.1
+        specifier: ^4.10.0
+        version: 4.10.7
       jose:
         specifier: ^6.0.11
         version: 6.0.12
@@ -4090,10 +4090,6 @@ packages:
 
   hono@4.10.7:
     resolution: {integrity: sha512-icXIITfw/07Q88nLSkB9aiUrd8rYzSweK681Kjo/TSggaGbOX4RRyxxm71v+3PC8C/j+4rlxGeoTRxQDkaJkUw==}
-    engines: {node: '>=16.9.0'}
-
-  hono@4.9.1:
-    resolution: {integrity: sha512-qfvdJ42t6CQE0N/iSCa8KsW8SQqYD67YB+TYbwPHlnALvX+s7ynh8otR1NEk5jXtUg73gpV/B82OSufDmwtX3w==}
     engines: {node: '>=16.9.0'}
 
   html-url-attributes@3.0.1:
@@ -10087,8 +10083,6 @@ snapshots:
   heap-js@2.6.0: {}
 
   hono@4.10.7: {}
-
-  hono@4.9.1: {}
 
   html-url-attributes@3.0.1: {}
 
