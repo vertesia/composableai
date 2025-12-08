@@ -324,7 +324,7 @@ importers:
     devDependencies:
       '@hono/node-server':
         specifier: ^1.19.5
-        version: 1.19.5(hono@4.10.4)
+        version: 1.19.6(hono@4.10.7)
       '@llumiverse/common':
         specifier: ^0.22.0
         version: 0.22.0
@@ -334,6 +334,18 @@ importers:
       '@types/node':
         specifier: ^22.5.0
         version: 22.17.1
+      '@vertesia/client':
+        specifier: workspace:*
+        version: link:../client
+      '@vertesia/common':
+        specifier: workspace:*
+        version: link:../common
+      '@vertesia/tools-sdk':
+        specifier: workspace:*
+        version: link:../tools-sdk
+      hono:
+        specifier: ^4.10.3
+        version: 4.10.7
       typescript:
         specifier: ^5.7.2
         version: 5.9.2
@@ -1471,6 +1483,12 @@ packages:
     peerDependencies:
       react: 19.1.2
       react-dom: 19.1.2
+
+  '@hono/node-server@1.19.6':
+    resolution: {integrity: sha512-Shz/KjlIeAhfiuE93NDKVdZ7HdBVLQAfdbaXEaoAVO3ic9ibRSLGIQGkcBbFyuLr+7/1D5ZCINM8B+6IvXeMtw==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -4069,6 +4087,10 @@ packages:
   heap-js@2.6.0:
     resolution: {integrity: sha512-trFMIq3PATiFRiQmNNeHtsrkwYRByIXUbYNbotiY9RLVfMkdwZdd2eQ38mGt7BRiCKBaj1DyBAIHmm7mmXPuuw==}
     engines: {node: '>=10.0.0'}
+
+  hono@4.10.7:
+    resolution: {integrity: sha512-icXIITfw/07Q88nLSkB9aiUrd8rYzSweK681Kjo/TSggaGbOX4RRyxxm71v+3PC8C/j+4rlxGeoTRxQDkaJkUw==}
+    engines: {node: '>=16.9.0'}
 
   hono@4.9.1:
     resolution: {integrity: sha512-qfvdJ42t6CQE0N/iSCa8KsW8SQqYD67YB+TYbwPHlnALvX+s7ynh8otR1NEk5jXtUg73gpV/B82OSufDmwtX3w==}
@@ -7143,6 +7165,10 @@ snapshots:
       react-dom: 19.1.2(react@19.1.2)
       use-sync-external-store: 1.5.0(react@19.1.2)
 
+  '@hono/node-server@1.19.6(hono@4.10.7)':
+    dependencies:
+      hono: 4.10.7
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.6':
@@ -10059,6 +10085,8 @@ snapshots:
   he@1.2.0: {}
 
   heap-js@2.6.0: {}
+
+  hono@4.10.7: {}
 
   hono@4.9.1: {}
 
