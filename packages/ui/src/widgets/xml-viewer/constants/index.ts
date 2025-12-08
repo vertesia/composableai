@@ -15,3 +15,14 @@ export const defaultTheme = {
   cdataColor: '#1d781d',
   fontFamily: 'monospace',
 };
+
+export const darkTheme = {
+  attributeKeyColor: '#FFD700',
+  attributeValueColor: '#FF4500',
+  tagColor: '#87CEFA',
+  textColor: '#00FF00',
+  separatorColor: '#FFD700',
+  commentColor: '#BEBEBE',
+  cdataColor: '#33CC66',
+  fontFamily: 'monospace',
+};

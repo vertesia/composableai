@@ -1,6 +1,7 @@
 import { Plan } from "@vertesia/common";
 import { Badge, Button } from "@vertesia/ui/core";
 import { AlertCircle, CheckCircle, Circle, Clock, X } from "lucide-react";
+import React from "react";
 
 interface InlinePlanPanelProps {
   plan: Plan;
@@ -12,7 +13,7 @@ interface InlinePlanPanelProps {
   onChangePlan?: (index: number) => void;
 }
 
-export default function InlineSlidingPlanPanel({
+function InlineSlidingPlanPanelComponent({
   plan,
   workstreamStatus,
   isOpen,
@@ -264,3 +265,7 @@ export default function InlineSlidingPlanPanel({
     </div>
   );
 }
+
+const InlineSlidingPlanPanel = React.memo(InlineSlidingPlanPanelComponent);
+
+export default InlineSlidingPlanPanel;

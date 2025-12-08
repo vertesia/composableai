@@ -33,7 +33,7 @@ export default async function runInteraction(program: Command, interactionSpec: 
     try {
         const queue = new ExecutionQueue();
         const data = await getInputData(options);
-        const client = getClient(program);
+        const client = await getClient(program);
 
         let count = options.count ? parseInt(options.count) : 1;
         if (isNaN(count) || count < 0) {
