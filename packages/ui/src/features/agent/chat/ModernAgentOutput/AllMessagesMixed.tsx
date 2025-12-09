@@ -167,11 +167,13 @@ export default function AllMessagesMixed({
                         <>
                             {/* Get all messages to display in sliding view */}
                             {(() => {
-                                // First get all permanent messages (ANSWER, QUESTION, COMPLETE, REQUEST_INPUT, TERMINATED)
+                                // First get all permanent messages (ANSWER, QUESTION, COMPLETE, REQUEST_INPUT, IDLE, TERMINATED)
                                 const permanentMessages = displayMessages.filter(msg =>
                                     msg.type === AgentMessageType.ANSWER ||
                                     msg.type === AgentMessageType.QUESTION ||
                                     msg.type === AgentMessageType.COMPLETE ||
+                                    msg.type === AgentMessageType.IDLE ||
+                                    msg.type === AgentMessageType.REQUEST_INPUT ||
                                     msg.type === AgentMessageType.TERMINATED
                                 );
 
