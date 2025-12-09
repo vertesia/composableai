@@ -1,3 +1,5 @@
+import { readdirSync, statSync, existsSync, readFileSync } from "fs";
+import { join } from "path";
 import { ToolDefinition } from "@llumiverse/common";
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -323,4 +325,65 @@ export async function loadSkillFromFile(
     const content = await fs.readFile(filePath, 'utf-8');
     const contentType: SkillContentType = filePath.endsWith('.jst') ? 'jst' : 'md';
     return parseSkillFile(content, contentType);
+}
+
+/**
+ * Load all skills from a directory.
+ * Scans for subdirectories containing SKILL.md files.
+ *
+ * Directory structure:
+ * ```
+ * skills/
+ *   nagare/
+ *     fund-onboarding/
+ *       SKILL.md
+ *     monte-carlo/
+ *       SKILL.md
+ * ```
+ *
+ * @param dirPath - Path to the skills collection directory
+ * @returns Array of parsed skill definitions
+ */
+export function loadSkillsFromDirectory(dirPath: string): SkillDefinition[] {
+    const skills: SkillDefinition[] = [];
+
+    let entries: string[];
+    try {
+        entries = readdirSync(dirPath);
+    } catch {
+        console.warn(`Could not read skills directory: ${dirPath}`);
+        return skills;
+    }
+
+    for (const entry of entries) {
+        const entryPath = join(dirPath, entry);
+
+        try {
+            const stat = statSync(entryPath);
+            if (!stat.isDirectory()) continue;
+
+            // Look for SKILL.md or SKILL.jst
+            const mdPath = join(entryPath, "SKILL.md");
+            const jstPath = join(entryPath, "SKILL.jst");
+
+            let content: string | undefined;
+            let contentType: SkillContentType = 'md';
+
+            if (existsSync(mdPath)) {
+                content = readFileSync(mdPath, "utf-8");
+                contentType = 'md';
+            } else if (existsSync(jstPath)) {
+                content = readFileSync(jstPath, "utf-8");
+                contentType = 'jst';
+            }
+
+            if (content) {
+                skills.push(parseSkillFile(content, contentType));
+            }
+        } catch (err) {
+            console.warn(`Error loading skill from ${entryPath}:`, err);
+        }
+    }
+
+    return skills;
 }

@@ -84,13 +84,13 @@ export class DocumentTableColumn {
         const type = this.layout.type || 'string';
         const baseType = type.indexOf('?') > 0 ? type.substring(0, type.indexOf('?')) : type;
         
-        if (baseType === 'objectId' && this.previewObject) {
+        if ((baseType === 'objectId' || baseType === 'objectLink') && this.previewObject) {
             const i = type.indexOf('?');
             const params = i > 0 ? new URLSearchParams(type.substring(i + 1)) : undefined;
-            const objectIdRenderer = renderers.objectId(params, (_id: string) => {
+            const renderer = renderers[baseType](params, (_id: string) => {
                 this.previewObject!(object.id);
             });
-            return objectIdRenderer(object, index);
+            return renderer(object, index);
         }
         
         // Otherwise use the type-based renderer with the resolved value

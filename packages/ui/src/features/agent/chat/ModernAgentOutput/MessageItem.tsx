@@ -495,7 +495,7 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                     )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 print:hidden">
                     <span className="text-xs text-muted">
                         {dayjs(message.timestamp).format("HH:mm:ss")}
                     </span>
@@ -555,7 +555,7 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                         )}
 
                         {/* Buttons for all artifacts (files and images) */}
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 print:hidden">
                             {artifactLinks.map(({ displayName, artifactPath, url }) => (
                                 <Button
                                     key={artifactPath + url}
@@ -574,7 +574,7 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
 
                 {/* Optional details section */}
                 {message.details && (
-                    <div className="mt-2">
+                    <div className="mt-2 print:hidden">
                         <button
                             onClick={() => setShowDetails(!showDetails)}
                             className="text-xs text-muted flex items-center"

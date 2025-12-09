@@ -1,8 +1,8 @@
-import { ToolCollection } from "@vertesia/tools-sdk";
-import { Context, Hono } from "hono";
+import { ToolCollection, ToolCollectionDefinition } from "@vertesia/tools-sdk";
+import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { collections } from "./collections/index.js";
 import { HTTPException } from "hono/http-exception";
+import { collections } from "./collections/index.js";
 
 function createServer(collections: ToolCollection[], prefix = '/api') {
     prefix = prefix.trim();
@@ -54,17 +54,19 @@ function createCollectionEndpoints(coll: ToolCollection) {
     const endpoint = new Hono();
 
     // POST endpoint to execute tools
-    endpoint.post('/', (c: Context) => {
+    endpoint.post('/', (c) => {
         return coll.execute(c);
     });
 
     // GET endpoint to retrieve collection metadata and tool definitions
     endpoint.get('/', (c) => {
+        const url = new URL(c.req.url);
         return c.json({
+            src: `${url.origin}${url.pathname}`,
             title: coll.title || coll.name,
-            description: coll.description,
+            description: coll.description || "",
             tools: coll.getToolDefinitions()
-        });
+        } satisfies ToolCollectionDefinition);
     });
 
     return endpoint;
