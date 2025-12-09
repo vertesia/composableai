@@ -10,6 +10,8 @@ import {
     ListWorkflowInteractionsResponse,
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
+    WebSocketClientMessage,
+    WebSocketServerMessage,
     WorkflowActionPayload,
     WorkflowDefinitionRef,
     WorkflowRule,
@@ -248,6 +250,170 @@ export class WorkflowsApi extends ApiTopic {
                 isClosed = true;
                 cleanup();
             };
+        });
+    }
+
+    /**
+     * Stream workflow messages via WebSocket (for mobile/React Native clients)
+     * @param workflowId The workflow ID
+     * @param runId The run ID
+     * @param onMessage Callback for incoming messages
+     * @param since Optional timestamp to resume from
+     * @returns Promise that resolves with cleanup function and sendSignal helper
+     */
+    async streamMessagesWS(
+        workflowId: string,
+        runId: string,
+        onMessage?: (message: AgentMessage) => void,
+        since?: number
+    ): Promise<{ cleanup: () => void; sendSignal: (signalName: string, data: any) => void }> {
+        return new Promise((resolve, reject) => {
+            let reconnectAttempts = 0;
+            const maxReconnectAttempts = 10;
+            const baseDelay = 1000;
+            const maxDelay = 30000;
+            let ws: WebSocket | null = null;
+            let lastMessageTimestamp = since || 0;
+            let isClosed = false;
+
+            const calculateBackoffDelay = (attempts: number): number => {
+                const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+                const jitter = Math.random() * 0.1 * exponentialDelay;
+                return exponentialDelay + jitter;
+            };
+
+            const connect = async () => {
+                if (isClosed) return;
+
+                try {
+                    const client = this.client as VertesiaClient;
+                    const wsUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/ws`);
+
+                    // Replace http/https with ws/wss
+                    wsUrl.protocol = wsUrl.protocol.replace('http', 'ws');
+
+                    // Add query parameters
+                    if (lastMessageTimestamp > 0) {
+                        wsUrl.searchParams.set('since', lastMessageTimestamp.toString());
+                    }
+
+                    const bearerToken = client._auth ? await client._auth() : undefined;
+                    if (!bearerToken) {
+                        reject(new Error('No auth token available'));
+                        return;
+                    }
+
+                    const token = bearerToken.split(' ')[1];
+                    wsUrl.searchParams.set('access_token', token);
+
+                    if (reconnectAttempts > 0) {
+                        console.log(`Reconnecting to WebSocket for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                    }
+
+                    ws = new WebSocket(wsUrl.href);
+
+                    ws.onopen = () => {
+                        if (reconnectAttempts > 0) {
+                            console.log(`Successfully reconnected to WebSocket for run ${runId}`);
+                        }
+                        reconnectAttempts = 0;
+
+                        // Resolve with helpers on first successful connection
+                        if (!isClosed) {
+                            resolve({
+                                cleanup: () => {
+                                    isClosed = true;
+                                    if (ws) {
+                                        ws.close();
+                                        ws = null;
+                                    }
+                                },
+                                sendSignal: (signalName: string, data: any) => {
+                                    if (ws?.readyState === WebSocket.OPEN) {
+                                        const message: WebSocketClientMessage = {
+                                            type: 'signal',
+                                            signalName,
+                                            data,
+                                            requestId: Date.now()
+                                        };
+                                        ws.send(JSON.stringify(message));
+                                    } else {
+                                        console.warn('WebSocket not open, cannot send signal');
+                                    }
+                                }
+                            });
+                        }
+                    };
+
+                    ws.onmessage = (event: MessageEvent) => {
+                        try {
+                            const message = JSON.parse(event.data) as WebSocketServerMessage;
+
+                            // Handle different message types
+                            if ('workflow_run_id' in message) {
+                                // This is an AgentMessage
+                                const agentMessage = message as AgentMessage;
+
+                                if (agentMessage.timestamp) {
+                                    lastMessageTimestamp = Math.max(lastMessageTimestamp, agentMessage.timestamp);
+                                }
+
+                                if (onMessage) onMessage(agentMessage);
+
+                                // Check for stream completion
+                                const streamIsOver =
+                                    agentMessage.type === AgentMessageType.TERMINATED ||
+                                    (agentMessage.type === AgentMessageType.COMPLETE &&
+                                        (!agentMessage.workstream_id || agentMessage.workstream_id === 'main'));
+
+                                if (streamIsOver) {
+                                    console.log('Closing WebSocket due to workflow completion');
+                                    isClosed = true;
+                                    if (ws) {
+                                        ws.close();
+                                        ws = null;
+                                    }
+                                }
+                            } else if (message.type === 'pong') {
+                                // Heartbeat response
+                                console.debug('Received pong');
+                            } else if (message.type === 'ack') {
+                                console.debug('Signal acknowledged', message);
+                            } else if (message.type === 'error') {
+                                console.error('WebSocket error message', message);
+                            }
+                        } catch (err) {
+                            console.error('Failed to parse WebSocket message', err);
+                        }
+                    };
+
+                    ws.onerror = (err) => {
+                        console.error('WebSocket error', err);
+                    };
+
+                    ws.onclose = () => {
+                        if (!isClosed && reconnectAttempts < maxReconnectAttempts) {
+                            const delay = calculateBackoffDelay(reconnectAttempts);
+                            console.log(`WebSocket closed, reconnecting in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                            reconnectAttempts++;
+                            setTimeout(connect, delay);
+                        } else if (reconnectAttempts >= maxReconnectAttempts) {
+                            reject(new Error(`WebSocket connection failed after ${maxReconnectAttempts} attempts`));
+                        }
+                    };
+                } catch (err) {
+                    console.error('Error setting up WebSocket', err);
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        const delay = calculateBackoffDelay(reconnectAttempts);
+                        reconnectAttempts++;
+                        setTimeout(connect, delay);
+                    } else {
+                        reject(err);
+                    }
+                }
+            };
+
+            connect();
         });
     }
 

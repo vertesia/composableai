@@ -3,7 +3,7 @@ import { getClient } from "../client.js";
 import { writeFile } from "../utils/stdio.js";
 
 export async function runHistory(program: Command, interactionId: string | undefined, options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
 
     const page = options.page ? parseInt(options.page) : 0;
     let limit = options.limit ? parseInt(options.limit) : 100;
