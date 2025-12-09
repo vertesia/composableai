@@ -1,6 +1,5 @@
-import { isEqual } from 'lodash-es';
 import { useEffect, useMemo, useState } from 'react';
-import { defaultTheme } from '../constants';
+import { darkTheme, defaultTheme } from '../constants';
 import { XMLViewerContext } from '../context/xml-viewer-context';
 import useXMLViewer from '../hooks/useXMLViewer';
 import { Elements } from './Elements';
@@ -17,7 +16,27 @@ export function XMLViewer(props: XMLViewerProps): React.ReactNode {
     initalCollapsedDepth,
     initialCollapsedDepth,
   } = props;
-  const [theme, setTheme] = useState<Theme>(() => ({ ...defaultTheme, ...customTheme }));
+
+  // Detect dark mode from document root class (set by ThemeProvider)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return document.documentElement.classList.contains('dark');
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(root.classList.contains('dark'));
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  // Compute theme based on dark mode, then apply custom overrides
+  const theme = useMemo<Theme>(() => {
+    const baseTheme = isDarkMode ? darkTheme : defaultTheme;
+    return { ...baseTheme, ...customTheme };
+  }, [isDarkMode, customTheme]);
+
   const { json, valid } = useXMLViewer(xml);
   const context = useMemo(
     () => ({
@@ -28,13 +47,6 @@ export function XMLViewer(props: XMLViewerProps): React.ReactNode {
     }),
     [theme, collapsible, indentSize, initalCollapsedDepth, initialCollapsedDepth],
   );
-
-  useEffect(() => {
-    setTheme((currentTheme) => {
-      const nextTheme = { ...defaultTheme, ...customTheme };
-      return isEqual(nextTheme, currentTheme) ? currentTheme : nextTheme;
-    });
-  }, [customTheme]);
 
   if (!valid) {
     return invalidXml ? invalidXml : <InvalidXml />;

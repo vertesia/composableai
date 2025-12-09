@@ -25,7 +25,7 @@ async function getGoogleToken(pkgDir?: string) {
         throw new Error("Profile entry not found in package.json");
     }
     config.use(pkg.vertesia.profile); // will exit if profile not found
-    const client = getClient();
+    const client = await getClient();
     const r = await client.account.getGoogleToken();
     return r.token;
 }

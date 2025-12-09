@@ -74,7 +74,13 @@ export function MessageBox({ icon, status, title, children, className }: Message
 }
 
 export function ErrorBox({ title, className, children }: { title: string, className?:string, children: React.ReactNode }) {
-    return <MessageBox status="error" title={title} className={className}><pre>{children}</pre></MessageBox>
+    return (
+        <MessageBox status="error" title={title} className={className}>
+            <pre className="whitespace-pre-wrap break-words">
+                {children}
+            </pre>
+        </MessageBox>
+    );
 }
 
 export function InfoBox({ title, className, children }: { title: string, className?:string, children: React.ReactNode }) {
@@ -92,5 +98,4 @@ export function SuccessBox({ title, className, children }: { title: string, clas
 export function DefaultBox({ title, className, children }: { title: string, className?:string, children: React.ReactNode }) {
     return <MessageBox status="default" title={title} className={className}>{children}</MessageBox>
 }
-
 

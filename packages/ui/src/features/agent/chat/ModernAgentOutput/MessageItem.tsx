@@ -2,11 +2,10 @@ import { AgentMessage, AgentMessageType } from "@vertesia/common";
 import { Badge, Button, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
+import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, MessageSquare, User } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { AnimatedThinkingDots, PulsatingCircle } from "../AnimatedThinkingDots";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
@@ -100,46 +99,17 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
 
     const messageStyles = getMessageStyles();
 
-    // Convert links in the content (now async to handle image URLs)
+    // Convert links in the content.
+    // Special schemes like store:, collection:, image:, and artifact:
+    // are now handled centrally in MarkdownRenderer, so this function
+    // only preserves the async shape for backwards compatibility.
     const convertLinks = async (content: string | object): Promise<string | object> => {
         // If content is not a string, return it as is
         if (typeof content !== "string") {
             return content;
         }
 
-        let processedContent = content;
-
-        // First, handle store and collection links
-        processedContent = processedContent.replace(/\[([^\]]+)\]\((store|collection):([a-f\d]{24})\)/gi, (_, text, type, id) => {
-            const path = type === 'store' ? 'objects' : 'collections';
-            return `[${text}](/store/${path}/${id})`;
-        });
-
-        // Then, handle image links by finding all image:<gcspath> patterns
-        const imageRegex = /!\[([^\]]*)\]\(image:([^)]+)\)/g;
-        const imageMatches = Array.from(processedContent.matchAll(imageRegex));
-
-        // Process all image URLs in parallel
-        const imageReplacements = await Promise.all(
-            imageMatches.map(async (match) => {
-                const [fullMatch, altText, gcsPath] = match;
-                try {
-                    const response = await client.files.getDownloadUrl(gcsPath);
-                    return { fullMatch, replacement: `![${altText}](${response.url})` };
-                } catch (error) {
-                    console.error(`Failed to get download URL for image: ${gcsPath}`, error);
-                    // Return original on error
-                    return { fullMatch, replacement: fullMatch };
-                }
-            })
-        );
-
-        // Apply all replacements
-        for (const { fullMatch, replacement } of imageReplacements) {
-            processedContent = processedContent.replace(fullMatch, replacement);
-        }
-
-        return processedContent;
+        return content;
     };
 
     // Get the message content to display with thinking message replacement
@@ -254,10 +224,12 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
         }
 
         // Handle string content with markdown - content is already processed
+        const runId = (message as any).workflow_run_id as string | undefined;
+
         return (
             <div className="vprose prose-sm">
-                <Markdown
-                    remarkPlugins={[remarkGfm]}
+                <MarkdownRenderer
+                    artifactRunId={runId}
                     components={{
                         a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
                             const href = props.href || "";
@@ -289,61 +261,77 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                                 />
                             );
                         },
-                        code: ({
-                            node,
-                            ref,
-                            className,
-                            children,
-                            ...props
-                        }: {
-                            node?: any;
-                            ref?: any;
-                            className?: string;
-                            children?: React.ReactNode;
-                        }) => {
-                            const match = /language-(\w+)/.exec(className || "");
-                            const isInline = !match;
-                            const language = match ? match[1] : "";
-
-                            // Keep only the language indicator logic here, styling moved to CSS
-                            return (
-                                <>
-                                    {!isInline && language && (
-                                        <div className="code-language-indicator">
-                                            {language}
-                                        </div>
-                                    )}
-                                    <code {...props}>
-                                        {children}
-                                    </code>
-                                </>
-                            );
-                        },
-                        // Remove 'node' and 'ref' from props
-                        p: ({ node, ref, ...props }) => <p {...props} />, 
-                        strong: ({ node, ref, ...props }) => <strong {...props} />,
-                        em: ({ node, ref, ...props }) => <em {...props} />,
-                        pre: ({ node, ref, ...props }) => <pre {...props} />,
-                        h1: ({ node, ref, ...props }) => <h1 {...props} />,
-                        h2: ({ node, ref, ...props }) => <h2 {...props} />,
-                        h3: ({ node, ref, ...props }) => <h3 {...props} />,
-                        li: ({ node, ref, ...props }) => <li {...props} />,
-                        ul: ({ node, ref, ...props }) => <ul {...props} />,
-                        ol: ({ node, ref, ...props }) => <ol {...props} />,
-                        blockquote: ({ node, ref, ...props }) => <blockquote {...props} />,
-                        hr: ({ node, ref, ...props }) => <hr {...props} />,
-                        table: ({ node, ref, ...props }) => <div className="overflow-x-auto"><table {...props} /></div>,
-                        th: ({ node, ref, ...props }) => <th {...props} />,
-                        td: ({ node, ref, ...props }) => <td {...props} />,
                     }}
                 >
                     {content as string}
-                </Markdown>
+                </MarkdownRenderer>
             </div>
         );
     };
 
     const messageContent = getMessageContent();
+
+    // Resolve artifacts from tool details (e.g. execute_shell.outputFiles)
+    const [artifactLinks, setArtifactLinks] = useState<
+        { displayName: string; artifactPath: string; url: string; isImage: boolean }[]
+    >([]);
+
+    useEffect(() => {
+        const loadArtifacts = async () => {
+            const runId = (message as any).workflow_run_id as string | undefined;
+            const details = message.details as any;
+            const outputFiles: unknown = details && details.outputFiles;
+
+            if (!runId || !Array.isArray(outputFiles) || outputFiles.length === 0) {
+                setArtifactLinks([]);
+                return;
+            }
+
+            try {
+                const entries = await Promise.all(
+                    outputFiles.map(async (name: unknown) => {
+                        if (typeof name !== "string" || !name.trim()) return null;
+                        const trimmed = name.trim();
+                        // execute_shell returns relative paths like "result.csv" or "plots/chart.png"
+                        // canonical artifact name is under out/
+                        const artifactPath =
+                            trimmed.startsWith("out/") || trimmed.startsWith("files/") || trimmed.startsWith("scripts/")
+                                ? trimmed
+                                : `out/${trimmed}`;
+
+                        const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
+                        const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
+                        const isImage = imageExtensions.has(ext);
+
+                        try {
+                            const disposition = isImage ? "inline" : "attachment";
+                            const { url } = await client.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
+                            return {
+                                displayName: trimmed,
+                                artifactPath,
+                                url,
+                                isImage,
+                            };
+                        } catch (err) {
+                            console.error(`Failed to resolve artifact URL for ${artifactPath}`, err);
+                            return null;
+                        }
+                    }),
+                );
+
+                setArtifactLinks(
+                    entries.filter(
+                        (e): e is { displayName: string; artifactPath: string; url: string; isImage: boolean } => !!e,
+                    ),
+                );
+            } catch (error) {
+                console.error("Error loading artifact URLs from message details", error);
+                setArtifactLinks([]);
+            }
+        };
+
+        loadArtifacts();
+    }, [message.details, message.timestamp, client]);
 
     // Process content with image URL resolution when component mounts or message changes
     useEffect(() => {
@@ -507,7 +495,7 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                     )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 print:hidden">
                     <span className="text-xs text-muted">
                         {dayjs(message.timestamp).format("HH:mm:ss")}
                     </span>
@@ -537,9 +525,56 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                     </div>
                 )}
 
+                {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
+                {artifactLinks.length > 0 && (
+                    <div className="mt-3 text-xs">
+                        <div className="font-medium text-muted mb-1">Artifacts</div>
+
+                        {/* Inline previews for image artifacts */}
+                        {artifactLinks.some(a => a.isImage) && (
+                            <div className="mb-2 flex flex-wrap gap-3">
+                                {artifactLinks
+                                    .filter(a => a.isImage)
+                                    .map(({ displayName, artifactPath, url }) => (
+                                        <div
+                                            key={`${artifactPath}-preview`}
+                                            className="max-w-xs cursor-pointer"
+                                            onClick={() => window.open(url, "_blank")}
+                                        >
+                                            <img
+                                                src={url}
+                                                alt={displayName}
+                                                className="max-w-full h-auto rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                                            />
+                                            <div className="mt-1 text-[11px] text-muted truncate">
+                                                {displayName}
+                                            </div>
+                                        </div>
+                                    ))}
+                            </div>
+                        )}
+
+                        {/* Buttons for all artifacts (files and images) */}
+                        <div className="flex flex-wrap gap-2 print:hidden">
+                            {artifactLinks.map(({ displayName, artifactPath, url }) => (
+                                <Button
+                                    key={artifactPath + url}
+                                    variant="outline"
+                                    size="xs"
+                                    className="px-2 py-1 text-xs"
+                                    onClick={() => window.open(url, "_blank")}
+                                    title={artifactPath}
+                                >
+                                    {displayName}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Optional details section */}
                 {message.details && (
-                    <div className="mt-2">
+                    <div className="mt-2 print:hidden">
                         <button
                             onClick={() => setShowDetails(!showDetails)}
                             className="text-xs text-muted flex items-center"

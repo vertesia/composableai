@@ -2,6 +2,30 @@ import type { ToolDefinition, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
 import { AuthTokenPayload, ToolResult, ToolResultContent } from "@vertesia/common";
 
+export type ICollection<T = any> = CollectionProperties & Iterable<T>
+
+export interface CollectionProperties {
+    /**
+     * A kebab case collection name. Must only contains alphanumeric and dash characters,
+     * The name can be used to generate the path where the collection is exposed.
+     * Example: my-collection
+     */
+    name: string;
+    /**
+     * Optional title for UI display. 
+     * If not provided the pascal case version of the name will be used
+     */
+    title?: string;
+    /**
+     * Optional icon for UI display
+     */
+    icon?: string;
+    /**
+     * A short description 
+     */
+    description?: string;
+}
+
 export interface ToolExecutionContext {
     /**
      * The raw JWT token to the tool execution request
@@ -94,4 +118,166 @@ export interface MCPConnectionDetails {
      * If an empty string no authentication will be done
      */
     token: string;
+}
+
+// ================== Skill Types ==================
+
+/**
+ * Content type for skill instructions
+ */
+export type SkillContentType = 'md' | 'jst';
+
+/**
+ * Context triggers for auto-injection of skills
+ */
+export interface SkillContextTriggers {
+    /**
+     * Keywords in user input that should trigger this skill
+     */
+    keywords?: string[];
+    /**
+     * If these tools are being used, suggest this skill
+     */
+    tool_names?: string[];
+    /**
+     * Regex patterns to match against input data
+     */
+    data_patterns?: string[];
+}
+
+/**
+ * Execution configuration for skills that need code execution
+ */
+export interface SkillExecution {
+    /**
+     * The programming language for execution
+     */
+    language: string;
+    /**
+     * Required packages to install
+     */
+    packages?: string[];
+    /**
+     * System-level packages to install (e.g., apt-get packages)
+     */
+    system_packages?: string[];
+    /**
+     * Code template to execute
+     */
+    template?: string;
+}
+
+/**
+ * Script file bundled with a skill
+ */
+export interface SkillScript {
+    /**
+     * Filename (e.g., "analyze.py")
+     */
+    name: string;
+    /**
+     * Script content
+     */
+    content: string;
+}
+
+/**
+ * Skill definition - parsed from SKILL.md or SKILL.jst
+ */
+export interface SkillDefinition {
+    /**
+     * Unique skill name (kebab-case)
+     */
+    name: string;
+    /**
+     * Display title
+     */
+    title?: string;
+    /**
+     * Short description for discovery
+     */
+    description: string;
+    /**
+     * The skill instructions (markdown or JST template)
+     */
+    instructions: string;
+    /**
+     * Content type: 'md' for static markdown, 'jst' for dynamic templates
+     */
+    content_type: SkillContentType;
+    /**
+     * JSON Schema for skill input parameters.
+     * Used when skill is exposed as a tool.
+     */
+    input_schema?: {
+        type: 'object';
+        properties?: Record<string, any>;
+        required?: string[];
+    };
+    /**
+     * Context triggers for auto-injection
+     */
+    context_triggers?: SkillContextTriggers;
+    /**
+     * Execution configuration for code-based skills
+     */
+    execution?: SkillExecution;
+    /**
+     * Related tools that work well with this skill
+     */
+    related_tools?: string[];
+    /**
+     * Scripts bundled with this skill (synced to sandbox when skill is used)
+     */
+    scripts?: SkillScript[];
+}
+
+/**
+ * Skill execution payload
+ */
+export interface SkillExecutionPayload {
+    /**
+     * The skill name to execute
+     */
+    skill_name: string;
+    /**
+     * Data context for JST template rendering
+     */
+    data?: Record<string, any>;
+    /**
+     * Whether to execute the code template (if present)
+     */
+    execute?: boolean;
+}
+
+/**
+ * Skill execution result
+ */
+export interface SkillExecutionResult {
+    /**
+     * The skill name
+     */
+    name: string;
+    /**
+     * Rendered instructions
+     */
+    instructions: string;
+    /**
+     * Execution output (if execute=true and skill has code template)
+     */
+    execution_result?: {
+        output: string;
+        files?: string[];
+        is_error: boolean;
+    };
+}
+
+/**
+ * Skill collection definition - returned by GET endpoint
+ */
+export interface SkillCollectionDefinition {
+    name: string;
+    title: string;
+    description: string;
+    skills: SkillDefinition[];
 }

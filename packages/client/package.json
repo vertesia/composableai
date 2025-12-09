@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/client",
-    "version": "0.79.4",
+    "version": "0.80.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -46,6 +46,11 @@
             "import": "./lib/esm/nodejs/index.js",
             "require": "./lib/cjs/nodejs/index.js"
         }
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/client"
     },
     "typesVersions": {
         "*": {
