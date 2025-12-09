@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/create-agent",
-    "version": "0.79.3",
+    "version": "0.80.0",
     "description": "Initialize workflow agent package",
     "type": "module",
     "bin": {
@@ -35,5 +35,10 @@
         "@types/hasbin": "^1.2.2",
         "@types/node": "^22.5.0",
         "typescript": "^5.7.2"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/create-agent"
     }
 }

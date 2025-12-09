@@ -185,7 +185,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
             <Command className="overflow-hidden">
                 <CommandList className={inline ? "max-h-full overflow-y-auto" : "max-h-[200px] overflow-y-auto"}>
                     <CommandEmpty>No result found.</CommandEmpty>
-                    <CommandGroup className="overflow-visible">
+                    <CommandGroup>
                         {filteredOptions?.map((opt, index) => {
                             const isSelected = multiple
                                 ? isOptionSelected(opt, Array.isArray(value) ? value : [])
@@ -275,6 +275,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                     <div className="flex items-center gap-1 group">
                         {isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && (
                             <Button variant={"link"} size={"icon"}
+                                disabled={disabled}
                                 alt="Clear selection"
                                 onClick={(e) => {
                                     e.stopPropagation();

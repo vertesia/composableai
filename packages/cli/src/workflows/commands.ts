@@ -23,7 +23,8 @@ export async function createWorkflowRule(program: Command, options: Record<strin
         process.exit(1);
     }
     const [event_name, object_type] = on.split(":");
-    const workflow = await getClient(program).workflows.rules.create({
+    const client = await getClient(program);
+    const workflow = await client.workflows.rules.create({
         name,
         endpoint: run,
         input_type: inputType ?? WorkflowRuleInputType.single,
@@ -49,18 +50,21 @@ export async function createOrUpdateWorkflowRule(program: Command, options: Reco
         json.tags = tags;
     }
 
-    const rule = await getClient(program).workflows.rules.create(json);
+    const client = await getClient(program);
+    const rule = await client.workflows.rules.create(json);
 
     console.log("Applied workflow rule", rule.id);
 }
 
 export async function deleteWorkflowRule(program: Command, ruleId: string, _options: Record<string, any>) {
-    const res = await getClient(program).workflows.rules.delete(ruleId);
+    const client = await getClient(program);
+    const res = await client.workflows.rules.delete(ruleId);
     console.log("Workflow rule deleted", res);
 }
 
 export async function getWorkflowRule(program: Command, ruleId: string, options: Record<string, any>) {
-    const res = await getClient(program).workflows.rules.retrieve(ruleId);
+    const client = await getClient(program);
+    const res = await client.workflows.rules.retrieve(ruleId);
     const pretty = JSON.stringify(res, null, 2);
 
     if (options.file) {
@@ -89,7 +93,8 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
         mergedConfig.task_queue = options.queue;
     }
 
-    const res = await getClient(program).workflows.execute(workflowName, {
+    const client = await getClient(program);
+    const res = await client.workflows.execute(workflowName, {
         ...mergedConfig,
         unique: true,
     });
@@ -109,7 +114,7 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
 
     // Save the result to a file if outputFile is specified
     if (outputFile && runId) {
-        const runDetails = await getClient(program).workflows.getRunDetails(runId, workflowId);
+        const runDetails = await client.workflows.getRunDetails(runId, workflowId);
         const output = runDetails.result?.output;
         let outputContent: string = "";
         if (!output) {
@@ -146,12 +151,14 @@ export async function executeWorkflowRule(program: Command, workflowId: string, 
         };
     }
 
-    const res = await getClient(program).workflows.rules.execute(workflowId, objectId, mergedConfig);
+    const client = await getClient(program);
+    const res = await client.workflows.rules.execute(workflowId, objectId, mergedConfig);
     console.log(res);
 }
 
 export async function listWorkflowsRule(program: Command, _options: Record<string, any>) {
-    const res = await getClient(program).workflows.rules.list();
+    const client = await getClient(program);
+    const res = await client.workflows.rules.list();
     const pretty = JSON.stringify(res, null, 2);
     console.log(pretty);
 }
@@ -226,23 +233,26 @@ export async function createOrUpdateWorkflowDefinition(
         json.tags = tags;
     }
 
+    const client = await getClient(program);
     if (workflowId) {
-        const res = await getClient(program).workflows.definitions.update(workflowId, json);
+        const res = await client.workflows.definitions.update(workflowId, json);
         console.log("Updated workflow", res.id);
         return;
     } else {
-        const res = await getClient(program).workflows.definitions.create(json);
+        const res = await client.workflows.definitions.create(json);
         console.log("Created workflow", res.id);
     }
 }
 
 export async function listWorkflowsDefinition(program: Command, _options: Record<string, any>) {
-    const res = await getClient(program).workflows.definitions.list();
+    const client = await getClient(program);
+    const res = await client.workflows.definitions.list();
     console.log(res);
 }
 
 export async function getWorkflowDefinition(program: Command, objectId: string, options: Record<string, any>) {
-    const res = await getClient(program).workflows.definitions.retrieve(objectId);
+    const client = await getClient(program);
+    const res = await client.workflows.definitions.retrieve(objectId);
     const pretty = JSON.stringify(res, null, 2);
 
     if (options.file) {
@@ -254,6 +264,7 @@ export async function getWorkflowDefinition(program: Command, objectId: string, 
 }
 
 export async function deleteWorkflowDefinition(program: Command, objectId: string, _options: Record<string, any>) {
-    const res = await getClient(program).workflows.definitions.delete(objectId);
+    const client = await getClient(program);
+    const res = await client.workflows.definitions.delete(objectId);
     console.log(res);
 }

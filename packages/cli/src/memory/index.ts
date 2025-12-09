@@ -5,8 +5,8 @@ import { createReadStream } from "fs";
 import { getClient } from "../client.js";
 
 export function getPublishMemoryAction(program: Command) {
-    return (file: string, name: string) => {
-        const client = getClient(program);
+    return async (file: string, name: string) => {
+        const client = await getClient(program);
         return publishMemory(client, file, name);
     }
 }

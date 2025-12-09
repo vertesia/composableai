@@ -6,12 +6,14 @@ import { AuthTokenPayload } from "@vertesia/common";
 export interface EnvProps {
     name: string; // the app name
     version: string,
+    sdkVersion?: string, // the @vertesia/ui package version
     isLocalDev: boolean,
     isDocker: boolean,
     type: "production" | "staging" | "preview" | "development" | string,
     endpoints: {
         zeno: string,
         studio: string,
+        sts: string, // Security Token Service endpoint
     },
     firebase?: {
         apiKey: string,
@@ -20,7 +22,7 @@ export interface EnvProps {
         appId?: string,
         providerType?: string,
     },
-    datadog: boolean,
+    datadog?: boolean,
     logger?: {
         info: (msg: string, ...args: any) => void,
         warn: (msg: string, ...args: any) => void,
@@ -50,6 +52,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     get version() {
         return this.prop("version");
+    }
+
+    get sdkVersion() {
+        return this._props?.sdkVersion;
     }
 
     get name() {
@@ -93,7 +99,7 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
     }
 
     get datadog() {
-        return this.prop("datadog");
+        return this._props?.datadog ?? false;
     }
 
     get logger() {

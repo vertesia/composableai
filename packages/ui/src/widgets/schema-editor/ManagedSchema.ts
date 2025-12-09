@@ -279,16 +279,13 @@ export class SchemaNode {
         if (this.schema.editor && data.editor === null) {
             // explicitly set to null => delete current editor
             this.schema.editor = undefined;
-            this.schema.format = undefined;
             updated = true;
         } else if (data.editor) { // a new editor is set
             this.schema.editor = data.editor;
-            this.schema.format = data.editor;
             updated = true;
         } else if (typeChanged) {
             // preserve editor only if the type didn't change
             this.schema.editor = undefined;
-            this.schema.format = undefined;
             updated = true;
         }
         if (data.description !== this.description) {

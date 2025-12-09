@@ -62,11 +62,11 @@ export default function WorkstreamTabs({
   }
 
   return (
-    <div className="flex overflow-x-auto space-x-1 mb-2 border-b-2 border-muted/20 sticky top-0 z-10 pt-1">
+    <div className="flex overflow-x-auto space-x-1 mb-2 bg-muted border-b-2 border-muted/20 sticky top-0 z-10">
       {sortedWorkstreams.map(([id, name]) => (
         <button
           key={id}
-          className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5
+          className={`px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5
                         ${activeWorkstream === id
               ? "bg-info text-info border-b-2 border-info"
               : "text-muted hover:bg-muted border-b-2 border-transparent"
@@ -79,7 +79,7 @@ export default function WorkstreamTabs({
           {count && count.has(id) && count.get(id)! > 0 && (
             <div className="flex items-center space-x-1">
               <span
-                className={`inline-flex items-center justify-center size-4 text-xs rounded-full
+                className={`inline-flex items-center justify-center p-1 text-xs rounded-full
                                 ${activeWorkstream === id
                     ? "bg-info text-info"
                     : "bg-muted text-muted"

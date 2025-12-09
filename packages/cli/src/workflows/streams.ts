@@ -60,7 +60,7 @@ const boxStyles = {
 };
 
 export async function streamRun(workflowId: string, runId: string, program: any, options: Record<string, any> = {}) {
-    const client = getClient(program);
+    const client = await getClient(program);
     const since = options.since ? parseInt(options.since, 10) : undefined;
     const interactive = options.interactive === true;
 
