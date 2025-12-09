@@ -131,9 +131,31 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
             );
         };
     },
-    // objectLink is deprecated (alias kept for backward compatibility)
+    // objectLink - same implementation as objectId
     objectLink(params?: URLSearchParams, onClick?: (id: string) => void) {
-        return renderers.objectId(params, onClick);
+        let transforms: ((value: string) => string)[] = [];
+        const hasSlice = true;
+        const slice = "-7";
+        transforms.push((value) => value.slice(parseInt(slice)));
+
+        return (value: any, index: number) => {
+            const displayValue = transforms.reduce((v, t) => t(v), value.id);
+            return (
+                <td key={index} className="flex justify-between items-center gap-2 max-w-48">
+                    {hasSlice ? "~" : ""}{displayValue}
+                    <Button
+                        variant="ghost"
+                        alt="Preview Object"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClick?.(value.id);
+                        }}
+                    >
+                        <Eye className="size-4" />
+                    </Button>
+                </td>
+            );
+        };
     },
     typeLink(_params?: URLSearchParams, _onClick?: (id: string) => void) {
         return (value: any, index: number) => {
