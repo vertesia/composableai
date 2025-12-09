@@ -277,6 +277,12 @@ export interface InteractionEndpoint {
     params_schema?: JSONSchema;
 }
 
+export interface InteractionTags{
+    tag: string;
+    count: number;
+    interactions: InteractionRef[];
+}
+
 export interface InteractionRef {
     id: string;
     name: string;
