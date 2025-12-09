@@ -1,7 +1,7 @@
 {
     "name": "@vertesia/memory",
     "description": "Manipulate memory images for LLMs",
-    "version": "0.79.4",
+    "version": "0.80.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -25,7 +25,7 @@
     "dependencies": {
         "@vertesia/converters": "workspace:*",
         "@vertesia/json": "workspace:*",
-        "glob": "^11.0.0",
+        "glob": "^11.1.0",
         "micromatch": "^4.0.8",
         "tar-stream": "^3.1.7"
     },
@@ -36,5 +36,10 @@
         "types": "./lib/types/index.d.ts",
         "import": "./lib/esm/index.js",
         "require": "./lib/cjs/index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/memory"
     }
 }
