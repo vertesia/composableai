@@ -131,12 +131,11 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
             );
         };
     },
-    // objectLink - same implementation as objectId
-    objectLink(params?: URLSearchParams, onClick?: (id: string) => void) {
-        let transforms: ((value: string) => string)[] = [];
+    // objectLink - same implementation as objectId but defaults to slice=-7
+    objectLink(_params?: URLSearchParams, onClick?: (id: string) => void) {
+        const transforms: ((value: string) => string)[] = [];
         const hasSlice = true;
-        const slice = "-7";
-        transforms.push((value) => value.slice(parseInt(slice)));
+        transforms.push((value) => value.slice(-7));
 
         return (value: any, index: number) => {
             const displayValue = transforms.reduce((v, t) => t(v), value.id);
