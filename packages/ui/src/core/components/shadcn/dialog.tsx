@@ -16,6 +16,7 @@ interface ModalProps {
     className?: string;
     allowOverflow?: boolean;
     disableCloseOnClickOutside?: boolean;
+    size?: "sm" | "md" | "lg" | "xl";
 }
 const ModalContext = createContext<boolean>(false)
 export function useIsInModal() {
@@ -34,12 +35,27 @@ export function VModal({
     noCloseButton = false,
     allowOverflow = false,
     disableCloseOnClickOutside = false,
+    size = "md",
 }: ModalProps) {
     const handleOpenChange = (open: boolean) => {
         if (!open) {
             onClose();
         }
     };
+    function getSizeClasses() {
+        switch (size) {
+            case "sm":
+                return "max-w-[20vw]";
+            case "md":
+                return "max-w-[40vw]";
+            case "lg":
+                return "max-w-[60vw]";
+            case "xl":
+                return "max-w-[80vw]";
+            default:
+                return "max-w-[40vw]";
+        }
+    }
 
     return (
         <Dialog
@@ -49,6 +65,7 @@ export function VModal({
                     handleOpenChange(open);
                 }
             }}
+            
         >
             {allowOverflow && <DialogOverlay className="z-50 fixed inset-0 bg-black/80" />}
             <VisuallyHidden>
@@ -57,7 +74,8 @@ export function VModal({
             <DialogContent
                 className={cn(
                     "min-h-20 p-4",
-                    "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 sm:rounded-lg",
+                    "fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 sm:rounded-lg",
+                    getSizeClasses(),
                     className
                 )}
             >

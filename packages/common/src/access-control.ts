@@ -44,9 +44,9 @@ export enum Permission {
     workflow_admin = "workflow:admin",
     workflow_superadmin = "workflow:superadmin",
 
-    /**
-     * whether the user has access to Sutdio App.
-     */
+    iam_impersonate = "iam:impersonate",
+
+    /** whether the user has access to Sutdio App. */
     studio_access = "studio:access",
 }
 

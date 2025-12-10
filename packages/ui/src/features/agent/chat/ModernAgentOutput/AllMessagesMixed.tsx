@@ -19,7 +19,7 @@ interface AllMessagesMixedProps {
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
 }
 
-export default function AllMessagesMixed({
+function AllMessagesMixedComponent({
     messages,
     bottomRef,
     viewMode = 'stacked',
@@ -119,7 +119,7 @@ export default function AllMessagesMixed({
     return (
         <div
             ref={containerRef}
-            className="flex-1 min-h-0 h-full overflow-y-auto py-2 px-4 sm:px-6 lg:px-8 flex flex-col relative"
+            className="flex-1 min-h-0 h-full overflow-y-auto px-4 sm:px-2 lg:px-4 flex flex-col relative"
             data-testid="all-messages-mixed"
         >
 
@@ -167,11 +167,13 @@ export default function AllMessagesMixed({
                         <>
                             {/* Get all messages to display in sliding view */}
                             {(() => {
-                                // First get all permanent messages (ANSWER, QUESTION, COMPLETE, REQUEST_INPUT, TERMINATED)
+                                // First get all permanent messages (ANSWER, QUESTION, COMPLETE, REQUEST_INPUT, IDLE, TERMINATED)
                                 const permanentMessages = displayMessages.filter(msg =>
                                     msg.type === AgentMessageType.ANSWER ||
                                     msg.type === AgentMessageType.QUESTION ||
                                     msg.type === AgentMessageType.COMPLETE ||
+                                    msg.type === AgentMessageType.IDLE ||
+                                    msg.type === AgentMessageType.REQUEST_INPUT ||
                                     msg.type === AgentMessageType.TERMINATED
                                 );
 
@@ -225,3 +227,7 @@ export default function AllMessagesMixed({
         </div>
     );
 }
+
+const AllMessagesMixed = React.memo(AllMessagesMixedComponent);
+
+export default AllMessagesMixed;

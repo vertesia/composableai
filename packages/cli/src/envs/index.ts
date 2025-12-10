@@ -4,17 +4,16 @@ import { ExecutionEnvironment } from "@vertesia/common";
 import colors from "ansi-colors";
 
 
-export function listEnvironments(program: Command, envId: string | undefined, options: Record<string, any>) {
+export async function listEnvironments(program: Command, envId: string | undefined, options: Record<string, any>) {
+    const client = await getClient(program);
     if (envId) {
-        getClient(program).environments.retrieve(envId).then((env) => {
-            printEnv(env, options);
-        });
+        const env = await client.environments.retrieve(envId);
+        printEnv(env, options);
     } else {
-        getClient(program).environments.list().then((environments) => {
-            environments.map(env => {
-                console.log(env.name + ` [${env.id}]`);
-            })
-        })
+        const environments = await client.environments.list();
+        environments.map(env => {
+            console.log(env.name + ` [${env.id}]`);
+        });
     }
 }
 

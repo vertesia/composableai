@@ -165,6 +165,8 @@ export interface ProjectConfiguration {
 
     default_visibility?: ResourceVisibility;
 
+    sync_content_properties?: boolean;
+
     embeddings: {
         text?: ProjectConfigurationEmbeddings;
         image?: ProjectConfigurationEmbeddings;
