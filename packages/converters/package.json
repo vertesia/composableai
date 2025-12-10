@@ -22,12 +22,12 @@
     "devDependencies": {
         "@types/tmp": "^0.2.6",
         "ts-dual-module": "^0.6.3",
-        "typescript": "^5.0.2",
-        "vitest": "^3.0.9"
+        "typescript": "^5.9.3",
+        "vitest": "^3.2.4"
     },
     "dependencies": {
         "sharp": "^0.33.5",
-        "tmp": "^0.2.4"
+        "tmp": "^0.2.5"
     },
     "repository": {
         "type": "git",
