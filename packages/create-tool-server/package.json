@@ -1,18 +1,19 @@
 {
-  "name": "@vertesia/create-tools",
+  "name": "@vertesia/create-tool-server",
   "version": "0.1.0",
   "description": "CLI to create Vertesia tool server projects from GitHub templates",
   "type": "module",
   "bin": {
-    "create-vertesia": "./dist/index.js"
+    "create-tool-server": "./lib/index.js"
   },
+  "main": "./lib/index.js",
   "files": [
-    "dist"
+    "lib"
   ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "node dist/index.js test-project",
+    "test": "node lib/index.js test-project",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

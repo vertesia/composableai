@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * @vertesia/create-tools
+ * @vertesia/create-tool-server
  *
  * CLI tool to create Vertesia tool server projects from GitHub templates.
  * Reads template.config.json from the template to determine prompts and file replacements.

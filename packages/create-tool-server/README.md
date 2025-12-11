@@ -1,19 +1,28 @@
-# @vertesia/create-tools
+# @vertesia/create-tool-server
 
 CLI tool to create Vertesia tool server projects from GitHub templates.
 
 ## Usage
 
 ```bash
-# Using pnpm
-pnpm create @vertesia/tools my-project
+# Using pnpm create (recommended)
+pnpm create @vertesia/tool-server my-project
 
-# Using npm
-npm create @vertesia/tools my-project
+# Using npm create
+npm create @vertesia/tool-server my-project
+
+# Using pnpm dlx (runs without installing)
+pnpm dlx @vertesia/create-tool-server my-project
 
 # Using npx
-npx @vertesia/create-tools my-project
+npx @vertesia/create-tool-server my-project
+
+# Or install globally
+pnpm install -g @vertesia/create-tool-server
+create-tool-server my-project
 ```
+
+**Note:** When using `pnpm create` or `npm create`, drop the `create-` prefix from the package name.
 
 ## Features
 
@@ -116,10 +125,10 @@ pnpm dev
 npm publish
 ```
 
-After publishing, users can install with:
+After publishing, users can create projects with:
 
 ```bash
-pnpm create @vertesia/tools my-project
+pnpm create @vertesia/tool-server my-project
 ```
 
 ## Template Development
@@ -137,13 +146,13 @@ To develop a template:
 ### Create a project with default settings
 
 ```bash
-pnpm create @vertesia/tools my-project
+pnpm create @vertesia/tool-server my-project
 ```
 
 ### View help
 
 ```bash
-pnpm create @vertesia/tools --help
+pnpm dlx @vertesia/create-tool-server --help
 ```
 
 ## License
