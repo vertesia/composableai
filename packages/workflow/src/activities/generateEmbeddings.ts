@@ -189,19 +189,21 @@ async function generateTextEmbeddings(
 
     const partDefinitions = parts ?? [];
 
-    // Count tokens if not already done
-    if (!document.tokens?.count && type === SupportedEmbeddingTypes.text) {
+    // Count tokens if not already done or if the text has changed (etag mismatch)
+    const textEtag = document.text_etag ?? (document.text ? md5(document.text) : undefined);
+    const needsTokenCount = !document.tokens?.count || (textEtag && document.tokens?.etag !== textEtag);
+    if (needsTokenCount && type === SupportedEmbeddingTypes.text && document.text && textEtag) {
         log.debug("Updating token count for document: " + document.id);
-        const tokensData = countTokens(document.text!);
+        const tokensData = countTokens(document.text);
         await client.objects.update(document.id, {
             tokens: {
                 ...tokensData,
-                etag: document.text_etag ?? md5(document.text!),
+                etag: textEtag,
             },
         });
         document.tokens = {
             ...tokensData,
-            etag: document.text_etag ?? md5(document.text!),
+            etag: textEtag,
         };
     }
 
