@@ -169,7 +169,7 @@ async function main() {
     // Cleanup on failure
     if (fs.existsSync(projectName)) {
       console.log(chalk.gray('Cleaning up...'));
-      //fs.rmSync(projectName, { recursive: true, force: true });
+      fs.rmSync(projectName, { recursive: true, force: true });
     }
 
     process.exit(1);
