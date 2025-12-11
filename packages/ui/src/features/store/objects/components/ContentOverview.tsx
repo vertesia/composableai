@@ -789,6 +789,9 @@ function ImagePanel({ object }: { object: ContentObject }) {
 
     useEffect(() => {
         if (isImage) {
+            // Reset image URL when object changes
+            setImageUrl(undefined);
+
             const loadImage = async () => {
                 const isOriginalWebSupported = content?.type && WEB_SUPPORTED_IMAGE_FORMATS.includes(content.type);
 
@@ -818,7 +821,7 @@ function ImagePanel({ object }: { object: ContentObject }) {
 
             loadImage();
         }
-    }, []);
+    }, [object.id, isImage, content?.type, content?.source, client]);
 
     return (
         <div className="mb-4 px-2">
@@ -857,6 +860,13 @@ function VideoPanel({ object }: { object: ContentObject }) {
 
     // Get poster
     const poster = renditions.find(r => r.name === POSTER_RENDITION_NAME);
+
+    // Reset state when object changes
+    useEffect(() => {
+        setVideoUrl(undefined);
+        setPosterUrl(undefined);
+        setIsLoading(true);
+    }, [object.id]);
 
     useEffect(() => {
         const loadPoster = async () => {
