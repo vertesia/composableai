@@ -1,0 +1,43 @@
+{
+  "prompts": [
+    {
+      "name": "PROJECT_NAME",
+      "message": "Project name",
+      "default": "my-tool-server"
+    },
+    {
+      "name": "PROJECT_DESCRIPTION",
+      "message": "Project description",
+      "default": "A custom tool server with tools, skills, and interactions"
+    },
+    {
+      "name": "SERVER_TITLE",
+      "message": "Server title (displayed in UI)",
+      "default": "My Tool Server"
+    },
+    {
+      "name": "AUTHOR_NAME",
+      "message": "Author name",
+      "default": ""
+    }
+  ],
+  "replacements": {
+    "package.json": {
+      "PROJECT_NAME": "name",
+      "PROJECT_DESCRIPTION": "description",
+      "AUTHOR_NAME": "author"
+    },
+    "src/server.ts": {
+      "SERVER_TITLE": "title",
+      "PROJECT_DESCRIPTION": "description"
+    }
+  },
+  "conditionalFiles": {
+    "removeIfNotWorkspace": [
+      ".vscode/launch.json"
+    ]
+  },
+  "metaFiles": [
+    "template.config.json"
+  ]
+}

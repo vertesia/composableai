@@ -1,0 +1,39 @@
+{
+  "name": "@vertesia/create-tools",
+  "version": "0.1.0",
+  "description": "CLI to create Vertesia tool server projects from GitHub templates",
+  "type": "module",
+  "bin": {
+    "create-vertesia": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node dist/index.js test-project",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "vertesia",
+    "tool-server",
+    "cli",
+    "create",
+    "template",
+    "scaffold"
+  ],
+  "author": "Vertesia",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "degit": "^2.8.4",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/degit": "^2.8.6",
+    "@types/node": "^22.18.12",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.9.3"
+  }
+}
