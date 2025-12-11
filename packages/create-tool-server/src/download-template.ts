@@ -8,12 +8,12 @@ import { config } from './configuration.js';
 /**
  * Download template from GitHub using degit
  */
-export async function downloadTemplate(projectName: string): Promise<void> {
+export async function downloadTemplate(projectName: string, repository: string): Promise<void> {
   console.log(chalk.blue('📦 Downloading template from GitHub...\n'));
-  console.log(chalk.gray(`   Repository: ${config.templateRepo}`));
+  console.log(chalk.gray(`   Repository: ${repository}`));
   console.log(chalk.gray(`   Target: ./${projectName}\n`));
 
-  const emitter = degit(config.templateRepo, {
+  const emitter = degit(repository, {
     cache: config.useCache,
     force: true,
   });

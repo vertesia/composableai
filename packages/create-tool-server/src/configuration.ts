@@ -5,34 +5,40 @@
  * Update these values to point to your template repository and customize behavior.
  */
 
+/**
+ * Template definition
+ */
+export interface TemplateDefinition {
+  /** Display name for the template (shown to user) */
+  name: string;
+  /** GitHub repository path */
+  repository: string;
+}
+
 export const config = {
   /**
-   * GitHub repository for the template
-   * Format: 'owner/repo/subdirectory' or 'owner/repo/subdirectory#branch' or 'owner/repo/subdirectory#tag'
+   * Available templates
+   * Array of template definitions with display names and repository paths
+   *
+   * Format for repository: 'owner/repo/subdirectory' or 'owner/repo/subdirectory#branch'
    *
    * Examples:
    * - 'vertesia/composableai/packages/tool-server-template'
    * - 'vertesia/composableai/packages/tool-server-template#main'
    * - 'vertesia/composableai/packages/tool-server-template#v1.0.0'
    */
-  templateRepo: 'vertesia/composableai/packages/tool-server-template#feat-tool-server-template',
+  templates: [
+    {
+      name: 'Vertesia Tool Server',
+      repository: 'vertesia/composableai/packages/tool-server-template#feat-tool-server-template'
+    }
+  ] as TemplateDefinition[],
 
   /**
    * Name of the template configuration file in the template repo
    * This file should contain prompts and installation instructions
    */
   templateConfigFile: 'template.config.json',
-
-  /**
-   * Default branch to use if not specified in templateRepo
-   */
-  defaultBranch: 'main',
-
-  /**
-   * Package manager to use for installing dependencies
-   * Options: 'npm' | 'pnpm' | 'yarn'
-   */
-  packageManager: 'pnpm',
 
   /**
    * Whether to use cache for degit downloads
@@ -42,24 +48,9 @@ export const config = {
   useCache: false,
 
   /**
-   * Timeout for downloading template (milliseconds)
-   */
-  downloadTimeout: 30000,
-
-  /**
-   * Display name for the tool (used in console output)
-   */
-  toolName: 'Vertesia Tool Server',
-
-  /**
    * Documentation URL to show in help messages
    */
   docsUrl: 'https://docs.vertesia.com/tools',
-
-  /**
-   * GitHub URL for the template (for display purposes)
-   */
-  templateUrl: 'https://github.com/vertesiahq/tool-server-template',
 } as const;
 
 /**

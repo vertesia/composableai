@@ -10,6 +10,7 @@
 import chalk from 'chalk';
 import fs from 'fs';
 import { config, validation } from './configuration.js';
+import { selectTemplate } from './template-selector.js';
 import { selectPackageManager, installDependencies } from './package-manager.js';
 import { downloadTemplate } from './download-template.js';
 import { readTemplateConfig } from './template-config.js';
@@ -25,7 +26,6 @@ import {
  * Main entry point
  */
 async function main() {
-  console.log(chalk.blue.bold(`\n🚀 Create ${config.toolName}\n`));
 
   const args = process.argv.slice(2);
 
@@ -64,16 +64,22 @@ async function main() {
   }
 
   try {
-    // Step 1: Detect and select package manager
+    // Step 1: Select template (only prompts if multiple templates available)
+    const selectedTemplate = await selectTemplate();
+
+    // Show the selected template name
+    console.log(chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}\n`));
+
+    // Step 2: Detect and select package manager
     const packageManager = await selectPackageManager();
 
-    // Step 2: Download template from GitHub
-    await downloadTemplate(projectName);
+    // Step 3: Download template from GitHub
+    await downloadTemplate(projectName, selectedTemplate.repository);
 
-    // Step 3: Read template configuration
+    // Step 4: Read template configuration
     const templateConfig = readTemplateConfig(projectName);
 
-    // Step 4: Prompt user for configuration
+    // Step 5: Prompt user for configuration
     const answers = await promptUser(projectName, templateConfig);
 
     // Step 5: Replace variables in files
@@ -94,7 +100,7 @@ async function main() {
     await installDependencies(projectName, packageManager);
 
     // Step 10: Success!
-    showSuccess(projectName, packageManager);
+    showSuccess(projectName, packageManager, selectedTemplate.name, selectedTemplate.repository);
 
   } catch (error) {
     console.log(chalk.red(`\n❌ Installation failed: ${error instanceof Error ? error.message : 'Unknown error'}\n`));
@@ -112,21 +118,22 @@ async function main() {
 /**
  * Show success message
  */
-function showSuccess(projectName: string, packageManager: string): void {
+function showSuccess(projectName: string, packageManager: string, templateName: string, repository: string): void {
   console.log(chalk.green.bold('✅ Project created successfully!\n'));
   console.log(chalk.gray('Next steps:\n'));
   console.log(chalk.cyan(`  cd ${projectName}`));
   console.log(chalk.cyan(`  ${packageManager} dev`));
   console.log();
   console.log(chalk.gray(`Documentation: ${config.docsUrl}`));
-  console.log(chalk.gray(`Template: ${config.templateUrl}\n`));
+  console.log(chalk.gray(`Template: ${templateName}`));
+  console.log(chalk.gray(`Repository: ${repository}\n`));
 }
 
 /**
  * Show help message
  */
 function showHelp(): void {
-  console.log(chalk.blue.bold(`\n${config.toolName} - Project Generator\n`));
+  console.log(chalk.blue.bold('\nVertesia Project Generator\n'));
   console.log('Usage:');
   console.log(chalk.gray('  pnpm create @vertesia/tool-server <project-name>'));
   console.log(chalk.gray('  npm create @vertesia/tool-server <project-name>'));
@@ -136,8 +143,14 @@ function showHelp(): void {
   console.log('Examples:');
   console.log(chalk.gray('  pnpm create @vertesia/tool-server my-tool-server'));
   console.log(chalk.gray('  npm create @vertesia/tool-server my-api-tools\n'));
-  console.log(`Documentation: ${chalk.cyan(config.docsUrl)}`);
-  console.log(`Template: ${chalk.cyan(config.templateUrl)}\n`);
+
+  console.log('Available Templates:');
+  config.templates.forEach(template => {
+    console.log(chalk.gray(`  - ${template.name}`));
+  });
+  console.log();
+
+  console.log(`Documentation: ${chalk.cyan(config.docsUrl)}\n`);
 }
 
 // Run the installer
