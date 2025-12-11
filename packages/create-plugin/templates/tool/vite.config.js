@@ -8,9 +8,9 @@ export default defineConfig(({ mode }) => {
     // Dev config
     if (mode === 'development') {
         return {
+            base: '/api',
             plugins: [
                 devServer({
-                    prefix: '/api',  // mount the tool endpoints under /api
                     entry: './src/server.ts',
                 }),
             ],

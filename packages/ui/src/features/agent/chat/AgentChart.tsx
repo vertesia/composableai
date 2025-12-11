@@ -1,37 +1,37 @@
-import { Component, memo, useState, useRef, useCallback, type ReactNode, type ErrorInfo } from 'react';
 import { toPng } from 'html-to-image';
-import { Download, Copy, Check } from 'lucide-react';
+import { Check, Copy, Download } from 'lucide-react';
+import { Component, memo, useCallback, useRef, useState, type ErrorInfo, type ReactNode } from 'react';
 import {
-    ResponsiveContainer,
-    BarChart,
-    LineChart,
-    ComposedChart,
-    AreaChart,
-    PieChart,
-    ScatterChart,
-    RadarChart,
-    RadialBarChart,
-    FunnelChart,
-    Treemap,
-    Bar,
-    Line,
     Area,
-    Pie,
+    AreaChart,
+    Bar,
+    BarChart,
+    CartesianGrid,
     Cell,
-    Scatter,
-    Radar,
-    RadialBar,
+    ComposedChart,
     Funnel,
+    FunnelChart,
     LabelList,
-    PolarGrid,
+    Legend,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
     PolarAngleAxis,
+    PolarGrid,
     PolarRadiusAxis,
+    Radar,
+    RadarChart,
+    RadialBar,
+    RadialBarChart,
+    ReferenceLine,
+    ResponsiveContainer,
+    Scatter,
+    ScatterChart,
+    Tooltip,
+    Treemap,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ReferenceLine,
 } from 'recharts';
 
 // Default color palette for charts
@@ -559,7 +559,7 @@ export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
                     <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                         {title || 'Chart'}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 print:hidden chart-actions">
                         <button
                             onClick={handleCopy}
                             disabled={isCopied}

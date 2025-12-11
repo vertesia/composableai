@@ -512,7 +512,7 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
                     )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 print:hidden">
                     <span className="text-xs text-muted">
                         {dayjs(message.timestamp).format("HH:mm:ss")}
                     </span>
@@ -572,7 +572,7 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
                         )}
 
                         {/* Buttons for all artifacts (files and images) */}
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 print:hidden">
                             {artifactLinks.map(({ displayName, artifactPath, url }) => (
                                 <Button
                                     key={artifactPath + url}
@@ -591,7 +591,7 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
 
                 {/* Optional details section */}
                 {message.details && (
-                    <div className="mt-2">
+                    <div className="mt-2 print:hidden">
                         <button
                             onClick={() => setShowDetails(!showDetails)}
                             className="text-xs text-muted flex items-center"
