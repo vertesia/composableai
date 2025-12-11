@@ -149,15 +149,18 @@ async function main() {
     // Step 4: Replace variables in files
     replaceVariables(projectName, templateConfig, answers);
 
-    // Step 5: Handle conditional removes
+    // Step 5: Adjust package.json (name and workspace dependencies)
+    adjustPackageJson(projectName, answers);
+
+    // Step 6: Handle conditional removes
     if (templateConfig.conditionalRemove) {
       handleConditionalRemoves(projectName, templateConfig, answers);
     }
 
-    // Step 6: Remove meta files
+    // Step 7: Remove meta files
     removeMetaFiles(projectName, templateConfig);
 
-    // Step 7: Install dependencies
+    // Step 8: Install dependencies
     await installDependencies(projectName);
 
     // Step 8: Success!
@@ -296,6 +299,61 @@ function replaceVariables(
       fs.writeFileSync(filePath, content);
       console.log(chalk.gray(`   ✓ ${file}`));
     }
+  }
+
+  console.log();
+}
+
+/**
+ * Adjust package.json after variable replacement
+ * 1. Sets the package name to PROJECT_NAME
+ * 2. Converts workspace:* dependencies to * for @vertesia and @llumiverse packages
+ */
+function adjustPackageJson(projectName: string, answers: Record<string, any>): void {
+  console.log(chalk.blue('📝 Adjusting package.json...\n'));
+
+  const packageJsonPath = path.join(projectName, 'package.json');
+
+  if (!fs.existsSync(packageJsonPath)) {
+    console.log(chalk.yellow('   ⚠️  package.json not found (skipping adjustment)'));
+    console.log();
+    return;
+  }
+
+  try {
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+
+    // 1. Set package name to PROJECT_NAME
+    const newName = answers.PROJECT_NAME || projectName;
+    if (packageJson.name !== newName) {
+      packageJson.name = newName;
+      console.log(chalk.gray(`   ✓ Set package name to "${newName}"`));
+    }
+
+    // 2. Replace workspace:* with * for @vertesia and @llumiverse dependencies
+    let workspaceReplacements = 0;
+
+    ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'].forEach(depType => {
+      if (packageJson[depType]) {
+        Object.keys(packageJson[depType]).forEach(pkgName => {
+          if ((pkgName.startsWith('@vertesia/') || pkgName.startsWith('@llumiverse/')) &&
+              packageJson[depType][pkgName] === 'workspace:*') {
+            packageJson[depType][pkgName] = '*';
+            workspaceReplacements++;
+          }
+        });
+      }
+    });
+
+    if (workspaceReplacements > 0) {
+      console.log(chalk.gray(`   ✓ Replaced ${workspaceReplacements} workspace:* dependencies with *`));
+    }
+
+    // Write back to file
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+
+  } catch (error) {
+    console.log(chalk.yellow(`   ⚠️  Failed to adjust package.json: ${error instanceof Error ? error.message : 'Unknown error'}`));
   }
 
   console.log();
