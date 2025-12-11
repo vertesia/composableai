@@ -23,6 +23,31 @@ import {
 } from './process-template.js';
 
 /**
+ * Parse command line arguments
+ */
+function parseArgs(args: string[]): { projectName: string; branch?: string } {
+  let projectName: string | undefined;
+  let branch: string | undefined;
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (arg === '-b' || arg === '--branch') {
+      branch = args[i + 1];
+      i++; // Skip next arg
+    } else if (!arg.startsWith('-')) {
+      projectName = arg;
+    }
+  }
+
+  if (!projectName) {
+    throw new Error('Project name is required');
+  }
+
+  return { projectName, branch };
+}
+
+/**
  * Main entry point
  */
 async function main() {
@@ -35,14 +60,21 @@ async function main() {
     process.exit(0);
   }
 
-  // Get project name
-  const projectName = args[0];
+  // Parse arguments
+  let projectName: string;
+  let branch: string | undefined;
 
-  if (!projectName) {
+  try {
+    const parsed = parseArgs(args);
+    projectName = parsed.projectName;
+    branch = parsed.branch;
+  } catch (error) {
     console.log(chalk.red('❌ Please specify a project name:\n'));
     console.log(chalk.gray('  pnpm create @vertesia/tool-server my-project'));
     console.log(chalk.gray('  npm create @vertesia/tool-server my-project'));
     console.log(chalk.gray('  npx @vertesia/create-tool-server my-project\n'));
+    console.log(chalk.gray('Options:'));
+    console.log(chalk.gray('  -b, --branch <branch>  Use specific branch\n'));
     process.exit(1);
   }
 
@@ -65,10 +97,11 @@ async function main() {
 
   try {
     // Step 1: Select template (only prompts if multiple templates available)
-    const selectedTemplate = await selectTemplate();
+    const selectedTemplate = await selectTemplate(branch);
 
-    // Show the selected template name
-    console.log(chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}\n`));
+    // Show the selected template name with branch if specified
+    const branchInfo = branch ? chalk.gray(` (branch: ${branch})`) : '';
+    console.log(chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}`) + branchInfo + '\n');
 
     // Step 2: Detect and select package manager
     const packageManager = await selectPackageManager();
@@ -135,14 +168,16 @@ function showSuccess(projectName: string, packageManager: string, templateName: 
 function showHelp(): void {
   console.log(chalk.blue.bold('\nVertesia Project Generator\n'));
   console.log('Usage:');
-  console.log(chalk.gray('  pnpm create @vertesia/tool-server <project-name>'));
-  console.log(chalk.gray('  npm create @vertesia/tool-server <project-name>'));
-  console.log(chalk.gray('  npx @vertesia/create-tool-server <project-name>\n'));
+  console.log(chalk.gray('  pnpm create @vertesia/tool-server <project-name> [options]'));
+  console.log(chalk.gray('  npm create @vertesia/tool-server <project-name> [options]'));
+  console.log(chalk.gray('  npx @vertesia/create-tool-server <project-name> [options]\n'));
   console.log('Options:');
-  console.log(chalk.gray('  -h, --help     Show this help message\n'));
+  console.log(chalk.gray('  -h, --help              Show this help message'));
+  console.log(chalk.gray('  -b, --branch <branch>   Use specific branch (default: configured branch or main)\n'));
   console.log('Examples:');
   console.log(chalk.gray('  pnpm create @vertesia/tool-server my-tool-server'));
-  console.log(chalk.gray('  npm create @vertesia/tool-server my-api-tools\n'));
+  console.log(chalk.gray('  npm create @vertesia/tool-server my-api-tools -b develop'));
+  console.log(chalk.gray('  npx @vertesia/create-tool-server my-project --branch v1.0.0\n'));
 
   console.log('Available Templates:');
   config.templates.forEach(template => {
