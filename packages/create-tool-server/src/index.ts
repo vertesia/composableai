@@ -95,6 +95,62 @@ interface PromptConfig {
 }
 
 /**
+ * Check if a command exists on the system (cross-platform)
+ */
+function commandExists(command: string): boolean {
+  try {
+    const checkCommand = process.platform === 'win32'
+      ? `where ${command}`
+      : `which ${command}`;
+    execSync(checkCommand, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Detect available package managers and let user choose
+ * Returns the selected package manager ('pnpm' or 'npm')
+ */
+async function selectPackageManager(): Promise<string> {
+  const hasPnpm = commandExists('pnpm');
+  const hasNpm = commandExists('npm');
+
+  // If npm is not installed, something is seriously wrong
+  if (!hasNpm) {
+    throw new Error('npm is not installed. Please install Node.js and npm first.');
+  }
+
+  // If pnpm is not installed, use npm
+  if (!hasPnpm) {
+    console.log(chalk.gray('Using npm (pnpm not found)\n'));
+    return 'npm';
+  }
+
+  // Both are installed - let user choose
+  console.log(chalk.blue('📦 Package Manager\n'));
+
+  const response = await prompts({
+    type: 'select',
+    name: 'packageManager',
+    message: 'Which package manager would you like to use?',
+    choices: [
+      { title: 'pnpm (recommended)', value: 'pnpm' },
+      { title: 'npm', value: 'npm' }
+    ],
+    initial: 0
+  }, {
+    onCancel: () => {
+      throw new Error('Installation cancelled by user');
+    }
+  });
+
+  console.log();
+  return response.packageManager;
+}
+
+/**
  * Main entry point
  */
 async function main() {
@@ -137,13 +193,16 @@ async function main() {
   }
 
   try {
-    // Step 1: Download template from GitHub
+    // Step 1: Detect and select package manager
+    const packageManager = await selectPackageManager();
+
+    // Step 2: Download template from GitHub
     await downloadTemplate(projectName);
 
-    // Step 2: Read template configuration
+    // Step 3: Read template configuration
     const templateConfig = readTemplateConfig(projectName);
 
-    // Step 3: Prompt user for configuration
+    // Step 4: Prompt user for configuration
     const answers = await promptUser(projectName, templateConfig);
 
     // Step 4: Replace variables in files
@@ -161,10 +220,10 @@ async function main() {
     removeMetaFiles(projectName, templateConfig);
 
     // Step 8: Install dependencies
-    await installDependencies(projectName);
+    await installDependencies(projectName, packageManager);
 
-    // Step 8: Success!
-    showSuccess(projectName);
+    // Step 9: Success!
+    showSuccess(projectName, packageManager);
 
   } catch (error) {
     console.log(chalk.red(`\n❌ Installation failed: ${error instanceof Error ? error.message : 'Unknown error'}\n`));
@@ -411,12 +470,12 @@ function removeMetaFiles(projectName: string, templateConfig: TemplateConfig): v
 /**
  * Install dependencies using the configured package manager
  */
-async function installDependencies(projectName: string): Promise<void> {
+async function installDependencies(projectName: string, packageManager: string): Promise<void> {
   console.log(chalk.blue('📦 Installing dependencies...\n'));
-  console.log(chalk.gray(`   Using: ${config.packageManager}\n`));
+  console.log(chalk.gray(`   Using: ${packageManager}\n`));
 
   try {
-    execSync(`${config.packageManager} install`, {
+    execSync(`${packageManager} install`, {
       cwd: projectName,
       stdio: 'inherit'
     });
@@ -429,11 +488,11 @@ async function installDependencies(projectName: string): Promise<void> {
 /**
  * Show success message
  */
-function showSuccess(projectName: string): void {
+function showSuccess(projectName: string, packageManager: string): void {
   console.log(chalk.green.bold('✅ Project created successfully!\n'));
   console.log(chalk.gray('Next steps:\n'));
   console.log(chalk.cyan(`  cd ${projectName}`));
-  console.log(chalk.cyan(`  ${config.packageManager} dev`));
+  console.log(chalk.cyan(`  ${packageManager} dev`));
   console.log();
   console.log(chalk.gray(`Documentation: ${config.docsUrl}`));
   console.log(chalk.gray(`Template: ${config.templateUrl}\n`));
