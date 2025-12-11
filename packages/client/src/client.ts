@@ -139,16 +139,13 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
                     // zeno-server-production.api.vertesia.io -> sts.vertesia.io
                     this.tokenServerUrl = "https://sts.vertesia.io";
                 } else if (url.hostname.includes("-preview.")) {
-                    // zeno-server-preview.api.vertesia.io -> sts-preview.vertesia.io
-                    this.tokenServerUrl = "https://sts-preview.vertesia.io";
+                    // zeno-server-preview.api.vertesia.io -> sts.vertesia.io
+                    this.tokenServerUrl = "https://sts.vertesia.io";
                 } else if (url.hostname === "api.vertesia.io") {
-                    // api.vertesia.io -> sts.vertesia.io
                     this.tokenServerUrl = "https://sts.vertesia.io";
                 } else if (url.hostname === "api-preview.vertesia.io") {
-                    // api-preview.vertesia.io -> sts-preview.vertesia.io
-                    this.tokenServerUrl = "https://sts-preview.vertesia.io";
+                    this.tokenServerUrl = "https://sts.vertesia.io";
                 } else if (url.hostname === "api-staging.vertesia.io") {
-                    // api-staging.vertesia.io -> sts-staging.vertesia.io
                     this.tokenServerUrl = "https://sts-staging.vertesia.io";
                 } else if (url.hostname.startsWith("api")) {
                     // Generic api.* pattern replacement
