@@ -8,14 +8,14 @@
 export const config = {
   /**
    * GitHub repository for the template
-   * Format: 'owner/repo' or 'owner/repo#branch' or 'owner/repo#tag'
+   * Format: 'owner/repo/subdirectory' or 'owner/repo/subdirectory#branch' or 'owner/repo/subdirectory#tag'
    *
    * Examples:
-   * - 'vertesiahq/tool-server-template'
-   * - 'vertesiahq/tool-server-template#main'
-   * - 'vertesiahq/tool-server-template#v1.0.0'
+   * - 'vertesia/composableai/packages/tool-server-template'
+   * - 'vertesia/composableai/packages/tool-server-template#main'
+   * - 'vertesia/composableai/packages/tool-server-template#v1.0.0'
    */
-  templateRepo: 'vertesiahq/tool-server-template',
+  templateRepo: 'vertesia/composableai/packages/tool-server-template#feat-tool-server-template',
 
   /**
    * Name of the template configuration file in the template repo
