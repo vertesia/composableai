@@ -169,7 +169,7 @@ async function main() {
     // Cleanup on failure
     if (fs.existsSync(projectName)) {
       console.log(chalk.gray('Cleaning up...'));
-      fs.rmSync(projectName, { recursive: true, force: true });
+      //fs.rmSync(projectName, { recursive: true, force: true });
     }
 
     process.exit(1);
@@ -233,6 +233,11 @@ async function promptUser(projectName: string, templateConfig: TemplateConfig): 
   // Process prompts - replace ${PROJECT_NAME} and other variables in initial values
   const processedPrompts = templateConfig.prompts.map(p => {
     const prompt: any = { ...p };
+
+    // Override PROJECT_NAME initial value with the directory name
+    if (prompt.name === 'PROJECT_NAME') {
+      prompt.initial = projectName;
+    }
 
     // Replace ${PROJECT_NAME} in initial values
     if (typeof prompt.initial === 'string') {
