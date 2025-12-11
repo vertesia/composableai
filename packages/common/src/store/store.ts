@@ -8,6 +8,8 @@ export enum ContentObjectApiHeaders {
     PROCESSING_PRIORITY = 'x-processing-priority',
     CREATE_REVISION = 'x-create-revision',
     REVISION_LABEL = 'x-revision-label',
+    /** When set to 'true', prevents this update from triggering workflow rules */
+    SUPPRESS_WORKFLOWS = 'x-suppress-workflows',
 }
 
 export enum ContentObjectStatus {
