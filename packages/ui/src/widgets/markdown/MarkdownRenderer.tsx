@@ -92,8 +92,13 @@ export function MarkdownRenderer({
                 try {
                     const raw = String(children || "").trim();
                     const spec = JSON.parse(raw) as AgentChartSpec;
-                    if (spec && spec.chart && Array.isArray(spec.data)) {
-                        return <AgentChart spec={spec} />;
+                    // Validate: either Vega-Lite (has spec.spec) or Recharts (has chart and data)
+                    if (spec) {
+                        const isVegaLite = spec.library === 'vega-lite' && 'spec' in spec;
+                        const isRecharts = 'chart' in spec && 'data' in spec && Array.isArray((spec as { data: unknown }).data);
+                        if (isVegaLite || isRecharts) {
+                            return <AgentChart spec={spec} />;
+                        }
                     }
                 } catch (e) {
                     console.warn("Failed to parse chart spec:", e);

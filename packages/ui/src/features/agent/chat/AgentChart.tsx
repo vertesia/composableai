@@ -1,6 +1,7 @@
 import { Component, memo, useState, useRef, useCallback, type ReactNode, type ErrorInfo } from 'react';
 import { toPng } from 'html-to-image';
 import { Download, Copy, Check } from 'lucide-react';
+import { VegaLiteChart } from './VegaLiteChart';
 import {
     ResponsiveContainer,
     BarChart,
@@ -82,7 +83,8 @@ class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, ChartErrorBo
     }
 }
 
-export type AgentChartSpec = {
+// Recharts-based chart specification (default)
+export type RechartsChartSpec = {
     version?: '1.0';
     library?: 'recharts';
     chart: 'bar' | 'line' | 'composed' | 'area' | 'pie' | 'scatter' | 'radar' | 'radialBar' | 'funnel' | 'treemap';
@@ -125,6 +127,35 @@ export type AgentChartSpec = {
     };
 };
 
+// Vega-Lite chart specification for advanced visualizations
+export type VegaLiteChartSpec = {
+    version?: '1.0';
+    library: 'vega-lite';
+    title?: string;
+    description?: string;
+    // Native Vega-Lite specification object
+    spec: Record<string, any>;
+    options?: {
+        collapsible?: boolean;
+        collapseInitially?: boolean;
+        theme?: 'default' | 'dark';
+        renderer?: 'canvas' | 'svg';
+    };
+};
+
+// Union type for all chart specifications
+export type AgentChartSpec = RechartsChartSpec | VegaLiteChartSpec;
+
+// Type guard to check if spec is Vega-Lite
+export function isVegaLiteSpec(spec: AgentChartSpec): spec is VegaLiteChartSpec {
+    return spec.library === 'vega-lite';
+}
+
+// Type guard to check if spec is Recharts (default)
+export function isRechartsSpec(spec: AgentChartSpec): spec is RechartsChartSpec {
+    return spec.library === 'recharts' || spec.library === undefined;
+}
+
 type AgentChartProps = {
     spec: AgentChartSpec;
 };
@@ -138,8 +169,22 @@ function formatNumber(n: number): string {
     return n.toLocaleString();
 }
 
-// Memoized chart component to prevent unnecessary re-renders
+// Router component that delegates to the appropriate chart renderer
 export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
+    // Route to VegaLiteChart for Vega-Lite specs
+    if (isVegaLiteSpec(spec)) {
+        return <VegaLiteChart spec={spec} />;
+    }
+
+    // Route to RechartsChart for Recharts specs
+    return <RechartsChart spec={spec as RechartsChartSpec} />;
+}, (prevProps, nextProps) => {
+    // Deep compare the spec to prevent re-renders when data hasn't changed
+    return JSON.stringify(prevProps.spec) === JSON.stringify(nextProps.spec);
+});
+
+// Recharts implementation component
+const RechartsChart = memo(function RechartsChart({ spec }: { spec: RechartsChartSpec }) {
     const {
         chart,
         title,

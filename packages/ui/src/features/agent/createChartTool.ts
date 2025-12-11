@@ -5,7 +5,7 @@
  * how to create charts in their responses.
  */
 
-import type { AgentChartSpec } from './chat/AgentChart';
+import type { AgentChartSpec, RechartsChartSpec, VegaLiteChartSpec } from './chat/AgentChart';
 
 /**
  * Tool definition for creating charts.
@@ -17,16 +17,54 @@ export const createChartToolDefinition = {
 
 IMPORTANT: You don't actually "call" this tool. Instead, you include a markdown code block with language "chart" in your response.
 
-Charts are created using JSON specifications in markdown code blocks:
+## CHART LIBRARIES
+
+Two chart libraries are available:
+
+### 1. Recharts (Default) - Simple Charts
+For standard bar, line, pie, area charts. Use when you need quick, simple visualizations.
 
 \`\`\`chart
 {
+  "library": "recharts",
   "chart": "bar|line|area|composed|pie|scatter|radar|radialBar|funnel|treemap",
   "title": "Chart Title",
   "data": [...],
-  ...
+  "xKey": "...",
+  "series": [...]
 }
 \`\`\`
+
+### 2. Vega-Lite (Advanced) - Complex Visualizations
+For heatmaps, geographic maps, layered charts, faceted charts, statistical plots.
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "title": "Chart Title",
+  "spec": {
+    "data": {"values": [...]},
+    "mark": "bar|line|point|rect|arc|...",
+    "encoding": {...}
+  }
+}
+\`\`\`
+
+## WHEN TO USE EACH LIBRARY
+
+| Use Case | Library |
+|----------|---------|
+| Simple bar, line, pie charts | recharts (default) |
+| Heatmaps / correlation matrices | **vega-lite** |
+| Geographic maps | **vega-lite** |
+| Faceted / small multiples | **vega-lite** |
+| Layered charts (scatter + regression) | **vega-lite** |
+| Statistical plots (boxplot, violin) | **vega-lite** |
+| Standard business charts | recharts |
+
+---
+
+## RECHARTS EXAMPLES
 
 ## CHART TYPES & WHEN TO USE
 
@@ -134,7 +172,47 @@ Charts are created using JSON specifications in markdown code blocks:
 - Pink #ec4899 - Highlight
 - Teal #14b8a6 - Alternative
 
-Numbers auto-format: 1K, 1M, 1B`,
+Numbers auto-format: 1K, 1M, 1B
+
+---
+
+## VEGA-LITE EXAMPLES
+
+### Heatmap
+\`\`\`chart
+{"library":"vega-lite","title":"Correlation Matrix","spec":{"data":{"values":[{"x":"A","y":"A","v":1},{"x":"A","y":"B","v":0.7},{"x":"B","y":"A","v":0.7},{"x":"B","y":"B","v":1}]},"mark":"rect","encoding":{"x":{"field":"x","type":"nominal"},"y":{"field":"y","type":"nominal"},"color":{"field":"v","type":"quantitative","scale":{"scheme":"redblue","domain":[-1,1]}}}}}
+\`\`\`
+
+### Layered Chart (Scatter + Trend Line)
+\`\`\`chart
+{"library":"vega-lite","title":"Sales Trend","spec":{"data":{"values":[{"x":1,"y":10},{"x":2,"y":18},{"x":3,"y":25},{"x":4,"y":31}]},"layer":[{"mark":"point","encoding":{"x":{"field":"x"},"y":{"field":"y"}}},{"mark":{"type":"line","color":"red"},"transform":[{"regression":"y","on":"x"}],"encoding":{"x":{"field":"x"},"y":{"field":"y"}}}]}}
+\`\`\`
+
+### Faceted Chart
+\`\`\`chart
+{"library":"vega-lite","title":"Sales by Category","spec":{"data":{"values":[{"cat":"A","region":"N","val":10},{"cat":"A","region":"S","val":15},{"cat":"B","region":"N","val":8},{"cat":"B","region":"S","val":12}]},"mark":"bar","encoding":{"x":{"field":"region"},"y":{"field":"val"},"color":{"field":"region"}},"facet":{"field":"cat","columns":2}}}
+\`\`\`
+
+### Box Plot
+\`\`\`chart
+{"library":"vega-lite","title":"Distribution","spec":{"data":{"values":[{"group":"A","val":10},{"group":"A","val":15},{"group":"A","val":12},{"group":"B","val":20},{"group":"B","val":25}]},"mark":"boxplot","encoding":{"x":{"field":"group"},"y":{"field":"val","type":"quantitative"}}}}
+\`\`\`
+
+## VEGA-LITE REFERENCE
+
+### Mark Types
+- bar, line, point, area, rect, arc, circle, text, boxplot, errorbar
+
+### Encoding Types
+- quantitative (Q): Numbers
+- nominal (N): Categories
+- ordinal (O): Ordered categories
+- temporal (T): Dates
+
+### Color Schemes
+- Sequential: blues, greens, viridis
+- Diverging: redblue, redyellowgreen
+- Categorical: category10, tableau10`,
 
     input_schema: {
         type: 'object',
@@ -324,16 +402,27 @@ Colors: Blue #4f46e5 (primary), Green #22c55e (positive), Red #ef4444 (negative)
  * Use this when you want to build charts programmatically.
  */
 export function buildChartSpec(spec: AgentChartSpec): string {
-    // Validate the spec
-    if (!spec.chart || !spec.data || !spec.xKey || !spec.series) {
+    // Check if it's a Vega-Lite spec
+    if (spec.library === 'vega-lite') {
+        const vegaSpec = spec as VegaLiteChartSpec;
+        if (!vegaSpec.spec) {
+            throw new Error('Invalid Vega-Lite chart spec: missing required "spec" field');
+        }
+        const json = JSON.stringify(spec, null, 2);
+        return `\`\`\`chart\n${json}\n\`\`\``;
+    }
+
+    // Recharts validation
+    const rechartsSpec = spec as RechartsChartSpec;
+    if (!rechartsSpec.chart || !rechartsSpec.data || !rechartsSpec.xKey || !rechartsSpec.series) {
         throw new Error('Invalid chart spec: missing required fields (chart, data, xKey, series)');
     }
 
-    if (!Array.isArray(spec.data)) {
+    if (!Array.isArray(rechartsSpec.data)) {
         throw new Error('Invalid chart spec: data must be an array');
     }
 
-    if (!Array.isArray(spec.series) || spec.series.length === 0) {
+    if (!Array.isArray(rechartsSpec.series) || rechartsSpec.series.length === 0) {
         throw new Error('Invalid chart spec: series must be a non-empty array');
     }
 
