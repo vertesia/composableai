@@ -31,6 +31,10 @@ export const config = {
     {
       name: 'Vertesia Tool Server',
       repository: 'vertesia/composableai/packages/tool-server-template#feat-tool-server-template'
+    },
+    {
+      name: 'Vertesia UI Plugin',
+      repository: 'vertesia/composableai/packages/ui-plugin-template#feat-tool-plugin-template'
     }
   ] as TemplateDefinition[],
 
