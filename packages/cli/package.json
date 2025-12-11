@@ -43,7 +43,7 @@
         "chalk": "^5.4.1",
         "cli-spinners": "^2.9.1",
         "cli-table3": "^0.6.5",
-        "commander": "^12.1.0",
+        "commander": "^14.0.2",
         "enquirer": "^2.4.1",
         "figures": "^6.1.0",
         "glob": "^11.1.0",
