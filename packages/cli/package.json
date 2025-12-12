@@ -27,7 +27,7 @@
     ],
     "scripts": {
         "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build",
+        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && pnpm exec tsc --build",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "dependencies": {
