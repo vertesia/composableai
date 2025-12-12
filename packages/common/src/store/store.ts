@@ -135,6 +135,8 @@ export interface TextSection {
     description: string; // the description of the section
     first_line_index: number;
     last_line_index: number;
+    start_page?: number; // optional start page number
+    end_page?: number; // optional end page number
 }
 
 export interface DocumentMetadata extends ContentMetadata {
