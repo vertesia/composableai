@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "description": "A template for building custom tool servers with tools, skills, and interactions",
+  "prompts": [
+    {
+      "type": "text",
+      "name": "PROJECT_NAME",
+      "message": "Project name",
+      "initial": "my-tool-server"
+    },
+    {
+      "type": "text",
+      "name": "PROJECT_DESCRIPTION",
+      "message": "Project description",
+      "initial": "A custom tool server with tools, skills, and interactions"
+    },
+    {
+      "type": "text",
+      "name": "SERVER_TITLE",
+      "message": "Server title (displayed in UI)",
+      "initial": "My Tool Server"
+    },
+    {
+      "type": "text",
+      "name": "AUTHOR_NAME",
+      "message": "Author name",
+      "initial": ""
+    }
+  ],
+  "files": [
+    "package.json",
+    "README.md",
+    "src/server.ts"
+  ],
+  "removeAfterInstall": [
+    "template.config.json"
+  ]
+}
