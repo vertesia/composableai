@@ -34,8 +34,8 @@ export class WebTemplateInit extends TemplateInit {
                 "preview": "vite preview"
             },
             peerDependencies: {
-                "react": "^19.0.0",
-                "react-dom": "^19.0.0"
+                "react": "^19.2.3",
+                "react-dom": "^19.2.3"
             },
         };
     }
