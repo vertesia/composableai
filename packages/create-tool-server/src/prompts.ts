@@ -10,6 +10,10 @@ import { applyTransform } from './transforms.js';
  * Prompt user for configuration values
  */
 export async function promptUser(projectName: string, templateConfig: TemplateConfig): Promise<Record<string, any>> {
+  if (!templateConfig.prompts) {
+    return {};
+  }
+
   console.log(chalk.blue('⚙️  Configure your project:\n'));
 
   // Process prompts - replace ${PROJECT_NAME} and other variables in initial values
