@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "description": "A template for building custom UI plugins for Vertesia",
+  "prompts": [
+    {
+      "type": "text",
+      "name": "PROJECT_NAME",
+      "message": "Project name (use kebab case)",
+      "initial": "my-plugin"
+    },
+    {
+      "type": "text",
+      "name": "PROJECT_DESCRIPTION",
+      "message": "Project description",
+      "initial": "A custom UI plugin for Vertesia"
+    },
+    {
+      "type": "select",
+      "name": "inlineCss",
+      "message": "CSS isolation strategy",
+      "initial": 0,
+      "choices": [
+        {
+          "title": "Shadow DOM",
+          "description": "Shadow DOM will be used to fully isolate the plugin.",
+          "value": false
+        },
+        {
+          "title": "CSS-only isolation",
+          "description": "Injects Tailwind utilities into host DOM; not fully isolated. Lighter but may generate conflicts.",
+          "value": true
+        }
+      ]
+    }
+  ],
+  "derived": {
+    "PLUGIN_TITLE": {
+      "from": "PROJECT_NAME",
+      "transform": "titleCase"
+    },
+    "PluginComponentName": {
+      "from": "PROJECT_NAME",
+      "transform": "pascalCase"
+    }
+  },
+  "files": [
+    "vite.config.ts",
+    "index.html",
+    "src/env.ts",
+    "src/plugin.tsx"
+  ],
+  "removeAfterInstall": [
+    "template.config.json"
+  ]
+}

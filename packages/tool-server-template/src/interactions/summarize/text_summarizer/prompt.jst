@@ -1,0 +1,31 @@
+return `
+# Text Summarization Request
+
+Please summarize the following text according to the specifications below.
+
+## Text to Summarize
+${text}
+
+## Summarization Parameters
+- **Style**: ${style || 'concise'}
+- **Max Length**: ${maxLength ? maxLength + ' words' : 'flexible'}
+${format ? `- **Output Format**: ${format}` : ''}
+
+## Instructions
+
+1. Read and understand the full text
+2. Identify the main points and key information
+3. Create a summary that:
+   - Captures the essential meaning
+   - Maintains accuracy
+   - Uses clear, simple language
+   - Follows the ${style} style
+   ${maxLength ? `- Stays within ${maxLength} words` : ''}
+   ${format ? `- Is formatted as ${format}` : ''}
+
+4. If the text contains multiple topics, organize your summary accordingly
+
+## Output
+
+Provide your summary below:
+`;
