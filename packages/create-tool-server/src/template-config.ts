@@ -38,6 +38,25 @@ export interface TemplateConfig {
    * Example: { "USE_TYPESCRIPT": { "false": ["tsconfig.json"] } }
    */
   conditionalRemove?: Record<string, Record<string, string[]>>;
+
+  /**
+   * Optional derived variables computed from user answers
+   * Format: { "NEW_VAR": { "from": "SOURCE_VAR", "transform": "pascalCase" } }
+   * Supported transforms: "pascalCase", "camelCase", "kebabCase", "snakeCase", "titleCase", "upperCase", "lowerCase"
+   * Example: { "ComponentName": { "from": "PROJECT_NAME", "transform": "pascalCase" } }
+   */
+  derived?: Record<string, DerivedVariable>;
+}
+
+/**
+ * Configuration for a derived variable computed from user input
+ */
+export interface DerivedVariable {
+  /** Source variable name to derive from */
+  from: string;
+
+  /** Transformation to apply: "pascalCase", "camelCase", "kebabCase", "snakeCase", "titleCase", "upperCase", "lowerCase" */
+  transform: string;
 }
 
 /**

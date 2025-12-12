@@ -1,4 +1,4 @@
-# Tool Server Template
+# Tool Server
 
 A template for building custom tool servers that expose LLM tools, skills, interactions, and MCP providers. Built with [Hono](https://hono.dev/) for flexible deployment to Vercel Functions or Node.js HTTP servers.
 

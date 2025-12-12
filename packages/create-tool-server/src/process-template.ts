@@ -7,7 +7,70 @@ import chalk from 'chalk';
 import { TemplateConfig } from './template-config.js';
 
 /**
+ * Escape special regex characters
+ */
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Check if a file is a code file based on extension
+ */
+function isCodeFile(filePath: string): boolean {
+  const codeExtensions = ['.js', '.jsx', '.mjs', '.ts', '.tsx'];
+  return codeExtensions.some(ext => filePath.endsWith(ext));
+}
+
+/**
+ * Replace variables in text files (HTML, JSON, Markdown, etc.)
+ * Uses {{VARIABLE}} placeholder pattern
+ */
+function replaceInTextFile(content: string, answers: Record<string, any>): { content: string; modified: boolean } {
+  let modified = false;
+
+  for (const [key, value] of Object.entries(answers)) {
+    const placeholder = `{{${key}}}`;
+    if (content.includes(placeholder)) {
+      content = content.replace(new RegExp(escapeRegex(placeholder), 'g'), String(value));
+      modified = true;
+    }
+  }
+
+  return { content, modified };
+}
+
+/**
+ * Replace variables in code files (JavaScript, TypeScript)
+ * Uses const CONFIG__variableName = value; pattern
+ */
+function replaceInCodeFile(content: string, answers: Record<string, any>): { content: string; modified: boolean } {
+  let modified = false;
+
+  for (const [key, value] of Object.entries(answers)) {
+    // CONFIG__ constant replacement
+    // Matches: const CONFIG__variableName = <value>; or <value>\n
+    // Replaces only the value, keeps the constant declaration
+    const configPattern = new RegExp(
+      `(const\\s+CONFIG__${key}\\s*=\\s*)([^;\\n]+)(\\s*;?\\s*\\n?)`,
+      'gm'
+    );
+    const matches = content.match(configPattern);
+    if (matches) {
+      content = content.replace(configPattern, (match, prefix, oldValue, suffix) => {
+        return `${prefix}${JSON.stringify(value)}${suffix}`;
+      });
+      modified = true;
+    }
+  }
+
+  return { content, modified };
+}
+
+/**
  * Replace variables in files
+ * Uses different strategies based on file type:
+ * - Code files (.js, .jsx, .mjs, .ts, .tsx): CONFIG__ constant pattern
+ * - Text files (all others): {{VARIABLE}} placeholder pattern
  */
 export function replaceVariables(
   projectName: string,
@@ -27,13 +90,15 @@ export function replaceVariables(
     let content = fs.readFileSync(filePath, 'utf8');
     let modified = false;
 
-    // Replace each variable
-    for (const [key, value] of Object.entries(answers)) {
-      const placeholder = `{{${key}}}`;
-      if (content.includes(placeholder)) {
-        content = content.replace(new RegExp(placeholder, 'g'), String(value));
-        modified = true;
-      }
+    // Choose replacement strategy based on file type
+    if (isCodeFile(file)) {
+      const result = replaceInCodeFile(content, answers);
+      content = result.content;
+      modified = result.modified;
+    } else {
+      const result = replaceInTextFile(content, answers);
+      content = result.content;
+      modified = result.modified;
     }
 
     if (modified) {

@@ -1,7 +1,9 @@
 import { Env } from "@vertesia/ui/env";
 
+const CONFIG__PLUGIN_TITLE = "Ui Plugin Template";
+
 Env.init({
-    name: "Ui Plugin Template",
+    name: CONFIG__PLUGIN_TITLE,
     version: "1.0.0",
     isLocalDev: true,
     isDocker: true,

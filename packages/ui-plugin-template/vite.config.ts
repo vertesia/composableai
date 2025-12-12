@@ -34,7 +34,7 @@ const VERTESIA_UI_PATH = ""
  * Set to true to extract the css utility layer and inject it in the plugin js file.
  * If you use shadow dom isolation for the plugin you must set this to false.
  */
-const inlineCss = false;
+const CONFIG__inlineCss = false;
 
 /**
  * Vite configuration to build the plugin as a library or as a standalone application or to run the application in dev mode.
@@ -64,7 +64,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
         plugins: [
             tailwindcss(),
             react(),
-            vertesiaPluginBuilder({ inlineCss })
+            vertesiaPluginBuilder({ inlineCss: CONFIG__inlineCss }),
         ],
         build: {
             outDir: 'dist/lib', // the plugin will be generated in the `dist/lib` directory

@@ -3,12 +3,14 @@ import { loadInteractions } from "./interactions/index.js";
 import { skills } from "./skills/index.js";
 import { tools } from "./tools/index.js";
 
+const CONFIG__SERVER_TITLE = "Tool Server Template";
+
 // Load interactions asynchronously
 const interactions = await loadInteractions();
 
 // Create server using tools-sdk
 const server = createToolServer({
-    title: 'Tool Server Template',
+    title: CONFIG__SERVER_TITLE,
     prefix: '/api',
     tools,
     interactions,

@@ -13,25 +13,14 @@
       "name": "PROJECT_DESCRIPTION",
       "message": "Project description",
       "initial": "A custom tool server with tools, skills, and interactions"
-    },
-    {
-      "type": "text",
-      "name": "SERVER_TITLE",
-      "message": "Server title (displayed in UI)",
-      "initial": "My Tool Server"
-    },
-    {
-      "type": "text",
-      "name": "AUTHOR_NAME",
-      "message": "Author name",
-      "initial": ""
     }
   ],
-  "files": [
-    "package.json",
-    "README.md",
-    "src/server.ts"
-  ],
+  "derived": {
+    "SERVER_TITLE": {
+      "from": "PROJECT_NAME",
+      "transform": "titleCase"
+    }
+  },
   "removeAfterInstall": [
     "template.config.json"
   ]

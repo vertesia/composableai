@@ -224,6 +224,80 @@ Becomes:
 }
 ```
 
+#### Using Variables in Code Files
+
+For **code files** (TypeScript, JavaScript, etc.), you cannot use `{{VARIABLE}}` directly as it breaks compilation. Instead, use the **CONFIG__ constant pattern**:
+
+**Template file (vite.config.ts):**
+```typescript
+// Define CONFIG__ constants at the top of your file
+const CONFIG__inlineCss = false;
+const CONFIG__serverPort = 3000;
+const CONFIG__pluginTitle = "My Plugin";
+
+// Use them in your code
+const inlineCss = CONFIG__inlineCss;
+
+export default defineConfig({
+  server: {
+    port: CONFIG__serverPort
+  },
+  // ... rest of config
+});
+```
+
+**template.config.json:**
+```json
+{
+  "prompts": [
+    {
+      "type": "confirm",
+      "name": "inlineCss",
+      "message": "Inline CSS in plugin bundle?",
+      "initial": false
+    },
+    {
+      "type": "number",
+      "name": "serverPort",
+      "message": "Server port",
+      "initial": 3000
+    },
+    {
+      "type": "text",
+      "name": "pluginTitle",
+      "message": "Plugin title",
+      "initial": "My Plugin"
+    }
+  ],
+  "files": ["vite.config.ts"]
+}
+```
+
+**After installation** (with `inlineCss=true`, `serverPort=8080`, `pluginTitle="Analytics"`):
+```typescript
+const CONFIG__inlineCss = true;
+const CONFIG__serverPort = 8080;
+const CONFIG__pluginTitle = "Analytics";
+
+const inlineCss = CONFIG__inlineCss;
+// ... rest of code remains unchanged
+```
+
+**How it works:**
+1. Define constants with `CONFIG__` prefix matching your prompt names
+2. The installer finds `const CONFIG__<name> = <value>;` patterns
+3. Only the value is replaced, keeping the constant declaration
+4. Your template stays compilable and testable with default values
+5. The `CONFIG__` prefix remains as documentation in the final project
+
+**Benefits:**
+- ✅ Template compiles and runs normally during development
+- ✅ Type-safe (preserves boolean, number, string types)
+- ✅ Clear visual marker for configuration values
+- ✅ Users can easily identify and modify config values later
+
+**For non-code files** (JSON, HTML, Markdown), continue using simple `{{VARIABLE}}` placeholders.
+
 ---
 
 ### `removeAfterInstall` (optional)
@@ -302,6 +376,93 @@ When the user's answer for `VARIABLE_NAME` equals `value1`, the specified files 
 - Remove package manager lock files
 - Remove example code if user wants a minimal setup
 - Remove platform-specific files based on deployment choice
+
+---
+
+### `derived` (optional)
+
+**Type:** `Record<string, DerivedVariable>`
+
+**Description:** Automatically generate additional variables by transforming user input. Useful for creating consistent naming across different contexts (e.g., component names from project names).
+
+**DerivedVariable structure:**
+```typescript
+{
+  "from": "SOURCE_VARIABLE",    // Variable to derive from
+  "transform": "transformType"  // Transformation to apply
+}
+```
+
+**Supported transforms:**
+- `pascalCase` - MyPlugin, HelloWorld
+- `camelCase` - myPlugin, helloWorld
+- `kebabCase` - my-plugin, hello-world
+- `snakeCase` - my_plugin, hello_world
+- `titleCase` - My Plugin, Hello World
+- `upperCase` - MY-PLUGIN, HELLO WORLD
+- `lowerCase` - my-plugin, hello world
+
+**Example:**
+```json
+{
+  "prompts": [
+    {
+      "type": "text",
+      "name": "PROJECT_NAME",
+      "message": "Project name",
+      "initial": "my-plugin"
+    }
+  ],
+  "derived": {
+    "ComponentName": {
+      "from": "PROJECT_NAME",
+      "transform": "pascalCase"
+    },
+    "packageName": {
+      "from": "PROJECT_NAME",
+      "transform": "kebabCase"
+    },
+    "constantName": {
+      "from": "PROJECT_NAME",
+      "transform": "snakeCase"
+    }
+  }
+}
+```
+
+**After user enters "my cool plugin":**
+- `PROJECT_NAME` = "my cool plugin"
+- `ComponentName` = "MyCoolPlugin" (derived, pascalCase)
+- `packageName` = "my-cool-plugin" (derived, kebabCase)
+- `constantName` = "my_cool_plugin" (derived, snakeCase)
+
+**Usage in template files:**
+```typescript
+// src/plugin.tsx
+export default function {{ComponentName}}() {
+  return <div>Hello from {{ComponentName}}!</div>;
+}
+```
+
+```json
+// package.json
+{
+  "name": "{{packageName}}",
+  "version": "1.0.0"
+}
+```
+
+```typescript
+// src/config.ts
+const CONFIG__pluginName = "{{PROJECT_NAME}}";
+export const PLUGIN_ID = "{{constantName}}";
+```
+
+**Benefits:**
+- ✅ Ensures consistent naming conventions across files
+- ✅ No need to ask users multiple questions for the same concept
+- ✅ Reduces user error in naming
+- ✅ Common use case: Component names from project names
 
 ---
 
