@@ -77,6 +77,10 @@ export function replaceVariables(
   templateConfig: TemplateConfig,
   answers: Record<string, any>
 ): void {
+  if (!templateConfig.files) {
+    return;
+  }
+
   console.log(chalk.blue('✏️  Configuring files...\n'));
 
   for (const file of templateConfig.files) {
@@ -143,7 +147,7 @@ export function adjustPackageJson(projectName: string, answers: Record<string, a
       if (packageJson[depType]) {
         Object.keys(packageJson[depType]).forEach(pkgName => {
           if ((pkgName.startsWith('@vertesia/') || pkgName.startsWith('@llumiverse/')) &&
-              packageJson[depType][pkgName] === 'workspace:*') {
+            packageJson[depType][pkgName] === 'workspace:*') {
             packageJson[depType][pkgName] = '*';
             workspaceReplacements++;
           }
