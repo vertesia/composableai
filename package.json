@@ -19,10 +19,10 @@
     "packageManager": "pnpm@10.8.1",
     "pnpm": {
         "overrides": {
-            "react": "19.1.2",
-            "react-dom": "19.1.2",
-            "@types/react": "19.1.6",
-            "@types/react-dom": "19.1.5",
+            "react": "19.2.3",
+            "react-dom": "19.2.3",
+            "@types/react": "19.2.3",
+            "@types/react-dom": "19.2.3",
             "brace-expansion@>=1.0.0 <2.0.0": "^1.1.12",
             "brace-expansion@>=2.0.0 <3.0.0": "^2.0.2",
             "cross-spawn@<6.0.6": "^6.0.6",
