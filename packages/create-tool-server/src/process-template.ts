@@ -41,24 +41,34 @@ function replaceInTextFile(content: string, answers: Record<string, any>): { con
 
 /**
  * Replace variables in code files (JavaScript, TypeScript)
- * Uses const CONFIG__variableName = value; pattern
+ * Supports two patterns:
+ * 1. const CONFIG__variableName = value; - Constant value replacement
+ * 2. TEMPLATE__IdentifierName - Identifier name replacement (functions, classes, variables)
  */
 function replaceInCodeFile(content: string, answers: Record<string, any>): { content: string; modified: boolean } {
   let modified = false;
 
   for (const [key, value] of Object.entries(answers)) {
-    // CONFIG__ constant replacement
+    // Pattern 1: CONFIG__ constant value replacement
     // Matches: const CONFIG__variableName = <value>; or <value>\n
     // Replaces only the value, keeps the constant declaration
     const configPattern = new RegExp(
       `(const\\s+CONFIG__${key}\\s*=\\s*)([^;\\n]+)(\\s*;?\\s*\\n?)`,
       'gm'
     );
-    const matches = content.match(configPattern);
-    if (matches) {
+    if (content.match(configPattern)) {
       content = content.replace(configPattern, (match, prefix, oldValue, suffix) => {
         return `${prefix}${JSON.stringify(value)}${suffix}`;
       });
+      modified = true;
+    }
+
+    // Pattern 2: TEMPLATE__ identifier replacement
+    // Matches: TEMPLATE__IdentifierName anywhere in code
+    // Replaces the entire identifier with the value
+    const templatePattern = new RegExp(`TEMPLATE__${key}\\b`, 'g');
+    if (content.match(templatePattern)) {
+      content = content.replace(templatePattern, String(value));
       modified = true;
     }
   }
@@ -69,7 +79,9 @@ function replaceInCodeFile(content: string, answers: Record<string, any>): { con
 /**
  * Replace variables in files
  * Uses different strategies based on file type:
- * - Code files (.js, .jsx, .mjs, .ts, .tsx): CONFIG__ constant pattern
+ * - Code files (.js, .jsx, .mjs, .ts, .tsx):
+ *   - CONFIG__variableName for constant values
+ *   - TEMPLATE__IdentifierName for identifier replacement
  * - Text files (all others): {{VARIABLE}} placeholder pattern
  */
 export function replaceVariables(

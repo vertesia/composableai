@@ -4,7 +4,7 @@ import { App } from "./app";
 /**
  * Export the plugin component.
  */
-export default function CONFIG__PluginComponentName({ slot }: { slot: string }) {
+export default function TEMPLATE__PluginComponentName({ slot }: { slot: string }) {
     if (slot === "page") {
         return (
             <PortalContainerProvider>

@@ -226,7 +226,11 @@ Becomes:
 
 #### Using Variables in Code Files
 
-For **code files** (TypeScript, JavaScript, etc.), you cannot use `{{VARIABLE}}` directly as it breaks compilation. Instead, use the **CONFIG__ constant pattern**:
+For **code files** (TypeScript, JavaScript, etc.), you cannot use `{{VARIABLE}}` directly as it breaks compilation. Instead, use two different patterns depending on what you're replacing:
+
+##### Pattern 1: CONFIG__ for Constant Values
+
+Use `CONFIG__` prefix for configuration values (booleans, numbers, strings):
 
 **Template file (vite.config.ts):**
 ```typescript
@@ -246,33 +250,6 @@ export default defineConfig({
 });
 ```
 
-**template.config.json:**
-```json
-{
-  "prompts": [
-    {
-      "type": "confirm",
-      "name": "inlineCss",
-      "message": "Inline CSS in plugin bundle?",
-      "initial": false
-    },
-    {
-      "type": "number",
-      "name": "serverPort",
-      "message": "Server port",
-      "initial": 3000
-    },
-    {
-      "type": "text",
-      "name": "pluginTitle",
-      "message": "Plugin title",
-      "initial": "My Plugin"
-    }
-  ],
-  "files": ["vite.config.ts"]
-}
-```
-
 **After installation** (with `inlineCss=true`, `serverPort=8080`, `pluginTitle="Analytics"`):
 ```typescript
 const CONFIG__inlineCss = true;
@@ -283,18 +260,60 @@ const inlineCss = CONFIG__inlineCss;
 // ... rest of code remains unchanged
 ```
 
+##### Pattern 2: TEMPLATE__ for Identifiers
+
+Use `TEMPLATE__` prefix for identifier names (functions, classes, variables):
+
+**Template file (src/plugin.tsx):**
+```typescript
+export default function TEMPLATE__PluginComponentName({ slot }: { slot: string }) {
+  return <div>Hello from TEMPLATE__PluginComponentName</div>;
+}
+
+class TEMPLATE__ServiceClass {
+  // ...
+}
+```
+
+**template.config.json with derived variable:**
+```json
+{
+  "prompts": [
+    {
+      "type": "text",
+      "name": "PROJECT_NAME",
+      "message": "Project name",
+      "initial": "my-plugin"
+    }
+  ],
+  "derived": {
+    "PluginComponentName": {
+      "from": "PROJECT_NAME",
+      "transform": "pascalCase"
+    }
+  },
+  "files": ["src/plugin.tsx", "vite.config.ts"]
+}
+```
+
+**After installation** (user enters "analytics-dashboard"):
+```typescript
+export default function AnalyticsDashboard({ slot }: { slot: string }) {
+  return <div>Hello from AnalyticsDashboard</div>;
+}
+```
+
 **How it works:**
-1. Define constants with `CONFIG__` prefix matching your prompt names
-2. The installer finds `const CONFIG__<name> = <value>;` patterns
-3. Only the value is replaced, keeping the constant declaration
-4. Your template stays compilable and testable with default values
-5. The `CONFIG__` prefix remains as documentation in the final project
+1. **CONFIG__** - Only the **value** is replaced, constant declaration remains
+2. **TEMPLATE__** - The entire **identifier** is replaced with the user's value
+3. Your template stays compilable and testable with default values
+4. Both patterns work anywhere in code files (.js, .jsx, .mjs, .ts, .tsx)
 
 **Benefits:**
 - ✅ Template compiles and runs normally during development
 - ✅ Type-safe (preserves boolean, number, string types)
-- ✅ Clear visual marker for configuration values
-- ✅ Users can easily identify and modify config values later
+- ✅ Clear visual markers for template variables
+- ✅ Supports both configuration values and identifier names
 
 **For non-code files** (JSON, HTML, Markdown), continue using simple `{{VARIABLE}}` placeholders.
 
