@@ -299,6 +299,7 @@ function ModernAgentConversationInner({
     const [isSending, setIsSending] = useState(false);
     const [viewMode, setViewMode] = useState<"stacked" | "sliding">("sliding");
     const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(!isModal);
+    const [isStopping, setIsStopping] = useState(false);
     // Keep track of multiple plans and their timestamps
     const [plans, setPlans] = useState<Array<{ plan: Plan; timestamp: number }>>(
         [],
@@ -562,6 +563,35 @@ function ModernAgentConversationInner({
             });
     };
 
+    // Stop/interrupt the active workflow
+    const handleStopWorkflow = async () => {
+        if (isStopping) return;
+
+        setIsStopping(true);
+        try {
+            await client.store.workflows.sendSignal(run.workflowId, run.runId, "Stop", {
+                message: "User requested stop",
+            });
+
+            toast({
+                status: "info",
+                title: "Agent Interrupted",
+                description: "Type your message to give new instructions",
+                duration: 3000,
+            });
+            setIsCompleted(true);
+        } catch (err) {
+            toast({
+                status: "error",
+                title: "Failed to Interrupt",
+                description: err instanceof Error ? err.message : "Unknown error",
+                duration: 3000,
+            });
+        } finally {
+            setIsStopping(false);
+        }
+    };
+
     // Calculate number of active tasks for the status indicator
     const getActiveTaskCount = (): number => {
         if (!messages.length) return 0;
@@ -762,8 +792,11 @@ function ModernAgentConversationInner({
                     ) : showInput && (
                         <MessageInput
                             onSend={handleSendMessage}
+                            onStop={handleStopWorkflow}
                             disabled={false}
                             isSending={isSending}
+                            isStopping={isStopping}
+                            isStreaming={!isCompleted}
                             isCompleted={isCompleted}
                             activeTaskCount={getActiveTaskCount()}
                             placeholder={placeholder}
