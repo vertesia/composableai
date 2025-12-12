@@ -194,7 +194,7 @@ const VTabsBar = ({ className }: { className?: string }) => {
   );
 };
 
-const VTabsPanel = ({ className }: { className?: string }) => {
+const VTabsPanel = () => {
   const { tabs } = React.useContext(TabsContext);
 
   if (!tabs) return null;
@@ -202,7 +202,7 @@ const VTabsPanel = ({ className }: { className?: string }) => {
   return (
     <>
       {tabs.map((tab) => (
-        <TabsContent key={tab.name} value={tab.name} className={className}>
+        <TabsContent key={tab.name} value={tab.name}>
           {tab.content}
         </TabsContent>
       ))}
@@ -285,7 +285,6 @@ const TabsContent = React.forwardRef<
     ref={ref}
     className={cn(
       "focus-visible:outline-none",
-      "flex-1 overflow-y-auto min-h-0 pt-2",
       className
     )}
     {...props}
