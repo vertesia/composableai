@@ -23,15 +23,51 @@ interface ClientInfo extends ProfileData {
     code: string
 }
 
-function getClientInfo(location: Location): ClientInfo | null {
-    const params = new URLSearchParams(location.search)
-    let redirect = params.get('redirect_uri')
-    const code = params.get('code')
-    if (!redirect || !code) {
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost'])
+
+function parseRedirectUri(rawRedirect: string | null): string | null {
+    if (!rawRedirect) {
         return null
     }
-    redirect = decodeURI(redirect)
-    if (!redirect.startsWith('http://127.0.0.1:') && !redirect.startsWith('http://localhost:')) {
+
+    let decoded: string
+    try {
+        decoded = decodeURIComponent(rawRedirect)
+    } catch {
+        return null
+    }
+
+    let parsed: URL
+    try {
+        parsed = new URL(decoded)
+    } catch {
+        return null
+    }
+
+    if (parsed.protocol !== 'http:') {
+        return null
+    }
+
+    if (!parsed.port) {
+        return null
+    }
+
+    if (parsed.username || parsed.password) {
+        return null
+    }
+
+    if (!LOOPBACK_HOSTS.has(parsed.hostname)) {
+        return null
+    }
+
+    return parsed.toString()
+}
+
+function getClientInfo(location: Location): ClientInfo | null {
+    const params = new URLSearchParams(location.search)
+    const redirect = parseRedirectUri(params.get('redirect_uri'))
+    const code = params.get('code')
+    if (!redirect || !code) {
         return null
     }
     const profile = params.get('profile') ?? "default"
