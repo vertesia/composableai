@@ -4,7 +4,7 @@ import { AccountRef, ProjectRef } from '@vertesia/common'
 import { Button, Center, ErrorBox, Input, SelectBox, Spinner, useFetch, useToast } from '@vertesia/ui/core'
 import { Env } from "@vertesia/ui/env"
 import { useLocation } from "@vertesia/ui/router"
-import { fetchComposableTokenFromFirebaseToken, useUserSession } from '@vertesia/ui/session'
+import { fetchComposableToken, useUserSession } from '@vertesia/ui/session'
 
 interface ProfileData {
     profile?: string
@@ -82,6 +82,7 @@ export function TerminalLogin() {
     const location = useLocation()
     const clientInfo = getClientInfo(location)
     const toast = useToast()
+    const session = useUserSession()
 
     const onAccept = async (data: ProfileData) => {
         if (!clientInfo) return
@@ -116,7 +117,10 @@ export function TerminalLogin() {
         // expire in 1 day
         let payload: LoginResult | undefined
         try {
-            const token = await fetchComposableTokenFromFirebaseToken(data.account, data.project, 24 * 3600)
+            // Use session's rawAuthToken as the source token for fetching a new token
+            // This works with both Firebase auth and internal auth (dev environments)
+            const getSessionToken = () => session.rawAuthToken
+            const token = await fetchComposableToken(getSessionToken, data.account, data.project, 24 * 3600)
             if (token) {
                 payload = {
                     ...data,
