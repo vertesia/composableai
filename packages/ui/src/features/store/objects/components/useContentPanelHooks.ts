@@ -39,17 +39,33 @@ export function useObjectText(objectId: string, initialText?: string, loadOnMoun
             })
             .catch((err) => {
                 console.error("Failed to load text", err);
+                setFullText(undefined);
+                setDisplayText(undefined);
+                setIsCropped(false);
             })
             .finally(() => {
                 setIsLoading(false);
             });
     }, [objectId, store]);
 
+    // Reset state when objectId changes
     useEffect(() => {
-        if (loadOnMount && !displayText) {
+        // Reset to initial text for new object
+        if (initialText && initialText.length > MAX_TEXT_DISPLAY_SIZE) {
+            setFullText(initialText);
+            setDisplayText(initialText.substring(0, MAX_TEXT_DISPLAY_SIZE));
+            setIsCropped(true);
+        } else {
+            setFullText(initialText);
+            setDisplayText(initialText);
+            setIsCropped(false);
+        }
+
+        // Load text if requested
+        if (loadOnMount && !initialText) {
             loadText();
         }
-    }, [loadOnMount, displayText, loadText]);
+    }, [objectId, initialText, loadOnMount, loadText]);
 
     return {
         fullText,

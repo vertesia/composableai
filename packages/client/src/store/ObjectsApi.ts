@@ -284,6 +284,7 @@ export class ObjectsApi extends ApiTopic {
      * @param options Additional options
      * @param options.createRevision Whether to create a new revision instead of updating in place
      * @param options.revisionLabel Optional label for the revision (e.g., "v1.2")
+     * @param options.suppressWorkflows When true, prevents this update from triggering workflow rules
      * @returns The updated object or newly created revision
      */
     async update(
@@ -293,6 +294,7 @@ export class ObjectsApi extends ApiTopic {
             createRevision?: boolean;
             revisionLabel?: string;
             processing_priority?: ContentObjectProcessingPriority;
+            suppressWorkflows?: boolean;
         },
     ): Promise<ContentObject> {
         const updatePayload: Partial<CreateContentObjectPayload> = {
@@ -316,6 +318,9 @@ export class ObjectsApi extends ApiTopic {
             if (options.revisionLabel) {
                 headers[ContentObjectApiHeaders.REVISION_LABEL] = options.revisionLabel;
             }
+        }
+        if (options?.suppressWorkflows) {
+            headers[ContentObjectApiHeaders.SUPPRESS_WORKFLOWS] = "true";
         }
 
         return this.put(`/${id}`, {
