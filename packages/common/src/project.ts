@@ -1,6 +1,12 @@
 import { SupportedIntegrations } from "./integrations.js";
 import { AccountRef } from "./user.js";
 
+/**
+ * Regex pattern for validating project namespaces.
+ * Requires at least 3 characters. Allows alphanumeric characters, hyphens, and underscores.
+ */
+export const NAMESPACE_REGEX = /^[a-zA-Z0-9_-]{3,}$/;
+
 export interface ICreateProjectPayload {
     name: string;
     namespace: string;
