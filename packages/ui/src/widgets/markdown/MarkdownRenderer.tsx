@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 import { visit, SKIP } from "unist-util-visit";
 import { AgentChart, type AgentChartSpec } from "../../features/agent/chat/AgentChart";
 import { useUserSession } from "@vertesia/ui/session";
+import { useArtifactUrlCache, getArtifactCacheKey, getFileCacheKey } from "../../features/agent/chat/useArtifactUrlCache.js";
 
 // Custom URL schemes that we handle in our components
 const ALLOWED_CUSTOM_SCHEMES = [
@@ -52,16 +53,17 @@ interface MarkdownRendererProps {
     artifactRunId?: string;
 }
 
-export function MarkdownRenderer({ 
-    children, 
-    components, 
-    remarkPlugins = [], 
+export function MarkdownRenderer({
+    children,
+    components,
+    remarkPlugins = [],
     removeComments = true,
     artifactRunId,
 }: MarkdownRendererProps) {
     const { client } = useUserSession();
+    const urlCache = useArtifactUrlCache();
     const plugins = [remarkGfm, ...remarkPlugins];
-    
+
     if (removeComments) {
         plugins.push(remarkRemoveComments);
     }
@@ -123,9 +125,24 @@ export function MarkdownRenderer({
             const artifactPath = isArtifactLink ? rawHref.replace(/^artifact:/, "").trim() : "";
             const isImageLink = rawHref.startsWith("image:");
             const imagePath = isImageLink ? rawHref.replace(/^image:/, "").trim() : "";
-            const [resolvedHref, setResolvedHref] = React.useState<string | undefined>(undefined);
+            const [resolvedHref, setResolvedHref] = React.useState<string | undefined>(() => {
+                // Initialize from cache if available
+                if (urlCache) {
+                    if (isArtifactLink && artifactRunId && !artifactPath.startsWith("agents/")) {
+                        return urlCache.getUrl(getArtifactCacheKey(artifactRunId, artifactPath, "attachment"));
+                    } else if (isArtifactLink) {
+                        return urlCache.getUrl(getFileCacheKey(artifactPath));
+                    } else if (isImageLink) {
+                        return urlCache.getUrl(getFileCacheKey(imagePath));
+                    }
+                }
+                return undefined;
+            });
 
             React.useEffect(() => {
+                // Skip if already resolved from cache
+                if (resolvedHref) return;
+
                 let cancelled = false;
                 const resolve = async () => {
                     if (!isArtifactLink && !isImageLink) {
@@ -136,24 +153,50 @@ export function MarkdownRenderer({
                         if (isArtifactLink) {
                             // If we have a run id and the path looks like a shorthand (e.g. out/...), use artifact API.
                             if (artifactRunId && !artifactPath.startsWith("agents/")) {
-                                const { url } = await client.files.getArtifactDownloadUrl(
-                                    artifactRunId,
-                                    artifactPath,
-                                    "attachment",
-                                );
+                                const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "attachment");
+                                let url: string;
+                                if (urlCache) {
+                                    url = await urlCache.getOrFetch(cacheKey, async () => {
+                                        const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
+                                        return result.url;
+                                    });
+                                } else {
+                                    const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
+                                    url = result.url;
+                                }
                                 if (!cancelled) {
                                     setResolvedHref(url);
                                 }
                             } else {
                                 // Otherwise, treat it as a direct file path.
-                                const { url } = await client.files.getDownloadUrl(artifactPath);
+                                const cacheKey = getFileCacheKey(artifactPath);
+                                let url: string;
+                                if (urlCache) {
+                                    url = await urlCache.getOrFetch(cacheKey, async () => {
+                                        const result = await client.files.getDownloadUrl(artifactPath);
+                                        return result.url;
+                                    });
+                                } else {
+                                    const result = await client.files.getDownloadUrl(artifactPath);
+                                    url = result.url;
+                                }
                                 if (!cancelled) {
                                     setResolvedHref(url);
                                 }
                             }
                         } else if (isImageLink) {
                             // image:<path> is treated as a direct file path resolved via files API
-                            const { url } = await client.files.getDownloadUrl(imagePath);
+                            const cacheKey = getFileCacheKey(imagePath);
+                            let url: string;
+                            if (urlCache) {
+                                url = await urlCache.getOrFetch(cacheKey, async () => {
+                                    const result = await client.files.getDownloadUrl(imagePath);
+                                    return result.url;
+                                });
+                            } else {
+                                const result = await client.files.getDownloadUrl(imagePath);
+                                url = result.url;
+                            }
                             if (!cancelled) {
                                 setResolvedHref(url);
                             }
@@ -170,7 +213,7 @@ export function MarkdownRenderer({
                 return () => {
                     cancelled = true;
                 };
-            }, [isArtifactLink, artifactPath, isImageLink, imagePath, artifactRunId, client]);
+            }, [isArtifactLink, artifactPath, isImageLink, imagePath, artifactRunId, client, resolvedHref, urlCache]);
 
             // Handle document://<id> links by mapping them to /store/objects/<id>
             if (rawHref.startsWith("document://")) {
@@ -292,9 +335,24 @@ export function MarkdownRenderer({
             const isImageRef = rawSrc.startsWith("image:");
             const isArtifactOrImageRef = isArtifactRef || isImageRef;
             const path = isArtifactOrImageRef ? rawSrc.replace(/^artifact:/, "").replace(/^image:/, "").trim() : "";
-            const [resolvedSrc, setResolvedSrc] = React.useState<string | undefined>(undefined);
+            const [resolvedSrc, setResolvedSrc] = React.useState<string | undefined>(() => {
+                // Initialize from cache if available
+                if (urlCache && isArtifactOrImageRef) {
+                    if (isArtifactRef && artifactRunId && !path.startsWith("agents/")) {
+                        return urlCache.getUrl(getArtifactCacheKey(artifactRunId, path, "inline"));
+                    } else if (isArtifactRef) {
+                        return urlCache.getUrl(getFileCacheKey(path));
+                    } else if (isImageRef) {
+                        return urlCache.getUrl(getFileCacheKey(path));
+                    }
+                }
+                return undefined;
+            });
 
             React.useEffect(() => {
+                // Skip if already resolved from cache
+                if (resolvedSrc) return;
+
                 let cancelled = false;
                 const resolve = async () => {
                     if (!isArtifactOrImageRef) {
@@ -305,23 +363,49 @@ export function MarkdownRenderer({
                         if (isArtifactRef) {
                             // Allow shorthand artifact paths when we have a run id
                             if (artifactRunId && !path.startsWith("agents/")) {
-                                const { url } = await client.files.getArtifactDownloadUrl(
-                                    artifactRunId,
-                                    path,
-                                    "inline",
-                                );
+                                const cacheKey = getArtifactCacheKey(artifactRunId, path, "inline");
+                                let url: string;
+                                if (urlCache) {
+                                    url = await urlCache.getOrFetch(cacheKey, async () => {
+                                        const result = await client.files.getArtifactDownloadUrl(artifactRunId, path, "inline");
+                                        return result.url;
+                                    });
+                                } else {
+                                    const result = await client.files.getArtifactDownloadUrl(artifactRunId, path, "inline");
+                                    url = result.url;
+                                }
                                 if (!cancelled) {
                                     setResolvedSrc(url);
                                 }
                             } else {
-                                const { url } = await client.files.getDownloadUrl(path);
+                                const cacheKey = getFileCacheKey(path);
+                                let url: string;
+                                if (urlCache) {
+                                    url = await urlCache.getOrFetch(cacheKey, async () => {
+                                        const result = await client.files.getDownloadUrl(path);
+                                        return result.url;
+                                    });
+                                } else {
+                                    const result = await client.files.getDownloadUrl(path);
+                                    url = result.url;
+                                }
                                 if (!cancelled) {
                                     setResolvedSrc(url);
                                 }
                             }
                         } else if (isImageRef) {
                             // image:<path> is always resolved via files API
-                            const { url } = await client.files.getDownloadUrl(path);
+                            const cacheKey = getFileCacheKey(path);
+                            let url: string;
+                            if (urlCache) {
+                                url = await urlCache.getOrFetch(cacheKey, async () => {
+                                    const result = await client.files.getDownloadUrl(path);
+                                    return result.url;
+                                });
+                            } else {
+                                const result = await client.files.getDownloadUrl(path);
+                                url = result.url;
+                            }
                             if (!cancelled) {
                                 setResolvedSrc(url);
                             }
@@ -337,7 +421,7 @@ export function MarkdownRenderer({
                 return () => {
                     cancelled = true;
                 };
-            }, [isArtifactOrImageRef, path, artifactRunId, client]);
+            }, [isArtifactOrImageRef, path, artifactRunId, client, resolvedSrc, urlCache]);
 
             // If a custom img component was passed and this is not an artifact:/image: URL, delegate.
             if (!isArtifactOrImageRef && typeof ExistingImg === "function") {
@@ -375,7 +459,7 @@ export function MarkdownRenderer({
             a: LinkComponent,
             img: ImageComponent,
         };
-    }, [components, client, artifactRunId]);
+    }, [components, client, artifactRunId, urlCache]);
 
     return (
         <Markdown

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ReactElement, ReactNode } from 'react';
+import { JSX, ReactNode } from 'react';
 
 import { ChevronRight, Info } from 'lucide-react';
 import { VTooltip, Breadcrumbs } from '@vertesia/ui/core';
@@ -7,10 +7,10 @@ import { capitalize } from 'lodash-es';
 import { useNavigate } from '@vertesia/ui/router';
 
 interface GenericPageNavHeaderProps {
-    title: string | ReactElement;
-    description?: string | ReactElement;
+    title: string | JSX.Element;
+    description?: string | JSX.Element;
     actions?: ReactNode | ReactNode[];
-    breadcrumbs?: ReactElement[]
+    breadcrumbs?: JSX.Element[]
     isCompact?: boolean
     children?: ReactNode
     className?: string

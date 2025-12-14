@@ -5,22 +5,24 @@ import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, MessageSquare, User } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, memo } from "react";
 import { AnimatedThinkingDots, PulsatingCircle } from "../AnimatedThinkingDots";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
+import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
 
 interface MessageItemProps {
     message: AgentMessage;
     showPulsatingCircle?: boolean;
 }
 
-export default function MessageItem({ message, showPulsatingCircle = false }: MessageItemProps) {
+function MessageItemComponent({ message, showPulsatingCircle = false }: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
     const [processedContent, setProcessedContent] = useState<string | object>("");
     const [isProcessingImages, setIsProcessingImages] = useState(false);
     const { client } = useUserSession();
     const toast = useToast();
+    const urlCache = useArtifactUrlCache();
 
     // Simplified message styling with minimal distinction between different types
     const getMessageStyles = () => {
@@ -276,12 +278,14 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
         { displayName: string; artifactPath: string; url: string; isImage: boolean }[]
     >([]);
 
+    // Create stable key from message for dependency tracking
+    const runId = (message as any).workflow_run_id as string | undefined;
+    const details = message.details as any;
+    const outputFiles: unknown = details && details.outputFiles;
+    const outputFilesKey = Array.isArray(outputFiles) ? outputFiles.join(",") : "";
+
     useEffect(() => {
         const loadArtifacts = async () => {
-            const runId = (message as any).workflow_run_id as string | undefined;
-            const details = message.details as any;
-            const outputFiles: unknown = details && details.outputFiles;
-
             if (!runId || !Array.isArray(outputFiles) || outputFiles.length === 0) {
                 setArtifactLinks([]);
                 return;
@@ -302,10 +306,23 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
                         const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                         const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                         const isImage = imageExtensions.has(ext);
+                        const disposition = isImage ? "inline" : "attachment";
 
                         try {
-                            const disposition = isImage ? "inline" : "attachment";
-                            const { url } = await client.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
+                            // Use cache if available
+                            const cacheKey = getArtifactCacheKey(runId, artifactPath, disposition);
+                            let url: string;
+
+                            if (urlCache) {
+                                url = await urlCache.getOrFetch(cacheKey, async () => {
+                                    const result = await client.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
+                                    return result.url;
+                                });
+                            } else {
+                                const result = await client.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
+                                url = result.url;
+                            }
+
                             return {
                                 displayName: trimmed,
                                 artifactPath,
@@ -331,7 +348,7 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
         };
 
         loadArtifacts();
-    }, [message.details, message.timestamp, client]);
+    }, [runId, outputFilesKey, client, urlCache]);
 
     // Process content with image URL resolution when component mounts or message changes
     useEffect(() => {
@@ -608,3 +625,14 @@ export default function MessageItem({ message, showPulsatingCircle = false }: Me
         </div>
     );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+// Only re-render when message timestamp or showPulsatingCircle changes
+const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
+    return (
+        prevProps.message.timestamp === nextProps.message.timestamp &&
+        prevProps.showPulsatingCircle === nextProps.showPulsatingCircle
+    );
+});
+
+export default MessageItem;
