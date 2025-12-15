@@ -10,7 +10,7 @@
     "dev": "vite dev",
     "build:app": "vite build --mode app",
     "build:lib": "vite build --mode lib",
-    "build": "echo 'Skipping build for template package (not needed in CI)'",
+    "build": "vite build --mode app && vite build --mode lib",
     "lint": "eslint .",
     "preview": "vite preview"
   },
