@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
+          # cache: "pnpm"  # Temporarily disabled due to hanging post-action cleanup
       - run: pnpm install
       - run: pnpm -r build
 
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
+          # cache: "pnpm"  # Temporarily disabled due to hanging post-action cleanup
       - run: pnpm install
       - run: npm --prefix packages/api-fetch-client test
 
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
+          # cache: "pnpm"  # Temporarily disabled due to hanging post-action cleanup
       - run: pnpm install
       - run: pnpm build
       - run: pnpm --prefix packages/client test
@@ -63,7 +63,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
+          # cache: "pnpm"  # Temporarily disabled due to hanging post-action cleanup
       - name: Install pandoc
         uses: pandoc/actions/setup@main
       - name: Install mutool
@@ -85,7 +85,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
+          # cache: "pnpm"  # Temporarily disabled due to hanging post-action cleanup
       - run: pnpm install
       - run: npm --prefix packages/json test
 
@@ -100,7 +100,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
+          # cache: "pnpm"  # Temporarily disabled due to hanging post-action cleanup
       - name: Install pandoc
         uses: pandoc/actions/setup@main
       - name: Install mutool
