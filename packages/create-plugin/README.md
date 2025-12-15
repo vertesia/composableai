@@ -1,6 +1,8 @@
 # @vertesia/plugin
 
-CLI tool to create Vertesia tool server projects from GitHub templates.
+CLI tool to create Vertesia plugins:
+- UI Plugins
+- Tool Server Plugins.
 
 ## Usage
 
