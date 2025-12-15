@@ -64,7 +64,11 @@ async function build(outDir: string) {
 
 // Run the build
 const outDir = process.argv[2] || './dist';
-build(outDir).catch(error => {
-    console.error('Build failed:', error);
-    process.exit(1);
-});
+build(outDir)
+    .then(() => {
+        process.exit(0);
+    })
+    .catch(error => {
+        console.error('Build failed:', error);
+        process.exit(1);
+    });
