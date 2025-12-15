@@ -16,7 +16,7 @@ export async function init(dirName?: string | undefined) {
 
     const isDockerInstalled = await hasBin("docker");
     if (!isDockerInstalled) {
-        console.warn("Docker is not installed. You must install docker if you need to publish your agent.");
+        console.warn("Docker is not installed. You must install docker if you need to publish your worker.");
     }
 
     let initialPm = "npm";
@@ -47,14 +47,14 @@ export async function init(dirName?: string | undefined) {
         initial: pms.indexOf(initialPm),
         choices: pms,
     }, {
-        name: 'agent_org',
+        name: 'worker_org',
         type: 'input',
         message: "Organization name (e.g. mycompany)",
         validate: (input: string) => /[a-zA-Z_][a-zA-Z_0-9-]/g.test(input),
     }, {
-        name: 'agent_name',
+        name: 'worker_name',
         type: 'input',
-        message: "Agent name (e.g. myagent)",
+        message: "Worker name (e.g. my-worker)",
         initial: dirName,
         validate: (input: string) => /[a-zA-Z_][a-zA-Z_0-9-]/g.test(input),
     }, {
@@ -78,7 +78,7 @@ export async function init(dirName?: string | undefined) {
 
     console.log("Generating package.json");
     const pkg = new Package({
-        name: '@' + answer.agent_org + '/' + answer.agent_name,
+        name: '@' + answer.worker_org + '/' + answer.worker_name,
         version: answer.version || '1.0.0',
         description: answer.description || '',
         type: 'module',
@@ -87,22 +87,42 @@ export async function init(dirName?: string | undefined) {
         scripts: {
             "clean": "rimraf ./lib tsconfig.tsbuildinfo",
             "build": "${npm_package_vertesia_pm} run clean && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
+            "typecheck:test": "tsc --project tsconfig.test.json",
+            "pretest": "${npm_package_vertesia_pm} run typecheck:test",
+            "test": "vitest",
             "start": "node lib/main.js",
-            "connect": `${VERTESIA_CLI} agent connect`,
+            "connect": `${VERTESIA_CLI} worker connect`,
+        },
+        dependencies: {
+            "@dglabs/worker": "^0.11.0",
+            "@temporalio/activity": "^1.13.0",
+            "@temporalio/client": "^1.13.0",
+            "@temporalio/worker": "^1.13.0",
+            "@temporalio/workflow": "^1.13.0",
+            "@vertesia/client": "^0.78.0",
+            "@vertesia/common": "^0.78.0",
+            "@vertesia/workflow": "^0.78.0",
+        },
+        devDependencies: {
+            "@temporalio/testing": "^1.13.0",
+            "@types/node": "^22.5.0",
+            "rimraf": "^6.0.1",
+            "typescript": "^5.7.2",
+            "vitest": "^3.2.4",
         },
         vertesia: {
             pm: cmd,
             image: {
                 repository: "us-docker.pkg.dev/dengenlabs/us.gcr.io",
-                organization: answer.agent_org,
-                name: answer.agent_name,
+                organization: answer.worker_org,
+                name: answer.worker_name,
             }
         }
     });
 
     pkg.saveTo(`${dir}/package.json`);
 
-    const service_name = answer.agent_org + '_' + answer.agent_name;
+    const service_name = answer.worker_org + '_' + answer.worker_name;
     console.log("Generating .env file");
     processAndRenameTemplateFile(`${dir}/.env.template`, {
         service_name

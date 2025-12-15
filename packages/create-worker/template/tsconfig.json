@@ -31,9 +31,11 @@
   },
   "exclude": [
     "node_modules",
-    "**/*.test.ts",
     "lib",
-    "test"
+    "**/test",
+    "vitest.config.ts",
+    "vitest.setup.ts",
+    "**/*.test.ts"
   ],
   "references": []
 }

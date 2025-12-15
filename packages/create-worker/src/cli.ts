@@ -37,5 +37,5 @@ export async function connectToVertesia() {
         process.exit(2);
     }
 
-    runCommand(VERTESIA_CLI, ["agent", "connect"]);
+    runCommand(VERTESIA_CLI, ["worker", "connect"]);
 }

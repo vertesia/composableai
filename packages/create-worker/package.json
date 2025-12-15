@@ -1,10 +1,10 @@
 {
-    "name": "@vertesia/create-agent",
+    "name": "@vertesia/create-worker",
     "version": "0.80.0",
-    "description": "Initialize workflow agent package",
+    "description": "Initialize workflow worker package",
     "type": "module",
     "bin": {
-        "create-agent": "./bin/create-agent.mjs"
+        "create-worker": "./bin/create-worker.mjs"
     },
     "main": "./lib/main.js",
     "types": "./lib/main.d.ts",
@@ -39,6 +39,6 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
-        "directory": "packages/create-agent"
+        "directory": "packages/create-worker"
     }
 }
