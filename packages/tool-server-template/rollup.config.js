@@ -40,6 +40,22 @@ function rawPlugin() {
 }
 
 // ============================================================================
+// CI Exit Plugin - Forces process exit after build completes in CI
+// ============================================================================
+function ciExitPlugin() {
+    return {
+        name: 'ci-exit',
+        closeBundle() {
+            if (process.env.CI) {
+                console.log('Tool server build Done');
+                // Force exit in CI after bundle completes
+                setImmediate(() => process.exit(0));
+            }
+        }
+    };
+}
+
+// ============================================================================
 // Server Build Configuration (TypeScript → JavaScript)
 // ============================================================================
 const serverBuild = {
@@ -73,7 +89,8 @@ const serverBuild = {
             declarationDir: 'lib',
             sourceMap: true
         }),
-        json()
+        json(),
+        ciExitPlugin()
     ]
 };
 
