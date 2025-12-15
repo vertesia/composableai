@@ -18,6 +18,8 @@
     "keywords": [
         "vertesia",
         "ui",
+        "tools",
+        "agent",
         "plugin"
     ],
     "scripts": {
