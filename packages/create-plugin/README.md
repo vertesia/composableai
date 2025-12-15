@@ -1,109 +1,160 @@
-# @vertesia/create-plugin
+# @vertesia/create-tool-server
 
-This package scaffolds Vertesia plugin projects. Use it to create either:
+CLI tool to create Vertesia tool server projects from GitHub templates.
 
-- **Web Application Plugins**: React-based web applications that extend Vertesia Studio
-- **Agent Tool Server**: Custom agent tools accessible via API endpoints
-
-Visit <https://vertesiahq.com> for more information about Vertesia.
-
-## What Can You Create?
-
-### Web Application Plugin (UI Extensions)
-
-Vertesia web plugins are React-based web application that can be embedded into the Vertesia Studio interface. They allow you to create custom user experiences focused on specific use cases and business processes, while seamlessly leveraging all the vertesia platform features.
-
-### Agent Tool Server
-
-An Agent Tool Server extends the capabilities of AI agents in Vertesia. It allows you to:
-
-- Create custom tools that agents can use
-- Integrate with external APIs and services
-- Organize tools into logical collections
-- Expose tools via REST API endpoints
-- Support authentication and context-aware execution
-
-## Prerequisites
-
-Before creating a plugin project, you need:
-
-- Node.js and pnpm (or npm)
-- Vertesia CLI
-- An application manifest declared in Vertesia
-
-### Declaring Your Web Application Plugin in Vertesia
-
-Before you can develop and integrate your web application plugin with Vertesia, you must declare an application manifest in the Vertesia platform using the Vertesia CLI.
-
-#### Install the Vertesia CLI
-
-If not already done, install the Vertesia CLI and create a profile:
+## Usage
 
 ```bash
-npm install -g @vertesia/cli
-vertesia profiles create
+# Using pnpm create (recommended)
+pnpm create @vertesia/tool-server my-project
+
+# Using npm create
+npm create @vertesia/tool-server my-project
+
+# Using pnpm dlx (runs without installing)
+pnpm dlx @vertesia/create-tool-server my-project
+
+# Using npx
+npx @vertesia/create-tool-server my-project
+
+# Or install globally
+pnpm install -g @vertesia/create-tool-server
+create-tool-server my-project
 ```
 
-### Create the App Manifest
+**Note:** When using `pnpm create` or `npm create`, drop the `create-` prefix from the package name.
 
-Create the app manifest using the Vertesia CLI:
+## Features
+
+- 📦 **Downloads template from GitHub** - Always get the latest template
+- ⚙️ **Template-driven configuration** - Template defines its own prompts via `template.config.json`
+- 🎨 **Interactive prompts** - User-friendly CLI with validation
+- 🔄 **Variable replacement** - Automatically replaces `{{VARIABLES}}` in files
+- 🧹 **Smart cleanup** - Removes meta files after installation
+- 📚 **Package manager agnostic** - Works with npm, pnpm, or yarn
+
+## How It Works
+
+1. **Downloads** the template repository from GitHub using `degit`
+2. **Reads** `template.config.json` from the template to determine configuration
+3. **Prompts** the user for values (project name, description, etc.)
+4. **Replaces** variables in specified files (e.g., `{{PROJECT_NAME}}` → `my-project`)
+5. **Cleans up** meta files (`.git`, `template.config.json`, etc.)
+6. **Installs** dependencies using the configured package manager
+
+## Configuration
+
+All configuration is centralized in `src/configuration.ts`:
+
+```typescript
+export const config = {
+  templateRepo: 'vertesiahq/tool-server-template',
+  templateConfigFile: 'template.config.json',
+  packageManager: 'pnpm',
+  // ... more options
+}
+```
+
+### Key Configuration Options
+
+- **`templateRepo`** - GitHub repository for the template (format: `owner/repo`)
+- **`templateConfigFile`** - Name of the config file in the template
+- **`packageManager`** - Which package manager to use (`npm`, `pnpm`, or `yarn`)
+- **`useCache`** - Whether to cache downloaded templates
+
+## Template Structure
+
+The template repository should include a `template.config.json` file:
+
+```json
+{
+  "version": "1.0",
+  "prompts": [
+    {
+      "type": "text",
+      "name": "PROJECT_NAME",
+      "message": "Project name",
+      "initial": "my-tool-server"
+    },
+    {
+      "type": "text",
+      "name": "DESCRIPTION",
+      "message": "Project description",
+      "initial": "A tool server for LLM integrations"
+    }
+  ],
+  "files": [
+    "package.json",
+    "README.md",
+    "src/server.ts"
+  ],
+  "removeAfterInstall": [
+    ".git",
+    "template.config.json"
+  ]
+}
+```
+
+### Template Config Schema
+
+- **`prompts`** - Array of prompts using the [prompts](https://www.npmjs.com/package/prompts) library format
+- **`files`** - List of files where variable replacement should occur
+- **`removeAfterInstall`** - Files/directories to remove after installation
+- **`conditionalRemove`** - Conditional file removal based on user answers
+
+## Development
 
 ```bash
-vertesia apps create --manifest '{
-  "name": "my-app",
-  "title": "My App",
-  "description": "A sample app",
-  "publisher": "your-org",
-  "private": true,
-  "status": "beta"
-}' --install
+# Install dependencies
+pnpm install
+
+# Build
+pnpm build
+
+# Test locally
+pnpm test
+
+# Watch mode
+pnpm dev
 ```
 
-The `--install` flag will automatically install the app and grant permissions to the creator.
-
-**Important**: The `name` field from your manifest (e.g., `my-app`) is what you'll use as your plugin name in the next step.
-
-## Initialize a Plugin Project
-
-Run the initialization command:
+## Publishing
 
 ```bash
-npm init @vertesia/plugin
-# or
-pnpm create @vertesia/plugin
+# Build and publish
+npm publish
 ```
 
-You will be prompted to choose a template and provide configuration:
+After publishing, users can create projects with:
 
-### Prompts
+```bash
+pnpm create @vertesia/tool-server my-project
+```
 
-1. **Template type**: Choose between:
-   - **Web application plugin**: For UI extensions
-   - **Agent tool server**: For custom agent tools
-2. **Package manager**: Choose between npm or pnpm
-3. **Plugin name**: Use kebab-case (e.g., my-plugin or my-tools)
-4. **Plugin version**: Semantic version (e.g., 1.0.0)
-5. **Description**: Optional description of your plugin
+## Template Development
 
-### Web Application Plugin Specific
+To develop a template:
 
-If you select the **Web application plugin** template, you'll also be asked:
+1. Create a GitHub repository with your template files
+2. Add a `template.config.json` file with prompts and configuration
+3. Use `{{VARIABLES}}` in files where you want replacements
+4. Update `src/configuration.ts` to point to your template repo
+5. Test with `pnpm test` or run the built CLI directly
 
-1. **Isolation strategy**:
-   - **Shadow DOM**: Fully isolated plugin using Shadow DOM (recommended)
-   - **CSS-only isolation**: Lighter isolation using CSS scope, but may have style conflicts
+## Examples
 
-## Working with Plugins
+### Create a project with default settings
 
-After creating your project, see the README file in the generated project for comprehensive development instructions.
+```bash
+pnpm create @vertesia/tool-server my-project
+```
 
-## Support
+### View help
 
-For issues, questions, or feature requests:
-
-- [GitHub Issues](https://github.com/vertesia/composableai/issues)
-- [Documentation](https://docs.vertesiahq.com/)
+```bash
+pnpm dlx @vertesia/create-tool-server --help
+```
 
 ## License
 
-Apache-2.0
+MIT
