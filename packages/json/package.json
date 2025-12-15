@@ -36,5 +36,14 @@
         "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/json"
-    }
+    },
+    "keywords": [
+        "vertesia",
+        "json",
+        "utilities",
+        "walker",
+        "visitor",
+        "traverse",
+        "typescript"
+    ]
 }

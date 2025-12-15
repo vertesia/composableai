@@ -23,7 +23,8 @@
         "interaction",
         "vertesia",
         "prompt",
-        "ai"
+        "ai",
+        "cli"
     ],
     "scripts": {
         "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",

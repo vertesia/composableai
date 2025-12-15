@@ -39,6 +39,14 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/common"
     },
+    "keywords": [
+        "vertesia",
+        "common",
+        "types",
+        "llm",
+        "ai",
+        "typescript"
+    ],
     "ts_dual_module": {
         "outDir": "lib"
     }
