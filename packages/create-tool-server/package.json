@@ -1,10 +1,10 @@
 {
-  "name": "@vertesia/create-tool-server",
-  "version": "0.1.0",
-  "description": "CLI to create Vertesia tool server projects from GitHub templates",
+  "name": "@vertesia/create-plugin",
+  "version": "0.80.0",
+  "description": "CLI to create Vertesia plugins: UI plugins or tool servers",
   "type": "module",
   "bin": {
-    "create-tool-server": "./lib/index.js"
+    "create-plugin": "./lib/index.js"
   },
   "main": "./lib/index.js",
   "files": [
