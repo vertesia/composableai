@@ -6,7 +6,7 @@
   "main": "lib/server.js",
   "scripts": {
     "dev": "npm run build && concurrently \"npm run build:watch\" \"npm run start:watch\"",
-    "build": "rollup -c && node ./lib/copy-assets.js src lib && node ./lib/build-site.js ./dist",
+    "build": "rollup -c",
     "build:watch": "rollup -c -w",
     "start": "node ./lib/server-node.js",
     "start:watch": "node --watch ./lib/server-node.js",
