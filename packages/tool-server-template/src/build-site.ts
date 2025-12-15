@@ -16,6 +16,9 @@ import { tools } from "./tools/index.js";
 async function build(outDir: string) {
     console.log(`Building static site to ${outDir}...`);
 
+    // Ensure output directory exists
+    mkdirSync(outDir, { recursive: true });
+
     // Load interactions
     const interactions = await loadInteractions();
 

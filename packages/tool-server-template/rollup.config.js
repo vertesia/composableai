@@ -1,16 +1,14 @@
 /**
- * Unified Rollup Configuration
+ * Rollup Configuration for Server Build
  *
  * This configuration handles:
  * 1. TypeScript compilation (src → lib) with preserveModules
  * 2. Raw file imports (?raw) for template files
- * 3. Browser bundles for tool collections (lib/tools → dist/libs)
+ *
+ * Browser bundles are in rollup.config.browser.js
  */
-import { nodeResolve } from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import typescript from '@rollup/plugin-typescript';
-import { terser } from 'rollup-plugin-terser';
 import fs from 'fs';
 import path from 'path';
 
@@ -42,7 +40,7 @@ function rawPlugin() {
 }
 
 // ============================================================================
-// Configuration 1: Build Server Code (TypeScript → JavaScript)
+// Server Build Configuration (TypeScript → JavaScript)
 // ============================================================================
 const serverBuild = {
     input: {
@@ -80,55 +78,6 @@ const serverBuild = {
 };
 
 // ============================================================================
-// Configuration 2: Browser Bundles (Tool Collections)
+// Export server build configuration only
 // ============================================================================
-const libToolCollectionsDir = './lib/tools';
-const outputDir = './dist/libs';
-
-// Ensure output directory exists
-if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-}
-
-// Get all directories in lib/tools with an index.js
-const entries = fs.existsSync(libToolCollectionsDir)
-    ? fs.readdirSync(libToolCollectionsDir).filter((name) => {
-          const dir = path.join(libToolCollectionsDir, name);
-          return (
-              fs.statSync(dir).isDirectory() &&
-              fs.existsSync(path.join(dir, 'index.js'))
-          );
-      })
-    : [];
-
-// Create a bundle configuration for each tool collection
-const browserBundles = entries.map((name) => ({
-    input: path.join(libToolCollectionsDir, name, 'index.js'),
-    output: {
-        file: path.join(outputDir, `tool-server-${name}.js`),
-        format: 'es',
-        sourcemap: true,
-        inlineDynamicImports: true
-    },
-    plugins: [
-        nodeResolve({
-            browser: true,
-            preferBuiltins: false
-        }),
-        json(),
-        commonjs(),
-        terser({
-            compress: {
-                drop_console: false
-            }
-        })
-    ]
-}));
-
-// ============================================================================
-// Export all configurations
-// ============================================================================
-export default [
-    serverBuild,
-    ...browserBundles
-];
+export default serverBuild;
