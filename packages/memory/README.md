@@ -467,3 +467,7 @@ export default {
 When using a memory pack you will likely want to select the metadata object and some files inside the tar. At each run you may need to access different content files. The content you want to access will be exported as a JSON object by providing a `content mapping`.
 
 TODO
+
+## License
+
+Apache-2.0

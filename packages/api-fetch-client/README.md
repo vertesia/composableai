@@ -267,4 +267,4 @@ The main client class for making HTTP requests.
 
 ## License
 
-MIT
+Apache-2.0

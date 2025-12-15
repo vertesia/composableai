@@ -102,3 +102,7 @@ Finally, activate models and select the default one in [Vertesia Studio](https:/
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+Apache-2.0

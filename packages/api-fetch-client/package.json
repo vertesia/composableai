@@ -39,7 +39,7 @@
         "vertesia"
     ],
     "author": "stefanescu.bogdan@gmail.com",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "bugs": {
         "url": "https://github.com/vertesia/composableai/issues"
     },

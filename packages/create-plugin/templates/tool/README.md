@@ -188,3 +188,7 @@ Replace `appId` by the actual ID and `https://your-app.vercel.app` with your act
 
 - [Vertesia Documentation](https://docs.vertesiahq.com)
 - [Tool SDK Reference](https://github.com/vertesia/composableai/tree/main/packages/tools-sdk)
+
+## License
+
+Apache-2.0

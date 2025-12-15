@@ -116,4 +116,4 @@ export default defineConfig({
 
 ## License
 
-MIT
+Apache-2.0

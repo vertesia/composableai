@@ -14,7 +14,7 @@
         "lib",
         "bin"
     ],
-    "license": "MIT",
+    "license": "Apache-2.0",
     "homepage": "https://docs.vertesiahq.com/cli",
     "keywords": [
         "llm",
