@@ -3,10 +3,10 @@ import { build, listVersions, publish, PublishMode, release, run } from "./comma
 import { connectToProject } from "./connect.js";
 import { getGooglePrincipal, getGoogleToken } from "./registry.js";
 
-export function registerAgentCommand(program: Command) {
-    const agent = program.command("agent");
+export function registerWorkerCommand(program: Command) {
+    const worker = program.command("worker");
 
-    agent.command("connect [pkgDir]")
+    worker.command("connect [pkgDir]")
         .description("Connect a node package to a Vertesia project. If no packageDir is specified the current dir will be used.")
         .option("-I, --non-interactive", "Don't do interactions with the user. Assume the user is already authenticated.")
         .option("-p, --profile [profile]", "The profile name to use. If not specified the one from the package.json will be used.")
@@ -17,7 +17,7 @@ export function registerAgentCommand(program: Command) {
             await connectToProject(options);
         });
 
-    agent.command("publish <version>")
+    worker.command("publish <version>")
         .description("Deploy a custom workflow worker. The user will be asked for a target image version.")
         .option("-d, --dir [project_dir]", "Use this as the current directory.")
         .option("--push-only", "If used the docker image will be push only. The deployment will not be triggered.")
@@ -39,7 +39,7 @@ export function registerAgentCommand(program: Command) {
             await publish(version, mode);
         });
 
-    agent.command("build")
+    worker.command("build")
         .description("Build a local docker image using 'latest' as version.")
         .option("-d, --dir [project_dir]", "Use this as the current directory.")
         .option("-c, --context [context]", "The docker build context to use. Defaults to the project directory.")
@@ -51,7 +51,7 @@ export function registerAgentCommand(program: Command) {
             await build(options.context);
         });
 
-    agent.command("release [version]")
+    worker.command("release [version]")
         .description("Promote the latest version to a named version (tag it).")
         .option("-d, --dir [project_dir]", "Use this as the current directory.")
         .option("--verbose", "Print more information.")
@@ -62,7 +62,7 @@ export function registerAgentCommand(program: Command) {
             await release(version);
         });
 
-    agent.command("run [version]")
+    worker.command("run [version]")
         .description("Run the docker image identified by the given version or the 'latest' version if no version is given.")
         .option("-d, --dir [project_dir]", "Use this as the current directory.")
         .option("--verbose", "Print more information.")
@@ -73,21 +73,21 @@ export function registerAgentCommand(program: Command) {
             await run(version);
         });
 
-    agent.command("versions")
+    worker.command("versions")
         .description("List existing versions.")
         .option("--verbose", "Print more information.")
         .action(async (_options: Record<string, any>) => {
             await listVersions();
         });
 
-    agent.command("gtoken")
+    worker.command("gtoken")
         .description("Get a google cloud token for the current vertesia project.")
         .option("-p, --profile", "The profile name to use. If specified it will be used instead of the current profile.")
         .action(async (options: Record<string, any> = {}) => {
             await getGoogleToken(program, options.profile);
         });
 
-    agent.command("gprincipal")
+    worker.command("gprincipal")
         .description("Get the google cloud principal for the current project.")
         .option("-p, --profile", "The profile name to use. If specified it will be used instead of the current profile.")
         .action(async (options: Record<string, any> = {}) => {

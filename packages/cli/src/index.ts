@@ -1,6 +1,6 @@
 import { setupMemoCommand } from '@vertesia/memory-cli';
 import { Command } from 'commander';
-import { registerAgentCommand } from './agent/index.js';
+import { registerWorkerCommand } from './agent/index.js';
 import { registerAppsCommand } from './apps/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
 import runExport from './codegen/index.js';
@@ -127,7 +127,7 @@ program.command("runs [interactionId]")
 const memoCmd = program.command("memo");
 setupMemoCommand(memoCmd, getPublishMemoryAction(program));
 
-registerAgentCommand(program);
+registerWorkerCommand(program);
 registerAppsCommand(program);
 registerArtifactsCommand(program);
 
