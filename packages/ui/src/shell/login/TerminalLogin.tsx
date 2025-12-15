@@ -202,14 +202,14 @@ function AuthAcceptScreen({ onAccept, clientInfo }: Readonly<AuthAcceptScreenPro
     return user && allProjects ? (
         <>
             <div className='w-1/3'>
-                <div className="mb-4 text-xl font-semibold text-gray-800">
+                <div className="mb-4 text-xl font-semibold text-info">
                     Authorizing client on {envName} environment.
                 </div>
-                <div className='mb-2 text-md text-gray-800'>
+                <div className='mb-2 text-md text-muted-foreground'>
                     <div>A client app wants authorization to access the composable prompt servers in your name.</div>
-                    <div>The client app code is <b>{clientInfo.code}</b>. You can check if the code is correct in the terminal.</div>
+                    <div>The client app code is <b className="text-foreground">{clientInfo.code}</b>. You can check if the code is correct in the terminal.</div>
                 </div>
-                <div className='mb-2 text-sm text-gray-600'>
+                <div className='mb-2 text-sm text-muted-foreground'>
                     <div>You must choose the target account and project for the client to access.</div>
                     <div>Also, enter a profile name that will be used to save the authorization in your client configuration.</div>
                 </div>
@@ -281,18 +281,21 @@ function ProfileForm({ allProjects, data, onAccept }: Readonly<ProfileFormProps>
     return (
         <div className='w-1/3'>
             <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-gray-600">Profile Name</span>
+                <span className="font-semibold text-muted-foreground">Profile Name</span>
                 <Input type='text' value={currentData.profile} onChange={onChangeProfile} />
             </div>
             <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-gray-600">Account</span>
+                <span className="font-semibold text-muted-foreground">Account</span>
                 <SelectAccount value={currentData.account} onChange={onChangeAccount} accounts={accounts || []} />
             </div>
             <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-gray-600">Project</span>
+                <span className="font-semibold text-muted-foreground">Project</span>
                 <SelectProject value={currentData.project} onChange={onChangeProject} projects={projects} />
             </div>
-            <div className="pt-2">
+            <div className='mb-4 text-sm text-attention'>
+                <b>Note:</b> If your browser asks for permission to access your local network, please allow it. This is required to send the authorization token back to the CLI tool. If not, you will need to copy/paste the token manually in your terminal.
+            </div>
+            <div>
                 <Button size='xl' onClick={() => onAccept(currentData)}>Authorize Client</Button>
             </div>
         </div>
