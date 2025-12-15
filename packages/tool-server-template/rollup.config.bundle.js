@@ -1,6 +1,8 @@
 /**
- * Rollup Configuration for Browser Bundles
+ * Rollup Configuration for building tools as es bundles for import() usage
  *
+ * Not used for now.
+ * 
  * Creates browser-ready bundles for each tool collection in lib/tools
  * Input: lib/tools/{TOOL_DIR}/index.js (already compiled from TypeScript)
  * Output: dist/libs/tool-server-{name}.js (browser bundles)
