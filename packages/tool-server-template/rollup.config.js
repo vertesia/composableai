@@ -40,17 +40,16 @@ function rawPlugin() {
 }
 
 // ============================================================================
-// CI Exit Plugin - Forces process exit after build completes in CI
+// Exit Plugin - Forces process exit after build completes
+// This prevents TypeScript plugin from keeping the process alive
 // ============================================================================
-function ciExitPlugin() {
+function exitPlugin() {
     return {
-        name: 'ci-exit',
+        name: 'force-exit',
         closeBundle() {
-            if (process.env.CI) {
-                console.log('Tool server build Done');
-                // Force exit in CI after bundle completes
-                setImmediate(() => process.exit(0));
-            }
+            console.log('Tool server build Done');
+            // Force exit after bundle completes to prevent hanging
+            setImmediate(() => process.exit(0));
         }
     };
 }
@@ -90,7 +89,7 @@ const serverBuild = {
             sourceMap: true
         }),
         json(),
-        ciExitPlugin()
+        exitPlugin()
     ]
 };
 
