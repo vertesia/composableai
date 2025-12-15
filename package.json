@@ -1,6 +1,7 @@
 {
     "name": "@vertesia/packages",
     "version": "0.80.0",
+    "license": "Apache-2.0",
     "private": true,
     "scripts": {
         "bump": "pnpm exec wst bump minor -x llumiverse",
@@ -20,10 +21,10 @@
     "packageManager": "pnpm@10.20.0",
     "pnpm": {
         "overrides": {
-            "react": "19.1.2",
-            "react-dom": "19.1.2",
-            "@types/react": "19.1.6",
-            "@types/react-dom": "19.1.5",
+            "react": "19.2.3",
+            "react-dom": "19.2.3",
+            "@types/react": "19.2.3",
+            "@types/react-dom": "19.2.3",
             "brace-expansion@>=1.0.0 <2.0.0": "^1.1.12",
             "brace-expansion@>=2.0.0 <3.0.0": "^2.0.2",
             "cross-spawn@<6.0.6": "^6.0.6",

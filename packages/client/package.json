@@ -52,6 +52,15 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/client"
     },
+    "keywords": [
+        "vertesia",
+        "client",
+        "api",
+        "sdk",
+        "llm",
+        "ai",
+        "typescript"
+    ],
     "typesVersions": {
         "*": {
             "node": [

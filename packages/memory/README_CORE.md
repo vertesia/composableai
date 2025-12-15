@@ -1,6 +1,6 @@
 # Memory Pack
 
-This is the core of the Composable memory Pack library.
+This is the core of the Vertesia memory Pack library.
 It defines the memory pack commands and provide an API to build and read memory packs.
 
 A memory pack is an indexed tar file containing a `metadata.json` and other random files (images, documents, text files etc.). The `metadata.json` file is defining the properties of a memory pack. The metadata is used to describe the memory and the other files in the tar can be used to hold the additional content you need in order to create a context for the interaction with a target LLM.
@@ -36,16 +36,18 @@ export default {
 }
 ```
 
-## Memory Pack Commands.
+## Memory Pack Commands
 
-The only dependency you need to import in your recipe ts file is the `@becomposable/memory-commands` package. This package contains all the built-in commands which are grouped in two categories: execution commands and content loading commands:
+The only dependency you need to import in your recipe ts file is the `@vertesia/memory-commands` package. This package contains all the built-in commands which are grouped in two categories: execution commands and content loading commands:
 
 ### Context commands
+
 1. **vars** - Get the build user variables
 2. **tmpdir** - Get or create a temporary directory for use while building
 3. **getBuilder** - Get the builder instance.
 
 ### Execution commands
+
 1. **from** - Extends an existing memory pack (a tar file)
 2. **exec** - Execute a shell command.
 3. **copy** - Copy a file to the tar. The file content can be transformed using the built-in transformers. See the [copy command](#copy) for more details.
@@ -55,6 +57,7 @@ The only dependency you need to import in your recipe ts file is the `@becomposa
 ### Content loading commands
 
 These commands can be used to fetch content from files. The result is returned as a variable which will only fetch the content when used. All these commands supports globs as argument to fetch content from multiple files. When a glob is used the result will always be an array of variables.
+
 1. **content** - fetch the text content from a text file.
 2. **json** - fetch a JSON object from a json file.
 3. **pdf** - extract the text content from a PDF file.
@@ -71,8 +74,9 @@ These variables can be used to parametrize the recipe. When using the `memo` cli
 **Example:** `--var-language fr` will produce a property `language` with a value of `'fr'`.
 
 **Usage:**
+
 ```js
-import { vars } from "@vertesia/memory-commands"
+import { vars } from '@vertesia/memory-commands';
 
 const { language } = vars();
 ```
@@ -88,7 +92,7 @@ If created, the temporary directory will be automatically removed at the end of 
 **Usage:**
 
 ```js
-import { tmpdir } from "@vertesia/memory-commands";
+import { tmpdir } from '@vertesia/memory-commands';
 
 const wd = tmpdir();
 
@@ -100,7 +104,6 @@ await exec(`ls -al > ${wd}/text.txt`);
 **Signature:** `getBuilder (): Builder`
 
 Get the instance of the builder which is used to build the current recipe ts file.
-
 
 ### from
 
@@ -118,29 +121,29 @@ The shape of the `FromOptions` is:
     projection?: Record<string, boolean | 0 | 1>;
 }
 ```
+
 The `files` filter is an array of globs as supported by the [micromatch](https://www.npmjs.com/package/micromatch) library. You can either include files using globs expressions or files by prepending the glob expression with an `!` character.
 
 The `projection` is an object which map keys to a truthy or falsy value. You can either use false or true to exclude or include properties not both.
 
-*Example:*
+_Example:_
 
 ```js
-import { vars, from } from "@vertesia/memory-commands"
-await from("./memory-source.tar", {
-    files: ["images/*.png"],
+import { vars, from } from '@vertesia/memory-commands';
+await from('./memory-source.tar', {
+    files: ['images/*.png'],
     projection: {
         name: true,
         language: true,
-    }
-})
+    },
+});
 // export a new metadata object
 export default {
-    theme: vars.theme || 'dark'
-}
+    theme: vars.theme || 'dark',
+};
 ```
 
 The memory pack built above will contain all the `images/*.png` files from the source tar and the metadata JSON object will contain the `name` and `language` properties from the source memory pack metadata and will add a new metadata property named `theme`.
-
 
 ### exec
 
@@ -153,10 +156,10 @@ The `exec` command is asynchronous so you need to use await when invoking it. If
 **Example:**
 
 ```javascript
-import { tmpdir, exec } from "@vertesia/memory-commands"
+import { tmpdir, exec } from '@vertesia/memory-commands';
 const wd = tmpdir();
-const output = await exec("cat some/file | wc -l")
-await exec(`cat some/file | wc -l > ${wd}out.txt`)
+const output = await exec('cat some/file | wc -l');
+await exec(`cat some/file | wc -l > ${wd}out.txt`);
 ```
 
 ### copy
@@ -176,7 +179,7 @@ You can transform the file content when copying it to the tar by using the `opti
 export interface CopyOptions {
     media?: {
         max_hw?: number;
-        format?: "jpeg" | "png";
+        format?: 'jpeg' | 'png';
     };
     extractText?: boolean | string;
 }
@@ -187,11 +190,11 @@ You can convert images by specifying a max height or width and / or an output im
 **Example:**
 
 ```js
-import { exec, copy, tmpdir } from "@vertesia/memory-commands"
+import { exec, copy, tmpdir } from '@vertesia/memory-commands';
 const wd = tmpdir();
-await exec(`cat some/file > ${wd}/out.txt`)
+await exec(`cat some/file > ${wd}/out.txt`);
 copy(`${wd}/out.txt`, 'out.txt');
-copy('./my-project/src/**/*.ts', './my-project/src!sources/*')
+copy('./my-project/src/**/*.ts', './my-project/src!sources/*');
 ```
 
 The rewrite expression in the example above `./my-project/src!sources/*` means: strip the prefix `./my-project/src` from he copied file and prefix the remaining od the path with the value `sources/`.
@@ -199,27 +202,28 @@ The rewrite expression in the example above `./my-project/src!sources/*` means: 
 #### Path rewrite expressions
 
 A path rewrite expression is composed of two parts:
+
 1. an optional prefix separated by a `!` character from the rest of the path. If present this prefix will be removed from the matched path.
-If no prefix is specified then the entire directory part of the matched path will be removed.
+   If no prefix is specified then the entire directory part of the matched path will be removed.
 2. A mandatory suffix which is describing how to rewrite the matched path. The suffix may contain either a wildcard `*` which will be replaced with the matched path (without the removed prefix), either a combination of the following variables:
-    * `%n` - the file name without the extension
-    * `%e` - the extension
-    * `%f` - the file name including the extension
-    * `%d` - the directory path (not including the removed prefix)
-    * `%i` - the 0 based index of the file in the matched array of files.
+    - `%n` - the file name without the extension
+    - `%e` - the extension
+    - `%f` - the file name including the extension
+    - `%d` - the directory path (not including the removed prefix)
+    - `%i` - the 0 based index of the file in the matched array of files.
 
 **Examples:**
 
 ```js
 // copy all .ts files flattened in the sources directory (the directory structure is not preserved)
-copy("work/docs/project1/src/**/*.ts", "sources/*")
+copy('work/docs/project1/src/**/*.ts', 'sources/*');
 // copy all .ts files  in the sources directory and recreate the subdirectories structure inside src/
-copy("work/docs/project1/src/**/*.ts", "work/docs/project1/src!sources/*")
+copy('work/docs/project1/src/**/*.ts', 'work/docs/project1/src!sources/*');
 // Remove the work/ prefix and preserver the same subdirectories structure including images/
 // and replace the file extension with .png
-copy("work/images/**/*.png", "work!%d/%n.jpeg")
+copy('work/images/**/*.png', 'work!%d/%n.jpeg');
 // Copy all images inside a images/ folder without preserving subdirectories and append the index of the image
-copy("work/images/**/*.png", "images/%n-%i.%e")
+copy('work/images/**/*.png', 'images/%n-%i.%e');
 ```
 
 In the last example for the matched files: `work/images/header/home.png` and `work/images/footer/logo.png` the result will be: `images/home-0.png`, `images/logo-1.png`
@@ -231,9 +235,9 @@ In the last example for the matched files: `work/images/header/home.png` and `wo
 This command will create a new entry in the target memory pack tar using the content you specified through the `text` argument. The tar entry path is specified by the `path` argument.
 
 ```js
-import { exec, copyText } from "@vertesia/memory-commands"
-const content = await exec(`cat some/file`)
-copyText(content.trim(), 'content.txt')
+import { exec, copyText } from '@vertesia/memory-commands';
+const content = await exec(`cat some/file`);
+copyText(content.trim(), 'content.txt');
 ```
 
 ### build
@@ -273,16 +277,16 @@ export interface BuildOptions {
      * @param file
      * @returns the URI of the published memory
      */
-    publish?: (file: string, name: string) => Promise<string>
+    publish?: (file: string, name: string) => Promise<string>;
 }
 ```
 
 **Usage:**
 
 ```js
-import { build, tmpdir } from "@vertesia/memory-commands";
+import { build, tmpdir } from '@vertesia/memory-commands';
 const wd = tmpdir();
-await build("./some/recipe.ts", { out: `${wd}}/child-memory`});
+await build('./some/recipe.ts', { out: `${wd}}/child-memory` });
 ```
 
 ### content
@@ -298,7 +302,7 @@ The `content` command simply load the content of the given file(s) as a text usi
 
 **Signature:** `json (location: string) => ContentObject | ContentObject[]`
 
-Load a JSON object from a json file. When assigned as a metadata property the content  will by transformed in a JSON object.
+Load a JSON object from a json file. When assigned as a metadata property the content will by transformed in a JSON object.
 
 ### pdf
 
@@ -309,13 +313,13 @@ Load a PdfObject form a pdf file. When assigned as a metadata property the PdfOb
 **Example:**
 
 ```js
-import { pdf } from "@vertesia/memory-commands";
+import { pdf } from '@vertesia/memory-commands';
 
-const doc = pdf("./my-doc.pdf")
+const doc = pdf('./my-doc.pdf');
 
 export default {
-    textContent: doc
-}
+    textContent: doc,
+};
 ```
 
 In the example above the PDF text will be extracted from the pdf and injected as the textContent property ion the memory pack metadata.
@@ -329,7 +333,6 @@ Load a DocxObject form a docx file. When assigned as a metadata property the Doc
 ### media
 
 **Signature:** `json (location: string, options?: MediaOptions) => MediaObject | MediaObject[]`
-
 
 Load a MediaObject form a docx file. When assigned as a metadata property the MediaObject is transformed to text representation of the image which is the base64 encoded image.
 
@@ -347,17 +350,16 @@ You can thus convert the image before using it.
 **Example:**
 
 ```js
-import { pdf } from "@vertesia/memory-commands";
+import { pdf } from '@vertesia/memory-commands';
 
-const images = media("./images/*.jpeg")
+const images = media('./images/*.jpeg');
 
 export default {
-    images: images
-}
+    images: images,
+};
 ```
 
 In the example above the an array of images encoded as base64 will be injected in the `images` property pf the memory pack metadata.
-
 
 ### Custom commands
 
