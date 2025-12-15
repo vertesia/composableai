@@ -51,6 +51,17 @@ export default {
             compilerOptions: {
                 outDir: 'output'
             }
-        })
+        }),
+        // Force exit in CI after bundle completes
+        {
+            name: 'ci-exit',
+            closeBundle() {
+                if (process.env.CI) {
+                    console.log('CI: Build complete, forcing exit...');
+                    // Use setImmediate to ensure all async operations finish first
+                    setImmediate(() => process.exit(0));
+                }
+            }
+        }
     ]
 };
