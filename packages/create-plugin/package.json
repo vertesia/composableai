@@ -25,7 +25,7 @@
     "scaffold"
   ],
   "author": "Vertesia",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "chalk": "^5.3.0",
     "degit": "^2.8.4",

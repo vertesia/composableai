@@ -25,8 +25,8 @@
     "interactions",
     "mcp"
   ],
-  "author": "",
-  "license": "MIT",
+  "author": "Vertesia",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.8",
     "@rollup/plugin-json": "^6.1.0",

@@ -6,6 +6,8 @@
   "files": [
     "dist"
   ],
+  "author": "Vertesia",
+  "license": "Apache-2.0",
   "scripts": {
     "dev": "vite dev",
     "build:app": "vite build --mode app",
