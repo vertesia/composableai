@@ -44,5 +44,14 @@
         "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/tools-sdk"
-    }
+    },
+    "keywords": [
+        "vertesia",
+        "tools",
+        "sdk",
+        "llm",
+        "ai",
+        "agents",
+        "typescript"
+    ]
 }

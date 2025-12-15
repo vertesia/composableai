@@ -103,3 +103,7 @@ For issues, questions, or feature requests:
 
 - [GitHub Issues](https://github.com/vertesia/composableai/issues)
 - [Documentation](https://docs.vertesiahq.com/)
+
+## License
+
+Apache-2.0

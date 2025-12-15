@@ -110,6 +110,16 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/workflow"
     },
+    "keywords": [
+        "vertesia",
+        "workflow",
+        "dsl",
+        "temporalio",
+        "llm",
+        "ai",
+        "agents",
+        "typescript"
+    ],
     "types": "./lib/types/index.d.ts",
     "typesVersions": {
         "*": {
