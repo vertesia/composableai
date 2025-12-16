@@ -21,6 +21,7 @@ import {
   handleConditionalRemoves,
   removeMetaFiles
 } from './process-template.js';
+import { runPostInstallHooks } from './post-install.js';
 
 /**
  * Parse command line arguments
@@ -132,7 +133,12 @@ async function main() {
     // Step 9: Install dependencies
     await installDependencies(projectName, packageManager);
 
-    // Step 10: Success!
+    // Step 10: Run post-install hooks (if any)
+    if (templateConfig.postInstall) {
+      await runPostInstallHooks(projectName, templateConfig.postInstall, packageManager);
+    }
+
+    // Step 11: Success!
     showSuccess(projectName, packageManager, selectedTemplate.name, selectedTemplate.repository);
 
   } catch (error) {

@@ -4,7 +4,7 @@
 import prompts from 'prompts';
 import chalk from 'chalk';
 import { TemplateConfig } from './template-config.js';
-import { applyTransform } from './transforms.js';
+import { applyTransform, concatValues } from './transforms.js';
 
 /**
  * Prompt user for configuration values
@@ -46,14 +46,30 @@ export async function promptUser(projectName: string, templateConfig: TemplateCo
 
   // Process derived variables
   if (templateConfig.derived) {
-    for (const [targetName, config] of Object.entries(templateConfig.derived)) {
-      const sourceValue = answers[config.from];
-      if (sourceValue !== undefined) {
-        try {
-          answers[targetName] = applyTransform(String(sourceValue), config.transform);
-        } catch (error) {
-          throw new Error(`Failed to derive ${targetName} from ${config.from}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    for (const [targetName, derivedConfig] of Object.entries(templateConfig.derived)) {
+      try {
+        if (derivedConfig.transform === 'concat') {
+          // Handle concat transform with multiple source fields
+          const sourceFields = Array.isArray(derivedConfig.from) ? derivedConfig.from : [derivedConfig.from];
+          const values = sourceFields.map(field => {
+            const value = answers[field];
+            if (value === undefined) {
+              throw new Error(`Source field "${field}" not found in answers`);
+            }
+            return String(value);
+          });
+          answers[targetName] = concatValues(values, derivedConfig.separator || '');
+        } else {
+          // Handle single-source transforms
+          const sourceField = Array.isArray(derivedConfig.from) ? derivedConfig.from[0] : derivedConfig.from;
+          const sourceValue = answers[sourceField];
+          if (sourceValue !== undefined) {
+            answers[targetName] = applyTransform(String(sourceValue), derivedConfig.transform);
+          }
         }
+      } catch (error) {
+        const fromStr = Array.isArray(derivedConfig.from) ? derivedConfig.from.join(', ') : derivedConfig.from;
+        throw new Error(`Failed to derive ${targetName} from ${fromStr}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
   }

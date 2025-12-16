@@ -22,7 +22,7 @@ COPY --from=build /app/bin /app/bin
 
 COPY --from=datadog/serverless-init:1 /datadog-init /app/datadog-init
 
-ENV SERVICE_NAME=${service_name}
+ENV SERVICE_NAME={{SERVICE_NAME}}
 
 ENTRYPOINT ["/app/datadog-init"]
 CMD [ "pnpm", "start" ]

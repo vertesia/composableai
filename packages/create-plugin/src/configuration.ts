@@ -35,6 +35,10 @@ export const config = {
     {
       name: 'Vertesia UI Plugin',
       repository: 'vertesia/composableai/packages/ui-plugin-template#preview'
+    },
+    {
+      name: 'Vertesia Workflow Worker',
+      repository: 'vertesia/composableai/packages/worker-template#preview'
     }
   ] as TemplateDefinition[],
 

@@ -1,0 +1,52 @@
+{
+  "version": "1.0",
+  "description": "A template for building Temporal workflow workers for Vertesia",
+  "prompts": [
+    {
+      "type": "text",
+      "name": "WORKER_ORG",
+      "message": "Organization name (e.g. mycompany)",
+      "initial": "my-org",
+      "validate": "^[a-zA-Z_][a-zA-Z_0-9-]*$"
+    },
+    {
+      "type": "text",
+      "name": "WORKER_NAME",
+      "message": "Worker name (e.g. my-worker)",
+      "initial": "my-worker",
+      "validate": "^[a-zA-Z_][a-zA-Z_0-9-]*$"
+    },
+    {
+      "type": "text",
+      "name": "PROJECT_DESCRIPTION",
+      "message": "Project description",
+      "initial": "A Temporal workflow worker for Vertesia"
+    }
+  ],
+  "derived": {
+    "SERVICE_NAME": {
+      "from": ["WORKER_ORG", "WORKER_NAME"],
+      "transform": "concat",
+      "separator": "_"
+    }
+  },
+  "files": [
+    "package.json",
+    ".env",
+    "Dockerfile"
+  ],
+  "postInstall": {
+    "commands": [
+      {
+        "name": "Connect to Vertesia",
+        "command": "vertesia worker connect",
+        "optional": true,
+        "prompt": "You must connect to a Vertesia project. Do you want to proceed?"
+      }
+    ],
+    "cliPackage": "@vertesia/cli"
+  },
+  "removeAfterInstall": [
+    "template.config.json"
+  ]
+}
