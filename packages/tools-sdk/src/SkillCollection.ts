@@ -96,7 +96,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
         };
 
         return Array.from(this.skills.values()).map(skill => ({
-            name: `skill_${skill.name}`,
+            name: `learn_${skill.name}`,
             description: `[Skill] ${skill.description}. Returns contextual instructions for this task.`,
             input_schema: skill.input_schema || defaultSchema
         }));
@@ -124,8 +124,8 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             payload = await ctx.req.json() as ToolExecutionPayload<Record<string, any>>;
             const toolName = payload.tool_use.tool_name;
 
-            // Extract skill name from tool name (remove "skill_" prefix if present)
-            const skillName = toolName.startsWith('skill_')
+            // Extract skill name from tool name (remove "learn_" prefix if present)
+            const skillName = toolName.startsWith('learn_')
                 ? toolName.slice(6)
                 : toolName;
 
