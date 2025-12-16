@@ -62,6 +62,65 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
             body: JSON.stringify(requestBody)
         });
 
+        if (idToken && stsRes?.status === 404) {
+            // User not found in token-server - call ensure-user endpoint
+            console.log('404: User not found - calling ensure-user endpoint');
+            Env.logger.info('404: User not found - calling ensure-user endpoint', {
+                vertesia: {
+                    account_id: accountId,
+                    project_id: projectId,
+                    status: stsRes?.status
+                },
+            });
+
+            const ensureResponse = await fetch(Env.endpoints.studio + '/auth/ensure-user', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (ensureResponse.status === 412) {
+                // No invite - trigger signup
+                console.log('412: No invite found - signup required');
+                Env.logger.info('412: No invite found - signup required', {
+                    vertesia: {
+                        account_id: accountId,
+                        project_id: projectId,
+                    }
+                });
+                const idTokenDecoded = jwtDecode(idToken) as any;
+                if (!idTokenDecoded?.email) {
+                    Env.logger.error('No email found in id token');
+                    throw new Error('No email found in id token');
+                }
+                throw new UserNotFoundError('User not found - signup required', idTokenDecoded.email);
+            }
+
+            if (!ensureResponse.ok) {
+                console.error('Failed to ensure user exists', ensureResponse.status);
+                Env.logger.error('Failed to ensure user exists', {
+                    vertesia: {
+                        account_id: accountId,
+                        project_id: projectId,
+                        status: ensureResponse.status,
+                    },
+                });
+                throw new Error('Failed to ensure user exists');
+            }
+
+            // User created/exists - retry token generation
+            console.log('User ensured - retrying token generation');
+            Env.logger.info('User ensured - retrying token generation', {
+                vertesia: {
+                    account_id: accountId,
+                    project_id: projectId,
+                }
+            });
+            return fetchComposableToken(getIdToken, accountId, projectId, ttl);
+        }
+
         if (idToken && stsRes?.status === 412) {
             console.log("412: auth succeeded but user doesn't exist - signup required", stsRes?.status);
             Env.logger.error("412: auth succeeded but user doesn't exist - signup required", {
