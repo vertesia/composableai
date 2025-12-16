@@ -4,13 +4,13 @@ import { join, resolve } from "node:path";
 
 /**
  * Manage docker images:
- * - build the latest image: vertesia agent build => agent_org/agent_name:latest
- * - promote the latest build to a version => vertesia agent release 1.0.0 => agent_org/agent_name:1.0.0
- * - list available versions => vertesia agent versions --remote
- * - publish a specific image version => vertesia agent publish 1.0.0
+ * - build the latest image: vertesia worker build => worker_org/worker_name:latest
+ * - promote the latest build to a version => vertesia worker release 1.0.0 => worker_org/worker_name:1.0.0
+ * - list available versions => vertesia worker versions --remote
+ * - publish a specific image version => vertesia worker publish 1.0.0
  */
 
-export interface AgentConfig {
+export interface WorkerConfig {
     profile?: string;
     pm?: string;
     image?: {
@@ -20,13 +20,13 @@ export interface AgentConfig {
     }
 }
 
-export interface AgentPackageJson {
+export interface WorkerPackageJson {
     name: string;
     version: string;
-    vertesia?: AgentConfig;
+    vertesia?: WorkerConfig;
 }
 
-export class PackageJson implements AgentPackageJson {
+export class PackageJson implements WorkerPackageJson {
     constructor(public file: string, public data: Record<string, any>) {
         if (!data.vertesia) {
             data.vertesia = {};
@@ -61,27 +61,27 @@ export class PackageJson implements AgentPackageJson {
         this.data.vertesia.profile = value;
     }
 
-    getAgentId() {
+    getWorkerId() {
         const image = this.vertesia.image;
         if (!image || !image.organization || !image.name) {
-            console.log('Agent configuration not found or not valid in package.json');
+            console.log('Worker configuration not found or not valid in package.json');
             process.exit(1);
         }
         return `${image.organization}/${image.name}`;
     }
 
     getLocalDockerTag(version: string) {
-        const agentId = this.getAgentId();
-        return `${agentId}:${version}`;
+        const workerId = this.getWorkerId();
+        return `${workerId}:${version}`;
     }
 
     getVertesiaDockerTag(version: string) {
-        const agentId = this.getAgentId();
+        const workerId = this.getWorkerId();
         let repo = this.vertesia.image.repository;
         if (repo.endsWith('/')) {
             repo = repo.slice(0, -1);
         }
-        return `${repo}/agents/${agentId}:${version}`;
+        return `${repo}/workers/${workerId}:${version}`;
     }
 
     get latestPublishedVersion() {
@@ -105,7 +105,7 @@ export class PackageJson implements AgentPackageJson {
     }
 }
 
-export class AgentProject {
+export class WorkerProject {
     dir: string;
     packageJsonFile: string;
     _pkg?: PackageJson;
@@ -144,8 +144,8 @@ export class AgentProject {
         return this._pkg;
     }
 
-    getAgentId() {
-        return this.packageJson.getAgentId();
+    getWorkerId() {
+        return this.packageJson.getWorkerId();
     }
 
     getVertesiaDockerTag(version: string) {

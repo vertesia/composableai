@@ -14,13 +14,12 @@
         "typecheck:test": "tsc --project tsconfig.test.json",
         "pretest": "pnpm run typecheck:test",
         "start": "node lib/main.js",
-        "connect": "vertesia agent connect",
+        "connect": "vertesia worker connect",
         "test": "vitest"
     },
     "keywords": [
         "workflow",
         "temporal",
-        "agent",
         "llm",
         "vertesia",
         "worker"

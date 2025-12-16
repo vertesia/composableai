@@ -1,6 +1,6 @@
-import { log } from "@temporalio/activity";
-import { WorkflowExecutionPayload } from "@vertesia/common";
-import { getVertesiaClient } from "@vertesia/workflow";
+import { log } from '@temporalio/activity';
+import { WorkflowExecutionPayload } from '@vertesia/common';
+import { getVertesiaClient } from '@vertesia/workflow';
 
 /**
  * Extended payload interface for activities that need additional parameters
@@ -77,7 +77,7 @@ export async function processObjectActivity(
             objectId,
             name: object.name,
             success: true,
-            message: "Dry run - no changes made",
+            message: 'Dry run - no changes made',
         };
     }
 

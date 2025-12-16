@@ -1,5 +1,5 @@
-import { ContentEventName, WorkflowExecutionPayload } from "@vertesia/common";
-import { ActivityExecutionPayload, ExampleWorkflowParams } from "../activities.js";
+import { ContentEventName, WorkflowExecutionPayload } from '@vertesia/common';
+import { ActivityExecutionPayload, ExampleWorkflowParams } from '../activities.js';
 
 /**
  * Creates a mock activity payload for testing.
@@ -7,18 +7,16 @@ import { ActivityExecutionPayload, ExampleWorkflowParams } from "../activities.j
  * @param params - The activity-specific parameters
  * @returns A complete ActivityExecutionPayload for use in tests
  */
-export const getMockActivityPayload = <T>(
-    params: T
-): ActivityExecutionPayload<T> => {
+export const getMockActivityPayload = <T>(params: T): ActivityExecutionPayload<T> => {
     return {
         event: ContentEventName.workflow_execution_request,
-        objectIds: ["test-object-id"],
-        auth_token: "mock-auth-token",
-        account_id: "mock-account-id",
-        project_id: "mock-project-id",
+        objectIds: ['test-object-id'],
+        auth_token: 'mock-auth-token',
+        account_id: 'mock-account-id',
+        project_id: 'mock-project-id',
         config: {
-            studio_url: "http://mock-studio",
-            store_url: "http://mock-store",
+            studio_url: 'http://mock-studio',
+            store_url: 'http://mock-store',
         },
         vars: {},
         params: params,
@@ -34,17 +32,17 @@ export const getMockActivityPayload = <T>(
  */
 export const getMockWorkflowPayload = <T extends ExampleWorkflowParams>(
     vars: T,
-    objectIds: string[] = ["test-object-id"]
+    objectIds: string[] = ['test-object-id']
 ): WorkflowExecutionPayload<T> => {
     return {
         event: ContentEventName.workflow_execution_request,
         objectIds,
-        auth_token: "mock-auth-token",
-        account_id: "mock-account-id",
-        project_id: "mock-project-id",
+        auth_token: 'mock-auth-token',
+        account_id: 'mock-account-id',
+        project_id: 'mock-project-id',
         config: {
-            studio_url: "http://mock-studio",
-            store_url: "http://mock-store",
+            studio_url: 'http://mock-studio',
+            store_url: 'http://mock-store',
         },
         vars: vars,
     };

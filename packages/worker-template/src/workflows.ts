@@ -1,7 +1,7 @@
-import { log, proxyActivities } from "@temporalio/workflow";
-import { WorkflowExecutionPayload } from "@vertesia/common";
-import * as activities from "./activities.js";
-import { ExampleWorkflowParams, ProcessObjectResult } from "./activities.js";
+import { log, proxyActivities } from '@temporalio/workflow';
+import { WorkflowExecutionPayload } from '@vertesia/common';
+import * as activities from './activities.js';
+import { ExampleWorkflowParams, ProcessObjectResult } from './activities.js';
 
 /**
  * Proxy activities with retry configuration.
@@ -11,17 +11,16 @@ import { ExampleWorkflowParams, ProcessObjectResult } from "./activities.js";
  * - startToCloseTimeout: Maximum time for a single activity attempt
  * - retry: Automatic retry behavior for transient failures
  */
-const { processObjectActivity, getObjectMetadataActivity } =
-    proxyActivities<typeof activities>({
-        startToCloseTimeout: "5 minute",
-        retry: {
-            initialInterval: "5s",
-            backoffCoefficient: 2,
-            maximumAttempts: 5,
-            maximumInterval: 30 * 1000, // ms
-            nonRetryableErrorTypes: ["ActivityParamInvalid", "ActivityParamNotFound"],
-        },
-    });
+const { processObjectActivity, getObjectMetadataActivity } = proxyActivities<typeof activities>({
+    startToCloseTimeout: '5 minute',
+    retry: {
+        initialInterval: '5s',
+        backoffCoefficient: 2,
+        maximumAttempts: 5,
+        maximumInterval: 30 * 1000, // ms
+        nonRetryableErrorTypes: ['ActivityParamInvalid', 'ActivityParamNotFound'],
+    },
+});
 
 /**
  * Result returned from the example workflow.
@@ -67,9 +66,7 @@ export async function exampleWorkflow(
     }
 
     const successCount = results.filter((r) => r.success).length;
-    log.info(
-        `Workflow completed: ${successCount}/${objectIds.length} objects processed successfully`
-    );
+    log.info(`Workflow completed: ${successCount}/${objectIds.length} objects processed successfully`);
 
     return {
         processedObjects: results.length,

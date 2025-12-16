@@ -1,6 +1,5 @@
 import { setupMemoCommand } from '@vertesia/memory-cli';
 import { Command } from 'commander';
-import { registerWorkerCommand } from './agent/index.js';
 import { registerAppsCommand } from './apps/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
 import runExport from './codegen/index.js';
@@ -15,6 +14,7 @@ import { getConfigFile } from './profiles/index.js';
 import { listProjects } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
+import { registerWorkerCommand } from './worker/index.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
 //warnIfNotLatest();
 

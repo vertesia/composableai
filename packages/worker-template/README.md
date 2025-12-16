@@ -172,7 +172,7 @@ Once deployed, the workflow can be started using the API, CLI, SDK, or Workflow 
 
 ```javascript
 const run = await client.workflows.execute("exampleWorkflow", {
-  task_queue: "agents/{{WORKER_ORG}}/{{WORKER_NAME}}",
+  task_queue: "workers/{{WORKER_ORG}}/{{WORKER_NAME}}",
   objectIds: ["object-id-1"],
   vars: {
     dryRun: false,
@@ -185,7 +185,7 @@ const run = await client.workflows.execute("exampleWorkflow", {
 ```bash
 vertesia workflows execute exampleWorkflow \
   -o <OBJECT_ID> \
-  --queue "agents/{{WORKER_ORG}}/{{WORKER_NAME}}" \
+  --queue "workers/{{WORKER_ORG}}/{{WORKER_NAME}}" \
   -f workflow_vars.json
 ```
 
@@ -197,7 +197,7 @@ curl --location 'https://api.vertesia.io/api/v1/workflows/execute/exampleWorkflo
   --header 'Content-Type: application/json' \
   --data '{
     "vars": { "dryRun": false },
-    "task_queue": "agents/{{WORKER_ORG}}/{{WORKER_NAME}}",
+    "task_queue": "workers/{{WORKER_ORG}}/{{WORKER_NAME}}",
     "objectIds": ["object-id-1"]
   }'
 ```

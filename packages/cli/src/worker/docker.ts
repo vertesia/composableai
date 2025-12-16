@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { getClient } from "../client.js";
 import { config } from "../profiles/index.js";
-import { AgentProject } from "./project.js";
+import { WorkerProject } from "./project.js";
 
 
 const LOCAL_DOCKER_CONFIG_DIR = '.docker';
@@ -19,7 +19,7 @@ export function generateDockerConfig() {
 
 
 async function getGoogleToken(pkgDir?: string) {
-    const project = new AgentProject(pkgDir);
+    const project = new WorkerProject(pkgDir);
     const pkg = project.packageJson;
     if (!pkg.vertesia.profile) {
         throw new Error("Profile entry not found in package.json");
@@ -39,7 +39,7 @@ export async function getDockerCredentials(serverUrl: string) {
     };
 }
 
-export function runDockerWithAgentConfig(args: string[]) {
+export function runDockerWithWorkerConfig(args: string[]) {
     const config = join(process.cwd(), LOCAL_DOCKER_CONFIG_DIR);
     const baseArgs: string[] = [];
     if (existsSync(config)) {

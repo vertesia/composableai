@@ -1,9 +1,9 @@
 import { updateProfile } from "../profiles/commands.js";
 import { config, Profile, shouldRefreshProfileToken } from "../profiles/index.js";
 import { ConfigResult } from "../profiles/server/index.js";
-import { AgentProject } from "./project.js";
+import { WorkerProject } from "./project.js";
 
-export function tryRefreshProjectToken(project: AgentProject): Promise<ConfigResult | undefined> {
+export function tryRefreshProjectToken(project: WorkerProject): Promise<ConfigResult | undefined> {
     const profileName = project.packageJson.vertesia?.profile;
     if (!profileName) {
         console.error('No vertesia.profile entry found in package.json');

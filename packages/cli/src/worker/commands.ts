@@ -4,8 +4,8 @@ import os from "os";
 import { join } from "path";
 import { getClient } from "../client.js";
 import { config, getCloudTypeFromConfigUrl, Profile } from "../profiles/index.js";
-import { runDocker, runDockerWithAgentConfig, runDockerWithOutput } from "./docker.js";
-import { AgentProject } from './project.js';
+import { runDocker, runDockerWithOutput, runDockerWithWorkerConfig } from "./docker.js";
+import { WorkerProject } from './project.js';
 import { tryRefreshProjectToken } from './refresh.js';
 import { updateNpmrc } from "./registry.js";
 import { validateVersion } from './version.js';
@@ -28,7 +28,7 @@ function shouldPush(mode: PublishMode) {
 const TARGET_PLATFORM = "linux/amd64";
 const LATEST_VERSION = "latest";
 
-async function pushImage(project: AgentProject, version: string) {
+async function pushImage(project: WorkerProject, version: string) {
 
     // we need to refresh the profile token if needed since
     // the docker credentials helper are connecting to studio.
@@ -41,17 +41,17 @@ async function pushImage(project: AgentProject, version: string) {
     // push the image to the registry
     console.log(`Pushing docker image ${remoteTag}`);
     runDocker(['tag', localTag, remoteTag]);
-    runDockerWithAgentConfig(['push', remoteTag]);
+    runDockerWithWorkerConfig(['push', remoteTag]);
 }
 
-async function triggerDeploy(profile: Profile, project: AgentProject, version: string) {
+async function triggerDeploy(profile: Profile, project: WorkerProject, version: string) {
     const environment = getCloudTypeFromConfigUrl(profile.config_url);
     const client = await getClient();
-    const agentId = project.getAgentId();
-    console.log(`Deploy agent ${agentId}:${version} to ${environment}`);
-    await client.store.agents.deploy({
+    const workerId = project.getWorkerId();
+    console.log(`Deploy worker ${workerId}:${version} to ${environment}`);
+    await client.store.workers.deploy({
         environment,
-        agentId: project.getAgentId(),
+        workerId: project.getWorkerId(),
         version,
     });
 }
@@ -66,7 +66,7 @@ export async function publish(version: string, mode: PublishMode) {
         process.exit(1);
     }
     const profile = config.current;
-    const project = new AgentProject();
+    const project = new WorkerProject();
     if (shouldPush(mode)) {
         await pushImage(project, version);
     }
@@ -76,7 +76,7 @@ export async function publish(version: string, mode: PublishMode) {
 }
 
 export async function build(contextDir = '.') {
-    const project = new AgentProject();
+    const project = new WorkerProject();
 
     const refreshResult = await tryRefreshProjectToken(project);
     if (refreshResult) {
@@ -98,7 +98,7 @@ export async function release(version: string) {
         console.log("Invalid version format: " + version + ". Use major.minor.patch[-modifier] format.");
         process.exit(1);
     }
-    const project = new AgentProject();
+    const project = new WorkerProject();
     const latestTag = project.getLocalDockerTag(LATEST_VERSION);
     const versionTag = project.getLocalDockerTag(version);
 
@@ -110,7 +110,7 @@ export function run(version: string = LATEST_VERSION) {
         console.log("Invalid version format: " + version + ". Use major.minor.patch[-modifier] format.");
         process.exit(1);
     }
-    const project = new AgentProject();
+    const project = new WorkerProject();
     const tag = project.getLocalDockerTag(version);
     // we need to inject the .env file into the container
     // and to get the google credentials needed by the worker
@@ -127,7 +127,7 @@ export function run(version: string = LATEST_VERSION) {
 }
 
 export async function listVersions() {
-    const project = new AgentProject();
+    const project = new WorkerProject();
     if (!project.packageJson.vertesia?.image) {
         console.error("Invalid package.json. Missing vertesia.image configuration.");
         process.exit(1);

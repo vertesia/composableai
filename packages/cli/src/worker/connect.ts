@@ -2,7 +2,7 @@ import enquirer from "enquirer";
 import { createProfile, updateProfile } from "../profiles/commands.js";
 import { config, shouldRefreshProfileToken } from "../profiles/index.js";
 import { ConfigResult } from "../profiles/server/index.js";
-import { AgentProject } from "./project.js";
+import { WorkerProject } from "./project.js";
 import { updateNpmrc } from "./registry.js";
 
 const { prompt } = enquirer;
@@ -13,7 +13,7 @@ interface ConnectOptions {
 }
 export async function connectToProject(options: ConnectOptions) {
     const allowInteraction = !options.nonInteractive;
-    const project = new AgentProject();
+    const project = new WorkerProject();
     const pkg = project.packageJson;
     let profileName: string | undefined = options.profile || pkg.vertesia.profile;
     const onAuthenticationDone = async (result: ConfigResult | undefined) => {
