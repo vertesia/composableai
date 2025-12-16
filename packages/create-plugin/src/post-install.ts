@@ -1,10 +1,10 @@
 /**
- * Post-install hooks for running commands after project creation
+ * Install hooks for running commands before/after project creation
  */
 import { spawn, spawnSync } from 'child_process';
 import chalk from 'chalk';
 import prompts from 'prompts';
-import { PostInstallConfig } from './template-config.js';
+import { PostInstallConfig, PreInstallConfig } from './template-config.js';
 
 /**
  * Check if a command exists in PATH
@@ -51,12 +51,13 @@ async function installGlobalPackage(packageName: string, packageManager: string)
 
 /**
  * Run a command in the project directory
+ * Uses npx to ensure globally installed packages are found even if PATH hasn't been refreshed
  */
 async function runCommand(command: string, cwd: string): Promise<boolean> {
   return new Promise((resolve) => {
-    const [cmd, ...args] = command.split(' ');
-
-    const child = spawn(cmd, args, {
+    // Use npx to run the command - this ensures we find globally installed packages
+    // even if the shell's PATH hasn't been refreshed after installation
+    const child = spawn('npx', ['--yes', ...command.split(' ')], {
       stdio: 'inherit',
       shell: true,
       cwd
@@ -73,48 +74,51 @@ async function runCommand(command: string, cwd: string): Promise<boolean> {
 }
 
 /**
- * Run post-install hooks
+ * Run install hooks (shared implementation for pre and post install)
  */
-export async function runPostInstallHooks(
+async function runInstallHooks(
   projectName: string,
-  postInstall: PostInstallConfig,
-  packageManager: string
-): Promise<void> {
-  if (!postInstall.commands || postInstall.commands.length === 0) {
-    return;
+  config: PreInstallConfig | PostInstallConfig,
+  packageManager: string,
+  phase: 'pre' | 'post'
+): Promise<boolean> {
+  if (!config.commands || config.commands.length === 0) {
+    return true;
   }
 
-  console.log(chalk.blue('🔧 Running post-install hooks...\n'));
+  const phaseLabel = phase === 'pre' ? 'pre-install' : 'post-install';
+  console.log(chalk.blue(`🔧 Running ${phaseLabel} hooks...\n`));
 
   // Check and install CLI package if needed
-  if (postInstall.cliPackage) {
-    const cliCommand = postInstall.cliPackage.split('/').pop()?.replace('@', '') || postInstall.cliPackage;
+  if (config.cliPackage) {
     // Extract the CLI binary name from the package (e.g., @vertesia/cli -> vertesia)
-    const cliBinary = cliCommand.replace(/-cli$/, '').replace(/^@[^/]+\//, '');
+    // For scoped packages like @vertesia/cli, the binary is typically the scope name (vertesia)
+    const scopeMatch = config.cliPackage.match(/^@([^/]+)\//);
+    const cliBinary = scopeMatch ? scopeMatch[1] : config.cliPackage.replace(/-cli$/, '');
 
     if (!commandExists(cliBinary)) {
       const { installCli } = await prompts({
         type: 'confirm',
         name: 'installCli',
-        message: `The ${postInstall.cliPackage} package is required. Do you want to install it globally?`,
+        message: `The ${config.cliPackage} package is required. Do you want to install it globally?`,
         initial: true
       });
 
       if (installCli) {
-        const installed = await installGlobalPackage(postInstall.cliPackage, packageManager);
+        const installed = await installGlobalPackage(config.cliPackage, packageManager);
         if (!installed) {
-          console.log(chalk.yellow('   ⚠️  Skipping post-install commands that require the CLI\n'));
-          return;
+          console.log(chalk.yellow(`   ⚠️  Skipping ${phaseLabel} commands that require the CLI\n`));
+          return false;
         }
       } else {
-        console.log(chalk.yellow('   ⚠️  Skipping post-install commands that require the CLI\n'));
-        return;
+        console.log(chalk.yellow(`   ⚠️  Skipping ${phaseLabel} commands that require the CLI\n`));
+        return false;
       }
     }
   }
 
   // Run each command
-  for (const cmd of postInstall.commands) {
+  for (const cmd of config.commands) {
     if (cmd.optional) {
       const promptMessage = cmd.prompt || `Do you want to run "${cmd.name}"?`;
       const { proceed } = await prompts({
@@ -137,6 +141,35 @@ export async function runPostInstallHooks(
       console.log(chalk.green(`   ✓ ${cmd.name} completed\n`));
     } else {
       console.log(chalk.yellow(`   ⚠️  ${cmd.name} failed (you can run it manually later)\n`));
+      // For pre-install, a failure is critical - return false to skip dependency installation
+      if (phase === 'pre') {
+        return false;
+      }
     }
   }
+
+  return true;
+}
+
+/**
+ * Run pre-install hooks (before npm install)
+ * Returns true if all required hooks succeeded, false otherwise
+ */
+export async function runPreInstallHooks(
+  projectName: string,
+  preInstall: PreInstallConfig,
+  packageManager: string
+): Promise<boolean> {
+  return runInstallHooks(projectName, preInstall, packageManager, 'pre');
+}
+
+/**
+ * Run post-install hooks (after npm install)
+ */
+export async function runPostInstallHooks(
+  projectName: string,
+  postInstall: PostInstallConfig,
+  packageManager: string
+): Promise<void> {
+  await runInstallHooks(projectName, postInstall, packageManager, 'post');
 }

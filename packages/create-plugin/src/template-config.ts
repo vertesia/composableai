@@ -49,10 +49,27 @@ export interface TemplateConfig {
   derived?: Record<string, DerivedVariable>;
 
   /**
+   * Optional pre-install hooks to run before dependencies are installed
+   * Used for CLI authentication, registry setup, etc.
+   */
+  preInstall?: PreInstallConfig;
+
+  /**
    * Optional post-install hooks to run after the project is created
-   * Used for CLI authentication, additional setup commands, etc.
+   * Used for additional setup commands, etc.
    */
   postInstall?: PostInstallConfig;
+}
+
+/**
+ * Configuration for pre-install hooks (runs before npm install)
+ */
+export interface PreInstallConfig {
+  /** Commands to run before installation */
+  commands: PostInstallCommand[];
+
+  /** CLI package to install globally before running commands (e.g., "@vertesia/cli") */
+  cliPackage?: string;
 }
 
 /**

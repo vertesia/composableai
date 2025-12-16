@@ -21,7 +21,7 @@ import {
   handleConditionalRemoves,
   removeMetaFiles
 } from './process-template.js';
-import { runPostInstallHooks } from './post-install.js';
+import { runPreInstallHooks, runPostInstallHooks } from './post-install.js';
 
 /**
  * Parse command line arguments
@@ -71,11 +71,13 @@ async function main() {
     branch = parsed.branch;
   } catch (error) {
     console.log(chalk.red('❌ Please specify a project name:\n'));
-    console.log(chalk.gray('  pnpm create @vertesia/tool-server my-project'));
-    console.log(chalk.gray('  npm create @vertesia/tool-server my-project'));
-    console.log(chalk.gray('  npx @vertesia/create-tool-server my-project\n'));
-    console.log(chalk.gray('Options:'));
-    console.log(chalk.gray('  -b, --branch <branch>  Use specific branch\n'));
+    console.log(chalk.white('Usage:'));
+    console.log(chalk.cyan('  npx @vertesia/create-plugin') + chalk.gray(' <project-name> [options]\n'));
+    console.log(chalk.white('Example:'));
+    console.log(chalk.gray('  npx @vertesia/create-plugin my-project\n'));
+    console.log(chalk.white('Options:'));
+    console.log(chalk.gray('  -b, --branch <branch>  Use specific branch'));
+    console.log(chalk.gray('  -h, --help             Show help\n'));
     process.exit(1);
   }
 
@@ -130,15 +132,30 @@ async function main() {
     // Step 8: Remove meta files
     removeMetaFiles(projectName, templateConfig);
 
-    // Step 9: Install dependencies
-    await installDependencies(projectName, packageManager);
+    // Step 9: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
+    let skipDependencyInstall = false;
+    if (templateConfig.preInstall) {
+      const preInstallSuccess = await runPreInstallHooks(projectName, templateConfig.preInstall, packageManager);
+      if (!preInstallSuccess) {
+        console.log(chalk.yellow('⚠️  Pre-install hooks failed. Skipping dependency installation.\n'));
+        console.log(chalk.gray('You can install dependencies manually after resolving the issue:\n'));
+        console.log(chalk.gray(`  cd ${projectName}`));
+        console.log(chalk.gray(`  ${packageManager} install\n`));
+        skipDependencyInstall = true;
+      }
+    }
 
-    // Step 10: Run post-install hooks (if any)
-    if (templateConfig.postInstall) {
+    // Step 10: Install dependencies
+    if (!skipDependencyInstall) {
+      await installDependencies(projectName, packageManager);
+    }
+
+    // Step 11: Run post-install hooks (if any)
+    if (!skipDependencyInstall && templateConfig.postInstall) {
       await runPostInstallHooks(projectName, templateConfig.postInstall, packageManager);
     }
 
-    // Step 11: Success!
+    // Step 12: Success!
     showSuccess(projectName, packageManager, selectedTemplate.name, selectedTemplate.repository);
 
   } catch (error) {

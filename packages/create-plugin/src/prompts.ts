@@ -30,6 +30,30 @@ export async function promptUser(projectName: string, templateConfig: TemplateCo
       prompt.initial = prompt.initial.replace(/\$\{PROJECT_NAME\}/g, projectName);
     }
 
+    // Convert validate string to function
+    // Can be either a regex pattern (e.g., "^[a-z]+$") or a function string (e.g., "(v) => v.length > 0")
+    if (typeof prompt.validate === 'string') {
+      const validateStr = prompt.validate;
+      if (validateStr.includes('=>') || validateStr.includes('function')) {
+        // It's a function string - evaluate it
+        try {
+          prompt.validate = eval(validateStr);
+        } catch {
+          // If eval fails, remove the validator
+          delete prompt.validate;
+        }
+      } else {
+        // It's a regex pattern
+        try {
+          const regex = new RegExp(validateStr);
+          prompt.validate = (value: string) => regex.test(value) || `Must match pattern: ${validateStr}`;
+        } catch {
+          // If regex is invalid, remove the validator
+          delete prompt.validate;
+        }
+      }
+    }
+
     return prompt;
   });
 

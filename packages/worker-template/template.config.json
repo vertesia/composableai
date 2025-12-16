@@ -35,13 +35,13 @@
     ".env",
     "Dockerfile"
   ],
-  "postInstall": {
+  "preInstall": {
     "commands": [
       {
         "name": "Connect to Vertesia",
         "command": "vertesia worker connect",
-        "optional": true,
-        "prompt": "You must connect to a Vertesia project. Do you want to proceed?"
+        "optional": false,
+        "prompt": "You must connect to a Vertesia project to authenticate with the private npm registry."
       }
     ],
     "cliPackage": "@vertesia/cli"
