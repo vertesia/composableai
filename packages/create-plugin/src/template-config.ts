@@ -23,6 +23,9 @@ export interface TemplateConfig {
   /** Optional human-readable description of the template */
   description?: string;
 
+  /** Optional package manager to force (skips selection prompt) */
+  packageManager?: 'pnpm' | 'npm';
+
   /** Array of prompts to ask the user during installation */
   prompts: PromptConfig[];
 

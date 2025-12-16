@@ -1,6 +1,7 @@
 {
   "version": "1.0",
   "description": "A template for building Temporal workflow workers for Vertesia",
+  "packageManager": "pnpm",
   "prompts": [
     {
       "type": "text",

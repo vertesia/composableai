@@ -106,14 +106,14 @@ async function main() {
     const branchInfo = branch ? chalk.gray(` (branch: ${branch})`) : '';
     console.log(chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}`) + branchInfo + '\n');
 
-    // Step 2: Detect and select package manager
-    const packageManager = await selectPackageManager();
-
-    // Step 3: Download template from GitHub
+    // Step 2: Download template from GitHub
     await downloadTemplate(projectName, selectedTemplate.repository);
 
-    // Step 4: Read template configuration
+    // Step 3: Read template configuration
     const templateConfig = readTemplateConfig(projectName);
+
+    // Step 4: Detect and select package manager (may be forced by template)
+    const packageManager = await selectPackageManager(templateConfig.packageManager);
 
     // Step 5: Prompt user for configuration
     const answers = await promptUser(projectName, templateConfig);
