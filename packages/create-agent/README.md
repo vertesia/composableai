@@ -98,3 +98,7 @@ You can see the docker image versions you created using the following command:
 ```
 vertesia agent versions
 ```
+
+## License
+
+Apache-2.0

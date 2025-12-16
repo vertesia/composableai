@@ -1,6 +1,7 @@
 {
     "name": "@vertesia/packages",
     "version": "0.80.0",
+    "license": "Apache-2.0",
     "private": true,
     "scripts": {
         "bump": "pnpm exec wst bump minor -x llumiverse",
@@ -33,7 +34,10 @@
             "koa@>=2.0.0 <2.16.2": "^2.16.2",
             "undici@>=6.0.0 < 6.21.2": "^6.21.2",
             "vite": "$vite",
-            "is-generator-function": "1.0.10"
+            "is-generator-function": "1.0.10",
+            "mdast-util-to-hast@>=13.0.0 <13.2.1": "^13.2.1",
+            "jws@>=3.0.0 <3.2.3": "^3.2.3",
+            "jws@>=4.0.0 <4.0.1": "^4.0.1"
         }
     }
 }

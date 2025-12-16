@@ -2,7 +2,7 @@
   "name": "environment-configuration",
   "version": "0.0.1",
   "description": "A collection of scripts to automate the configuration of execution environments in Vertesia",
-  "license": "APL-2.0",
+  "license": "Apache-2.0",
   "author": "Vertesia",
   "type": "module",
   "private": true,
