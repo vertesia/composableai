@@ -28,3 +28,7 @@ vertesia help
 ## Documentation
 
 See https://docs.vertesiahq.com/cli
+
+## License
+
+Apache-2.0
