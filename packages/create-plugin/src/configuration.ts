@@ -23,22 +23,22 @@ export const config = {
    * Format for repository: 'owner/repo/subdirectory' or 'owner/repo/subdirectory#branch'
    *
    * Examples:
-   * - 'vertesia/composableai/packages/tool-server-template'
-   * - 'vertesia/composableai/packages/tool-server-template#main'
-   * - 'vertesia/composableai/packages/tool-server-template#v1.0.0'
+   * - 'vertesia/composableai/templates/tool-server-template'
+   * - 'vertesia/composableai/templates/tool-server-template#main'
+   * - 'vertesia/composableai/templates/tool-server-template#v1.0.0'
    */
   templates: [
     {
       name: 'Vertesia Tool Server',
-      repository: 'vertesia/composableai/packages/tool-server-template#preview'
+      repository: 'vertesia/composableai/templates/tool-server-template#preview'
     },
     {
       name: 'Vertesia UI Plugin',
-      repository: 'vertesia/composableai/packages/ui-plugin-template#preview'
+      repository: 'vertesia/composableai/templates/ui-plugin-template#preview'
     },
     {
       name: 'Vertesia Workflow Worker',
-      repository: 'vertesia/composableai/packages/worker-template#preview'
+      repository: 'vertesia/composableai/templates/worker-template#preview'
     }
   ] as TemplateDefinition[],
 
@@ -58,7 +58,7 @@ export const config = {
   /**
    * Documentation URL to show in help messages
    */
-  docsUrl: 'https://docs.vertesia.com/tools',
+  docsUrl: 'https://docs.vertesia.com',
 } as const;
 
 /**
