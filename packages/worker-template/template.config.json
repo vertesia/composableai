@@ -34,7 +34,8 @@
   "files": [
     "package.json",
     ".env.template",
-    "Dockerfile"
+    "Dockerfile",
+    "README.md"
   ],
   "renameFiles": {
     ".env.template": ".env"
