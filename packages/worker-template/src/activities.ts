@@ -117,6 +117,6 @@ export async function getObjectMetadataActivity(
         objectId: object.id,
         name: object.name,
         type: object.type?.name,
-        properties: object.properties || {},
+        properties: (object.properties as Record<string, unknown>) || {},
     };
 }
