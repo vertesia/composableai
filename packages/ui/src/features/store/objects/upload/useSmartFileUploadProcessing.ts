@@ -169,7 +169,7 @@ export function useSmartFileUploadProcessing() {
                         .map((file) => file.name);
                     const query: Record<string, any> = {
                         "content.name": { $in: namesInLocation },
-                        location: location || "/"
+                        location: location || { $in: ["/", ...namesInLocation] }
                     };
                     if (limitToCollectionId) {
                         const res = client.store.collections.searchMembers(limitToCollectionId, {
@@ -194,10 +194,10 @@ export function useSmartFileUploadProcessing() {
                 //update fileWithMetadata
                 for (const doc of results) {
                     const file = filesWithMetadata.find(
-                        //name must be the same, and location must match (default is "/")
+                        //name must be the same, and location must match (default is "/" or the filename itself)
                         (f) =>
                             f.name === doc.content.name &&
-                            (f.location ? f.location === doc.location : doc.location === "/"),
+                            (f.location ? f.location === doc.location : (doc.location === "/" || doc.location === f.name)),
                     );
                     if (file) {
                         file.existingId = doc.id;
