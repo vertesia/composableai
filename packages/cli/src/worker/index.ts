@@ -4,7 +4,8 @@ import { connectToProject } from "./connect.js";
 import { getGooglePrincipal, getGoogleToken } from "./registry.js";
 
 export function registerWorkerCommand(program: Command) {
-    const worker = program.command("worker");
+    const worker = program.command("worker")
+        .description("Build, release, and deploy custom workflow workers");
 
     worker.command("connect [pkgDir]")
         .description("Connect a node package to a Vertesia project. If no packageDir is specified the current dir will be used.")
