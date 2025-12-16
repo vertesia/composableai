@@ -237,6 +237,30 @@ export function handleConditionalRemoves(
 }
 
 /**
+ * Rename files based on template configuration
+ * Useful for files like .env.template -> .env that can't be committed to git
+ */
+export function renameFiles(projectName: string, templateConfig: TemplateConfig): void {
+  if (!templateConfig.renameFiles) return;
+
+  console.log(chalk.blue('📝 Renaming files...\n'));
+
+  for (const [source, destination] of Object.entries(templateConfig.renameFiles)) {
+    const sourcePath = path.join(projectName, source);
+    const destPath = path.join(projectName, destination);
+
+    if (fs.existsSync(sourcePath)) {
+      fs.renameSync(sourcePath, destPath);
+      console.log(chalk.gray(`   ✓ ${source} → ${destination}`));
+    } else {
+      console.log(chalk.yellow(`   ⚠️  File not found: ${source} (skipping rename)`));
+    }
+  }
+
+  console.log();
+}
+
+/**
  * Remove meta files that shouldn't be in the user's project
  */
 export function removeMetaFiles(projectName: string, templateConfig: TemplateConfig): void {

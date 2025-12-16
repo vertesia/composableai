@@ -36,6 +36,13 @@ export interface TemplateConfig {
   removeAfterInstall?: string[];
 
   /**
+   * Optional file renaming after variable replacement
+   * Format: { "source": "destination" }
+   * Example: { ".env.template": ".env" }
+   */
+  renameFiles?: Record<string, string>;
+
+  /**
    * Optional conditional file removal based on user answers
    * Format: { "VARIABLE_NAME": { "value": ["files", "to", "remove"] } }
    * Example: { "USE_TYPESCRIPT": { "false": ["tsconfig.json"] } }

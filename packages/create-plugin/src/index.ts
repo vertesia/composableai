@@ -19,6 +19,7 @@ import {
   replaceVariables,
   adjustPackageJson,
   handleConditionalRemoves,
+  renameFiles,
   removeMetaFiles
 } from './process-template.js';
 import { runPreInstallHooks, runPostInstallHooks } from './post-install.js';
@@ -129,7 +130,10 @@ async function main() {
       handleConditionalRemoves(projectName, templateConfig, answers);
     }
 
-    // Step 8: Remove meta files
+    // Step 8: Rename files (e.g., .env.template -> .env)
+    renameFiles(projectName, templateConfig);
+
+    // Step 9: Remove meta files
     removeMetaFiles(projectName, templateConfig);
 
     // Step 9: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
