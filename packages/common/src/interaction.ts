@@ -277,6 +277,12 @@ export interface InteractionEndpoint {
     params_schema?: JSONSchema;
 }
 
+export interface InteractionTags {
+    tag: string;
+    count: number;
+    interactions: InteractionRef[];
+}
+
 export interface InteractionRef {
     id: string;
     name: string;
@@ -823,6 +829,11 @@ export interface ExecutionRunWorkflow {
     activity_type?: string;
 }
 
+export interface PromptModalities {
+    hasVideo: boolean;
+    hasImage: boolean;
+}
+
 export interface InteractionExecutionResult<P = any> extends ExecutionRun<P> {
     tool_use?: ToolUse[];
     conversation?: unknown;
@@ -889,7 +900,8 @@ export interface RateLimitRequestPayload {
     interaction: string,
     environment_id?: string,
     model_id?: string,
-    workflow_run_id?: string
+    workflow_run_id?: string,
+    modalities?: PromptModalities;
 }
 
 export interface RateLimitRequestResponse {

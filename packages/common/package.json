@@ -1,6 +1,7 @@
 {
     "name": "@vertesia/common",
     "version": "0.80.0",
+    "license": "Apache-2.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -39,6 +40,14 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/common"
     },
+    "keywords": [
+        "vertesia",
+        "common",
+        "types",
+        "llm",
+        "ai",
+        "typescript"
+    ],
     "ts_dual_module": {
         "outDir": "lib"
     }
