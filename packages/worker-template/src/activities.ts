@@ -36,6 +36,16 @@ export interface ProcessObjectResult {
 }
 
 /**
+ * Metadata returned from getObjectMetadataActivity.
+ */
+export interface ObjectMetadata {
+    objectId: string;
+    name: string;
+    type?: string;
+    properties: Record<string, unknown>;
+}
+
+/**
  * Example activity that retrieves and processes a content object from Vertesia.
  *
  * This demonstrates the pattern for:
@@ -94,7 +104,7 @@ export async function processObjectActivity(
  */
 export async function getObjectMetadataActivity(
     payload: ActivityExecutionPayload<ProcessObjectParams>
-): Promise<{ objectId: string; name: string; type?: string; properties: Record<string, unknown> }> {
+): Promise<ObjectMetadata> {
     const { params } = payload;
     const { objectId } = params;
 

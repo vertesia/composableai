@@ -1,51 +1,63 @@
 {
-  "name": "@{{WORKER_ORG}}/{{WORKER_NAME}}",
-  "version": "1.0.0",
-  "description": "{{PROJECT_DESCRIPTION}}",
-  "type": "module",
-  "main": "lib/main.js",
-  "types": "lib/main.d.ts",
-  "scripts": {
-    "clean": "rimraf ./lib tsconfig.tsbuildinfo",
-    "build": "npm run clean && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
-    "typecheck:test": "tsc --project tsconfig.test.json",
-    "pretest": "npm run typecheck:test",
-    "test": "vitest",
-    "start": "node lib/main.js",
-    "connect": "vertesia worker connect"
-  },
-  "keywords": [
-    "workflow",
-    "temporal",
-    "agent",
-    "llm",
-    "vertesia",
-    "worker"
-  ],
-  "author": "Vertesia",
-  "license": "Apache-2.0",
-  "dependencies": {
-    "@dglabs/worker": "^0.11.0",
-    "@temporalio/activity": "^1.13.0",
-    "@temporalio/client": "^1.13.0",
-    "@temporalio/worker": "^1.13.0",
-    "@temporalio/workflow": "^1.13.0",
-    "@vertesia/client": "workspace:*",
-    "@vertesia/common": "workspace:*",
-    "@vertesia/workflow": "workspace:*"
-  },
-  "devDependencies": {
-    "@temporalio/testing": "^1.13.0",
-    "@types/node": "^22.5.0",
-    "rimraf": "^6.0.1",
-    "typescript": "^5.7.2",
-    "vitest": "^3.2.4"
-  },
-  "vertesia": {
-    "image": {
-      "repository": "us-docker.pkg.dev/dengenlabs/us.gcr.io",
-      "organization": "{{WORKER_ORG}}",
-      "name": "{{WORKER_NAME}}"
+    "name": "@{{WORKER_ORG}}/{{WORKER_NAME}}",
+    "version": "1.0.0",
+    "description": "{{PROJECT_DESCRIPTION}}",
+    "type": "module",
+    "main": "lib/main.js",
+    "types": "lib/main.d.ts",
+    "scripts": {
+        "clean": "rimraf ./lib tsconfig.tsbuildinfo",
+        "lint": "npx eslint 'src/**/*' --fix",
+        "format": "npx prettier --write \"**/*.{ts,js,json,md}\"",
+        "prebuild": "pnpm run lint",
+        "build": "pnpm run clean && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
+        "typecheck:test": "tsc --project tsconfig.test.json",
+        "pretest": "pnpm run typecheck:test",
+        "start": "node lib/main.js",
+        "connect": "vertesia agent connect",
+        "test": "vitest"
+    },
+    "keywords": [
+        "workflow",
+        "temporal",
+        "agent",
+        "llm",
+        "vertesia",
+        "worker"
+    ],
+    "author": "Vertesia",
+    "license": "Apache-2.0",
+    "dependencies": {
+        "@dglabs/worker": "^0.11.0",
+        "@temporalio/activity": "^1.13.0",
+        "@temporalio/client": "^1.13.0",
+        "@temporalio/worker": "^1.13.0",
+        "@temporalio/workflow": "^1.13.0",
+        "@vertesia/client": "workspace:*",
+        "@vertesia/common": "workspace:*",
+        "@vertesia/workflow": "workspace:*"
+    },
+    "devDependencies": {
+        "@eslint/compat": "^1.3.2",
+        "@eslint/js": "^9.35.0",
+        "eslint": "^9.35.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
+        "@types/node": "^22.5.0",
+        "prettier": "3.5.3",
+        "rimraf": "^6.0.1",
+        "@temporalio/proto": "^1.13.0",
+        "@temporalio/testing": "^1.13.0",
+        "typescript": "^5.9.2",
+        "typescript-eslint": "^8.43.0",
+        "vitest": "^3.2.4",
+        "vitest-fetch-mock": "^0.4.5"
+    },
+    "vertesia": {
+        "image": {
+            "repository": "us-docker.pkg.dev/dengenlabs/us.gcr.io",
+            "organization": "{{WORKER_ORG}}",
+            "name": "{{WORKER_NAME}}"
+        }
     }
-  }
 }

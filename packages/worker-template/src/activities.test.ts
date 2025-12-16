@@ -1,4 +1,6 @@
 import { MockActivityEnvironment } from "@temporalio/testing";
+import { ContentObject } from "@vertesia/common";
+import { getVertesiaClient } from "@vertesia/workflow";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as activities from "./activities.js";
 import {
@@ -31,13 +33,12 @@ describe("processObjectActivity", () => {
         const mockObjectName = "Test Document";
 
         // Mock the Vertesia client
-        const { getVertesiaClient } = await import("@vertesia/workflow");
         vi.mocked(getVertesiaClient).mockReturnValue({
             objects: {
                 retrieve: vi.fn().mockResolvedValue({
                     id: mockObjectId,
                     name: mockObjectName,
-                }),
+                } satisfies Partial<ContentObject>),
             },
         } as never);
 
@@ -62,13 +63,12 @@ describe("processObjectActivity", () => {
         const mockObjectName = "Test Document";
 
         // Mock the Vertesia client
-        const { getVertesiaClient } = await import("@vertesia/workflow");
         vi.mocked(getVertesiaClient).mockReturnValue({
             objects: {
                 retrieve: vi.fn().mockResolvedValue({
                     id: mockObjectId,
                     name: mockObjectName,
-                }),
+                } satisfies Partial<ContentObject>),
             },
         } as never);
 
@@ -98,12 +98,11 @@ describe("getObjectMetadataActivity", () => {
         const mockObject = {
             id: mockObjectId,
             name: "Test Document",
-            type: { name: "Document" },
+            type: { id: "123", name: "Document" },
             properties: { author: "Test Author" },
-        };
+        } satisfies Partial<ContentObject>;
 
         // Mock the Vertesia client
-        const { getVertesiaClient } = await import("@vertesia/workflow");
         vi.mocked(getVertesiaClient).mockReturnValue({
             objects: {
                 retrieve: vi.fn().mockResolvedValue(mockObject),
@@ -132,10 +131,9 @@ describe("getObjectMetadataActivity", () => {
         const mockObject = {
             id: mockObjectId,
             name: "Simple Document",
-        };
+        } satisfies Partial<ContentObject>;
 
         // Mock the Vertesia client
-        const { getVertesiaClient } = await import("@vertesia/workflow");
         vi.mocked(getVertesiaClient).mockReturnValue({
             objects: {
                 retrieve: vi.fn().mockResolvedValue(mockObject),
