@@ -18,8 +18,8 @@ jobs:
         with:
           node-version: 22
           cache: "pnpm"
-      - run: pnpm install
-      - run: pnpm -r build
+      - run: pnpm install --filter "!./packages/worker-template"
+      - run: pnpm -r --filter "!./packages/worker-template" build
 
   api-fetch-client-test:
     runs-on: ubuntu-latest
