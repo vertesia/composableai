@@ -53,34 +53,26 @@ function ActionsWrapper({ }: ActionsWrapperProps) {
     return <StartWorkflowButton />;
 }
 
-export function UploadObjectsButton({ collectionId }: { collectionId?: string }) {
+export function UploadObjectsButton({ collectionId, allowFolders = true }: { collectionId?: string, allowFolders?: boolean }) {
     const [files, setFiles] = useState<File[]>([]);
+    const [isOpen, setIsOpen] = useState(false);
     const selection = useDocumentSelection();
 
     const hasSelection = selection?.hasSelection();
 
-    const selectFile = () => {
-        const fileInput = document.createElement("input");
-        fileInput.type = "file";
-        fileInput.multiple = true;
-        fileInput.accept = "*";
-        fileInput?.click();
-        fileInput.onchange = (event) => {
-            const files = (event.target as HTMLInputElement).files;
-            if (files) {
-                setFiles(Array.from(files));
-            }
-        };
-    };
+    const onClose = () => {
+        setIsOpen(false);
+        setFiles([]);
+    }
 
     return (
         !hasSelection &&
         <>
-            <Button onClick={() => selectFile()}>Upload</Button>
+            <Button onClick={() => setIsOpen(true)}>Upload</Button>
             <DocumentUploadModal
                 collectionId={collectionId ?? ''}
-                isOpen={files.length > 0}
-                onClose={() => setFiles([])}
+                isOpen={isOpen}
+                onClose={onClose}
                 files={files}
                 title="Upload Files"
                 onUploadComplete={(result) => {
@@ -88,11 +80,8 @@ export function UploadObjectsButton({ collectionId }: { collectionId?: string })
                         setFiles([]);
                     }
                 }}
+                allowFolders={allowFolders}
             >
-                <div className="text-sm">
-                    Select the associated Content Type, or let the system choose or generate the type based on the
-                    content.
-                </div>
             </DocumentUploadModal>
         </>
     );
