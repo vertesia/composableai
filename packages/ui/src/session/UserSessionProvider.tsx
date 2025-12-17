@@ -88,6 +88,14 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                     });
                 })
                 .catch((err) => {
+                    // Don't redirect to central auth for UserNotFoundError - let signup flow handle it
+                    if (err instanceof UserNotFoundError) {
+                        console.log("User not found - will trigger signup flow", err);
+                        session.authError = err;
+                        setSession(session.clone());
+                        return;
+                    }
+
                     console.error("Failed to fetch user token from studio, redirecting to central auth", err);
                     Env.logger.error("Failed to fetch user token from studio, redirecting to central auth", {
                         vertesia: {
