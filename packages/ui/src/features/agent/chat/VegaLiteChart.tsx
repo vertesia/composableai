@@ -112,10 +112,23 @@ function calculateAutoHeight(spec: Record<string, any>, mode: 'chart' | 'dashboa
 
 // Get dark mode config for Vega
 function getDarkModeConfig(isDark: boolean): Record<string, any> {
+    const baseConfig = {
+        background: 'transparent',
+        view: { stroke: 'transparent' },
+        // Enable tooltips by default for all mark types
+        mark: { tooltip: true },
+        bar: { tooltip: true },
+        line: { tooltip: true },
+        point: { tooltip: true },
+        area: { tooltip: true },
+        rect: { tooltip: true },
+        arc: { tooltip: true },
+        circle: { tooltip: true },
+    };
+
     if (isDark) {
         return {
-            background: 'transparent',
-            view: { stroke: 'transparent' },
+            ...baseConfig,
             axis: {
                 labelColor: '#9ca3af',
                 titleColor: '#d1d5db',
@@ -133,8 +146,7 @@ function getDarkModeConfig(isDark: boolean): Record<string, any> {
         };
     }
     return {
-        background: 'transparent',
-        view: { stroke: 'transparent' },
+        ...baseConfig,
         axis: {
             labelColor: '#6b7280',
             titleColor: '#374151',
