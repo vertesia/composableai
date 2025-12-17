@@ -45,7 +45,12 @@ export interface ConversationStripOptions {
      */
     images_after_turns?: number;
 
-    // Future: text_after_turns, etc.
+    /**
+     * Maximum tokens for text content before truncation.
+     * Text content exceeding this limit will be truncated with a marker.
+     * Uses ~4 characters per token estimate.
+     */
+    text_max_tokens?: number;
 }
 
 
