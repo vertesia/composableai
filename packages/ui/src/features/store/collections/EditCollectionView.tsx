@@ -161,7 +161,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                 <FormItem label="Description">
                     <Textarea
                         value={metadata.description}
-                        onChange={(e) => setField("description", e)}
+                        onChange={(e) => setField("description", e.target.value)}
                     />
                 </FormItem>
                 {
@@ -186,7 +186,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                             <Textarea
                                 className={Styles.INPUT}
                                 value={metadata.query}
-                                onChange={(e) => setField("query", e)}
+                                onChange={(e) => setField("query", e.target.value)}
                             />
                         </FormItem>
                     )

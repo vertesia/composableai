@@ -32,6 +32,7 @@ Complete list of supported types:
 3. **date** - Date/time display
 4. **objectId** - object id with preview button
 5. **objectName** - object name display
+6. **objectLink** - *(deprecated)* alias for objectId, kept for backward compatibility
 
 ### Column Types and Renderers
 Built-in renderers with parameters:

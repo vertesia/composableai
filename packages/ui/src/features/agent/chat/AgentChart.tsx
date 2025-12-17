@@ -3,36 +3,36 @@ import { toPng } from 'html-to-image';
 import { Download, Copy, Check } from 'lucide-react';
 import { VegaLiteChart } from './VegaLiteChart';
 import {
-    ResponsiveContainer,
-    BarChart,
-    LineChart,
-    ComposedChart,
-    AreaChart,
-    PieChart,
-    ScatterChart,
-    RadarChart,
-    RadialBarChart,
-    FunnelChart,
-    Treemap,
-    Bar,
-    Line,
     Area,
-    Pie,
+    AreaChart,
+    Bar,
+    BarChart,
+    CartesianGrid,
     Cell,
-    Scatter,
-    Radar,
-    RadialBar,
+    ComposedChart,
     Funnel,
+    FunnelChart,
     LabelList,
-    PolarGrid,
+    Legend,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
     PolarAngleAxis,
+    PolarGrid,
     PolarRadiusAxis,
+    Radar,
+    RadarChart,
+    RadialBar,
+    RadialBarChart,
+    ReferenceLine,
+    ResponsiveContainer,
+    Scatter,
+    ScatterChart,
+    Tooltip,
+    Treemap,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ReferenceLine,
 } from 'recharts';
 
 // Default color palette for charts
@@ -611,7 +611,7 @@ const RechartsChart = memo(function RechartsChart({ spec }: { spec: RechartsChar
                     <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                         {title || 'Chart'}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 print:hidden chart-actions">
                         <button
                             onClick={handleCopy}
                             disabled={isCopied}
