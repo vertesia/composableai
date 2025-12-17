@@ -230,8 +230,7 @@ export function DropZone({
         folderInput.type = "file";
         folderInput.multiple = true;
         folderInput.accept = "*";
-        // @ts-ignore
-        folderInput.webkitdirectory = true;
+        (folderInput as any).webkitdirectory = true; // webkitdirectory is not standard but widely supported
         folderInput?.click();
         folderInput.onchange = (event) => {
             handleChange(event as unknown as React.ChangeEvent<HTMLInputElement>);
