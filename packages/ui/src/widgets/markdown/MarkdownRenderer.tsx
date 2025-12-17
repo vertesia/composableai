@@ -90,7 +90,13 @@ export function MarkdownRenderer({
 
             if (!isInline && (language === "chart" || className?.includes("language-chart"))) {
                 try {
-                    const raw = String(children || "").trim();
+                    let raw = String(children || "").trim();
+                    // Extract just the JSON object - handle cases where extra content is appended
+                    const jsonStart = raw.indexOf('{');
+                    const jsonEnd = raw.lastIndexOf('}');
+                    if (jsonStart !== -1 && jsonEnd > jsonStart) {
+                        raw = raw.slice(jsonStart, jsonEnd + 1);
+                    }
                     const spec = JSON.parse(raw) as AgentChartSpec;
                     // Support both Vega-Lite and Recharts
                     if (spec) {
