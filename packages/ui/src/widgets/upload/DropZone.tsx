@@ -51,7 +51,6 @@ export function DropZone({
     className = ""
 }: DropZoneProps) {
     const [isDragging, setIsDragging] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
     const dropZoneRef = useRef<HTMLDivElement>(null);
 
     const handleDragOver = (e: React.DragEvent) => {
