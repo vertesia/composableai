@@ -23,6 +23,9 @@ export interface TemplateConfig {
   /** Optional human-readable description of the template */
   description?: string;
 
+  /** Optional package manager to force (skips selection prompt) */
+  packageManager?: 'pnpm' | 'npm';
+
   /** Array of prompts to ask the user during installation */
   prompts: PromptConfig[];
 
@@ -31,6 +34,13 @@ export interface TemplateConfig {
 
   /** Optional array of file paths to remove after installation (e.g., template.config.json) */
   removeAfterInstall?: string[];
+
+  /**
+   * Optional file renaming after variable replacement
+   * Format: { "source": "destination" }
+   * Example: { ".env.template": ".env" }
+   */
+  renameFiles?: Record<string, string>;
 
   /**
    * Optional conditional file removal based on user answers
@@ -42,21 +52,76 @@ export interface TemplateConfig {
   /**
    * Optional derived variables computed from user answers
    * Format: { "NEW_VAR": { "from": "SOURCE_VAR", "transform": "pascalCase" } }
-   * Supported transforms: "pascalCase", "camelCase", "kebabCase", "snakeCase", "titleCase", "upperCase", "lowerCase"
+   * Supported transforms: "pascalCase", "camelCase", "kebabCase", "snakeCase", "titleCase", "upperCase", "lowerCase", "concat"
    * Example: { "ComponentName": { "from": "PROJECT_NAME", "transform": "pascalCase" } }
+   * For concat: { "SERVICE_NAME": { "from": ["ORG", "NAME"], "transform": "concat", "separator": "_" } }
    */
   derived?: Record<string, DerivedVariable>;
+
+  /**
+   * Optional pre-install hooks to run before dependencies are installed
+   * Used for CLI authentication, registry setup, etc.
+   */
+  preInstall?: PreInstallConfig;
+
+  /**
+   * Optional post-install hooks to run after the project is created
+   * Used for additional setup commands, etc.
+   */
+  postInstall?: PostInstallConfig;
+}
+
+/**
+ * Configuration for pre-install hooks (runs before npm install)
+ */
+export interface PreInstallConfig {
+  /** Commands to run before installation */
+  commands: PostInstallCommand[];
+
+  /** CLI package to install globally before running commands (e.g., "@vertesia/cli") */
+  cliPackage?: string;
 }
 
 /**
  * Configuration for a derived variable computed from user input
  */
 export interface DerivedVariable {
-  /** Source variable name to derive from */
-  from: string;
+  /** Source variable name(s) to derive from. Can be a single string or array of strings for concat transform */
+  from: string | string[];
 
-  /** Transformation to apply: "pascalCase", "camelCase", "kebabCase", "snakeCase", "titleCase", "upperCase", "lowerCase" */
+  /** Transformation to apply: "pascalCase", "camelCase", "kebabCase", "snakeCase", "titleCase", "upperCase", "lowerCase", "concat" */
   transform: string;
+
+  /** Separator for concat transform (default: "") */
+  separator?: string;
+}
+
+/**
+ * Configuration for a post-install command
+ */
+export interface PostInstallCommand {
+  /** Display name for the command */
+  name: string;
+
+  /** Command to execute */
+  command: string;
+
+  /** If true, prompt user before running and allow skipping */
+  optional?: boolean;
+
+  /** Prompt message to show if optional (default: "Do you want to run {name}?") */
+  prompt?: string;
+}
+
+/**
+ * Configuration for post-install hooks
+ */
+export interface PostInstallConfig {
+  /** Commands to run after installation */
+  commands: PostInstallCommand[];
+
+  /** CLI package to install globally before running commands (e.g., "@vertesia/cli") */
+  cliPackage?: string;
 }
 
 /**

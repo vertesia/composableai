@@ -19,8 +19,10 @@ import {
   replaceVariables,
   adjustPackageJson,
   handleConditionalRemoves,
+  renameFiles,
   removeMetaFiles
 } from './process-template.js';
+import { runPreInstallHooks, runPostInstallHooks } from './post-install.js';
 
 /**
  * Parse command line arguments
@@ -70,11 +72,13 @@ async function main() {
     branch = parsed.branch;
   } catch (error) {
     console.log(chalk.red('❌ Please specify a project name:\n'));
-    console.log(chalk.gray('  pnpm create @vertesia/tool-server my-project'));
-    console.log(chalk.gray('  npm create @vertesia/tool-server my-project'));
-    console.log(chalk.gray('  npx @vertesia/create-tool-server my-project\n'));
-    console.log(chalk.gray('Options:'));
-    console.log(chalk.gray('  -b, --branch <branch>  Use specific branch\n'));
+    console.log(chalk.white('Usage:'));
+    console.log(chalk.cyan('  npx @vertesia/create-plugin') + chalk.gray(' <project-name> [options]\n'));
+    console.log(chalk.white('Example:'));
+    console.log(chalk.gray('  npx @vertesia/create-plugin my-project\n'));
+    console.log(chalk.white('Options:'));
+    console.log(chalk.gray('  -b, --branch <branch>  Use specific branch'));
+    console.log(chalk.gray('  -h, --help             Show help\n'));
     process.exit(1);
   }
 
@@ -103,14 +107,14 @@ async function main() {
     const branchInfo = branch ? chalk.gray(` (branch: ${branch})`) : '';
     console.log(chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}`) + branchInfo + '\n');
 
-    // Step 2: Detect and select package manager
-    const packageManager = await selectPackageManager();
-
-    // Step 3: Download template from GitHub
+    // Step 2: Download template from GitHub
     await downloadTemplate(projectName, selectedTemplate.repository);
 
-    // Step 4: Read template configuration
+    // Step 3: Read template configuration
     const templateConfig = readTemplateConfig(projectName);
+
+    // Step 4: Detect and select package manager (may be forced by template)
+    const packageManager = await selectPackageManager(templateConfig.packageManager);
 
     // Step 5: Prompt user for configuration
     const answers = await promptUser(projectName, templateConfig);
@@ -126,13 +130,36 @@ async function main() {
       handleConditionalRemoves(projectName, templateConfig, answers);
     }
 
-    // Step 8: Remove meta files
+    // Step 8: Rename files (e.g., .env.template -> .env)
+    renameFiles(projectName, templateConfig);
+
+    // Step 9: Remove meta files
     removeMetaFiles(projectName, templateConfig);
 
-    // Step 9: Install dependencies
-    await installDependencies(projectName, packageManager);
+    // Step 9: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
+    let skipDependencyInstall = false;
+    if (templateConfig.preInstall) {
+      const preInstallSuccess = await runPreInstallHooks(projectName, templateConfig.preInstall, packageManager);
+      if (!preInstallSuccess) {
+        console.log(chalk.yellow('⚠️  Pre-install hooks failed. Skipping dependency installation.\n'));
+        console.log(chalk.gray('You can install dependencies manually after resolving the issue:\n'));
+        console.log(chalk.gray(`  cd ${projectName}`));
+        console.log(chalk.gray(`  ${packageManager} install\n`));
+        skipDependencyInstall = true;
+      }
+    }
 
-    // Step 10: Success!
+    // Step 10: Install dependencies
+    if (!skipDependencyInstall) {
+      await installDependencies(projectName, packageManager);
+    }
+
+    // Step 11: Run post-install hooks (if any)
+    if (!skipDependencyInstall && templateConfig.postInstall) {
+      await runPostInstallHooks(projectName, templateConfig.postInstall, packageManager);
+    }
+
+    // Step 12: Success!
     showSuccess(projectName, packageManager, selectedTemplate.name, selectedTemplate.repository);
 
   } catch (error) {

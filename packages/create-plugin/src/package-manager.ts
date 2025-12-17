@@ -23,14 +23,24 @@ function commandExists(command: string): boolean {
 /**
  * Detect available package managers and let user choose
  * Returns the selected package manager ('pnpm' or 'npm')
+ * @param forcedPackageManager - If specified, skip selection and use this package manager
  */
-export async function selectPackageManager(): Promise<string> {
+export async function selectPackageManager(forcedPackageManager?: 'pnpm' | 'npm'): Promise<string> {
   const hasPnpm = commandExists('pnpm');
   const hasNpm = commandExists('npm');
 
   // If npm is not installed, something is seriously wrong
   if (!hasNpm) {
     throw new Error('npm is not installed. Please install Node.js and npm first.');
+  }
+
+  // If a specific package manager is forced by the template
+  if (forcedPackageManager) {
+    if (forcedPackageManager === 'pnpm' && !hasPnpm) {
+      throw new Error('This template requires pnpm. Please install it first: npm install -g pnpm');
+    }
+    console.log(chalk.gray(`Using ${forcedPackageManager} (required by template)\n`));
+    return forcedPackageManager;
   }
 
   // If pnpm is not installed, use npm

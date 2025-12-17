@@ -4,7 +4,24 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
+import { execSync } from 'child_process';
 import { TemplateConfig } from './template-config.js';
+
+/**
+ * Get the latest version of an npm package
+ * Returns the version string (e.g., "1.2.3") or null if not found
+ */
+function getLatestVersion(packageName: string): string | null {
+  try {
+    const result = execSync(`npm view ${packageName} version`, {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'ignore']
+    });
+    return result.trim();
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Escape special regex characters
@@ -129,7 +146,7 @@ export function replaceVariables(
 /**
  * Adjust package.json after variable replacement
  * 1. Sets the package name to PROJECT_NAME
- * 2. Converts workspace:* dependencies to * for @vertesia and @llumiverse packages
+ * 2. Resolves workspace:* dependencies to actual latest versions
  */
 export function adjustPackageJson(projectName: string, answers: Record<string, any>): void {
   console.log(chalk.blue('📝 Adjusting package.json...\n'));
@@ -152,23 +169,31 @@ export function adjustPackageJson(projectName: string, answers: Record<string, a
       console.log(chalk.gray(`   ✓ Set package name to "${newName}"`));
     }
 
-    // 2. Replace workspace:* with * for @vertesia and @llumiverse dependencies
+    // 2. Replace workspace:* with actual latest versions
+    const internalScopes = ['@vertesia/', '@llumiverse/', '@dglabs/'];
     let workspaceReplacements = 0;
 
     ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'].forEach(depType => {
       if (packageJson[depType]) {
         Object.keys(packageJson[depType]).forEach(pkgName => {
-          if ((pkgName.startsWith('@vertesia/') || pkgName.startsWith('@llumiverse/')) &&
-            packageJson[depType][pkgName] === 'workspace:*') {
-            packageJson[depType][pkgName] = '*';
-            workspaceReplacements++;
+          const isInternalPackage = internalScopes.some(scope => pkgName.startsWith(scope));
+          if (isInternalPackage && packageJson[depType][pkgName] === 'workspace:*') {
+            const latestVersion = getLatestVersion(pkgName);
+            if (latestVersion) {
+              packageJson[depType][pkgName] = `^${latestVersion}`;
+              workspaceReplacements++;
+            } else {
+              // Fallback to 'latest' if we can't fetch the version
+              packageJson[depType][pkgName] = 'latest';
+              workspaceReplacements++;
+            }
           }
         });
       }
     });
 
     if (workspaceReplacements > 0) {
-      console.log(chalk.gray(`   ✓ Replaced ${workspaceReplacements} workspace:* dependencies with *`));
+      console.log(chalk.gray(`   ✓ Resolved ${workspaceReplacements} workspace:* dependencies to latest versions`));
     }
 
     // Write back to file
@@ -205,6 +230,30 @@ export function handleConditionalRemoves(
           console.log(chalk.gray(`   ✓ Removed: ${file}`));
         }
       }
+    }
+  }
+
+  console.log();
+}
+
+/**
+ * Rename files based on template configuration
+ * Useful for files like .env.template -> .env that can't be committed to git
+ */
+export function renameFiles(projectName: string, templateConfig: TemplateConfig): void {
+  if (!templateConfig.renameFiles) return;
+
+  console.log(chalk.blue('📝 Renaming files...\n'));
+
+  for (const [source, destination] of Object.entries(templateConfig.renameFiles)) {
+    const sourcePath = path.join(projectName, source);
+    const destPath = path.join(projectName, destination);
+
+    if (fs.existsSync(sourcePath)) {
+      fs.renameSync(sourcePath, destPath);
+      console.log(chalk.gray(`   ✓ ${source} → ${destination}`));
+    } else {
+      console.log(chalk.yellow(`   ⚠️  File not found: ${source} (skipping rename)`));
     }
   }
 
