@@ -126,7 +126,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
 
             // Extract skill name from tool name (remove "learn_" prefix if present)
             const skillName = toolName.startsWith('learn_')
-                ? toolName.slice(6)
+                ? toolName.replace('learn_', '')
                 : toolName;
 
             const skill = this.skills.get(skillName);
