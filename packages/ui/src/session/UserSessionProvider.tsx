@@ -91,6 +91,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                     // Don't redirect to central auth for UserNotFoundError - let signup flow handle it
                     if (err instanceof UserNotFoundError) {
                         console.log("User not found - will trigger signup flow", err);
+                        session.isLoading = false;
                         session.authError = err;
                         setSession(session.clone());
                         return;
