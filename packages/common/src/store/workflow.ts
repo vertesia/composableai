@@ -492,3 +492,89 @@ export interface WorkflowActionPayload {
      */
     reason?: string;
 }
+
+/**
+ * Parameters for the AgentIntakeWorkflow.
+ * This workflow uses an intelligent agent to process documents:
+ * - Select or create appropriate content types
+ * - Extract properties using schema-enforced interactions
+ * - File documents into relevant collections
+ */
+export interface AgentIntakeWorkflowParams {
+    /**
+     * The interaction to use for document intake agent.
+     * Defaults to "sys:DocumentIntakeAgent" if not specified.
+     * Can be overridden with a project-level interaction.
+     */
+    intakeInteraction?: string;
+
+    /**
+     * The interaction to use for property extraction.
+     * Defaults to "sys:ExtractInformation" if not specified.
+     * Can be overridden with a project-level interaction.
+     */
+    extractionInteraction?: string;
+
+    /**
+     * Whether to generate table of contents for documents.
+     * Defaults to true for documents, false for images/videos.
+     */
+    generateTableOfContents?: boolean;
+
+    /**
+     * Whether to generate embeddings after processing.
+     * Defaults to true.
+     */
+    generateEmbeddings?: boolean;
+
+    /**
+     * Max iterations for the agent workflow.
+     * Defaults to 50.
+     */
+    maxIterations?: number;
+
+    /**
+     * Environment ID for LLM execution.
+     */
+    environment?: string;
+
+    /**
+     * Model to use for the agent.
+     */
+    model?: string;
+
+    /**
+     * Additional model options.
+     */
+    model_options?: Record<string, unknown>;
+
+    /**
+     * Whether to use semantic layer (MagicPDF) for PDF processing.
+     */
+    useSemanticLayer?: boolean;
+
+    /**
+     * Whether to use vision for image-based extraction.
+     */
+    useVision?: boolean;
+}
+
+/**
+ * Result of the AgentIntakeWorkflow
+ */
+export interface AgentIntakeWorkflowResult {
+    /** The object ID that was processed */
+    objectId: string;
+    /** Whether text was extracted */
+    hasText: boolean;
+    /** Whether table of contents was generated */
+    hasTableOfContents: boolean;
+    /** The type ID assigned to the document */
+    typeId?: string;
+    /** Whether properties were extracted */
+    hasProperties: boolean;
+    /** Collection IDs the document was added to */
+    collectionIds?: string[];
+    /** Whether embeddings were generated */
+    hasEmbeddings: boolean;
+}

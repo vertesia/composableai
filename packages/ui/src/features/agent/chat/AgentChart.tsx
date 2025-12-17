@@ -140,6 +140,13 @@ export type VegaLiteChartSpec = {
         collapseInitially?: boolean;
         theme?: 'default' | 'dark';
         renderer?: 'canvas' | 'svg';
+        // Dashboard mode options
+        mode?: 'chart' | 'dashboard';
+        height?: number; // Explicit height override (default: 280 for chart, 500 for dashboard)
+        enableFullscreen?: boolean; // Show fullscreen button (default: true for dashboard, false for chart)
+        // Interactive features
+        enableTooltips?: boolean; // Enable Vega tooltips (default: true)
+        enableSignalListeners?: boolean; // Enable external signal listeners (default: false)
     };
 };
 

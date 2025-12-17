@@ -212,7 +212,173 @@ Numbers auto-format: 1K, 1M, 1B
 ### Color Schemes
 - Sequential: blues, greens, viridis
 - Diverging: redblue, redyellowgreen
-- Categorical: category10, tableau10`,
+- Categorical: category10, tableau10
+
+---
+
+## INTERACTIVE DASHBOARDS
+
+For interactive dashboards with cross-filtering and linked views, use \`options.mode: "dashboard"\`.
+Dashboard mode enables:
+- Larger default height (500px vs 280px)
+- Fullscreen button for exploration
+- "Interactive" badge indicator
+
+### Dashboard with Cross-Filter Selection
+Click on a bar to filter the line chart below:
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "title": "Sales Dashboard",
+  "description": "Click a category to filter the trend",
+  "options": {"mode": "dashboard", "height": 600},
+  "spec": {
+    "data": {"values": [
+      {"category": "Electronics", "month": "Jan", "sales": 100},
+      {"category": "Electronics", "month": "Feb", "sales": 120},
+      {"category": "Electronics", "month": "Mar", "sales": 140},
+      {"category": "Clothing", "month": "Jan", "sales": 80},
+      {"category": "Clothing", "month": "Feb", "sales": 95},
+      {"category": "Clothing", "month": "Mar", "sales": 110},
+      {"category": "Food", "month": "Jan", "sales": 60},
+      {"category": "Food", "month": "Feb", "sales": 70},
+      {"category": "Food", "month": "Mar", "sales": 85}
+    ]},
+    "params": [{"name": "categorySelect", "select": {"type": "point", "fields": ["category"]}}],
+    "vconcat": [
+      {
+        "mark": "bar",
+        "encoding": {
+          "x": {"field": "category", "type": "nominal"},
+          "y": {"aggregate": "sum", "field": "sales"},
+          "color": {"condition": {"param": "categorySelect", "field": "category"}, "value": "lightgray"},
+          "opacity": {"condition": {"param": "categorySelect", "value": 1}, "value": 0.5}
+        }
+      },
+      {
+        "mark": "line",
+        "transform": [{"filter": {"param": "categorySelect"}}],
+        "encoding": {
+          "x": {"field": "month", "type": "ordinal"},
+          "y": {"field": "sales", "type": "quantitative"},
+          "color": {"field": "category", "type": "nominal"}
+        }
+      }
+    ]
+  }
+}
+\`\`\`
+
+### Dashboard with Interval Brush Selection
+Brush to select a time range in the overview, detail view updates:
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "title": "Focus + Context",
+  "options": {"mode": "dashboard", "height": 500},
+  "spec": {
+    "data": {"values": [
+      {"date": "2024-01-01", "value": 28}, {"date": "2024-02-01", "value": 55},
+      {"date": "2024-03-01", "value": 43}, {"date": "2024-04-01", "value": 91},
+      {"date": "2024-05-01", "value": 81}, {"date": "2024-06-01", "value": 53},
+      {"date": "2024-07-01", "value": 19}, {"date": "2024-08-01", "value": 87},
+      {"date": "2024-09-01", "value": 52}, {"date": "2024-10-01", "value": 48}
+    ]},
+    "vconcat": [
+      {
+        "height": 250,
+        "mark": "area",
+        "encoding": {
+          "x": {"field": "date", "type": "temporal", "scale": {"domain": {"param": "brush"}}, "axis": {"title": ""}},
+          "y": {"field": "value", "type": "quantitative"}
+        }
+      },
+      {
+        "height": 60,
+        "params": [{"name": "brush", "select": {"type": "interval", "encodings": ["x"]}}],
+        "mark": "area",
+        "encoding": {
+          "x": {"field": "date", "type": "temporal"},
+          "y": {"field": "value", "type": "quantitative", "axis": {"tickCount": 3}}
+        }
+      }
+    ]
+  }
+}
+\`\`\`
+
+### Dashboard with Legend Filter
+Click legend items to filter:
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "title": "Multi-Series with Legend Filter",
+  "options": {"mode": "dashboard"},
+  "spec": {
+    "data": {"values": [
+      {"series": "A", "x": 1, "y": 10}, {"series": "A", "x": 2, "y": 15},
+      {"series": "B", "x": 1, "y": 20}, {"series": "B", "x": 2, "y": 12},
+      {"series": "C", "x": 1, "y": 8}, {"series": "C", "x": 2, "y": 18}
+    ]},
+    "params": [{"name": "seriesFilter", "select": {"type": "point", "fields": ["series"]}, "bind": "legend"}],
+    "mark": "line",
+    "encoding": {
+      "x": {"field": "x", "type": "quantitative"},
+      "y": {"field": "y", "type": "quantitative"},
+      "color": {"field": "series", "type": "nominal"},
+      "opacity": {"condition": {"param": "seriesFilter", "value": 1}, "value": 0.2}
+    }
+  }
+}
+\`\`\`
+
+### Dashboard with Input Widgets
+Bind parameters to sliders and dropdowns:
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "title": "Interactive Controls",
+  "options": {"mode": "dashboard"},
+  "spec": {
+    "params": [
+      {"name": "threshold", "value": 50, "bind": {"input": "range", "min": 0, "max": 100, "step": 5}},
+      {"name": "colorScheme", "value": "category10", "bind": {"input": "select", "options": ["category10", "tableau10", "set1"]}}
+    ],
+    "data": {"values": [{"x": "A", "y": 30}, {"x": "B", "y": 60}, {"x": "C", "y": 80}, {"x": "D", "y": 45}]},
+    "mark": "bar",
+    "encoding": {
+      "x": {"field": "x", "type": "nominal"},
+      "y": {"field": "y", "type": "quantitative"},
+      "color": {
+        "condition": {"test": "datum.y > threshold", "value": "steelblue"},
+        "value": "lightgray"
+      }
+    }
+  }
+}
+\`\`\`
+
+### DASHBOARD OPTIONS
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| mode | "chart" \\| "dashboard" | "chart" | Dashboard mode enables fullscreen + larger height |
+| height | number | 280/500 | Explicit height (auto-calculated for vconcat) |
+| enableFullscreen | boolean | true (dashboard) | Show fullscreen button |
+| renderer | "canvas" \\| "svg" | "canvas" | SVG for print quality |
+
+### INTERACTIVE FEATURES (params)
+
+| Selection Type | Use Case | Example |
+|---------------|----------|---------|
+| point | Click to select | \`{"select": {"type": "point", "fields": ["category"]}}\` |
+| interval | Brush selection | \`{"select": {"type": "interval", "encodings": ["x"]}}\` |
+| bind: "legend" | Legend toggle | \`{"select": {...}, "bind": "legend"}\` |
+| bind: input | Widgets | \`{"bind": {"input": "range", "min": 0, "max": 100}}\` |`,
 
     input_schema: {
         type: 'object',
