@@ -76,50 +76,28 @@ export function MarkdownRenderer({
 
         const CodeComponent = ({
             node,
-            inline,
             className,
             children,
             ...props
         }: {
             node?: any;
-            inline?: boolean;
             className?: string;
             children?: React.ReactNode;
         }) => {
             const match = /language-(\w+)/.exec(className || "");
+            const isInline = !match;
             const language = match ? match[1] : "";
 
-            // Check if this is a chart code block - be flexible with detection
-            // Use the inline prop from react-markdown if available, otherwise infer from className
-            const isInlineCode = inline === true || (!className && inline !== false);
-            const isChartBlock = !isInlineCode && (
-                language === "chart" ||
-                className?.includes("language-chart") ||
-                className === "chart"
-            );
-
-            if (isChartBlock) {
+            if (!isInline && (language === "chart" || className?.includes("language-chart"))) {
                 try {
-                    // Handle children that might be React nodes or strings
-                    const raw = React.Children.toArray(children)
-                        .map(child => typeof child === 'string' ? child : '')
-                        .join('')
-                        .trim();
-
-                    if (!raw) {
-                        console.warn("Chart code block has no content");
-                        return null;
-                    }
-
+                    const raw = String(children || "").trim();
                     const spec = JSON.parse(raw) as AgentChartSpec;
-                    // Validate: either Vega-Lite (has spec.spec) or Recharts (has chart and data)
+                    // Support both Vega-Lite and Recharts
                     if (spec) {
                         const isVegaLite = spec.library === 'vega-lite' && 'spec' in spec;
                         const isRecharts = 'chart' in spec && 'data' in spec && Array.isArray((spec as { data: unknown }).data);
                         if (isVegaLite || isRecharts) {
                             return <AgentChart spec={spec} />;
-                        } else {
-                            console.warn("Chart spec validation failed:", { isVegaLite, isRecharts, spec });
                         }
                     }
                 } catch (e) {
@@ -128,14 +106,14 @@ export function MarkdownRenderer({
             }
 
             if (typeof ExistingCode === "function") {
-                return <ExistingCode node={node} inline={inline} className={className} {...props}>{children}</ExistingCode>;
+                return <ExistingCode node={node} className={className} {...props}>{children}</ExistingCode>;
             }
 
             return (
                 <code
                     {...props}
                     className={
-                        isInlineCode
+                        isInline
                             ? "px-1.5 py-0.5 rounded"
                             : "text-muted"
                     }
