@@ -180,17 +180,32 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChart
         return () => observer.disconnect();
     }, []);
 
+    // Track container width for responsive sizing
+    const [containerWidth, setContainerWidth] = useState(0);
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                setContainerWidth(entry.contentRect.width);
+            }
+        });
+        resizeObserver.observe(containerRef.current);
+        // Initial width
+        setContainerWidth(containerRef.current.clientWidth);
+        return () => resizeObserver.disconnect();
+    }, []);
+
     // Build the full Vega-Lite spec with defaults
     const buildFullSpec = useCallback((height: number, forFullscreen = false): VisualizationSpec => {
         const config = getDarkModeConfig(isDarkMode);
+        // Use measured container width, or fallback to a reasonable default
+        const width = forFullscreen ? undefined : (containerWidth > 0 ? containerWidth - 24 : 500);
 
         return {
             $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-            width: 'container' as unknown as number,
-            height: forFullscreen ? 'container' as unknown as number : height,
-            autosize: forFullscreen
-                ? { type: 'fit', contains: 'padding' }
-                : { type: 'fit', contains: 'padding' },
+            ...(width ? { width } : {}),
+            height: forFullscreen ? undefined : height,
+            autosize: { type: 'fit', contains: 'padding' },
             ...vegaSpec,
             // Override title if provided at top level
             ...(title && !vegaSpec.title ? { title } : {}),
@@ -200,7 +215,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChart
                 ...vegaSpec.config,
             },
         };
-    }, [vegaSpec, title, isDarkMode]);
+    }, [vegaSpec, title, isDarkMode, containerWidth]);
 
     const handleCopy = useCallback(async () => {
         const view = isFullscreen ? fullscreenViewRef.current : viewRef.current;
