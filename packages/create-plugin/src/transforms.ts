@@ -84,3 +84,10 @@ export function applyTransform(value: string, transform: string): string {
       throw new Error(`Unknown transform: ${transform}`);
   }
 }
+
+/**
+ * Concatenate multiple values with a separator
+ */
+export function concatValues(values: string[], separator: string = ''): string {
+  return values.join(separator);
+}
