@@ -45,8 +45,6 @@ interface DocumentUploadModalProps {
     hideFileSelection?: boolean;
     /** Show only the type selection, used for type change operations */
     showTypeSelectionOnly?: boolean;
-    /** Allow folder uploads */
-    allowFolders?: boolean;
 }
 
 /**
@@ -68,7 +66,6 @@ export function DocumentUploadModal({
     onUploadComplete,
     hideFileSelection = false,
     showTypeSelectionOnly = false,
-    allowFolders = false
 }: DocumentUploadModalProps) {
     const { client, typeRegistry } = useUserSession();
     const toast = useToast();
@@ -451,7 +448,7 @@ export function DocumentUploadModal({
                             // Mark the overall success as false if any file fails
                             result.success = false;
                         }
-
+                        
                         // Update progress every PROGRESS_UPDATE_INTERVAL files
                         filesProcessedInBatch++;
                         if (filesProcessedInBatch % PROGRESS_UPDATE_INTERVAL === 0 || filesProcessedInBatch === batch.length) {
@@ -616,7 +613,6 @@ export function DocumentUploadModal({
 
         // Step 1: File selection #todo: update styles
         if (files.length === 0 && !hideFileSelection) {
-
             return (
                 <VModalBody className="flex flex-col items-center justify-center p-8">
                     {/* Collection and folder information if available */}
@@ -627,7 +623,7 @@ export function DocumentUploadModal({
                         message="Drag and drop files here or click to select"
                         buttonLabel="Select Files"
                         className="w-full h-64"
-                        allowFolders={allowFolders}
+                        allowFolders={true}
                     />
                     {children}
                 </VModalBody>
