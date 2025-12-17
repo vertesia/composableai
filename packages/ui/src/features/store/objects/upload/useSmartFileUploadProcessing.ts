@@ -65,7 +65,7 @@ async function prepareFilesWithMetadata(files: File[], selectedFolder?: string |
         const metadataResults = await Promise.all(
             batch.map(async (file) => {
                 // Determine the location for this file
-                let location = selectedFolder || undefined;
+                let location = selectedFolder || "/";
 
                 // If file has relative path, use it to determine location
                 const hasRelativePath = !!(file as any).webkitRelativePath;
@@ -169,7 +169,7 @@ export function useSmartFileUploadProcessing() {
                         .map((file) => file.name);
                     const query: Record<string, any> = {
                         "content.name": { $in: namesInLocation },
-                        location: location || { $in: ["/", ...namesInLocation] }
+                        location: location || "/"
                     };
                     if (limitToCollectionId) {
                         const res = client.store.collections.searchMembers(limitToCollectionId, {
@@ -194,10 +194,10 @@ export function useSmartFileUploadProcessing() {
                 //update fileWithMetadata
                 for (const doc of results) {
                     const file = filesWithMetadata.find(
-                        //name must be the same, and location must match (default is "/" or the filename itself)
+                        //name must be the same, and location must match (default is "/")
                         (f) =>
                             f.name === doc.content.name &&
-                            (f.location ? f.location === doc.location : (doc.location === "/" || doc.location === f.name)),
+                            (f.location ? f.location === doc.location : doc.location === "/"),
                     );
                     if (file) {
                         file.existingId = doc.id;
