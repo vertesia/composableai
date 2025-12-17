@@ -1,7 +1,7 @@
 {
     "name": "@vertesia/memory-cli",
     "description": "Vertesia memory builder CLI",
-    "version": "0.50.0",
+    "version": "0.80.0",
     "type": "module",
     "bin": {
         "memo": "./bin/memo.js"
@@ -15,13 +15,13 @@
     "license": "Apache-2.0",
     "homepage": "https://docs.vertesiahq.com",
     "keywords": [
+        "vertesia",
+        "memory",
+        "cli",
         "llm",
-        "code",
-        "generation",
-        "interaction",
-        "composable",
-        "prompt",
-        "ai"
+        "ai",
+        "context",
+        "typescript"
     ],
     "scripts": {
         "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
@@ -39,7 +39,7 @@
         "vitest": "^3.1.1"
     },
     "repository": {
-        "type" : "git",
+        "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/memory-cli"
     }

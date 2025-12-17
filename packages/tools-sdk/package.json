@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/tools-sdk",
-    "version": "0.79.0",
+    "version": "0.80.0",
     "description": "Tools SDK - utilities for building remote tools",
     "type": "module",
     "types": "./lib/types/index.d.ts",
@@ -19,7 +19,11 @@
         "import": "./lib/esm/index.js",
         "require": "./lib/cjs/index.js"
     },
+    "bin": {
+        "tools-sdk-copy-assets": "./lib/esm/copy-assets.js"
+    },
     "devDependencies": {
+        "@types/node": "^24.10.1",
         "ts-dual-module": "^0.6.3",
         "typescript": "^5.0.2",
         "vitest": "^3.0.9"
@@ -28,7 +32,7 @@
         "outDir": "lib"
     },
     "peerDependencies": {
-        "hono": "^4.9.6"
+        "hono": "^4.10.0"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
@@ -37,8 +41,17 @@
         "jose": "^6.0.11"
     },
     "repository": {
-        "type" : "git",
+        "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/tools-sdk"
-    }
+    },
+    "keywords": [
+        "vertesia",
+        "tools",
+        "sdk",
+        "llm",
+        "ai",
+        "agents",
+        "typescript"
+    ]
 }

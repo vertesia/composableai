@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/converters",
-    "version": "0.79.0",
+    "version": "0.80.0",
     "description": "Image and content converters",
     "type": "module",
     "types": "./lib/types/index.d.ts",
@@ -30,10 +30,21 @@
         "tmp": "^0.2.4"
     },
     "repository": {
-        "type" : "git",
+        "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/converters"
     },
+    "keywords": [
+        "vertesia",
+        "converters",
+        "image",
+        "pdf",
+        "markdown",
+        "sharp",
+        "pandoc",
+        "mutool",
+        "typescript"
+    ],
     "ts_dual_module": {
         "outDir": "lib"
     }

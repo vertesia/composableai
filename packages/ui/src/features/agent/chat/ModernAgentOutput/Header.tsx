@@ -19,6 +19,7 @@ interface HeaderProps {
     onDownload?: () => void;
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
+    onExportPdf?: () => void;
 }
 
 export default function Header({
@@ -33,7 +34,8 @@ export default function Header({
     onTogglePlanPanel,
     onDownload,
     onCopyRunId,
-    resetWorkflow
+    resetWorkflow,
+    onExportPdf,
 }: HeaderProps) {
     return (
         <PayloadBuilderProvider>
@@ -84,6 +86,7 @@ export default function Header({
                         onDownload={onDownload}
                         onCopyRunId={onCopyRunId}
                         resetWorkflow={resetWorkflow}
+                        onExportPdf={onExportPdf}
                     />
                     {onClose && !isModal && (
                         <Button size="xs" variant="ghost" onClick={onClose}>
@@ -102,7 +105,8 @@ function MoreDropdown({
     onClose,
     onDownload,
     onCopyRunId,
-    resetWorkflow
+    resetWorkflow,
+    onExportPdf,
 }: {
     run: AsyncExecutionResult;
     isModal: boolean;
@@ -110,6 +114,7 @@ function MoreDropdown({
     onDownload?: () => void;
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
+    onExportPdf?: () => void;
 }) {
     const toast = useToast();
     const { client } = useUserSession();
@@ -191,6 +196,11 @@ function MoreDropdown({
                                         <DownloadCloudIcon className="size-3.5 mr-2 text-muted" /> Download
                                         Conversation
                                     </CommandItem>
+                                    {onExportPdf && (
+                                        <CommandItem className="text-xs" onSelect={onExportPdf}>
+                                            <DownloadCloudIcon className="size-3.5 mr-2 text-muted" /> Export as PDF
+                                        </CommandItem>
+                                    )}
                                     {onClose && isModal && (
                                         <CommandItem className="text-xs" onSelect={onClose}>
                                             <XIcon className="size-3.5 mr-2 text-muted" /> Close

@@ -1,9 +1,7 @@
 import { json } from "@codemirror/lang-json";
 import { Collection, CreateCollectionPayload, JSONSchemaObject } from "@vertesia/common";
 import { Button, ErrorBox, FormItem, Input, Panel, Styles, Textarea, useFetch, useToast } from "@vertesia/ui/core";
-import { UserInfo } from "@vertesia/ui/features";
-import { SharedPropsEditor } from "@vertesia/ui/features";
-import { SyncMemberHeadsToggle } from "@vertesia/ui/features";
+import { SharedPropsEditor, SyncMemberHeadsToggle, UserInfo } from "@vertesia/ui/features";
 import { useUserSession } from "@vertesia/ui/session";
 import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
 import { basicSetup } from "codemirror";
@@ -163,7 +161,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                 <FormItem label="Description">
                     <Textarea
                         value={metadata.description}
-                        onChange={(e) => setField("description", e)}
+                        onChange={(e) => setField("description", e.target.value)}
                     />
                 </FormItem>
                 {
@@ -188,7 +186,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                             <Textarea
                                 className={Styles.INPUT}
                                 value={metadata.query}
-                                onChange={(e) => setField("query", e)}
+                                onChange={(e) => setField("query", e.target.value)}
                             />
                         </FormItem>
                     )

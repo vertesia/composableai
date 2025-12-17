@@ -1,8 +1,8 @@
 
-import { Plus, Trash2 } from "lucide-react";
+import type { JSONSchemaObject } from "@vertesia/common";
 import { Button, FormItem } from "@vertesia/ui/core";
 import clsx from "clsx";
-import type { JSONSchemaObject } from "@vertesia/common";
+import { Plus, Trash2 } from "lucide-react";
 import { ComponentType, ReactNode, SyntheticEvent, useState } from "react";
 import { FormContext, FormContextProvider, InputComponentProps, useForm } from "./FormContext.js";
 import { ManagedListProperty, ManagedObject, ManagedObjectBase, ManagedProperty, Node } from "./ManagedObject.js";
@@ -94,10 +94,15 @@ export function ScalarField({ object, editor, inline = false }: ScalarFieldProps
         object.value = object.schema.isNumber ? parseFloat(value) : value
     }
 
+    if (object.isListItem) {
+        // List items don't need the FormItem wrapper (no label, description, etc.)
+        return <Component object={object} type={inputType} onChange={handleOnChange} disabled={disabled} />;
+    }
+
     return (
         <FormItem label={object.title} required={object.schema.isRequired} description={object.schema.description}
             className={clsx('flex', inline ? 'flex-row items-center' : 'flex-col')}>
-            {!object.isListItem && <Component object={object} type={inputType} onChange={handleOnChange} disabled={disabled} />}
+            <Component object={object} type={inputType} onChange={handleOnChange} disabled={disabled} />
         </FormItem>
     )
 }

@@ -166,8 +166,6 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
     }
 
     const params = vars.resolve() as ParamsT;
-    log.info(`Activity ${payload.activity.name} setup complete`);
-
     return new ActivityContext<ParamsT>(payload, client, params);
 }
 

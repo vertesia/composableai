@@ -11,7 +11,7 @@ function convertConfigMode(raw_config_mode: any): ConfigModes | undefined {
     return Object.values(ConfigModes).includes(configStr as ConfigModes) ? configStr as ConfigModes : undefined;
 }
 
-export function genTestData(program: Command, interactionId: string, options: Record<string, any>) {
+export async function genTestData(program: Command, interactionId: string, options: Record<string, any>) {
     const count = options.count ? parseInt(options.count) : 1;
     const message = options.message || undefined;
     const output = options.output || undefined;
@@ -52,7 +52,8 @@ export function genTestData(program: Command, interactionId: string, options: Re
         stop_sequence: options.stopSequence ? options.stopSequence.trim().split(/\s*,\s*/) : undefined,
     };
 
-    getClient(program).interactions.generateTestData(interactionId, {
+    const client = await getClient(program);
+    client.interactions.generateTestData(interactionId, {
         count,
         message,
         config: {

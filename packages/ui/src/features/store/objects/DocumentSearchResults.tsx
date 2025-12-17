@@ -27,12 +27,7 @@ const defaultLayout: ColumnLayout[] = [
 
 function getTableLayout(registry: TypeRegistry, type: string | undefined): ColumnLayout[] {
     const layout = type ? registry.getTypeLayout(type) : defaultLayout;
-    console.log('[DEBUG] getTableLayout called with type:', type);
-    console.log('[DEBUG] Layout from registry:', layout);
-    console.log('[DEBUG] Using defaultLayout?', layout === defaultLayout);
     const result = layout ?? defaultLayout;
-    console.log('[DEBUG] Final layout:', result);
-    console.log('[DEBUG] Has Status field?', result.some(col => col.field === 'status'));
     return result;
 }
 
@@ -101,8 +96,6 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         typeRegistry ? layout || getTableLayout(typeRegistry, search.query.type) : defaultLayout,
     );
 
-    console.log('[DEBUG] DocumentSearchResults - actualLayout:', actualLayout);
-    console.log('[DEBUG] DocumentSearchResults - actualLayout has Status?', actualLayout.some(col => col.field === 'status'));
     //TODO _setRefreshTrigger state not used
     const [refreshTrigger, _setRefreshTrigger] = useState(0);
     const [loaded, setLoaded] = useState(0);

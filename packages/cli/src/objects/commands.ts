@@ -3,11 +3,13 @@ import { NodeStreamSource } from "@vertesia/client/node";
 import { ContentObject, ContentObjectTypeItem, CreateContentObjectPayload } from "@vertesia/common";
 import { Command } from "commander";
 import enquirer from "enquirer";
-import { Dirent, Stats, createReadStream } from "fs";
-import { readdir, stat } from "fs/promises";
+import { Stats, createReadStream, createWriteStream, type Dirent } from "node:fs";
+import { readdir, stat } from "node:fs/promises";
 import { glob } from 'glob';
 import mime from "mime";
 import { basename, join, resolve } from "path";
+import { pipeline } from "stream/promises";
+import { Readable } from "stream";
 import { getClient } from "../client.js";
 const { prompt } = enquirer;
 
@@ -93,7 +95,7 @@ export async function createObject(program: Command, files: string[], options: R
             const files = await glob(file);
             return createObjectFromFiles(program, files, options);
         } else if (file.includes("://")) {
-            return createObjectFromExternalSource(getClient(program), file, options);
+            return createObjectFromExternalSource(await getClient(program), file, options);
         } else {
             file = resolve(file);
             let stats: Stats;
@@ -175,7 +177,7 @@ export async function createObjectFromFiles(program: Command, files: string[], o
 }
 
 export async function createObjectFromFile(program: Command, file: string, options: Record<string, any>) {
-    const client = getClient(program);
+    const client = await getClient(program);
     let res: ContentObject;
     if (file.startsWith("s3://") || file.startsWith("gs://")) {
         res = await createObjectFromExternalSource(client, file, options);
@@ -225,29 +227,34 @@ export async function updateObject(program: Command, objectId: string, type: str
         searchedType = undefined;
     }
     const payload: Partial<CreateContentObjectPayload> = { type: searchedType };
-    console.log(await getClient(program).objects.update(objectId, payload));
+    const client = await getClient(program);
+    console.log(await client.objects.update(objectId, payload));
 }
 
 export async function deleteObject(program: Command, objectId: string, _options: Record<string, any>) {
-    await getClient(program).objects.delete(objectId);
+    const client = await getClient(program);
+    await client.objects.delete(objectId);
 }
 
 export async function getObject(program: Command, objectId: string, _options: Record<string, any>) {
-    const object = await getClient(program).objects.retrieve(objectId);
+    const client = await getClient(program);
+    const object = await client.objects.retrieve(objectId);
     console.log(object);
 }
 
 //@ts-ignore
 export async function listObjects(program: Command, folderPath: string | undefined, _options: Record<string, any>) {
-    const objects = await getClient(program).objects.list();
+    const client = await getClient(program);
+    const objects = await client.objects.list();
     console.log(objects.map(o => `${o.id}\t ${o.name}`).join('\n'));
 }
 
 export async function listTypes(program: Command) {
-    var types: any[] = []
+    const types: any[] = []
     types.push({ name: AUTOMATIC_TYPE_SELECTION_DESC, value: AUTOMATIC_TYPE_SELECTION })
 
-    const platformTypes: ContentObjectTypeItem[] = await getClient(program).types.list();
+    const client = await getClient(program);
+    const platformTypes: ContentObjectTypeItem[] = await client.types.list();
     for (const type of platformTypes) {
         types.push({ name: type.name, value: type.id });
     }
@@ -257,4 +264,33 @@ export async function listTypes(program: Command) {
 export function findTypeValue(types: any[], name: string) {
     const type = types.find(type => type.name === name || type.id === name);
     return type ? type.value : TYPE_SELECTION_ERROR;
+}
+
+export async function downloadObjectContent(program: Command, objectId: string, options: Record<string, any>) {
+    const client = await getClient(program);
+
+    // Get object to find content source and name
+    const object = await client.objects.retrieve(objectId);
+    const contentSource = await client.objects.getContentSource(objectId);
+
+    if (!contentSource?.source) {
+        console.error("Object has no downloadable content");
+        process.exit(1);
+    }
+
+    // Get download URL and stream content
+    const { url } = await client.files.getDownloadUrl(contentSource.source);
+    const response = await fetch(url);
+
+    if (!response.ok || !response.body) {
+        console.error(`Failed to download: ${response.statusText}`);
+        process.exit(1);
+    }
+
+    const outputPath = options.output || object.name;
+    const nodeStream = Readable.fromWeb(response.body as any);
+    const writeStream = createWriteStream(outputPath);
+    await pipeline(nodeStream, writeStream);
+
+    console.log(`Downloaded to: ${outputPath}`);
 }

@@ -1,6 +1,7 @@
 {
     "name": "@vertesia/packages",
-    "version": "0.79.0",
+    "version": "0.80.0",
+    "license": "Apache-2.0",
     "private": true,
     "scripts": {
         "bump": "pnpm exec wst bump minor -x llumiverse",
@@ -20,18 +21,23 @@
     "packageManager": "pnpm@10.20.0",
     "pnpm": {
         "overrides": {
-            "react": "19.1.0",
-            "react-dom": "19.1.0",
-            "@types/react": "19.1.6",
-            "@types/react-dom": "19.1.5",
+            "react": "19.2.3",
+            "react-dom": "19.2.3",
+            "@types/react": "19.2.3",
+            "@types/react-dom": "19.2.3",
             "brace-expansion@>=1.0.0 <2.0.0": "^1.1.12",
             "brace-expansion@>=2.0.0 <3.0.0": "^2.0.2",
             "cross-spawn@<6.0.6": "^6.0.6",
             "esbuild@<0.25.0": "^0.25.0",
+            "glob@>=10.2.0 <10.5.0": "^10.5.0",
+            "js-yaml@>=4.0.0 <4.1.1": "^4.1.1",
             "koa@>=2.0.0 <2.16.2": "^2.16.2",
             "undici@>=6.0.0 < 6.21.2": "^6.21.2",
             "vite": "$vite",
-            "is-generator-function": "1.0.10"
+            "is-generator-function": "1.0.10",
+            "mdast-util-to-hast@>=13.0.0 <13.2.1": "^13.2.1",
+            "jws@>=3.0.0 <3.2.3": "^3.2.3",
+            "jws@>=4.0.0 <4.0.1": "^4.0.1"
         }
     }
 }

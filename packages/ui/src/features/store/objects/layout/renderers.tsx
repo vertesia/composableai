@@ -131,6 +131,31 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
             );
         };
     },
+    // objectLink - same implementation as objectId but defaults to slice=-7
+    objectLink(_params?: URLSearchParams, onClick?: (id: string) => void) {
+        const transforms: ((value: string) => string)[] = [];
+        const hasSlice = true;
+        transforms.push((value) => value.slice(-7));
+
+        return (value: any, index: number) => {
+            const displayValue = transforms.reduce((v, t) => t(v), value.id);
+            return (
+                <td key={index} className="flex justify-between items-center gap-2 max-w-48">
+                    {hasSlice ? "~" : ""}{displayValue}
+                    <Button
+                        variant="ghost"
+                        alt="Preview Object"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClick?.(value.id);
+                        }}
+                    >
+                        <Eye className="size-4" />
+                    </Button>
+                </td>
+            );
+        };
+    },
     typeLink(_params?: URLSearchParams, _onClick?: (id: string) => void) {
         return (value: any, index: number) => {
             return <td key={index}>{value?.name || "n/a"}</td>;

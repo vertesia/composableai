@@ -13,6 +13,7 @@ export enum ContentObjectApiHeaders {
 export enum ContentObjectStatus {
     created = "created",
     processing = "processing", // the was created and still processing
+    ready = "ready", // the object is rendered and ready to be used
     completed = "completed",
     failed = "failed",
     archived = "archived",
@@ -75,6 +76,27 @@ export interface GenerationRunMetadata {
     target?: string;
 }
 
+// Base rendition interface for document and audio
+export interface Rendition {
+    name: string;
+    content: ContentSource;
+}
+
+// Rendition with dimensions for video and image
+export interface RenditionWithDimensions extends Rendition {
+    dimensions: Dimensions;
+}
+
+/**
+ * @deprecated Use RenditionWithDimensions instead
+ */
+export type VideoRendition = RenditionWithDimensions;
+
+export const POSTER_RENDITION_NAME = "Poster";
+export const AUDIO_RENDITION_NAME = "Audio";
+export const WEB_VIDEO_RENDITION_NAME = "Web";
+export const PDF_RENDITION_NAME = "PDF";
+
 export interface ContentMetadata {
     // Common fields for all media types
     type?: ContentNature;
@@ -83,9 +105,10 @@ export interface ContentMetadata {
     location?: Location;
     generation_runs: GenerationRunMetadata[];
     etag?: string;
+    renditions?: Rendition[];
 }
 
-// Example of type-specific metadata interfaces (optional, for better type safety)
+// Type-specific metadata interfaces
 export interface TemporalMediaMetadata extends ContentMetadata {
     duration?: number; // in seconds
     transcript?: Transcript;
@@ -94,26 +117,17 @@ export interface TemporalMediaMetadata extends ContentMetadata {
 export interface ImageMetadata extends ContentMetadata {
     type: ContentNature.Image;
     dimensions?: Dimensions;
+    renditions?: RenditionWithDimensions[];
 }
 
 export interface AudioMetadata extends TemporalMediaMetadata {
     type: ContentNature.Audio;
 }
 
-export interface VideoRendition {
-    name: string;
-    dimensions: Dimensions;
-    content: ContentSource
-}
-
-export const POSTER_RENDITION_NAME = "Poster";
-export const AUDIO_RENDITION_NAME = "Audio";
-export const WEB_VIDEO_RENDITION_NAME = "Web";
-
 export interface VideoMetadata extends TemporalMediaMetadata {
     type: ContentNature.Video;
     dimensions?: Dimensions;
-    renditions?: VideoRendition[];
+    renditions?: RenditionWithDimensions[];
     hasAudio?: boolean;
 }
 
@@ -398,6 +412,7 @@ export interface GetRenditionParams {
     max_hw?: number;
     generate_if_missing?: boolean;
     sign_url?: boolean;
+    block_on_generation?: boolean;
 }
 
 export interface GetRenditionResponse {
@@ -426,6 +441,13 @@ export interface GetFileUrlResponse {
     id: string;
     mime_type: string;
     path: string;
+}
+
+export interface SetFileMetadataPayload {
+    /** The file path (relative to bucket) or full URI */
+    file: string;
+    /** Custom metadata key-value pairs to set on the file */
+    metadata: Record<string, string>;
 }
 
 export enum ContentObjectProcessingPriority {

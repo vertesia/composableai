@@ -181,9 +181,7 @@ export function useSmartFileUploadProcessing() {
                         queries.push(res);
                     } else {
                         const res = client.store.objects.find({
-                            query: {
-                                match: query,
-                            },
+                            query: query,
                             select: "id content.name location" // Only fetch fields needed for comparison
                         });
                         queries.push(res);

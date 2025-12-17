@@ -38,21 +38,16 @@ export enum BillingMethod {
     invoice = 'invoice'
 }
 
-
-interface AccountBilling {
+export interface AccountBilling {
     method: BillingMethod;
     stripe_customer_id?: string;
 }
+
 export interface Account {
     id: string;
     name: string;
 
     email_domains: string[];
-    members: {
-        role: ProjectRoles;
-        user: UserRef;
-        disabled: boolean;
-    }[];
 
     onboarding: {
         completed: boolean,
