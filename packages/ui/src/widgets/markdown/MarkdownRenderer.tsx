@@ -97,13 +97,18 @@ export function MarkdownRenderer({
                     if (jsonStart !== -1 && jsonEnd > jsonStart) {
                         raw = raw.slice(jsonStart, jsonEnd + 1);
                     }
-                    const spec = JSON.parse(raw) as AgentChartSpec;
+                    const spec = JSON.parse(raw) as Record<string, unknown>;
                     // Support both Vega-Lite and Recharts
                     if (spec) {
                         const isVegaLite = spec.library === 'vega-lite' && 'spec' in spec;
-                        const isRecharts = 'chart' in spec && 'data' in spec && Array.isArray((spec as { data: unknown }).data);
+                        // Recharts: check for 'chart' property OR library === 'recharts' with data
+                        const isRecharts = (
+                            ('chart' in spec || 'type' in spec || spec.library === 'recharts') &&
+                            'data' in spec &&
+                            Array.isArray(spec.data)
+                        );
                         if (isVegaLite || isRecharts) {
-                            return <AgentChart spec={spec} />;
+                            return <AgentChart spec={spec as AgentChartSpec} artifactRunId={artifactRunId} />;
                         }
                     }
                 } catch (e) {

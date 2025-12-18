@@ -1,13 +1,19 @@
-import { memo, useState, useRef, useCallback, useEffect } from 'react';
-import { Download, Copy, Check, Maximize2, Minimize2, X } from 'lucide-react';
+import { memo, useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { Download, Copy, Check, Maximize2, Minimize2, X, Loader2 } from 'lucide-react';
 import { VegaLite, type VisualizationSpec } from 'react-vega';
 import type { View } from 'vega';
 import type { VegaLiteChartSpec } from './AgentChart';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { cn } from '../../../core/components/libs/utils';
+import { useUserSession } from '../../../session';
+import { useArtifactUrlCache, getArtifactCacheKey, getFileCacheKey } from './useArtifactUrlCache';
 
 type VegaLiteChartProps = {
     spec: VegaLiteChartSpec;
+    /**
+     * Optional workflow run id used to resolve artifact: URLs in Vega-Lite data references.
+     */
+    artifactRunId?: string;
 };
 
 // Constants
@@ -30,7 +36,7 @@ function VegaErrorDisplay({ error, chartTitle }: { error: string; chartTitle?: s
     );
 }
 
-// Fullscreen dialog component
+// Fullscreen dialog component with smooth animations
 function FullscreenDialog({
     isOpen,
     onClose,
@@ -48,37 +54,38 @@ function FullscreenDialog({
         <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogPrimitive.Portal>
                 <DialogPrimitive.Overlay
-                    className="fixed inset-0 z-50 bg-black/90 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+                    className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
                 />
                 <DialogPrimitive.Content
-                    className="fixed inset-4 z-50 flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+                    className="fixed inset-2 sm:inset-4 z-50 flex flex-col bg-white dark:bg-gray-900 rounded-xl shadow-2xl transition-all duration-300 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2"
                     onEscapeKeyDown={onClose}
                 >
-                    {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+                    {/* Close button - top right corner */}
+                    <DialogPrimitive.Close asChild>
+                        <button
+                            onClick={onClose}
+                            className="absolute top-3 right-3 z-10 p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 shadow-sm"
+                            aria-label="Close fullscreen"
+                        >
+                            <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                        </button>
+                    </DialogPrimitive.Close>
+                    {/* Chart content first - takes most space */}
+                    <div className="flex-1 overflow-auto p-4 sm:p-6 animate-in fade-in-0 duration-500 delay-150">
+                        {children}
+                    </div>
+                    {/* Title bar at bottom */}
+                    <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-xl">
                         <div className="flex flex-col">
-                            <DialogPrimitive.Title className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                            <DialogPrimitive.Title className="text-base font-semibold text-gray-900 dark:text-gray-100">
                                 {title || 'Dashboard'}
                             </DialogPrimitive.Title>
                             {description && (
-                                <DialogPrimitive.Description className="text-sm text-gray-500 dark:text-gray-400">
+                                <DialogPrimitive.Description className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                                     {description}
                                 </DialogPrimitive.Description>
                             )}
                         </div>
-                        <DialogPrimitive.Close asChild>
-                            <button
-                                onClick={onClose}
-                                className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                aria-label="Close fullscreen"
-                            >
-                                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                            </button>
-                        </DialogPrimitive.Close>
-                    </div>
-                    {/* Content */}
-                    <div className="flex-1 overflow-auto p-4">
-                        {children}
                     </div>
                 </DialogPrimitive.Content>
             </DialogPrimitive.Portal>
@@ -110,59 +117,359 @@ function calculateAutoHeight(spec: Record<string, any>, mode: 'chart' | 'dashboa
     return Math.max(DEFAULT_DASHBOARD_HEIGHT, rowCount * 280 + 40);
 }
 
-// Get dark mode config for Vega
+// Modern color palette - vibrant but professional
+const CHART_COLORS = {
+    // Primary palette - vibrant gradients
+    categorical: [
+        '#6366f1', // indigo
+        '#8b5cf6', // violet
+        '#ec4899', // pink
+        '#f43f5e', // rose
+        '#f97316', // orange
+        '#eab308', // yellow
+        '#22c55e', // green
+        '#14b8a6', // teal
+        '#06b6d4', // cyan
+        '#3b82f6', // blue
+    ],
+    // Sequential schemes
+    blues: ['#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'],
+    purples: ['#f3e8ff', '#c4b5fd', '#8b5cf6', '#6d28d9', '#4c1d95'],
+    greens: ['#dcfce7', '#86efac', '#22c55e', '#15803d', '#14532d'],
+    // Diverging
+    diverging: ['#ef4444', '#fca5a5', '#fef3c7', '#86efac', '#22c55e'],
+};
+
+// Helper types for artifact resolution
+type ArtifactReference = {
+    path: string[];  // Path to the data object in the spec
+    artifactPath: string;  // The artifact path (without "artifact:" prefix)
+};
+
+/**
+ * Preprocess a Vega-Lite spec to fix duplicate signal names that occur
+ * when params with selections are used in vconcat/hconcat layouts.
+ *
+ * The issue: Vega-Lite creates internal signals like `paramName_tuple` for
+ * point selections. When a param is defined at the root level of a vconcat/hconcat
+ * spec, Vega-Lite's compiler creates duplicate signals when propagating the
+ * selection to sub-views.
+ *
+ * Solution: Move selection params from the root level to the first sub-view
+ * (where selections typically originate). Cross-view references are preserved
+ * so that clicking in one view filters other views.
+ */
+function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, any> {
+    // Deep clone the spec to avoid mutations
+    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
+
+    // Check if this is a concatenated spec with root-level selection params
+    const concatKeys = ['vconcat', 'hconcat', 'concat'];
+    const hasConcatViews = concatKeys.some(key => Array.isArray(result[key]));
+
+    if (!hasConcatViews) {
+        // Not a concatenated spec, no special handling needed
+        return result;
+    }
+
+    // Check for selection params at the root level
+    const rootSelectionParams: Array<{ name: string; param: Record<string, any> }> = [];
+    if (Array.isArray(result.params)) {
+        for (const param of result.params) {
+            if (param && typeof param === 'object' && param.name && param.select) {
+                rootSelectionParams.push({ name: param.name, param });
+            }
+        }
+    }
+
+    if (rootSelectionParams.length === 0) {
+        // No selection params at root level, no special handling needed
+        return result;
+    }
+
+    // Strategy: Move the selection param to the first sub-view that has an
+    // encoding field matching the selection. Keep cross-view references intact
+    // so filtering works across views.
+
+    for (const { name: paramName, param } of rootSelectionParams) {
+        const selectFields = param.select?.fields || [];
+        const hasLegendBinding = param.select?.bind === 'legend';
+
+        // Find the concat array
+        let concatArray: any[] | null = null;
+        for (const key of concatKeys) {
+            if (Array.isArray(result[key])) {
+                concatArray = result[key];
+                break;
+            }
+        }
+
+        if (!concatArray || concatArray.length === 0) continue;
+
+        // Find the first view that has the selection field in its encoding
+        // This is typically where users click to make selections
+        let targetViewIndex = 0;
+        for (let i = 0; i < concatArray.length; i++) {
+            const view = concatArray[i];
+            if (viewHasField(view, selectFields) || (hasLegendBinding && viewHasColorEncoding(view, selectFields))) {
+                targetViewIndex = i;
+                break;
+            }
+        }
+
+        // Move the param to the target view
+        const targetView = concatArray[targetViewIndex];
+        if (!targetView.params) {
+            targetView.params = [];
+        }
+        targetView.params.push(param);
+
+        // Remove the param from root level
+        result.params = result.params.filter((p: any) => p.name !== paramName);
+
+        // Cross-view references are kept intact - Vega-Lite handles signal
+        // propagation from the view where the selection is defined to other views
+    }
+
+    // Clean up empty params array at root
+    if (Array.isArray(result.params) && result.params.length === 0) {
+        delete result.params;
+    }
+
+    return result;
+}
+
+/**
+ * Check if a view has encoding using any of the specified fields.
+ */
+function viewHasField(view: Record<string, any>, fields: string[]): boolean {
+    if (!view || !view.encoding) return false;
+
+    for (const field of fields) {
+        for (const channel of Object.values(view.encoding)) {
+            if (channel && typeof channel === 'object' && (channel as any).field === field) {
+                return true;
+            }
+        }
+    }
+
+    // Also check nested layers
+    if (Array.isArray(view.layer)) {
+        for (const layer of view.layer) {
+            if (viewHasField(layer, fields)) return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Check if a view has color encoding using any of the specified fields.
+ */
+function viewHasColorEncoding(view: Record<string, any>, fields: string[]): boolean {
+    if (!view) return false;
+
+    const checkEncoding = (encoding: any): boolean => {
+        if (!encoding) return false;
+        const colorField = encoding.color?.field;
+        return colorField && fields.includes(colorField);
+    };
+
+    if (checkEncoding(view.encoding)) return true;
+
+    // Check nested layers
+    if (Array.isArray(view.layer)) {
+        for (const layer of view.layer) {
+            if (checkEncoding(layer.encoding)) return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Walk the Vega-Lite spec and find all artifact: URL references in data.url fields.
+ * Returns an array of references with their paths in the spec tree.
+ */
+function findArtifactReferences(spec: Record<string, any>, currentPath: string[] = []): ArtifactReference[] {
+    const references: ArtifactReference[] = [];
+
+    if (!spec || typeof spec !== 'object') {
+        return references;
+    }
+
+    // Check if this object has a data.url that's an artifact reference
+    if (spec.data && typeof spec.data === 'object') {
+        const url = spec.data.url;
+        if (typeof url === 'string' && url.startsWith('artifact:')) {
+            references.push({
+                path: [...currentPath, 'data'],
+                artifactPath: url.replace(/^artifact:/, '').trim(),
+            });
+        }
+    }
+
+    // Recursively check nested objects (layer, vconcat, hconcat, concat, spec, etc.)
+    const nestedKeys = ['layer', 'vconcat', 'hconcat', 'concat', 'spec', 'repeat', 'facet'];
+    for (const key of nestedKeys) {
+        if (key in spec) {
+            const value = spec[key];
+            if (Array.isArray(value)) {
+                value.forEach((item, index) => {
+                    references.push(...findArtifactReferences(item, [...currentPath, key, String(index)]));
+                });
+            } else if (typeof value === 'object' && value !== null) {
+                references.push(...findArtifactReferences(value, [...currentPath, key]));
+            }
+        }
+    }
+
+    return references;
+}
+
+/**
+ * Deep clone and update the spec by replacing artifact URLs with resolved data values.
+ */
+function replaceArtifactData(
+    spec: Record<string, any>,
+    resolvedData: Map<string, any[]>
+): Record<string, any> {
+    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
+
+    for (const [pathKey, data] of resolvedData) {
+        const path = pathKey.split('.');
+        let current = result;
+
+        // Navigate to the parent of the data object
+        for (let i = 0; i < path.length - 1; i++) {
+            if (current[path[i]] === undefined) break;
+            current = current[path[i]];
+        }
+
+        // Replace data.url with data.values
+        const lastKey = path[path.length - 1];
+        if (current[lastKey] && typeof current[lastKey] === 'object') {
+            delete current[lastKey].url;
+            current[lastKey].values = data;
+        }
+    }
+
+    return result;
+}
+
+// Get dark mode config for Vega with enhanced styling
 function getDarkModeConfig(isDark: boolean): Record<string, any> {
     const baseConfig = {
         background: 'transparent',
         view: { stroke: 'transparent' },
-        // Enable tooltips by default for all mark types
+        // Modern color range
+        range: {
+            category: CHART_COLORS.categorical,
+            diverging: CHART_COLORS.diverging,
+            heatmap: CHART_COLORS.purples,
+            ramp: CHART_COLORS.blues,
+        },
+        // Enable tooltips by default for all mark types with enhanced styling
         mark: { tooltip: true },
-        bar: { tooltip: true },
-        line: { tooltip: true },
-        point: { tooltip: true },
-        area: { tooltip: true },
-        rect: { tooltip: true },
-        arc: { tooltip: true },
-        circle: { tooltip: true },
+        bar: {
+            tooltip: true,
+            cornerRadiusTopLeft: 4,
+            cornerRadiusTopRight: 4,
+        },
+        line: {
+            tooltip: true,
+            strokeWidth: 2.5,
+            strokeCap: 'round',
+        },
+        point: {
+            tooltip: true,
+            size: 60,
+            filled: true,
+        },
+        area: {
+            tooltip: true,
+            fillOpacity: 0.7,
+            line: true,
+        },
+        rect: {
+            tooltip: true,
+            cornerRadius: 2,
+        },
+        arc: {
+            tooltip: true,
+            cornerRadius: 4,
+        },
+        circle: {
+            tooltip: true,
+            size: 80,
+        },
     };
 
     if (isDark) {
         return {
             ...baseConfig,
             axis: {
-                labelColor: '#9ca3af',
-                titleColor: '#d1d5db',
-                gridColor: '#374151',
-                domainColor: '#4b5563',
-                tickColor: '#4b5563',
+                labelColor: '#a1a1aa',
+                titleColor: '#e4e4e7',
+                gridColor: '#3f3f46',
+                domainColor: '#52525b',
+                tickColor: '#52525b',
+                labelFont: 'Inter, system-ui, sans-serif',
+                titleFont: 'Inter, system-ui, sans-serif',
+                labelFontSize: 11,
+                titleFontSize: 12,
+                titleFontWeight: 500,
             },
             legend: {
-                labelColor: '#9ca3af',
-                titleColor: '#d1d5db',
+                labelColor: '#a1a1aa',
+                titleColor: '#e4e4e7',
+                labelFont: 'Inter, system-ui, sans-serif',
+                titleFont: 'Inter, system-ui, sans-serif',
+                labelFontSize: 11,
+                titleFontSize: 12,
+                symbolSize: 100,
             },
             title: {
-                color: '#f3f4f6',
+                color: '#fafafa',
+                font: 'Inter, system-ui, sans-serif',
+                fontSize: 14,
+                fontWeight: 600,
             },
         };
     }
     return {
         ...baseConfig,
         axis: {
-            labelColor: '#6b7280',
-            titleColor: '#374151',
-            gridColor: '#e5e7eb',
+            labelColor: '#71717a',
+            titleColor: '#3f3f46',
+            gridColor: '#e4e4e7',
+            domainColor: '#d4d4d8',
+            tickColor: '#d4d4d8',
+            labelFont: 'Inter, system-ui, sans-serif',
+            titleFont: 'Inter, system-ui, sans-serif',
+            labelFontSize: 11,
+            titleFontSize: 12,
+            titleFontWeight: 500,
         },
         legend: {
-            labelColor: '#6b7280',
-            titleColor: '#374151',
+            labelColor: '#71717a',
+            titleColor: '#3f3f46',
+            labelFont: 'Inter, system-ui, sans-serif',
+            titleFont: 'Inter, system-ui, sans-serif',
+            labelFontSize: 11,
+            titleFontSize: 12,
+            symbolSize: 100,
         },
         title: {
-            color: '#111827',
+            color: '#18181b',
+            font: 'Inter, system-ui, sans-serif',
+            fontSize: 14,
+            fontWeight: 600,
         },
     };
 }
 
-export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChartProps) {
+export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }: VegaLiteChartProps) {
     const { title, description, spec: vegaSpec, options } = spec;
     const [isExporting, setIsExporting] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
@@ -172,6 +479,13 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChart
     const fullscreenViewRef = useRef<View | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Artifact resolution state
+    const { client } = useUserSession();
+    const urlCache = useArtifactUrlCache();
+    const [resolvedSpec, setResolvedSpec] = useState<Record<string, any> | null>(null);
+    const [isLoadingArtifacts, setIsLoadingArtifacts] = useState(false);
+    const [artifactError, setArtifactError] = useState<string | null>(null);
+
     // Determine mode and settings
     const mode = options?.mode || 'chart';
     const isDashboard = mode === 'dashboard';
@@ -179,6 +493,87 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChart
 
     // Calculate height
     const baseHeight = options?.height || calculateAutoHeight(vegaSpec, mode);
+
+    // Resolve artifact URLs in the spec
+    useEffect(() => {
+        const references = findArtifactReferences(vegaSpec);
+
+        // If no artifact references, use original spec
+        if (references.length === 0) {
+            setResolvedSpec(vegaSpec);
+            setIsLoadingArtifacts(false);
+            setArtifactError(null);
+            return;
+        }
+
+        let cancelled = false;
+        setIsLoadingArtifacts(true);
+        setArtifactError(null);
+
+        const resolveArtifacts = async () => {
+            const resolvedData = new Map<string, any[]>();
+
+            for (const ref of references) {
+                try {
+                    const pathKey = ref.path.join('.');
+                    let url: string;
+
+                    // Determine if this is a shorthand path or full path
+                    if (artifactRunId && !ref.artifactPath.startsWith('agents/')) {
+                        // Shorthand path - use artifact API
+                        const cacheKey = getArtifactCacheKey(artifactRunId, ref.artifactPath, 'inline');
+                        if (urlCache) {
+                            url = await urlCache.getOrFetch(cacheKey, async () => {
+                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
+                                return result.url;
+                            });
+                        } else {
+                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
+                            url = result.url;
+                        }
+                    } else {
+                        // Full path - use files API
+                        const cacheKey = getFileCacheKey(ref.artifactPath);
+                        if (urlCache) {
+                            url = await urlCache.getOrFetch(cacheKey, async () => {
+                                const result = await client.files.getDownloadUrl(ref.artifactPath);
+                                return result.url;
+                            });
+                        } else {
+                            const result = await client.files.getDownloadUrl(ref.artifactPath);
+                            url = result.url;
+                        }
+                    }
+
+                    // Fetch the JSON data from the resolved URL
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch artifact data: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    resolvedData.set(pathKey, Array.isArray(data) ? data : [data]);
+                } catch (err) {
+                    console.error(`Failed to resolve artifact: ${ref.artifactPath}`, err);
+                    if (!cancelled) {
+                        setArtifactError(`Failed to load data from artifact: ${ref.artifactPath}`);
+                    }
+                    return;
+                }
+            }
+
+            if (!cancelled) {
+                const newSpec = replaceArtifactData(vegaSpec, resolvedData);
+                setResolvedSpec(newSpec);
+                setIsLoadingArtifacts(false);
+            }
+        };
+
+        resolveArtifacts();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [vegaSpec, artifactRunId, client, urlCache]);
 
     // Detect dark mode
     const [isDarkMode, setIsDarkMode] = useState(false);
@@ -207,8 +602,18 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChart
         return () => resizeObserver.disconnect();
     }, []);
 
+    // Memoize the processed spec to fix Vega-Lite selection param issues
+    // This handles the duplicate signal problem in concatenated views
+    const processedSpec = useMemo(() => {
+        const specToUse = resolvedSpec || vegaSpec;
+        if (!specToUse) return null;
+        return fixVegaLiteSelectionParams(specToUse);
+    }, [resolvedSpec, vegaSpec]);
+
     // Build the full Vega-Lite spec with defaults
-    const buildFullSpec = useCallback((height: number, forFullscreen = false): VisualizationSpec => {
+    const buildFullSpec = useCallback((height: number, forFullscreen = false): VisualizationSpec | null => {
+        if (!processedSpec) return null;
+
         const config = getDarkModeConfig(isDarkMode);
         // Use measured container width, or fallback to a reasonable default
         const width = forFullscreen ? undefined : (containerWidth > 0 ? containerWidth - 24 : 500);
@@ -218,16 +623,16 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChart
             ...(width ? { width } : {}),
             height: forFullscreen ? undefined : height,
             autosize: { type: 'fit', contains: 'padding' },
-            ...vegaSpec,
+            ...processedSpec,
             // Override title if provided at top level
-            ...(title && !vegaSpec.title ? { title } : {}),
+            ...(title && !processedSpec.title ? { title } : {}),
             // Apply theme config
             config: {
                 ...config,
-                ...vegaSpec.config,
+                ...processedSpec.config,
             },
         };
-    }, [vegaSpec, title, isDarkMode, containerWidth]);
+    }, [processedSpec, title, isDarkMode, containerWidth]);
 
     const handleCopy = useCallback(async () => {
         const view = isFullscreen ? fullscreenViewRef.current : viewRef.current;
@@ -324,6 +729,48 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChart
         </div>
     );
 
+    // Show loading state when resolving artifacts
+    if (isLoadingArtifacts) {
+        return (
+            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                <div className="flex flex-col gap-2 p-3">
+                    <div className="flex items-center justify-between">
+                        <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                            {title || 'Chart'}
+                        </span>
+                    </div>
+                    <div
+                        className="flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded"
+                        style={{ width: '100%', height: baseHeight }}
+                    >
+                        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span className="text-sm">Loading data from artifacts...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Show artifact error state
+    if (artifactError) {
+        return (
+            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                <div className="flex flex-col gap-2 p-3">
+                    <div className="flex items-center justify-between">
+                        <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                            {title || 'Chart'}
+                        </span>
+                    </div>
+                    <div style={{ width: '100%', height: baseHeight }}>
+                        <VegaErrorDisplay error={artifactError} chartTitle={title} />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (error) {
         return (
             <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
@@ -339,6 +786,15 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChart
                 </div>
             </div>
         );
+    }
+
+    // Build spec for rendering
+    const chartSpec = buildFullSpec(baseHeight);
+    const fullscreenSpec = buildFullSpec(0, true);
+
+    // Handle case when spec isn't ready yet
+    if (!chartSpec) {
+        return null;
     }
 
     return (
@@ -373,7 +829,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChart
                         style={{ width: '100%', height: baseHeight, minWidth: 0 }}
                     >
                         <VegaLite
-                            spec={buildFullSpec(baseHeight)}
+                            spec={chartSpec}
                             onNewView={handleNewView}
                             onError={handleError}
                             renderer={options?.renderer || 'canvas'}
@@ -391,13 +847,15 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChart
                 description={description}
             >
                 <div className="w-full h-full min-h-[calc(100vh-200px)]">
-                    <VegaLite
-                        spec={buildFullSpec(0, true)}
-                        onNewView={handleFullscreenNewView}
-                        onError={handleError}
-                        renderer={options?.renderer || 'canvas'}
-                        actions={false}
-                    />
+                    {fullscreenSpec && (
+                        <VegaLite
+                            spec={fullscreenSpec}
+                            onNewView={handleFullscreenNewView}
+                            onError={handleError}
+                            renderer={options?.renderer || 'canvas'}
+                            actions={false}
+                        />
+                    )}
                 </div>
                 {/* Floating toolbar in fullscreen */}
                 <div className="absolute bottom-6 right-6">
@@ -408,5 +866,6 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec }: VegaLiteChart
     );
 }, (prevProps, nextProps) => {
     // Deep compare the spec to prevent re-renders when data hasn't changed
-    return JSON.stringify(prevProps.spec) === JSON.stringify(nextProps.spec);
+    return JSON.stringify(prevProps.spec) === JSON.stringify(nextProps.spec) &&
+        prevProps.artifactRunId === nextProps.artifactRunId;
 });

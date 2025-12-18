@@ -160,11 +160,16 @@ export function isVegaLiteSpec(spec: AgentChartSpec): spec is VegaLiteChartSpec 
 
 // Type guard to check if spec is Recharts (default)
 export function isRechartsSpec(spec: AgentChartSpec): spec is RechartsChartSpec {
-    return spec.library === 'recharts' || spec.library === undefined;
+    return (spec.library === 'recharts' || spec.library === undefined) && !('spec' in spec);
 }
 
 type AgentChartProps = {
     spec: AgentChartSpec;
+    /**
+     * Optional workflow run id used to resolve artifact: URLs in Vega-Lite data references.
+     * When provided, data URLs like "artifact:out/data.json" will be resolved to the actual data.
+     */
+    artifactRunId?: string;
 };
 
 function formatNumber(n: number): string {
@@ -177,21 +182,63 @@ function formatNumber(n: number): string {
 }
 
 // Router component that delegates to the appropriate chart renderer
-export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
+export const AgentChart = memo(function AgentChart({ spec, artifactRunId }: AgentChartProps) {
     // Route to VegaLiteChart for Vega-Lite specs
     if (isVegaLiteSpec(spec)) {
-        return <VegaLiteChart spec={spec} />;
+        return <VegaLiteChart spec={spec} artifactRunId={artifactRunId} />;
     }
 
     // Route to RechartsChart for Recharts specs
     return <RechartsChart spec={spec as RechartsChartSpec} />;
 }, (prevProps, nextProps) => {
     // Deep compare the spec to prevent re-renders when data hasn't changed
-    return JSON.stringify(prevProps.spec) === JSON.stringify(nextProps.spec);
+    return JSON.stringify(prevProps.spec) === JSON.stringify(nextProps.spec) &&
+        prevProps.artifactRunId === nextProps.artifactRunId;
 });
+
+// Map alternative chart type names to our standard names
+function normalizeChartType(spec: any): RechartsChartSpec['chart'] {
+    // If 'chart' is provided, use it directly
+    if (spec.chart) return spec.chart;
+    // Map 'type' field (e.g., "BarChart" -> "bar")
+    const typeMap: Record<string, RechartsChartSpec['chart']> = {
+        'BarChart': 'bar',
+        'LineChart': 'line',
+        'AreaChart': 'area',
+        'PieChart': 'pie',
+        'ScatterChart': 'scatter',
+        'RadarChart': 'radar',
+        'FunnelChart': 'funnel',
+        'Treemap': 'treemap',
+        'ComposedChart': 'composed',
+        'RadialBarChart': 'radialBar',
+    };
+    if (spec.type && typeMap[spec.type]) {
+        return typeMap[spec.type];
+    }
+    return 'bar'; // default
+}
 
 // Recharts implementation component
 const RechartsChart = memo(function RechartsChart({ spec }: { spec: RechartsChartSpec }) {
+    // Normalize spec to handle alternative formats from agents
+    const normalizedSpec = {
+        ...spec,
+        chart: normalizeChartType(spec),
+        // Handle x_axis.data_key -> xKey
+        xKey: spec.xKey || (spec as any).x_axis?.data_key || 'name',
+        // Handle bars/lines -> series
+        series: spec.series || (spec as any).bars?.map((b: any) => ({
+            key: b.data_key || b.dataKey,
+            color: b.fill || b.color,
+            label: b.name,
+        })) || (spec as any).lines?.map((l: any) => ({
+            key: l.data_key || l.dataKey,
+            color: l.stroke || l.color,
+            label: l.name,
+        })) || [],
+    };
+
     const {
         chart,
         title,
@@ -207,7 +254,7 @@ const RechartsChart = memo(function RechartsChart({ spec }: { spec: RechartsChar
         zKey: _zKey,
         axisKey,
         dataKey,
-    } = spec;
+    } = normalizedSpec;
     const [isExporting, setIsExporting] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     const chartRef = useRef<HTMLDivElement>(null);
