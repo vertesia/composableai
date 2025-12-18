@@ -5,36 +5,17 @@ import { Readable } from "stream";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 
 /**
- * Directories in the agent workspace that can be copied from parent to child.
- * These match the workspace structure used by execute_shell:
- * - scripts/ -> /home/daytona/scripts/
- * - files/   -> /home/daytona/files/
- * - skills/  -> /home/daytona/skills/
- * - docs/    -> /home/daytona/documents/
- * - out/     -> /home/daytona/out/
+ * Directories in the agent workspace to copy from parent to child.
  */
-export const WORKSPACE_DIRECTORIES = ['scripts', 'files', 'skills', 'docs', 'out'] as const;
-export type WorkspaceDirectory = typeof WORKSPACE_DIRECTORIES[number];
+const WORKSPACE_DIRECTORIES = ['scripts', 'files', 'skills', 'docs', 'out'];
 
-export interface CopyParentArtifactsParams {
-    /**
-     * The parent workflow run ID to copy artifacts from.
-     * If not provided, uses the parent.run_id from the payload.
-     */
-    parent_run_id?: string;
+/**
+ * Files that should never be copied (child has its own).
+ */
+const EXCLUDED_FILES = ['conversation.json', 'tools.json'];
 
-    /**
-     * Which workspace directories to copy. Defaults to all: scripts, files, skills, docs, out.
-     * You can limit to specific directories, e.g., ['scripts', 'files'] to only copy scripts and data.
-     */
-    directories?: WorkspaceDirectory[];
-
-    /**
-     * Optional list of file patterns to exclude (simple glob with * wildcard).
-     * By default, conversation.json and tools.json are excluded.
-     */
-    exclude_patterns?: string[];
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface CopyParentArtifactsParams {}
 
 export interface CopyParentArtifacts extends DSLActivitySpec<CopyParentArtifactsParams> {
     name: 'copyParentArtifacts';
@@ -42,109 +23,62 @@ export interface CopyParentArtifacts extends DSLActivitySpec<CopyParentArtifacts
 }
 
 /**
- * Copy workspace artifacts from a parent workflow's agent space to the current workflow's agent space.
+ * Copy workspace artifacts from parent workflow's agent space to current workflow's agent space.
  *
- * This enables child workflows (spawned via parallel workstreams) to inherit the parent's:
- * - scripts (Python/shell scripts)
- * - files (data files like CSV, JSON)
- * - skills (skill script bundles)
- * - docs (document snapshots)
- * - out (output files)
- *
- * After copying, these files will be available when execute_shell syncs to the sandbox.
- *
- * @param payload - Activity execution payload containing parent_run_id and optional filters
- * @returns Object with copied files count and list of copied file paths
+ * Copies: scripts/, files/, skills/, docs/, out/
+ * Excludes: conversation.json, tools.json
  */
 export async function copyParentArtifacts(
     payload: DSLActivityExecutionPayload<CopyParentArtifactsParams>
-): Promise<{ copied: number; files: string[]; skipped: string[] }> {
-    const { client, params } = await setupActivity<CopyParentArtifactsParams>(payload);
+): Promise<{ copied: number; files: string[] }> {
+    const { client } = await setupActivity<CopyParentArtifactsParams>(payload);
     const { runId: childRunId } = activityInfo().workflowExecution;
-
-    // Get parent run ID from params or from the payload's parent reference
-    const parentRunId = params.parent_run_id || payload.parent?.run_id;
+    const parentRunId = payload.parent?.run_id;
 
     if (!parentRunId) {
-        log.info("No parent run ID provided, skipping artifact copy");
-        return { copied: 0, files: [], skipped: [] };
+        log.info("No parent run ID, skipping artifact copy");
+        return { copied: 0, files: [] };
     }
 
     if (parentRunId === childRunId) {
-        log.warn("Parent and child run IDs are the same, skipping artifact copy");
-        return { copied: 0, files: [], skipped: [] };
+        log.warn("Parent and child run IDs are the same, skipping");
+        return { copied: 0, files: [] };
     }
 
-    log.info(`Copying workspace artifacts from parent ${parentRunId} to child ${childRunId}`);
+    log.info(`Copying artifacts from parent ${parentRunId} to child ${childRunId}`);
 
-    // Directories to copy (default: all workspace directories)
-    const directories = params.directories || [...WORKSPACE_DIRECTORIES];
+    // List all files in parent's agent space
+    const parentFiles = await client.files.listArtifacts(parentRunId);
 
-    // Default exclusions - don't copy conversation/tools as child has its own
-    const excludePatterns = params.exclude_patterns || ['conversation.json', 'tools.json'];
-
-    try {
-        // List all files in parent's agent space
-        const parentFiles = await client.files.listArtifacts(parentRunId);
-
-        if (parentFiles.length === 0) {
-            log.info("No artifacts found in parent agent space");
-            return { copied: 0, files: [], skipped: [] };
-        }
-
-        log.info(`Found ${parentFiles.length} files in parent agent space`);
-
-        const copiedFiles: string[] = [];
-        const skippedFiles: string[] = [];
-
-        for (const fullPath of parentFiles) {
-            // Extract relative path from full storage path
-            const relativePath = extractRelativePath(fullPath, parentRunId);
-
-            if (!relativePath) {
-                log.debug(`Could not extract relative path from: ${fullPath}`);
-                skippedFiles.push(fullPath);
-                continue;
-            }
-
-            // Check if file is in one of the directories we want to copy
-            const directory = getDirectory(relativePath);
-            if (!directory || !directories.includes(directory)) {
-                log.debug(`Skipping file outside target directories: ${relativePath}`);
-                skippedFiles.push(relativePath);
-                continue;
-            }
-
-            // Check exclude patterns
-            const fileName = relativePath.split('/').pop() || relativePath;
-            if (matchesAnyPattern(fileName, excludePatterns) || matchesAnyPattern(relativePath, excludePatterns)) {
-                log.debug(`Skipping excluded file: ${relativePath}`);
-                skippedFiles.push(relativePath);
-                continue;
-            }
-
-            try {
-                await copyArtifact(client, parentRunId, childRunId, relativePath);
-                copiedFiles.push(relativePath);
-                log.debug(`Copied: ${relativePath}`);
-            } catch (err: any) {
-                log.error(`Failed to copy artifact ${relativePath}`, { error: err.message });
-                skippedFiles.push(relativePath);
-            }
-        }
-
-        log.info(`Copied ${copiedFiles.length} artifacts from parent to child`, {
-            copied: copiedFiles.length,
-            skipped: skippedFiles.length,
-            directories
-        });
-
-        return { copied: copiedFiles.length, files: copiedFiles, skipped: skippedFiles };
-
-    } catch (err: any) {
-        log.error(`Failed to copy parent artifacts`, { error: err.message, parentRunId, childRunId });
-        throw new Error(`Failed to copy parent artifacts: ${err.message}`);
+    if (parentFiles.length === 0) {
+        log.info("No artifacts in parent agent space");
+        return { copied: 0, files: [] };
     }
+
+    const copiedFiles: string[] = [];
+
+    for (const fullPath of parentFiles) {
+        const relativePath = extractRelativePath(fullPath, parentRunId);
+        if (!relativePath) continue;
+
+        // Only copy workspace directories
+        const dir = relativePath.split('/')[0];
+        if (!WORKSPACE_DIRECTORIES.includes(dir)) continue;
+
+        // Skip excluded files
+        const fileName = relativePath.split('/').pop() || '';
+        if (EXCLUDED_FILES.includes(fileName)) continue;
+
+        try {
+            await copyArtifact(client, parentRunId, childRunId, relativePath);
+            copiedFiles.push(relativePath);
+        } catch (err: any) {
+            log.warn(`Failed to copy ${relativePath}: ${err.message}`);
+        }
+    }
+
+    log.info(`Copied ${copiedFiles.length} artifacts from parent`);
+    return { copied: copiedFiles.length, files: copiedFiles };
 }
 
 /**
@@ -175,37 +109,6 @@ function extractRelativePath(fullPath: string, runId: string): string | null {
     }
 
     return null;
-}
-
-/**
- * Get the workspace directory from a relative path
- */
-function getDirectory(relativePath: string): WorkspaceDirectory | null {
-    for (const dir of WORKSPACE_DIRECTORIES) {
-        if (relativePath.startsWith(`${dir}/`)) {
-            return dir;
-        }
-    }
-    return null;
-}
-
-/**
- * Check if filename matches any of the patterns (simple glob: * matches anything)
- */
-function matchesAnyPattern(value: string, patterns: string[]): boolean {
-    for (const pattern of patterns) {
-        if (pattern === value) {
-            return true;
-        }
-        // Simple wildcard matching
-        if (pattern.includes('*')) {
-            const regex = new RegExp('^' + pattern.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$');
-            if (regex.test(value)) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 /**
