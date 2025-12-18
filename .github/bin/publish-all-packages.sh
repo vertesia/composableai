@@ -101,6 +101,8 @@ if [ "$REF" = "main" ]; then
   npm_tag="dev"
 elif [ "$REF" = "preview" ]; then
   npm_tag="latest"
+else
+  npm_tag="experimental"
 fi
 
 for pkg_dir in packages/*; do
