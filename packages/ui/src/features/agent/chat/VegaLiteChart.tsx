@@ -662,20 +662,90 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         return fixVegaLiteSelectionParams(specToUse);
     }, [resolvedSpec, vegaSpec, hasArtifactReferences]);
 
+    // Scale widths in concatenated views to fit container
+    const scaleSpecWidths = useCallback((spec: any, availableWidth: number): any => {
+        if (!spec || typeof spec !== 'object') return spec;
+
+        // Handle hconcat - distribute width among children
+        if (spec.hconcat && Array.isArray(spec.hconcat)) {
+            const childCount = spec.hconcat.length;
+            const spacing = spec.spacing ?? 10;
+            const totalSpacing = spacing * (childCount - 1);
+            const widthPerChild = Math.floor((availableWidth - totalSpacing) / childCount);
+
+            return {
+                ...spec,
+                hconcat: spec.hconcat.map((child: any) => scaleSpecWidths(child, widthPerChild)),
+            };
+        }
+
+        // Handle vconcat - each child gets full width
+        if (spec.vconcat && Array.isArray(spec.vconcat)) {
+            return {
+                ...spec,
+                vconcat: spec.vconcat.map((child: any) => scaleSpecWidths(child, availableWidth)),
+            };
+        }
+
+        // Handle generic concat with columns
+        if (spec.concat && Array.isArray(spec.concat)) {
+            const columns = spec.columns ?? spec.concat.length;
+            const spacing = spec.spacing ?? 10;
+            const totalSpacing = spacing * (columns - 1);
+            const widthPerChild = Math.floor((availableWidth - totalSpacing) / columns);
+
+            return {
+                ...spec,
+                concat: spec.concat.map((child: any) => scaleSpecWidths(child, widthPerChild)),
+            };
+        }
+
+        // For leaf views, set width if it's "container" or larger than available
+        const currentWidth = spec.width;
+        if (currentWidth === 'container' || (typeof currentWidth === 'number' && currentWidth > availableWidth)) {
+            return { ...spec, width: availableWidth };
+        }
+
+        return spec;
+    }, []);
+
     // Build the full Vega-Lite spec with defaults
     const buildFullSpec = useCallback((height: number, forFullscreen = false): VisualizationSpec | null => {
         if (!processedSpec) return null;
 
         const config = getDarkModeConfig(isDarkMode);
-        // Use measured container width, or fallback to a reasonable default
-        const width = forFullscreen ? undefined : (containerWidth > 0 ? containerWidth - 24 : 500);
+        // Use measured container width, window width for fullscreen, or fallback
+        const calculatedWidth = forFullscreen
+            ? (typeof window !== 'undefined' ? window.innerWidth - 80 : 1200)
+            : (containerWidth > 0 ? containerWidth - 24 : 500);
+
+        // Check if this is a concatenated view - autosize 'fit' only works for single/layered views
+        const isConcatenatedView = 'vconcat' in processedSpec || 'hconcat' in processedSpec || 'concat' in processedSpec;
+
+        // For concatenated views, use 'pad' which works correctly; for single views use 'fit'
+        const autosize = isConcatenatedView
+            ? { type: 'pad' as const, contains: 'padding' as const }
+            : { type: 'fit' as const, contains: 'padding' as const };
+
+        // Scale widths for concatenated views to fit container
+        let scaledSpec = processedSpec;
+        if (isConcatenatedView && calculatedWidth) {
+            scaledSpec = scaleSpecWidths(processedSpec, calculatedWidth);
+        }
+
+        // Replace "container" width with our measured width - "container" relies on CSS which may not be ready
+        const specWidth = (scaledSpec as any).width;
+        const width = isConcatenatedView ? undefined : (specWidth === 'container' ? calculatedWidth : (specWidth ?? calculatedWidth));
+
+        // Destructure to remove width from spec so we can control it (only for non-concat views)
+        const { width: _specWidth, ...specWithoutWidth } = scaledSpec as any;
 
         return {
             $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-            ...(width ? { width } : {}),
+            ...(!isConcatenatedView && width ? { width } : {}),
             height: forFullscreen ? undefined : height,
-            autosize: { type: 'fit', contains: 'padding' },
-            ...processedSpec,
+            autosize,
+            ...(isConcatenatedView ? scaledSpec : specWithoutWidth),
             // Override title if provided at top level
             ...(title && !processedSpec.title ? { title } : {}),
             // Apply theme config
@@ -684,7 +754,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
                 ...processedSpec.config,
             },
         };
-    }, [processedSpec, title, isDarkMode, containerWidth]);
+    }, [processedSpec, title, isDarkMode, containerWidth, scaleSpecWidths]);
 
     const handleCopy = useCallback(async () => {
         const view = isFullscreen ? fullscreenViewRef.current : viewRef.current;
