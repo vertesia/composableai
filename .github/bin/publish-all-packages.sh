@@ -46,6 +46,7 @@ if [ "$REF" = "main" ]; then
 
   # Update llumiverse root package.json
   cd llumiverse
+  pnpm install
   npm version ${llumiverse_dev_version} --no-git-tag-version --workspaces=false
 
   # Update all llumiverse workspace packages
