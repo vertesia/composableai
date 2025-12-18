@@ -10,6 +10,7 @@ import {
     sleep,
     startChild,
     UntypedActivities,
+    workflowInfo,
 } from "@temporalio/workflow";
 import {
     DSLActivityExecutionPayload,
@@ -82,6 +83,24 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     });
 
     log.info("Executing workflow", { payload });
+
+    // If this is a child workflow with inherit_artifacts enabled, copy parent's workspace
+    if (payload.parent && payload.inherit_artifacts) {
+        log.info("Inheriting artifacts from parent workflow", { parent_run_id: payload.parent.run_id });
+
+        try {
+            const copyPayload = dslActivityPayload(basePayload, {
+                name: "copyParentArtifacts",
+                params: {},
+            }, {});
+
+            const { copyParentArtifacts } = proxyActivities<typeof activities>(defaultOptions);
+            const result = await copyParentArtifacts(copyPayload);
+            log.info("Inherited artifacts from parent workflow", { copied: result.copied });
+        } catch (err: any) {
+            log.warn("Failed to inherit artifacts from parent workflow", { error: err.message });
+        }
+    }
 
     // TODO(mhuang): remove patch when all workflows are migrated to v2
     //   It avoids breaking the ongoing workflow execution running in v1 and also allows us to
@@ -162,12 +181,23 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
     if (debug_mode) {
         log.debug(`Workflow vars before starting child workflow ${step.name}`, { vars: resolvedVars });
     }
+
+    // Get current workflow info to pass as parent reference
+    const info = workflowInfo();
+    const parentInfo = {
+        run_id: info.runId,
+        workflow_id: info.workflowId,
+        run_depth: (payload.parent?.run_depth || 0) + 1,
+    };
+
     const handle = await startChild(step.name, {
         ...step.options,
         args: [{
             ...payload,
             workflow: step.spec,
-            vars: resolvedVars
+            vars: resolvedVars,
+            parent: parentInfo,
+            inherit_artifacts: step.inherit_artifacts ?? true, // default to true
         }],
         memo: {
             InitiatedBy: payload.initiated_by,
@@ -195,12 +225,23 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
     if (debug_mode) {
         log.debug(`Workflow vars before executing child workflow ${step.name}`, { vars: resolvedVars });
     }
+
+    // Get current workflow info to pass as parent reference
+    const info = workflowInfo();
+    const parentInfo = {
+        run_id: info.runId,
+        workflow_id: info.workflowId,
+        run_depth: (payload.parent?.run_depth || 0) + 1,
+    };
+
     const result = await executeChild(step.name, {
         ...step.options,
         args: [{
             ...payload,
             workflow: step.spec,
             vars: resolvedVars,
+            parent: parentInfo,
+            inherit_artifacts: step.inherit_artifacts ?? true, // default to true
         }],
         memo: {
             InitiatedBy: payload.initiated_by,

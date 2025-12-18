@@ -79,6 +79,14 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     };
 
     /**
+     * If true, copy workspace artifacts (scripts/, files/, skills/, docs/, out/)
+     * from parent workflow to this workflow on startup.
+     * Defaults to true when spawning child workflows.
+     * conversation.json and tools.json are never copied.
+     */
+    inherit_artifacts?: boolean;
+
+    /**
      *  List of enabled processing queues. Managed by the application.
      */
     _enabled_queues?: Queue[];

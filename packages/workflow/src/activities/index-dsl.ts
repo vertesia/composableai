@@ -19,3 +19,4 @@ export { prepareVideo } from "./media/prepareVideo.js";
 export { notifyWebhook } from "./notifyWebhook.js";
 export { setDocumentStatus } from "./setDocumentStatus.js";
 export { checkRateLimit } from "./rateLimiter.js";
+export { copyParentArtifacts } from "./copyParentArtifacts.js";

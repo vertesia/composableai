@@ -714,9 +714,9 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         if (!processedSpec) return null;
 
         const config = getDarkModeConfig(isDarkMode);
-        // Use measured container width, window width for fullscreen, or fallback
+        // Use measured container width, window width for fullscreen (capped), or fallback
         const calculatedWidth = forFullscreen
-            ? (typeof window !== 'undefined' ? window.innerWidth - 80 : 1200)
+            ? (typeof window !== 'undefined' ? Math.min(window.innerWidth - 80, 1400) : 1200)
             : (containerWidth > 0 ? containerWidth - 24 : 500);
 
         // Check if this is a concatenated view - autosize 'fit' only works for single/layered views
