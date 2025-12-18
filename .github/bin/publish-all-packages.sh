@@ -5,11 +5,11 @@ set -e
 # Usage: publish-all-packages.sh <ref> [dry-run] [version-type]
 #   ref: Git reference (main or preview)
 #   dry-run: Optional boolean (true/false) for dry run mode
-#   version-type: Optional version bump type (patch, minor, major) - only used for preview
+#   version-type: Version type (dev, patch, minor, major)
 
 REF=$1
 DRY_RUN=${2:-false}
-VERSION_TYPE=${3:-patch}
+VERSION_TYPE=${3:-dev}
 
 if [ -z "$REF" ]; then
   echo "Error: Missing required argument: ref"
@@ -18,8 +18,8 @@ if [ -z "$REF" ]; then
 fi
 
 # Validate version type
-if [[ ! "$VERSION_TYPE" =~ ^(patch|minor|major)$ ]]; then
-  echo "Error: Invalid version type '$VERSION_TYPE'. Must be patch, minor, or major."
+if [[ ! "$VERSION_TYPE" =~ ^(dev|patch|minor|major)$ ]]; then
+  echo "Error: Invalid version type '$VERSION_TYPE'. Must be dev, patch, minor, or major."
   exit 1
 fi
 
@@ -31,8 +31,8 @@ else
   DRY_RUN_FLAG=""
 fi
 
-# Step 1: Publish llumiverse packages (only for main branch)
-if [ "$REF" = "main" ]; then
+# Step 1: Publish llumiverse packages (only for dev version type)
+if [ "$VERSION_TYPE" = "dev" ]; then
   echo "=== Publishing llumiverse packages ==="
 
   # Get llumiverse base version (all packages should have same version)
@@ -65,8 +65,8 @@ fi
 # Step 2: Update all composableai package versions first (before publishing)
 echo "=== Updating composableai package versions ==="
 
-if [ "$REF" = "main" ]; then
-  # Main: create dev version with date/time stamp
+if [ "$VERSION_TYPE" = "dev" ]; then
+  # Dev: create dev version with date/time stamp
   # Use format without leading zeros to avoid npm stripping them
   pkg_version=$(pnpm pkg get version | tr -d '"')
   date_part=$(date -u +"%Y%m%d")
@@ -79,8 +79,8 @@ if [ "$REF" = "main" ]; then
 
   # Update all workspace packages
   pnpm -r --filter "./packages/**" exec npm version ${dev_version} --no-git-tag-version
-elif [ "$REF" = "preview" ]; then
-  # Preview: bump version
+else
+  # Release: bump version (patch, minor, or major)
   echo "Bumping ${VERSION_TYPE} version"
 
   # Update root package.json
@@ -131,8 +131,8 @@ if [ "$DRY_RUN" = "true" ]; then
   # Array to track failed packages
   failed_packages=()
 
-  # Verify llumiverse packages (only for main branch)
-  if [ "$REF" = "main" ]; then
+  # Verify llumiverse packages (only for dev version type)
+  if [ "$VERSION_TYPE" = "dev" ]; then
     echo ""
     echo "=== Verifying llumiverse packages ==="
     cd llumiverse
@@ -217,9 +217,9 @@ if [ "$DRY_RUN" = "true" ]; then
         # Track if this package has issues
         has_issues=false
 
-        # Verify llumiverse dependencies (only for main branch)
+        # Verify llumiverse dependencies (only for dev version type)
         llumiverse_deps=$(echo "$deps_section" | grep '"@llumiverse/' || true)
-        if [ "$REF" = "main" ] && [ -n "$llumiverse_deps" ]; then
+        if [ "$VERSION_TYPE" = "dev" ] && [ -n "$llumiverse_deps" ]; then
           if echo "$llumiverse_deps" | grep -q "${llumiverse_dev_version}"; then
             echo "  ✓ llumiverse dependencies: ${llumiverse_dev_version}"
           else
@@ -231,10 +231,10 @@ if [ "$DRY_RUN" = "true" ]; then
         # Verify vertesia dependencies
         vertesia_deps=$(echo "$deps_section" | grep '"@vertesia/' || true)
         if [ -n "$vertesia_deps" ]; then
-          if [ "$REF" = "main" ]; then
+          if [ "$VERSION_TYPE" = "dev" ]; then
             expected_version="${dev_version}"
           else
-            # For preview, get the actual version from package.json
+            # For release versions, get the actual version from package.json
             expected_version=$(pnpm pkg get version | tr -d '"')
           fi
 
@@ -272,8 +272,8 @@ if [ "$DRY_RUN" = "true" ]; then
   fi
 fi
 
-# Step 5: Commit version changes (only for preview + not dry-run)
-if [ "$REF" = "preview" ] && [ "$DRY_RUN" = "false" ]; then
+# Step 5: Commit version changes (only for release versions + not dry-run)
+if [ "$VERSION_TYPE" != "dev" ] && [ "$DRY_RUN" = "false" ]; then
   echo "=== Committing version changes ==="
 
   git config user.email "github-actions[bot]@users.noreply.github.com"
