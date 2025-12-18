@@ -36,8 +36,11 @@ if [ "$REF" = "main" ]; then
   echo "=== Publishing llumiverse packages ==="
 
   # Get llumiverse base version (all packages should have same version)
+  # Use date/time format without leading zeros to avoid npm stripping them
   llumiverse_base_version=$(cd llumiverse && pnpm pkg get version | tr -d '"' && cd ..)
-  llumiverse_dev_version="${llumiverse_base_version}-dev-${GITHUB_SHA::7}"
+  date_part=$(date -u +"%Y%m%d")
+  time_part=$(date -u +"%H%M%S" | sed 's/^0*//')  # Remove leading zeros
+  llumiverse_dev_version="${llumiverse_base_version}-dev.${date_part}.${time_part}"
 
   echo "Updating llumiverse to dev version ${llumiverse_dev_version}"
 
@@ -62,9 +65,12 @@ fi
 echo "=== Updating composableai package versions ==="
 
 if [ "$REF" = "main" ]; then
-  # Main: create dev version
+  # Main: create dev version with date/time stamp
+  # Use format without leading zeros to avoid npm stripping them
   pkg_version=$(pnpm pkg get version | tr -d '"')
-  dev_version="${pkg_version}-dev-${GITHUB_SHA::7}"
+  date_part=$(date -u +"%Y%m%d")
+  time_part=$(date -u +"%H%M%S" | sed 's/^0*//')  # Remove leading zeros
+  dev_version="${pkg_version}-dev.${date_part}.${time_part}"
   echo "Updating to dev version ${dev_version}"
 
   # Update root package.json
