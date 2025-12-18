@@ -14,8 +14,9 @@ const WORKSPACE_DIRECTORIES = ['scripts', 'files', 'skills', 'docs', 'out'];
  */
 const EXCLUDED_FILES = ['conversation.json', 'tools.json'];
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface CopyParentArtifactsParams {}
+export interface CopyParentArtifactsParams {
+    parent_run_id: string;
+}
 
 export interface CopyParentArtifacts extends DSLActivitySpec<CopyParentArtifactsParams> {
     name: 'copyParentArtifacts';
@@ -31,19 +32,9 @@ export interface CopyParentArtifacts extends DSLActivitySpec<CopyParentArtifacts
 export async function copyParentArtifacts(
     payload: DSLActivityExecutionPayload<CopyParentArtifactsParams>
 ): Promise<{ copied: number; files: string[] }> {
-    const { client } = await setupActivity<CopyParentArtifactsParams>(payload);
-    const { runId: childRunId } = activityInfo().workflowExecution;
-    const parentRunId = payload.parent?.run_id;
-
-    if (!parentRunId) {
-        log.info("No parent run ID, skipping artifact copy");
-        return { copied: 0, files: [] };
-    }
-
-    if (parentRunId === childRunId) {
-        log.warn("Parent and child run IDs are the same, skipping");
-        return { copied: 0, files: [] };
-    }
+    const { client, params } = await setupActivity<CopyParentArtifactsParams>(payload);
+    const childRunId = activityInfo().workflowExecution.runId;
+    const parentRunId = params.parent_run_id;
 
     log.info(`Copying artifacts from parent ${parentRunId} to child ${childRunId}`);
 
