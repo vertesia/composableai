@@ -4,6 +4,7 @@ import { VegaLite, type VisualizationSpec } from 'react-vega';
 import type { View } from 'vega';
 import type { VegaLiteChartSpec } from './AgentChart';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import Papa from 'papaparse';
 import { cn } from '../../../core/components/libs/utils';
 import { useUserSession } from '../../../session';
 import { useArtifactUrlCache, getArtifactCacheKey, getFileCacheKey } from './useArtifactUrlCache';
@@ -338,19 +339,28 @@ function replaceArtifactData(
 
     for (const [pathKey, data] of resolvedData) {
         const path = pathKey.split('.');
-        let current = result;
+        let current: any = result;
+
+        console.log(`Replacing artifact data at path: ${pathKey}, path parts:`, path);
 
         // Navigate to the parent of the data object
         for (let i = 0; i < path.length - 1; i++) {
-            if (current[path[i]] === undefined) break;
+            if (current[path[i]] === undefined) {
+                console.warn(`Path navigation failed at step ${i}, key "${path[i]}" not found in:`, Object.keys(current));
+                break;
+            }
             current = current[path[i]];
         }
 
         // Replace data.url with data.values
         const lastKey = path[path.length - 1];
         if (current[lastKey] && typeof current[lastKey] === 'object') {
+            const oldUrl = current[lastKey].url;
             delete current[lastKey].url;
             current[lastKey].values = data;
+            console.log(`Replaced artifact URL "${oldUrl}" with ${data.length} data rows`);
+        } else {
+            console.warn(`Could not find data object at path ${pathKey}. current[${lastKey}]:`, current[lastKey]);
         }
     }
 
@@ -545,13 +555,43 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
                         }
                     }
 
-                    // Fetch the JSON data from the resolved URL
+                    // Fetch the data from the resolved URL
                     const response = await fetch(url);
                     if (!response.ok) {
                         throw new Error(`Failed to fetch artifact data: ${response.statusText}`);
                     }
-                    const data = await response.json();
-                    resolvedData.set(pathKey, Array.isArray(data) ? data : [data]);
+
+                    // Detect CSV files by artifact path extension
+                    const isCsv = ref.artifactPath.toLowerCase().endsWith('.csv');
+                    let data: any[];
+
+                    if (isCsv) {
+                        // Parse CSV to JSON array
+                        const csvText = await response.text();
+                        const parseResult = Papa.parse(csvText, {
+                            header: true,
+                            skipEmptyLines: true,
+                            dynamicTyping: true, // Auto-convert numbers and booleans
+                        });
+                        if (parseResult.errors.length > 0) {
+                            console.warn(`CSV parse warnings for ${ref.artifactPath}:`, parseResult.errors);
+                        }
+                        data = parseResult.data as any[];
+                    } else {
+                        // Parse as JSON
+                        const jsonData = await response.json();
+                        data = Array.isArray(jsonData) ? jsonData : [jsonData];
+                    }
+
+                    // Log for debugging
+                    console.log(`Artifact ${ref.artifactPath}: loaded ${data.length} rows`);
+
+                    // Check for empty data
+                    if (!data || data.length === 0) {
+                        console.warn(`Artifact ${ref.artifactPath}: returned empty data`);
+                    }
+
+                    resolvedData.set(pathKey, data);
                 } catch (err) {
                     console.error(`Failed to resolve artifact: ${ref.artifactPath}`, err);
                     if (!cancelled) {
@@ -563,6 +603,8 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
             if (!cancelled) {
                 const newSpec = replaceArtifactData(vegaSpec, resolvedData);
+                // Log the resolved spec for debugging
+                console.log('Resolved spec with artifact data:', JSON.stringify(newSpec).slice(0, 500) + '...');
                 setResolvedSpec(newSpec);
                 setIsLoadingArtifacts(false);
             }
@@ -602,13 +644,23 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         return () => resizeObserver.disconnect();
     }, []);
 
+    // Check if there are artifact references that need resolution
+    const hasArtifactReferences = useMemo(() => {
+        return findArtifactReferences(vegaSpec).length > 0;
+    }, [vegaSpec]);
+
     // Memoize the processed spec to fix Vega-Lite selection param issues
     // This handles the duplicate signal problem in concatenated views
     const processedSpec = useMemo(() => {
+        // If there are artifact references, we must wait for resolvedSpec
+        // Don't fall back to vegaSpec which contains artifact: URLs
+        if (hasArtifactReferences && !resolvedSpec) {
+            return null;
+        }
         const specToUse = resolvedSpec || vegaSpec;
         if (!specToUse) return null;
         return fixVegaLiteSelectionParams(specToUse);
-    }, [resolvedSpec, vegaSpec]);
+    }, [resolvedSpec, vegaSpec, hasArtifactReferences]);
 
     // Build the full Vega-Lite spec with defaults
     const buildFullSpec = useCallback((height: number, forFullscreen = false): VisualizationSpec | null => {
@@ -730,7 +782,9 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
     );
 
     // Show loading state when resolving artifacts
-    if (isLoadingArtifacts) {
+    // Also show loading if we have artifact refs but haven't resolved them yet
+    // (covers the gap before the effect runs)
+    if (isLoadingArtifacts || (hasArtifactReferences && !resolvedSpec)) {
         return (
             <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="flex flex-col gap-2 p-3">
@@ -795,6 +849,21 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
     // Handle case when spec isn't ready yet
     if (!chartSpec) {
         return null;
+    }
+
+    // Debug: Log the final spec being rendered
+    console.log('VegaLite rendering with spec:', {
+        title,
+        hasData: !!(chartSpec as any).data?.values,
+        dataLength: (chartSpec as any).data?.values?.length,
+        spec: JSON.stringify(chartSpec).slice(0, 1000) + '...'
+    });
+
+    // Check if spec has data
+    const specData = (chartSpec as any).data;
+    const hasNoData = specData && !specData.values && !specData.url;
+    if (hasNoData) {
+        console.warn('VegaLite spec has no data:', chartSpec);
     }
 
     return (

@@ -28,6 +28,7 @@ export const EXTERNALS = [
     "class-variance-authority",
     "cmdk",
     "lodash-es",
+    "papaparse",
     "ts-md5",
     "react-markdown",
     "remark-gfm",
