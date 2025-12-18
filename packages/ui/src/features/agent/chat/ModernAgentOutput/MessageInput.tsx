@@ -1,12 +1,15 @@
 import { Button, Input, Spinner, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core";
-import { Activity, PaperclipIcon, SendIcon } from "lucide-react";
+import { Activity, PaperclipIcon, SendIcon, StopCircleIcon } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { SelectDocument } from "../../../store";
 
 interface MessageInputProps {
     onSend: (message: string) => void;
+    onStop?: () => void;
     disabled?: boolean;
     isSending?: boolean;
+    isStopping?: boolean;
+    isStreaming?: boolean;
     isCompleted?: boolean;
     activeTaskCount?: number;
     placeholder?: string;
@@ -14,8 +17,11 @@ interface MessageInputProps {
 
 export default function MessageInput({
     onSend,
+    onStop,
     disabled = false,
     isSending = false,
+    isStopping = false,
+    isStreaming = false,
     isCompleted = false,
     activeTaskCount = 0,
     placeholder = "Type your message..."
@@ -36,9 +42,19 @@ export default function MessageInput({
         setValue("");
     };
 
+    const handleStop = () => {
+        if (onStop && !isStopping) {
+            onStop();
+        }
+    };
+
     const keyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
+            // If streaming, stop first then send
+            if (isStreaming && onStop) {
+                handleStop();
+            }
             handleSend();
         }
     };
@@ -80,8 +96,8 @@ export default function MessageInput({
                         value={value}
                         onKeyDown={keyDown}
                         onChange={setValue}
-                        disabled={disabled || isSending}
-                        placeholder={placeholder}
+                        disabled={disabled}
+                        placeholder={isStreaming ? "Agent is working... (click stop to interrupt)" : placeholder}
                         className="pr-12 py-2.5"
                     />
                     <Button
@@ -94,13 +110,24 @@ export default function MessageInput({
                         <PaperclipIcon className="size-4" />
                     </Button>
                 </div>
-                <Button
-                    onClick={handleSend}
-                    disabled={disabled || isSending || !value.trim()}
-                    className="px-4 py-2.5"
-                >
-                    {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className="size-4 mr-2" />} Send
-                </Button>
+                {isStreaming && onStop ? (
+                    <Button
+                        onClick={handleStop}
+                        disabled={isStopping}
+                        className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white"
+                        title="Stop the agent"
+                    >
+                        {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className="size-4 mr-2" />} Stop
+                    </Button>
+                ) : (
+                    <Button
+                        onClick={handleSend}
+                        disabled={disabled || isSending || !value.trim()}
+                        className="px-4 py-2.5"
+                    >
+                        {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className="size-4 mr-2" />} Send
+                    </Button>
+                )}
             </div>
 
             <div className="text-xs text-muted mt-2 text-center">
@@ -109,9 +136,11 @@ export default function MessageInput({
                         <Activity className="h-3 w-3 mr-1 text-attention" />
                         <span>Agent has {activeTaskCount} active workstream{activeTaskCount !== 1 ? 's' : ''} running</span>
                     </div>
-                ) : disabled
-                    ? "Agent is processing, you can continue once it completes..."
-                    : "You can send a message at any time"}
+                ) : isStreaming
+                    ? "Agent is working... Click Stop to interrupt and give new instructions"
+                    : disabled
+                        ? "Agent is processing, you can continue once it completes..."
+                        : "You can send a message at any time"}
             </div>
 
             {/* Object Selection Modal */}
