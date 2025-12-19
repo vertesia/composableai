@@ -6,6 +6,7 @@ import { EmbeddingsApi } from "./EmbeddingsApi.js";
 import { ZenoClientNotFoundError } from "./errors.js";
 import { FilesApi } from "./FilesApi.js";
 import { ObjectsApi } from "./ObjectsApi.js";
+import { SchedulesApi } from "./SchedulesApi.js";
 import { TypesApi } from "./TypesApi.js";
 import { VERSION, VERSION_HEADER } from "./version.js";
 import { WorkersApi } from "./WorkersApi.js";
@@ -77,6 +78,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     objects = new ObjectsApi(this);
     types = new TypesApi(this);
     workflows = new WorkflowsApi(this);
+    schedules = new SchedulesApi(this);
     files = new FilesApi(this);
     commands = new CommandsApi(this);
     workers = new WorkersApi(this);
