@@ -20,6 +20,13 @@ export interface SkillCollectionProperties extends CollectionProperties {
      * The skills in this collection
      */
     skills: SkillDefinition[];
+
+    /**
+     * A list of widgets exposed by skills in this collection.
+     * The widgets are identified by their unique names.
+     * The widget js bundle can be loaded from /widgets/{widget_name}.js
+     */
+    widgets?: string[];
 }
 
 /**

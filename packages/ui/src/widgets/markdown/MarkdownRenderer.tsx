@@ -2,6 +2,7 @@ import React from "react";
 import Markdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { visit, SKIP } from "unist-util-visit";
+import type { Element } from "hast";
 import { AgentChart, type AgentChartSpec } from "../../features/agent/chat/AgentChart";
 import { useUserSession } from "@vertesia/ui/session";
 
@@ -78,7 +79,7 @@ export function MarkdownRenderer({
             children,
             ...props
         }: {
-            node?: any;
+            node?: Element;
             className?: string;
             children?: React.ReactNode;
         }) => {
@@ -116,7 +117,7 @@ export function MarkdownRenderer({
             );
         };
 
-        const LinkComponent = (props: { node?: any; href?: string; children?: React.ReactNode }) => {
+        const LinkComponent = (props: { node?: Element; href?: string; children?: React.ReactNode }) => {
             const { node, href, children, ...rest } = props as any;
             const rawHref = href || "";
             const isArtifactLink = rawHref.startsWith("artifact:");
@@ -285,7 +286,7 @@ export function MarkdownRenderer({
             );
         };
 
-        const ImageComponent = (props: { node?: any; src?: string; alt?: string }) => {
+        const ImageComponent = (props: { node?: Element; src?: string; alt?: string }) => {
             const { node, src, alt, ...rest } = props as any;
             const rawSrc = src || "";
             const isArtifactRef = rawSrc.startsWith("artifact:");
