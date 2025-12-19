@@ -17,7 +17,7 @@ const exampleManifest: AppManifestData = {
     title: "My App",
     description: "A sample app",
     publisher: "your-org",
-    visibility: 'private',
+    private: true,
     status: "beta",
     ui: {
         src: "/plugins/my-app",
