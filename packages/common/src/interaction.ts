@@ -32,6 +32,27 @@ export interface InteractionExecutionError {
     data?: any;
 }
 
+/**
+ * Configuration for stripping large data from conversation history
+ * to prevent JSON serialization issues and reduce storage bloat.
+ */
+export interface ConversationStripOptions {
+    /**
+     * Number of turns to keep images before stripping them.
+     * - 0: Strip images immediately after each turn (default)
+     * - N > 0: Keep images for N turns before stripping
+     * - Infinity: Never strip images
+     */
+    images_after_turns?: number;
+
+    /**
+     * Maximum tokens for text content before truncation.
+     * Text content exceeding this limit will be truncated with a marker.
+     * Uses ~4 characters per token estimate.
+     */
+    text_max_tokens?: number;
+}
+
 
 // ------------------ in code interactions -----------------
 /**
@@ -656,6 +677,12 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      */
     checkpoint_tokens?: number;
 
+    /**
+     * Configuration for stripping large data (images, text) from conversation history
+     * to prevent JSON serialization issues and reduce storage bloat.
+     */
+    strip_options?: ConversationStripOptions;
+
     /** In child execution workflow, this is the curent task_id */
     task_id?: string;
 
@@ -685,6 +712,8 @@ interface ResumeConversationPayload {
     options: StatelessExecutionOptions; // the options used on the first execution
     conversation: unknown; // the conversation state
     tools: ToolDefinition[]; // the tools to be used
+    /** Configuration for stripping large data from conversation history */
+    strip_options?: ConversationStripOptions;
 }
 
 
