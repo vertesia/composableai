@@ -4,6 +4,7 @@ export * from "./common.js";
 export * from "./doc-analyzer.js";
 export * from "./dsl-workflow.js";
 export * from "./object-types.js";
+export * from "./schedule.js";
 export * from "./signals.js";
 export * from "./store.js";
 export * from "./temporalio.js";
