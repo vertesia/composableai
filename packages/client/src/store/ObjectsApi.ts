@@ -1,5 +1,6 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
+    canGenerateRendition,
     ContentObjectApiHeaders,
     ComplexSearchPayload,
     ComputeObjectFacetPayload,
@@ -16,12 +17,17 @@ import {
     GetFileUrlResponse,
     GetRenditionParams,
     GetRenditionResponse,
+    getSupportedRenditionFormats,
     GetUploadUrlPayload,
     ListWorkflowRunsResponse,
     ObjectSearchPayload,
     ObjectSearchQuery,
     SupportedEmbeddingTypes,
+    supportsVisualRendition,
 } from "@vertesia/common";
+
+// Re-export rendition utilities for consumers
+export { canGenerateRendition, getSupportedRenditionFormats, supportsVisualRendition };
 
 import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
@@ -370,6 +376,35 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${documentId}/renditions/${options.format}`, {
             query,
         });
+    }
+
+    /**
+     * Get rendition with pre-validation of content type compatibility.
+     * Returns null instead of throwing if the format is not supported for the content type.
+     *
+     * @param documentId - The document ID
+     * @param contentType - The content type of the document (e.g., 'image/png', 'text/markdown')
+     * @param options - Rendition options including format
+     * @returns The rendition response, or null if format is not supported for the content type
+     *
+     * @example
+     * const rendition = await client.objects.getRenditionSafe(docId, doc.content?.type, {
+     *     format: ImageRenditionFormat.jpeg,
+     *     generate_if_missing: true
+     * });
+     * if (!rendition) {
+     *     console.log('Document does not support JPEG renditions');
+     * }
+     */
+    getRenditionSafe(
+        documentId: string,
+        contentType: string | undefined,
+        options: GetRenditionParams,
+    ): Promise<GetRenditionResponse | null> {
+        if (!canGenerateRendition(contentType, options.format)) {
+            return Promise.resolve(null);
+        }
+        return this.getRendition(documentId, options);
     }
 
     exportProperties(
