@@ -2,13 +2,16 @@ import { AgentMessage } from "@vertesia/common";
 import { Button, useToast } from "@vertesia/ui/core";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
-import { Bot, ChevronDown, ChevronRight, CopyIcon } from "lucide-react";
+import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import { useState, memo, useEffect, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
+import { ToolExecutionStatus } from "./utils";
 
 interface ToolCallGroupProps {
     messages: AgentMessage[];
     showPulsatingCircle?: boolean;
+    toolRunId?: string;
+    toolStatus?: ToolExecutionStatus;
 }
 
 interface ToolCallItemProps {
@@ -127,12 +130,37 @@ function ToolCallItem({ message, isExpanded, onToggle }: ToolCallItemProps) {
     );
 }
 
-function ToolCallGroupComponent({ messages, showPulsatingCircle = false }: ToolCallGroupProps) {
+function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRunId: _toolRunId, toolStatus }: ToolCallGroupProps) {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
     const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(new Set());
     const prevCountRef = useRef(messages.length);
     const toast = useToast();
+
+    // Render status indicator based on tool execution status
+    const renderStatusIndicator = () => {
+        if (showPulsatingCircle || toolStatus === "running") {
+            return <PulsatingCircle size="sm" color="blue" />;
+        }
+        if (toolStatus === "completed") {
+            return <CheckCircle className="size-4 text-success" />;
+        }
+        if (toolStatus === "error") {
+            return <AlertCircle className="size-4 text-destructive" />;
+        }
+        if (toolStatus === "warning") {
+            return <AlertTriangle className="size-4 text-attention" />;
+        }
+        return <Bot className="size-4 text-purple-600 dark:text-purple-400" />;
+    };
+
+    // Get border color based on status
+    const getBorderColor = () => {
+        if (toolStatus === "completed") return "border-l-success";
+        if (toolStatus === "error") return "border-l-destructive";
+        if (toolStatus === "warning") return "border-l-attention";
+        return "border-l-purple-500";
+    };
 
     // Animate new messages when they're added
     useEffect(() => {
@@ -204,7 +232,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false }: ToolC
 
     return (
         <div
-            className="border-l-4 border-l-purple-500 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5"
+            className={`border-l-4 ${getBorderColor()} shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5`}
         >
             {/* Header */}
             <div
@@ -212,11 +240,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false }: ToolC
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
                 <div className="flex items-center gap-2">
-                    {showPulsatingCircle ? (
-                        <PulsatingCircle size="sm" color="blue" />
-                    ) : (
-                        <Bot className="size-4 text-purple-600 dark:text-purple-400" />
-                    )}
+                    {renderStatusIndicator()}
                     <span className="text-xs font-medium text-muted">Agent</span>
                     <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
                         {toolSummary}
@@ -349,6 +373,8 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false }: ToolC
 const ToolCallGroup = memo(ToolCallGroupComponent, (prevProps, nextProps) => {
     if (prevProps.messages.length !== nextProps.messages.length) return false;
     if (prevProps.showPulsatingCircle !== nextProps.showPulsatingCircle) return false;
+    if (prevProps.toolRunId !== nextProps.toolRunId) return false;
+    if (prevProps.toolStatus !== nextProps.toolStatus) return false;
     // Compare first and last timestamps as a proxy for content changes
     return (
         prevProps.messages[0]?.timestamp === nextProps.messages[0]?.timestamp &&

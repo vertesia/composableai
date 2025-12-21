@@ -252,13 +252,16 @@ function AllMessagesMixedComponent({
                                     const lastMessage = group.messages[group.messages.length - 1];
                                     const isLatest = !isCompleted &&
                                         isLastGroup &&
-                                        !DONE_STATES.includes(lastMessage.type);
+                                        !DONE_STATES.includes(lastMessage.type) &&
+                                        group.toolStatus !== "completed";
 
                                     return (
-                                        <MessageErrorBoundary key={`group-${group.firstTimestamp}-${groupIndex}`}>
+                                        <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
                                             <ToolCallGroup
                                                 messages={group.messages}
                                                 showPulsatingCircle={isLatest}
+                                                toolRunId={group.toolRunId}
+                                                toolStatus={group.toolStatus}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -310,13 +313,16 @@ function AllMessagesMixedComponent({
                                     const isLatest = !isCompleted &&
                                         recentThinking.length === 0 &&
                                         isLastGroup &&
-                                        !DONE_STATES.includes(lastMessage.type);
+                                        !DONE_STATES.includes(lastMessage.type) &&
+                                        group.toolStatus !== "completed";
 
                                     return (
-                                        <MessageErrorBoundary key={`group-${group.firstTimestamp}-${groupIndex}`}>
+                                        <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
                                             <ToolCallGroup
                                                 messages={group.messages}
                                                 showPulsatingCircle={isLatest}
+                                                toolRunId={group.toolRunId}
+                                                toolStatus={group.toolStatus}
                                             />
                                         </MessageErrorBoundary>
                                     );
