@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git push:*)",
-      "Bash(gh pr view:*)"
+      "Bash(gh pr view:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

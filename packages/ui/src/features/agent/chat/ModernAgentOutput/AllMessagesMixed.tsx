@@ -1,6 +1,7 @@
-import { AgentMessage, AgentMessageType, Plan } from "@vertesia/common";
+import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState, Component, ReactNode } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
+import BatchProgressPanel from "./BatchProgressPanel";
 import MessageItem from "./MessageItem";
 import StreamingMessage from "./StreamingMessage";
 import ToolCallGroup from "./ToolCallGroup";
@@ -15,6 +16,11 @@ const processThinkingPlaceholder = (text: string): string => {
         return text.replace(/%thinking_message%/g, ThinkingMessages[randomIndex]);
     }
     return text;
+};
+
+// Check if message is a batch progress message
+const isBatchProgressMessage = (message: AgentMessage): message is AgentMessage & { details: BatchProgressDetails } => {
+    return message.type === AgentMessageType.BATCH_PROGRESS && !!message.details?.batch_id;
 };
 
 // Error boundary to catch and isolate errors in individual message components
@@ -283,6 +289,19 @@ function AllMessagesMixedComponent({
                                         isLastGroup &&
                                         !DONE_STATES.includes(message.type);
 
+                                    // Special handling for batch progress messages
+                                    if (isBatchProgressMessage(message)) {
+                                        return (
+                                            <MessageErrorBoundary key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}>
+                                                <BatchProgressPanel
+                                                    message={message}
+                                                    batchData={message.details}
+                                                    isRunning={!message.details.completed_at}
+                                                />
+                                            </MessageErrorBoundary>
+                                        );
+                                    }
+
                                     return (
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
                                             <MessageItem
@@ -344,6 +363,19 @@ function AllMessagesMixedComponent({
                                         recentThinking.length === 0 &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(message.type);
+
+                                    // Special handling for batch progress messages
+                                    if (isBatchProgressMessage(message)) {
+                                        return (
+                                            <MessageErrorBoundary key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}>
+                                                <BatchProgressPanel
+                                                    message={message}
+                                                    batchData={message.details}
+                                                    isRunning={!message.details.completed_at}
+                                                />
+                                            </MessageErrorBoundary>
+                                        );
+                                    }
 
                                     return (
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>

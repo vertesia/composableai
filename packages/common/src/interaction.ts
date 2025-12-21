@@ -780,6 +780,11 @@ export interface ToolResultContent {
 
 export interface ToolResult extends ToolResultContent {
     tool_use_id: string;
+    /**
+     * Gemini thinking models require thought_signature to be passed back with tool results.
+     * Copy this from the ToolUse.thought_signature that requested this tool call.
+     */
+    thought_signature?: string;
 }
 
 /**

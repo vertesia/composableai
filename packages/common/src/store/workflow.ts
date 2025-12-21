@@ -436,6 +436,7 @@ export enum AgentMessageType {
     IDLE = "idle",
     TERMINATED = "terminated",
     STREAMING_CHUNK = "streaming_chunk",
+    BATCH_PROGRESS = "batch_progress",
 }
 
 /**
@@ -448,6 +449,44 @@ export interface StreamingChunkDetails {
     chunk_index: number;
     /** True if this is the final chunk of the stream */
     is_final: boolean;
+}
+
+/**
+ * Status of a single item in a batch execution
+ */
+export interface BatchItemStatus {
+    /** Unique identifier for this batch item */
+    id: string;
+    /** Current status of the item */
+    status: "pending" | "running" | "success" | "error";
+    /** Optional message (e.g., error message or result summary) */
+    message?: string;
+    /** Execution duration in milliseconds (when completed) */
+    duration_ms?: number;
+}
+
+/**
+ * Details for BATCH_PROGRESS messages used for batch tool execution progress
+ */
+export interface BatchProgressDetails {
+    /** Unique identifier for this batch execution */
+    batch_id: string;
+    /** Name of the tool being batch executed */
+    tool_name: string;
+    /** Total number of items in the batch */
+    total: number;
+    /** Number of items completed */
+    completed: number;
+    /** Number of items that succeeded */
+    succeeded: number;
+    /** Number of items that failed */
+    failed: number;
+    /** Status of individual items */
+    items: BatchItemStatus[];
+    /** Timestamp when batch started */
+    started_at: number;
+    /** Timestamp when batch completed (if done) */
+    completed_at?: number;
 }
 
 /**

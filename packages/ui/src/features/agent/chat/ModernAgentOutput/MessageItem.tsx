@@ -4,7 +4,7 @@ import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
-import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, MessageSquare, User } from "lucide-react";
+import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, Layers, MessageSquare, User } from "lucide-react";
 import React, { useEffect, useState, memo } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { ThinkingMessages } from "../WaitingMessages";
@@ -37,6 +37,7 @@ const MESSAGE_STYLES: Record<AgentMessageType | 'default', {
     [AgentMessageType.WARNING]: { borderColor: 'border-l-attention', bgColor: 'bg-attention', iconColor: 'text-attention', sender: 'Warning', Icon: AlertCircle },
     [AgentMessageType.SYSTEM]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
     [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-l-blue-500', bgColor: 'bg-blue-50/50 dark:bg-blue-900/10', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
     default: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
 };
 
