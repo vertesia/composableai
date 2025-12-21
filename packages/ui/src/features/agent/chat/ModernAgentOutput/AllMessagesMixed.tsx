@@ -1,5 +1,4 @@
 import { AgentMessage, AgentMessageType, Plan } from "@vertesia/common";
-import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useMemo, useState } from "react";
 import MessageItem from "./MessageItem";
 import StreamingMessage from "./StreamingMessage";
@@ -153,68 +152,23 @@ function AllMessagesMixedComponent({
                 <div className="flex-1 flex flex-col justify-start pb-4 space-y-2">
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
-                        // Stacked view - show all messages but consolidate thinking messages
-                        // Only show the latest THOUGHT/UPDATE/PLAN (new ones replace previous)
+                        // Details view - show ALL messages (full history)
                         <>
-                            {(() => {
+                            {displayMessages.map((message, index) => {
                                 const hasStreamingMessages = streamingMessages.size > 0;
-
-                                // Thinking message types that should be consolidated
-                                const isThinkingType = (type: AgentMessageType) =>
-                                    type === AgentMessageType.THOUGHT ||
-                                    type === AgentMessageType.UPDATE ||
-                                    type === AgentMessageType.PLAN;
-
-                                // Find the latest thinking message (to keep only this one)
-                                const latestThinking = displayMessages
-                                    .filter(msg => isThinkingType(msg.type))
-                                    .pop();
-
-                                // Separate permanent messages (non-thinking)
-                                const permanentMessages = displayMessages.filter(
-                                    msg => !isThinkingType(msg.type)
-                                );
+                                const isLatestMessage = !isCompleted &&
+                                    !hasStreamingMessages &&
+                                    index === displayMessages.length - 1 &&
+                                    !DONE_STATES.includes(message.type);
 
                                 return (
-                                    <>
-                                        {permanentMessages.map((message, index) => {
-                                            const isLatestNonCompletionMessage = !isCompleted &&
-                                                !hasStreamingMessages &&
-                                                !latestThinking &&
-                                                index === permanentMessages.length - 1 &&
-                                                !DONE_STATES.includes(message.type);
-
-                                            return (
-                                                <MessageItem
-                                                    key={`${message.timestamp}-${index}`}
-                                                    message={message}
-                                                    showPulsatingCircle={isLatestNonCompletionMessage}
-                                                />
-                                            );
-                                        })}
-                                        {/* Animated thinking message - slides in/out smoothly */}
-                                        <AnimatePresence mode="wait">
-                                            {latestThinking && (
-                                                <motion.div
-                                                    key={`thinking-${latestThinking.timestamp}`}
-                                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                                                    transition={{
-                                                        duration: 0.2,
-                                                        ease: "easeOut"
-                                                    }}
-                                                >
-                                                    <MessageItem
-                                                        message={latestThinking}
-                                                        showPulsatingCircle={!isCompleted && !hasStreamingMessages}
-                                                    />
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </>
+                                    <MessageItem
+                                        key={`${message.timestamp}-${index}`}
+                                        message={message}
+                                        showPulsatingCircle={isLatestMessage}
+                                    />
                                 );
-                            })()}
+                            })}
                             {/* Render streaming messages at the end */}
                             {Array.from(streamingMessages.entries())
                                 .filter(([_, data]) =>
@@ -233,49 +187,39 @@ function AllMessagesMixedComponent({
                             }
                         </>
                     ) : (
-                        // Sliding view - only permanent messages and latest thinking from the current workstream
+                        // Most Important view - main messages + thinking displayed like streaming
                         <>
-                            {/* Get all messages to display in sliding view */}
                             {(() => {
-                                // First get all permanent messages (ANSWER, QUESTION, COMPLETE, REQUEST_INPUT, IDLE, TERMINATED)
-                                const permanentMessages = displayMessages.filter(msg =>
+                                const hasStreamingMessages = streamingMessages.size > 0;
+
+                                // Important messages: user questions and agent answers/completions
+                                const importantMessages = displayMessages.filter(msg =>
                                     msg.type === AgentMessageType.ANSWER ||
                                     msg.type === AgentMessageType.QUESTION ||
                                     msg.type === AgentMessageType.COMPLETE ||
                                     msg.type === AgentMessageType.IDLE ||
                                     msg.type === AgentMessageType.REQUEST_INPUT ||
-                                    msg.type === AgentMessageType.TERMINATED
+                                    msg.type === AgentMessageType.TERMINATED ||
+                                    msg.type === AgentMessageType.ERROR
                                 );
 
-                                // Then get the latest thinking message if not completed and no streaming messages
-                                const hasStreamingMessages = streamingMessages.size > 0;
-                                const latestThinkingMessage = !isCompleted && !hasStreamingMessages ?
-                                    displayMessages
+                                // Latest thinking message (shown with streaming-like effect)
+                                const latestThinking = !isCompleted && !hasStreamingMessages
+                                    ? displayMessages
                                         .filter(msg =>
                                             msg.type === AgentMessageType.THOUGHT ||
                                             msg.type === AgentMessageType.UPDATE ||
                                             msg.type === AgentMessageType.PLAN)
-                                        .sort((a, b) => {
-                                            const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
-                                            const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
-                                            return timeB - timeA; // Sort descending - newest first
-                                        })[0]
+                                        .pop()
                                     : null;
-
-                                // Sort permanent messages by timestamp
-                                permanentMessages.sort((a, b) => {
-                                    const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
-                                    const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
-                                    return timeA - timeB; // Sort ascending - oldest first
-                                });
 
                                 return (
                                     <>
-                                        {permanentMessages.map((message, index) => {
+                                        {importantMessages.map((message, index) => {
                                             const isLatestMessage = !isCompleted &&
                                                 !hasStreamingMessages &&
-                                                !latestThinkingMessage &&
-                                                index === permanentMessages.length - 1 &&
+                                                !latestThinking &&
+                                                index === importantMessages.length - 1 &&
                                                 !DONE_STATES.includes(message.type);
 
                                             return (
@@ -286,30 +230,19 @@ function AllMessagesMixedComponent({
                                                 />
                                             );
                                         })}
-                                        {/* Animated thinking message - slides in/out smoothly */}
-                                        <AnimatePresence mode="wait">
-                                            {latestThinkingMessage && (
-                                                <motion.div
-                                                    key={`thinking-${latestThinkingMessage.timestamp}`}
-                                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                                                    transition={{
-                                                        duration: 0.2,
-                                                        ease: "easeOut"
-                                                    }}
-                                                >
-                                                    <MessageItem
-                                                        message={latestThinkingMessage}
-                                                        showPulsatingCircle={!isCompleted && !hasStreamingMessages}
-                                                    />
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
+                                        {/* Latest thinking - displayed like streaming message */}
+                                        {latestThinking && (
+                                            <StreamingMessage
+                                                key={`thinking-${latestThinking.timestamp}`}
+                                                text={latestThinking.message || ''}
+                                                workstreamId={getWorkstreamId(latestThinking)}
+                                                isComplete={false}
+                                            />
+                                        )}
                                     </>
                                 );
                             })()}
-                            {/* Render streaming messages at the end in sliding view */}
+                            {/* Render streaming messages at the end */}
                             {Array.from(streamingMessages.entries())
                                 .filter(([_, data]) =>
                                     activeWorkstream === "all" ||
