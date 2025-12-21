@@ -1,4 +1,5 @@
 import { AgentMessage, AgentMessageType, Plan } from "@vertesia/common";
+import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useMemo, useState } from "react";
 import MessageItem from "./MessageItem";
 import StreamingMessage from "./StreamingMessage";
@@ -32,11 +33,14 @@ function AllMessagesMixedComponent({
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
 
     // Auto-scroll to bottom when messages or streaming messages change
+    // Use instant scroll during active streaming for better UX
+    const isStreaming = streamingMessages.size > 0;
     useEffect(() => {
         if (bottomRef.current) {
-            bottomRef.current.scrollIntoView({ behavior: "smooth" });
+            // Use instant scroll during streaming, smooth scroll otherwise
+            bottomRef.current.scrollIntoView({ behavior: isStreaming ? "instant" : "smooth" });
         }
-    }, [messages, streamingMessages, bottomRef]);
+    }, [messages, streamingMessages, bottomRef, isStreaming]);
 
     // Sort all messages chronologically
     const sortedMessages = React.useMemo(
@@ -149,25 +153,68 @@ function AllMessagesMixedComponent({
                 <div className="flex-1 flex flex-col justify-start pb-4 space-y-2">
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
-                        // Stacked view - show all messages in the current workstream
-                        // Add pulsating circle to the latest message if not completed
+                        // Stacked view - show all messages but consolidate thinking messages
+                        // Only show the latest THOUGHT/UPDATE/PLAN (new ones replace previous)
                         <>
-                            {displayMessages.map((message, index) => {
-                                // Find if this is the latest non-completion message (but only if no streaming messages)
+                            {(() => {
                                 const hasStreamingMessages = streamingMessages.size > 0;
-                                const isLatestNonCompletionMessage = !isCompleted &&
-                                    !hasStreamingMessages &&
-                                    index === displayMessages.length - 1 &&
-                                    !DONE_STATES.includes(message.type);
+
+                                // Thinking message types that should be consolidated
+                                const isThinkingType = (type: AgentMessageType) =>
+                                    type === AgentMessageType.THOUGHT ||
+                                    type === AgentMessageType.UPDATE ||
+                                    type === AgentMessageType.PLAN;
+
+                                // Find the latest thinking message (to keep only this one)
+                                const latestThinking = displayMessages
+                                    .filter(msg => isThinkingType(msg.type))
+                                    .pop();
+
+                                // Separate permanent messages (non-thinking)
+                                const permanentMessages = displayMessages.filter(
+                                    msg => !isThinkingType(msg.type)
+                                );
 
                                 return (
-                                    <MessageItem
-                                        key={`${message.timestamp}-${index}`}
-                                        message={message}
-                                        showPulsatingCircle={isLatestNonCompletionMessage}
-                                    />
+                                    <>
+                                        {permanentMessages.map((message, index) => {
+                                            const isLatestNonCompletionMessage = !isCompleted &&
+                                                !hasStreamingMessages &&
+                                                !latestThinking &&
+                                                index === permanentMessages.length - 1 &&
+                                                !DONE_STATES.includes(message.type);
+
+                                            return (
+                                                <MessageItem
+                                                    key={`${message.timestamp}-${index}`}
+                                                    message={message}
+                                                    showPulsatingCircle={isLatestNonCompletionMessage}
+                                                />
+                                            );
+                                        })}
+                                        {/* Animated thinking message - slides in/out smoothly */}
+                                        <AnimatePresence mode="wait">
+                                            {latestThinking && (
+                                                <motion.div
+                                                    key={`thinking-${latestThinking.timestamp}`}
+                                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                                                    transition={{
+                                                        duration: 0.2,
+                                                        ease: "easeOut"
+                                                    }}
+                                                >
+                                                    <MessageItem
+                                                        message={latestThinking}
+                                                        showPulsatingCircle={!isCompleted && !hasStreamingMessages}
+                                                    />
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </>
                                 );
-                            })}
+                            })()}
                             {/* Render streaming messages at the end */}
                             {Array.from(streamingMessages.entries())
                                 .filter(([_, data]) =>
@@ -215,33 +262,52 @@ function AllMessagesMixedComponent({
                                         })[0]
                                     : null;
 
-                                // Sort all messages by timestamp
-                                const allMessages = [...permanentMessages];
-                                if (latestThinkingMessage) {
-                                    allMessages.push(latestThinkingMessage);
-                                }
-
-                                allMessages.sort((a, b) => {
+                                // Sort permanent messages by timestamp
+                                permanentMessages.sort((a, b) => {
                                     const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
                                     const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
                                     return timeA - timeB; // Sort ascending - oldest first
                                 });
 
-                                // Show pulsating circle only on the latest message if not completed and no streaming
-                                return allMessages.map((message, index) => {
-                                    const isLatestMessage = !isCompleted &&
-                                        !hasStreamingMessages &&
-                                        index === allMessages.length - 1 &&
-                                        !DONE_STATES.includes(message.type);
+                                return (
+                                    <>
+                                        {permanentMessages.map((message, index) => {
+                                            const isLatestMessage = !isCompleted &&
+                                                !hasStreamingMessages &&
+                                                !latestThinkingMessage &&
+                                                index === permanentMessages.length - 1 &&
+                                                !DONE_STATES.includes(message.type);
 
-                                    return (
-                                        <MessageItem
-                                            key={`${message.timestamp}-${index}`}
-                                            message={message}
-                                            showPulsatingCircle={isLatestMessage}
-                                        />
-                                    );
-                                });
+                                            return (
+                                                <MessageItem
+                                                    key={`${message.timestamp}-${index}`}
+                                                    message={message}
+                                                    showPulsatingCircle={isLatestMessage}
+                                                />
+                                            );
+                                        })}
+                                        {/* Animated thinking message - slides in/out smoothly */}
+                                        <AnimatePresence mode="wait">
+                                            {latestThinkingMessage && (
+                                                <motion.div
+                                                    key={`thinking-${latestThinkingMessage.timestamp}`}
+                                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                                                    transition={{
+                                                        duration: 0.2,
+                                                        ease: "easeOut"
+                                                    }}
+                                                >
+                                                    <MessageItem
+                                                        message={latestThinkingMessage}
+                                                        showPulsatingCircle={!isCompleted && !hasStreamingMessages}
+                                                    />
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </>
+                                );
                             })()}
                             {/* Render streaming messages at the end in sliding view */}
                             {Array.from(streamingMessages.entries())

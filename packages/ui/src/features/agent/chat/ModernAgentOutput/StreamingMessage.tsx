@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { cn } from "@vertesia/ui/core";
-import { PulsatingCircle } from "../AnimatedThinkingDots";
+import { Button, cn, useToast } from "@vertesia/ui/core";
+import { MarkdownRenderer } from "@vertesia/ui/widgets";
+import { CopyIcon } from "lucide-react";
 
 interface StreamingMessageProps {
     text: string;
@@ -12,8 +13,9 @@ interface StreamingMessageProps {
 }
 
 /**
- * Displays a streaming message with a fast, smooth reveal effect.
- * Text is revealed in chunks with a subtle fade-in animation for natural feel.
+ * Displays a streaming message with adaptive reveal effect.
+ * Automatically adjusts speed to match the model's generation rate,
+ * creating smooth continuous text flow without bursts and pauses.
  */
 function StreamingMessageComponent({
     text,
@@ -22,11 +24,39 @@ function StreamingMessageComponent({
     isComplete = false,
 }: StreamingMessageProps) {
     const [displayedLength, setDisplayedLength] = useState(0);
-    const [recentlyAddedStart, setRecentlyAddedStart] = useState(0);
     const animationRef = useRef<number | null>(null);
     const targetLengthRef = useRef(text.length);
     const displayedLengthRef = useRef(0);
-    const lastRevealRef = useRef(0);
+
+    // Track model's generation rate for adaptive speed
+    const lastTextLengthRef = useRef(0);
+    const lastTextTimeRef = useRef(performance.now());
+    const modelRateRef = useRef(revealSpeed); // chars per second from model
+    const rateHistoryRef = useRef<number[]>([]); // smoothed rate history
+
+    // Update model rate when new text arrives
+    useEffect(() => {
+        const now = performance.now();
+        const newChars = text.length - lastTextLengthRef.current;
+        const elapsed = now - lastTextTimeRef.current;
+
+        if (newChars > 0 && elapsed > 0) {
+            const instantRate = (newChars / elapsed) * 1000; // chars per second
+
+            // Add to history and compute smoothed rate (moving average)
+            rateHistoryRef.current.push(instantRate);
+            if (rateHistoryRef.current.length > 5) {
+                rateHistoryRef.current.shift();
+            }
+            const avgRate = rateHistoryRef.current.reduce((a, b) => a + b, 0) / rateHistoryRef.current.length;
+
+            // Update model rate with some smoothing
+            modelRateRef.current = Math.max(50, avgRate); // minimum 50 chars/sec
+        }
+
+        lastTextLengthRef.current = text.length;
+        lastTextTimeRef.current = now;
+    }, [text.length]);
 
     // Keep refs in sync
     targetLengthRef.current = text.length;
@@ -38,29 +68,41 @@ function StreamingMessageComponent({
             const elapsed = currentTime - lastTime;
             const behindBy = targetLengthRef.current - displayedLengthRef.current;
 
-            // Fast adaptive speed - quickly catch up when behind
-            const baseSpeed = isComplete ? revealSpeed * 3 : revealSpeed;
-            const speedBoost = Math.min(5, 1 + behindBy / 50);
-            const currentSpeed = baseSpeed * speedBoost;
-            const msPerChar = 1000 / currentSpeed;
+            // Adaptive speed based on model rate and buffer
+            // When close to caught up (small buffer), match model rate
+            // When far behind, speed up to catch up
+            let targetSpeed: number;
 
-            // Reveal in chunks of ~5-15 chars for smoother appearance
-            const minChunk = 5;
+            if (isComplete) {
+                // Fast finish when streaming is done
+                targetSpeed = revealSpeed * 5;
+            } else if (behindBy < 30) {
+                // Close to caught up - slow down to match model rate
+                // This prevents the "catch up then pause" effect
+                targetSpeed = modelRateRef.current * 0.9; // slightly slower than model
+            } else if (behindBy < 100) {
+                // Small buffer - match model rate
+                targetSpeed = modelRateRef.current;
+            } else if (behindBy < 300) {
+                // Medium buffer - gradually speed up
+                const speedup = 1 + (behindBy - 100) / 100; // 1x to 3x
+                targetSpeed = modelRateRef.current * speedup;
+            } else {
+                // Large buffer - catch up fast
+                targetSpeed = revealSpeed * 10;
+            }
+
+            const msPerChar = 1000 / targetSpeed;
+
+            // Chunk size based on buffer
+            const minChunk = behindBy > 200 ? 15 : behindBy > 50 ? 8 : 3;
             const charsToAdd = Math.max(minChunk, Math.floor(elapsed / msPerChar));
 
             if (elapsed >= msPerChar * minChunk) {
-                const prevLength = displayedLengthRef.current;
                 displayedLengthRef.current = Math.min(
                     displayedLengthRef.current + charsToAdd,
                     targetLengthRef.current
                 );
-
-                // Track where new text starts for fade effect
-                if (currentTime - lastRevealRef.current > 50) {
-                    setRecentlyAddedStart(prevLength);
-                    lastRevealRef.current = currentTime;
-                }
-
                 setDisplayedLength(displayedLengthRef.current);
                 lastTime = currentTime;
             }
@@ -70,8 +112,6 @@ function StreamingMessageComponent({
                 animationRef.current = requestAnimationFrame(step);
             } else {
                 animationRef.current = null;
-                // Clear the "recently added" highlight after catching up
-                setRecentlyAddedStart(displayedLengthRef.current);
             }
         };
 
@@ -103,53 +143,91 @@ function StreamingMessageComponent({
         }
     }, [isComplete, text.length, animate]);
 
+    const toast = useToast();
+
     if (!text) return null;
 
-    const stableText = text.slice(0, recentlyAddedStart);
-    const newText = text.slice(recentlyAddedStart, displayedLength);
     const isTyping = displayedLength < text.length;
+    const displayedText = text.slice(0, displayedLength);
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(text).then(() => {
+            toast({
+                status: "success",
+                title: "Copied to clipboard",
+                duration: 2000,
+            });
+        });
+    };
 
     return (
         <div
             className={cn(
-                "flex items-start gap-2 p-3 rounded-lg",
+                "flex flex-col gap-1 p-3 rounded-lg",
                 "bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30",
-                "min-h-[3rem]" // Prevent layout jumping on initial render
+                "min-h-[3rem]"
             )}
         >
-            <div className="flex-shrink-0 mt-0.5">
-                <PulsatingCircle size="sm" color="blue" />
-            </div>
-            <div className="flex-1 min-w-0">
-                {workstreamId && workstreamId !== "main" && (
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mb-1 font-medium">
-                        Task: {workstreamId}
-                    </div>
-                )}
-                <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words leading-relaxed">
-                    {stableText}
-                    <span
-                        key={recentlyAddedStart}
-                        className="transition-opacity duration-100"
-                        style={{ animation: 'fadeIn 0.1s ease-out' }}
-                    >
-                        {newText}
-                    </span>
-                    {isTyping && (
-                        <span
-                            className={cn(
-                                "inline-block w-0.5 h-4 ml-0.5 rounded-sm align-middle",
-                                "bg-blue-500 dark:bg-blue-400 animate-pulse"
-                            )}
-                        />
+            {/* Header with task and copy button */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    {workstreamId && workstreamId !== "main" && (
+                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                            Task: {workstreamId}
+                        </span>
                     )}
-                    <style>{`
-                        @keyframes fadeIn {
-                            from { opacity: 0.5; }
-                            to { opacity: 1; }
-                        }
-                    `}</style>
+                    {isTyping && (
+                        <span className="text-xs text-muted">Streaming...</span>
+                    )}
                 </div>
+                <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={copyToClipboard}
+                    className="text-muted opacity-50 hover:opacity-100"
+                    title="Copy message"
+                >
+                    <CopyIcon className="size-3" />
+                </Button>
+            </div>
+            {/* Content */}
+            <div className="text-sm break-words leading-relaxed streaming-content prose prose-sm dark:prose-invert max-w-none">
+                <MarkdownRenderer>
+                    {displayedText}
+                </MarkdownRenderer>
+                {isTyping && (
+                    <span className="streaming-cursor" />
+                )}
+                <style>{`
+                    .streaming-content p:last-child {
+                        display: inline;
+                    }
+                    .streaming-cursor {
+                        display: inline-block;
+                        width: 2px;
+                        height: 1.1em;
+                        margin-left: 2px;
+                        vertical-align: text-bottom;
+                        background: linear-gradient(180deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
+                        border-radius: 1px;
+                        animation: cursorBlink 0.6s ease-in-out infinite, cursorGlow 1.2s ease-in-out infinite;
+                        box-shadow: 0 0 4px rgba(59, 130, 246, 0.6);
+                    }
+                    @keyframes cursorBlink {
+                        0%, 100% { opacity: 1; transform: scaleY(1); }
+                        50% { opacity: 0.4; transform: scaleY(0.95); }
+                    }
+                    @keyframes cursorGlow {
+                        0%, 100% { box-shadow: 0 0 4px rgba(59, 130, 246, 0.6); }
+                        50% { box-shadow: 0 0 8px rgba(59, 130, 246, 0.9), 0 0 12px rgba(59, 130, 246, 0.4); }
+                    }
+                    @media (prefers-color-scheme: dark) {
+                        .streaming-cursor {
+                            background: linear-gradient(180deg, #60a5fa 0%, #93c5fd 50%, #60a5fa 100%);
+                            box-shadow: 0 0 6px rgba(96, 165, 250, 0.8);
+                        }
+                    }
+                `}</style>
             </div>
         </div>
     );

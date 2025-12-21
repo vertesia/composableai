@@ -88,7 +88,8 @@ export function MarkdownRenderer({
             const isInline = !match;
             const language = match ? match[1] : "";
 
-            if (!isInline && (language === "chart" || className?.includes("language-chart"))) {
+            // Detect charts in 'chart' or 'json' code blocks
+            if (!isInline && (language === "chart" || language === "json" || className?.includes("language-chart"))) {
                 try {
                     let raw = String(children || "").trim();
                     // Extract just the JSON object - handle cases where extra content is appended
@@ -98,8 +99,10 @@ export function MarkdownRenderer({
                         raw = raw.slice(jsonStart, jsonEnd + 1);
                     }
                     const spec = JSON.parse(raw) as Record<string, unknown>;
-                    // Support both Vega-Lite and Recharts
+                    // Support Vega-Lite, Recharts, and native Vega-Lite JSON with $schema
                     if (spec) {
+                        // Detect Vega-Lite by $schema containing "vega"
+                        const hasVegaSchema = typeof spec.$schema === 'string' && spec.$schema.includes('vega');
                         const isVegaLite = spec.library === 'vega-lite' && 'spec' in spec;
                         // Recharts: check for 'chart' property OR library === 'recharts' with data
                         const isRecharts = (
@@ -107,12 +110,16 @@ export function MarkdownRenderer({
                             'data' in spec &&
                             Array.isArray(spec.data)
                         );
-                        if (isVegaLite || isRecharts) {
-                            return <AgentChart spec={spec as AgentChartSpec} artifactRunId={artifactRunId} />;
+                        if (hasVegaSchema || isVegaLite || isRecharts) {
+                            // Wrap native Vega-Lite spec in expected format
+                            const chartSpec = hasVegaSchema && !isVegaLite
+                                ? { library: 'vega-lite', spec }
+                                : spec;
+                            return <AgentChart spec={chartSpec as AgentChartSpec} artifactRunId={artifactRunId} />;
                         }
                     }
                 } catch (e) {
-                    console.warn("Failed to parse chart spec:", e);
+                    // Not valid JSON or not a chart - fall through to regular code rendering
                 }
             }
 

@@ -698,6 +698,14 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /** Maximum depth for nested conversations to prevent infinite recursion (default: 5) */
     max_nested_conversation_depth?: number;
 
+    /**
+     * Metadata inherited from parent workflow.
+     * Used to propagate context (e.g., apiKey, session info) to child workflows/workstreams.
+     * When a workstream is spawned, the parent's `data` is preserved here so that
+     * child tools can access it via metadata.parent_metadata.
+     */
+    parent_metadata?: Record<string, any>;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
