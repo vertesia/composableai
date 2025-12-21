@@ -319,8 +319,6 @@ function ModernAgentConversationInner({
     const [workflowStatus, setWorkflowStatus] = useState<string | null>(null);
     // Track streaming messages by streaming_id for real-time chunk aggregation
     const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean }>>(new Map());
-    // Track completed streams to convert to messages (avoids race condition from nested setState)
-    const completedStreamsRef = useRef<Array<{ text: string; workstreamId?: string; streamingId: string }>>([]);
 
     // Helper function to get the current active plan and its workstream status
     const getActivePlan = useMemo(() => {
@@ -367,7 +365,6 @@ function ModernAgentConversationInner({
         setShowSlidingPanel(false);
         setWorkflowStatus(null);
         setStreamingMessages(new Map());
-        completedStreamsRef.current = [];
 
         checkWorkflowStatus();
         client.store.workflows.streamMessages(run.workflowId, run.runId, (message) => {
@@ -382,28 +379,39 @@ function ModernAgentConversationInner({
                     const newText = current.text + (message.message || '');
 
                     // When streaming is done, mark as complete but keep displaying
-                    // The message will be removed when COMPLETE message arrives
-                    if (details.is_final) {
-                        updated.set(details.streaming_id, {
-                            text: newText,
-                            workstreamId: message.workstream_id,
-                            isComplete: true,
-                        });
-                        // Queue completed stream for processing (will be handled by useEffect)
-                        completedStreamsRef.current.push({
-                            text: newText,
-                            workstreamId: message.workstream_id,
-                            streamingId: details.streaming_id,
-                        });
-                    } else {
-                        updated.set(details.streaming_id, {
-                            text: newText,
-                            workstreamId: message.workstream_id,
-                        });
-                    }
+                    // The message will be converted to THOUGHT and removed when COMPLETE arrives
+                    updated.set(details.streaming_id, {
+                        text: newText,
+                        workstreamId: message.workstream_id,
+                        isComplete: details.is_final,
+                    });
                     return updated;
                 });
                 return;
+            }
+
+            // When COMPLETE arrives, convert streaming messages to THOUGHT messages
+            if (message.type === AgentMessageType.COMPLETE) {
+                setStreamingMessages((prev) => {
+                    // Convert any remaining streaming messages to THOUGHT messages
+                    prev.forEach(({ text, workstreamId }) => {
+                        if (text) {
+                            const thoughtMessage: AgentMessage = {
+                                timestamp: Date.now(),
+                                workflow_run_id: run.runId,
+                                type: AgentMessageType.THOUGHT,
+                                message: text,
+                                workstream_id: workstreamId,
+                            };
+                            setMessages((prev_messages) => {
+                                insertMessageInTimeline(prev_messages, thoughtMessage);
+                                return [...prev_messages];
+                            });
+                        }
+                    });
+                    // Clear all streaming messages
+                    return new Map();
+                });
             }
 
             if (message.message) {
@@ -425,29 +433,6 @@ function ModernAgentConversationInner({
         };
     }, [run.runId, client.store.workflows]);
 
-    // Process completed streams and convert them to regular messages
-    // This runs on every streamingMessages change to check for queued completions
-    useEffect(() => {
-        if (completedStreamsRef.current.length === 0) return;
-
-        // Process all queued completed streams
-        const completed = [...completedStreamsRef.current];
-        completedStreamsRef.current = [];
-
-        completed.forEach(({ text, workstreamId }) => {
-            const finalMessage: AgentMessage = {
-                timestamp: Date.now(),
-                workflow_run_id: run.runId,
-                type: AgentMessageType.THOUGHT,
-                message: text,
-                workstream_id: workstreamId,
-            };
-            setMessages((prev_messages) => {
-                insertMessageInTimeline(prev_messages, finalMessage);
-                return [...prev_messages];
-            });
-        });
-    }, [streamingMessages, run.runId]);
 
     // Update completion status when messages change
     // This now accounts for multiple workstreams
