@@ -201,3 +201,62 @@ export async function getConversationUrl(
         .getDownloadUrl(`agents/${workflowRunId}/conversation.json`)
         .then((r) => r.url);
 }
+
+/**
+ * Represents a group of messages for display purposes
+ * Either a single message or a group of consecutive tool calls
+ */
+export type MessageGroup =
+    | { type: 'single'; message: AgentMessage }
+    | { type: 'tool_group'; messages: AgentMessage[]; firstTimestamp: number | string };
+
+/**
+ * Check if a message is a tool call (THOUGHT with tool details)
+ */
+export function isToolCallMessage(message: AgentMessage): boolean {
+    return message.type === AgentMessageType.THOUGHT && !!message.details?.tool;
+}
+
+/**
+ * Group consecutive tool call messages together for a cleaner display
+ * Non-tool messages remain as single items
+ *
+ * @param messages Sorted array of messages
+ * @returns Array of message groups
+ */
+export function groupConsecutiveToolCalls(messages: AgentMessage[]): MessageGroup[] {
+    const groups: MessageGroup[] = [];
+    let currentToolGroup: AgentMessage[] = [];
+
+    const flushToolGroup = () => {
+        if (currentToolGroup.length > 0) {
+            if (currentToolGroup.length === 1) {
+                // Single tool call - no need to group
+                groups.push({ type: 'single', message: currentToolGroup[0] });
+            } else {
+                // Multiple consecutive tool calls - group them
+                groups.push({
+                    type: 'tool_group',
+                    messages: currentToolGroup,
+                    firstTimestamp: currentToolGroup[0].timestamp
+                });
+            }
+            currentToolGroup = [];
+        }
+    };
+
+    for (const message of messages) {
+        if (isToolCallMessage(message)) {
+            currentToolGroup.push(message);
+        } else {
+            // Flush any pending tool group before adding non-tool message
+            flushToolGroup();
+            groups.push({ type: 'single', message });
+        }
+    }
+
+    // Flush any remaining tool group
+    flushToolGroup();
+
+    return groups;
+}

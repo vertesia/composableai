@@ -318,7 +318,8 @@ function ModernAgentConversationInner({
     const [showInput, setShowInput] = useState(interactive);
     const [workflowStatus, setWorkflowStatus] = useState<string | null>(null);
     // Track streaming messages by streaming_id for real-time chunk aggregation
-    const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean }>>(new Map());
+    // Include startTimestamp to preserve chronological order when converting to regular messages
+    const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
 
     // Helper function to get the current active plan and its workstream status
     const getActivePlan = useMemo(() => {
@@ -375,7 +376,11 @@ function ModernAgentConversationInner({
 
                 setStreamingMessages((prev) => {
                     const updated = new Map(prev);
-                    const current = updated.get(details.streaming_id) || { text: '', workstreamId: message.workstream_id };
+                    const current = updated.get(details.streaming_id) || {
+                        text: '',
+                        workstreamId: message.workstream_id,
+                        startTimestamp: Date.now() // Track when this streaming message started
+                    };
                     const newText = current.text + (message.message || '');
 
                     // When streaming is done, mark as complete but keep displaying
@@ -384,6 +389,7 @@ function ModernAgentConversationInner({
                         text: newText,
                         workstreamId: message.workstream_id,
                         isComplete: details.is_final,
+                        startTimestamp: current.startTimestamp, // Preserve the original start timestamp
                     });
                     return updated;
                 });
@@ -394,10 +400,11 @@ function ModernAgentConversationInner({
             if (message.type === AgentMessageType.COMPLETE) {
                 setStreamingMessages((prev) => {
                     // Convert any remaining streaming messages to THOUGHT messages
-                    prev.forEach(({ text, workstreamId }) => {
+                    prev.forEach(({ text, workstreamId, startTimestamp }) => {
                         if (text) {
                             const thoughtMessage: AgentMessage = {
-                                timestamp: Date.now(),
+                                // Use the start timestamp to maintain chronological order
+                                timestamp: startTimestamp || Date.now(),
                                 workflow_run_id: run.runId,
                                 type: AgentMessageType.THOUGHT,
                                 message: text,
@@ -610,9 +617,19 @@ function ModernAgentConversationInner({
             workstream_id: "main",
             details: { _optimistic: true },
         };
+
+        console.log("[Optimistic] Adding user message:", trimmed);
+
         setMessages((prev) => {
-            insertMessageInTimeline(prev, optimisticMessage);
-            return [...prev];
+            const newMessages = [...prev, optimisticMessage];
+            // Sort by timestamp to maintain order
+            newMessages.sort((a, b) => {
+                const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
+                const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
+                return timeA - timeB;
+            });
+            console.log("[Optimistic] Messages after add:", newMessages.length, "messages");
+            return newMessages;
         });
 
         client.store.workflows
@@ -855,28 +872,28 @@ function ModernAgentConversationInner({
                     />
                 )}
 
-                {workflowStatus && (
-                    workflowStatus !== "RUNNING" ? (
-                        <MessageBox
-                            status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
-                            icon={null}
-                            className="flex-shrink-0 m-2"
-                        >
-                            This Workflow is {workflowStatus}
-                        </MessageBox>
-                    ) : showInput && (
-                        <MessageInput
-                            onSend={handleSendMessage}
-                            onStop={handleStopWorkflow}
-                            disabled={false}
-                            isSending={isSending}
-                            isStopping={isStopping}
-                            isStreaming={!isCompleted}
-                            isCompleted={isCompleted}
-                            activeTaskCount={getActiveTaskCount()}
-                            placeholder={placeholder}
-                        />
-                    ))}
+                {/* Show workflow status message when not running, or show input when running/unknown */}
+                {workflowStatus && workflowStatus !== "RUNNING" ? (
+                    <MessageBox
+                        status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
+                        icon={null}
+                        className="flex-shrink-0 m-2"
+                    >
+                        This Workflow is {workflowStatus}
+                    </MessageBox>
+                ) : showInput && (
+                    <MessageInput
+                        onSend={handleSendMessage}
+                        onStop={handleStopWorkflow}
+                        disabled={false}
+                        isSending={isSending}
+                        isStopping={isStopping}
+                        isStreaming={!isCompleted}
+                        isCompleted={isCompleted}
+                        activeTaskCount={getActiveTaskCount()}
+                        placeholder={placeholder}
+                    />
+                )}
             </div>
 
             {/* Plan Panel Area - only rendered when panel should be shown */}

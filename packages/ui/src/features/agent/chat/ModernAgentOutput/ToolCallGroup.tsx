@@ -1,0 +1,360 @@
+import { AgentMessage } from "@vertesia/common";
+import { Button, useToast } from "@vertesia/ui/core";
+import { MarkdownRenderer } from "@vertesia/ui/widgets";
+import dayjs from "dayjs";
+import { Bot, ChevronDown, ChevronRight, CopyIcon } from "lucide-react";
+import { useState, memo, useEffect, useRef } from "react";
+import { PulsatingCircle } from "../AnimatedThinkingDots";
+
+interface ToolCallGroupProps {
+    messages: AgentMessage[];
+    showPulsatingCircle?: boolean;
+}
+
+interface ToolCallItemProps {
+    message: AgentMessage;
+    isExpanded: boolean;
+    onToggle: () => void;
+}
+
+function ToolCallItem({ message, isExpanded, onToggle }: ToolCallItemProps) {
+    const [showDetails, setShowDetails] = useState(false);
+    const toast = useToast();
+
+    const details = message.details as { tool?: string; [key: string]: unknown } | undefined;
+    const toolName = details?.tool || "Tool";
+    const messageContent = typeof message.message === "string" ? message.message : "";
+
+    const copyToClipboard = () => {
+        const textToCopy = [
+            messageContent,
+            details ? "\n\nDetails:\n" + JSON.stringify(details, null, 2) : ""
+        ].join("").trim();
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            toast({
+                status: "success",
+                title: "Copied to clipboard",
+                duration: 2000,
+            });
+        });
+    };
+
+    return (
+        <div className="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+            {/* Collapsed header - always visible */}
+            <div
+                className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                onClick={onToggle}
+            >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {isExpanded ? (
+                        <ChevronDown className="size-3 text-muted flex-shrink-0" />
+                    ) : (
+                        <ChevronRight className="size-3 text-muted flex-shrink-0" />
+                    )}
+                    <span className="text-xs font-medium text-purple-600 dark:text-purple-400 flex-shrink-0">
+                        {toolName}
+                    </span>
+                    {!isExpanded && messageContent && (
+                        <span className="text-xs text-muted flex-1">
+                            {messageContent}
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-xs text-muted">
+                        {dayjs(message.timestamp).format("HH:mm:ss")}
+                    </span>
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard();
+                        }}
+                        className="text-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Copy message"
+                    >
+                        <CopyIcon className="size-3" />
+                    </Button>
+                </div>
+            </div>
+
+            {/* Expanded content */}
+            {isExpanded && (
+                <div className="px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30">
+                    {messageContent && (
+                        <div className="vprose prose-sm text-sm mb-2">
+                            <MarkdownRenderer>{messageContent}</MarkdownRenderer>
+                        </div>
+                    )}
+
+                    {/* Details toggle */}
+                    {details && (
+                        <div className="mt-2">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowDetails(!showDetails);
+                                }}
+                                className="text-xs text-muted flex items-center"
+                            >
+                                {showDetails ? "Hide" : "Show"} details
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className={`h-3 w-3 ml-1 transition-transform ${showDetails ? "rotate-180" : ""}`}
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            {showDetails && (
+                                <div className="mt-2 p-2 bg-muted border border-mixer-muted/40 rounded text-sm">
+                                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto">
+                                        {JSON.stringify(details, null, 2)}
+                                    </pre>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ToolCallGroupComponent({ messages, showPulsatingCircle = false }: ToolCallGroupProps) {
+    const [isCollapsed, setIsCollapsed] = useState(true);
+    const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+    const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(new Set());
+    const prevCountRef = useRef(messages.length);
+    const toast = useToast();
+
+    // Animate new messages when they're added
+    useEffect(() => {
+        const prevCount = prevCountRef.current;
+        const currentCount = messages.length;
+
+        if (currentCount > prevCount) {
+            // New messages added - animate them
+            const newIndices = new Set<number>();
+            for (let i = prevCount; i < currentCount; i++) {
+                newIndices.add(i);
+            }
+            setAnimatingIndices(newIndices);
+
+            // Clear animation after it completes
+            const timer = setTimeout(() => {
+                setAnimatingIndices(new Set());
+            }, 500);
+
+            prevCountRef.current = currentCount;
+            return () => clearTimeout(timer);
+        }
+
+        prevCountRef.current = currentCount;
+    }, [messages.length]);
+
+    const firstMessage = messages[0];
+    const lastMessage = messages[messages.length - 1];
+    const firstTimestamp = firstMessage.timestamp;
+    const lastTimestamp = lastMessage.timestamp;
+
+    // Get tool names for summary
+    const toolNames = messages.map(m => {
+        const details = m.details as { tool?: string } | undefined;
+        return details?.tool || "tool";
+    });
+
+    const uniqueToolCount = new Set(toolNames).size;
+    const toolSummary = uniqueToolCount === 1
+        ? `${messages.length}× ${toolNames[0]}`
+        : `${messages.length} tool calls`;
+
+    const toggleItem = (index: number) => {
+        setExpandedItems(prev => {
+            const next = new Set(prev);
+            if (next.has(index)) {
+                next.delete(index);
+            } else {
+                next.add(index);
+            }
+            return next;
+        });
+    };
+
+    const copyAllToClipboard = () => {
+        const allContent = messages.map(m => {
+            const details = m.details as { tool?: string; [key: string]: unknown } | undefined;
+            return `[${details?.tool || "tool"}] ${m.message || ""}\n${details ? JSON.stringify(details, null, 2) : ""}`;
+        }).join("\n\n---\n\n");
+
+        navigator.clipboard.writeText(allContent).then(() => {
+            toast({
+                status: "success",
+                title: "Copied all tool calls to clipboard",
+                duration: 2000,
+            });
+        });
+    };
+
+    return (
+        <div
+            className="border-l-4 border-l-purple-500 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5"
+        >
+            {/* Header */}
+            <div
+                className="flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-purple-50/50 dark:bg-purple-900/10 cursor-pointer"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+            >
+                <div className="flex items-center gap-2">
+                    {showPulsatingCircle ? (
+                        <PulsatingCircle size="sm" color="blue" />
+                    ) : (
+                        <Bot className="size-4 text-purple-600 dark:text-purple-400" />
+                    )}
+                    <span className="text-xs font-medium text-muted">Agent</span>
+                    <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                        {toolSummary}
+                    </span>
+                    {isCollapsed ? (
+                        <ChevronRight className="size-3 text-muted" />
+                    ) : (
+                        <ChevronDown className="size-3 text-muted" />
+                    )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted">
+                        {dayjs(firstTimestamp).format("HH:mm:ss")}
+                        {messages.length > 1 && ` - ${dayjs(lastTimestamp).format("HH:mm:ss")}`}
+                    </span>
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            copyAllToClipboard();
+                        }}
+                        className="text-muted"
+                        title="Copy all tool calls"
+                    >
+                        <CopyIcon className="size-3" />
+                    </Button>
+                </div>
+            </div>
+
+            {/* Collapsed summary - show tool calls as single-line rows with expand option */}
+            {isCollapsed && (
+                <div className="px-4 py-1 space-y-0">
+                    {messages.map((m, idx) => {
+                        const details = m.details as { tool?: string } | undefined;
+                        const toolName = details?.tool || "tool";
+                        const fullMessage = typeof m.message === "string" ? m.message : "";
+                        const isAnimating = animatingIndices.has(idx);
+                        const isItemExpanded = expandedItems.has(idx);
+
+                        return (
+                            <div
+                                key={`${m.timestamp}-${idx}`}
+                                className="border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                                style={{
+                                    opacity: isAnimating ? 0 : 1,
+                                    transform: isAnimating ? 'translateX(-10px)' : 'translateX(0)',
+                                    transition: 'opacity 0.3s ease-out, transform 0.3s ease-out',
+                                    transitionDelay: `${(idx - (messages.length - animatingIndices.size)) * 100}ms`,
+                                    animation: isAnimating ? 'slideInFade 0.4s ease-out forwards' : 'none',
+                                    animationDelay: `${(idx - (messages.length - animatingIndices.size)) * 100}ms`,
+                                }}
+                            >
+                                {/* Row header - clickable to expand */}
+                                <div
+                                    className="flex items-center gap-2 py-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                    onClick={() => toggleItem(idx)}
+                                    title={fullMessage}
+                                >
+                                    {isItemExpanded ? (
+                                        <ChevronDown className="size-3 text-muted flex-shrink-0" />
+                                    ) : (
+                                        <ChevronRight className="size-3 text-muted flex-shrink-0" />
+                                    )}
+                                    <span className="font-medium text-purple-700 dark:text-purple-300 flex-shrink-0 min-w-[100px]">
+                                        {toolName}
+                                    </span>
+                                    {!isItemExpanded && (
+                                        <span className="text-muted truncate flex-1">
+                                            {fullMessage}
+                                        </span>
+                                    )}
+                                </div>
+                                {/* Expanded content */}
+                                {isItemExpanded && (
+                                    <div className="pl-5 pr-3 pb-2 text-sm">
+                                        <div className="vprose prose-sm">
+                                            <MarkdownRenderer>{fullMessage}</MarkdownRenderer>
+                                        </div>
+                                        {/* Show details if available */}
+                                        {details && Object.keys(details).length > 1 && (
+                                            <details className="mt-2 text-xs">
+                                                <summary className="text-muted cursor-pointer">Show details</summary>
+                                                <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto">
+                                                    {JSON.stringify(details, null, 2)}
+                                                </pre>
+                                            </details>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Keyframes for slide-in animation */}
+            <style>{`
+                @keyframes slideInFade {
+                    from {
+                        opacity: 0;
+                        transform: translateX(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0);
+                    }
+                }
+            `}</style>
+
+            {/* Expanded view - individual tool calls */}
+            {!isCollapsed && (
+                <div className="group">
+                    {messages.map((message, index) => (
+                        <ToolCallItem
+                            key={`${message.timestamp}-${index}`}
+                            message={message}
+                            isExpanded={expandedItems.has(index)}
+                            onToggle={() => toggleItem(index)}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// Memoize to prevent unnecessary re-renders
+const ToolCallGroup = memo(ToolCallGroupComponent, (prevProps, nextProps) => {
+    if (prevProps.messages.length !== nextProps.messages.length) return false;
+    if (prevProps.showPulsatingCircle !== nextProps.showPulsatingCircle) return false;
+    // Compare first and last timestamps as a proxy for content changes
+    return (
+        prevProps.messages[0]?.timestamp === nextProps.messages[0]?.timestamp &&
+        prevProps.messages[prevProps.messages.length - 1]?.timestamp ===
+            nextProps.messages[nextProps.messages.length - 1]?.timestamp
+    );
+});
+
+export default ToolCallGroup;

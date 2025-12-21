@@ -3,8 +3,9 @@ import React, { useEffect, useMemo, useState, Component, ReactNode } from "react
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import MessageItem from "./MessageItem";
 import StreamingMessage from "./StreamingMessage";
+import ToolCallGroup from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getWorkstreamId } from "./utils";
+import { DONE_STATES, getWorkstreamId, groupConsecutiveToolCalls } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
 
 // Replace %thinking_message% placeholder with actual thinking message
@@ -53,7 +54,7 @@ interface AllMessagesMixedProps {
     activePlanIndex?: number;
     onChangePlan?: (index: number) => void;
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
-    streamingMessages?: Map<string, { text: string; workstreamId?: string; isComplete?: boolean }>; // Real-time streaming chunks
+    streamingMessages?: Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>; // Real-time streaming chunks
 }
 
 function AllMessagesMixedComponent({
@@ -167,6 +168,18 @@ function AllMessagesMixedComponent({
         [streamingMessages, activeWorkstream]
     );
 
+    // Group consecutive tool calls for cleaner display in stacked view
+    const groupedMessages = React.useMemo(
+        () => groupConsecutiveToolCalls(displayMessages),
+        [displayMessages]
+    );
+
+    // Group consecutive tool calls in important messages for sliding view
+    const groupedImportantMessages = React.useMemo(
+        () => groupConsecutiveToolCalls(importantMessages),
+        [importantMessages]
+    );
+
     // Show working indicator when agent is actively processing
     const isAgentWorking = useMemo(() => {
         if (isCompleted) return false;
@@ -239,23 +252,45 @@ function AllMessagesMixedComponent({
                 <div className="flex-1 flex flex-col justify-start pb-4 space-y-2">
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
-                        // Details view - show ALL messages (full history)
+                        // Details view - show ALL messages with consecutive tool calls grouped
                         <>
-                            {displayMessages.map((message, index) => {
+                            {groupedMessages.map((group, groupIndex) => {
                                 const hasStreamingMessages = streamingMessages.size > 0;
-                                const isLatestMessage = !isCompleted &&
-                                    !hasStreamingMessages &&
-                                    index === displayMessages.length - 1 &&
-                                    !DONE_STATES.includes(message.type);
+                                const isLastGroup = groupIndex === groupedMessages.length - 1;
 
-                                return (
-                                    <MessageErrorBoundary key={`${message.timestamp}-${index}`}>
-                                        <MessageItem
-                                            message={message}
-                                            showPulsatingCircle={isLatestMessage}
-                                        />
-                                    </MessageErrorBoundary>
-                                );
+                                if (group.type === 'tool_group') {
+                                    // Render grouped tool calls
+                                    const lastMessage = group.messages[group.messages.length - 1];
+                                    const isLatest = !isCompleted &&
+                                        !hasStreamingMessages &&
+                                        isLastGroup &&
+                                        !DONE_STATES.includes(lastMessage.type);
+
+                                    return (
+                                        <MessageErrorBoundary key={`group-${group.firstTimestamp}-${groupIndex}`}>
+                                            <ToolCallGroup
+                                                messages={group.messages}
+                                                showPulsatingCircle={isLatest}
+                                            />
+                                        </MessageErrorBoundary>
+                                    );
+                                } else {
+                                    // Render single message
+                                    const message = group.message;
+                                    const isLatestMessage = !isCompleted &&
+                                        !hasStreamingMessages &&
+                                        isLastGroup &&
+                                        !DONE_STATES.includes(message.type);
+
+                                    return (
+                                        <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
+                                            <MessageItem
+                                                message={message}
+                                                showPulsatingCircle={isLatestMessage}
+                                            />
+                                        </MessageErrorBoundary>
+                                    );
+                                }
                             })}
                             {/* Render streaming messages at the end */}
                             {filteredStreamingMessages.map(([streamingId, data]) => (
@@ -278,22 +313,45 @@ function AllMessagesMixedComponent({
                     ) : (
                         // Most Important view - main messages + thinking displayed like streaming
                         <>
-                            {importantMessages.map((message, index) => {
+                            {groupedImportantMessages.map((group, groupIndex) => {
                                 const hasStreaming = streamingMessages.size > 0;
-                                const isLatestMessage = !isCompleted &&
-                                    !hasStreaming &&
-                                    recentThinking.length === 0 &&
-                                    index === importantMessages.length - 1 &&
-                                    !DONE_STATES.includes(message.type);
+                                const isLastGroup = groupIndex === groupedImportantMessages.length - 1;
 
-                                return (
-                                    <MessageErrorBoundary key={`${message.timestamp}-${index}`}>
-                                        <MessageItem
-                                            message={message}
-                                            showPulsatingCircle={isLatestMessage}
-                                        />
-                                    </MessageErrorBoundary>
-                                );
+                                if (group.type === 'tool_group') {
+                                    // Render grouped tool calls
+                                    const lastMessage = group.messages[group.messages.length - 1];
+                                    const isLatest = !isCompleted &&
+                                        !hasStreaming &&
+                                        recentThinking.length === 0 &&
+                                        isLastGroup &&
+                                        !DONE_STATES.includes(lastMessage.type);
+
+                                    return (
+                                        <MessageErrorBoundary key={`group-${group.firstTimestamp}-${groupIndex}`}>
+                                            <ToolCallGroup
+                                                messages={group.messages}
+                                                showPulsatingCircle={isLatest}
+                                            />
+                                        </MessageErrorBoundary>
+                                    );
+                                } else {
+                                    // Render single message
+                                    const message = group.message;
+                                    const isLatestMessage = !isCompleted &&
+                                        !hasStreaming &&
+                                        recentThinking.length === 0 &&
+                                        isLastGroup &&
+                                        !DONE_STATES.includes(message.type);
+
+                                    return (
+                                        <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
+                                            <MessageItem
+                                                message={message}
+                                                showPulsatingCircle={isLatestMessage}
+                                            />
+                                        </MessageErrorBoundary>
+                                    );
+                                }
                             })}
                             {/* Recent thinking messages - displayed like streaming */}
                             {recentThinking.map((thinking, idx) => (
