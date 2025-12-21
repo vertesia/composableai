@@ -450,6 +450,24 @@ export interface StreamingChunkDetails {
     is_final: boolean;
 }
 
+/**
+ * Get the Redis pub/sub channel name for workflow messages.
+ * Used by both publishers (workflow activities, studio-server) and subscribers (zeno-server, clients).
+ * @param workflowRunId - The Temporal workflow run ID (NOT the interaction execution run ID)
+ */
+export function getWorkflowChannel(workflowRunId: string): string {
+    return `workflow:${workflowRunId}:channel`;
+}
+
+/**
+ * Get the Redis list key for storing workflow message history.
+ * Messages are stored here for retrieval by reconnecting clients.
+ * @param workflowRunId - The Temporal workflow run ID (NOT the interaction execution run ID)
+ */
+export function getWorkflowUpdatesKey(workflowRunId: string): string {
+    return `workflow:${workflowRunId}:updates`;
+}
+
 export interface PlanTask {
     id: number;
     goal: string;
