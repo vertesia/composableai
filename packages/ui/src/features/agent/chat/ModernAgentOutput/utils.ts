@@ -211,6 +211,24 @@ export type MessageGroup =
     | { type: 'tool_group'; messages: AgentMessage[]; firstTimestamp: number | string };
 
 /**
+ * Streaming message data structure
+ */
+export interface StreamingData {
+    text: string;
+    workstreamId?: string;
+    isComplete?: boolean;
+    startTimestamp: number;
+}
+
+/**
+ * Extended group type that includes streaming messages for interleaved rendering
+ */
+export type RenderableGroup =
+    | { type: 'single'; message: AgentMessage }
+    | { type: 'tool_group'; messages: AgentMessage[]; firstTimestamp: number }
+    | { type: 'streaming'; streamingId: string; text: string; workstreamId?: string; startTimestamp: number; isComplete?: boolean };
+
+/**
  * Check if a message is a tool call (THOUGHT with tool details)
  */
 export function isToolCallMessage(message: AgentMessage): boolean {
@@ -252,6 +270,114 @@ export function groupConsecutiveToolCalls(messages: AgentMessage[]): MessageGrou
             // Flush any pending tool group before adding non-tool message
             flushToolGroup();
             groups.push({ type: 'single', message });
+        }
+    }
+
+    // Flush any remaining tool group
+    flushToolGroup();
+
+    return groups;
+}
+
+/**
+ * Helper to get timestamp as number
+ */
+function getTimestampMs(timestamp: number | string): number {
+    return typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
+}
+
+/**
+ * Unified item type for sorting messages and streaming together
+ */
+type SortableItem =
+    | { kind: 'message'; message: AgentMessage; timestamp: number }
+    | { kind: 'streaming'; streamingId: string; data: StreamingData; timestamp: number };
+
+/**
+ * Group messages with streaming messages interleaved in chronological order
+ * Streaming messages break consecutive tool call grouping
+ *
+ * @param messages Sorted array of messages
+ * @param streamingMessages Map of streaming messages by ID
+ * @param activeWorkstream Optional workstream filter
+ * @returns Array of renderable groups with streaming interleaved
+ */
+export function groupMessagesWithStreaming(
+    messages: AgentMessage[],
+    streamingMessages: Map<string, StreamingData>,
+    activeWorkstream?: string
+): RenderableGroup[] {
+    // Create unified list of items with timestamps
+    const items: SortableItem[] = [];
+
+    // Add regular messages
+    for (const message of messages) {
+        items.push({
+            kind: 'message',
+            message,
+            timestamp: getTimestampMs(message.timestamp)
+        });
+    }
+
+    // Add streaming messages (filter by workstream if specified)
+    streamingMessages.forEach((data, streamingId) => {
+        // Skip empty streaming messages
+        if (!data.text) return;
+
+        // Filter by workstream if specified
+        if (activeWorkstream && activeWorkstream !== "all") {
+            const streamWorkstream = data.workstreamId || "main";
+            if (activeWorkstream !== streamWorkstream) return;
+        }
+
+        items.push({
+            kind: 'streaming',
+            streamingId,
+            data,
+            timestamp: data.startTimestamp
+        });
+    });
+
+    // Sort by timestamp
+    items.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Group consecutive tool calls, but streaming breaks grouping
+    const groups: RenderableGroup[] = [];
+    let currentToolGroup: AgentMessage[] = [];
+
+    const flushToolGroup = () => {
+        if (currentToolGroup.length > 0) {
+            if (currentToolGroup.length === 1) {
+                groups.push({ type: 'single', message: currentToolGroup[0] });
+            } else {
+                groups.push({
+                    type: 'tool_group',
+                    messages: currentToolGroup,
+                    firstTimestamp: getTimestampMs(currentToolGroup[0].timestamp)
+                });
+            }
+            currentToolGroup = [];
+        }
+    };
+
+    for (const item of items) {
+        if (item.kind === 'streaming') {
+            // Streaming breaks tool grouping
+            flushToolGroup();
+            groups.push({
+                type: 'streaming',
+                streamingId: item.streamingId,
+                text: item.data.text,
+                workstreamId: item.data.workstreamId,
+                startTimestamp: item.data.startTimestamp,
+                isComplete: item.data.isComplete
+            });
+        } else if (isToolCallMessage(item.message)) {
+            currentToolGroup.push(item.message);
+        } else {
+            // Non-tool message breaks grouping
+            flushToolGroup();
+            groups.push({ type: 'single', message: item.message });
         }
     }
 

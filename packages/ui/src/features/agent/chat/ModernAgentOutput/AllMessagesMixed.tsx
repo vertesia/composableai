@@ -5,7 +5,7 @@ import MessageItem from "./MessageItem";
 import StreamingMessage from "./StreamingMessage";
 import ToolCallGroup from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getWorkstreamId, groupConsecutiveToolCalls } from "./utils";
+import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
 
 // Replace %thinking_message% placeholder with actual thinking message
@@ -54,7 +54,7 @@ interface AllMessagesMixedProps {
     activePlanIndex?: number;
     onChangePlan?: (index: number) => void;
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
-    streamingMessages?: Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>; // Real-time streaming chunks
+    streamingMessages?: Map<string, StreamingData>; // Real-time streaming chunks
 }
 
 function AllMessagesMixedComponent({
@@ -158,26 +158,16 @@ function AllMessagesMixedComponent({
         return { importantMessages: important, recentThinking: thinkingMessages };
     }, [displayMessages, isCompleted, streamingMessages.size]);
 
-    // Pre-compute filtered streaming messages
-    const filteredStreamingMessages = React.useMemo(() =>
-        Array.from(streamingMessages.entries()).filter(([_, data]) =>
-            activeWorkstream === "all" ||
-            data.workstreamId === activeWorkstream ||
-            (!data.workstreamId && activeWorkstream === "main")
-        ),
-        [streamingMessages, activeWorkstream]
-    );
-
-    // Group consecutive tool calls for cleaner display in stacked view
+    // Group messages with streaming interleaved for stacked view
     const groupedMessages = React.useMemo(
-        () => groupConsecutiveToolCalls(displayMessages),
-        [displayMessages]
+        () => groupMessagesWithStreaming(displayMessages, streamingMessages, activeWorkstream),
+        [displayMessages, streamingMessages, activeWorkstream]
     );
 
-    // Group consecutive tool calls in important messages for sliding view
+    // Group important messages with streaming interleaved for sliding view
     const groupedImportantMessages = React.useMemo(
-        () => groupConsecutiveToolCalls(importantMessages),
-        [importantMessages]
+        () => groupMessagesWithStreaming(importantMessages, streamingMessages, activeWorkstream),
+        [importantMessages, streamingMessages, activeWorkstream]
     );
 
     // Show working indicator when agent is actively processing
@@ -252,17 +242,15 @@ function AllMessagesMixedComponent({
                 <div className="flex-1 flex flex-col justify-start pb-4 space-y-2">
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
-                        // Details view - show ALL messages with consecutive tool calls grouped
+                        // Details view - show ALL messages with streaming interleaved
                         <>
                             {groupedMessages.map((group, groupIndex) => {
-                                const hasStreamingMessages = streamingMessages.size > 0;
                                 const isLastGroup = groupIndex === groupedMessages.length - 1;
 
                                 if (group.type === 'tool_group') {
                                     // Render grouped tool calls
                                     const lastMessage = group.messages[group.messages.length - 1];
                                     const isLatest = !isCompleted &&
-                                        !hasStreamingMessages &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(lastMessage.type);
 
@@ -274,11 +262,21 @@ function AllMessagesMixedComponent({
                                             />
                                         </MessageErrorBoundary>
                                     );
+                                } else if (group.type === 'streaming') {
+                                    // Render streaming message inline
+                                    return (
+                                        <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`}>
+                                            <StreamingMessage
+                                                text={group.text}
+                                                workstreamId={group.workstreamId}
+                                                isComplete={group.isComplete}
+                                            />
+                                        </MessageErrorBoundary>
+                                    );
                                 } else {
                                     // Render single message
                                     const message = group.message;
                                     const isLatestMessage = !isCompleted &&
-                                        !hasStreamingMessages &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(message.type);
 
@@ -292,18 +290,8 @@ function AllMessagesMixedComponent({
                                     );
                                 }
                             })}
-                            {/* Render streaming messages at the end */}
-                            {filteredStreamingMessages.map(([streamingId, data]) => (
-                                <MessageErrorBoundary key={`streaming-${streamingId}`}>
-                                    <StreamingMessage
-                                        text={data.text}
-                                        workstreamId={data.workstreamId}
-                                        isComplete={data.isComplete}
-                                    />
-                                </MessageErrorBoundary>
-                            ))}
                             {/* Working indicator - shows agent is actively processing */}
-                            {isAgentWorking && filteredStreamingMessages.length === 0 && (
+                            {isAgentWorking && streamingMessages.size === 0 && (
                                 <div className="flex items-center gap-3 p-4 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-sm text-muted">Working...</span>
@@ -311,17 +299,15 @@ function AllMessagesMixedComponent({
                             )}
                         </>
                     ) : (
-                        // Most Important view - main messages + thinking displayed like streaming
+                        // Most Important view - main messages + streaming interleaved
                         <>
                             {groupedImportantMessages.map((group, groupIndex) => {
-                                const hasStreaming = streamingMessages.size > 0;
                                 const isLastGroup = groupIndex === groupedImportantMessages.length - 1;
 
                                 if (group.type === 'tool_group') {
                                     // Render grouped tool calls
                                     const lastMessage = group.messages[group.messages.length - 1];
                                     const isLatest = !isCompleted &&
-                                        !hasStreaming &&
                                         recentThinking.length === 0 &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(lastMessage.type);
@@ -334,11 +320,21 @@ function AllMessagesMixedComponent({
                                             />
                                         </MessageErrorBoundary>
                                     );
+                                } else if (group.type === 'streaming') {
+                                    // Render streaming message inline
+                                    return (
+                                        <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`}>
+                                            <StreamingMessage
+                                                text={group.text}
+                                                workstreamId={group.workstreamId}
+                                                isComplete={group.isComplete}
+                                            />
+                                        </MessageErrorBoundary>
+                                    );
                                 } else {
                                     // Render single message
                                     const message = group.message;
                                     const isLatestMessage = !isCompleted &&
-                                        !hasStreaming &&
                                         recentThinking.length === 0 &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(message.type);
@@ -363,18 +359,8 @@ function AllMessagesMixedComponent({
                                     />
                                 </MessageErrorBoundary>
                             ))}
-                            {/* Render streaming messages at the end */}
-                            {filteredStreamingMessages.map(([streamingId, data]) => (
-                                <MessageErrorBoundary key={`streaming-${streamingId}`}>
-                                    <StreamingMessage
-                                        text={data.text}
-                                        workstreamId={data.workstreamId}
-                                        isComplete={data.isComplete}
-                                    />
-                                </MessageErrorBoundary>
-                            ))}
                             {/* Working indicator - shows agent is actively processing */}
-                            {isAgentWorking && recentThinking.length === 0 && filteredStreamingMessages.length === 0 && (
+                            {isAgentWorking && recentThinking.length === 0 && streamingMessages.size === 0 && (
                                 <div className="flex items-center gap-3 p-4 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-sm text-muted">Working...</span>
