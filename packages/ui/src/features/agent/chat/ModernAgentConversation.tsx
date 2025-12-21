@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Cpu, SendIcon, XIcon } from "lucide-react";
 import { useUserSession } from "@vertesia/ui/session";
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { AgentMessage, AgentMessageType, Plan, UserInputSignal } from "@vertesia/common";
+import { AgentMessage, AgentMessageType, Plan, StreamingChunkDetails, UserInputSignal } from "@vertesia/common";
 import { Button, MessageBox, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
@@ -317,6 +317,10 @@ function ModernAgentConversationInner({
     const toast = useToast();
     const [showInput, setShowInput] = useState(interactive);
     const [workflowStatus, setWorkflowStatus] = useState<string | null>(null);
+    // Track streaming messages by streaming_id for real-time chunk aggregation
+    const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string }>>(new Map());
+    // Track completed streams to convert to messages (avoids race condition from nested setState)
+    const completedStreamsRef = useRef<Array<{ text: string; workstreamId?: string; streamingId: string }>>([]);
 
     // Helper function to get the current active plan and its workstream status
     const getActivePlan = useMemo(() => {
@@ -362,9 +366,41 @@ function ModernAgentConversationInner({
         setWorkstreamStatusMap(new Map());
         setShowSlidingPanel(false);
         setWorkflowStatus(null);
+        setStreamingMessages(new Map());
+        completedStreamsRef.current = [];
 
         checkWorkflowStatus();
         client.store.workflows.streamMessages(run.workflowId, run.runId, (message) => {
+            // Handle streaming chunks separately for real-time aggregation
+            if (message.type === AgentMessageType.STREAMING_CHUNK) {
+                const details = message.details as StreamingChunkDetails;
+                if (!details?.streaming_id) return;
+
+                setStreamingMessages((prev) => {
+                    const updated = new Map(prev);
+                    const current = updated.get(details.streaming_id) || { text: '', workstreamId: message.workstream_id };
+                    const newText = current.text + (message.message || '');
+
+                    // When streaming is done, queue for conversion to regular message
+                    if (details.is_final) {
+                        updated.delete(details.streaming_id);
+                        // Queue completed stream for processing (will be handled by useEffect)
+                        completedStreamsRef.current.push({
+                            text: newText,
+                            workstreamId: message.workstream_id,
+                            streamingId: details.streaming_id,
+                        });
+                    } else {
+                        updated.set(details.streaming_id, {
+                            text: newText,
+                            workstreamId: message.workstream_id,
+                        });
+                    }
+                    return updated;
+                });
+                return;
+            }
+
             if (message.message) {
                 setMessages((prev_messages) => {
                     if (!prev_messages.find((m) => m.timestamp === message.timestamp)) {
@@ -383,6 +419,30 @@ function ModernAgentConversationInner({
             // Client handles unsubscribing from the message stream internally
         };
     }, [run.runId, client.store.workflows]);
+
+    // Process completed streams and convert them to regular messages
+    // This runs on every streamingMessages change to check for queued completions
+    useEffect(() => {
+        if (completedStreamsRef.current.length === 0) return;
+
+        // Process all queued completed streams
+        const completed = [...completedStreamsRef.current];
+        completedStreamsRef.current = [];
+
+        completed.forEach(({ text, workstreamId }) => {
+            const finalMessage: AgentMessage = {
+                timestamp: Date.now(),
+                workflow_run_id: run.runId,
+                type: AgentMessageType.THOUGHT,
+                message: text,
+                workstream_id: workstreamId,
+            };
+            setMessages((prev_messages) => {
+                insertMessageInTimeline(prev_messages, finalMessage);
+                return [...prev_messages];
+            });
+        });
+    }, [streamingMessages, run.runId]);
 
     // Update completion status when messages change
     // This now accounts for multiple workstreams
@@ -777,6 +837,7 @@ function ModernAgentConversationInner({
                             }
                             return acc;
                         }, new Map<string, string>())}
+                        streamingMessages={streamingMessages}
                     />
                 )}
 

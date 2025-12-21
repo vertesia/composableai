@@ -435,6 +435,19 @@ export enum AgentMessageType {
     REQUEST_INPUT = "request_input",
     IDLE = "idle",
     TERMINATED = "terminated",
+    STREAMING_CHUNK = "streaming_chunk",
+}
+
+/**
+ * Details for STREAMING_CHUNK messages used for real-time LLM response streaming
+ */
+export interface StreamingChunkDetails {
+    /** Unique identifier grouping chunks from the same stream */
+    streaming_id: string;
+    /** Order of this chunk within the stream (0-indexed) */
+    chunk_index: number;
+    /** True if this is the final chunk of the stream */
+    is_final: boolean;
 }
 
 export interface PlanTask {

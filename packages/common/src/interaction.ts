@@ -516,6 +516,12 @@ export interface InteractionExecutionPayload {
      * These are temporary interactions using "tmp:" suffix.
      */
     prompts?: InCodePrompt[];
+
+    /**
+     * Options for streaming LLM response chunks directly to Redis.
+     * Used by agent workflows to stream responses in real-time to clients.
+     */
+    streaming?: StreamingOptions;
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
@@ -706,6 +712,18 @@ export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadB
 
 export type AsyncExecutionPayload = AsyncConversationExecutionPayload | AsyncInteractionExecutionPayload;
 
+/**
+ * Options for streaming LLM responses directly to Redis
+ */
+export interface StreamingOptions {
+    /** Redis channel to publish streaming chunks to */
+    redis_channel: string;
+    /** Workflow run ID for message context */
+    run_id: string;
+    /** Optional workstream ID for multi-workstream agents */
+    workstream_id?: string;
+}
+
 interface ResumeConversationPayload {
     run: ExecutionRunDocRef; // the run created by the first execution.
     environment: string; // the environment ID
@@ -714,6 +732,8 @@ interface ResumeConversationPayload {
     tools: ToolDefinition[]; // the tools to be used
     /** Configuration for stripping large data from conversation history */
     strip_options?: ConversationStripOptions;
+    /** Options for streaming LLM response chunks to Redis */
+    streaming?: StreamingOptions;
 }
 
 

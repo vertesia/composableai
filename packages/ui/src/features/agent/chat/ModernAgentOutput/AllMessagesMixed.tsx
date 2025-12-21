@@ -1,6 +1,7 @@
 import { AgentMessage, AgentMessageType, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState } from "react";
 import MessageItem from "./MessageItem";
+import StreamingMessage from "./StreamingMessage";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
 import { DONE_STATES, getWorkstreamId } from "./utils";
 
@@ -17,6 +18,7 @@ interface AllMessagesMixedProps {
     activePlanIndex?: number;
     onChangePlan?: (index: number) => void;
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
+    streamingMessages?: Map<string, { text: string; workstreamId?: string }>; // Real-time streaming chunks
 }
 
 function AllMessagesMixedComponent({
@@ -24,16 +26,17 @@ function AllMessagesMixedComponent({
     bottomRef,
     viewMode = 'stacked',
     isCompleted = false,
+    streamingMessages = new Map(),
 }: AllMessagesMixedProps) {
     const containerRef = React.useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
 
-    // Auto-scroll to bottom when messages change
+    // Auto-scroll to bottom when messages or streaming messages change
     useEffect(() => {
         if (bottomRef.current) {
             bottomRef.current.scrollIntoView({ behavior: "smooth" });
         }
-    }, [messages, bottomRef]);
+    }, [messages, streamingMessages, bottomRef]);
 
     // Sort all messages chronologically
     const sortedMessages = React.useMemo(
@@ -148,20 +151,39 @@ function AllMessagesMixedComponent({
                     {viewMode === 'stacked' ? (
                         // Stacked view - show all messages in the current workstream
                         // Add pulsating circle to the latest message if not completed
-                        displayMessages.map((message, index) => {
-                            // Find if this is the latest non-completion message
-                            const isLatestNonCompletionMessage = !isCompleted &&
-                                index === displayMessages.length - 1 &&
-                                !DONE_STATES.includes(message.type);
+                        <>
+                            {displayMessages.map((message, index) => {
+                                // Find if this is the latest non-completion message (but only if no streaming messages)
+                                const hasStreamingMessages = streamingMessages.size > 0;
+                                const isLatestNonCompletionMessage = !isCompleted &&
+                                    !hasStreamingMessages &&
+                                    index === displayMessages.length - 1 &&
+                                    !DONE_STATES.includes(message.type);
 
-                            return (
-                                <MessageItem
-                                    key={`${message.timestamp}-${index}`}
-                                    message={message}
-                                    showPulsatingCircle={isLatestNonCompletionMessage}
-                                />
-                            );
-                        })
+                                return (
+                                    <MessageItem
+                                        key={`${message.timestamp}-${index}`}
+                                        message={message}
+                                        showPulsatingCircle={isLatestNonCompletionMessage}
+                                    />
+                                );
+                            })}
+                            {/* Render streaming messages at the end */}
+                            {Array.from(streamingMessages.entries())
+                                .filter(([_, data]) =>
+                                    activeWorkstream === "all" ||
+                                    data.workstreamId === activeWorkstream ||
+                                    (!data.workstreamId && activeWorkstream === "main")
+                                )
+                                .map(([streamingId, data]) => (
+                                    <StreamingMessage
+                                        key={`streaming-${streamingId}`}
+                                        text={data.text}
+                                        workstreamId={data.workstreamId}
+                                    />
+                                ))
+                            }
+                        </>
                     ) : (
                         // Sliding view - only permanent messages and latest thinking from the current workstream
                         <>
@@ -177,8 +199,9 @@ function AllMessagesMixedComponent({
                                     msg.type === AgentMessageType.TERMINATED
                                 );
 
-                                // Then get the latest thinking message if not completed
-                                const latestThinkingMessage = !isCompleted ?
+                                // Then get the latest thinking message if not completed and no streaming messages
+                                const hasStreamingMessages = streamingMessages.size > 0;
+                                const latestThinkingMessage = !isCompleted && !hasStreamingMessages ?
                                     displayMessages
                                         .filter(msg =>
                                             msg.type === AgentMessageType.THOUGHT ||
@@ -203,9 +226,10 @@ function AllMessagesMixedComponent({
                                     return timeA - timeB; // Sort ascending - oldest first
                                 });
 
-                                // Show pulsating circle only on the latest message if not completed
+                                // Show pulsating circle only on the latest message if not completed and no streaming
                                 return allMessages.map((message, index) => {
                                     const isLatestMessage = !isCompleted &&
+                                        !hasStreamingMessages &&
                                         index === allMessages.length - 1 &&
                                         !DONE_STATES.includes(message.type);
 
@@ -218,7 +242,21 @@ function AllMessagesMixedComponent({
                                     );
                                 });
                             })()}
-
+                            {/* Render streaming messages at the end in sliding view */}
+                            {Array.from(streamingMessages.entries())
+                                .filter(([_, data]) =>
+                                    activeWorkstream === "all" ||
+                                    data.workstreamId === activeWorkstream ||
+                                    (!data.workstreamId && activeWorkstream === "main")
+                                )
+                                .map(([streamingId, data]) => (
+                                    <StreamingMessage
+                                        key={`streaming-${streamingId}`}
+                                        text={data.text}
+                                        workstreamId={data.workstreamId}
+                                    />
+                                ))
+                            }
                         </>
                     )}
                     <div ref={bottomRef} className="h-4" />
