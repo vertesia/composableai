@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button, cn, useToast } from "@vertesia/ui/core";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { CopyIcon } from "lucide-react";
+import dayjs from "dayjs";
 
 interface StreamingMessageProps {
     text: string;
@@ -10,6 +11,8 @@ interface StreamingMessageProps {
     revealSpeed?: number;
     /** Whether streaming has completed (triggers fast catch-up) */
     isComplete?: boolean;
+    /** Timestamp when streaming started */
+    timestamp?: number | string;
 }
 
 /**
@@ -22,11 +25,15 @@ function StreamingMessageComponent({
     workstreamId,
     revealSpeed = 300,
     isComplete = false,
+    timestamp,
 }: StreamingMessageProps) {
     const [displayedLength, setDisplayedLength] = useState(0);
+    const [throttledText, setThrottledText] = useState("");
     const animationRef = useRef<number | null>(null);
     const targetLengthRef = useRef(text.length);
     const displayedLengthRef = useRef(0);
+    const throttleTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const startTime = useRef(timestamp || Date.now());
 
     // Track model's generation rate for adaptive speed
     const lastTextLengthRef = useRef(0);
@@ -143,12 +150,41 @@ function StreamingMessageComponent({
         }
     }, [isComplete, text.length, animate]);
 
+    // Throttle markdown updates to every 100ms for performance
+    useEffect(() => {
+        const displayedText = text.slice(0, displayedLength);
+
+        // Update immediately if we're caught up or complete
+        if (displayedLength >= text.length || isComplete) {
+            setThrottledText(displayedText);
+            return;
+        }
+
+        // Throttle updates during active streaming
+        if (!throttleTimerRef.current) {
+            throttleTimerRef.current = setTimeout(() => {
+                setThrottledText(text.slice(0, displayedLengthRef.current));
+                throttleTimerRef.current = null;
+            }, 100);
+        }
+
+        return () => {
+            if (throttleTimerRef.current) {
+                clearTimeout(throttleTimerRef.current);
+                throttleTimerRef.current = null;
+            }
+        };
+    }, [displayedLength, text, isComplete]);
+
     const toast = useToast();
+    const formattedTime = useMemo(() =>
+        dayjs(startTime.current).format("HH:mm:ss"),
+        []
+    );
 
     if (!text) return null;
 
     const isTyping = displayedLength < text.length;
-    const displayedText = text.slice(0, displayedLength);
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(text).then(() => {
@@ -168,7 +204,7 @@ function StreamingMessageComponent({
                 "min-h-[3rem]"
             )}
         >
-            {/* Header with task and copy button */}
+            {/* Header with task, timestamp and copy button */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     {workstreamId && workstreamId !== "main" && (
@@ -180,20 +216,23 @@ function StreamingMessageComponent({
                         <span className="text-xs text-muted">Streaming...</span>
                     )}
                 </div>
-                <Button
-                    variant="ghost"
-                    size="xs"
-                    onClick={copyToClipboard}
-                    className="text-muted opacity-50 hover:opacity-100"
-                    title="Copy message"
-                >
-                    <CopyIcon className="size-3" />
-                </Button>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted">{formattedTime}</span>
+                    <Button
+                        variant="ghost"
+                        size="xs"
+                        onClick={copyToClipboard}
+                        className="text-muted opacity-50 hover:opacity-100"
+                        title="Copy message"
+                    >
+                        <CopyIcon className="size-3" />
+                    </Button>
+                </div>
             </div>
-            {/* Content */}
+            {/* Content - uses throttled text for performance */}
             <div className="text-sm break-words leading-relaxed streaming-content prose prose-sm dark:prose-invert max-w-none">
                 <MarkdownRenderer>
-                    {displayedText}
+                    {throttledText || text.slice(0, displayedLength)}
                 </MarkdownRenderer>
                 {isTyping && (
                     <span className="streaming-cursor" />

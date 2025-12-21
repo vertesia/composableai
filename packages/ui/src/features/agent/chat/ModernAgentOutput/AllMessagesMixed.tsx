@@ -91,6 +91,42 @@ function AllMessagesMixedComponent({
         return filterMessagesByWorkstream(sortedMessages, activeWorkstream);
     }, [sortedMessages, activeWorkstream]);
 
+    // Pre-compute important messages and latest thinking for sliding view (avoid IIFE in render)
+    const { importantMessages, latestThinking } = React.useMemo(() => {
+        const hasStreaming = streamingMessages.size > 0;
+
+        const important = displayMessages.filter(msg =>
+            msg.type === AgentMessageType.ANSWER ||
+            msg.type === AgentMessageType.QUESTION ||
+            msg.type === AgentMessageType.COMPLETE ||
+            msg.type === AgentMessageType.IDLE ||
+            msg.type === AgentMessageType.REQUEST_INPUT ||
+            msg.type === AgentMessageType.TERMINATED ||
+            msg.type === AgentMessageType.ERROR
+        );
+
+        const thinking = !isCompleted && !hasStreaming
+            ? displayMessages
+                .filter(msg =>
+                    msg.type === AgentMessageType.THOUGHT ||
+                    msg.type === AgentMessageType.UPDATE ||
+                    msg.type === AgentMessageType.PLAN)
+                .pop()
+            : null;
+
+        return { importantMessages: important, latestThinking: thinking };
+    }, [displayMessages, isCompleted, streamingMessages.size]);
+
+    // Pre-compute filtered streaming messages
+    const filteredStreamingMessages = React.useMemo(() =>
+        Array.from(streamingMessages.entries()).filter(([_, data]) =>
+            activeWorkstream === "all" ||
+            data.workstreamId === activeWorkstream ||
+            (!data.workstreamId && activeWorkstream === "main")
+        ),
+        [streamingMessages, activeWorkstream]
+    );
+
     // Determine completion status for each workstream
     const workstreamCompletionStatus = useMemo(() => {
         const statusMap = new Map<string, boolean>();
@@ -170,94 +206,52 @@ function AllMessagesMixedComponent({
                                 );
                             })}
                             {/* Render streaming messages at the end */}
-                            {Array.from(streamingMessages.entries())
-                                .filter(([_, data]) =>
-                                    activeWorkstream === "all" ||
-                                    data.workstreamId === activeWorkstream ||
-                                    (!data.workstreamId && activeWorkstream === "main")
-                                )
-                                .map(([streamingId, data]) => (
-                                    <StreamingMessage
-                                        key={`streaming-${streamingId}`}
-                                        text={data.text}
-                                        workstreamId={data.workstreamId}
-                                        isComplete={data.isComplete}
-                                    />
-                                ))
-                            }
+                            {filteredStreamingMessages.map(([streamingId, data]) => (
+                                <StreamingMessage
+                                    key={`streaming-${streamingId}`}
+                                    text={data.text}
+                                    workstreamId={data.workstreamId}
+                                    isComplete={data.isComplete}
+                                />
+                            ))}
                         </>
                     ) : (
                         // Most Important view - main messages + thinking displayed like streaming
                         <>
-                            {(() => {
-                                const hasStreamingMessages = streamingMessages.size > 0;
-
-                                // Important messages: user questions and agent answers/completions
-                                const importantMessages = displayMessages.filter(msg =>
-                                    msg.type === AgentMessageType.ANSWER ||
-                                    msg.type === AgentMessageType.QUESTION ||
-                                    msg.type === AgentMessageType.COMPLETE ||
-                                    msg.type === AgentMessageType.IDLE ||
-                                    msg.type === AgentMessageType.REQUEST_INPUT ||
-                                    msg.type === AgentMessageType.TERMINATED ||
-                                    msg.type === AgentMessageType.ERROR
-                                );
-
-                                // Latest thinking message (shown with streaming-like effect)
-                                const latestThinking = !isCompleted && !hasStreamingMessages
-                                    ? displayMessages
-                                        .filter(msg =>
-                                            msg.type === AgentMessageType.THOUGHT ||
-                                            msg.type === AgentMessageType.UPDATE ||
-                                            msg.type === AgentMessageType.PLAN)
-                                        .pop()
-                                    : null;
+                            {importantMessages.map((message, index) => {
+                                const hasStreaming = streamingMessages.size > 0;
+                                const isLatestMessage = !isCompleted &&
+                                    !hasStreaming &&
+                                    !latestThinking &&
+                                    index === importantMessages.length - 1 &&
+                                    !DONE_STATES.includes(message.type);
 
                                 return (
-                                    <>
-                                        {importantMessages.map((message, index) => {
-                                            const isLatestMessage = !isCompleted &&
-                                                !hasStreamingMessages &&
-                                                !latestThinking &&
-                                                index === importantMessages.length - 1 &&
-                                                !DONE_STATES.includes(message.type);
-
-                                            return (
-                                                <MessageItem
-                                                    key={`${message.timestamp}-${index}`}
-                                                    message={message}
-                                                    showPulsatingCircle={isLatestMessage}
-                                                />
-                                            );
-                                        })}
-                                        {/* Latest thinking - displayed like streaming message */}
-                                        {latestThinking && (
-                                            <StreamingMessage
-                                                key={`thinking-${latestThinking.timestamp}`}
-                                                text={latestThinking.message || ''}
-                                                workstreamId={getWorkstreamId(latestThinking)}
-                                                isComplete={false}
-                                            />
-                                        )}
-                                    </>
-                                );
-                            })()}
-                            {/* Render streaming messages at the end */}
-                            {Array.from(streamingMessages.entries())
-                                .filter(([_, data]) =>
-                                    activeWorkstream === "all" ||
-                                    data.workstreamId === activeWorkstream ||
-                                    (!data.workstreamId && activeWorkstream === "main")
-                                )
-                                .map(([streamingId, data]) => (
-                                    <StreamingMessage
-                                        key={`streaming-${streamingId}`}
-                                        text={data.text}
-                                        workstreamId={data.workstreamId}
-                                        isComplete={data.isComplete}
+                                    <MessageItem
+                                        key={`${message.timestamp}-${index}`}
+                                        message={message}
+                                        showPulsatingCircle={isLatestMessage}
                                     />
-                                ))
-                            }
+                                );
+                            })}
+                            {/* Latest thinking - displayed like streaming message */}
+                            {latestThinking && (
+                                <StreamingMessage
+                                    key={`thinking-${latestThinking.timestamp}`}
+                                    text={latestThinking.message || ''}
+                                    workstreamId={getWorkstreamId(latestThinking)}
+                                    isComplete={false}
+                                />
+                            )}
+                            {/* Render streaming messages at the end */}
+                            {filteredStreamingMessages.map(([streamingId, data]) => (
+                                <StreamingMessage
+                                    key={`streaming-${streamingId}`}
+                                    text={data.text}
+                                    workstreamId={data.workstreamId}
+                                    isComplete={data.isComplete}
+                                />
+                            ))}
                         </>
                     )}
                     <div ref={bottomRef} className="h-4" />
