@@ -416,12 +416,24 @@ function ModernAgentConversationInner({
 
             if (message.message) {
                 setMessages((prev_messages) => {
-                    if (!prev_messages.find((m) => m.timestamp === message.timestamp)) {
-                        insertMessageInTimeline(prev_messages, message);
-                        return [...prev_messages];
-                    } else {
+                    // Check for duplicate by timestamp
+                    if (prev_messages.find((m) => m.timestamp === message.timestamp)) {
                         return prev_messages;
                     }
+
+                    // For QUESTION messages from server, replace any optimistic version
+                    if (message.type === AgentMessageType.QUESTION && !message.details?._optimistic) {
+                        const withoutOptimistic = prev_messages.filter(
+                            (m) => !(m.type === AgentMessageType.QUESTION &&
+                                m.details?._optimistic &&
+                                m.message === message.message)
+                        );
+                        insertMessageInTimeline(withoutOptimistic, message);
+                        return [...withoutOptimistic];
+                    }
+
+                    insertMessageInTimeline(prev_messages, message);
+                    return [...prev_messages];
                 });
             }
         });
@@ -588,19 +600,31 @@ function ModernAgentConversationInner({
 
         setIsSending(true);
 
+        // Add optimistic QUESTION message immediately for better UX
+        const optimisticTimestamp = Date.now();
+        const optimisticMessage: AgentMessage = {
+            timestamp: optimisticTimestamp,
+            workflow_run_id: run.runId,
+            type: AgentMessageType.QUESTION,
+            message: trimmed,
+            workstream_id: "main",
+            details: { _optimistic: true },
+        };
+        setMessages((prev) => {
+            insertMessageInTimeline(prev, optimisticMessage);
+            return [...prev];
+        });
+
         client.store.workflows
             .sendSignal(run.workflowId, run.runId, "UserInput", {
                 message: trimmed,
             } as UserInputSignal)
             .then(() => {
                 setIsCompleted(false);
-                toast({
-                    status: "success",
-                    title: "Message Sent",
-                    duration: 2000,
-                });
             })
             .catch((err) => {
+                // Remove optimistic message on failure
+                setMessages((prev) => prev.filter((m) => m.timestamp !== optimisticTimestamp));
                 toast({
                     status: "error",
                     title: "Failed to Send Message",
