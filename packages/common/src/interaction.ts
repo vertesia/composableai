@@ -747,6 +747,12 @@ export interface StreamingOptions {
      * Required when task_token is provided.
      */
     current_state?: import("./store/conversation-state.js").ConversationState;
+    /**
+     * Interval in milliseconds for sending heartbeats to Temporal during streaming.
+     * When provided, Studio will send periodic heartbeats to keep the activity alive.
+     * Recommended: 10000 (10 seconds). Activity heartbeat timeout should be ~3x this value.
+     */
+    heartbeat_interval_ms?: number;
 }
 
 interface ResumeConversationPayload {
