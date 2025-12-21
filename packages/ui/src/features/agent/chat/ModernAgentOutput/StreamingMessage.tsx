@@ -113,10 +113,11 @@ function StreamingMessageComponent({
         <div
             className={cn(
                 "flex items-start gap-2 p-3 rounded-lg",
-                "bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30"
+                "bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30",
+                "min-h-[3rem]" // Prevent layout jumping on initial render
             )}
         >
-            <div className="flex-shrink-0 mt-1">
+            <div className="flex-shrink-0 mt-0.5">
                 <PulsatingCircle size="sm" color="blue" />
             </div>
             <div className="flex-1 min-w-0">
@@ -125,25 +126,26 @@ function StreamingMessageComponent({
                         Task: {workstreamId}
                     </div>
                 )}
-                <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
+                <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words leading-relaxed">
                     {stableText}
                     <span
                         key={recentlyAddedStart}
-                        className="transition-opacity duration-150"
-                        style={{ animation: 'fadeIn 0.15s ease-out' }}
+                        className="transition-opacity duration-100"
+                        style={{ animation: 'fadeIn 0.1s ease-out' }}
                     >
                         {newText}
                     </span>
-                    <span
-                        className={cn(
-                            "inline-block w-0.5 h-4 ml-0.5 rounded-sm",
-                            "bg-blue-500 dark:bg-blue-400",
-                            isTyping ? "animate-pulse" : "opacity-0"
-                        )}
-                    />
+                    {isTyping && (
+                        <span
+                            className={cn(
+                                "inline-block w-0.5 h-4 ml-0.5 rounded-sm align-middle",
+                                "bg-blue-500 dark:bg-blue-400 animate-pulse"
+                            )}
+                        />
+                    )}
                     <style>{`
                         @keyframes fadeIn {
-                            from { opacity: 0.4; }
+                            from { opacity: 0.5; }
                             to { opacity: 1; }
                         }
                     `}</style>
