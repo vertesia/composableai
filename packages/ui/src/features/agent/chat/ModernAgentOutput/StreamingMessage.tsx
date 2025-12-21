@@ -5,32 +5,28 @@ import { PulsatingCircle } from "../AnimatedThinkingDots";
 interface StreamingMessageProps {
     text: string;
     workstreamId?: string;
-    /** Base characters per second for typing animation (default: 80) */
-    baseTypingSpeed?: number;
-    /** Max characters per second when catching up (default: 500) */
-    maxTypingSpeed?: number;
-    /** Whether streaming has completed (triggers catch-up mode) */
+    /** Characters per second for reveal animation (default: 300) */
+    revealSpeed?: number;
+    /** Whether streaming has completed (triggers fast catch-up) */
     isComplete?: boolean;
 }
 
 /**
- * Displays a streaming message that is being received in real-time.
- * Shows a pulsating indicator and renders the accumulated text with adaptive typing speed.
- *
- * The typing speed automatically increases when falling behind to keep pace with
- * incoming chunks, then returns to base speed when caught up.
+ * Displays a streaming message with a fast, smooth reveal effect.
+ * Text is revealed in chunks with a subtle fade-in animation for natural feel.
  */
 function StreamingMessageComponent({
     text,
     workstreamId,
-    baseTypingSpeed = 80,
-    maxTypingSpeed = 500,
+    revealSpeed = 300,
     isComplete = false,
 }: StreamingMessageProps) {
     const [displayedLength, setDisplayedLength] = useState(0);
+    const [recentlyAddedStart, setRecentlyAddedStart] = useState(0);
     const animationRef = useRef<number | null>(null);
     const targetLengthRef = useRef(text.length);
     const displayedLengthRef = useRef(0);
+    const lastRevealRef = useRef(0);
 
     // Keep refs in sync
     targetLengthRef.current = text.length;
@@ -42,23 +38,29 @@ function StreamingMessageComponent({
             const elapsed = currentTime - lastTime;
             const behindBy = targetLengthRef.current - displayedLengthRef.current;
 
-            // Adaptive speed: faster when behind, base speed when caught up
-            // Scale from baseTypingSpeed to maxTypingSpeed based on how far behind we are
-            const catchUpThreshold = 50; // Start speeding up when 50+ chars behind
-            const speedMultiplier = Math.min(
-                maxTypingSpeed / baseTypingSpeed,
-                1 + (Math.max(0, behindBy - catchUpThreshold) / 100)
-            );
-            const currentSpeed = baseTypingSpeed * speedMultiplier;
+            // Fast adaptive speed - quickly catch up when behind
+            const baseSpeed = isComplete ? revealSpeed * 3 : revealSpeed;
+            const speedBoost = Math.min(5, 1 + behindBy / 50);
+            const currentSpeed = baseSpeed * speedBoost;
             const msPerChar = 1000 / currentSpeed;
 
-            const charsToAdd = Math.max(1, Math.floor(elapsed / msPerChar));
+            // Reveal in chunks of ~5-15 chars for smoother appearance
+            const minChunk = 5;
+            const charsToAdd = Math.max(minChunk, Math.floor(elapsed / msPerChar));
 
-            if (elapsed >= msPerChar) {
+            if (elapsed >= msPerChar * minChunk) {
+                const prevLength = displayedLengthRef.current;
                 displayedLengthRef.current = Math.min(
                     displayedLengthRef.current + charsToAdd,
                     targetLengthRef.current
                 );
+
+                // Track where new text starts for fade effect
+                if (currentTime - lastRevealRef.current > 50) {
+                    setRecentlyAddedStart(prevLength);
+                    lastRevealRef.current = currentTime;
+                }
+
                 setDisplayedLength(displayedLengthRef.current);
                 lastTime = currentTime;
             }
@@ -68,11 +70,13 @@ function StreamingMessageComponent({
                 animationRef.current = requestAnimationFrame(step);
             } else {
                 animationRef.current = null;
+                // Clear the "recently added" highlight after catching up
+                setRecentlyAddedStart(displayedLengthRef.current);
             }
         };
 
         animationRef.current = requestAnimationFrame(step);
-    }, [baseTypingSpeed, maxTypingSpeed]);
+    }, [revealSpeed, isComplete]);
 
     // Start/continue animation when text grows
     useEffect(() => {
@@ -90,14 +94,19 @@ function StreamingMessageComponent({
 
     // When streaming completes, ensure we finish displaying quickly
     useEffect(() => {
-        if (isComplete && displayedLengthRef.current < text.length && !animationRef.current) {
+        if (isComplete && displayedLengthRef.current < text.length) {
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+                animationRef.current = null;
+            }
             animate();
         }
     }, [isComplete, text.length, animate]);
 
     if (!text) return null;
 
-    const displayedText = text.slice(0, displayedLength);
+    const stableText = text.slice(0, recentlyAddedStart);
+    const newText = text.slice(recentlyAddedStart, displayedLength);
     const isTyping = displayedLength < text.length;
 
     return (
@@ -117,13 +126,27 @@ function StreamingMessageComponent({
                     </div>
                 )}
                 <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
-                    {displayedText}
+                    {stableText}
+                    <span
+                        key={recentlyAddedStart}
+                        className="transition-opacity duration-150"
+                        style={{ animation: 'fadeIn 0.15s ease-out' }}
+                    >
+                        {newText}
+                    </span>
                     <span
                         className={cn(
-                            "inline-block w-2 h-4 ml-0.5 bg-blue-500 dark:bg-blue-400",
-                            isTyping ? "animate-none" : "animate-pulse"
+                            "inline-block w-0.5 h-4 ml-0.5 rounded-sm",
+                            "bg-blue-500 dark:bg-blue-400",
+                            isTyping ? "animate-pulse" : "opacity-0"
                         )}
                     />
+                    <style>{`
+                        @keyframes fadeIn {
+                            from { opacity: 0.4; }
+                            to { opacity: 1; }
+                        }
+                    `}</style>
                 </div>
             </div>
         </div>
