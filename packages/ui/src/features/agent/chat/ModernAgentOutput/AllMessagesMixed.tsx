@@ -1,9 +1,44 @@
 import { AgentMessage, AgentMessageType, Plan } from "@vertesia/common";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, Component, ReactNode } from "react";
+import { PulsatingCircle } from "../AnimatedThinkingDots";
 import MessageItem from "./MessageItem";
 import StreamingMessage from "./StreamingMessage";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
 import { DONE_STATES, getWorkstreamId } from "./utils";
+import { ThinkingMessages } from "../WaitingMessages";
+
+// Replace %thinking_message% placeholder with actual thinking message
+const processThinkingPlaceholder = (text: string): string => {
+    if (text.includes('%thinking_message%')) {
+        const randomIndex = Math.floor(Math.random() * ThinkingMessages.length);
+        return text.replace(/%thinking_message%/g, ThinkingMessages[randomIndex]);
+    }
+    return text;
+};
+
+// Error boundary to catch and isolate errors in individual message components
+class MessageErrorBoundary extends Component<
+    { children: ReactNode },
+    { hasError: boolean; error?: Error }
+> {
+    constructor(props: { children: ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError(error: Error) {
+        console.error('Message render error:', error);
+        return { hasError: true, error };
+    }
+
+    render() {
+        // Silent fail - just don't render the broken message
+        if (this.state.hasError) {
+            return null;
+        }
+        return this.props.children;
+    }
+}
 
 interface AllMessagesMixedProps {
     messages: AgentMessage[];
@@ -91,10 +126,11 @@ function AllMessagesMixedComponent({
         return filterMessagesByWorkstream(sortedMessages, activeWorkstream);
     }, [sortedMessages, activeWorkstream]);
 
-    // Pre-compute important messages and latest thinking for sliding view (avoid IIFE in render)
-    const { importantMessages, latestThinking } = React.useMemo(() => {
+    // Pre-compute important messages and recent thinking for sliding view (avoid IIFE in render)
+    const { importantMessages, recentThinking } = React.useMemo(() => {
         const hasStreaming = streamingMessages.size > 0;
 
+        // Important messages include answers, questions, completion states, AND tool progress thoughts
         const important = displayMessages.filter(msg =>
             msg.type === AgentMessageType.ANSWER ||
             msg.type === AgentMessageType.QUESTION ||
@@ -102,19 +138,23 @@ function AllMessagesMixedComponent({
             msg.type === AgentMessageType.IDLE ||
             msg.type === AgentMessageType.REQUEST_INPUT ||
             msg.type === AgentMessageType.TERMINATED ||
-            msg.type === AgentMessageType.ERROR
+            msg.type === AgentMessageType.ERROR ||
+            // Include THOUGHT messages that have tool details (progress from message_to_human)
+            (msg.type === AgentMessageType.THOUGHT && msg.details?.tool)
         );
 
-        const thinking = !isCompleted && !hasStreaming
+        // Latest thinking: show only the most recent generic thinking message (UPDATE/PLAN or THOUGHT without tool)
+        // Tool progress is already in important messages
+        const thinkingMessages = !isCompleted && !hasStreaming
             ? displayMessages
                 .filter(msg =>
-                    msg.type === AgentMessageType.THOUGHT ||
                     msg.type === AgentMessageType.UPDATE ||
-                    msg.type === AgentMessageType.PLAN)
-                .pop()
-            : null;
+                    msg.type === AgentMessageType.PLAN ||
+                    (msg.type === AgentMessageType.THOUGHT && !msg.details?.tool))
+                .slice(-1) // Show only the latest thinking message
+            : [];
 
-        return { importantMessages: important, latestThinking: thinking };
+        return { importantMessages: important, recentThinking: thinkingMessages };
     }, [displayMessages, isCompleted, streamingMessages.size]);
 
     // Pre-compute filtered streaming messages
@@ -126,6 +166,17 @@ function AllMessagesMixedComponent({
         ),
         [streamingMessages, activeWorkstream]
     );
+
+    // Show working indicator when agent is actively processing
+    const isAgentWorking = useMemo(() => {
+        if (isCompleted) return false;
+        // Agent is working if there are streaming messages, recent thinking, or no final answer yet
+        return streamingMessages.size > 0 || recentThinking.length > 0 || !displayMessages.some(msg =>
+            msg.type === AgentMessageType.COMPLETE ||
+            msg.type === AgentMessageType.IDLE ||
+            msg.type === AgentMessageType.TERMINATED
+        );
+    }, [isCompleted, streamingMessages.size, recentThinking.length, displayMessages]);
 
     // Determine completion status for each workstream
     const workstreamCompletionStatus = useMemo(() => {
@@ -198,22 +249,31 @@ function AllMessagesMixedComponent({
                                     !DONE_STATES.includes(message.type);
 
                                 return (
-                                    <MessageItem
-                                        key={`${message.timestamp}-${index}`}
-                                        message={message}
-                                        showPulsatingCircle={isLatestMessage}
-                                    />
+                                    <MessageErrorBoundary key={`${message.timestamp}-${index}`}>
+                                        <MessageItem
+                                            message={message}
+                                            showPulsatingCircle={isLatestMessage}
+                                        />
+                                    </MessageErrorBoundary>
                                 );
                             })}
                             {/* Render streaming messages at the end */}
                             {filteredStreamingMessages.map(([streamingId, data]) => (
-                                <StreamingMessage
-                                    key={`streaming-${streamingId}`}
-                                    text={data.text}
-                                    workstreamId={data.workstreamId}
-                                    isComplete={data.isComplete}
-                                />
+                                <MessageErrorBoundary key={`streaming-${streamingId}`}>
+                                    <StreamingMessage
+                                        text={data.text}
+                                        workstreamId={data.workstreamId}
+                                        isComplete={data.isComplete}
+                                    />
+                                </MessageErrorBoundary>
                             ))}
+                            {/* Working indicator - shows agent is actively processing */}
+                            {isAgentWorking && filteredStreamingMessages.length === 0 && (
+                                <div className="flex items-center gap-3 p-4 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
+                                    <PulsatingCircle size="sm" color="blue" />
+                                    <span className="text-sm text-muted">Working...</span>
+                                </div>
+                            )}
                         </>
                     ) : (
                         // Most Important view - main messages + thinking displayed like streaming
@@ -222,36 +282,46 @@ function AllMessagesMixedComponent({
                                 const hasStreaming = streamingMessages.size > 0;
                                 const isLatestMessage = !isCompleted &&
                                     !hasStreaming &&
-                                    !latestThinking &&
+                                    recentThinking.length === 0 &&
                                     index === importantMessages.length - 1 &&
                                     !DONE_STATES.includes(message.type);
 
                                 return (
-                                    <MessageItem
-                                        key={`${message.timestamp}-${index}`}
-                                        message={message}
-                                        showPulsatingCircle={isLatestMessage}
-                                    />
+                                    <MessageErrorBoundary key={`${message.timestamp}-${index}`}>
+                                        <MessageItem
+                                            message={message}
+                                            showPulsatingCircle={isLatestMessage}
+                                        />
+                                    </MessageErrorBoundary>
                                 );
                             })}
-                            {/* Latest thinking - displayed like streaming message */}
-                            {latestThinking && (
-                                <StreamingMessage
-                                    key={`thinking-${latestThinking.timestamp}`}
-                                    text={latestThinking.message || ''}
-                                    workstreamId={getWorkstreamId(latestThinking)}
-                                    isComplete={false}
-                                />
-                            )}
+                            {/* Recent thinking messages - displayed like streaming */}
+                            {recentThinking.map((thinking, idx) => (
+                                <MessageErrorBoundary key={`thinking-${thinking.timestamp}-${idx}`}>
+                                    <StreamingMessage
+                                        text={processThinkingPlaceholder(thinking.message || '')}
+                                        workstreamId={getWorkstreamId(thinking)}
+                                        isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
+                                    />
+                                </MessageErrorBoundary>
+                            ))}
                             {/* Render streaming messages at the end */}
                             {filteredStreamingMessages.map(([streamingId, data]) => (
-                                <StreamingMessage
-                                    key={`streaming-${streamingId}`}
-                                    text={data.text}
-                                    workstreamId={data.workstreamId}
-                                    isComplete={data.isComplete}
-                                />
+                                <MessageErrorBoundary key={`streaming-${streamingId}`}>
+                                    <StreamingMessage
+                                        text={data.text}
+                                        workstreamId={data.workstreamId}
+                                        isComplete={data.isComplete}
+                                    />
+                                </MessageErrorBoundary>
                             ))}
+                            {/* Working indicator - shows agent is actively processing */}
+                            {isAgentWorking && recentThinking.length === 0 && filteredStreamingMessages.length === 0 && (
+                                <div className="flex items-center gap-3 p-4 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
+                                    <PulsatingCircle size="sm" color="blue" />
+                                    <span className="text-sm text-muted">Working...</span>
+                                </div>
+                            )}
                         </>
                     )}
                     <div ref={bottomRef} className="h-4" />

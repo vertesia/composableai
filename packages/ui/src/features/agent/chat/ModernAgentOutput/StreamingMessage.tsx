@@ -32,7 +32,6 @@ function StreamingMessageComponent({
     const animationRef = useRef<number | null>(null);
     const targetLengthRef = useRef(text.length);
     const displayedLengthRef = useRef(0);
-    const throttleTimerRef = useRef<NodeJS.Timeout | null>(null);
     const startTime = useRef(timestamp || Date.now());
 
     // Track model's generation rate for adaptive speed
@@ -152,29 +151,19 @@ function StreamingMessageComponent({
 
     // Throttle markdown updates to every 100ms for performance
     useEffect(() => {
-        const displayedText = text.slice(0, displayedLength);
-
-        // Update immediately if we're caught up or complete
+        // Update immediately if caught up or complete
         if (displayedLength >= text.length || isComplete) {
-            setThrottledText(displayedText);
+            setThrottledText(text.slice(0, displayedLength));
             return;
         }
 
-        // Throttle updates during active streaming
-        if (!throttleTimerRef.current) {
-            throttleTimerRef.current = setTimeout(() => {
-                setThrottledText(text.slice(0, displayedLengthRef.current));
-                throttleTimerRef.current = null;
-            }, 100);
-        }
+        // Throttle during active streaming
+        const timer = setTimeout(() => {
+            setThrottledText(text.slice(0, displayedLengthRef.current));
+        }, 100);
 
-        return () => {
-            if (throttleTimerRef.current) {
-                clearTimeout(throttleTimerRef.current);
-                throttleTimerRef.current = null;
-            }
-        };
-    }, [displayedLength, text, isComplete]);
+        return () => clearTimeout(timer);
+    }, [displayedLength, text.length, isComplete]);
 
     const toast = useToast();
     const formattedTime = useMemo(() =>
