@@ -1,6 +1,7 @@
 export * from "./activity-catalog.js";
 export * from "./collections.js";
 export * from "./common.js";
+export * from "./conversation-state.js";
 export * from "./doc-analyzer.js";
 export * from "./dsl-workflow.js";
 export * from "./object-types.js";

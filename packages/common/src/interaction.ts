@@ -722,6 +722,23 @@ export interface StreamingOptions {
     run_id: string;
     /** Optional workstream ID for multi-workstream agents */
     workstream_id?: string;
+    /**
+     * Temporal task token for async activity completion (base64url encoded).
+     * When provided, Studio will complete the activity after streaming finishes,
+     * allowing the worker to release the activity slot immediately.
+     */
+    task_token?: string;
+    /**
+     * Activity ID for idempotency metadata when storing conversation.
+     * Required when task_token is provided.
+     */
+    activity_id?: string;
+    /**
+     * Current conversation state to merge with execution result.
+     * Studio will store the conversation and complete the activity with merged state.
+     * Required when task_token is provided.
+     */
+    current_state?: import("./store/conversation-state.js").ConversationState;
 }
 
 interface ResumeConversationPayload {
