@@ -18,7 +18,7 @@ interface AllMessagesMixedProps {
     activePlanIndex?: number;
     onChangePlan?: (index: number) => void;
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
-    streamingMessages?: Map<string, { text: string; workstreamId?: string }>; // Real-time streaming chunks
+    streamingMessages?: Map<string, { text: string; workstreamId?: string; isComplete?: boolean }>; // Real-time streaming chunks
 }
 
 function AllMessagesMixedComponent({
@@ -180,6 +180,7 @@ function AllMessagesMixedComponent({
                                         key={`streaming-${streamingId}`}
                                         text={data.text}
                                         workstreamId={data.workstreamId}
+                                        isComplete={data.isComplete}
                                     />
                                 ))
                             }
@@ -254,6 +255,7 @@ function AllMessagesMixedComponent({
                                         key={`streaming-${streamingId}`}
                                         text={data.text}
                                         workstreamId={data.workstreamId}
+                                        isComplete={data.isComplete}
                                     />
                                 ))
                             }

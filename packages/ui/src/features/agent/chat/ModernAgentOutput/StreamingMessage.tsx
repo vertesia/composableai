@@ -5,15 +5,28 @@ import { PulsatingCircle } from "../AnimatedThinkingDots";
 interface StreamingMessageProps {
     text: string;
     workstreamId?: string;
-    /** Characters per second for typing animation (default: 100) */
-    typingSpeed?: number;
+    /** Base characters per second for typing animation (default: 80) */
+    baseTypingSpeed?: number;
+    /** Max characters per second when catching up (default: 500) */
+    maxTypingSpeed?: number;
+    /** Whether streaming has completed (triggers catch-up mode) */
+    isComplete?: boolean;
 }
 
 /**
  * Displays a streaming message that is being received in real-time.
- * Shows a pulsating indicator and renders the accumulated text with a smooth typing effect.
+ * Shows a pulsating indicator and renders the accumulated text with adaptive typing speed.
+ *
+ * The typing speed automatically increases when falling behind to keep pace with
+ * incoming chunks, then returns to base speed when caught up.
  */
-function StreamingMessageComponent({ text, workstreamId, typingSpeed = 100 }: StreamingMessageProps) {
+function StreamingMessageComponent({
+    text,
+    workstreamId,
+    baseTypingSpeed = 80,
+    maxTypingSpeed = 500,
+    isComplete = false,
+}: StreamingMessageProps) {
     const [displayedLength, setDisplayedLength] = useState(0);
     const animationRef = useRef<number | null>(null);
     const targetLengthRef = useRef(text.length);
@@ -23,11 +36,22 @@ function StreamingMessageComponent({ text, workstreamId, typingSpeed = 100 }: St
     targetLengthRef.current = text.length;
 
     const animate = useCallback(() => {
-        const msPerChar = 1000 / typingSpeed;
         let lastTime = performance.now();
 
         const step = (currentTime: number) => {
             const elapsed = currentTime - lastTime;
+            const behindBy = targetLengthRef.current - displayedLengthRef.current;
+
+            // Adaptive speed: faster when behind, base speed when caught up
+            // Scale from baseTypingSpeed to maxTypingSpeed based on how far behind we are
+            const catchUpThreshold = 50; // Start speeding up when 50+ chars behind
+            const speedMultiplier = Math.min(
+                maxTypingSpeed / baseTypingSpeed,
+                1 + (Math.max(0, behindBy - catchUpThreshold) / 100)
+            );
+            const currentSpeed = baseTypingSpeed * speedMultiplier;
+            const msPerChar = 1000 / currentSpeed;
+
             const charsToAdd = Math.max(1, Math.floor(elapsed / msPerChar));
 
             if (elapsed >= msPerChar) {
@@ -48,7 +72,7 @@ function StreamingMessageComponent({ text, workstreamId, typingSpeed = 100 }: St
         };
 
         animationRef.current = requestAnimationFrame(step);
-    }, [typingSpeed]);
+    }, [baseTypingSpeed, maxTypingSpeed]);
 
     // Start/continue animation when text grows
     useEffect(() => {
@@ -63,6 +87,13 @@ function StreamingMessageComponent({ text, workstreamId, typingSpeed = 100 }: St
             }
         };
     }, [text.length, animate]);
+
+    // When streaming completes, ensure we finish displaying quickly
+    useEffect(() => {
+        if (isComplete && displayedLengthRef.current < text.length && !animationRef.current) {
+            animate();
+        }
+    }, [isComplete, text.length, animate]);
 
     if (!text) return null;
 

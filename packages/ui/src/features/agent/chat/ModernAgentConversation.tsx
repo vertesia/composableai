@@ -318,7 +318,7 @@ function ModernAgentConversationInner({
     const [showInput, setShowInput] = useState(interactive);
     const [workflowStatus, setWorkflowStatus] = useState<string | null>(null);
     // Track streaming messages by streaming_id for real-time chunk aggregation
-    const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string }>>(new Map());
+    const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean }>>(new Map());
     // Track completed streams to convert to messages (avoids race condition from nested setState)
     const completedStreamsRef = useRef<Array<{ text: string; workstreamId?: string; streamingId: string }>>([]);
 
@@ -381,9 +381,14 @@ function ModernAgentConversationInner({
                     const current = updated.get(details.streaming_id) || { text: '', workstreamId: message.workstream_id };
                     const newText = current.text + (message.message || '');
 
-                    // When streaming is done, queue for conversion to regular message
+                    // When streaming is done, mark as complete but keep displaying
+                    // The message will be removed when COMPLETE message arrives
                     if (details.is_final) {
-                        updated.delete(details.streaming_id);
+                        updated.set(details.streaming_id, {
+                            text: newText,
+                            workstreamId: message.workstream_id,
+                            isComplete: true,
+                        });
                         // Queue completed stream for processing (will be handled by useEffect)
                         completedStreamsRef.current.push({
                             text: newText,
