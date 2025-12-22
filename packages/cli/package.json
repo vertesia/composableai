@@ -50,7 +50,7 @@
         "glob": "^11.1.0",
         "gradient-string": "^3.0.0",
         "json-schema": "^0.4.0",
-        "json-schema-to-typescript": "^13.1.1",
+        "json-schema-to-typescript": "^15.0.4",
         "jsonwebtoken": "^9.0.3",
         "log-symbols": "^7.0.0",
         "log-update": "^6.1.0",
