@@ -1,12 +1,12 @@
 import { SkillCollection, loadSkillsFromDirectory } from "@vertesia/tools-sdk";
 
-export const CodeReviewSkills = new SkillCollection({
-    name: "code-review",
-    title: "Code Review Skills",
-    description: "Skills for reviewing and analyzing code quality",
-    skills: loadSkillsFromDirectory(new URL("./code-review", import.meta.url).pathname)
+export const ExampleSkills = new SkillCollection({
+    name: "examples",
+    title: "Example Skills",
+    description: "A suite of simple skills demonstrating various functionalities",
+    skills: loadSkillsFromDirectory(new URL("./examples", import.meta.url).pathname)
 });
 
 export const skills = [
-    CodeReviewSkills
+    ExampleSkills
 ];

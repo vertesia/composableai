@@ -236,6 +236,7 @@ export interface SkillDefinition {
      * Th name will be used to load the widget dynamically from the agent chat
      * and must match the code block language returned by the LLM (e.g., ```my-widget)
      * which will be rendered using the widget.
+     * The widget file must be located in the skill directory under the name {{widget-name}}.tsx.
      */
     widgets?: string[];
 }

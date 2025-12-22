@@ -20,13 +20,6 @@ export interface SkillCollectionProperties extends CollectionProperties {
      * The skills in this collection
      */
     skills: SkillDefinition[];
-
-    /**
-     * A list of widgets exposed by skills in this collection.
-     * The widgets are identified by their unique names.
-     * The widget js bundle can be loaded from /widgets/{widget_name}.js
-     */
-    widgets?: string[];
 }
 
 /**
@@ -121,6 +114,18 @@ export class SkillCollection implements ICollection<SkillDefinition> {
         };
     }
 
+    getWidgets(): string[] {
+        const out = new Set<string>();
+        for (const skill of this.skills.values()) {
+            if (skill.widgets) {
+                for (const widget of skill.widgets) {
+                    out.add(widget);
+                }
+            }
+        }
+        return Array.from(out);
+    }
+
     /**
      * Execute a skill - accepts standard tool execution payload.
      * Returns rendered instructions in tool result format.
@@ -201,6 +206,7 @@ interface SkillFrontmatter {
     description: string;
     keywords?: string[];
     tools?: string[];
+    widgets?: string[];
     data_patterns?: string[];
     language?: string;
     packages?: string[];
@@ -252,6 +258,7 @@ export function parseSkillFile(
         name: frontmatter.name,
         title: frontmatter.title,
         description: frontmatter.description,
+        widgets: frontmatter.widgets,
         instructions,
         content_type: contentType,
     };
