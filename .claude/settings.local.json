@@ -3,7 +3,9 @@
     "allow": [
       "Bash(git push:*)",
       "Bash(gh pr view:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(pnpm exec vitest:*)",
+      "Bash(pnpm test:*)"
     ],
     "deny": []
   }
