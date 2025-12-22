@@ -87,7 +87,7 @@
         "eslint-import-resolver-typescript": "^4.4.4",
         "eslint-plugin-import": "^2.32.0",
         "eslint-plugin-react": "^7.37.5",
-        "eslint-plugin-react-hooks": "^5.2.0",
+        "eslint-plugin-react-hooks": "^7.0.1",
         "rimraf": "^6.1.2",
         "rollup": "^4.53.3",
         "rollup-plugin-terser": "^7.0.2",
