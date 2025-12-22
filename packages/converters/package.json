@@ -34,6 +34,17 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/converters"
     },
+    "keywords": [
+        "vertesia",
+        "converters",
+        "image",
+        "pdf",
+        "markdown",
+        "sharp",
+        "pandoc",
+        "mutool",
+        "typescript"
+    ],
     "ts_dual_module": {
         "outDir": "lib"
     }

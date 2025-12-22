@@ -128,7 +128,12 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         if (opts.tokenServerUrl) {
             this.tokenServerUrl = opts.tokenServerUrl;
         } else if (opts.site) {
-            this.tokenServerUrl = `https://${opts.site.replace(/^api/, "sts")}`;
+            // Preview uses production STS, staging uses its own STS
+            if (opts.site === "api-preview.vertesia.io" || opts.site === "api.vertesia.io") {
+                this.tokenServerUrl = "https://sts.vertesia.io";
+            } else {
+                this.tokenServerUrl = `https://${opts.site.replace(/^api/, "sts")}`;
+            }
         } else if (opts.serverUrl || opts.storeUrl) {
             // Determine STS URL based on environment in serverUrl or storeUrl
             const urlToCheck = opts.serverUrl || opts.storeUrl || "";

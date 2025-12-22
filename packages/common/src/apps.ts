@@ -23,10 +23,12 @@ export interface AppManifestData {
     name: string;
 
     /**
-     * Whether the app is private to the owner account.
-     * If true the account property must be defined.
+     * Visibility level of the app:
+     * - "public": visible to all accounts
+     * - "private": visible only to the owning account
+     * - "vertesia": visible only to Vertesia team members (any project)
      */
-    private: boolean;
+    visibility: "public" | "private" | "vertesia";
 
     title: string;
     description: string;

@@ -45,6 +45,7 @@ interface DocumentUploadModalProps {
     hideFileSelection?: boolean;
     /** Show only the type selection, used for type change operations */
     showTypeSelectionOnly?: boolean;
+    allowFolders?: boolean;
 }
 
 /**
@@ -66,6 +67,7 @@ export function DocumentUploadModal({
     onUploadComplete,
     hideFileSelection = false,
     showTypeSelectionOnly = false,
+    allowFolders = true,
 }: DocumentUploadModalProps) {
     const { client, typeRegistry } = useUserSession();
     const toast = useToast();
@@ -623,6 +625,7 @@ export function DocumentUploadModal({
                         message="Drag and drop files here or click to select"
                         buttonLabel="Select Files"
                         className="w-full h-64"
+                        allowFolders={allowFolders}
                     />
                     {children}
                 </VModalBody>

@@ -1,32 +1,112 @@
-# Composable Prompts CLI
+# @vertesia/memory-cli
 
-# Composite Prompts CLI
+A command-line tool for building and managing Vertesia memory packs. Memory packs are archives containing structured data for LLM context.
 
-This is a command line application that can be used to access your composable prompts projects.
-It was designed to fulfil the following main use cases:
+## Features
 
-* List and switch between your Composable Prompts projects
-* List the existing interactions and execution environments
-* Run interactions once or multiple times over a set of different data inputs.
-* Generate data inputs to run the interactions against.
-* Search through the history of runs to inspect detailed results.
+- **Build Memory Packs**: Create memory archives from recipe scripts
+- **Export Data**: Extract JSON objects from memory packs using mappings
+- **Gzip Compression**: Optionally compress output files
+- **Custom Variables**: Pass variables to recipe scripts via command line
 
 ## Requirements
 
-A TTY terminal and Node.js version 18 or higher is required.
+Node.js version 18 or higher is required.
 
 ## Installation
 
 ```bash
-npm -g install @vertesia/cli
+npm install -g @vertesia/memory-cli
+# or
+pnpm add -g @vertesia/memory-cli
 ```
 
-## Basic Usage
+## Usage
+
+### Build a Memory Pack
+
+Build a memory pack from a recipe script:
 
 ```bash
-composable help
+memo build <recipe>
+```
+
+#### Options
+
+| Option | Description |
+|--------|-------------|
+| `-o, --out <file>` | Output file (default: `memory.tar`) |
+| `-z, --gzip` | Compress output with gzip |
+| `-i, --indent <spaces>` | JSON indentation (default: 2) |
+| `-q, --quiet` | Suppress console output |
+| `-t, --test` | Test recipe without building |
+
+#### Passing Variables
+
+Pass custom variables to your recipe script using `--var-<name>`:
+
+```bash
+memo build recipe.ts --var-version 1.0.0 --var-env production
+```
+
+Variables are available in your recipe script via the `vars` object.
+
+### Export from Memory Pack
+
+Export a JSON object from a memory pack using a mapping:
+
+```bash
+memo export <pack> --map <mapping>
+```
+
+#### Examples
+
+```bash
+# Export with inline JSON mapping
+memo export memory.tar --map '{"title": "$.metadata.title", "content": "$.files[0].content"}'
+
+# Export with mapping file
+memo export memory.tar --map @mapping.json
+
+# Export with custom indentation
+memo export memory.tar --map @mapping.json --indent 4
+```
+
+## Recipe Scripts
+
+Recipe scripts are TypeScript files that define how to build a memory pack. They use the `@vertesia/memory` API to collect and structure data.
+
+Example recipe (`recipe.ts`):
+
+```typescript
+import { MemoryBuilder } from '@vertesia/memory';
+
+const builder = new MemoryBuilder();
+
+// Add files, metadata, and structured data
+builder.addFile('README.md', readFileSync('README.md'));
+builder.setMetadata({ version: vars.version });
+
+export default builder;
+```
+
+## API
+
+The CLI can also be used programmatically:
+
+```typescript
+import { setupMemoCommand } from '@vertesia/memory-cli';
+import { Command } from 'commander';
+
+const program = new Command();
+setupMemoCommand(program);
+program.parse();
 ```
 
 ## Documentation
 
-See https://docs.becomposable.com/cli
+See [Vertesia Documentation](https://docs.vertesiahq.com)
+
+## License
+
+Apache-2.0

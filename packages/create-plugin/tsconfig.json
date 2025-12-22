@@ -1,43 +1,30 @@
 {
   "compilerOptions": {
-    "composite": true,
-    "rootDir": "./src",
-    "sourceMap": true,
-    "outDir": "./lib",
-    "forceConsistentCasingInFileNames": true,
-    "experimentalDecorators": true, /* Enable experimental support for TC39 stage 2 draft decorators. */
-    "allowSyntheticDefaultImports": true, /* Allow 'import x from y' when a module doesn't have a default export. */
-    "esModuleInterop": true, /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables `allowSyntheticDefaultImports` for type compatibility. */
     "target": "ES2022",
-    "useDefineForClassFields": true,
+    "module": "ES2022",
     "lib": [
-      "ES2022",
-      "DOM"
+      "ES2022"
     ],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "bundler",
+    "rootDir": "./src",
+    "outDir": "./lib",
     "declaration": true,
     "declarationMap": true,
-    "skipLibCheck": true,
-    /* Bundler mode */
-    //"allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    /* Linting */
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": [
+      "node"
+    ]
   },
   "include": [
-    "src"
+    "src/**/*"
   ],
   "exclude": [
-    "template",
     "node_modules",
-    "**/*.test.ts",
-    "lib",
-    "test"
-  ],
-  "references": []
+    "lib"
+  ]
 }

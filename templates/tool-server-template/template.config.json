@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "description": "A template for building custom tool servers with tools, skills, and interactions",
+  "prompts": [
+    {
+      "type": "text",
+      "name": "PROJECT_NAME",
+      "message": "Project name",
+      "initial": "my-tool-server"
+    },
+    {
+      "type": "text",
+      "name": "PROJECT_DESCRIPTION",
+      "message": "Project description",
+      "initial": "A custom tool server with tools, skills, and interactions"
+    }
+  ],
+  "derived": {
+    "SERVER_TITLE": {
+      "from": "PROJECT_NAME",
+      "transform": "titleCase"
+    }
+  },
+  "removeAfterInstall": [
+    "template.config.json"
+  ]
+}
