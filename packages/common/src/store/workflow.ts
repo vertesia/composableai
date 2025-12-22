@@ -357,6 +357,12 @@ export interface WorkflowInteractionVars {
     interaction: string,
     interactive: boolean,
     debug_mode?: boolean,
+    /**
+     * The channel to use for user communication.
+     * - "interactive": Use the chat UI (default when interactive=true)
+     * - "email": Also send questions via email to the user
+     */
+    user_channel?: "interactive" | "email",
     data?: Record<string, any>,
     tool_names: string[],
     config: {

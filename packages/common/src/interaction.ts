@@ -661,6 +661,15 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     interactive?: boolean;
 
     /**
+     * The channel to use for user communication.
+     * - "interactive": Use the chat UI (default when interactive=true)
+     * - "email": Send questions via email and receive replies via email webhook
+     *
+     * When set to "email", the user's email is extracted from the auth token.
+     */
+    user_channel?: "interactive" | "email";
+
+    /**
      * Whether to disable the generation of interaction tools or not.
      */
     disable_interaction_tools?: boolean;
