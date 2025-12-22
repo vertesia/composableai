@@ -95,7 +95,7 @@ export interface AppInstallationPayload {
 export type AppInstallationKind = 'ui' | 'tools' | 'all';
 
 /**
- * A descriptiojn of the tools provided by an app
+ * A description of the tools provided by an app
  */
 export interface AppToolCollection {
     /**
@@ -112,4 +112,36 @@ export interface AppToolCollection {
      * the tools provided by this collection
      */
     tools: { name: string, description?: string }[]
+}
+
+/**
+ * Information about a tool and its associated app installation.
+ * Used to look up which app provides a specific tool.
+ */
+export interface ProjectToolInfo {
+    /**
+     * The tool name
+     */
+    tool_name: string;
+
+    /**
+     * Optional tool description
+     */
+    tool_description?: string;
+
+    /**
+     * The app name that provides this tool
+     */
+    app_name: string;
+
+    /**
+     * The app installation ID
+     */
+    app_install_id: string;
+
+    /**
+     * The app installation settings.
+     * Only included for agent tokens, not user tokens (security: may contain API keys).
+     */
+    settings?: Record<string, any>;
 }

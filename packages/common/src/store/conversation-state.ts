@@ -84,6 +84,24 @@ export interface ConversationState {
 
     /** Whether to stream LLM responses to Redis (cached from project config) */
     streaming_enabled?: boolean;
+
+    /**
+     * Email thread tracking for email-based conversations.
+     * Stores info needed to maintain proper email threading when replying via email.
+     */
+    email_thread?: EmailThreadInfo;
+}
+
+/**
+ * Email thread information for maintaining proper threading in email replies.
+ */
+export interface EmailThreadInfo {
+    /** The original email subject (without "Re:" prefix) */
+    subject: string;
+    /** The most recent message ID (for In-Reply-To header) */
+    last_message_id: string;
+    /** Chain of message IDs in the thread (for References header) */
+    references: string[];
 }
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */
