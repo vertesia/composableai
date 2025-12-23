@@ -160,6 +160,10 @@ export interface ToolCallEvent extends BaseTelemetryEvent {
     environment?: string;
     /** Agent interaction name (e.g., "Planner", "sys:AdhocTaskAgent") */
     interactionName?: string;
+    /** Account ID */
+    accountId?: string;
+    /** Project ID */
+    projectId?: string;
 }
 
 // ============================================================================
