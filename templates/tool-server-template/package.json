@@ -5,7 +5,7 @@
   "type": "module",
   "main": "lib/server.js",
   "scripts": {
-    "dev": "npm run build && concurrently \"npm run build:watch\" \"npm run start:watch\"",
+    "dev": "pnpm run build && concurrently \"pnpm run build:watch\" \"pnpm run start:watch\"",
     "build": "rollup -c && rollup -c rollup.config.widgets.js && node ./lib/build-site.js ./dist",
     "build:watch": "rollup -c -w",
     "build:scripts": "rollup -c rollup.config.widgets.js",
