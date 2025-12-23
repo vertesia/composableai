@@ -47,14 +47,14 @@
     "devDependencies": {
         "@koa-stack/router": "^0.24.0",
         "@koa-stack/server": "^0.24.0",
-        "@types/koa": "^2.13.8",
-        "@types/mocha": "^10.0.1",
-        "koa": "^2.16.1",
+        "@types/koa": "^2.15.0",
+        "@types/mocha": "^10.0.10",
+        "koa": "^2.16.3",
         "mocha": "^10.2.0",
         "ts-dual-module": "^0.6.3",
-        "ts-node": "^10.9.1",
+        "ts-node": "^10.9.2",
         "tsx": "^3.14.0",
-        "typescript": "^5.2.2",
+        "typescript": "^5.9.3",
         "vitest": "^4.0.16"
     },
     "dependencies": {

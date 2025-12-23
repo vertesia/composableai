@@ -27,11 +27,11 @@
     "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
   },
   "devDependencies": {
-    "typescript": "^5.0.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@adobe/css-tools": "^4.4.1",
-    "@types/node": "^22.13.1"
+    "@types/node": "^22.19.2"
   },
   "peerDependencies": {
     "vite": "^7.3.0"
