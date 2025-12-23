@@ -16,7 +16,7 @@
         "npm-ws-tools": "^0.3.0",
         "rimraf": "^5.0.5",
         "typescript": "^5.3.3",
-        "vite": "^6.3.6"
+        "vite": "^7.3.0"
     },
     "packageManager": "pnpm@10.20.0",
     "pnpm": {
