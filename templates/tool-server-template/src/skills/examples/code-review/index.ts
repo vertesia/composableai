@@ -7,6 +7,7 @@ export default {
     description: "Analyze code and provide constructive feedback on quality, best practices, and performance",
     instructions: skillPrompt,
     content_type: "md",
+    scripts: ["code-review.py"],
     context_triggers: {
         keywords: [
             "code",

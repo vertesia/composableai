@@ -2,6 +2,7 @@ import type { InteractionCollection } from "../InteractionCollection.js";
 import type { SkillCollection } from "../SkillCollection.js";
 import type { ToolCollection } from "../ToolCollection.js";
 import type { ICollection, SkillDefinition, Tool } from "../types.js";
+import { join } from "../utils.js";
 import { baseStyles } from "./styles.js";
 
 type MCPProviderMeta = {
@@ -528,7 +529,7 @@ export function skillCard(skill: SkillDefinition): string {
 /**
  * Render a detailed skill card
  */
-export function skillDetailCard(skill: SkillDefinition): string {
+export function skillDetailCard(skill: SkillDefinition, collection: SkillCollection): string {
     const hasKeywords = skill.context_triggers?.keywords?.length;
     const hasPackages = skill.execution?.packages?.length;
     const hasScripts = skill.scripts?.length;
@@ -539,6 +540,7 @@ export function skillDetailCard(skill: SkillDefinition): string {
         <div>
             <h3 class="detail-title">${skill.name}</h3>
             <p class="detail-desc">${skill.description || 'No description'}</p>
+            ${renderSkillUrl(skill, collection.name)}
         </div>
         <div class="detail-badges">
             <span class="badge skill-type-badge">Skill</span>
@@ -588,7 +590,7 @@ export function skillDetailCard(skill: SkillDefinition): string {
                 ${skill.scripts?.map(script => /*html*/`
                 <div class="script-item">
                     ${fileIcon}
-                    <span class="script-name">${script.name}</span>
+                    <span class="script-name">${join("/scripts", script)}</span>
                 </div>
                 `).join('')}
             </div>
@@ -607,12 +609,22 @@ function skillWidgetsTemplate(skillWidgets: string[] | undefined) {
     if (!skillWidgets || skillWidgets.length === 0) {
         return 'n/a';
     }
-    return skillWidgets.map(w => `<div style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span>${escapeHtml(w)}</span>
+    return skillWidgets.map(w => `<div style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span>${w}</span>
         <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '/widgets/${w}.js')" title="Copy endpoint URL">
             ${copyIcon}
         </button>
     </div>`).join('');
 }
+
+function renderSkillUrl(skill: SkillDefinition, collectionName: string): string {
+    const skillPath = `/api/skills/${collectionName}/${skill.name}`;
+    return /*html*/`<div class="script-item" style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span class="script-name">${skillPath}</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '${skillPath}')" title="Copy endpoint URL">
+            ${copyIcon}
+        </button>
+    </div>`;
+}
+
 
 /**
  * Escape HTML for safe rendering
@@ -910,7 +922,7 @@ export function skillCollectionPage(collection: SkillCollection): string {
     <h2>${skillsArray.length} Skill${skillsArray.length !== 1 ? 's' : ''}</h2>
 
     ${skillsArray.length > 0 ?
-            skillsArray.map(skill => skillDetailCard(skill)).join('') :
+            skillsArray.map(skill => skillDetailCard(skill, collection)).join('') :
             '<div class="empty-state">No skills in this collection</div>'
         }
 </body>

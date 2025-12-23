@@ -168,20 +168,6 @@ export interface SkillExecution {
 }
 
 /**
- * Script file bundled with a skill
- */
-export interface SkillScript {
-    /**
-     * Filename (e.g., "analyze.py")
-     */
-    name: string;
-    /**
-     * Script content
-     */
-    content: string;
-}
-
-/**
  * Skill definition - parsed from SKILL.md or SKILL.jst
  */
 export interface SkillDefinition {
@@ -227,9 +213,12 @@ export interface SkillDefinition {
      */
     related_tools?: string[];
     /**
-     * Scripts bundled with this skill (synced to sandbox when skill is used)
+     * Scripts URLs. The scripts will be synced to sandbox when skill is used.
+     * When defined in a skill definition you should use the script path relative to the scripts/ directory.
+     * Example: ["my-script.py"] or ["./utils/helper.js"] 
+     * If an absolute path is given a relative path will be assumed from the scripts/ directory.
      */
-    scripts?: SkillScript[];
+    scripts?: string[];
 
     /**
      * The name of the widgets provided by this sklll (if any)
