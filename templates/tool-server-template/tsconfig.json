@@ -22,4 +22,10 @@
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "lib", "dist"]
-}
+,
+  "references": [
+    { "path": "../../llumiverse/common/tsconfig.json" },
+    { "path": "../../packages/common/tsconfig.json" },
+    { "path": "../../packages/client/tsconfig.json" },
+    { "path": "../../packages/tools-sdk/tsconfig.json" }
+  ]}

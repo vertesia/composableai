@@ -47,5 +47,9 @@
     {
       "path": "../client/tsconfig.json"
     }
+  ,
+    { "path": "../../llumiverse/common/tsconfig.json" },
+    { "path": "../api-fetch-client/tsconfig.json" },
+    { "path": "../memory/tsconfig.json" }
   ]
 }
