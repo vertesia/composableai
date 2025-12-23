@@ -17,12 +17,13 @@ interface ComposableTokenResponse {
     message?: string;
 }
 
-export async function fetchComposableToken(getIdToken: () => Promise<string | null | undefined>, accountId?: string, projectId?: string, ttl?: number): Promise<string> {
+export async function fetchComposableToken(getIdToken: () => Promise<string | null | undefined>, accountId?: string, projectId?: string, ttl?: number, retryCount = 0): Promise<string> {
     console.log(`Getting/refreshing composable token for account ${accountId} and project ${projectId} `);
     Env.logger.info('Getting/refreshing composable token', {
         vertesia: {
             account_id: accountId,
             project_id: projectId,
+            retry_count: retryCount,
         },
     });
 
@@ -62,6 +63,65 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
             body: JSON.stringify(requestBody)
         });
 
+        if (idToken && stsRes?.status === 404) {
+            // User not found in token-server - call ensure-user endpoint
+            console.log('404: User not found - calling ensure-user endpoint');
+            Env.logger.info('404: User not found - calling ensure-user endpoint', {
+                vertesia: {
+                    account_id: accountId,
+                    project_id: projectId,
+                    status: stsRes?.status
+                },
+            });
+
+            const ensureResponse = await fetch(Env.endpoints.studio + '/auth/ensure-user', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (ensureResponse.status === 412) {
+                // No invite - trigger signup
+                console.log('412: No invite found - signup required');
+                Env.logger.info('412: No invite found - signup required', {
+                    vertesia: {
+                        account_id: accountId,
+                        project_id: projectId,
+                    }
+                });
+                const idTokenDecoded = jwtDecode(idToken) as any;
+                if (!idTokenDecoded?.email) {
+                    Env.logger.error('No email found in id token');
+                    throw new Error('No email found in id token');
+                }
+                throw new UserNotFoundError('User not found - signup required', idTokenDecoded.email);
+            }
+
+            if (!ensureResponse.ok) {
+                console.error('Failed to ensure user exists', ensureResponse.status);
+                Env.logger.error('Failed to ensure user exists', {
+                    vertesia: {
+                        account_id: accountId,
+                        project_id: projectId,
+                        status: ensureResponse.status,
+                    },
+                });
+                throw new Error('Failed to ensure user exists');
+            }
+
+            // User created/exists - retry token generation
+            console.log('User ensured - retrying token generation');
+            Env.logger.info('User ensured - retrying token generation', {
+                vertesia: {
+                    account_id: accountId,
+                    project_id: projectId,
+                }
+            });
+            return fetchComposableToken(getIdToken, accountId, projectId, ttl, retryCount);
+        }
+
         if (idToken && stsRes?.status === 412) {
             console.log("412: auth succeeded but user doesn't exist - signup required", stsRes?.status);
             Env.logger.error("412: auth succeeded but user doesn't exist - signup required", {
@@ -84,6 +144,47 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                 }
             });
             throw new UserNotFoundError('User not found', idTokenDecoded.email);
+        }
+
+        if (stsRes.status === 403) {
+            // User doesn't have access to the requested account/project, or has no accounts
+            // This can happen with:
+            // 1. Stale localStorage from previous user
+            // 2. User invited to a new account (doesn't have access yet)
+            // 3. User exists but has no accounts at all
+
+            if (retryCount > 0) {
+                // Already retried without account scope - this is a real authorization failure
+                console.error('403: Access denied even without account scope - user may have no accounts');
+                Env.logger.error('403: Access denied after retry - authorization failure', {
+                    vertesia: {
+                        account_id: accountId,
+                        project_id: projectId,
+                        status: stsRes.status,
+                        retry_count: retryCount
+                    },
+                });
+                throw new Error('Access denied - user may not have access to any accounts');
+            }
+
+            console.log('403: Access denied - clearing cached account and retrying without account scope');
+            Env.logger.warn('403: Access denied - clearing cached account and retrying', {
+                vertesia: {
+                    account_id: accountId,
+                    project_id: projectId,
+                    status: stsRes.status,
+                    retry_count: retryCount
+                },
+            });
+
+            // Clear any stale account/project from localStorage
+            localStorage.removeItem(LastSelectedAccountId_KEY);
+            if (accountId) {
+                localStorage.removeItem(LastSelectedProjectId_KEY + '-' + accountId);
+            }
+
+            // Retry without account/project scope - let user log in to their default account
+            return fetchComposableToken(getIdToken, undefined, undefined, ttl, retryCount + 1);
         }
 
         if (!stsRes.ok) {
@@ -110,8 +211,11 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
             throw error; // Re-throw UserNotFoundError
         }
 
+        // Clear any stale account/project from localStorage on error
         localStorage.removeItem(LastSelectedAccountId_KEY);
-        localStorage.removeItem(LastSelectedProjectId_KEY);
+        if (accountId) {
+            localStorage.removeItem(LastSelectedProjectId_KEY + '-' + accountId);
+        }
         console.error('Failed to get composable token from STS', error);
         Env.logger.error('Failed to get composable token from STS', {
             vertesia: {

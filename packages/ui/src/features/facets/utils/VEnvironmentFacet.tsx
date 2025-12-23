@@ -17,7 +17,8 @@ export function VEnvironmentFacet({ buckets, name }: EnvironmentFacetProps): Fil
     }));
 
     const filterGroup: FilterGroup = {
-        name: name.charAt(0).toUpperCase() + name.slice(1),
+        name: 'environment',
+        placeholder: name.charAt(0).toUpperCase() + name.slice(1),
         options: options,
         type: "select",
         labelRenderer: (environmentId: string) => {
