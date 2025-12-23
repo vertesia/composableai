@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, Context } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { createInteractionsRoute } from "./server/interactions.js";
@@ -71,7 +71,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
     createMcpRoute(app, `${prefix}/mcp`, config);
 
     // Global error handler
-    app.onError((err, c) => {
+    app.onError((err: Error, c: Context) => {
         if (err instanceof HTTPException) {
             return c.json({ error: err.message }, err.status);
         }
