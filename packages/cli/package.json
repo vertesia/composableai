@@ -51,7 +51,7 @@
         "gradient-string": "^3.0.0",
         "json-schema": "^0.4.0",
         "json-schema-to-typescript": "^13.1.1",
-        "jsonwebtoken": "^9.0.2",
+        "jsonwebtoken": "^9.0.3",
         "log-symbols": "^7.0.0",
         "log-update": "^6.1.0",
         "mime": "^4.0.4",
@@ -63,7 +63,7 @@
         "typescript": "^5.5.3"
     },
     "devDependencies": {
-        "@types/jsonwebtoken": "^9.0.6"
+        "@types/jsonwebtoken": "^9.0.10"
     },
     "repository": {
         "type": "git",
