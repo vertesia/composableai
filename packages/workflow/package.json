@@ -27,7 +27,7 @@
         "@types/papaparse": "^5.3.15",
         "@types/tmp": "^0.2.6",
         "ts-dual-module": "^0.6.3",
-        "vitest": "^3.0.9"
+        "vitest": "^4.0.16"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.693.0",
