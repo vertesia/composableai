@@ -615,6 +615,9 @@ importers:
       motion:
         specifier: ^12.12.1
         version: 12.23.26(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      papaparse:
+        specifier: ^5.5.3
+        version: 5.5.3
       react:
         specifier: 19.2.3
         version: 19.2.3

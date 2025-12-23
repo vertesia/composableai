@@ -67,6 +67,7 @@
         "react-markdown": "^10.1.0",
         "react-pdf": "^10.2.0",
         "react-resizable-panels": "^3.0.6",
+        "papaparse": "^5.5.3",
         "react-vega": "^7.6.0",
         "recharts": "^3.5.0",
         "remark-gfm": "^4.0.1",
