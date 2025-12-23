@@ -29,10 +29,22 @@ export interface SerperConfiguration extends IntegrationConfigurationBase {
     url?: string;
 }
 
+export interface ResendConfiguration extends IntegrationConfigurationBase {
+    /** Resend API key for sending emails */
+    api_key: string;
+    /** Domain for inbound email routing (e.g., inbound.vertesia.io) */
+    inbound_domain: string;
+    /** Webhook secret for validating inbound email webhooks */
+    webhook_secret?: string;
+    /** Domains allowed to send emails TO start agents (for inbound validation) */
+    allowed_sender_domains?: string[];
+}
+
 export enum SupportedIntegrations {
     gladia = "gladia",
     github = "github",
     aws = "aws",
     magic_pdf = "magic_pdf",
     serper = "serper",
+    resend = "resend",
 }
