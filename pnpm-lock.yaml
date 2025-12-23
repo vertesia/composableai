@@ -682,6 +682,9 @@ importers:
       '@types/node':
         specifier: ^22.19.2
         version: 22.19.3
+      '@types/papaparse':
+        specifier: ^5.5.2
+        version: 5.5.2
       '@types/react':
         specifier: 19.2.3
         version: 19.2.3
