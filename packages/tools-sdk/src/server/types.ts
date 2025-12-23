@@ -44,7 +44,7 @@ export interface ToolServerConfig {
      */
     mcpProviders?: MCPProviderConfig[];
     /**
-     * Disable HTML pages (default: false)
+     * Enable dynamic HTML pages (default: false)
      */
-    disableHtml?: boolean;
+    createSitePages?: boolean;
 }

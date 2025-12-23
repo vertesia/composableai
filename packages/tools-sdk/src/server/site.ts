@@ -8,7 +8,7 @@ import {
 import { ToolServerConfig } from "./types.js";
 
 
-export function createSitePages(app: Hono, basePath: string, config: ToolServerConfig) {
+export function createSiteRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const {
         title = 'Tools Server',
         tools = [],

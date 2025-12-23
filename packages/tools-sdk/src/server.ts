@@ -3,9 +3,11 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { createInteractionsRoute } from "./server/interactions.js";
 import { createMcpRoute } from "./server/mcp.js";
+import { createSiteRoute } from "./server/site.js";
 import { createSkillsRoute } from "./server/skills.js";
 import { createToolsRoute } from "./server/tools.js";
 import { ToolServerConfig } from "./server/types.js";
+import { createWidgetsRoute } from "./server/widgets.js";
 
 
 /**
@@ -30,7 +32,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
         interactions = [],
         skills = [],
         mcpProviders = [],
-        disableHtml = false,
+        createSitePages = false,
     } = config;
 
     const app = new Hono();
@@ -39,8 +41,8 @@ export function createToolServer(config: ToolServerConfig): Hono {
     app.use('*', cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'] }));
 
     // HTML pages (unless disabled)
-    if (!disableHtml) {
-        //createSitePages(app, '', config);
+    if (createSitePages) {
+        createSiteRoute(app, '', config);
     }
 
     // Skills are exposed as tools, so include them in the tools list
@@ -49,14 +51,11 @@ export function createToolServer(config: ToolServerConfig): Hono {
         ...skills.map(col => `${prefix}/skills/${col.name}`),
     ];
 
-    const allWidgets = skills.flatMap(col => col.getWidgets());
-
     // Add base API route
     app.get(prefix, (c) => {
         return c.json({
             message: 'Vertesia Tools API',
             version: '1.0.0',
-            widgets: allWidgets,
             endpoints: {
                 tools: allToolEndpoints,
                 interactions: interactions.map(col => `${prefix}/interactions/${col.name}`),
@@ -67,6 +66,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
 
     createToolsRoute(app, `${prefix}/tools`, config);
     createSkillsRoute(app, `${prefix}/skills`, config);
+    createWidgetsRoute(app, `${prefix}/widgets`, config);
     createInteractionsRoute(app, `${prefix}/interactions`, config);
     createMcpRoute(app, `${prefix}/mcp`, config);
 

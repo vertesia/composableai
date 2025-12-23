@@ -15,6 +15,7 @@ import type {
 } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
 
+
 export interface SkillCollectionProperties extends CollectionProperties {
     /**
      * The skills in this collection
@@ -114,12 +115,21 @@ export class SkillCollection implements ICollection<SkillDefinition> {
         };
     }
 
-    getWidgets(): string[] {
-        const out = new Set<string>();
+    getWidgets(): {
+        name: string;
+        skill: string;
+    }[] {
+        const out: {
+            name: string;
+            skill: string;
+        }[] = [];
         for (const skill of this.skills.values()) {
             if (skill.widgets) {
                 for (const widget of skill.widgets) {
-                    out.add(widget);
+                    out.push({
+                        name: widget,
+                        skill: skill.name,
+                    });
                 }
             }
         }

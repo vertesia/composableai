@@ -5,8 +5,8 @@ import type { ICollection, SkillDefinition, Tool } from "../types.js";
 import { baseStyles } from "./styles.js";
 
 type MCPProviderMeta = {
-  name: string;
-  description?: string;
+    name: string;
+    description?: string;
 };
 
 /**
@@ -439,7 +439,7 @@ export function toolCard(tool: Tool<Record<string, unknown>>): string {
  * Render an MCP provider card
  */
 export function mcpProviderCard(provider: MCPProviderMeta): string {
-  return /*html*/`
+    return /*html*/`
 <a class="card" href="/api/mcp/${provider.name}">
     <div class="card-title">${provider.name}</div>
     <div class="card-desc">${provider.description || ''}</div>
@@ -482,9 +482,9 @@ export function toolDetailCard(tool: Tool<Record<string, unknown>>, collectionNa
             ${properties ? /*html*/`
             <div class="info-grid" style="margin-bottom: 1rem;">
                 ${Object.entries(properties).map(([key, value]) => {
-                    const prop = value as Record<string, unknown>;
-                    const isRequired = required?.includes(key);
-                    return /*html*/`
+        const prop = value as Record<string, unknown>;
+        const isRequired = required?.includes(key);
+        return /*html*/`
                     <div class="info-item">
                         <div class="info-label">${key}${isRequired ? ' *' : ''}</div>
                         <div class="info-value">
@@ -492,7 +492,7 @@ export function toolDetailCard(tool: Tool<Record<string, unknown>>, collectionNa
                             ${prop.description ? `<br><span style="color: #6b7280; font-size: 0.85rem;">${prop.description}</span>` : ''}
                         </div>
                     </div>`;
-                }).join('')}
+    }).join('')}
             </div>
             ` : ''}
             <details>
@@ -557,6 +557,10 @@ export function skillDetailCard(skill: SkillDefinition): string {
                 <div class="info-value"><code>${skill.execution.language}</code></div>
             </div>
             ` : ''}
+            <div class="info-item">
+                <div class="info-label">Widgets</div>
+                <div class="info-value">${skillWidgetsTemplate(skill.widgets)}</div>
+            </div>
         </div>
 
         ${hasKeywords ? /*html*/`
@@ -597,6 +601,17 @@ export function skillDetailCard(skill: SkillDefinition): string {
         </div>
     </div>
 </div>`;
+}
+
+function skillWidgetsTemplate(skillWidgets: string[] | undefined) {
+    if (!skillWidgets || skillWidgets.length === 0) {
+        return 'n/a';
+    }
+    return skillWidgets.map(w => `<div style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span>${escapeHtml(w)}</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '/widgets/${w}.js')" title="Copy endpoint URL">
+            ${copyIcon}
+        </button>
+    </div>`).join('');
 }
 
 /**
@@ -730,9 +745,9 @@ export function indexPage(
             </div>
             <div class="card-grid">
                 ${skills.map(s => {
-                    const count = Array.from(s).length;
-                    return collectionCard(s, 'skills', `${count} skill${count !== 1 ? 's' : ''}`);
-                }).join('')}
+        const count = Array.from(s).length;
+        return collectionCard(s, 'skills', `${count} skill${count !== 1 ? 's' : ''}`);
+    }).join('')}
             </div>
         </section>
         ` : ''}
@@ -852,9 +867,9 @@ export function toolCollectionPage(collection: ToolCollection): string {
     <h2>${toolsArray.length} Tool${toolsArray.length !== 1 ? 's' : ''}</h2>
 
     ${toolsArray.length > 0 ?
-        toolsArray.map(tool => toolDetailCard(tool, collection.name)).join('') :
-        '<div class="empty-state">No tools in this collection</div>'
-    }
+            toolsArray.map(tool => toolDetailCard(tool, collection.name)).join('') :
+            '<div class="empty-state">No tools in this collection</div>'
+        }
 </body>
 </html>`;
 }
@@ -895,9 +910,9 @@ export function skillCollectionPage(collection: SkillCollection): string {
     <h2>${skillsArray.length} Skill${skillsArray.length !== 1 ? 's' : ''}</h2>
 
     ${skillsArray.length > 0 ?
-        skillsArray.map(skill => skillDetailCard(skill)).join('') :
-        '<div class="empty-state">No skills in this collection</div>'
-    }
+            skillsArray.map(skill => skillDetailCard(skill)).join('') :
+            '<div class="empty-state">No skills in this collection</div>'
+        }
 </body>
 </html>`;
 }
