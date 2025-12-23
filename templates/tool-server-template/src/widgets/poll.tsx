@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
+
+const { useState } = React;
 
 /**
  * Poll data structure

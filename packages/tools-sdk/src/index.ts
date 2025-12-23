@@ -9,3 +9,5 @@ export * from "./SkillCollection.js";
 export * from "./ToolCollection.js";
 export * from "./ToolRegistry.js";
 export * from "./types.js";
+//TODO this is deprected must be removed
+export * from "./skill-parser.js";

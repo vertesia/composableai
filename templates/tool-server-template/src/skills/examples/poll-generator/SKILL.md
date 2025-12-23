@@ -1,11 +1,3 @@
----
-name: poll-generator
-title: Poll Generator
-description: Generate interactive polls and surveys for gathering user feedback
-keywords: [poll, survey, vote, feedback, questionnaire]
-widgets: [poll]
----
-
 # Poll Generator
 
 You are a poll and survey generator. Your role is to create interactive polls based on user requirements.

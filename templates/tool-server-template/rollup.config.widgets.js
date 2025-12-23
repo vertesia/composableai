@@ -2,7 +2,7 @@
  * Rollup Configuration for Widget Bundles
  *
  * This configuration:
- * 1. Finds all .tsx files in skill directories
+ * 1. Finds all .tsx files in src/widgets/ (top-level only)
  * 2. Bundles each widget with all dependencies included
  * 3. Outputs browser-ready ES modules to dist/widgets/
  *
@@ -15,7 +15,7 @@ import { terser } from 'rollup-plugin-terser';
 import fs from 'fs';
 import path from 'path';
 
-const skillsDir = './src/skills';
+const widgetsDir = './src/widgets';
 const outputDir = './dist/widgets';
 
 // Ensure output directory exists
@@ -24,66 +24,44 @@ if (!fs.existsSync(outputDir)) {
 }
 
 /**
- * Find all .tsx files directly in skill directories (not in subdirectories).
- * Recursively searches through skill collection directories.
+ * Find all .tsx files in src/widgets/ (top-level only).
+ * Subdirectories are ignored - they contain helper components.
  *
  * Structure:
- * skills/
- *   examples/           ← Collection directory
- *     my-skill/         ← Skill directory
- *       widget.tsx      ← Entry point (processed)
- *       SKILL.md
- *       ui/
- *         helper.tsx    ← Helper component (ignored)
+ * src/widgets/
+ *   poll.tsx           ← Entry point (bundled)
+ *   poll/              ← Helper components (imported, not entry points)
+ *     Chart.tsx
+ *     utils.ts
  */
-function findWidgetFiles(dir, widgets = []) {
+function findWidgetEntryPoints(dir) {
+    const widgets = [];
+
     if (!fs.existsSync(dir)) {
         return widgets;
     }
 
-    const entries = fs.readdirSync(dir);
+    const files = fs.readdirSync(dir);
 
-    for (const entry of entries) {
-        const entryPath = path.join(dir, entry);
-        const stat = fs.statSync(entryPath);
+    for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
 
-        if (!stat.isDirectory()) {
-            continue;
-        }
-
-        // Check if this directory contains SKILL.md or SKILL.jst (it's a skill directory)
-        const hasSkillFile = fs.existsSync(path.join(entryPath, 'SKILL.md')) ||
-                            fs.existsSync(path.join(entryPath, 'SKILL.jst'));
-
-        if (hasSkillFile) {
-            // This is a skill directory - look for .tsx files in root only
-            const skillFiles = fs.readdirSync(entryPath);
-
-            for (const file of skillFiles) {
-                const filePath = path.join(entryPath, file);
-                const fileStat = fs.statSync(filePath);
-
-                // Only process .tsx files directly in the skill directory (not subdirectories)
-                if (!fileStat.isDirectory() && file.endsWith('.tsx')) {
-                    const widgetName = path.basename(file, '.tsx');
-                    widgets.push({
-                        name: widgetName,
-                        path: filePath,
-                        skill: entry
-                    });
-                }
-            }
-        } else {
-            // Not a skill directory, recurse into it (e.g., collection directories)
-            findWidgetFiles(entryPath, widgets);
+        // Only top-level .tsx files (not directories)
+        if (!stat.isDirectory() && file.endsWith('.tsx')) {
+            const widgetName = path.basename(file, '.tsx');
+            widgets.push({
+                name: widgetName,
+                path: filePath
+            });
         }
     }
 
     return widgets;
 }
 
-// Find all widget files
-const widgets = findWidgetFiles(skillsDir);
+// Find all widget entry points
+const widgets = findWidgetEntryPoints(widgetsDir);
 
 console.log(`Found ${widgets.length} widget(s):`, widgets.map(w => w.name).join(', '));
 
@@ -109,11 +87,7 @@ const widgetBundles = widgets.map(({ name, path: widgetPath }) => ({
         typescript({
             tsconfig: './tsconfig.widgets.json',
             declaration: false,
-            sourceMap: true,
-            compilerOptions: {
-                outDir: './dist/widgets',  // Must match Rollup output dir
-                rootDir: './src'
-            }
+            sourceMap: true
         }),
         nodeResolve({
             browser: true,
@@ -131,7 +105,7 @@ const widgetBundles = widgets.map(({ name, path: widgetPath }) => ({
 
 // Rollup requires at least one config, so export empty config if no widgets found
 export default widgetBundles.length > 0 ? widgetBundles : {
-    input: 'src/skills/index.ts',  // Dummy input
+    input: 'src/widgets/index.ts',  // Dummy input
     output: {
         file: '/dev/null',  // No output
         format: 'es'
