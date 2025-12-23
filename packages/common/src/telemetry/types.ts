@@ -125,39 +125,23 @@ export interface LlmCallEvent extends BaseTelemetryEvent {
 // ============================================================================
 
 /**
- * Emitted when a tool call starts
+ * Emitted when a tool call completes (success or failure).
+ * Contains all information about the tool execution including parameters and results.
  */
-export interface ToolCallStartedEvent extends BaseTelemetryEvent {
-    eventType: 'tool_call_started';
+export interface ToolCallEvent extends BaseTelemetryEvent {
+    eventType: 'tool_call';
     /** Name of the tool being called */
     toolName: string;
     /** Tool use ID from the LLM */
     toolUseId: string;
-    /** Parameters passed to the tool (sanitized - no secrets) */
-    parameters?: Record<string, unknown>;
-    /** Size of parameters in bytes */
-    parametersSizeBytes?: number;
     /** Whether this is a built-in tool, interaction tool, or remote tool */
     toolType: 'builtin' | 'interaction' | 'remote' | 'skill';
     /** Current iteration number */
     iteration: number;
-    /** LLM model identifier (e.g., "claude-3-5-sonnet", "gemini-1.5-pro") */
-    model?: string;
-    /** Environment/driver used (e.g., "vertexai", "bedrock", "openai") */
-    environment?: string;
-    /** Agent interaction name (e.g., "Planner", "sys:AdhocTaskAgent") */
-    interactionName?: string;
-}
-
-/**
- * Emitted when a tool call completes
- */
-export interface ToolCallCompletedEvent extends BaseTelemetryEvent {
-    eventType: 'tool_call_completed';
-    /** Name of the tool */
-    toolName: string;
-    /** Tool use ID from the LLM */
-    toolUseId: string;
+    /** Parameters passed to the tool (sanitized - no secrets) */
+    parameters?: Record<string, unknown>;
+    /** Size of parameters in bytes */
+    parametersSizeBytes?: number;
     /** Whether the tool call succeeded */
     success: boolean;
     /** Duration in milliseconds */
@@ -226,8 +210,7 @@ export type TelemetryEvent =
     | AgentRunStartedEvent
     | AgentRunCompletedEvent
     | LlmCallEvent
-    | ToolCallStartedEvent
-    | ToolCallCompletedEvent
+    | ToolCallEvent
     | CheckpointCreatedEvent
     | IterationEvent;
 
