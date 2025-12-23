@@ -15,7 +15,7 @@
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "devDependencies": {
-        "@types/node": "^22.5.1",
+        "@types/node": "^22.19.2",
         "ts-dual-module": "^0.6.3",
         "vitest": "^3.1.1"
     },

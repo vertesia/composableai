@@ -23,7 +23,7 @@
         "tools-sdk-copy-assets": "./lib/esm/copy-assets.js"
     },
     "devDependencies": {
-        "@types/node": "^24.10.1",
+        "@types/node": "^22.19.2",
         "ts-dual-module": "^0.6.3",
         "typescript": "^5.9.3",
         "vitest": "^3.2.4"
