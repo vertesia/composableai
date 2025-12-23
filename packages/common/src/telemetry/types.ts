@@ -141,6 +141,12 @@ export interface ToolCallStartedEvent extends BaseTelemetryEvent {
     toolType: 'builtin' | 'interaction' | 'remote' | 'skill';
     /** Current iteration number */
     iteration: number;
+    /** LLM model identifier (e.g., "claude-3-5-sonnet", "gemini-1.5-pro") */
+    model?: string;
+    /** Environment/driver used (e.g., "vertexai", "bedrock", "openai") */
+    environment?: string;
+    /** Agent interaction name (e.g., "Planner", "sys:AdhocTaskAgent") */
+    interactionName?: string;
 }
 
 /**
@@ -164,6 +170,12 @@ export interface ToolCallCompletedEvent extends BaseTelemetryEvent {
     errorMessage?: string;
     /** Whether this tool spawned a child workflow */
     spawnedChildWorkflow?: boolean;
+    /** LLM model identifier (e.g., "claude-3-5-sonnet", "gemini-1.5-pro") */
+    model?: string;
+    /** Environment/driver used (e.g., "vertexai", "bedrock", "openai") */
+    environment?: string;
+    /** Agent interaction name (e.g., "Planner", "sys:AdhocTaskAgent") */
+    interactionName?: string;
 }
 
 // ============================================================================

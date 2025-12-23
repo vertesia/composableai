@@ -1,4 +1,5 @@
 import { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from "@llumiverse/common";
+import { ExecutionEnvironmentRef } from "../environment.js";
 import { ConversationStripOptions } from "../interaction.js";
 import { ExecutionRunDocRef } from "../runs.js";
 import { Plan } from "./workflow.js";
@@ -24,9 +25,9 @@ export interface ConversationState {
     run: ExecutionRunDocRef;
 
     /**
-     * The environment ID to use to resolve the driver.
+     * The execution environment with provider info for LLM calls.
      */
-    environment: string;
+    environment: ExecutionEnvironmentRef;
 
     /**
      * The options to use on the next call.
