@@ -56,6 +56,12 @@ interface MessageInputProps {
 
     // Hide the default object linking (for apps that don't use it)
     hideObjectLinking?: boolean;
+
+    // Styling props for Tailwind customization
+    /** Additional className for the container */
+    className?: string;
+    /** Additional className for the input field */
+    inputClassName?: string;
 }
 
 export default function MessageInput({
@@ -80,6 +86,9 @@ export default function MessageInput({
     onRemoveDocument,
     // Object linking
     hideObjectLinking = false,
+    // Styling props
+    className,
+    inputClassName,
 }: MessageInputProps) {
     const ref = useRef<HTMLInputElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -243,7 +252,7 @@ export default function MessageInput({
 
     return (
         <div
-            className={`p-3 border-t border-muted flex-shrink-0 transition-all ${isDragOver ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' : ''}`}
+            className={`p-3 border-t border-muted flex-shrink-0 transition-all ${isDragOver ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' : ''} ${className || ''}`}
             style={{ minHeight: "90px" }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -354,7 +363,7 @@ export default function MessageInput({
                         onPaste={handlePaste}
                         disabled={disabled}
                         placeholder={isStreaming ? "Agent is working... (click stop to interrupt)" : (onFilesSelected ? "Ask anything... (drop or paste files)" : placeholder)}
-                        className="pr-12 py-2.5"
+                        className={`pr-12 py-2.5 ${inputClassName || ''}`}
                     />
                     {!hideObjectLinking && (
                         <Button

@@ -166,7 +166,7 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
         const runId = (message as any).workflow_run_id as string | undefined;
 
         return (
-            <div className="vprose prose-sm">
+            <div className="vprose prose-sm text-sm">
                 <MarkdownRenderer
                     artifactRunId={runId}
                     components={{

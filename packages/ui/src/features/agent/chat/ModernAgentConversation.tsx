@@ -8,7 +8,7 @@ import { Button, MessageBox, Spinner, useToast, VModal, VModalBody, VModalFooter
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
-import MessageInput from "./ModernAgentOutput/MessageInput";
+import MessageInput, { UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
 import { getWorkstreamId, insertMessageInTimeline, isInProgress } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
@@ -74,6 +74,39 @@ interface ModernAgentConversationProps {
     placeholder?: string;
     hideUserInput?: boolean;
     resetWorkflow?: () => void;
+
+    // File upload props - passed through to MessageInput
+    /** Called when files are dropped/pasted/selected */
+    onFilesSelected?: (files: File[]) => void;
+    /** Currently uploaded files to display */
+    uploadedFiles?: UploadedFile[];
+    /** Called when user removes an uploaded file */
+    onRemoveFile?: (fileId: string) => void;
+    /** Accepted file types (e.g., ".pdf,.doc,.png") */
+    acceptedFileTypes?: string;
+    /** Max number of files allowed */
+    maxFiles?: number;
+
+    // Document search props (render prop for custom search UI)
+    /** Render custom document search UI - if provided, shows search button */
+    renderDocumentSearch?: (props: {
+        isOpen: boolean;
+        onClose: () => void;
+        onSelect: (doc: SelectedDocument) => void;
+    }) => React.ReactNode;
+    /** Currently selected documents from search */
+    selectedDocuments?: SelectedDocument[];
+    /** Called when user removes a selected document */
+    onRemoveDocument?: (docId: string) => void;
+
+    // Hide the default object linking (for apps that don't use it)
+    hideObjectLinking?: boolean;
+
+    // Styling props for Tailwind customization - passed through to MessageInput
+    /** Additional className for the MessageInput container */
+    inputContainerClassName?: string;
+    /** Additional className for the input field */
+    inputClassName?: string;
 }
 
 export function ModernAgentConversation(
@@ -290,6 +323,21 @@ function ModernAgentConversationInner({
     isModal = false,
     placeholder = "Type your message...",
     resetWorkflow,
+    // File upload props
+    onFilesSelected,
+    uploadedFiles,
+    onRemoveFile,
+    acceptedFileTypes,
+    maxFiles,
+    // Document search props
+    renderDocumentSearch,
+    selectedDocuments,
+    onRemoveDocument,
+    // Object linking
+    hideObjectLinking,
+    // Styling props
+    inputContainerClassName,
+    inputClassName,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
     const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -892,6 +940,21 @@ function ModernAgentConversationInner({
                         isCompleted={isCompleted}
                         activeTaskCount={getActiveTaskCount()}
                         placeholder={placeholder}
+                        // File upload props
+                        onFilesSelected={onFilesSelected}
+                        uploadedFiles={uploadedFiles}
+                        onRemoveFile={onRemoveFile}
+                        acceptedFileTypes={acceptedFileTypes}
+                        maxFiles={maxFiles}
+                        // Document search props
+                        renderDocumentSearch={renderDocumentSearch}
+                        selectedDocuments={selectedDocuments}
+                        onRemoveDocument={onRemoveDocument}
+                        // Object linking
+                        hideObjectLinking={hideObjectLinking}
+                        // Styling props
+                        className={inputContainerClassName}
+                        inputClassName={inputClassName}
                     />
                 )}
             </div>
