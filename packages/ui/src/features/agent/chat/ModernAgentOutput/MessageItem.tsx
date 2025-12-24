@@ -11,7 +11,7 @@ import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
 
-interface MessageItemProps {
+export interface MessageItemProps {
     message: AgentMessage;
     showPulsatingCircle?: boolean;
     /** Additional className for the outer container */
@@ -337,17 +337,18 @@ function MessageItemComponent({
     };
 
     return (
-        <div
-            className={`border-l-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5 ${styles.borderColor} ${styles.bgColor}`}
-            data-workstream-id={workstreamId}
-        >
-            {/* Header with icon and timestamp */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                    <div className={showPulsatingCircle ? "animate-fadeIn" : ""}>
-                        {renderIcon()}
-                    </div>
-                    <span className="text-xs font-medium text-muted">{styles.sender}</span>
+        <div className={className}>
+            <div
+                className={`border-l-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5 ${styles.borderColor} ${styles.bgColor} ${cardClassName || ""}`}
+                data-workstream-id={workstreamId}
+            >
+                {/* Header with icon and timestamp */}
+                <div className={`flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm ${headerClassName || ""}`}>
+                    <div className="flex items-center gap-2">
+                        <div className={`${showPulsatingCircle ? "animate-fadeIn" : ""} ${iconClassName || ""}`}>
+                            {renderIcon()}
+                        </div>
+                        <span className={`text-xs font-medium text-muted ${senderClassName || ""}`}>{styles.sender}</span>
 
                     {/* Show workstream badge next to sender for better organization */}
                     {workstreamId !== "main" && workstreamId !== "all" && (
@@ -358,7 +359,7 @@ function MessageItemComponent({
                 </div>
 
                 <div className="flex items-center gap-2 print:hidden">
-                    <span className="text-xs text-muted">
+                    <span className={`text-xs text-muted ${timestampClassName || ""}`}>
                         {dayjs(message.timestamp).format("HH:mm:ss")}
                     </span>
                     <Button
@@ -373,7 +374,7 @@ function MessageItemComponent({
             </div>
 
             {/* Message content */}
-            <div className="px-4 py-3 bg-white dark:bg-gray-900">
+            <div className={`px-4 py-3 bg-white dark:bg-gray-900 ${contentClassName || ""}`}>
                 {messageContent && (
                     <div className="message-content">
                         {renderContent(processedContent || messageContent)}
@@ -382,7 +383,7 @@ function MessageItemComponent({
 
                 {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                 {artifactLinks.length > 0 && (
-                    <div className="mt-3 text-xs">
+                    <div className={`mt-3 text-xs ${artifactsClassName || ""}`}>
                         <div className="font-medium text-muted mb-1">Artifacts</div>
 
                         {/* Inline previews for image artifacts */}
@@ -429,7 +430,7 @@ function MessageItemComponent({
 
                 {/* Optional details section */}
                 {message.details && (
-                    <div className="mt-2 print:hidden">
+                    <div className={`mt-2 print:hidden ${detailsClassName || ""}`}>
                         <button
                             onClick={() => setShowDetails(!showDetails)}
                             className="text-xs text-muted flex items-center"
@@ -460,16 +461,26 @@ function MessageItemComponent({
                     </div>
                 )}
             </div>
+            </div>
         </div>
     );
 }
 
 // Memoize the component to prevent unnecessary re-renders
-// Only re-render when message timestamp or showPulsatingCircle changes
+// Only re-render when message timestamp, showPulsatingCircle, or className props change
 const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
     return (
         prevProps.message.timestamp === nextProps.message.timestamp &&
-        prevProps.showPulsatingCircle === nextProps.showPulsatingCircle
+        prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
+        prevProps.className === nextProps.className &&
+        prevProps.cardClassName === nextProps.cardClassName &&
+        prevProps.headerClassName === nextProps.headerClassName &&
+        prevProps.contentClassName === nextProps.contentClassName &&
+        prevProps.timestampClassName === nextProps.timestampClassName &&
+        prevProps.senderClassName === nextProps.senderClassName &&
+        prevProps.iconClassName === nextProps.iconClassName &&
+        prevProps.detailsClassName === nextProps.detailsClassName &&
+        prevProps.artifactsClassName === nextProps.artifactsClassName
     );
 });
 
