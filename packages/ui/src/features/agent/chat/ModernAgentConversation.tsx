@@ -12,6 +12,7 @@ import MessageInput from "./ModernAgentOutput/MessageInput";
 import { getWorkstreamId, insertMessageInTimeline, isInProgress } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
+import { SkillWidgetProvider } from "@vertesia/ui/features/agent/chat/SkillWidgetProvider";
 
 type StartWorkflowFn = (
     initialMessage?: string,
@@ -89,7 +90,11 @@ export function ModernAgentConversation(
                     runId: run.run_id,
                     workflowId: run.workflow_id,
                 };
-        return <ModernAgentConversationInner {...props} run={execRun} />;
+        return (
+            <SkillWidgetProvider>
+                <ModernAgentConversationInner {...props} run={execRun} />
+            </SkillWidgetProvider>
+        )
     } else if (startWorkflow) {
         // If we have startWorkflow capability but no run yet
         return <StartWorkflowView {...props} />;
@@ -679,9 +684,8 @@ function ModernAgentConversationInner({
             {/* Conversation Area - responsive width based on panel visibility */}
             <div
                 ref={conversationRef}
-                className={`flex flex-col h-full min-h-0 border-0 ${
-                showSlidingPanel ? 'lg:w-2/3 flex-1' : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
-            }`}
+                className={`flex flex-col h-full min-h-0 border-0 ${showSlidingPanel ? 'lg:w-2/3 flex-1' : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
+                    }`}
             >
                 <Header
                     title={actualTitle}

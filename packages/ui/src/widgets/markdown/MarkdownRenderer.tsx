@@ -1,10 +1,10 @@
+import { useUserSession } from "@vertesia/ui/session";
+import { useCodeBlockRendererRegistry } from "@vertesia/ui/widgets/markdown/CodeBlockRendering";
+import type { Element } from "hast";
 import React from "react";
 import Markdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { visit, SKIP } from "unist-util-visit";
-import type { Element } from "hast";
-import { AgentChart, type AgentChartSpec } from "../../features/agent/chat/AgentChart";
-import { useUserSession } from "@vertesia/ui/session";
+import { SKIP, visit } from "unist-util-visit";
 
 // Custom URL schemes that we handle in our components
 const ALLOWED_CUSTOM_SCHEMES = [
@@ -53,16 +53,17 @@ interface MarkdownRendererProps {
     artifactRunId?: string;
 }
 
-export function MarkdownRenderer({ 
-    children, 
-    components, 
-    remarkPlugins = [], 
+export function MarkdownRenderer({
+    children,
+    components,
+    remarkPlugins = [],
     removeComments = true,
     artifactRunId,
 }: MarkdownRendererProps) {
     const { client } = useUserSession();
+    const codeBlockRegistry = useCodeBlockRendererRegistry();
+
     const plugins = [remarkGfm, ...remarkPlugins];
-    
     if (removeComments) {
         plugins.push(remarkRemoveComments);
     }
@@ -87,15 +88,12 @@ export function MarkdownRenderer({
             const isInline = !match;
             const language = match ? match[1] : "";
 
-            if (!isInline && (language === "chart" || className?.includes("language-chart"))) {
-                try {
-                    const raw = String(children || "").trim();
-                    const spec = JSON.parse(raw) as AgentChartSpec;
-                    if (spec && spec.chart && Array.isArray(spec.data)) {
-                        return <AgentChart spec={spec} />;
-                    }
-                } catch (e) {
-                    console.warn("Failed to parse chart spec:", e);
+            // Check if there's a custom renderer for this language
+            if (!isInline && language && codeBlockRegistry) {
+                const CustomComponent = codeBlockRegistry.getComponent(language);
+                if (CustomComponent) {
+                    const code = String(children || "").trim();
+                    return <CustomComponent code={code} />;
                 }
             }
 

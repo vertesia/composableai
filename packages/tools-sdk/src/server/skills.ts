@@ -64,9 +64,10 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
                 message: `Skill not found: ${skillName}`
             });
         }
+        const url = new URL(c.req.url);
         return c.json({
             skill_name: skill.name,
-            scripts: skill.scripts || []
+            scripts: skill.scripts ? skill.scripts.map(s => makeScriptUrl(url.origin, s)) : []
         });
     });
 
