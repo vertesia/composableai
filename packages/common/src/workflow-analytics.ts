@@ -317,12 +317,18 @@ export interface WorkflowAnalyticsSummary {
     successfulRuns: number;
     /** Failed runs */
     failedRuns: number;
+    /** Ongoing runs (started but not yet completed) */
+    ongoingRuns: number;
     /** Overall success rate (0-1) */
     successRate: number;
     /** Total token usage */
     tokenUsage: TokenUsageMetrics;
-    /** Average run duration */
+    /** Average run duration (non-interactive runs only) */
     avgRunDurationMs: number;
+    /** 95th percentile run duration (non-interactive runs only) */
+    p95RunDurationMs: number;
+    /** Number of non-interactive runs used for duration calculation */
+    nonInteractiveRunCount: number;
     /** Total LLM calls */
     totalLlmCalls: number;
     /** Total tool calls */
@@ -399,4 +405,74 @@ export interface ToolParameterAnalyticsResponse {
 export interface WorkflowAnalyticsSummaryResponse {
     /** Summary data */
     summary: WorkflowAnalyticsSummary;
+}
+
+/**
+ * Agent/interaction reference with id and display name
+ */
+export interface AgentFilterOption {
+    /** The agent/interaction ID (used for filtering) */
+    id: string;
+    /** The display name (resolved from interaction) */
+    name: string;
+}
+
+/**
+ * Environment reference with id and display name
+ */
+export interface EnvironmentFilterOption {
+    /** The environment ID (used for filtering) */
+    id: string;
+    /** The display name (resolved from environment) */
+    name: string;
+}
+
+/**
+ * Environment-model pair from telemetry data
+ */
+export interface EnvironmentModelPair {
+    /** Environment ID */
+    environmentId: string;
+    /** Environment display name */
+    environmentName: string;
+    /** Model ID (used for filtering) */
+    modelId: string;
+    /** Model display name (human-readable) */
+    modelName: string;
+}
+
+/**
+ * Response for available filter options (unique values from telemetry data)
+ */
+export interface WorkflowAnalyticsFilterOptionsResponse {
+    /** Unique agent/interaction options with id and name */
+    agents: AgentFilterOption[];
+    /** Environment-model pairs (since models are environment-specific) */
+    environmentModels: EnvironmentModelPair[];
+}
+
+// ============================================================================
+// Prompt Size Analytics
+// ============================================================================
+
+/**
+ * Prompt size metrics for a single agent
+ */
+export interface PromptSizeByAgent {
+    /** Agent ID (to be resolved to name by the API) */
+    agentId: string;
+    /** Agent display name (resolved from interaction) */
+    agentName: string;
+    /** Average prompt/input tokens for start calls */
+    avgPromptTokens: number;
+    /** Number of start calls */
+    startCallCount: number;
+}
+
+/**
+ * Response for prompt size analytics by agent
+ */
+export interface PromptSizeAnalyticsResponse {
+    /** Prompt size metrics by agent */
+    byAgent: PromptSizeByAgent[];
 }

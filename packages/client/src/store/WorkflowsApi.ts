@@ -13,12 +13,14 @@ import {
     ListWorkflowInteractionsResponse,
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
+    PromptSizeAnalyticsResponse,
     TokenUsageAnalyticsResponse,
     ToolAnalyticsResponse,
     ToolParameterAnalyticsResponse,
     WebSocketClientMessage,
     WebSocketServerMessage,
     WorkflowActionPayload,
+    WorkflowAnalyticsFilterOptionsResponse,
     WorkflowAnalyticsSummaryQuery,
     WorkflowAnalyticsSummaryResponse,
     WorkflowAnalyticsTimeSeriesQuery,
@@ -523,6 +525,26 @@ export class WorkflowsApi extends ApiTopic {
         query: WorkflowToolParametersQuery
     ): Promise<ToolParameterAnalyticsResponse> {
         return this.post('/analytics/tools/parameters', { payload: query });
+    }
+
+    /**
+     * Get available filter options for analytics.
+     * Returns unique agents, environments, and models from telemetry data.
+     */
+    getAnalyticsFilterOptions(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<WorkflowAnalyticsFilterOptionsResponse> {
+        return this.post('/analytics/filter-options', { payload: query });
+    }
+
+    /**
+     * Get average prompt size (input tokens) by agent for startConversation calls.
+     * This represents the initial prompt + tools size.
+     */
+    getPromptSizeAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<PromptSizeAnalyticsResponse> {
+        return this.post('/analytics/prompt-size', { payload: query });
     }
 
     rules = new WorkflowsRulesApi(this);
