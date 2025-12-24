@@ -1,26 +1,19 @@
 /**
  * Agent Observability Telemetry Types
  *
- * These types define the event-based telemetry model for agent observability.
- * Events are span-correlated and designed to be vendor-neutral and stable over time.
+ * These types define the event-based model for agent observability.
  */
 
 /**
  * Base interface for all telemetry events
  */
-export interface BaseTelemetryEvent {
+export interface BaseAgentEvent {
     /** Type of the event */
     eventType: string;
     /** ISO 8601 timestamp */
     timestamp: string;
     /** Globally unique ID for this agent run */
     agentRunId: string;
-    /** Tenant identifier (accountId:projectId) */
-    tenantId: string;
-    /** OpenTelemetry trace ID for correlation */
-    traceId?: string;
-    /** OpenTelemetry span ID for correlation */
-    spanId?: string;
 }
 
 // ============================================================================
@@ -30,16 +23,12 @@ export interface BaseTelemetryEvent {
 /**
  * Emitted when an agent run starts
  */
-export interface AgentRunStartedEvent extends BaseTelemetryEvent {
+export interface AgentRunStartedEvent extends BaseAgentEvent {
     eventType: 'agent_run_started';
     /** Logical agent identifier (e.g., interaction name) */
     agentId: string;
     /** Version of the agent (e.g., workflow version) */
     agentVersion?: string;
-    /** Account ID */
-    accountId: string;
-    /** Project ID */
-    projectId: string;
     /** Whether this is an interactive conversation */
     interactive: boolean;
     /** Parent run info if this is a child workflow */
@@ -57,7 +46,7 @@ export interface AgentRunStartedEvent extends BaseTelemetryEvent {
 /**
  * Emitted when an agent run completes (success or failure)
  */
-export interface AgentRunCompletedEvent extends BaseTelemetryEvent {
+export interface AgentRunCompletedEvent extends BaseAgentEvent {
     eventType: 'agent_run_completed';
     /** Whether the run succeeded */
     success: boolean;
@@ -79,8 +68,6 @@ export interface AgentRunCompletedEvent extends BaseTelemetryEvent {
         output: number;
         total: number;
     };
-    /** Estimated cost in USD */
-    totalCostUsd?: number;
 }
 
 // ============================================================================
@@ -90,7 +77,7 @@ export interface AgentRunCompletedEvent extends BaseTelemetryEvent {
 /**
  * Emitted for each LLM call (start/resume conversation)
  */
-export interface LlmCallEvent extends BaseTelemetryEvent {
+export interface LlmCallEvent extends BaseAgentEvent {
     eventType: 'llm_call';
     /** LLM model identifier */
     model: string;
@@ -102,8 +89,6 @@ export interface LlmCallEvent extends BaseTelemetryEvent {
     completionTokens: number;
     /** Total tokens used */
     totalTokens: number;
-    /** Estimated cost in USD (if available) */
-    costUsd?: number;
     /** Duration of the LLM call in milliseconds */
     durationMs: number;
     /** Whether the call succeeded */
@@ -128,7 +113,7 @@ export interface LlmCallEvent extends BaseTelemetryEvent {
  * Emitted when a tool call completes (success or failure).
  * Contains all information about the tool execution including parameters and results.
  */
-export interface ToolCallEvent extends BaseTelemetryEvent {
+export interface ToolCallEvent extends BaseAgentEvent {
     eventType: 'tool_call';
     /** Name of the tool being called */
     toolName: string;
@@ -160,10 +145,6 @@ export interface ToolCallEvent extends BaseTelemetryEvent {
     environment?: string;
     /** Agent interaction name (e.g., "Planner", "sys:AdhocTaskAgent") */
     interactionName?: string;
-    /** Account ID */
-    accountId?: string;
-    /** Project ID */
-    projectId?: string;
 }
 
 // ============================================================================
@@ -173,7 +154,7 @@ export interface ToolCallEvent extends BaseTelemetryEvent {
 /**
  * Emitted when a checkpoint is created
  */
-export interface CheckpointCreatedEvent extends BaseTelemetryEvent {
+export interface CheckpointCreatedEvent extends BaseAgentEvent {
     eventType: 'checkpoint_created';
     /** Token count that triggered the checkpoint */
     tokenCountAtCheckpoint: number;
@@ -190,7 +171,7 @@ export interface CheckpointCreatedEvent extends BaseTelemetryEvent {
 /**
  * Emitted at each iteration of the agent loop
  */
-export interface IterationEvent extends BaseTelemetryEvent {
+export interface IterationEvent extends BaseAgentEvent {
     eventType: 'iteration';
     /** Current iteration number */
     iteration: number;
@@ -210,72 +191,10 @@ export interface IterationEvent extends BaseTelemetryEvent {
 // Union type for all events
 // ============================================================================
 
-export type TelemetryEvent =
+export type AgentEvent =
     | AgentRunStartedEvent
     | AgentRunCompletedEvent
     | LlmCallEvent
     | ToolCallEvent
     | CheckpointCreatedEvent
     | IterationEvent;
-
-// ============================================================================
-// Telemetry Context
-// ============================================================================
-
-/**
- * Context passed through async operations for telemetry correlation
- */
-export interface TelemetryContext {
-    /** Agent run ID */
-    agentRunId: string;
-    /** Tenant ID */
-    tenantId: string;
-    /** Account ID */
-    accountId: string;
-    /** Project ID */
-    projectId: string;
-    /** OpenTelemetry trace ID */
-    traceId?: string;
-    /** OpenTelemetry span ID */
-    spanId?: string;
-}
-
-// ============================================================================
-// Telemetry Sink Interface
-// ============================================================================
-
-/**
- * Interface for telemetry sinks that receive and process events
- */
-export interface TelemetrySink {
-    /** Name of the sink for logging/debugging */
-    name: string;
-    /** Emit a single event */
-    emit(event: TelemetryEvent): void | Promise<void>;
-    /** Emit multiple events (for batching) */
-    emitBatch?(events: TelemetryEvent[]): void | Promise<void>;
-    /** Flush any buffered events */
-    flush?(): Promise<void>;
-    /** Close the sink and release resources */
-    close?(): Promise<void>;
-}
-
-// ============================================================================
-// Telemetry Configuration
-// ============================================================================
-
-/**
- * Configuration for the telemetry system
- */
-export interface TelemetryConfig {
-    /** Whether telemetry is enabled */
-    enabled: boolean;
-    /** Sinks to emit events to */
-    sinks: TelemetrySink[];
-    /** Whether to include tool parameters in events (may contain sensitive data) */
-    includeToolParameters?: boolean;
-    /** Maximum size of tool parameters to include (bytes) */
-    maxToolParametersSize?: number;
-    /** Whether to sample events (1.0 = 100%, 0.1 = 10%) */
-    samplingRate?: number;
-}
