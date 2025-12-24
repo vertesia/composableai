@@ -1,5 +1,5 @@
 import { useUserSession } from "@vertesia/ui/session";
-import { useCodeBlockRendererRegistry } from "@vertesia/ui/widgets/markdown/CodeBlockRendering";
+import { useCodeBlockRendererRegistry } from "./CodeBlockRendering";
 import type { Element } from "hast";
 import React from "react";
 import Markdown, { defaultUrlTransform } from "react-markdown";

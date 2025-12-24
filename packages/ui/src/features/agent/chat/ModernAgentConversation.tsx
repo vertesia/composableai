@@ -12,7 +12,7 @@ import MessageInput from "./ModernAgentOutput/MessageInput";
 import { getWorkstreamId, insertMessageInTimeline, isInProgress } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
-import { SkillWidgetProvider } from "@vertesia/ui/features/agent/chat/SkillWidgetProvider";
+import { SkillWidgetProvider } from "./SkillWidgetProvider";
 
 type StartWorkflowFn = (
     initialMessage?: string,
