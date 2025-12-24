@@ -239,28 +239,134 @@ export default function MessageInput({
         }, 100);
     };
 
+    const hasAttachments = uploadedFiles.length > 0 || selectedDocuments.length > 0;
+
     return (
-        <div className="p-3 border-t border-muted flex-shrink-0" style={{ minHeight: "90px" }}>
+        <div
+            className={`p-3 border-t border-muted flex-shrink-0 transition-all ${isDragOver ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' : ''}`}
+            style={{ minHeight: "90px" }}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            {/* Drag overlay */}
+            {isDragOver && (
+                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 rounded-lg z-10 pointer-events-none">
+                    <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2">
+                        <UploadIcon className="size-5" />
+                        Drop files to upload
+                    </div>
+                </div>
+            )}
+
+            {/* Hidden file input */}
+            {onFilesSelected && (
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept={acceptedFileTypes}
+                    onChange={handleFileInputChange}
+                    className="hidden"
+                />
+            )}
+
+            {/* Attachments preview */}
+            {hasAttachments && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                    {/* Uploaded files */}
+                    {uploadedFiles.map((file) => (
+                        <div
+                            key={file.id}
+                            className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md text-sm"
+                        >
+                            <FileTextIcon className="size-3.5 text-gray-500" />
+                            <span className="max-w-[120px] truncate">{file.name}</span>
+                            {onRemoveFile && (
+                                <button
+                                    onClick={() => onRemoveFile(file.id)}
+                                    className="ml-1 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                >
+                                    <XIcon className="size-3" />
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                    {/* Selected documents */}
+                    {selectedDocuments.map((doc) => (
+                        <div
+                            key={doc.id}
+                            className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-md text-sm text-blue-700 dark:text-blue-300"
+                        >
+                            <FileTextIcon className="size-3.5" />
+                            <span className="max-w-[120px] truncate">{doc.name}</span>
+                            {onRemoveDocument && (
+                                <button
+                                    onClick={() => onRemoveDocument(doc.id)}
+                                    className="ml-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
+                                >
+                                    <XIcon className="size-3" />
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Action buttons row */}
+            {(onFilesSelected || renderDocumentSearch) && (
+                <div className="flex gap-2 mb-2">
+                    {onFilesSelected && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={openFileDialog}
+                            disabled={disabled || uploadedFiles.length >= maxFiles}
+                            className="text-xs"
+                        >
+                            <UploadIcon className="size-3.5 mr-1.5" />
+                            Upload
+                        </Button>
+                    )}
+                    {renderDocumentSearch && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsDocSearchOpen(true)}
+                            disabled={disabled}
+                            className="text-xs"
+                        >
+                            <FileTextIcon className="size-3.5 mr-1.5" />
+                            Search Documents
+                        </Button>
+                    )}
+                </div>
+            )}
+
+            {/* Input row */}
             <div className="flex items-center space-x-2">
-                <div className="flex flex-1 space-x-1" >
+                <div className="flex flex-1 space-x-1">
                     <Input
                         ref={ref}
                         value={value}
                         onKeyDown={keyDown}
                         onChange={setValue}
+                        onPaste={handlePaste}
                         disabled={disabled}
-                        placeholder={isStreaming ? "Agent is working... (click stop to interrupt)" : placeholder}
+                        placeholder={isStreaming ? "Agent is working... (click stop to interrupt)" : (onFilesSelected ? "Ask anything... (drop or paste files)" : placeholder)}
                         className="pr-12 py-2.5"
                     />
-                    <Button
-                        variant="ghost"
-                        className="rounded-full"
-                        disabled={!isCompleted}
-                        onClick={() => setIsObjectModalOpen(true)}
-                        alt="Link Object"
-                    >
-                        <PaperclipIcon className="size-4" />
-                    </Button>
+                    {!hideObjectLinking && (
+                        <Button
+                            variant="ghost"
+                            className="rounded-full"
+                            disabled={!isCompleted}
+                            onClick={() => setIsObjectModalOpen(true)}
+                            alt="Link Object"
+                        >
+                            <PaperclipIcon className="size-4" />
+                        </Button>
+                    )}
                 </div>
                 {isStreaming && onStop ? (
                     <Button
@@ -295,17 +401,26 @@ export default function MessageInput({
                         : "You can send a message at any time"}
             </div>
 
-            {/* Object Selection Modal */}
-            <VModal
-                isOpen={isObjectModalOpen}
-                onClose={() => setIsObjectModalOpen(false)}
-                className='min-w-[60vw]'
-            >
-                <VModalTitle>Link Object</VModalTitle>
-                <VModalBody className="pb-6">
-                    <SelectDocument onChange={handleObjectSelect} />
-                </VModalBody>
-            </VModal>
+            {/* Object Selection Modal (default) */}
+            {!hideObjectLinking && (
+                <VModal
+                    isOpen={isObjectModalOpen}
+                    onClose={() => setIsObjectModalOpen(false)}
+                    className='min-w-[60vw]'
+                >
+                    <VModalTitle>Link Object</VModalTitle>
+                    <VModalBody className="pb-6">
+                        <SelectDocument onChange={handleObjectSelect} />
+                    </VModalBody>
+                </VModal>
+            )}
+
+            {/* Custom Document Search (render prop) */}
+            {renderDocumentSearch && renderDocumentSearch({
+                isOpen: isDocSearchOpen,
+                onClose: () => setIsDocSearchOpen(false),
+                onSelect: handleDocumentSelect,
+            })}
         </div>
     );
 }
