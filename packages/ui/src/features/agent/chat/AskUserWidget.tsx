@@ -32,12 +32,34 @@ export interface AskUserWidgetProps {
     icon?: React.ReactNode;
     /** Variant for styling */
     variant?: "default" | "warning" | "info" | "success";
-    /** Additional className for the container */
+    /** Hide the default icon */
+    hideIcon?: boolean;
+    /** Hide the border */
+    hideBorder?: boolean;
+
+    // Styling props for full customization
+    /** Additional className for the outer container */
     className?: string;
-    /** Additional className for the card */
+    /** Additional className for the card wrapper */
     cardClassName?: string;
-    /** Additional className for the buttons */
+    /** Additional className for the header section */
+    headerClassName?: string;
+    /** Additional className for the icon wrapper */
+    iconClassName?: string;
+    /** Additional className for the question text */
+    questionClassName?: string;
+    /** Additional className for the description text */
+    descriptionClassName?: string;
+    /** Additional className for the options container */
+    optionsClassName?: string;
+    /** Additional className for option buttons */
     buttonClassName?: string;
+    /** Additional className for the input container */
+    inputContainerClassName?: string;
+    /** Additional className for the text input */
+    inputClassName?: string;
+    /** Additional className for the submit button */
+    submitButtonClassName?: string;
 }
 
 const VARIANT_STYLES = {
@@ -87,9 +109,20 @@ export function AskUserWidget({
     isLoading = false,
     icon,
     variant = "default",
+    hideIcon = false,
+    hideBorder = false,
+    // Styling props
     className,
     cardClassName,
+    headerClassName,
+    iconClassName,
+    questionClassName,
+    descriptionClassName,
+    optionsClassName,
     buttonClassName,
+    inputContainerClassName,
+    inputClassName,
+    submitButtonClassName,
 }: AskUserWidgetProps) {
     const [inputValue, setInputValue] = React.useState("");
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -111,23 +144,27 @@ export function AskUserWidget({
         }
     };
 
+    const borderClass = hideBorder ? "" : `border-l-4 ${styles.border}`;
+
     return (
         <div className={`my-4 ${className || ""}`}>
             <div
-                className={`border-l-4 ${styles.border} ${styles.bg} rounded-r-lg shadow-sm ${cardClassName || ""}`}
+                className={`${borderClass} ${styles.bg} rounded-r-lg shadow-sm ${cardClassName || ""}`}
             >
                 {/* Header with icon and question */}
-                <div className="px-4 py-3">
+                <div className={`px-4 py-3 ${headerClassName || ""}`}>
                     <div className="flex items-start gap-3">
-                        <div className={`flex-shrink-0 mt-0.5 ${styles.icon}`}>
-                            {icon || <DefaultIcon className="size-5" />}
-                        </div>
+                        {!hideIcon && (
+                            <div className={`flex-shrink-0 mt-0.5 ${styles.icon} ${iconClassName || ""}`}>
+                                {icon || <DefaultIcon className="size-5" />}
+                            </div>
+                        )}
                         <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            <h4 className={`text-sm font-semibold text-gray-900 dark:text-gray-100 ${questionClassName || ""}`}>
                                 {question}
                             </h4>
                             {description && (
-                                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                <p className={`mt-1 text-sm text-gray-600 dark:text-gray-400 ${descriptionClassName || ""}`}>
                                     {description}
                                 </p>
                             )}
@@ -137,7 +174,7 @@ export function AskUserWidget({
 
                 {/* Options */}
                 {options && options.length > 0 && (
-                    <div className="px-4 pb-3 pt-1">
+                    <div className={`px-4 pb-3 pt-1 ${optionsClassName || ""}`}>
                         <div className="flex flex-wrap gap-2">
                             {options.map((option) => (
                                 <Button
@@ -159,7 +196,7 @@ export function AskUserWidget({
 
                 {/* Free-form input */}
                 {allowFreeResponse && (
-                    <div className="px-4 pb-3 pt-1">
+                    <div className={`px-4 pb-3 pt-1 ${inputContainerClassName || ""}`}>
                         <div className="flex gap-2">
                             <input
                                 ref={inputRef}
@@ -169,12 +206,13 @@ export function AskUserWidget({
                                 onKeyDown={handleKeyDown}
                                 placeholder={placeholder}
                                 disabled={isLoading}
-                                className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className={`flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${inputClassName || ""}`}
                             />
                             <Button
                                 size="sm"
                                 onClick={handleSubmit}
                                 disabled={isLoading || !inputValue.trim()}
+                                className={submitButtonClassName}
                             >
                                 {isLoading ? "..." : "Send"}
                             </Button>
