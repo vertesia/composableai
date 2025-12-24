@@ -7,17 +7,26 @@ import {
     CreateWorkflowRulePayload,
     DSLWorkflowDefinition,
     DSLWorkflowSpec,
+    ErrorAnalyticsResponse,
     ExecuteWorkflowPayload,
+    LatencyAnalyticsResponse,
     ListWorkflowInteractionsResponse,
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
+    TokenUsageAnalyticsResponse,
+    ToolAnalyticsResponse,
+    ToolParameterAnalyticsResponse,
     WebSocketClientMessage,
     WebSocketServerMessage,
     WorkflowActionPayload,
+    WorkflowAnalyticsSummaryQuery,
+    WorkflowAnalyticsSummaryResponse,
+    WorkflowAnalyticsTimeSeriesQuery,
     WorkflowDefinitionRef,
     WorkflowRule,
     WorkflowRuleItem,
     WorkflowRunWithDetails,
+    WorkflowToolParametersQuery,
 } from "@vertesia/common";
 import { VertesiaClient } from "../client.js";
 import { EventSourceProvider } from "../execute.js";
@@ -430,6 +439,90 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs/${workflowId}/${runId}/events`, {
             payload: { events },
         });
+    }
+
+    // ========================================================================
+    // Analytics API
+    // ========================================================================
+
+    /**
+     * Get workflow analytics summary.
+     * Returns overall metrics including token usage, success rates, and run counts.
+     */
+    getAnalyticsSummary(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<WorkflowAnalyticsSummaryResponse> {
+        return this.post('/analytics/summary', { payload: query });
+    }
+
+    /**
+     * Get token usage analytics.
+     * Returns token consumption metrics by model, agent, tool, or over time.
+     */
+    getTokenUsageAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<TokenUsageAnalyticsResponse> {
+        return this.post('/analytics/tokens', { payload: query });
+    }
+
+    /**
+     * Get LLM latency analytics.
+     * Returns duration/latency metrics for LLM calls.
+     */
+    getLlmLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/llm', { payload: query });
+    }
+
+    /**
+     * Get tool latency analytics.
+     * Returns duration/latency metrics for tool calls.
+     */
+    getToolLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/tools', { payload: query });
+    }
+
+    /**
+     * Get agent/workflow latency analytics.
+     * Returns duration metrics for complete workflow runs.
+     */
+    getAgentLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/agents', { payload: query });
+    }
+
+    /**
+     * Get error analytics.
+     * Returns error rates, types, and trends.
+     */
+    getErrorAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<ErrorAnalyticsResponse> {
+        return this.post('/analytics/errors', { payload: query });
+    }
+
+    /**
+     * Get tool usage analytics.
+     * Returns tool invocation counts, success rates, and performance metrics.
+     */
+    getToolAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<ToolAnalyticsResponse> {
+        return this.post('/analytics/tools', { payload: query });
+    }
+
+    /**
+     * Get tool parameter analytics.
+     * Returns parameter value distributions for a specific tool.
+     */
+    getToolParameterAnalytics(
+        query: WorkflowToolParametersQuery
+    ): Promise<ToolParameterAnalyticsResponse> {
+        return this.post('/analytics/tools/parameters', { payload: query });
     }
 
     rules = new WorkflowsRulesApi(this);

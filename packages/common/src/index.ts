@@ -32,4 +32,5 @@ export type * from './utils/type-helpers.js';
 export * from './sts-token-types.js';
 export * from './telemetry/index.js';
 export * from './versions.js';
+export * from './workflow-analytics.js';
 
