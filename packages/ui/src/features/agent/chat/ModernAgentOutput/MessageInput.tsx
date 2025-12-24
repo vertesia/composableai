@@ -1,7 +1,23 @@
 import { Button, Input, Spinner, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core";
-import { Activity, PaperclipIcon, SendIcon, StopCircleIcon } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import { Activity, FileTextIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { SelectDocument } from "../../../store";
+
+/** Represents an uploaded file attachment */
+export interface UploadedFile {
+    id: string;
+    name: string;
+    type?: string;
+    size?: number;
+    /** Optional preview URL for images */
+    previewUrl?: string;
+}
+
+/** Represents a selected document from search */
+export interface SelectedDocument {
+    id: string;
+    name: string;
+}
 
 interface MessageInputProps {
     onSend: (message: string) => void;
@@ -13,6 +29,33 @@ interface MessageInputProps {
     isCompleted?: boolean;
     activeTaskCount?: number;
     placeholder?: string;
+
+    // File upload props
+    /** Called when files are dropped/pasted/selected */
+    onFilesSelected?: (files: File[]) => void;
+    /** Currently uploaded files to display */
+    uploadedFiles?: UploadedFile[];
+    /** Called when user removes an uploaded file */
+    onRemoveFile?: (fileId: string) => void;
+    /** Accepted file types (e.g., ".pdf,.doc,.png") */
+    acceptedFileTypes?: string;
+    /** Max number of files allowed */
+    maxFiles?: number;
+
+    // Document search props (render prop for custom search UI)
+    /** Render custom document search UI - if provided, shows search button */
+    renderDocumentSearch?: (props: {
+        isOpen: boolean;
+        onClose: () => void;
+        onSelect: (doc: SelectedDocument) => void;
+    }) => React.ReactNode;
+    /** Currently selected documents from search */
+    selectedDocuments?: SelectedDocument[];
+    /** Called when user removes a selected document */
+    onRemoveDocument?: (docId: string) => void;
+
+    // Hide the default object linking (for apps that don't use it)
+    hideObjectLinking?: boolean;
 }
 
 export default function MessageInput({
@@ -24,15 +67,124 @@ export default function MessageInput({
     isStreaming = false,
     isCompleted = false,
     activeTaskCount = 0,
-    placeholder = "Type your message..."
+    placeholder = "Type your message...",
+    // File upload props
+    onFilesSelected,
+    uploadedFiles = [],
+    onRemoveFile,
+    acceptedFileTypes = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp",
+    maxFiles = 5,
+    // Document search props
+    renderDocumentSearch,
+    selectedDocuments = [],
+    onRemoveDocument,
+    // Object linking
+    hideObjectLinking = false,
 }: MessageInputProps) {
     const ref = useRef<HTMLInputElement | null>(null);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [value, setValue] = useState("");
     const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
+    const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
 
     useEffect(() => {
         if (!disabled && isCompleted) ref.current?.focus();
     }, [disabled, isCompleted]);
+
+    // File handling
+    const handleFiles = useCallback((files: FileList | File[]) => {
+        if (!onFilesSelected) return;
+
+        const fileArray = Array.from(files);
+        const remainingSlots = maxFiles - uploadedFiles.length;
+        const filesToAdd = fileArray.slice(0, remainingSlots);
+
+        if (filesToAdd.length > 0) {
+            onFilesSelected(filesToAdd);
+        }
+    }, [onFilesSelected, maxFiles, uploadedFiles.length]);
+
+    // Drag and drop handlers
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (onFilesSelected) {
+            setIsDragOver(true);
+        }
+    }, [onFilesSelected]);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+
+        if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+            handleFiles(e.dataTransfer.files);
+        }
+    }, [handleFiles]);
+
+    // Paste handler for files
+    const handlePaste = useCallback((e: React.ClipboardEvent) => {
+        if (!onFilesSelected) return;
+
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        const files: File[] = [];
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.kind === 'file') {
+                const file = item.getAsFile();
+                if (file) {
+                    // If it's an image without a proper name, generate one
+                    if (item.type.startsWith('image/') && (!file.name || file.name === 'image.png')) {
+                        const extension = item.type.split('/')[1] || 'png';
+                        const namedFile = new File([file], `pasted-image-${Date.now()}.${extension}`, {
+                            type: file.type,
+                        });
+                        files.push(namedFile);
+                    } else {
+                        files.push(file);
+                    }
+                }
+            }
+        }
+
+        if (files.length > 0) {
+            handleFiles(files);
+        }
+    }, [onFilesSelected, handleFiles]);
+
+    // File input change handler
+    const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            handleFiles(e.target.files);
+            // Reset input so same file can be selected again
+            e.target.value = '';
+        }
+    }, [handleFiles]);
+
+    const openFileDialog = useCallback(() => {
+        fileInputRef.current?.click();
+    }, []);
+
+    // Document search handlers
+    const handleDocumentSelect = useCallback((doc: SelectedDocument) => {
+        // Insert document reference into message
+        const markdownLink = `[📄 ${doc.name}](doc:${doc.id})`;
+        const currentValue = value || '';
+        const cursorPos = ref.current?.selectionStart || currentValue.length;
+        const newValue = currentValue.substring(0, cursorPos) + markdownLink + currentValue.substring(cursorPos);
+        setValue(newValue);
+        setIsDocSearchOpen(false);
+    }, [value]);
 
     const handleSend = () => {
         const message = value.trim();

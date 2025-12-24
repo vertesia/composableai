@@ -23,6 +23,17 @@ const isBatchProgressMessage = (message: AgentMessage): message is AgentMessage 
     return message.type === AgentMessageType.BATCH_PROGRESS && !!message.details?.batch_id;
 };
 
+// Check if message is a system metadata message that should be hidden from users
+const isSystemMetadataMessage = (message: AgentMessage): boolean => {
+    if (message.type !== AgentMessageType.UPDATE) return false;
+    const text = message.message?.toString() || '';
+    // Hide "Tools enabled:" messages that list all available tools
+    if (text.startsWith('Tools enabled:')) return true;
+    // Hide "Starting work with interaction" messages
+    if (text.startsWith('Starting work with interaction')) return true;
+    return false;
+};
+
 // Error boundary to catch and isolate errors in individual message components
 class MessageErrorBoundary extends Component<
     { children: ReactNode },
@@ -83,14 +94,16 @@ function AllMessagesMixedComponent({
         }
     }, [messages, streamingMessages, bottomRef, isStreaming]);
 
-    // Sort all messages chronologically
+    // Sort all messages chronologically and filter out system metadata
     const sortedMessages = React.useMemo(
         () =>
-            [...messages].sort((a, b) => {
-                const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
-                const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
-                return timeA - timeB;
-            }),
+            [...messages]
+                .filter(msg => !isSystemMetadataMessage(msg))
+                .sort((a, b) => {
+                    const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
+                    const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
+                    return timeA - timeB;
+                }),
         [messages],
     );
 
