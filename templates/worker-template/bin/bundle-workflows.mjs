@@ -7,6 +7,15 @@ import path from 'node:path';
 async function bundle(wsPath, bundlePath) {
     const { code } = await bundleWorkflowCode({
         workflowsPath: path.resolve(wsPath),
+        webpackConfigHook: (config) => {
+            // Fix for "Automatic publicPath is not supported in this browser"
+            // Temporal workflows run in an isolated VM, not a browser, so auto-detection fails
+            config.output = {
+                ...config.output,
+                publicPath: '',
+            };
+            return config;
+        },
     });
     const codePath = path.resolve(bundlePath);
     await writeFile(codePath, code);
