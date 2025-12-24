@@ -14,6 +14,24 @@ import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache
 interface MessageItemProps {
     message: AgentMessage;
     showPulsatingCircle?: boolean;
+    /** Additional className for the outer container */
+    className?: string;
+    /** Additional className for the card wrapper */
+    cardClassName?: string;
+    /** Additional className for the header section */
+    headerClassName?: string;
+    /** Additional className for the content section */
+    contentClassName?: string;
+    /** Additional className for the timestamp */
+    timestampClassName?: string;
+    /** Additional className for the sender label */
+    senderClassName?: string;
+    /** Additional className for the icon wrapper */
+    iconClassName?: string;
+    /** Additional className for the details section */
+    detailsClassName?: string;
+    /** Additional className for the artifacts section */
+    artifactsClassName?: string;
 }
 
 // Consolidated message styling - single source of truth
@@ -41,7 +59,19 @@ const MESSAGE_STYLES: Record<AgentMessageType | 'default', {
     default: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
 };
 
-function MessageItemComponent({ message, showPulsatingCircle = false }: MessageItemProps) {
+function MessageItemComponent({
+    message,
+    showPulsatingCircle = false,
+    className,
+    cardClassName,
+    headerClassName,
+    contentClassName,
+    timestampClassName,
+    senderClassName,
+    iconClassName,
+    detailsClassName,
+    artifactsClassName,
+}: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
     const [processedContent, setProcessedContent] = useState<string | object>("");
     const { client } = useUserSession();

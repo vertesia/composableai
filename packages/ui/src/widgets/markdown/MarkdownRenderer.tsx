@@ -51,6 +51,16 @@ interface MarkdownRendererProps {
      * Optional workflow run id used to resolve shorthand artifact paths (e.g. artifact:out/result.csv)
      */
     artifactRunId?: string;
+    /** Additional className for the markdown wrapper */
+    className?: string;
+    /** Additional className for code blocks */
+    codeClassName?: string;
+    /** Additional className for inline code */
+    inlineCodeClassName?: string;
+    /** Additional className for links */
+    linkClassName?: string;
+    /** Additional className for images */
+    imageClassName?: string;
 }
 
 export function MarkdownRenderer({
@@ -59,6 +69,11 @@ export function MarkdownRenderer({
     remarkPlugins = [],
     removeComments = true,
     artifactRunId,
+    className,
+    codeClassName,
+    inlineCodeClassName,
+    linkClassName,
+    imageClassName,
 }: MarkdownRendererProps) {
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
@@ -127,13 +142,16 @@ export function MarkdownRenderer({
                 return <ExistingCode node={node} className={className} {...props}>{children}</ExistingCode>;
             }
 
+            const baseInlineClass = "px-1.5 py-0.5 rounded";
+            const baseCodeClass = "text-muted";
+
             return (
                 <code
                     {...props}
                     className={
                         isInline
-                            ? "px-1.5 py-0.5 rounded"
-                            : "text-muted"
+                            ? `${baseInlineClass} ${inlineCodeClassName || ""}`
+                            : `${baseCodeClass} ${codeClassName || ""}`
                     }
                 >
                     {children}
@@ -251,6 +269,7 @@ export function MarkdownRenderer({
                     <a
                         href={mappedHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -272,6 +291,7 @@ export function MarkdownRenderer({
                     <a
                         href={mappedHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -293,6 +313,7 @@ export function MarkdownRenderer({
                     <a
                         href={mappedHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -314,6 +335,7 @@ export function MarkdownRenderer({
                     <a
                         href={finalHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -330,6 +352,7 @@ export function MarkdownRenderer({
                     <a
                         href={finalHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -343,6 +366,7 @@ export function MarkdownRenderer({
                 <a
                     href={href}
                     {...rest}
+                    className={linkClassName}
                     target="_blank"
                     rel="noopener noreferrer"
                 >
@@ -461,6 +485,7 @@ export function MarkdownRenderer({
                     <img
                         src={resolvedSrc}
                         alt={alt}
+                        className={imageClassName}
                         {...rest}
                     />
                 );
@@ -471,6 +496,7 @@ export function MarkdownRenderer({
                 <img
                     src={src}
                     alt={alt}
+                    className={imageClassName}
                     {...rest}
                 />
             );
@@ -482,9 +508,9 @@ export function MarkdownRenderer({
             a: LinkComponent,
             img: ImageComponent,
         };
-    }, [components, client, artifactRunId, urlCache]);
+    }, [components, client, artifactRunId, urlCache, codeClassName, inlineCodeClassName, linkClassName, imageClassName]);
 
-    return (
+    const markdownContent = (
         <Markdown
             remarkPlugins={plugins}
             components={componentsWithCharts}
@@ -493,4 +519,11 @@ export function MarkdownRenderer({
             {children}
         </Markdown>
     );
+
+    // Wrap in a div if className is provided, otherwise return Markdown directly
+    if (className) {
+        return <div className={className}>{markdownContent}</div>;
+    }
+
+    return markdownContent;
 }
