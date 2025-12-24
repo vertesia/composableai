@@ -8,11 +8,15 @@ async function bundle(wsPath, bundlePath) {
     const { code } = await bundleWorkflowCode({
         workflowsPath: path.resolve(wsPath),
         webpackConfigHook: (config) => {
-            // Fix for "Automatic publicPath is not supported in this browser"
-            // Temporal workflows run in an isolated VM, not a browser, so auto-detection fails
+            // Fix for Temporal's VM sandbox environment:
+            // 1. publicPath: '' - disable auto-detection (no document.currentScript)
+            // 2. chunkLoading: 'import' - use import() instead of JSONP (no 'self' global)
+            // 3. globalObject: 'globalThis' - use globalThis instead of self/window
             config.output = {
                 ...config.output,
                 publicPath: '',
+                chunkLoading: 'import',
+                globalObject: 'globalThis',
             };
             return config;
         },
