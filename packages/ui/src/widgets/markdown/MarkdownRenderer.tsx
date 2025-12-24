@@ -42,7 +42,7 @@ function remarkRemoveComments() {
     };
 }
 
-interface MarkdownRendererProps {
+export interface MarkdownRendererProps {
     children: string;
     components?: any;
     remarkPlugins?: any[];
