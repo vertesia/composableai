@@ -143,7 +143,7 @@ export class WorkflowsApi extends ApiTopic {
                 if (isClosed) return;
 
                 try {
-                    const EventSourceImpl = EventSourceProvider();
+                    const EventSourceImpl = await EventSourceProvider();
                     const client = this.client as VertesiaClient;
                     const streamUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/stream`);
 
