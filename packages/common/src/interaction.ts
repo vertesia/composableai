@@ -1001,3 +1001,78 @@ export interface RateLimitRequestPayload {
 export interface RateLimitRequestResponse {
     delay_ms: number;
 }
+
+/**
+ * Source of the resolved model configuration
+ */
+export enum ModelSource {
+    /** Model was explicitly provided in the execution config */
+    config = "config",
+    /** Model comes from the interaction definition */
+    interaction = "interaction",
+    /** Model comes from environment's default_model */
+    environmentDefault = "environmentDefault",
+    /** Model comes from project system interaction defaults */
+    projectSystemDefault = "projectSystemDefault",
+    /** Model comes from project base defaults */
+    projectBaseDefault = "projectBaseDefault",
+    /** Model comes from project modality-specific defaults */
+    projectModalityDefault = "projectModalityDefault",
+    /** Model comes from legacy project defaults */
+    projectLegacyDefault = "projectLegacyDefault",
+}
+
+/**
+ * Resolved environment information
+ */
+export interface ResolvedEnvironmentInfo {
+    id: string;
+    name: string;
+    provider: string;
+}
+
+/**
+ * Resolved runtime configuration for an interaction
+ */
+export interface ResolvedRuntimeConfig {
+    environment: ResolvedEnvironmentInfo;
+    model?: string;
+    model_source: ModelSource;
+}
+
+/**
+ * Resolved execution info for an interaction.
+ * Contains the interaction ID, basic metadata, and the resolved runtime configuration
+ * (environment, model) that would be used at execution time.
+ */
+export interface ResolvedInteractionExecutionInfo {
+    /**
+     * The resolved interaction ID
+     */
+    id: string;
+
+    /**
+     * The interaction endpoint name
+     */
+    name: string;
+
+    /**
+     * The interaction version number
+     */
+    version: number;
+
+    /**
+     * The interaction status (draft or published)
+     */
+    status: InteractionStatus;
+
+    /**
+     * The interaction tags (can include version tags like "production", "staging")
+     */
+    tags: string[];
+
+    /**
+     * The resolved runtime configuration
+     */
+    resolved: ResolvedRuntimeConfig;
+}
