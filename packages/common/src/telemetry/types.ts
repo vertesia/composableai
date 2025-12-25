@@ -14,6 +14,14 @@ export interface BaseAgentEvent {
     timestamp: string;
     /** Globally unique ID for this agent run */
     agentRunId: string;
+    /** LLM model identifier (e.g., "claude-3-5-sonnet", "gemini-1.5-pro") */
+    model: string;
+    /** Environment ID (MongoDB ObjectId of the environment) */
+    environmentId: string;
+    /** Environment type/driver (e.g., "vertexai", "bedrock", "openai") */
+    environmentType: string;
+    /** Interaction ID (MongoDB ObjectId of the interaction) */
+    interactionId: string;
 }
 
 // ============================================================================
@@ -76,13 +84,16 @@ export interface AgentRunCompletedEvent extends BaseAgentEvent {
 
 /**
  * Emitted for each LLM call (start/resume conversation)
+ * Note: model, environmentId, environmentType are required (override base optional)
  */
 export interface LlmCallEvent extends BaseAgentEvent {
     eventType: 'llm_call';
-    /** LLM model identifier */
+    /** LLM model identifier - required for LLM calls */
     model: string;
-    /** Environment (driver) used */
-    environment: string;
+    /** Environment ID - required for LLM calls */
+    environmentId: string;
+    /** Environment type/driver - required for LLM calls */
+    environmentType: string;
     /** Number of input/prompt tokens */
     promptTokens: number;
     /** Number of output/completion tokens */
@@ -139,12 +150,6 @@ export interface ToolCallEvent extends BaseAgentEvent {
     errorMessage?: string;
     /** Whether this tool spawned a child workflow */
     spawnedChildWorkflow?: boolean;
-    /** LLM model identifier (e.g., "claude-3-5-sonnet", "gemini-1.5-pro") */
-    model?: string;
-    /** Environment/driver used (e.g., "vertexai", "bedrock", "openai") */
-    environment?: string;
-    /** Agent interaction name (e.g., "Planner", "sys:AdhocTaskAgent") */
-    interactionName?: string;
 }
 
 // ============================================================================
