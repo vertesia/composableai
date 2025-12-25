@@ -1,6 +1,5 @@
 import { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from "@llumiverse/common";
-import { ExecutionEnvironmentRef } from "../environment.js";
-import { ConversationStripOptions } from "../interaction.js";
+import { ConversationStripOptions, ResolvedInteractionExecutionInfo } from "../interaction.js";
 import { ExecutionRunDocRef } from "../runs.js";
 import { Plan } from "./workflow.js";
 
@@ -27,7 +26,7 @@ export interface ConversationState {
     /**
      * The execution environment with provider info for LLM calls.
      */
-    environment: ExecutionEnvironmentRef;
+    environment: string;
 
     /**
      * The options to use on the next call.
@@ -91,6 +90,8 @@ export interface ConversationState {
      * Stores info needed to maintain proper email threading when replying via email.
      */
     email_thread?: EmailThreadInfo;
+
+    resolvedInteraction?: ResolvedInteractionExecutionInfo;
 }
 
 /**
