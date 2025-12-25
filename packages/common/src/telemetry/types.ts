@@ -22,6 +22,10 @@ export interface BaseAgentEvent {
     environmentType: string;
     /** Interaction ID (MongoDB ObjectId of the interaction) */
     interactionId: string;
+    /** Principal ID who initiated the request (user_id for users, key ID for API keys, from onBehalfOf for agent tokens) */
+    principalId: string;
+    /** Principal type: user, apikey, service_account, agent */
+    principalType: string;
 }
 
 // ============================================================================

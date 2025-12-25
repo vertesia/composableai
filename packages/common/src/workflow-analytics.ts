@@ -476,3 +476,31 @@ export interface PromptSizeAnalyticsResponse {
     /** Prompt size metrics by agent */
     byAgent: PromptSizeByAgent[];
 }
+
+// ============================================================================
+// Top Principals Analytics
+// ============================================================================
+
+/**
+ * Top principal (user/API key/service account) metrics
+ */
+export interface TopPrincipal {
+    /** Principal ID (user ID, API key ID, etc.) */
+    principalId: string;
+    /** Principal type (user, apikey, service_account, agent) */
+    principalType: string;
+    /** Display name (user email/name, API key name, etc.) */
+    displayName: string;
+    /** Number of agent runs started by this principal */
+    runCount: number;
+}
+
+/**
+ * Response for top principals analytics (most active users/principals)
+ */
+export interface TopPrincipalsAnalyticsResponse {
+    /** List of top principals sorted by run count descending */
+    principals: TopPrincipal[];
+    /** Total number of runs in the period */
+    totalRuns: number;
+}

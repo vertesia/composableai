@@ -17,6 +17,7 @@ import {
     TokenUsageAnalyticsResponse,
     ToolAnalyticsResponse,
     ToolParameterAnalyticsResponse,
+    TopPrincipalsAnalyticsResponse,
     WebSocketClientMessage,
     WebSocketServerMessage,
     WorkflowActionPayload,
@@ -545,6 +546,16 @@ export class WorkflowsApi extends ApiTopic {
         query: WorkflowAnalyticsSummaryQuery = {}
     ): Promise<PromptSizeAnalyticsResponse> {
         return this.post('/analytics/prompt-size', { payload: query });
+    }
+
+    /**
+     * Get top principals (users/API keys) who started the most agent runs.
+     * Returns the top N principals sorted by run count descending.
+     */
+    getTopPrincipalsAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<TopPrincipalsAnalyticsResponse> {
+        return this.post('/analytics/top-principals', { payload: query });
     }
 
     rules = new WorkflowsRulesApi(this);
