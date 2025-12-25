@@ -744,9 +744,9 @@ export interface StreamingTelemetryContext {
     /** Timestamp when inference started (for duration calculation) */
     inferenceStartTime: number;
     /** Principal ID who initiated the request (user_id for users, key ID for API keys, from onBehalfOf for agent tokens) */
-    principalId?: string;
+    principalId: string;
     /** Principal type: user, apikey, service_account, agent */
-    principalType?: string;
+    principalType: string;
 }
 
 /**
