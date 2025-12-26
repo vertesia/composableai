@@ -1,7 +1,7 @@
 import { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from "@llumiverse/common";
 import { ConversationStripOptions, ResolvedInteractionExecutionInfo } from "../interaction.js";
 import { ExecutionRunDocRef } from "../runs.js";
-import { Plan } from "./workflow.js";
+import { Plan, WorkflowAncestor } from "./workflow.js";
 
 /**
  * Lightweight tool reference for activity payloads.
@@ -49,11 +49,10 @@ export interface ConversationState {
     token_usage?: ExecutionTokenUsage;
 
     /** If a sub workflow execution, contains the parent's info */
-    parent?: {
-        run_id: string;
-        workflow_id: string;
-        run_depth: number;
-    };
+    parent?: WorkflowAncestor;
+
+    /** Full ancestry chain from root to immediate parent (for hierarchical aggregation) */
+    ancestors: WorkflowAncestor[];
 
     /** If part of a larger agentic workflow, task id of this task */
     task_id?: string;

@@ -68,6 +68,10 @@ export interface BaseAgentEvent {
     environmentType: string;
     /** Interaction ID (MongoDB ObjectId of the interaction) */
     interactionId: string;
+    /** Immediate parent run ID (if this is a child workflow) */
+    parentRunId?: string;
+    /** Ancestor run IDs from root to immediate parent (for hierarchical aggregation) */
+    ancestorRunIds?: string[];
 }
 
 // ============================================================================
@@ -81,12 +85,6 @@ export interface AgentRunStartedEvent extends BaseAgentEvent {
     eventType: TelemetryEventType.AgentRunStarted;
     /** Whether this is an interactive conversation */
     interactive: boolean;
-    /** Parent run info if this is a child workflow */
-    parent?: {
-        runId: string;
-        workflowId: string;
-        depth: number;
-    };
     /** Task ID if part of a multi-workstream execution */
     taskId?: string;
     /** User channel (web, email, api, etc.) */
