@@ -16,9 +16,12 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 //     tool_names: string[],
 // }
 
+export type UserChannel = "interactive" | "email";
+
 export class PayloadBuilder {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
+    _user_channel: UserChannel | undefined;
     _collection: string | undefined;
     _start: boolean = false;
     _preserveRunValues: boolean = false;
@@ -52,6 +55,7 @@ export class PayloadBuilder {
         builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
+        builder._user_channel = this._user_channel;
         builder._inputValidator = this._inputValidator;
         builder._start = this._start;
         builder._collection = this._collection;
@@ -77,6 +81,17 @@ export class PayloadBuilder {
     set debug_mode(debug_mode: boolean) {
         if (debug_mode !== this._debug_mode) {
             this._debug_mode = debug_mode;
+            this.onStateChanged();
+        }
+    }
+
+    get user_channel(): UserChannel | undefined {
+        return this._user_channel;
+    }
+
+    set user_channel(user_channel: UserChannel | undefined) {
+        if (user_channel !== this._user_channel) {
+            this._user_channel = user_channel;
             this.onStateChanged();
         }
     }
@@ -126,6 +141,7 @@ export class PayloadBuilder {
         this._data = context.data;
         this._interactive = context.interactive;
         this._debug_mode = context.debug_mode ?? false;
+        this._user_channel = context.user_channel;
         this.collection = context.collection_id ?? undefined;
 
         // we need to trigger the setter to deal with default models
@@ -243,6 +259,7 @@ export class PayloadBuilder {
         this._start = false;
         this._interactive = true;
         this._debug_mode = false;
+        this._user_channel = undefined;
         this._collection = undefined;
         this._preserveRunValues = false;
         this._model = '';

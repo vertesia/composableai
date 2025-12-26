@@ -162,12 +162,13 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
     if (debug_mode) {
         log.debug(`Workflow vars before starting child workflow ${step.name}`, { vars: resolvedVars });
     }
+
     const handle = await startChild(step.name, {
         ...step.options,
         args: [{
             ...payload,
             workflow: step.spec,
-            vars: resolvedVars
+            vars: resolvedVars,
         }],
         memo: {
             InitiatedBy: payload.initiated_by,
@@ -195,6 +196,7 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
     if (debug_mode) {
         log.debug(`Workflow vars before executing child workflow ${step.name}`, { vars: resolvedVars });
     }
+
     const result = await executeChild(step.name, {
         ...step.options,
         args: [{

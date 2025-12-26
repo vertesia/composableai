@@ -45,5 +45,10 @@
     {
       "path": "../client/tsconfig.json",
     }
+  ,
+    { "path": "../../llumiverse/common/tsconfig.json" },
+    { "path": "../memory-cli/tsconfig.json" },
+    { "path": "../memory-commands/tsconfig.json" },
+    { "path": "../workflow/tsconfig.json" }
   ]
 }

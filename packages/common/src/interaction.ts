@@ -516,6 +516,12 @@ export interface InteractionExecutionPayload {
      * These are temporary interactions using "tmp:" suffix.
      */
     prompts?: InCodePrompt[];
+
+    /**
+     * Options for streaming LLM response chunks directly to Redis.
+     * Used by agent workflows to stream responses in real-time to clients.
+     */
+    streaming?: StreamingOptions;
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
@@ -655,6 +661,15 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     interactive?: boolean;
 
     /**
+     * The channel to use for user communication.
+     * - "interactive": Use the chat UI (default when interactive=true)
+     * - "email": Send questions via email and receive replies via email webhook
+     *
+     * When set to "email", the user's email is extracted from the auth token.
+     */
+    user_channel?: "interactive" | "email";
+
+    /**
      * Whether to disable the generation of interaction tools or not.
      */
     disable_interaction_tools?: boolean;
@@ -692,6 +707,14 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /** Maximum depth for nested conversations to prevent infinite recursion (default: 5) */
     max_nested_conversation_depth?: number;
 
+    /**
+     * Metadata inherited from parent workflow.
+     * Used to propagate context (e.g., apiKey, session info) to child workflows/workstreams.
+     * When a workstream is spawned, the parent's `data` is preserved here so that
+     * child tools can access it via metadata.parent_metadata.
+     */
+    parent_metadata?: Record<string, any>;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
@@ -706,6 +729,41 @@ export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadB
 
 export type AsyncExecutionPayload = AsyncConversationExecutionPayload | AsyncInteractionExecutionPayload;
 
+/**
+ * Options for streaming LLM responses directly to Redis
+ */
+export interface StreamingOptions {
+    /** Redis channel to publish streaming chunks to */
+    redis_channel: string;
+    /** Workflow run ID for message context */
+    run_id: string;
+    /** Optional workstream ID for multi-workstream agents */
+    workstream_id?: string;
+    /**
+     * Temporal task token for async activity completion (base64url encoded).
+     * When provided, Studio will complete the activity after streaming finishes,
+     * allowing the worker to release the activity slot immediately.
+     */
+    task_token?: string;
+    /**
+     * Activity ID for idempotency metadata when storing conversation.
+     * Required when task_token is provided.
+     */
+    activity_id?: string;
+    /**
+     * Current conversation state to merge with execution result.
+     * Studio will store the conversation and complete the activity with merged state.
+     * Required when task_token is provided.
+     */
+    current_state?: import("./store/conversation-state.js").ConversationState;
+    /**
+     * Interval in milliseconds for sending heartbeats to Temporal during streaming.
+     * When provided, Studio will send periodic heartbeats to keep the activity alive.
+     * Recommended: 10000 (10 seconds). Activity heartbeat timeout should be ~3x this value.
+     */
+    heartbeat_interval_ms?: number;
+}
+
 interface ResumeConversationPayload {
     run: ExecutionRunDocRef; // the run created by the first execution.
     environment: string; // the environment ID
@@ -714,6 +772,8 @@ interface ResumeConversationPayload {
     tools: ToolDefinition[]; // the tools to be used
     /** Configuration for stripping large data from conversation history */
     strip_options?: ConversationStripOptions;
+    /** Options for streaming LLM response chunks to Redis */
+    streaming?: StreamingOptions;
 }
 
 
@@ -729,6 +789,11 @@ export interface ToolResultContent {
 
 export interface ToolResult extends ToolResultContent {
     tool_use_id: string;
+    /**
+     * Gemini thinking models require thought_signature to be passed back with tool results.
+     * Copy this from the ToolUse.thought_signature that requested this tool call.
+     */
+    thought_signature?: string;
 }
 
 /**

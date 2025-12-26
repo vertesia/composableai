@@ -42,7 +42,7 @@ function remarkRemoveComments() {
     };
 }
 
-interface MarkdownRendererProps {
+export interface MarkdownRendererProps {
     children: string;
     components?: any;
     remarkPlugins?: any[];
@@ -51,6 +51,16 @@ interface MarkdownRendererProps {
      * Optional workflow run id used to resolve shorthand artifact paths (e.g. artifact:out/result.csv)
      */
     artifactRunId?: string;
+    /** Additional className for the markdown wrapper */
+    className?: string;
+    /** Additional className for code blocks */
+    codeClassName?: string;
+    /** Additional className for inline code */
+    inlineCodeClassName?: string;
+    /** Additional className for links */
+    linkClassName?: string;
+    /** Additional className for images */
+    imageClassName?: string;
 }
 
 export function MarkdownRenderer({
@@ -59,6 +69,11 @@ export function MarkdownRenderer({
     remarkPlugins = [],
     removeComments = true,
     artifactRunId,
+    className,
+    codeClassName,
+    inlineCodeClassName,
+    linkClassName,
+    imageClassName,
 }: MarkdownRendererProps) {
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
@@ -88,15 +103,38 @@ export function MarkdownRenderer({
             const isInline = !match;
             const language = match ? match[1] : "";
 
-            if (!isInline && (language === "chart" || className?.includes("language-chart"))) {
+            // Detect charts in 'chart' or 'json' code blocks
+            if (!isInline && (language === "chart" || language === "json" || className?.includes("language-chart"))) {
                 try {
-                    const raw = String(children || "").trim();
-                    const spec = JSON.parse(raw) as AgentChartSpec;
-                    if (spec && spec.chart && Array.isArray(spec.data)) {
-                        return <AgentChart spec={spec} />;
+                    let raw = String(children || "").trim();
+                    // Extract just the JSON object - handle cases where extra content is appended
+                    const jsonStart = raw.indexOf('{');
+                    const jsonEnd = raw.lastIndexOf('}');
+                    if (jsonStart !== -1 && jsonEnd > jsonStart) {
+                        raw = raw.slice(jsonStart, jsonEnd + 1);
+                    }
+                    const spec = JSON.parse(raw) as Record<string, unknown>;
+                    // Support Vega-Lite, Recharts, and native Vega-Lite JSON with $schema
+                    if (spec) {
+                        // Detect Vega-Lite by $schema containing "vega"
+                        const hasVegaSchema = typeof spec.$schema === 'string' && spec.$schema.includes('vega');
+                        const isVegaLite = spec.library === 'vega-lite' && 'spec' in spec;
+                        // Recharts: check for 'chart' property OR library === 'recharts' with data
+                        const isRecharts = (
+                            ('chart' in spec || 'type' in spec || spec.library === 'recharts') &&
+                            'data' in spec &&
+                            Array.isArray(spec.data)
+                        );
+                        if (hasVegaSchema || isVegaLite || isRecharts) {
+                            // Wrap native Vega-Lite spec in expected format
+                            const chartSpec = hasVegaSchema && !isVegaLite
+                                ? { library: 'vega-lite', spec }
+                                : spec;
+                            return <AgentChart spec={chartSpec as AgentChartSpec} artifactRunId={artifactRunId} />;
+                        }
                     }
                 } catch (e) {
-                    console.warn("Failed to parse chart spec:", e);
+                    // Not valid JSON or not a chart - fall through to regular code rendering
                 }
             }
 
@@ -104,13 +142,16 @@ export function MarkdownRenderer({
                 return <ExistingCode node={node} className={className} {...props}>{children}</ExistingCode>;
             }
 
+            const baseInlineClass = "px-1.5 py-0.5 rounded";
+            const baseCodeClass = "text-muted";
+
             return (
                 <code
                     {...props}
                     className={
                         isInline
-                            ? "px-1.5 py-0.5 rounded"
-                            : "text-muted"
+                            ? `${baseInlineClass} ${inlineCodeClassName || ""}`
+                            : `${baseCodeClass} ${codeClassName || ""}`
                     }
                 >
                     {children}
@@ -228,6 +269,7 @@ export function MarkdownRenderer({
                     <a
                         href={mappedHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -249,6 +291,7 @@ export function MarkdownRenderer({
                     <a
                         href={mappedHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -270,6 +313,7 @@ export function MarkdownRenderer({
                     <a
                         href={mappedHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -291,6 +335,7 @@ export function MarkdownRenderer({
                     <a
                         href={finalHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -307,6 +352,7 @@ export function MarkdownRenderer({
                     <a
                         href={finalHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -320,6 +366,7 @@ export function MarkdownRenderer({
                 <a
                     href={href}
                     {...rest}
+                    className={linkClassName}
                     target="_blank"
                     rel="noopener noreferrer"
                 >
@@ -438,6 +485,7 @@ export function MarkdownRenderer({
                     <img
                         src={resolvedSrc}
                         alt={alt}
+                        className={imageClassName}
                         {...rest}
                     />
                 );
@@ -448,6 +496,7 @@ export function MarkdownRenderer({
                 <img
                     src={src}
                     alt={alt}
+                    className={imageClassName}
                     {...rest}
                 />
             );
@@ -459,9 +508,9 @@ export function MarkdownRenderer({
             a: LinkComponent,
             img: ImageComponent,
         };
-    }, [components, client, artifactRunId, urlCache]);
+    }, [components, client, artifactRunId, urlCache, codeClassName, inlineCodeClassName, linkClassName, imageClassName]);
 
-    return (
+    const markdownContent = (
         <Markdown
             remarkPlugins={plugins}
             components={componentsWithCharts}
@@ -470,4 +519,11 @@ export function MarkdownRenderer({
             {children}
         </Markdown>
     );
+
+    // Wrap in a div if className is provided, otherwise return Markdown directly
+    if (className) {
+        return <div className={className}>{markdownContent}</div>;
+    }
+
+    return markdownContent;
 }
