@@ -30,6 +30,9 @@ export enum LlmCallType {
     ResumeUser = 'resume_user',
     /** Checkpoint resume (after conversation summarization) */
     Checkpoint = 'checkpoint',
+    /** Nested interaction call from within tools */
+    NestedInteraction = 'nested_interaction',
+
 }
 
 /**
@@ -205,6 +208,25 @@ export interface CheckpointCreatedEvent extends LlmCallEvent {
 }
 
 // ============================================================================
+// Nested Interaction Execution Events
+// ============================================================================
+
+/**
+ * Emitted when a nested interaction is called from within a tool.
+ * Extends LlmCallEvent since nested interaction execution involves an LLM call.
+ */
+export interface NestedInteractionEvent extends LlmCallEvent {
+    callType: LlmCallType.NestedInteraction;
+    /** The interaction being called (e.g., "sys:AnalyzeDocument") */
+    nestedInteractionId: string;
+    /** Tool that triggered this call - same pattern as ToolCallEvent */
+    toolName: string;
+    /** Tool type - same pattern as ToolCallEvent */
+    toolType: TelemetryToolType;
+}
+
+
+// ============================================================================
 // Union type for all events
 // ============================================================================
 
@@ -213,4 +235,5 @@ export type AgentEvent =
     | AgentRunCompletedEvent
     | LlmCallEvent
     | ToolCallEvent
-    | CheckpointCreatedEvent;
+    | CheckpointCreatedEvent
+    | NestedInteractionEvent;   
