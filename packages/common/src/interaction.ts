@@ -14,6 +14,7 @@ import type { JSONSchema4 } from "json-schema";
 import { ExecutionTokenUsage } from "@llumiverse/common";
 
 import { ExecutionEnvironmentRef } from "./environment.js";
+import { LlmCallType } from "./telemetry/types.js";
 import { ProjectRef } from "./project.js";
 import {
     ExecutablePromptSegmentDef,
@@ -738,15 +739,11 @@ export interface StreamingTelemetryContext {
     /** Workflow ID for ingestEvents API call */
     workflowId: string;
     /** Type of LLM call: start, resume after user message, or resume after tool results */
-    callType: 'start' | 'resume_tools' | 'resume_user';
+    callType: LlmCallType;
     /** Activity retry attempt number */
     attemptNumber?: number;
     /** Timestamp when inference started (for duration calculation) */
     inferenceStartTime: number;
-    /** Principal ID who initiated the request (user_id for users, key ID for API keys, from onBehalfOf for agent tokens) */
-    principalId: string;
-    /** Principal type: user, apikey, service_account, agent */
-    principalType: string;
 }
 
 /**
