@@ -68,6 +68,7 @@ interface ModernAgentConversationProps {
     interactive?: boolean;
     onClose?: () => void;
     isModal?: boolean;
+    fullWidth?: boolean;
     initialMessage?: string;
     startWorkflow?: StartWorkflowFn;
     startButtonText?: string;
@@ -378,6 +379,7 @@ function ModernAgentConversationInner({
     interactive = true,
     onClose,
     isModal = false,
+    fullWidth = false,
     placeholder = "Type your message...",
     resetWorkflow,
     // File upload props
@@ -963,7 +965,11 @@ function ModernAgentConversationInner({
             <div
                 ref={conversationRef}
                 className={`flex flex-col h-full min-h-0 border-0 ${
-                showSlidingPanel ? 'lg:w-2/3 flex-1' : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
+                showSlidingPanel
+                    ? 'lg:w-2/3 flex-1'
+                    : fullWidth
+                        ? 'flex-1 w-full'
+                        : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
             }`}
             >
                 <Header
