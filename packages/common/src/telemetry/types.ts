@@ -15,8 +15,7 @@ export enum TelemetryEventType {
     AgentRunStarted = 'agent_run_started',
     AgentRunCompleted = 'agent_run_completed',
     LlmCall = 'llm_call',
-    ToolCall = 'tool_call',
-    CheckpointCreated = 'checkpoint_created',
+    ToolCall = 'tool_call'
 }
 
 /**
@@ -29,6 +28,8 @@ export enum LlmCallType {
     ResumeTools = 'resume_tools',
     /** Resuming with user message */
     ResumeUser = 'resume_user',
+    /** Checkpoint resume (after conversation summarization) */
+    Checkpoint = 'checkpoint',
 }
 
 /**
@@ -192,11 +193,12 @@ export interface ToolCallEvent extends BaseAgentEvent {
 // ============================================================================
 
 /**
- * Emitted when a checkpoint is created
+ * Emitted when a checkpoint is created.
+ * Extends LlmCallEvent since checkpoint creation involves an LLM call.
  */
-export interface CheckpointCreatedEvent extends BaseAgentEvent {
-    eventType: TelemetryEventType.CheckpointCreated;
-    /** Token count that triggered the checkpoint */
+export interface CheckpointCreatedEvent extends LlmCallEvent {
+    callType: LlmCallType.Checkpoint;
+    /** Token count that triggered the checkpoint (before this LLM call) */
     tokenCountAtCheckpoint: number;
     /** Checkpoint threshold configured */
     checkpointThreshold: number;
