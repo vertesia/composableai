@@ -12,7 +12,7 @@
 /**
  * Time resolution for analytics aggregation
  */
-export type WorkflowAnalyticsResolution = 'hour' | 'day' | 'week' | 'month';
+export type WorkflowAnalyticsResolution = 'minute' | 'hour' | 'day' | 'week' | 'month';
 
 /**
  * Dimensions to group analytics by
