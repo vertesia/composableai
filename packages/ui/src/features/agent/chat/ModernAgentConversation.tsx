@@ -157,6 +157,7 @@ function StartWorkflowView({
     startWorkflow,
     onClose,
     isModal = false,
+    fullWidth = false,
     placeholder = "Type your message...",
     startButtonText = "Start Agent",
     title = "Start New Conversation",
@@ -319,14 +320,26 @@ function StartWorkflowView({
             </div>
 
             {/* Empty conversation area with instructions */}
-            <div className="flex-1 overflow-y-auto px-4 py-6 bg-white dark:bg-gray-900 flex flex-col items-center justify-center">
+            <div
+                className={`flex-1 overflow-y-auto px-4 py-6 bg-white dark:bg-gray-900 flex flex-col ${
+                    fullWidth ? 'items-start justify-start' : 'items-center justify-center'
+                }`}
+            >
                 {initialMessage && (
-                    <div className="px-4 py-3 mb-4 bg-blue-50/80 dark:bg-blue-900/30 border-l-2 border-blue-400 dark:border-blue-500 text-blue-700 dark:text-blue-300 max-w-md">
+                    <div
+                        className={`px-4 py-3 mb-4 bg-blue-50/80 dark:bg-blue-900/30 border-l-2 border-blue-400 dark:border-blue-500 text-blue-700 dark:text-blue-300 ${
+                            fullWidth ? 'w-full' : 'max-w-md'
+                        }`}
+                    >
                         {initialMessage}
                     </div>
                 )}
 
-                <div className="bg-white dark:bg-slate-800 p-4 max-w-md border-l-2 border-blue-400 dark:border-blue-500">
+                <div
+                    className={`bg-white dark:bg-slate-800 p-4 border-l-2 border-blue-400 dark:border-blue-500 ${
+                        fullWidth ? 'w-full' : 'max-w-md'
+                    }`}
+                >
                     <div className="text-base text-slate-600 dark:text-slate-300 font-medium">
                         Enter a message to start a conversation
                     </div>
