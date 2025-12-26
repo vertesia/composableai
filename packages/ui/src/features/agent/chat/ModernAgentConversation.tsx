@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Cpu, SendIcon, XIcon } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Bot, Cpu, SendIcon, UploadIcon, XIcon } from "lucide-react";
 import { useUserSession } from "@vertesia/ui/session";
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
 import { AgentMessage, AgentMessageType, Plan, StreamingChunkDetails, UserInputSignal } from "@vertesia/common";
@@ -368,6 +368,38 @@ function ModernAgentConversationInner({
     // Track streaming messages by streaming_id for real-time chunk aggregation
     // Include startTimestamp to preserve chronological order when converting to regular messages
     const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
+
+    // Drag and drop state for full-panel file upload
+    const [isDragOver, setIsDragOver] = useState(false);
+
+    // Drag and drop handlers for full-panel file upload
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (onFilesSelected) {
+            setIsDragOver(true);
+        }
+    }, [onFilesSelected]);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Only trigger if leaving the container, not entering a child
+        if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) {
+            setIsDragOver(false);
+        }
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+
+        if (onFilesSelected && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+            const filesArray = Array.from(e.dataTransfer.files);
+            onFilesSelected(filesArray);
+        }
+    }, [onFilesSelected]);
 
     // Helper function to get the current active plan and its workstream status
     const getActivePlan = useMemo(() => {
@@ -846,7 +878,21 @@ function ModernAgentConversationInner({
 
     return (
         <ArtifactUrlCacheProvider>
-        <div className="flex gap-2 h-full">
+        <div
+            className={`flex gap-2 h-full relative ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            {/* Drag overlay for full-panel file drop */}
+            {isDragOver && (
+                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
+                    <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
+                        <UploadIcon className="size-6" />
+                        Drop files to upload
+                    </div>
+                </div>
+            )}
             {/* Conversation Area - responsive width based on panel visibility */}
             <div
                 ref={conversationRef}
