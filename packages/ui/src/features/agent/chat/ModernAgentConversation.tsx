@@ -159,12 +159,54 @@ function StartWorkflowView({
     placeholder = "Type your message...",
     startButtonText = "Start Agent",
     title = "Start New Conversation",
+    // File upload props
+    onFilesSelected,
 }: ModernAgentConversationProps) {
     const [inputValue, setInputValue] = useState<string>("");
     const [isSending, setIsSending] = useState(false);
     const [run, setRun] = useState<AsyncExecutionResult>();
     const toast = useToast();
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Drag and drop state
+    const [isDragOver, setIsDragOver] = useState(false);
+    const dragCounterRef = useRef(0);
+
+    // Drag and drop handlers
+    const handleDragEnter = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current++;
+        if (onFilesSelected && e.dataTransfer?.types?.includes('Files')) {
+            setIsDragOver(true);
+        }
+    }, [onFilesSelected]);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current--;
+        if (dragCounterRef.current === 0) {
+            setIsDragOver(false);
+        }
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current = 0;
+        setIsDragOver(false);
+
+        if (onFilesSelected && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+            const filesArray = Array.from(e.dataTransfer.files);
+            onFilesSelected(filesArray);
+        }
+    }, [onFilesSelected]);
 
     useEffect(() => {
         // Focus the input field when component mounts
@@ -234,7 +276,22 @@ function StartWorkflowView({
     }
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-gray-900 overflow-hidden border-0">
+        <div
+            className={`flex flex-col h-full bg-white dark:bg-gray-900 overflow-hidden border-0 relative ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            {/* Drag overlay for full-panel file drop */}
+            {isDragOver && (
+                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
+                    <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
+                        <UploadIcon className="size-6" />
+                        Drop files to upload
+                    </div>
+                </div>
+            )}
             {/* Header */}
             <div className="flex items-center justify-between py-2 px-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
                 <div className="flex items-center space-x-2">
@@ -371,21 +428,28 @@ function ModernAgentConversationInner({
 
     // Drag and drop state for full-panel file upload
     const [isDragOver, setIsDragOver] = useState(false);
+    const dragCounterRef = useRef(0);
 
     // Drag and drop handlers for full-panel file upload
-    const handleDragOver = useCallback((e: React.DragEvent) => {
+    const handleDragEnter = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (onFilesSelected) {
+        dragCounterRef.current++;
+        if (onFilesSelected && e.dataTransfer?.types?.includes('Files')) {
             setIsDragOver(true);
         }
     }, [onFilesSelected]);
 
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
     const handleDragLeave = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        // Only trigger if leaving the container, not entering a child
-        if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) {
+        dragCounterRef.current--;
+        if (dragCounterRef.current === 0) {
             setIsDragOver(false);
         }
     }, []);
@@ -393,6 +457,7 @@ function ModernAgentConversationInner({
     const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        dragCounterRef.current = 0;
         setIsDragOver(false);
 
         if (onFilesSelected && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
@@ -880,6 +945,7 @@ function ModernAgentConversationInner({
         <ArtifactUrlCacheProvider>
         <div
             className={`flex gap-2 h-full relative ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
+            onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
