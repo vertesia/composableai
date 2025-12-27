@@ -283,6 +283,8 @@ export interface WorkflowAnalyticsFilter {
     success?: boolean;
     /** Filter by specific workflow run IDs */
     runIds?: string[];
+    /** Filter by principal IDs (users or API keys) */
+    principals?: string[];
 }
 
 /**
@@ -684,6 +686,18 @@ export interface EnvironmentModelPair {
 }
 
 /**
+ * Principal (user/API key) filter option
+ */
+export interface PrincipalFilterOption {
+    /** The principal ID (user ID or API key ID) */
+    id: string;
+    /** The principal type (user, apikey, service_account, agent) */
+    type: string;
+    /** The display name (user email/name, API key name, etc.) */
+    name: string;
+}
+
+/**
  * Response for available filter options (unique values from telemetry data)
  */
 export interface WorkflowAnalyticsFilterOptionsResponse {
@@ -691,6 +705,8 @@ export interface WorkflowAnalyticsFilterOptionsResponse {
     agents: AgentFilterOption[];
     /** Environment-model pairs (since models are environment-specific) */
     environmentModels: EnvironmentModelPair[];
+    /** Unique principals (users and API keys) that have triggered agent runs */
+    principals: PrincipalFilterOption[];
 }
 
 // ============================================================================
