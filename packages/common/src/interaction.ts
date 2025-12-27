@@ -14,7 +14,6 @@ import type { JSONSchema4 } from "json-schema";
 import { ExecutionTokenUsage } from "@llumiverse/common";
 
 import { ExecutionEnvironmentRef } from "./environment.js";
-import { LlmCallType } from "./telemetry/types.js";
 import { ProjectRef } from "./project.js";
 import {
     ExecutablePromptSegmentDef,
@@ -27,6 +26,7 @@ import {
 import { ExecutionRunDocRef } from "./runs.js";
 import { ConversationState } from "./store/conversation-state.js";
 import { AccountRef } from "./user.js";
+import { LlmCallType } from "./workflow-analytics.js";
 
 export interface InteractionExecutionError {
     code: string;
