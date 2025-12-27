@@ -876,7 +876,7 @@ export interface BaseExecutionRun<P = any> {
     interaction?: string | Interaction;
     // only set when the target interaction is an in-code interaction
     interaction_code?: string; // Interaction code name in case of in-code interaction (not stored in the DB as an Interaction document)
-    //TODO a string is returned when execution not the env object
+    /** Environment reference - populated with full object in API responses */
     environment: ExecutionEnvironmentRef;
     modelId: string;
     result_schema: JSONSchema4;
