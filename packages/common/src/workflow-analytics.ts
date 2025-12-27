@@ -443,6 +443,10 @@ export interface ErrorMetrics {
     errorCount: number;
     /** Error rate (0-1) */
     errorRate: number;
+    /** Number of LLM call errors */
+    llmErrorCount?: number;
+    /** Number of tool call errors */
+    toolErrorCount?: number;
 }
 
 /**
