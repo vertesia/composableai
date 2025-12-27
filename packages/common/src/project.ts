@@ -152,24 +152,6 @@ export interface ProjectModelDefaults {
 // Project Configuration
 // ==========================================
 
-/**
- * Configuration for starting agents via email.
- * When enabled, emails sent to {interactionName}+{projectId}@{inbound_domain}
- * will start an agent with the email body as the initial message.
- */
-export interface EmailAgentStartSettings {
-    /** Whether email-triggered agents are enabled for this project */
-    enabled: boolean;
-    /** The inbound email domain (e.g., "acme.vertesia.io") */
-    inbound_domain: string;
-    /** Resend webhook signing secret for this project */
-    webhook_secret: string;
-    /** Optional: Resend API key override for this project */
-    resend_api_key?: string;
-    /** Optional: Whitelist of allowed sender email domains */
-    allowed_sender_domains?: string[];
-}
-
 export interface ProjectConfiguration {
 
     human_context: string;
@@ -200,13 +182,6 @@ export interface ProjectConfiguration {
      * Defaults to true if not specified.
      */
     agent_streaming_enabled?: boolean;
-
-    /**
-     * Configuration for starting agents via email.
-     * When enabled, emails sent to {interactionName}+{projectId}@{inbound_domain}
-     * will start an agent with the specified interaction.
-     */
-    email_agent_start?: EmailAgentStartSettings;
 
 }
 

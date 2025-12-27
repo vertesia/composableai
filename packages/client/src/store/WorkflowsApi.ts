@@ -81,6 +81,18 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs/${workflowId}/${runId}/actions/cancel`, { payload });
     }
 
+    /**
+     * Query a workflow for its current state.
+     * The workflow must have a query handler registered with the given name.
+     * @param workflowId The workflow ID
+     * @param runId The run ID
+     * @param queryName The name of the query to execute (e.g., "BatchAgentProgress")
+     * @returns The query result
+     */
+    query<T = unknown>(workflowId: string, runId: string, queryName: string): Promise<T> {
+        return this.get(`/runs/${workflowId}/${runId}/query/${queryName}`);
+    }
+
     execute(
         name: string,
         payload: ExecuteWorkflowPayload = {},

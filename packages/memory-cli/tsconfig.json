@@ -42,5 +42,7 @@
     {
       "path": "../memory/tsconfig.json"
     }
+  ,
+    { "path": "../memory-commands/tsconfig.json" }
   ]
 }

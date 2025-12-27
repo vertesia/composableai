@@ -4,7 +4,7 @@ import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { CopyIcon } from "lucide-react";
 import dayjs from "dayjs";
 
-interface StreamingMessageProps {
+export interface StreamingMessageProps {
     text: string;
     workstreamId?: string;
     /** Characters per second for reveal animation (default: 300) */
@@ -13,6 +13,12 @@ interface StreamingMessageProps {
     isComplete?: boolean;
     /** Timestamp when streaming started */
     timestamp?: number | string;
+    /** Additional className for the outer container */
+    className?: string;
+    /** Additional className for the header section */
+    headerClassName?: string;
+    /** Additional className for the content section */
+    contentClassName?: string;
 }
 
 /**
@@ -26,6 +32,9 @@ function StreamingMessageComponent({
     revealSpeed = 300,
     isComplete = false,
     timestamp,
+    className,
+    headerClassName,
+    contentClassName,
 }: StreamingMessageProps) {
     const [displayedLength, setDisplayedLength] = useState(0);
     const [throttledText, setThrottledText] = useState("");
@@ -190,11 +199,12 @@ function StreamingMessageComponent({
             className={cn(
                 "flex flex-col gap-1 p-3 rounded-lg",
                 "bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30",
-                "min-h-[3rem]"
+                "min-h-[3rem]",
+                className
             )}
         >
             {/* Header with task, timestamp and copy button */}
-            <div className="flex items-center justify-between">
+            <div className={cn("flex items-center justify-between", headerClassName)}>
                 <div className="flex items-center gap-2">
                     {workstreamId && workstreamId !== "main" && (
                         <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
@@ -219,7 +229,7 @@ function StreamingMessageComponent({
                 </div>
             </div>
             {/* Content - uses throttled text for performance */}
-            <div className="text-sm break-words leading-relaxed streaming-content prose prose-sm dark:prose-invert max-w-none">
+            <div className={cn("text-sm break-words leading-relaxed streaming-content prose prose-sm dark:prose-invert max-w-none", contentClassName)}>
                 <MarkdownRenderer>
                     {throttledText || text.slice(0, displayedLength)}
                 </MarkdownRenderer>

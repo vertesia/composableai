@@ -142,7 +142,7 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo }: {
                                 <EnterpriseSigninButton />
                             </div>
                         </div>
-                        {authError && (
+                        {authError && !(authError instanceof UserNotFoundError) && (
                             <div className="text-center">
                                 <div className="">
                                     Sorry, we have not been able to sign you in.
