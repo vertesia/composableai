@@ -563,6 +563,8 @@ export interface WorkflowAnalyticsSummary {
     successRate: number;
     /** Total token usage */
     tokenUsage: TokenUsageMetrics;
+    /** Token usage from nested interaction calls (e.g., sys:AnalyzeDocument) */
+    nestedInteractionTokens: TokenUsageMetrics;
     /** Average run duration (non-interactive runs only) */
     avgRunDurationMs: number;
     /** 95th percentile run duration (non-interactive runs only) */
