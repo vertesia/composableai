@@ -848,6 +848,12 @@ importers:
       hono:
         specifier: ^4.10.3
         version: 4.11.1
+      react:
+        specifier: 19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: 19.2.3
+        version: 19.2.3(react@19.2.3)
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^28.0.8
@@ -864,6 +870,12 @@ importers:
       '@types/node':
         specifier: ^22.19.1
         version: 22.19.3
+      '@types/react':
+        specifier: 19.2.3
+        version: 19.2.3
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.3)
       concurrently:
         specifier: ^9.1.2
         version: 9.2.1
