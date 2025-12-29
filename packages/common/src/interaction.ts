@@ -635,6 +635,53 @@ export interface AgentRunnerOptions {
     collection_id?: string;
 }
 
+// ================= User Communication Channels ====================
+
+/**
+ * Email channel configuration with threading support.
+ * Used for email-based agent communication.
+ */
+export interface EmailChannel {
+    type: "email";
+    /** Email address to send agent messages to */
+    to_email: string;
+    /** Subject for the email thread (without "Re:" prefix) */
+    thread_subject?: string;
+    /** Message ID for In-Reply-To header (most recent message) */
+    in_reply_to?: string;
+    /** Chain of message IDs for References header */
+    references?: string[];
+}
+
+/**
+ * Interactive (UI chat) channel configuration.
+ * Used for real-time chat interface communication.
+ */
+export interface InteractiveChannel {
+    type: "interactive";
+}
+
+/**
+ * Union of all supported user communication channel types.
+ */
+export type UserChannel = EmailChannel | InteractiveChannel;
+
+/**
+ * Type guard for email channels
+ */
+export function isEmailChannel(channel: UserChannel): channel is EmailChannel {
+    return channel.type === "email";
+}
+
+/**
+ * Type guard for interactive channels
+ */
+export function isInteractiveChannel(channel: UserChannel): channel is InteractiveChannel {
+    return channel.type === "interactive";
+}
+
+// ================= end user communication channels ====================
+
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
     type: "conversation";
 
@@ -661,13 +708,11 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     interactive?: boolean;
 
     /**
-     * The channel to use for user communication.
-     * - "interactive": Use the chat UI (default when interactive=true)
-     * - "email": Send questions via email and receive replies via email webhook
-     *
-     * When set to "email", the user's email is extracted from the auth token.
+     * Array of channels to use for user communication.
+     * Multiple channels can be active simultaneously (e.g., both email and interactive).
+     * Each channel contains its own configuration and state (e.g., email threading info).
      */
-    user_channel?: "interactive" | "email";
+    user_channels?: UserChannel[];
 
     /**
      * Whether to disable the generation of interaction tools or not.

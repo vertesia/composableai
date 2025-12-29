@@ -1,5 +1,5 @@
 import { JSONSchema4 } from "json-schema";
-import { ConversationVisibility, InteractionRef } from "../interaction.js";
+import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
 
 export enum ContentEventName {
     create = "create",
@@ -358,11 +358,10 @@ export interface WorkflowInteractionVars {
     interactive: boolean,
     debug_mode?: boolean,
     /**
-     * The channel to use for user communication.
-     * - "interactive": Use the chat UI (default when interactive=true)
-     * - "email": Also send questions via email to the user
+     * Array of channels to use for user communication.
+     * Multiple channels can be active simultaneously.
      */
-    user_channel?: "interactive" | "email",
+    user_channels?: UserChannel[],
     data?: Record<string, any>,
     tool_names: string[],
     config: {
