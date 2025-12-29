@@ -2,9 +2,8 @@ import { AgentMessage, AgentMessageType } from "@vertesia/common";
 import { Badge, Button, useToast } from "@vertesia/ui/core";
 import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, MessageSquare, User } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { AnimatedThinkingDots, PulsatingCircle } from "../AnimatedThinkingDots";
-import { ThinkingMessages } from "../WaitingMessages";
 import MessageContent from "./MessageContent";
 import { getWorkstreamId } from "./utils";
 

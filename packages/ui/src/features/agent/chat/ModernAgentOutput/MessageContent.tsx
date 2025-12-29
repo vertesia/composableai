@@ -22,8 +22,6 @@ export interface MessageContentProps {
     message: AgentMessage;
     /** Optional run ID for artifact resolution */
     artifactRunId?: string;
-    /** Optional callback for sending messages (e.g., from proposal widgets) */
-    onSendMessage?: (message: string) => void;
     /** Optional custom artifact renderer */
     renderArtifacts?: (artifacts: ArtifactLink[]) => React.ReactNode;
     /** Optional custom component overrides for MarkdownRenderer */
@@ -52,7 +50,6 @@ export interface MessageContentProps {
 export function MessageContent({
     message,
     artifactRunId,
-    onSendMessage,
     renderArtifacts,
     components: customComponents,
 }: MessageContentProps) {
@@ -186,7 +183,6 @@ export function MessageContent({
             <div className="vprose prose-sm">
                 <MarkdownRenderer
                     artifactRunId={runId}
-                    onSendMessage={onSendMessage}
                     components={mergedComponents}
                 >
                     {content as string}
