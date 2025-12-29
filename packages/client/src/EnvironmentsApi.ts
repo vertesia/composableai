@@ -1,6 +1,6 @@
-import { ExecutionEnvironment, ExecutionEnvironmentCreatePayload, ExecutionEnvironmentRef, ExecutionEnvironmentUpdatePayload, LoadBalancingEnvConfig, MediatorEnvConfig } from "@vertesia/common";
 import type { AIModel, EmbeddingsOptions, EmbeddingsResult, ModelSearchPayload } from "@llumiverse/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ExecutionEnvironment, ExecutionEnvironmentCreatePayload, ExecutionEnvironmentRef, ExecutionEnvironmentUpdatePayload, LoadBalancingEnvConfig, MediatorEnvConfig } from "@vertesia/common";
 
 export default class EnvironmentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -65,6 +65,21 @@ export default class EnvironmentsApi extends ApiTopic {
         return this.post('/' + id + '/embeddings', {
             payload
         });
+    }
+
+    /**
+     * Test batch embeddings with a given environment
+     * @param id The environment ID to test with
+     * @returns Batch job details
+     */
+    testBatchEmbeddings(id: string): Promise<{
+        success: boolean;
+        job_id: string;
+        job_status: string;
+        job_type: string;
+        model: string;
+    }> {
+        return this.post('/' + id + '/test-batch-embeddings');
     }
 
 }
