@@ -24,10 +24,12 @@ function RemoteWidgetComponent({ url, code }: { url: string, code: string }) {
     useEffect(() => {
         import(url).then(module => {
             // register the component
-            setComponent(module.default)
+            // Wrap in arrow function to prevent React from calling it as a state updater
+            setComponent(() => module.default)
+        }).catch(err => {
+            console.error("Failed to load remote widget component from ", url, err);
         })
     }, [url]);
-
     return Component ? <Component code={code} /> : null;
 }
 
@@ -36,10 +38,12 @@ async function fetchSkillWidgets(client: VertesiaClient): Promise<Record<string,
     const urls = new Set<string>();
     for (const app of installedApps) {
         for (const collUrl of app.manifest.tool_collections || []) {
-            const i = collUrl.indexOf("/api/");
-            if (i > 0) {
-                const url = collUrl.substring(0, i);
-                urls.add(url + '/api/widgets');
+            if (collUrl.startsWith("http://") || collUrl.startsWith("https://")) {
+                const i = collUrl.indexOf("/api/");
+                if (i > 0) {
+                    const url = collUrl.substring(0, i);
+                    urls.add(url + '/api/widgets');
+                }
             }
         }
     }
@@ -54,7 +58,7 @@ async function fetchSkillWidgets(client: VertesiaClient): Promise<Record<string,
             const widgets: { name: string, component: React.FunctionComponent<CodeBlockRendererProps> }[] = [];
             const widgetsMap = data.widgets as Record<string, { url: string }>;
             for (const [name, value] of Object.entries(widgetsMap)) {
-                widgets.push({ name, component: ({ code }: { code: string }) => <RemoteWidgetComponent url={value.url} code={code} /> });
+                widgets.push({ name, component: (props: CodeBlockRendererProps) => <RemoteWidgetComponent url={value.url} code={props.code} /> });
             }
             return widgets;
         }).catch(() => {
