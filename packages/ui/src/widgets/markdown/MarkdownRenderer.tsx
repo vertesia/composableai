@@ -3,6 +3,7 @@ import Markdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { visit, SKIP } from "unist-util-visit";
 import { AgentChart, type AgentChartSpec } from "../../features/agent/chat/AgentChart";
+import { AskUserWidget, type AskUserWidgetProps } from "../../features/agent/chat/AskUserWidget";
 import { useUserSession } from "@vertesia/ui/session";
 import { useArtifactUrlCache, getArtifactCacheKey, getFileCacheKey } from "../../features/agent/chat/useArtifactUrlCache.js";
 
@@ -61,6 +62,10 @@ export interface MarkdownRendererProps {
     linkClassName?: string;
     /** Additional className for images */
     imageClassName?: string;
+    /** Callback when user selects a proposal option */
+    onProposalSelect?: (optionId: string) => void;
+    /** Callback when user submits free-form response to proposal */
+    onProposalSubmit?: (response: string) => void;
 }
 
 export function MarkdownRenderer({
@@ -74,6 +79,8 @@ export function MarkdownRenderer({
     inlineCodeClassName,
     linkClassName,
     imageClassName,
+    onProposalSelect,
+    onProposalSubmit,
 }: MarkdownRendererProps) {
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
@@ -135,6 +142,38 @@ export function MarkdownRenderer({
                     }
                 } catch (e) {
                     // Not valid JSON or not a chart - fall through to regular code rendering
+                }
+            }
+
+            // Detect proposal/askuser blocks
+            if (!isInline && (language === "proposal" || language === "askuser")) {
+                try {
+                    const raw = String(children || "").trim();
+                    const spec = JSON.parse(raw);
+
+                    if (spec.options && (spec.question || spec.title)) {
+                        const widgetProps: AskUserWidgetProps = {
+                            question: spec.question || spec.title || '',
+                            description: spec.description,
+                            options: Array.isArray(spec.options)
+                                ? spec.options.map((opt: any) => ({
+                                    id: opt.id || opt.value || '',
+                                    label: opt.label || '',
+                                    description: opt.description,
+                                }))
+                                : undefined,
+                            allowFreeResponse: spec.allowFreeResponse ?? spec.multiple,
+                            variant: spec.variant,
+                            onSelect: onProposalSelect,
+                            onSubmit: onProposalSubmit,
+                        };
+
+                        if (widgetProps.question && widgetProps.options && widgetProps.options.length > 0) {
+                            return <AskUserWidget {...widgetProps} />;
+                        }
+                    }
+                } catch (e) {
+                    // Not valid JSON or not a proposal - fall through to regular code rendering
                 }
             }
 
@@ -508,7 +547,7 @@ export function MarkdownRenderer({
             a: LinkComponent,
             img: ImageComponent,
         };
-    }, [components, client, artifactRunId, urlCache, codeClassName, inlineCodeClassName, linkClassName, imageClassName]);
+    }, [components, client, artifactRunId, urlCache, codeClassName, inlineCodeClassName, linkClassName, imageClassName, onProposalSelect, onProposalSubmit]);
 
     const markdownContent = (
         <Markdown

@@ -1048,6 +1048,7 @@ function ModernAgentConversationInner({
                             return acc;
                         }, new Map<string, string>())}
                         streamingMessages={streamingMessages}
+                        onSendMessage={handleSendMessage}
                     />
                 )}
 

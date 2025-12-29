@@ -14,6 +14,8 @@ import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache
 export interface MessageItemProps {
     message: AgentMessage;
     showPulsatingCircle?: boolean;
+    /** Callback when user sends a message (e.g., from proposal selection) */
+    onSendMessage?: (message: string) => void;
     /** Additional className for the outer container */
     className?: string;
     /** Additional className for the card wrapper */
@@ -62,6 +64,7 @@ const MESSAGE_STYLES: Record<AgentMessageType | 'default', {
 function MessageItemComponent({
     message,
     showPulsatingCircle = false,
+    onSendMessage,
     className,
     cardClassName,
     headerClassName,
@@ -199,6 +202,8 @@ function MessageItemComponent({
             <div className="vprose prose-sm text-sm">
                 <MarkdownRenderer
                     artifactRunId={runId}
+                    onProposalSelect={(optionId) => onSendMessage?.(optionId)}
+                    onProposalSubmit={(text) => onSendMessage?.(text)}
                     components={{
                         a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
                             const href = props.href || "";
@@ -472,6 +477,7 @@ const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
     return (
         prevProps.message.timestamp === nextProps.message.timestamp &&
         prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
+        prevProps.onSendMessage === nextProps.onSendMessage &&
         prevProps.className === nextProps.className &&
         prevProps.cardClassName === nextProps.cardClassName &&
         prevProps.headerClassName === nextProps.headerClassName &&

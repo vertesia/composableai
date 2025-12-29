@@ -72,6 +72,8 @@ interface AllMessagesMixedProps {
     onChangePlan?: (index: number) => void;
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
     streamingMessages?: Map<string, StreamingData>; // Real-time streaming chunks
+    /** Callback when user sends a message (e.g., from proposal selection) */
+    onSendMessage?: (message: string) => void;
 }
 
 function AllMessagesMixedComponent({
@@ -80,6 +82,7 @@ function AllMessagesMixedComponent({
     viewMode = 'stacked',
     isCompleted = false,
     streamingMessages = new Map(),
+    onSendMessage,
 }: AllMessagesMixedProps) {
     const containerRef = React.useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -320,6 +323,7 @@ function AllMessagesMixedComponent({
                                             <MessageItem
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
+                                                onSendMessage={onSendMessage}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -395,6 +399,7 @@ function AllMessagesMixedComponent({
                                             <MessageItem
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
+                                                onSendMessage={onSendMessage}
                                             />
                                         </MessageErrorBoundary>
                                     );
