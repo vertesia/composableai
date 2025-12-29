@@ -12,6 +12,7 @@ import MessageInput from "./ModernAgentOutput/MessageInput";
 import { getWorkstreamId, insertMessageInTimeline, isInProgress } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
+import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
 
 type StartWorkflowFn = (
@@ -90,7 +91,11 @@ export function ModernAgentConversation(
                     runId: run.run_id,
                     workflowId: run.workflow_id,
                 };
-        return <ModernAgentConversationInner {...props} run={execRun} />;
+        return (
+            <SkillWidgetProvider>
+                <ModernAgentConversationInner {...props} run={execRun} />
+            </SkillWidgetProvider>
+        )
     } else if (startWorkflow) {
         // If we have startWorkflow capability but no run yet
         return <StartWorkflowView {...props} />;

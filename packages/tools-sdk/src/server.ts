@@ -190,6 +190,29 @@ export function createToolServer(config: ToolServerConfig): Hono {
         } satisfies ToolCollectionDefinition & { collections: any[] });
     });
 
+    // GET /api/widgets - Returns all widgets from all skill collections
+    app.get(`${prefix}/widgets`, (c) => {
+        const url = new URL(c.req.url);
+
+        const widgets: Record<string, { collection: string; skill: string; url: string }> = {};
+        for (const coll of skills) {
+            const collWidgets = coll.getWidgets();
+            for (const widget of collWidgets) {
+                widgets[widget.name] = {
+                    collection: coll.name,
+                    skill: widget.skill,
+                    url: `${url.origin}/widgets/${widget.name}.js`,
+                };
+            }
+        }
+
+        return c.json({
+            title: 'All Widgets',
+            description: 'All available widgets across all skill collections',
+            widgets,
+        });
+    });
+
     // GET /api/interactions - Returns all interactions from all collections
     app.get(`${prefix}/interactions`, (c) => {
         const allInteractions: CatalogInteractionRef[] = [];

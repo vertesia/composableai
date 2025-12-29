@@ -4,7 +4,8 @@ import {
     skillCollectionPage,
     toolCollectionPage
 } from "@vertesia/tools-sdk";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, readdirSync, mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { loadInteractions } from "./interactions/index.js";
 import { skills } from "./skills/index.js";
 import { tools } from "./tools/index.js";
@@ -18,6 +19,14 @@ async function build(outDir: string) {
 
     // Ensure output directory exists
     mkdirSync(outDir, { recursive: true });
+
+    // Copy scripts first (if they exist)
+    try {
+        copyDir("./scripts", `${outDir}/scripts`);
+        console.log('✓ Copied scripts directory');
+    } catch (err) {
+        console.log('  No scripts directory to copy');
+    }
 
     // Load interactions
     const interactions = await loadInteractions();
@@ -63,6 +72,20 @@ async function build(outDir: string) {
     }
 
     console.log('✓ Static site build complete!');
+}
+
+function copyDir(src: string, dest: string) {
+    mkdirSync(dest, { recursive: true });
+    const entries = readdirSync(src, { withFileTypes: true });
+    for (const entry of entries) {
+        const srcPath = join(src, entry.name);
+        const destPath = join(dest, entry.name);
+        if (entry.isDirectory()) {
+            copyDir(srcPath, destPath);
+        } else if (entry.isFile()) {
+            copyFileSync(srcPath, destPath);
+        }
+    }
 }
 
 // Run the build

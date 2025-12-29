@@ -1,9 +1,11 @@
+import { useUserSession } from "@vertesia/ui/session";
+import { useCodeBlockRendererRegistry } from "./CodeBlockRendering";
+import type { Element } from "hast";
 import React from "react";
 import Markdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { visit, SKIP } from "unist-util-visit";
+import { SKIP, visit } from "unist-util-visit";
 import { AgentChart, type AgentChartSpec } from "../../features/agent/chat/AgentChart";
-import { useUserSession } from "@vertesia/ui/session";
 import { useArtifactUrlCache, getArtifactCacheKey, getFileCacheKey } from "../../features/agent/chat/useArtifactUrlCache.js";
 
 // Custom URL schemes that we handle in our components
@@ -62,6 +64,7 @@ export function MarkdownRenderer({
 }: MarkdownRendererProps) {
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
+    const codeBlockRegistry = useCodeBlockRendererRegistry();
     const plugins = [remarkGfm, ...remarkPlugins];
 
     if (removeComments) {
@@ -80,13 +83,22 @@ export function MarkdownRenderer({
             children,
             ...props
         }: {
-            node?: any;
+            node?: Element;
             className?: string;
             children?: React.ReactNode;
         }) => {
             const match = /language-(\w+)/.exec(className || "");
             const isInline = !match;
             const language = match ? match[1] : "";
+
+            // Check if there's a custom renderer for this language
+            if (!isInline && language && codeBlockRegistry) {
+                const CustomComponent = codeBlockRegistry.getComponent(language);
+                if (CustomComponent) {
+                    const code = String(children || "").trim();
+                    return <CustomComponent code={code} />;
+                }
+            }
 
             if (!isInline && (language === "chart" || className?.includes("language-chart"))) {
                 try {
@@ -118,7 +130,7 @@ export function MarkdownRenderer({
             );
         };
 
-        const LinkComponent = (props: { node?: any; href?: string; children?: React.ReactNode }) => {
+        const LinkComponent = (props: { node?: Element; href?: string; children?: React.ReactNode }) => {
             const { node, href, children, ...rest } = props as any;
             const rawHref = href || "";
             const isArtifactLink = rawHref.startsWith("artifact:");
