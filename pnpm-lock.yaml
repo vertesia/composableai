@@ -667,6 +667,9 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.1
         version: 16.0.3(rollup@4.54.0)
+      '@types/hast':
+        specifier: ^3.0.4
+        version: 3.0.4
       '@types/json-schema':
         specifier: ^7.0.15
         version: 7.0.15

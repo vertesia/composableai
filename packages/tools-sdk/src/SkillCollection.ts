@@ -219,6 +219,7 @@ interface SkillFrontmatter {
     language?: string;
     packages?: string[];
     system_packages?: string[];
+    widgets?: string[];
 }
 
 /**
@@ -268,6 +269,7 @@ export function parseSkillFile(
         description: frontmatter.description,
         instructions,
         content_type: contentType,
+        widgets: frontmatter.widgets || undefined,
     };
 
     // Build context triggers
