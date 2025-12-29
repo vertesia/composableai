@@ -14,6 +14,7 @@ import {
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
     PromptSizeAnalyticsResponse,
+    RunsByAgentAnalyticsResponse,
     TokenUsageAnalyticsResponse,
     ToolAnalyticsResponse,
     ToolParameterAnalyticsResponse,
@@ -568,6 +569,16 @@ export class WorkflowsApi extends ApiTopic {
         query: WorkflowAnalyticsSummaryQuery = {}
     ): Promise<TopPrincipalsAnalyticsResponse> {
         return this.post('/analytics/top-principals', { payload: query });
+    }
+
+    /**
+     * Get agent run distribution - how many runs per agent/interaction type.
+     * Returns the top N agents sorted by run count descending.
+     */
+    getRunsByAgentAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<RunsByAgentAnalyticsResponse> {
+        return this.post('/analytics/runs-by-agent', { payload: query });
     }
 
     rules = new WorkflowsRulesApi(this);

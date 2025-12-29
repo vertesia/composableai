@@ -766,3 +766,31 @@ export interface TopPrincipalsAnalyticsResponse {
     /** Total number of runs in the period */
     totalRuns: number;
 }
+
+// ============================================================================
+// Runs by Agent Analytics
+// ============================================================================
+
+/**
+ * Agent run distribution metrics
+ */
+export interface AgentRunDistribution {
+    /** Agent/interaction ID */
+    agentId: string;
+    /** Agent display name (resolved from interaction) */
+    agentName: string;
+    /** Number of runs for this agent */
+    runCount: number;
+    /** Percentage of total runs */
+    percentage: number;
+}
+
+/**
+ * Response for runs by agent analytics
+ */
+export interface RunsByAgentAnalyticsResponse {
+    /** List of agents sorted by run count descending */
+    agents: AgentRunDistribution[];
+    /** Total number of runs in the period */
+    totalRuns: number;
+}
