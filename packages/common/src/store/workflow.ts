@@ -19,6 +19,15 @@ export interface Queue {
     queue_full_name?: string; // full name
 }
 
+export interface WorkflowAncestor {
+    run_id: string;
+    workflow_id: string;
+    /**
+     * the depth of nested parent workflows
+     */
+    run_depth: number;
+}
+
 export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     /**
      * The ref of the user who initiated the workflow.
@@ -69,14 +78,12 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     notify_endpoints?: (string | WebHookSpec)[];
 
     /** If this is a child workflow, parent contains parent's ids  */
-    parent?: {
-        run_id: string;
-        workflow_id: string;
-        /**
-         * the depth of nested parent workflows
-         */
-        run_depth?: number;
-    };
+    parent?: WorkflowAncestor;
+
+    /**
+     * Full ancestry chain from root to immediate parent (for hierarchical aggregation)
+     */
+    ancestors?: WorkflowAncestor[]
 
     /**
      * If true, copy workspace artifacts (scripts/, files/, skills/, docs/, out/)

@@ -24,7 +24,9 @@ import {
     TemplateType,
 } from "./prompt.js";
 import { ExecutionRunDocRef } from "./runs.js";
+import { ConversationState } from "./store/conversation-state.js";
 import { AccountRef } from "./user.js";
+import { LlmCallType } from "./workflow-analytics.js";
 
 export interface InteractionExecutionError {
     code: string;
@@ -775,6 +777,21 @@ export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadB
 export type AsyncExecutionPayload = AsyncConversationExecutionPayload | AsyncInteractionExecutionPayload;
 
 /**
+ * Telemetry context for streaming mode.
+ * Contains info not available in current_state needed to send LlmCallEvent.
+ */
+export interface StreamingTelemetryContext {
+    /** Workflow ID for ingestEvents API call */
+    workflowId: string;
+    /** Type of LLM call: start, resume after user message, or resume after tool results */
+    callType: LlmCallType;
+    /** Activity retry attempt number */
+    attemptNumber?: number;
+    /** Timestamp when inference started (for duration calculation) */
+    inferenceStartTime: number;
+}
+
+/**
  * Options for streaming LLM responses directly to Redis
  */
 export interface StreamingOptions {
@@ -800,13 +817,19 @@ export interface StreamingOptions {
      * Studio will store the conversation and complete the activity with merged state.
      * Required when task_token is provided.
      */
-    current_state?: import("./store/conversation-state.js").ConversationState;
+    current_state?: ConversationState;
     /**
      * Interval in milliseconds for sending heartbeats to Temporal during streaming.
      * When provided, Studio will send periodic heartbeats to keep the activity alive.
      * Recommended: 10000 (10 seconds). Activity heartbeat timeout should be ~3x this value.
      */
     heartbeat_interval_ms?: number;
+    /**
+     * Telemetry context for sending LlmCallEvent after streaming completes.
+     * Studio will use this to send token usage telemetry since the activity
+     * exits before the response is available in async completion mode.
+     */
+    telemetry?: StreamingTelemetryContext;
 }
 
 interface ResumeConversationPayload {
@@ -898,7 +921,7 @@ export interface BaseExecutionRun<P = any> {
     interaction?: string | Interaction;
     // only set when the target interaction is an in-code interaction
     interaction_code?: string; // Interaction code name in case of in-code interaction (not stored in the DB as an Interaction document)
-    //TODO a string is returned when execution not the env object
+    /** Environment reference - populated with full object in API responses */
     environment: ExecutionEnvironmentRef;
     modelId: string;
     result_schema: JSONSchema4;
@@ -1045,4 +1068,79 @@ export interface RateLimitRequestPayload {
 
 export interface RateLimitRequestResponse {
     delay_ms: number;
+}
+
+/**
+ * Source of the resolved model configuration
+ */
+export enum ModelSource {
+    /** Model was explicitly provided in the execution config */
+    config = "config",
+    /** Model comes from the interaction definition */
+    interaction = "interaction",
+    /** Model comes from environment's default_model */
+    environmentDefault = "environmentDefault",
+    /** Model comes from project system interaction defaults */
+    projectSystemDefault = "projectSystemDefault",
+    /** Model comes from project base defaults */
+    projectBaseDefault = "projectBaseDefault",
+    /** Model comes from project modality-specific defaults */
+    projectModalityDefault = "projectModalityDefault",
+    /** Model comes from legacy project defaults */
+    projectLegacyDefault = "projectLegacyDefault",
+}
+
+/**
+ * Resolved environment information
+ */
+export interface ResolvedEnvironmentInfo {
+    id: string;
+    name: string;
+    provider: string;
+}
+
+/**
+ * Resolved runtime configuration for an interaction
+ */
+export interface ResolvedRuntimeConfig {
+    environment: ResolvedEnvironmentInfo;
+    model?: string;
+    model_source: ModelSource;
+}
+
+/**
+ * Resolved execution info for an interaction.
+ * Contains the interaction ID, basic metadata, and the resolved runtime configuration
+ * (environment, model) that would be used at execution time.
+ */
+export interface ResolvedInteractionExecutionInfo {
+    /**
+     * The resolved interaction ID
+     */
+    id: string;
+
+    /**
+     * The interaction endpoint name
+     */
+    name: string;
+
+    /**
+     * The interaction version number
+     */
+    version: number;
+
+    /**
+     * The interaction status (draft or published)
+     */
+    status: InteractionStatus;
+
+    /**
+     * The interaction tags (can include version tags like "production", "staging")
+     */
+    tags: string[];
+
+    /**
+     * The resolved runtime configuration
+     */
+    resolved: ResolvedRuntimeConfig;
 }
