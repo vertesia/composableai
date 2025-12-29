@@ -794,3 +794,99 @@ export interface RunsByAgentAnalyticsResponse {
     /** Total number of runs in the period */
     totalRuns: number;
 }
+
+// ============================================================================
+// Time to First Response Analytics
+// ============================================================================
+
+/**
+ * Time to first response metrics
+ * Measures the time from agent run start to the completion of the first LLM call
+ */
+export interface TimeToFirstResponseMetrics {
+    /** Average time to first response in milliseconds */
+    avgMs: number;
+    /** Minimum time to first response in milliseconds */
+    minMs: number;
+    /** Maximum time to first response in milliseconds */
+    maxMs: number;
+    /** Median time to first response in milliseconds (p50) */
+    medianMs: number;
+    /** 95th percentile time to first response in milliseconds */
+    p95Ms: number;
+    /** 99th percentile time to first response in milliseconds */
+    p99Ms: number;
+    /** Number of agent runs analyzed */
+    runCount: number;
+}
+
+/**
+ * Time to first response time series data point
+ */
+export interface TimeToFirstResponseTimeSeriesPoint {
+    /** Timestamp bucket (ISO 8601) */
+    timestamp: string;
+    /** Average time to first response in this bucket (ms) */
+    avgMs: number;
+    /** Number of runs in this bucket */
+    count: number;
+}
+
+/**
+ * Response for time to first response analytics
+ */
+export interface TimeToFirstResponseAnalyticsResponse {
+    /** Summary metrics */
+    summary: TimeToFirstResponseMetrics;
+    /** Time series data if resolution was specified */
+    timeSeries?: TimeToFirstResponseTimeSeriesPoint[];
+}
+
+// ============================================================================
+// First Response Behavior Analytics
+// ============================================================================
+
+/**
+ * First response behavior metrics
+ * Analyzes the agent's first LLM response (callType = 'start') behavior
+ */
+export interface FirstResponseBehaviorMetrics {
+    /** Total number of agent runs analyzed */
+    totalRuns: number;
+    /** Number of runs where the first response used a plan tool */
+    runsWithPlanTool: number;
+    /** Percentage of runs that start with a plan tool (0-100) */
+    planToolPercentage: number;
+    /** Number of runs where the first response had no tool calls */
+    runsWithNoTools: number;
+    /** Percentage of runs that start with no tool calls (0-100) */
+    noToolsPercentage: number;
+    /** Number of runs where the first response had tool calls (excluding plan only) */
+    runsWithOtherTools: number;
+    /** Percentage of runs that start with other tool calls (0-100) */
+    otherToolsPercentage: number;
+}
+
+/**
+ * First response behavior time series data point
+ */
+export interface FirstResponseBehaviorTimeSeriesPoint {
+    /** Timestamp bucket (ISO 8601) */
+    timestamp: string;
+    /** Total runs in this bucket */
+    totalRuns: number;
+    /** Runs with plan tool in this bucket */
+    runsWithPlanTool: number;
+    /** Runs with no tools in this bucket */
+    runsWithNoTools: number;
+}
+
+/**
+ * Response for first response behavior analytics
+ */
+export interface FirstResponseBehaviorAnalyticsResponse {
+    /** Summary metrics */
+    summary: FirstResponseBehaviorMetrics;
+    /** Time series data if resolution was specified */
+    timeSeries?: FirstResponseBehaviorTimeSeriesPoint[];
+}

@@ -9,12 +9,14 @@ import {
     DSLWorkflowSpec,
     ErrorAnalyticsResponse,
     ExecuteWorkflowPayload,
+    FirstResponseBehaviorAnalyticsResponse,
     LatencyAnalyticsResponse,
     ListWorkflowInteractionsResponse,
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
     PromptSizeAnalyticsResponse,
     RunsByAgentAnalyticsResponse,
+    TimeToFirstResponseAnalyticsResponse,
     TokenUsageAnalyticsResponse,
     ToolAnalyticsResponse,
     ToolParameterAnalyticsResponse,
@@ -579,6 +581,29 @@ export class WorkflowsApi extends ApiTopic {
         query: WorkflowAnalyticsSummaryQuery = {}
     ): Promise<RunsByAgentAnalyticsResponse> {
         return this.post('/analytics/runs-by-agent', { payload: query });
+    }
+
+    /**
+     * Get time to first response analytics.
+     * Measures the time from agent start to the completion of the first LLM call.
+     * Returns average, min, max, median, p95, and p99 metrics.
+     */
+    getTimeToFirstResponseAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<TimeToFirstResponseAnalyticsResponse> {
+        return this.post('/analytics/time-to-first-response', { payload: query });
+    }
+
+    /**
+     * Get first response behavior analytics.
+     * Analyzes the agent's first LLM response behavior:
+     * - Percentage of agents that start by making a plan
+     * - Percentage of agents that return no tool calls at start
+     */
+    getFirstResponseBehaviorAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<FirstResponseBehaviorAnalyticsResponse> {
+        return this.post('/analytics/first-response-behavior', { payload: query });
     }
 
     rules = new WorkflowsRulesApi(this);
