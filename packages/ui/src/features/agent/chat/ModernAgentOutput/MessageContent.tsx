@@ -26,6 +26,8 @@ export interface MessageContentProps {
     onSendMessage?: (message: string) => void;
     /** Optional custom artifact renderer */
     renderArtifacts?: (artifacts: ArtifactLink[]) => React.ReactNode;
+    /** Optional custom component overrides for MarkdownRenderer */
+    components?: Record<string, React.ComponentType<any>>;
 }
 
 /**
@@ -52,6 +54,7 @@ export function MessageContent({
     artifactRunId,
     onSendMessage,
     renderArtifacts,
+    components: customComponents,
 }: MessageContentProps) {
     const { client } = useUserSession();
     const [processedContent, setProcessedContent] = useState<string | object>("");
@@ -149,36 +152,42 @@ export function MessageContent({
         // Handle string content with markdown
         const runId = artifactRunId || (message as any).workflow_run_id as string | undefined;
 
+        // Default component overrides
+        const defaultComponents = {
+            a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
+                const href = props.href || "";
+                if (href.includes("/store/objects")) {
+                    return (
+                        <NavLink href={href} topLevelNav>
+                            {props.children}
+                        </NavLink>
+                    );
+                }
+                return (
+                    <a {...props} target="_blank" rel="noopener noreferrer" />
+                );
+            },
+            img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
+                return (
+                    <img
+                        {...props}
+                        className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
+                        loading="lazy"
+                        onClick={() => props.src && window.open(props.src, "_blank")}
+                    />
+                );
+            },
+        };
+
+        // Merge custom components (custom wins over defaults)
+        const mergedComponents = { ...defaultComponents, ...customComponents };
+
         return (
             <div className="vprose prose-sm">
                 <MarkdownRenderer
                     artifactRunId={runId}
                     onSendMessage={onSendMessage}
-                    components={{
-                        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
-                            const href = props.href || "";
-                            if (href.includes("/store/objects")) {
-                                return (
-                                    <NavLink href={href} topLevelNav>
-                                        {props.children}
-                                    </NavLink>
-                                );
-                            }
-                            return (
-                                <a {...props} target="_blank" rel="noopener noreferrer" />
-                            );
-                        },
-                        img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
-                            return (
-                                <img
-                                    {...props}
-                                    className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
-                                    loading="lazy"
-                                    onClick={() => props.src && window.open(props.src, "_blank")}
-                                />
-                            );
-                        },
-                    }}
+                    components={mergedComponents}
                 >
                     {content as string}
                 </MarkdownRenderer>
