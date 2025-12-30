@@ -556,29 +556,16 @@ function ModernAgentConversationInner({
                 return;
             }
 
-            // When COMPLETE arrives, convert streaming messages to THOUGHT messages
+            // When ANSWER arrives, clear streaming messages (they contain the same content)
+            // This prevents showing the message twice: once as streaming, once as final ANSWER
+            if (message.type === AgentMessageType.ANSWER) {
+                setStreamingMessages(new Map());
+            }
+
+            // When COMPLETE arrives, clear any remaining streaming messages
+            // (don't convert to THOUGHT since the content is already in the ANSWER message)
             if (message.type === AgentMessageType.COMPLETE) {
-                setStreamingMessages((prev) => {
-                    // Convert any remaining streaming messages to THOUGHT messages
-                    prev.forEach(({ text, workstreamId, startTimestamp }) => {
-                        if (text) {
-                            const thoughtMessage: AgentMessage = {
-                                // Use the start timestamp to maintain chronological order
-                                timestamp: startTimestamp || Date.now(),
-                                workflow_run_id: run.runId,
-                                type: AgentMessageType.THOUGHT,
-                                message: text,
-                                workstream_id: workstreamId,
-                            };
-                            setMessages((prev_messages) => {
-                                insertMessageInTimeline(prev_messages, thoughtMessage);
-                                return [...prev_messages];
-                            });
-                        }
-                    });
-                    // Clear all streaming messages
-                    return new Map();
-                });
+                setStreamingMessages(new Map());
             }
 
             if (message.message) {
@@ -1049,6 +1036,7 @@ function ModernAgentConversationInner({
                         }, new Map<string, string>())}
                         streamingMessages={streamingMessages}
                         onSendMessage={handleSendMessage}
+                        thinkingMessageIndex={thinkingMessageIndex}
                     />
                 )}
 

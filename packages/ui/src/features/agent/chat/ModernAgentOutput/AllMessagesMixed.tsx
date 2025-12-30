@@ -10,10 +10,9 @@ import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, StreamingData
 import { ThinkingMessages } from "../WaitingMessages";
 
 // Replace %thinking_message% placeholder with actual thinking message
-const processThinkingPlaceholder = (text: string): string => {
+const processThinkingPlaceholder = (text: string, thinkingMessageIndex: number): string => {
     if (text.includes('%thinking_message%')) {
-        const randomIndex = Math.floor(Math.random() * ThinkingMessages.length);
-        return text.replace(/%thinking_message%/g, ThinkingMessages[randomIndex]);
+        return text.replace(/%thinking_message%/g, ThinkingMessages[thinkingMessageIndex]);
     }
     return text;
 };
@@ -74,6 +73,8 @@ interface AllMessagesMixedProps {
     streamingMessages?: Map<string, StreamingData>; // Real-time streaming chunks
     /** Callback when user sends a message (e.g., from proposal selection) */
     onSendMessage?: (message: string) => void;
+    /** Stable index for thinking messages (changes on 4s interval) */
+    thinkingMessageIndex?: number;
 }
 
 function AllMessagesMixedComponent({
@@ -83,6 +84,7 @@ function AllMessagesMixedComponent({
     isCompleted = false,
     streamingMessages = new Map(),
     onSendMessage,
+    thinkingMessageIndex = 0,
 }: AllMessagesMixedProps) {
     const containerRef = React.useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -409,7 +411,7 @@ function AllMessagesMixedComponent({
                             {recentThinking.map((thinking, idx) => (
                                 <MessageErrorBoundary key={`thinking-${thinking.timestamp}-${idx}`}>
                                     <StreamingMessage
-                                        text={processThinkingPlaceholder(thinking.message || '')}
+                                        text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
                                         workstreamId={getWorkstreamId(thinking)}
                                         isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
                                     />
