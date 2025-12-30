@@ -330,7 +330,7 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
     // Returns all scripts bundled with the skill
     endpoint.get('/:name/scripts', (c: Context) => {
         const name = c.req.param('name');
-        const skillName = name.startsWith('skill_') ? name.slice(6) : name;
+        const skillName = name.startsWith('learn_') ? name.slice(6) : name;
         const skill = coll.getSkill(skillName);
         if (!skill) {
             throw new HTTPException(404, {
@@ -347,7 +347,7 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
     endpoint.get('/:name/scripts/:filename', (c: Context) => {
         const name = c.req.param('name');
         const filename = c.req.param('filename');
-        const skillName = name.startsWith('skill_') ? name.slice(6) : name;
+        const skillName = name.startsWith('learn_') ? name.slice(6) : name;
         const skill = coll.getSkill(skillName);
         if (!skill) {
             throw new HTTPException(404, {
@@ -371,8 +371,8 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
     // Get a specific skill by name
     endpoint.get('/:name', (c: Context) => {
         const name = c.req.param('name');
-        // Handle both "skill_name" and "name" formats
-        const skillName = name.startsWith('skill_') ? name.slice(6) : name;
+        // Handle both "learn_name" and "name" formats
+        const skillName = name.startsWith('learn_') ? name.slice(6) : name;
         const skill = coll.getSkill(skillName);
         if (!skill) {
             throw new HTTPException(404, {
