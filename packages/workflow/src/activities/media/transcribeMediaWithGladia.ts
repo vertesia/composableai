@@ -1,6 +1,6 @@
-import { DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, AUDIO_RENDITION_NAME, VideoMetadata, ContentNature } from "@vertesia/common";
 import { activityInfo, CompleteAsyncError, log } from "@temporalio/activity";
 import { FetchClient, RequestError } from "@vertesia/api-fetch-client";
+import { AUDIO_RENDITION_NAME, ContentNature, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, VideoMetadata } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../../errors.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../index.js";
@@ -85,10 +85,7 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
                 }
             }
         }) as GladiaTranscriptRequestResponse;
-
         log.info(`Transcription request sent to Gladia`, { objectId, res });
-        throw new CompleteAsyncError();
-
     } catch (error: any) {
         if (error instanceof RequestError && error.status === 422) {
             return {
@@ -97,16 +94,12 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
                 status: TextExtractionStatus.error,
                 error: `Gladia transcription error: ${error.message}`,
             }
-        } else {
-            log.error(`Error sending transcription request to Gladia for object ${objectId}`, {
-                message: error?.message,
-                status: error?.status,
-                body: error?.body,
-                stack: error?.stack,
-            });
-            throw error;
         }
+        log.error(`Error sending transcription request to Gladia for object ${objectId}`, { error });
+        throw error;
     }
+
+    throw new CompleteAsyncError();
 }
 
 function generateCallbackUrlForGladia(baseUrl: string, taskToken: string, objectId: string) {
