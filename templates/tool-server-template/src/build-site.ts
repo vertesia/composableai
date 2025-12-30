@@ -4,8 +4,9 @@ import {
     skillCollectionPage,
     toolCollectionPage
 } from "@vertesia/tools-sdk";
-import { copyFileSync, readdirSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { glob } from "node:fs/promises";
+import { basename } from "node:path";
 import { loadInteractions } from "./interactions/index.js";
 import { skills } from "./skills/index.js";
 import { tools } from "./tools/index.js";
@@ -20,12 +21,12 @@ async function build(outDir: string) {
     // Ensure output directory exists
     mkdirSync(outDir, { recursive: true });
 
-    // Copy scripts first (if they exist)
-    try {
-        copyDir("./scripts", `${outDir}/scripts`);
-        console.log('✓ Copied scripts directory');
-    } catch (err) {
-        console.log('  No scripts directory to copy');
+    // Copy scripts from skill directories
+    const scriptCount = await copyScriptsFromSkills(`${outDir}/scripts`);
+    if (scriptCount > 0) {
+        console.log(`✓ Copied ${scriptCount} script(s) from skill directories`);
+    } else {
+        console.log('  No scripts found in skill directories');
     }
 
     // Load interactions
@@ -74,18 +75,43 @@ async function build(outDir: string) {
     console.log('✓ Static site build complete!');
 }
 
-function copyDir(src: string, dest: string) {
-    mkdirSync(dest, { recursive: true });
-    const entries = readdirSync(src, { withFileTypes: true });
-    for (const entry of entries) {
-        const srcPath = join(src, entry.name);
-        const destPath = join(dest, entry.name);
-        if (entry.isDirectory()) {
-            copyDir(srcPath, destPath);
-        } else if (entry.isFile()) {
-            copyFileSync(srcPath, destPath);
+/**
+ * Find and copy all scripts (.js, .py) from skill directories to dist/scripts (flat)
+ * Uses glob to find: src/skills/*-slash-*-slash-*.{py,js}
+ */
+async function copyScriptsFromSkills(outputDir: string): Promise<number> {
+    // Ensure output directory exists
+    mkdirSync(outputDir, { recursive: true });
+
+    // Find all .py and .js files in skill directories
+    const scriptFiles = glob('src/skills/*/*/*.{py,js}');
+
+    // Check for duplicate script names
+    const nameMap = new Map<string, string>();
+    const filesToCopy: { file: string; name: string }[] = [];
+
+    for await (const file of scriptFiles) {
+        const name = basename(file);
+        if (nameMap.has(name)) {
+            const existing = nameMap.get(name)!;
+            throw new Error(
+                `Duplicate script name "${name}" found:\n` +
+                `  - ${existing}\n` +
+                `  - ${file}\n` +
+                `Script names must be unique across all skills.`
+            );
         }
+        nameMap.set(name, file);
+        filesToCopy.push({ file, name });
     }
+
+    // Copy all scripts
+    for (const { file, name } of filesToCopy) {
+        const destPath = `${outputDir}/${name}`;
+        copyFileSync(file, destPath);
+    }
+
+    return filesToCopy.length;
 }
 
 // Run the build

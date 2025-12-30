@@ -2,9 +2,9 @@
  * Rollup Configuration for Widget Bundles
  *
  * This configuration:
- * 1. Finds all .tsx files in src/widgets/ (top-level only)
+ * 1. Finds all .tsx files in src/skills/ directories (next to SKILL.md files)
  * 2. Bundles each widget with all dependencies included
- * 3. Outputs browser-ready ES modules to dist/widgets/
+ * 3. Outputs browser-ready ES modules flat to dist/widgets/
  *
  * Output: dist/widgets/{widget-name}.js
  */
@@ -12,56 +12,51 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import { terser } from 'rollup-plugin-terser';
-import fs from 'fs';
+import { globSync } from 'fs';
 import path from 'path';
 
-const widgetsDir = './src/widgets';
 const outputDir = './dist/widgets';
 
-// Ensure output directory exists
-if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-}
-
 /**
- * Find all .tsx files in src/widgets/ (top-level only).
- * Subdirectories are ignored - they contain helper components.
+ * Find all .tsx files in skill directories using glob.
+ * Widgets are located next to SKILL.md files in skill directories.
  *
  * Structure:
- * src/widgets/
- *   poll.tsx           ← Entry point (bundled)
- *   poll/              ← Helper components (imported, not entry points)
- *     Chart.tsx
- *     utils.ts
+ * src/skills/
+ *   examples/
+ *     user-select/
+ *       SKILL.md           ← Skill definition
+ *       user-select.tsx    ← Widget entry point
  */
-function findWidgetEntryPoints(dir) {
-    const widgets = [];
+function findWidgetEntryPoints() {
+    // Use glob to find all .tsx files in skill directories
+    const files = globSync('src/skills/**/*.tsx');
 
-    if (!fs.existsSync(dir)) {
-        return widgets;
-    }
+    const widgets = files.map(file => ({
+        name: path.basename(file, '.tsx'),
+        path: file
+    }));
 
-    const files = fs.readdirSync(dir);
-
-    for (const file of files) {
-        const filePath = path.join(dir, file);
-        const stat = fs.statSync(filePath);
-
-        // Only top-level .tsx files (not directories)
-        if (!stat.isDirectory() && file.endsWith('.tsx')) {
-            const widgetName = path.basename(file, '.tsx');
-            widgets.push({
-                name: widgetName,
-                path: filePath
-            });
+    // Check for duplicate widget names
+    const nameMap = new Map();
+    for (const widget of widgets) {
+        if (nameMap.has(widget.name)) {
+            const existing = nameMap.get(widget.name);
+            throw new Error(
+                `Duplicate widget name "${widget.name}" found:\n` +
+                `  - ${existing}\n` +
+                `  - ${widget.path}\n` +
+                `Widget names must be unique across all skills.`
+            );
         }
+        nameMap.set(widget.name, widget.path);
     }
 
     return widgets;
 }
 
 // Find all widget entry points
-const widgets = findWidgetEntryPoints(widgetsDir);
+const widgets = findWidgetEntryPoints();
 
 console.log(`Found ${widgets.length} widget(s):`, widgets.map(w => w.name).join(', '));
 

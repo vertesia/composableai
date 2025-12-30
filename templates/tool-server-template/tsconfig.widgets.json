@@ -20,7 +20,7 @@
     "isolatedModules": true
   },
   "include": [
-    "src/**/*.tsx"
+    "src/skills/**/*.tsx"
   ],
   "exclude": [
     "node_modules",
