@@ -17,6 +17,11 @@ export interface TranscriptMedia extends DSLActivitySpec<TranscriptMediaParams> 
 
 export interface TranscriptMediaResult extends TextExtractionResult {
     message?: string;
+    /**
+     * Gladia transcription ID for fetching results in a follow-up activity.
+     * Present when async media transcription completes successfully.
+     */
+    gladiaTranscriptionId?: string;
 }
 
 const GLADIA_URL = "https://api.gladia.io/v2";
