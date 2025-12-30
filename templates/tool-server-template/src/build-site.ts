@@ -34,7 +34,7 @@ async function build(outDir: string) {
 
     // Create main index page
     console.log('Creating index page...');
-    writeFileSync(
+    writeFile(
         `${outDir}/index.html`,
         indexPage(tools, skills, interactions, 'Tool Server Template')
     );
@@ -44,7 +44,7 @@ async function build(outDir: string) {
     for (const coll of tools) {
         const dir = `${outDir}/tools/${coll.name}`;
         mkdirSync(dir, { recursive: true });
-        writeFileSync(
+        writeFile(
             `${dir}/index.html`,
             toolCollectionPage(coll)
         );
@@ -55,7 +55,7 @@ async function build(outDir: string) {
     for (const coll of skills) {
         const dir = `${outDir}/skills/${coll.name}`;
         mkdirSync(dir, { recursive: true });
-        writeFileSync(
+        writeFile(
             `${dir}/index.html`,
             skillCollectionPage(coll)
         );
@@ -66,7 +66,7 @@ async function build(outDir: string) {
     for (const coll of interactions) {
         const dir = `${outDir}/interactions/${coll.name}`;
         mkdirSync(dir, { recursive: true });
-        writeFileSync(
+        writeFile(
             `${dir}/index.html`,
             interactionCollectionPage(coll)
         );
@@ -112,6 +112,10 @@ async function copyScriptsFromSkills(outputDir: string): Promise<number> {
     }
 
     return filesToCopy.length;
+}
+
+function writeFile(file: string, content: string) {
+    writeFileSync(file, content.trim() + '\n', "utf8");
 }
 
 // Run the build
