@@ -1,2 +1,2 @@
-export { MarkdownRenderer } from './MarkdownRenderer';
-export type { MarkdownRendererProps } from './MarkdownRenderer';
+export { CodeBlockRendererProvider, useCodeBlockComponent, useCodeBlockRendererRegistry, type CodeBlockRendererProps } from './CodeBlockRendering';
+export { MarkdownRenderer, type MarkdownRendererProps } from './MarkdownRenderer';

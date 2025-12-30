@@ -253,6 +253,14 @@ export interface SkillDefinition {
      * Scripts bundled with this skill (synced to sandbox when skill is used)
      */
     scripts?: SkillScript[];
+    /**
+     * The name of the widgets provided by this skill (if any)
+     * The name will be used to load the widget dynamically from the agent chat
+     * and must match the code block language returned by the LLM (e.g., ```my-widget)
+     * which will be rendered using the widget.
+     * The widget file must be located in the skill directory under the name {{widget-name}}.tsx.
+     */
+    widgets?: string[];
 }
 
 /**

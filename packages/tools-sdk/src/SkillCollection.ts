@@ -125,6 +125,27 @@ export class SkillCollection implements ICollection<SkillDefinition> {
         };
     }
 
+    getWidgets(): {
+        name: string;
+        skill: string;
+    }[] {
+        const out: {
+            name: string;
+            skill: string;
+        }[] = [];
+        for (const skill of this.skills.values()) {
+            if (skill.widgets) {
+                for (const widget of skill.widgets) {
+                    out.push({
+                        name: widget,
+                        skill: skill.name,
+                    });
+                }
+            }
+        }
+        return Array.from(out);
+    }
+
     /**
      * Execute a skill - accepts standard tool execution payload.
      * Returns rendered instructions in tool result format.
@@ -209,6 +230,7 @@ interface SkillFrontmatter {
     language?: string;
     packages?: string[];
     system_packages?: string[];
+    widgets?: string[];
 }
 
 /**
@@ -258,6 +280,7 @@ export function parseSkillFile(
         description: frontmatter.description,
         instructions,
         content_type: contentType,
+        widgets: frontmatter.widgets || undefined,
     };
 
     // Build context triggers
