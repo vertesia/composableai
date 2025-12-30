@@ -1,5 +1,5 @@
 import { HTTPException } from "hono/http-exception";
-import { Tool, ToolDefinition, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult } from "./types.js";
+import { Tool, ToolDefinitionWithDefault, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult } from "./types.js";
 export class ToolRegistry {
 
     registry: Record<string, Tool<any>> = {};
@@ -10,11 +10,12 @@ export class ToolRegistry {
         }
     }
 
-    getDefinitions(): ToolDefinition[] {
+    getDefinitions(): ToolDefinitionWithDefault[] {
         return Object.values(this.registry).map(tool => ({
             name: tool.name,
             description: tool.description,
-            input_schema: tool.input_schema
+            input_schema: tool.input_schema,
+            default: tool.default,
         }));
     }
 

@@ -90,8 +90,8 @@ export interface AgentRunStartedEvent extends BaseAgentEvent {
     interactive: boolean;
     /** Task ID if part of a multi-workstream execution */
     taskId?: string;
-    /** User channel (web, email, api, etc.) */
-    userChannel?: string;
+    /** User channels enabled for this run (email, interactive, etc.) */
+    userChannels?: string[];
 }
 
 /**
@@ -118,6 +118,13 @@ export interface AgentRunCompletedEvent extends BaseAgentEvent {
         input: number;
         output: number;
         total: number;
+    };
+    /** If conversation was ended via end_conversation tool */
+    endConversation?: {
+        /** Status provided by the agent */
+        status: 'success' | 'failure';
+        /** Reason provided by the agent (especially for failures) */
+        reason?: string;
     };
 }
 
