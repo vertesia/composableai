@@ -98,7 +98,12 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
                 error: `Gladia transcription error: ${error.message}`,
             }
         } else {
-            log.error(`Error sending transcription request to Gladia for object ${objectId}`, { error });
+            log.error(`Error sending transcription request to Gladia for object ${objectId}`, {
+                message: error?.message,
+                status: error?.status,
+                body: error?.body,
+                stack: error?.stack,
+            });
             throw error;
         }
     }
