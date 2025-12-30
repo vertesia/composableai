@@ -169,12 +169,25 @@ export function createToolServer(config: ToolServerConfig): Hono {
     });
 
     // GET /api/tools - Returns all tools from all collections
+    // Query params:
+    //   - defaultOnly=true: Only return tools with default !== false
+    //   - unlocked=tool1,tool2: Comma-separated list of unlocked tool names
     app.get(`${prefix}/tools`, (c) => {
         const url = new URL(c.req.url);
+        const defaultOnly = c.req.query('defaultOnly') === 'true';
+        const unlockedParam = c.req.query('unlocked');
+        const unlockedTools = unlockedParam ? unlockedParam.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+        const filterOptions = defaultOnly ? { defaultOnly, unlockedTools } : undefined;
+
         const allTools: ToolDefinition[] = [];
+        let reserveToolCount = 0;
 
         for (const coll of tools) {
-            allTools.push(...coll.getToolDefinitions());
+            allTools.push(...coll.getToolDefinitions(filterOptions));
+            if (defaultOnly) {
+                reserveToolCount += coll.getReserveTools(unlockedTools).length;
+            }
         }
 
         return c.json({
@@ -182,12 +195,13 @@ export function createToolServer(config: ToolServerConfig): Hono {
             title: 'All Tools',
             description: 'All available tools across all collections',
             tools: allTools,
+            reserveToolCount: defaultOnly ? reserveToolCount : undefined,
             collections: tools.map(t => ({
                 name: t.name,
                 title: t.title,
                 description: t.description,
             })),
-        } satisfies ToolCollectionDefinition & { collections: any[] });
+        } satisfies ToolCollectionDefinition & { collections: any[]; reserveToolCount?: number });
     });
 
     // GET /api/widgets - Returns all widgets from all skill collections
@@ -285,17 +299,35 @@ function createToolEndpoints(coll: ToolCollection): Hono {
         return coll.execute(c);
     });
 
+    // GET /api/tools/{collection}
+    // Query params:
+    //   - import: Return import source URL instead of API URL
+    //   - defaultOnly=true: Only return tools with default !== false
+    //   - unlocked=tool1,tool2: Comma-separated list of unlocked tool names
     endpoint.get('/', (c) => {
         const importSourceUrl = c.req.query('import') != null;
+        const defaultOnly = c.req.query('defaultOnly') === 'true';
+        const unlockedParam = c.req.query('unlocked');
+        const unlockedTools = unlockedParam ? unlockedParam.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+        const filterOptions = defaultOnly ? { defaultOnly, unlockedTools } : undefined;
         const url = new URL(c.req.url);
-        return c.json({
+
+        const response: ToolCollectionDefinition & { reserveToolCount?: number } = {
             src: importSourceUrl
                 ? `${url.origin}/libs/vertesia-tools-${coll.name}.js`
                 : `${url.origin}${url.pathname}`,
             title: coll.title || coll.name,
             description: coll.description || '',
-            tools: coll.getToolDefinitions()
-        } satisfies ToolCollectionDefinition);
+            tools: coll.getToolDefinitions(filterOptions)
+        };
+
+        // Include reserve count when filtering
+        if (defaultOnly) {
+            response.reserveToolCount = coll.getReserveTools(unlockedTools).length;
+        }
+
+        return c.json(response);
     });
 
     return endpoint;

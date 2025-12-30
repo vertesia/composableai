@@ -1,5 +1,22 @@
 import { HTTPException } from "hono/http-exception";
 import { Tool, ToolDefinitionWithDefault, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult } from "./types.js";
+
+/**
+ * Options for filtering tool definitions
+ */
+export interface ToolFilterOptions {
+    /**
+     * If true, only return tools that are available by default (default !== false).
+     * If false or undefined, return all tools.
+     */
+    defaultOnly?: boolean;
+    /**
+     * List of tool names that are unlocked (available even if default: false).
+     * These tools will be included even when defaultOnly is true.
+     */
+    unlockedTools?: string[];
+}
+
 export class ToolRegistry {
 
     registry: Record<string, Tool<any>> = {};
@@ -10,13 +27,49 @@ export class ToolRegistry {
         }
     }
 
-    getDefinitions(): ToolDefinitionWithDefault[] {
-        return Object.values(this.registry).map(tool => ({
-            name: tool.name,
-            description: tool.description,
-            input_schema: tool.input_schema,
-            default: tool.default,
-        }));
+    /**
+     * Get tool definitions with optional filtering.
+     * @param options - Filtering options
+     * @returns Filtered tool definitions
+     */
+    getDefinitions(options?: ToolFilterOptions): ToolDefinitionWithDefault[] {
+        const { defaultOnly, unlockedTools = [] } = options || {};
+        const unlockedSet = new Set(unlockedTools);
+
+        return Object.values(this.registry)
+            .filter(tool => {
+                // If not filtering by default, include all tools
+                if (!defaultOnly) return true;
+
+                // Include if tool is default (default !== false) or is in unlocked list
+                const isDefault = tool.default !== false;
+                const isUnlocked = unlockedSet.has(tool.name);
+                return isDefault || isUnlocked;
+            })
+            .map(tool => ({
+                name: tool.name,
+                description: tool.description,
+                input_schema: tool.input_schema,
+                default: tool.default,
+            }));
+    }
+
+    /**
+     * Get tools that are in reserve (default: false and not unlocked).
+     * @param unlockedTools - List of tool names that are unlocked
+     * @returns Tool definitions for reserve tools
+     */
+    getReserveTools(unlockedTools: string[] = []): ToolDefinitionWithDefault[] {
+        const unlockedSet = new Set(unlockedTools);
+
+        return Object.values(this.registry)
+            .filter(tool => tool.default === false && !unlockedSet.has(tool.name))
+            .map(tool => ({
+                name: tool.name,
+                description: tool.description,
+                input_schema: tool.input_schema,
+                default: tool.default,
+            }));
     }
 
     getTool<ParamsT extends Record<string, any>>(name: string): Tool<ParamsT> {
