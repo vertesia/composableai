@@ -68,7 +68,7 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
     log.info(`Using media URL for transcription`, { objectId, mediaUrl: mediaSource });
 
     const taskToken = Buffer.from(activityInfo().taskToken).toString('base64url');
-    const callbackUrl = generateCallbackUrlForGladia(client.store.baseUrl, payload.auth_token, taskToken, objectId);
+    const callbackUrl = generateCallbackUrlForGladia(client.store.baseUrl, taskToken, objectId);
 
     log.info(`Transcribing media ${mediaUrl} with Gladia`, { objectId, callbackUrl });
 
@@ -104,8 +104,8 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
     }
 }
 
-function generateCallbackUrlForGladia(baseUrl: string, authToken: string, taskToken: string, objectId: string) {
-    return `${baseUrl}/api/v1/webhooks/gladia/${objectId}?access_token=${authToken}&task_token=${taskToken}`;
+function generateCallbackUrlForGladia(baseUrl: string, taskToken: string, objectId: string) {
+    return `${baseUrl}/webhooks/gladia/${objectId}?task_token=${taskToken}`;
 }
 
 interface GladiaTranscriptRequestResponse {
