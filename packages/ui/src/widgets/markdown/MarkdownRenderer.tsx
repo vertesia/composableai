@@ -87,7 +87,7 @@ export function MarkdownRenderer({
             className?: string;
             children?: React.ReactNode;
         }) => {
-            const match = /language-(\w+)/.exec(className || "");
+            const match = /language-([\w-]+)/.exec(className || "");
             const isInline = !match;
             const language = match ? match[1] : "";
 
