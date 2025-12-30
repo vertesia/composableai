@@ -1,5 +1,5 @@
 import { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from "@llumiverse/common";
-import { ConversationStripOptions, UserChannel } from "../interaction.js";
+import { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from "../interaction.js";
 import { ExecutionRunDocRef } from "../runs.js";
 import { Plan, WorkflowAncestor } from "./workflow.js";
 
@@ -89,6 +89,35 @@ export interface ConversationState {
      * Channels can be updated as conversation progresses (e.g., email threading info).
      */
     user_channels?: UserChannel[];
+
+    /**
+     * The resolved interaction execution info.
+     * Contains interaction ID, name, version, and environment details.
+     */
+    resolvedInteraction?: ResolvedInteractionExecutionInfo;
+
+    /**
+     * End conversation metadata set when end_conversation tool is called.
+     * Signals the workflow to terminate gracefully.
+     */
+    end_conversation?: {
+        final_result?: string;
+        status?: 'success' | 'failure';
+        reason?: string;
+    };
+
+    /**
+     * Tools that have been unlocked by skills during the conversation.
+     * These tools were initially hidden (default: false) but became available
+     * when a skill with related_tools was called.
+     */
+    unlocked_tools?: string[];
+
+    /**
+     * Mapping of skill names to their related tools.
+     * When a skill is called, its related tools are added to unlocked_tools.
+     */
+    skill_tool_map?: Record<string, string[]>;
 }
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */

@@ -10,6 +10,7 @@ import type {
     SkillDefinition,
     SkillExecutionResult,
     ToolCollectionDefinition,
+    ToolDefinitionWithDefault,
     ToolExecutionPayload,
     ToolExecutionResult,
 } from "./types.js";
@@ -83,8 +84,9 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      * Get skills exposed as tool definitions.
      * This allows skills to appear alongside regular tools.
      * When called, they return rendered instructions.
+     * Includes related_tools for dynamic tool discovery.
      */
-    getToolDefinitions(): ToolDefinition[] {
+    getToolDefinitions(): ToolDefinitionWithDefault[] {
         const defaultSchema: ToolDefinition['input_schema'] = {
             type: 'object',
             properties: {
@@ -98,7 +100,8 @@ export class SkillCollection implements ICollection<SkillDefinition> {
         return Array.from(this.skills.values()).map(skill => ({
             name: `learn_${skill.name}`,
             description: `[Skill] ${skill.description}. Returns contextual instructions for this task.`,
-            input_schema: skill.input_schema || defaultSchema
+            input_schema: skill.input_schema || defaultSchema,
+            related_tools: skill.related_tools,
         }));
     }
 
