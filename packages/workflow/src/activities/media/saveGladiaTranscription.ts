@@ -80,7 +80,7 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
     log.info(`Saved transcription for object`, { objectId, textLength: fullText?.length, segmentCount: segments.length });
 
     return {
-        hasText: fullText?.length > 0,
+        hasText: (fullText?.length ?? 0) > 0,
         objectId,
         status: TextExtractionStatus.success,
         message: `Transcription saved with ${segments.length} segments`
