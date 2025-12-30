@@ -830,6 +830,18 @@ export interface StreamingOptions {
      * exits before the response is available in async completion mode.
      */
     telemetry?: StreamingTelemetryContext;
+    /**
+     * Options for storing the LLM result to cloud storage.
+     * When provided, Studio will upload the result to the specified path
+     * after execution completes, before completing the activity.
+     * This enables async completion for activities that need post-processing.
+     */
+    result_storage?: {
+        /** Cloud storage path - content type inferred from extension (.md, .json, etc.) */
+        path: string;
+        /** If true, strip markdown code blocks (```...```) from result before storing */
+        strip_code_blocks?: boolean;
+    };
 }
 
 interface ResumeConversationPayload {
