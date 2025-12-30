@@ -532,6 +532,7 @@ export function skillDetailCard(skill: SkillDefinition): string {
     const hasKeywords = skill.context_triggers?.keywords?.length;
     const hasPackages = skill.execution?.packages?.length;
     const hasScripts = skill.scripts?.length;
+    const hasRelatedTools = skill.related_tools?.length;
 
     return /*html*/`
 <div class="detail-card">
@@ -543,6 +544,7 @@ export function skillDetailCard(skill: SkillDefinition): string {
         <div class="detail-badges">
             <span class="badge skill-type-badge">Skill</span>
             ${skill.execution?.language ? `<span class="badge ${skill.execution.language}">${skill.execution.language}</span>` : ''}
+            ${hasRelatedTools ? `<span class="badge" style="background: #8b5cf6; color: white;">Unlocks ${skill.related_tools?.length} tool${skill.related_tools?.length !== 1 ? 's' : ''}</span>` : ''}
         </div>
     </div>
     <div class="detail-body">
@@ -558,6 +560,16 @@ export function skillDetailCard(skill: SkillDefinition): string {
             </div>
             ` : ''}
         </div>
+
+        ${hasRelatedTools ? /*html*/`
+        <div class="detail-section">
+            <h4 class="detail-section-title">Unlocks Tools</h4>
+            <p style="color: #6b7280; font-size: 0.85rem; margin: 0 0 0.75rem 0;">These tools become available when this skill is activated:</p>
+            <div class="package-list">
+                ${skill.related_tools?.map(tool => `<span class="package-tag" style="background: #ede9fe; color: #6d28d9;">${tool}</span>`).join('')}
+            </div>
+        </div>
+        ` : ''}
 
         ${hasKeywords ? /*html*/`
         <div class="detail-section">

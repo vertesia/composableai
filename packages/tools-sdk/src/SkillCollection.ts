@@ -97,12 +97,20 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             }
         };
 
-        return Array.from(this.skills.values()).map(skill => ({
-            name: `learn_${skill.name}`,
-            description: `[Skill] ${skill.description}. Returns contextual instructions for this task.`,
-            input_schema: skill.input_schema || defaultSchema,
-            related_tools: skill.related_tools,
-        }));
+        return Array.from(this.skills.values()).map(skill => {
+            // Build description with related tools info if available
+            let description = `[Skill] ${skill.description}. Returns contextual instructions for this task.`;
+            if (skill.related_tools && skill.related_tools.length > 0) {
+                description += ` Unlocks tools: ${skill.related_tools.join(', ')}.`;
+            }
+
+            return {
+                name: `learn_${skill.name}`,
+                description,
+                input_schema: skill.input_schema || defaultSchema,
+                related_tools: skill.related_tools,
+            };
+        });
     }
 
     /**
