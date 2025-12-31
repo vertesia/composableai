@@ -520,10 +520,10 @@ export interface InteractionExecutionPayload {
     prompts?: InCodePrompt[];
 
     /**
-     * Options for streaming LLM response chunks directly to Redis.
-     * Used by agent workflows to stream responses in real-time to clients.
+     * Options for async completion and/or streaming LLM response chunks to Redis.
+     * Used by agent workflows for async activity completion and real-time streaming.
      */
-    streaming?: StreamingOptions;
+    asyncCompletion?: AsyncCompletionOptions;
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
@@ -792,18 +792,39 @@ export interface StreamingTelemetryContext {
 }
 
 /**
- * Options for streaming LLM responses directly to Redis
+ * Options for storing inference results to cloud storage
+ */
+export interface ResultStorageOptions {
+    /** Full storage path for the result (e.g., "pages/doc123/page-1.md") */
+    path: string;
+    // Note: content_type is inferred from execution context:
+    // - If result_schema → application/json
+    // - Otherwise → text/markdown or text/plain
+}
+
+/**
+ * Streaming-specific options (only needed when stream=true)
  */
 export interface StreamingOptions {
     /** Redis channel to publish streaming chunks to */
     redis_channel: string;
-    /** Workflow run ID for message context */
-    run_id: string;
     /** Optional workstream ID for multi-workstream agents */
     workstream_id?: string;
+}
+
+/**
+ * Options for async completion and/or streaming LLM responses
+ */
+export interface AsyncCompletionOptions {
+    /** Workflow run ID for message context */
+    run_id: string;
+    /** Whether to stream chunks to Redis */
+    stream?: boolean;
+    /** Streaming-specific options (required if stream=true) */
+    streaming?: StreamingOptions;
     /**
      * Temporal task token for async activity completion (base64url encoded).
-     * When provided, Studio will complete the activity after streaming finishes,
+     * When provided, Studio will complete the activity after execution finishes,
      * allowing the worker to release the activity slot immediately.
      */
     task_token?: string;
@@ -830,6 +851,12 @@ export interface StreamingOptions {
      * exits before the response is available in async completion mode.
      */
     telemetry?: StreamingTelemetryContext;
+    /**
+     * Storage options for inference result.
+     * When provided, Studio will store the result to the specified path
+     * after inference completes (before completing the Temporal activity).
+     */
+    result_storage?: ResultStorageOptions;
 }
 
 interface ResumeConversationPayload {
@@ -840,8 +867,8 @@ interface ResumeConversationPayload {
     tools: ToolDefinition[]; // the tools to be used
     /** Configuration for stripping large data from conversation history */
     strip_options?: ConversationStripOptions;
-    /** Options for streaming LLM response chunks to Redis */
-    streaming?: StreamingOptions;
+    /** Options for async completion and/or streaming LLM response chunks to Redis */
+    asyncCompletion?: AsyncCompletionOptions;
 }
 
 
