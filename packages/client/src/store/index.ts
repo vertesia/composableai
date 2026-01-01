@@ -1,5 +1,6 @@
 export * from "./client.js";
 export * from "./CommandsApi.js";
+export * from "./EmailApi.js";
 export * from "./FilesApi.js";
 export * from "./ObjectsApi.js";
 export * from "./SchedulesApi.js";

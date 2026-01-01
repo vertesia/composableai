@@ -638,50 +638,19 @@ export interface AgentRunnerOptions {
 }
 
 // ================= User Communication Channels ====================
-
-/**
- * Email channel configuration with threading support.
- * Used for email-based agent communication.
- */
-export interface EmailChannel {
-    type: "email";
-    /** Email address to send agent messages to */
-    to_email: string;
-    /** Subject for the email thread (without "Re:" prefix) */
-    thread_subject?: string;
-    /** Message ID for In-Reply-To header (most recent message) */
-    in_reply_to?: string;
-    /** Chain of message IDs for References header */
-    references?: string[];
-}
-
-/**
- * Interactive (UI chat) channel configuration.
- * Used for real-time chat interface communication.
- */
-export interface InteractiveChannel {
-    type: "interactive";
-}
-
-/**
- * Union of all supported user communication channel types.
- */
-export type UserChannel = EmailChannel | InteractiveChannel;
-
-/**
- * Type guard for email channels
- */
-export function isEmailChannel(channel: UserChannel): channel is EmailChannel {
-    return channel.type === "email";
-}
-
-/**
- * Type guard for interactive channels
- */
-export function isInteractiveChannel(channel: UserChannel): channel is InteractiveChannel {
-    return channel.type === "interactive";
-}
-
+// Import for local use
+import type { UserChannel } from "./email.js";
+// Re-exported from email.ts for backwards compatibility
+export type {
+    EmailChannel,
+    InteractiveChannel,
+    UserChannel,
+    EmailRouteData,
+} from "./email.js";
+export {
+    isEmailChannel,
+    isInteractiveChannel,
+} from "./email.js";
 // ================= end user communication channels ====================
 
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {

@@ -34,6 +34,10 @@ export interface ResendConfiguration extends IntegrationConfigurationBase {
     api_key: string;
     /** Domain for inbound email routing (e.g., inbound.vertesia.io) */
     inbound_domain: string;
+    /** Domain for outgoing emails (e.g., vertesia.io). From address will be: {project}+{interaction}@{from_domain} */
+    from_domain: string;
+    /** Default display name for outgoing emails (e.g., "Vertesia - Project Name") */
+    default_from_name?: string;
     /** Webhook secret for validating inbound email webhooks (required for receiving emails) */
     webhook_secret: string;
     /** Domains allowed to send emails TO start agents (for inbound validation) */
