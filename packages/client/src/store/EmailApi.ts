@@ -4,7 +4,7 @@ import { EmailRouteData } from "@vertesia/common";
 /**
  * Request payload for sending an email via the agent.
  * Resend configuration is fetched from project settings.
- * From address is constructed as: {project_namespace}+{agent_name}@{from_domain}
+ * From address is constructed as: {project_namespace}+{agent_name}@{email_domain}
  */
 export interface SendEmailRequest {
     /** Email address to send to */
@@ -48,10 +48,10 @@ export interface SendEmailResponse {
 export interface CreateRouteResponse {
     /** The generated route key (8-char alphanumeric) */
     route_key: string;
-    /** Full reply-to address: r+{route_key}@{inbound_domain} */
+    /** Full reply-to address: r+{route_key}@{email_domain} */
     reply_to: string;
-    /** The inbound domain for receiving replies */
-    inbound_domain: string;
+    /** The email domain for sending and receiving */
+    email_domain: string;
 }
 
 /**
