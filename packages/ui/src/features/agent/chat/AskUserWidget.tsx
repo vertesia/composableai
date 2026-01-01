@@ -1,7 +1,6 @@
 import React from "react";
-import { Button } from "@vertesia/ui/core";
+import { Button, VTooltip } from "@vertesia/ui/core";
 import { MessageSquare, CheckCircle, XCircle, AlertCircle, HelpCircle, Send } from "lucide-react";
-import { VTooltip } from "@vertesia/ui/core/components/shadcn/tooltip";
 
 /** Option for user to select */
 export interface AskUserOption {
