@@ -187,7 +187,7 @@ export class EmailApi extends ApiTopic {
      *     },
      *     context: {
      *         // Your service-specific data passed to the workflow
-     *         nagare_auth_token: generateServiceToken(),
+     *         service_auth_token: generateServiceToken(),
      *         user_id: resolvedUser.id,
      *         organization_id: resolvedUser.orgId,
      *     },
