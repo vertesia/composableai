@@ -173,7 +173,11 @@ export class EmailApi extends ApiTopic {
      *
      * Use this when your service receives an email reply and needs to forward
      * it to the Vertesia workflow. You can add custom context data (like auth
-     * tokens or user IDs) that will be passed to the workflow.
+     * tokens or user IDs) that will be merged into `payload.vars.data`.
+     *
+     * **Important**: Use camelCase keys in context to match the agent start
+     * pattern. This ensures tools work identically whether the agent was
+     * started directly or received an email reply.
      *
      * @example
      * ```ts
@@ -186,10 +190,11 @@ export class EmailApi extends ApiTopic {
      *         message_id: inboundEmail.messageId,
      *     },
      *     context: {
-     *         // Your service-specific data passed to the workflow
-     *         service_auth_token: generateServiceToken(),
-     *         user_id: resolvedUser.id,
-     *         organization_id: resolvedUser.orgId,
+     *         // Use camelCase - merged into payload.vars.data
+     *         apiKey: generateServiceToken(),
+     *         tenantId: resolvedUser.tenantId,
+     *         userId: resolvedUser.id,
+     *         userEmail: resolvedUser.email,
      *     },
      *     attachments: inboundEmail.attachments?.map(att => ({
      *         filename: att.filename,
