@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@vertesia/ui/core";
-import { MessageSquare, CheckCircle, XCircle, AlertCircle, HelpCircle } from "lucide-react";
+import { MessageSquare, CheckCircle, XCircle, AlertCircle, HelpCircle, Send } from "lucide-react";
+import { VTooltip } from "@vertesia/ui/core/components/shadcn/tooltip";
 
 /** Option for user to select */
 export interface AskUserOption {
@@ -18,12 +19,16 @@ export interface AskUserWidgetProps {
     description?: string;
     /** Options for the user to choose from */
     options?: AskUserOption[];
-    /** Called when user selects an option */
+    /** Called when user selects an option (single select mode) */
     onSelect?: (optionId: string) => void;
+    /** Called when user submits selected options (multi select mode) */
+    onMultiSelect?: (optionIds: string[]) => void;
     /** Called when user submits a free-form response */
     onSubmit?: (response: string) => void;
     /** Whether to show a text input for free-form response */
     allowFreeResponse?: boolean;
+    /** Whether to allow multiple selections with checkboxes */
+    multiSelect?: boolean;
     /** Placeholder for free-form input */
     placeholder?: string;
     /** Whether the widget is in a loading/processing state */
@@ -103,8 +108,10 @@ export function AskUserWidget({
     description,
     options,
     onSelect,
+    onMultiSelect,
     onSubmit,
     allowFreeResponse = false,
+    multiSelect = false,
     placeholder = "Type your response...",
     isLoading = false,
     icon,
@@ -125,10 +132,30 @@ export function AskUserWidget({
     submitButtonClassName,
 }: AskUserWidgetProps) {
     const [inputValue, setInputValue] = React.useState("");
+    const [selectedOptions, setSelectedOptions] = React.useState<Set<string>>(new Set());
     const inputRef = React.useRef<HTMLInputElement>(null);
 
     const styles = VARIANT_STYLES[variant];
     const DefaultIcon = VARIANT_ICONS[variant];
+
+    const toggleOption = (optionId: string) => {
+        setSelectedOptions((prev) => {
+            const next = new Set(prev);
+            if (next.has(optionId)) {
+                next.delete(optionId);
+            } else {
+                next.add(optionId);
+            }
+            return next;
+        });
+    };
+
+    const handleMultiSubmit = () => {
+        if (selectedOptions.size > 0 && onMultiSelect) {
+            onMultiSelect(Array.from(selectedOptions));
+            setSelectedOptions(new Set());
+        }
+    };
 
     const handleSubmit = () => {
         if (inputValue.trim() && onSubmit) {
@@ -175,22 +202,80 @@ export function AskUserWidget({
                 {/* Options */}
                 {options && options.length > 0 && (
                     <div className={`px-4 pb-3 pt-1 ${optionsClassName || ""}`}>
-                        <div className="flex flex-wrap gap-2">
-                            {options.map((option) => (
-                                <Button
-                                    key={option.id}
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => onSelect?.(option.id)}
-                                    disabled={isLoading}
-                                    className={`flex items-center gap-2 ${buttonClassName || ""}`}
-                                    title={option.description}
-                                >
-                                    {option.icon}
-                                    {option.label}
-                                </Button>
-                            ))}
-                        </div>
+                        {multiSelect ? (
+                            /* Multi-select mode with checkboxes */
+                            <div className="space-y-2">
+                                {options.map((option) => {
+                                    const checkbox = (
+                                        <label
+                                            className={`flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors
+                                                ${selectedOptions.has(option.id)
+                                                    ? "bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700"
+                                                    : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                                }
+                                                ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedOptions.has(option.id)}
+                                                onChange={() => toggleOption(option.id)}
+                                                disabled={isLoading}
+                                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                                            />
+                                            <span className="flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100">
+                                                {option.icon}
+                                                {option.label}
+                                            </span>
+                                        </label>
+                                    );
+
+                                    return option.description ? (
+                                        <VTooltip key={option.id} description={option.description} placement="right" asChild>
+                                            {checkbox}
+                                        </VTooltip>
+                                    ) : (
+                                        <React.Fragment key={option.id}>{checkbox}</React.Fragment>
+                                    );
+                                })}
+                                <div className="pt-2">
+                                    <Button
+                                        size="sm"
+                                        onClick={handleMultiSubmit}
+                                        disabled={isLoading || selectedOptions.size === 0}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Send className="size-4" />
+                                        Submit Selection{selectedOptions.size > 0 ? ` (${selectedOptions.size})` : ""}
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Single-select mode with buttons */
+                            <div className="flex flex-wrap gap-2">
+                                {options.map((option) => {
+                                    const button = (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => onSelect?.(option.id)}
+                                            disabled={isLoading}
+                                            className={`flex items-center gap-2 ${buttonClassName || ""}`}
+                                        >
+                                            {option.icon}
+                                            {option.label}
+                                        </Button>
+                                    );
+
+                                    return option.description ? (
+                                        <VTooltip key={option.id} description={option.description} placement="top" asChild>
+                                            {button}
+                                        </VTooltip>
+                                    ) : (
+                                        <React.Fragment key={option.id}>{button}</React.Fragment>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 )}
 
