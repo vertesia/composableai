@@ -733,6 +733,18 @@ export interface WorkflowAnalyticsFilterOptionsResponse {
 // ============================================================================
 
 /**
+ * Summary of prompt size metrics across all agents
+ */
+export interface PromptSizeSummary {
+    /** Average prompt/input tokens for start calls across all agents */
+    avgPromptTokens: number;
+    /** 95th percentile of prompt/input tokens */
+    p95PromptTokens: number;
+    /** Total number of start calls */
+    totalStartCalls: number;
+}
+
+/**
  * Prompt size metrics for a single agent
  */
 export interface PromptSizeByAgent {
@@ -750,6 +762,8 @@ export interface PromptSizeByAgent {
  * Response for prompt size analytics by agent
  */
 export interface PromptSizeAnalyticsResponse {
+    /** Summary metrics across all agents */
+    summary: PromptSizeSummary;
     /** Prompt size metrics by agent */
     byAgent: PromptSizeByAgent[];
 }
