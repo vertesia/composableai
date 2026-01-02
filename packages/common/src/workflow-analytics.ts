@@ -312,6 +312,8 @@ export interface WorkflowAnalyticsQueryBase {
 export interface WorkflowAnalyticsTimeSeriesQuery extends WorkflowAnalyticsQueryBase {
     /** Time bucket resolution */
     resolution?: WorkflowAnalyticsResolution;
+    /** Resolution step size (e.g., 2 means 2-hour buckets when resolution is 'hour'). Defaults to 1. */
+    resolutionStep?: number;
     /** Optional grouping dimension */
     groupBy?: WorkflowAnalyticsGroupBy;
 }
@@ -372,8 +374,10 @@ export interface TokenUsageByDimension {
  * Token usage time series data point
  */
 export interface TokenUsageTimeSeriesPoint {
-    /** Timestamp bucket (ISO 8601) */
+    /** Timestamp bucket start (ISO 8601) */
     timestamp: string;
+    /** Timestamp bucket end (ISO 8601) */
+    timestampEnd: string;
     /** Token usage metrics for this bucket */
     usage: TokenUsageMetrics;
     /** Number of LLM calls in this bucket */
@@ -422,8 +426,10 @@ export interface LatencyByDimension {
  * Latency time series data point
  */
 export interface LatencyTimeSeriesPoint {
-    /** Timestamp bucket (ISO 8601) */
+    /** Timestamp bucket start (ISO 8601) */
     timestamp: string;
+    /** Timestamp bucket end (ISO 8601) */
+    timestampEnd: string;
     /** Duration statistics for this bucket */
     duration: DurationStats;
     /** Number of executions in this bucket */
@@ -486,8 +492,10 @@ export interface ErrorByDimension {
  * Error time series data point
  */
 export interface ErrorTimeSeriesPoint {
-    /** Timestamp bucket (ISO 8601) */
+    /** Timestamp bucket start (ISO 8601) */
     timestamp: string;
+    /** Timestamp bucket end (ISO 8601) */
+    timestampEnd: string;
     /** Error metrics for this bucket */
     metrics: ErrorMetrics;
     /** Optional group value if groupBy was specified */
@@ -831,8 +839,10 @@ export interface TimeToFirstResponseMetrics {
  * Time to first response time series data point
  */
 export interface TimeToFirstResponseTimeSeriesPoint {
-    /** Timestamp bucket (ISO 8601) */
+    /** Timestamp bucket start (ISO 8601) */
     timestamp: string;
+    /** Timestamp bucket end (ISO 8601) */
+    timestampEnd: string;
     /** Average time to first response in this bucket (ms) */
     avgMs: number;
     /** Number of runs in this bucket */
@@ -878,8 +888,10 @@ export interface FirstResponseBehaviorMetrics {
  * First response behavior time series data point
  */
 export interface FirstResponseBehaviorTimeSeriesPoint {
-    /** Timestamp bucket (ISO 8601) */
+    /** Timestamp bucket start (ISO 8601) */
     timestamp: string;
+    /** Timestamp bucket end (ISO 8601) */
+    timestampEnd: string;
     /** Total runs in this bucket */
     totalRuns: number;
     /** Runs with plan tool in this bucket */
