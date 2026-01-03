@@ -5,6 +5,7 @@ export * from './apps.js';
 export * from './channels.js';
 export * from './common.js';
 export * from './environment.js';
+export * from './events.js';
 export * from "./facets.js";
 export * from './group.js';
 export * from './integrations.js';
