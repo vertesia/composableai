@@ -381,7 +381,7 @@ function MessageItemComponent({
             {/* Message content */}
             <div className={`px-4 py-3 bg-white dark:bg-gray-900 ${contentClassName || ""}`}>
                 {messageContent && (
-                    <div className="message-content">
+                    <div className="message-content break-words max-w-full" style={{ overflowWrap: 'anywhere' }}>
                         {renderContent(processedContent || messageContent)}
                     </div>
                 )}
