@@ -951,7 +951,7 @@ function ModernAgentConversationInner({
     return (
         <ArtifactUrlCacheProvider>
         <div
-            className={`flex gap-2 h-full relative ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
+            className={`flex gap-2 h-full relative overflow-hidden ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -977,28 +977,31 @@ function ModernAgentConversationInner({
                         : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
             }`}
             >
-                <Header
-                    title={actualTitle}
-                    isCompleted={isCompleted}
-                    onClose={onClose}
-                    isModal={isModal}
-                    run={run}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                    showPlanPanel={showSlidingPanel}
-                    hasPlan={plans.length > 0}
-                    onTogglePlanPanel={() => {
-                        setShowSlidingPanel(!showSlidingPanel);
-                        // When opening the plan panel, mark that we've shown it
-                        if (!showSlidingPanel) {
-                            sessionStorage.setItem("plan-panel-shown", "true");
-                        }
-                    }}
-                    onDownload={downloadConversation}
-                    onCopyRunId={copyRunId}
-                    resetWorkflow={resetWorkflow}
-                    onExportPdf={exportConversationPdf}
-                />
+                {/* Header - flex-shrink-0 to prevent shrinking */}
+                <div className="flex-shrink-0">
+                    <Header
+                        title={actualTitle}
+                        isCompleted={isCompleted}
+                        onClose={onClose}
+                        isModal={isModal}
+                        run={run}
+                        viewMode={viewMode}
+                        onViewModeChange={setViewMode}
+                        showPlanPanel={showSlidingPanel}
+                        hasPlan={plans.length > 0}
+                        onTogglePlanPanel={() => {
+                            setShowSlidingPanel(!showSlidingPanel);
+                            // When opening the plan panel, mark that we've shown it
+                            if (!showSlidingPanel) {
+                                sessionStorage.setItem("plan-panel-shown", "true");
+                            }
+                        }}
+                        onDownload={downloadConversation}
+                        onCopyRunId={copyRunId}
+                        resetWorkflow={resetWorkflow}
+                        onExportPdf={exportConversationPdf}
+                    />
+                </div>
 
                 {messages.length === 0 && !isCompleted ? (
                     <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-6">
@@ -1046,42 +1049,45 @@ function ModernAgentConversationInner({
                 )}
 
                 {/* Show workflow status message when not running, or show input when running/unknown */}
-                {workflowStatus && workflowStatus !== "RUNNING" ? (
-                    <MessageBox
-                        status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
-                        icon={null}
-                        className="flex-shrink-0 m-2"
-                    >
-                        This Workflow is {workflowStatus}
-                    </MessageBox>
-                ) : showInput && (
-                    <MessageInput
-                        onSend={handleSendMessage}
-                        onStop={handleStopWorkflow}
-                        disabled={false}
-                        isSending={isSending}
-                        isStopping={isStopping}
-                        isStreaming={!isCompleted}
-                        isCompleted={isCompleted}
-                        activeTaskCount={getActiveTaskCount()}
-                        placeholder={placeholder}
-                        // File upload props
-                        onFilesSelected={onFilesSelected}
-                        uploadedFiles={uploadedFiles}
-                        onRemoveFile={onRemoveFile}
-                        acceptedFileTypes={acceptedFileTypes}
-                        maxFiles={maxFiles}
-                        // Document search props
-                        renderDocumentSearch={renderDocumentSearch}
-                        selectedDocuments={selectedDocuments}
-                        onRemoveDocument={onRemoveDocument}
-                        // Object linking
-                        hideObjectLinking={hideObjectLinking}
-                        // Styling props
-                        className={inputContainerClassName}
-                        inputClassName={inputClassName}
-                    />
-                )}
+                {/* Input area - flex-shrink-0 to stay pinned at bottom, with iOS safe area support */}
+                <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                    {workflowStatus && workflowStatus !== "RUNNING" ? (
+                        <MessageBox
+                            status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
+                            icon={null}
+                            className="m-2"
+                        >
+                            This Workflow is {workflowStatus}
+                        </MessageBox>
+                    ) : showInput && (
+                        <MessageInput
+                            onSend={handleSendMessage}
+                            onStop={handleStopWorkflow}
+                            disabled={false}
+                            isSending={isSending}
+                            isStopping={isStopping}
+                            isStreaming={!isCompleted}
+                            isCompleted={isCompleted}
+                            activeTaskCount={getActiveTaskCount()}
+                            placeholder={placeholder}
+                            // File upload props
+                            onFilesSelected={onFilesSelected}
+                            uploadedFiles={uploadedFiles}
+                            onRemoveFile={onRemoveFile}
+                            acceptedFileTypes={acceptedFileTypes}
+                            maxFiles={maxFiles}
+                            // Document search props
+                            renderDocumentSearch={renderDocumentSearch}
+                            selectedDocuments={selectedDocuments}
+                            onRemoveDocument={onRemoveDocument}
+                            // Object linking
+                            hideObjectLinking={hideObjectLinking}
+                            // Styling props
+                            className={inputContainerClassName}
+                            inputClassName={inputClassName}
+                        />
+                    )}
+                </div>
             </div>
 
             {/* Plan Panel Area - only rendered when panel should be shown */}
