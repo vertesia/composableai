@@ -46,6 +46,21 @@ export interface ResendConfiguration extends IntegrationConfigurationBase {
     require_email_auth?: boolean;
 }
 
+/**
+ * Configuration for ask_user webhook notifications.
+ * Sends webhooks when agents call ask_user and when users respond.
+ */
+export interface AskUserWebhookConfiguration extends IntegrationConfigurationBase {
+    /** Webhook URL to receive ask_user events */
+    webhook_url: string;
+    /** Secret for signing webhook payloads (HMAC-SHA256) */
+    webhook_secret?: string;
+    /** Which events to send: ['requested', 'resolved'] or subset (default: both) */
+    events?: ('requested' | 'resolved')[];
+    /** Custom headers to include in webhook requests */
+    custom_headers?: Record<string, string>;
+}
+
 export enum SupportedIntegrations {
     gladia = "gladia",
     github = "github",
@@ -53,4 +68,5 @@ export enum SupportedIntegrations {
     magic_pdf = "magic_pdf",
     serper = "serper",
     resend = "resend",
+    ask_user_webhook = "ask_user_webhook",
 }
