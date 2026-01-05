@@ -8,3 +8,4 @@ export type { GroupsQueryOptions } from './GroupsApi.js';
 export * from "./store/index.js";
 export * from "./StreamSource.js";
 export type { OrphanedAppInstallation } from "./AppsApi.js";
+export type { OAuthAuthStatus, OAuthAuthorizeResponse } from "./MCPOAuthApi.js";

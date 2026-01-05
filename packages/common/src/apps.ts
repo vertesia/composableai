@@ -8,11 +8,81 @@ export interface AppUIConfig {
      */
     src: string;
     /**
-     * The isolation strategy. If not specified it defaults to shadow 
+     * The isolation strategy. If not specified it defaults to shadow
      * - shadow - use Shadow DOM to fully isolate the plugin from the host.
      * - css - use CSS processing (like prefixing or other isolation techniques). Ligther but plugins may conflict with the host
      */
     isolation?: "shadow" | "css";
+}
+
+/**
+ * Authentication type for tool collections
+ */
+export type ToolCollectionAuthType = "oauth" | "other";
+
+/**
+ * Tool collection type
+ */
+export type ToolCollectionType = "mcp" | "vertesia_sdk";
+
+/**
+ * Tool collection configuration (object format)
+ */
+export interface ToolCollectionObject {
+    /**
+     * The URL endpoint for the tool collection
+     */
+    url: string;
+
+    /**
+     * The type of tool collection (MCP or Vertesia SDK)
+     */
+    type: ToolCollectionType;
+
+    /**
+     * Optional authentication type required for this tool collection
+     */
+    auth?: ToolCollectionAuthType;
+
+    /**
+     * Optional prefix to use for tool names from this collection.
+     * If not provided, the URL will be used as the prefix.
+     * This is useful for MCP servers to provide clean, readable tool names
+     * (e.g., "jira" instead of "https://mcp.atlassian.com/v1/mcp")
+     */
+    prefix?: string;
+}
+
+/**
+ * Tool collection can be either:
+ * - A string URL (legacy format, with "mcp:" prefix for MCP servers)
+ * - An object with url, type, and optional auth (new format)
+ */
+export type ToolCollection = string | ToolCollectionObject;
+
+/**
+ * Normalizes a tool collection to the object format.
+ * Handles backward compatibility with string URLs.
+ *
+ * @param collection - String URL or ToolCollectionObject
+ * @returns Normalized ToolCollectionObject
+ */
+export function normalizeToolCollection(collection: ToolCollection): ToolCollectionObject {
+    if (typeof collection === 'string') {
+        // Legacy string format
+        if (collection.startsWith('mcp:')) {
+            return {
+                url: collection.substring('mcp:'.length),
+                type: 'mcp'
+            };
+        }
+        return {
+            url: collection,
+            type: 'vertesia_sdk'
+        };
+    }
+    // Already in object format
+    return collection;
 }
 
 export interface AppManifestData {
@@ -54,7 +124,7 @@ export interface AppManifestData {
      * A tools collection endpoint is an URL which may end with a `?import` query string.
      * If the `?import` query string is used the tool will be imported as a javascript module and not executed through a POST on the collections endpoint.
      */
-    tool_collections?: string[]
+    tool_collections?: ToolCollection[]
 
     /**
      * An URL providing interactions definitions in JSON format.

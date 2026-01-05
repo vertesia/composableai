@@ -24,7 +24,15 @@ const exampleManifest: AppManifestData = {
         isolation: "shadow"
     },
     tool_collections: [
-        "https://example.com/tools"
+        {
+            url: "https://example.com/tools",
+            type: "vertesia_sdk"
+        },
+        {
+            url: "https://example.com/mcp-server",
+            type: "mcp",
+            auth: "oauth"
+        }
     ],
     settings_schema: {
         type: "object",

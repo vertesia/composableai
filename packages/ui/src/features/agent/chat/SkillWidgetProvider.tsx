@@ -1,4 +1,5 @@
 import { VertesiaClient } from "@vertesia/client";
+import { normalizeToolCollection } from "@vertesia/common";
 import { useUserSession } from "@vertesia/ui/session";
 import { CodeBlockRendererProps, CodeBlockRendererProvider } from "@vertesia/ui/widgets";
 import { useEffect, useMemo, useState } from "react";
@@ -37,7 +38,9 @@ async function fetchSkillWidgets(client: VertesiaClient): Promise<Record<string,
     const installedApps = await client.apps.getInstalledApps("tools");
     const urls = new Set<string>();
     for (const app of installedApps) {
-        for (const collUrl of app.manifest.tool_collections || []) {
+        for (const item of app.manifest.tool_collections || []) {
+            const collection = normalizeToolCollection(item);
+            const collUrl = collection.url;
             if (collUrl.startsWith("http://") || collUrl.startsWith("https://")) {
                 const i = collUrl.indexOf("/api/");
                 if (i > 0) {
