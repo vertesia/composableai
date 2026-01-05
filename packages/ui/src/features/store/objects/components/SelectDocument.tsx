@@ -57,6 +57,13 @@ function SelectDocumentImpl({ onRowClick }: Readonly<SelectDocumentImplProps>) {
         }
     }, { threshold: 0.1, deps: [isReady, hasMore, isLoading] });
 
+    useEffect(() => {
+        search.search()
+            .finally(() => {
+                setIsReady(true);
+            });
+    }, []);
+
     const facets = useWatchDocumentSearchFacets();
     const facetSearch = useDocumentSearch();
 
@@ -68,13 +75,6 @@ function SelectDocumentImpl({ onRowClick }: Readonly<SelectDocumentImplProps>) {
     if (error) {
         return <ErrorBox title="Search failed">{error.message}</ErrorBox>
     }
-
-    useEffect(() => {
-        search.search()
-            .finally(() => {
-                setIsReady(true);
-            });
-    }, []);
 
     return (
         <div className="flex flex-col gap-2 h-full w-full">
