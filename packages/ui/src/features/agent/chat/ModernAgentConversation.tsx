@@ -104,6 +104,12 @@ interface ModernAgentConversationProps {
     // Hide the default object linking (for apps that don't use it)
     hideObjectLinking?: boolean;
 
+    // Callback to get attached document IDs when sending messages
+    // Returns array of document IDs to include in message metadata
+    getAttachedDocs?: () => string[];
+    // Called after attachments are sent to allow clearing them
+    onAttachmentsSent?: () => void;
+
     // Styling props for Tailwind customization - passed through to MessageInput
     /** Additional className for the MessageInput container */
     inputContainerClassName?: string;
@@ -412,6 +418,9 @@ function ModernAgentConversationInner({
     onRemoveDocument,
     // Object linking
     hideObjectLinking,
+    // Attachment callback
+    getAttachedDocs,
+    onAttachmentsSent,
     // Styling props
     inputContainerClassName,
     inputClassName,
@@ -831,12 +840,25 @@ function ModernAgentConversationInner({
             return newMessages;
         });
 
+        // Get attached document IDs if callback provided
+        const attachedDocs = getAttachedDocs?.() || [];
+
+        // Build message content with attachment references if present
+        let messageContent = trimmed;
+        if (attachedDocs.length > 0 && !/store:\S+/.test(trimmed)) {
+            const lines = attachedDocs.map((id) => `store:${id}`);
+            messageContent = [trimmed, '', 'Attachments:', ...lines].join('\n');
+        }
+
         client.store.workflows
             .sendSignal(run.workflowId, run.runId, "UserInput", {
-                message: trimmed,
+                message: messageContent,
+                metadata: attachedDocs.length > 0 ? { attached_docs: attachedDocs } : undefined,
             } as UserInputSignal)
             .then(() => {
                 setIsCompleted(false);
+                // Clear attachments after successful send
+                onAttachmentsSent?.();
             })
             .catch((err) => {
                 // Remove optimistic message on failure
