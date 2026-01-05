@@ -90,13 +90,8 @@ export function ScalarField({ object, editor, inline = false }: ScalarFieldProps
 
     const handleOnChange = (event: any) => {
         if (disabled) return;
-        if (object.schema.isBoolean) {
-            object.value = event.target.checked;
-        } else if (object.schema.isNumber) {
-            object.value = parseFloat(event.target.value);
-        } else {
-            object.value = event.target.value;
-        }
+        const { value } = event.target;
+        object.value = object.schema.isNumber ? parseFloat(value) : value
     }
 
     if (object.isListItem) {
