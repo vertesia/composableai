@@ -1,4 +1,4 @@
-import { Button, Input, Spinner, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core";
+import { Button, Spinner, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core";
 import { Activity, FileTextIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { SelectDocument } from "../../../store";
@@ -90,7 +90,7 @@ export default function MessageInput({
     className,
     inputClassName,
 }: MessageInputProps) {
-    const ref = useRef<HTMLInputElement | null>(null);
+    const ref = useRef<HTMLTextAreaElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [value, setValue] = useState("");
     const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
@@ -209,7 +209,7 @@ export default function MessageInput({
         }
     };
 
-    const keyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const keyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             // If streaming, stop first then send
@@ -218,7 +218,21 @@ export default function MessageInput({
             }
             handleSend();
         }
+        // Shift+Enter allows newline (default textarea behavior)
     };
+
+    // Auto-resize textarea as content grows
+    const adjustTextareaHeight = useCallback(() => {
+        const textarea = ref.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+        }
+    }, []);
+
+    useEffect(() => {
+        adjustTextareaHeight();
+    }, [value, adjustTextareaHeight]);
 
     const handleObjectSelect = (object: any) => {
         // Create a markdown link with the object title and ID
@@ -253,7 +267,7 @@ export default function MessageInput({
     return (
         <div
             className={`relative p-3 border-t border-muted flex-shrink-0 transition-all ${isDragOver ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' : ''} ${className || ''}`}
-            style={{ minHeight: "90px" }}
+            style={{ minHeight: "120px" }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -353,17 +367,19 @@ export default function MessageInput({
             )}
 
             {/* Input row */}
-            <div className="flex items-center space-x-2">
-                <div className="flex flex-1 space-x-1">
-                    <Input
+            <div className="flex items-end space-x-2">
+                <div className="flex flex-1 items-end space-x-1">
+                    <textarea
                         ref={ref}
                         value={value}
                         onKeyDown={keyDown}
-                        onChange={setValue}
+                        onChange={(e) => setValue(e.target.value)}
                         onPaste={handlePaste}
                         disabled={disabled}
                         placeholder={isStreaming ? "Agent is working... (click stop to interrupt)" : (onFilesSelected ? "Ask anything... (drop or paste files)" : placeholder)}
-                        className={`pr-12 py-2.5 ${inputClassName || ''}`}
+                        className={`flex-1 w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden ${inputClassName || ''}`}
+                        rows={2}
+                        style={{ minHeight: '60px', maxHeight: '200px' }}
                     />
                     {!hideObjectLinking && (
                         <Button
@@ -407,7 +423,7 @@ export default function MessageInput({
                     ? "Agent is working... Click Stop to interrupt and give new instructions"
                     : disabled
                         ? "Agent is processing, you can continue once it completes..."
-                        : "You can send a message at any time"}
+                        : "Enter to send • Shift+Enter for new line"}
             </div>
 
             {/* Object Selection Modal (default) */}
