@@ -1,8 +1,8 @@
-import { readdirSync, statSync, existsSync, readFileSync } from "fs";
-import { join } from "path";
 import { ToolDefinition } from "@llumiverse/common";
+import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { join } from "path";
 import type {
     CollectionProperties,
     ICollection,
@@ -231,6 +231,7 @@ interface SkillFrontmatter {
     packages?: string[];
     system_packages?: string[];
     widgets?: string[];
+    scripts?: string[];
 }
 
 /**
@@ -281,6 +282,7 @@ export function parseSkillFile(
         instructions,
         content_type: contentType,
         widgets: frontmatter.widgets || undefined,
+        scripts: frontmatter.scripts || undefined,
     };
 
     // Build context triggers

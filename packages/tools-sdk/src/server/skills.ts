@@ -4,6 +4,7 @@ import { Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { SkillCollection } from "../SkillCollection.js";
 import { SkillDefinition, ToolCollectionDefinition, ToolDefinition } from "../types.js";
+import { makeScriptUrl } from "../utils.js";
 import { ToolServerConfig } from "./types.js";
 
 export function createSkillsRoute(app: Hono, basePath: string, config: ToolServerConfig) {
@@ -64,9 +65,10 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
                 message: `Skill not found: ${skillName}`
             });
         }
+        const url = new URL(c.req.url);
         return c.json({
             skill_name: skill.name,
-            scripts: skill.scripts || []
+            scripts: skill.scripts ? skill.scripts.map(s => makeScriptUrl(url.origin, s)) : []
         });
     });
 
