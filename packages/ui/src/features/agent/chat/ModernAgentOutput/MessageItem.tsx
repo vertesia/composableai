@@ -5,11 +5,63 @@ import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, Layers, MessageSquare, User } from "lucide-react";
-import React, { useEffect, useState, memo } from "react";
+import React, { useEffect, useState, useMemo, memo } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
+
+// PERFORMANCE: Move pure function outside component to avoid recreation on every render
+// Process content to enhance markdown detection for lists and thinking messages
+function processContentForMarkdown(content: string | object, messageType: AgentMessageType, originalMessage?: string): string | object {
+    // If content is not a string, return it as is
+    if (typeof content !== "string") {
+        return content;
+    }
+
+    // Special handling for thought messages to ensure proper markdown formatting
+    if (
+        messageType === AgentMessageType.THOUGHT ||
+        (typeof originalMessage === "string" &&
+            (originalMessage.toLowerCase().includes("thinking about") ||
+                originalMessage.toLowerCase().includes("i'm thinking") ||
+                originalMessage.toLowerCase().includes("💭")))
+    ) {
+        let formattedContent = content;
+
+        // Check for numbering patterns like "1. First item 2. Second item"
+        if (/\d+\.\s+.+/.test(formattedContent)) {
+            // Format numbered lists by adding newlines between items
+            formattedContent = formattedContent.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, "$1\n\n");
+
+            // Make sure nested content under numbered items is properly indented
+            formattedContent = formattedContent.replace(/(\d+\.\s+.+\n)([^\d\n][^:])/g, "$1  $2");
+        }
+
+        // Handle colon-prefixed items that should be on separate lines
+        if (formattedContent.includes(":") && !formattedContent.includes("\n\n")) {
+            formattedContent = formattedContent.replace(
+                /\b(First|Next|Then|Finally|Lastly|Additionally|Step \d+):\s+/gi,
+                "\n\n$&",
+            );
+        }
+
+        // Handle thinking points or list-like structures even without numbers
+        if (formattedContent.includes(" - ")) {
+            formattedContent = formattedContent.replace(/\s+-\s+/g, "\n- ");
+        }
+
+        return formattedContent;
+    }
+
+    // Normal processing for non-thinking messages
+    if (/\d+\.\s+.+/.test(content) && !content.includes("\n\n")) {
+        // Add proper line breaks for numbered lists that aren't already properly formatted
+        return content.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, "$1\n\n");
+    }
+
+    return content;
+}
 
 export interface MessageItemProps {
     message: AgentMessage;
@@ -76,7 +128,6 @@ function MessageItemComponent({
     artifactsClassName,
 }: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
-    const [processedContent, setProcessedContent] = useState<string | object>("");
     const { client } = useUserSession();
     const toast = useToast();
     const urlCache = useArtifactUrlCache();
@@ -84,15 +135,14 @@ function MessageItemComponent({
     // Get styles from consolidated config
     const styles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
 
-    // Get the message content to display with thinking message replacement
-    const getMessageContent = () => {
+    // PERFORMANCE: Memoize message content extraction - only recalculates when message changes
+    const messageContent = useMemo(() => {
         let content = "";
 
         if (message.message) {
             // Check if message.message is an object
             if (typeof message.message === "object") {
                 // Use JSONView for objects - we'll need to stringify it for now
-                // as we don't have direct access to JSONView
                 content = JSON.stringify(message.message, null, 2);
             } else if (message.message.trim) {
                 content = message.message.trim();
@@ -110,11 +160,21 @@ function MessageItemComponent({
         }
 
         return content;
-    };
+    }, [message.message]);
+
+    // PERFORMANCE: Memoize processed content - expensive regex operations only run when messageContent changes
+    const processedContent = useMemo(() => {
+        if (!messageContent) return "";
+        return processContentForMarkdown(
+            messageContent,
+            message.type,
+            typeof message.message === "string" ? message.message : undefined
+        );
+    }, [messageContent, message.type, message.message]);
 
     // Copy message content to clipboard
     const copyToClipboard = () => {
-        const messageContent = getMessageContent() || "";
+        const content = messageContent || "";
         const detailsContent =
             typeof message.details === "string"
                 ? message.details
@@ -122,7 +182,7 @@ function MessageItemComponent({
                     ? JSON.stringify(message.details, null, 2)
                     : "";
 
-        const textToCopy = [messageContent, detailsContent ? "\n\nDetails:\n" + detailsContent : ""].join("").trim();
+        const textToCopy = [content, detailsContent ? "\n\nDetails:\n" + detailsContent : ""].join("").trim();
 
         navigator.clipboard.writeText(textToCopy).then(() => {
             toast({
@@ -131,57 +191,6 @@ function MessageItemComponent({
                 duration: 2000,
             });
         });
-    };
-
-    // Process content to enhance markdown detection for lists and thinking messages
-    const processContentForMarkdown = (content: string | object) => {
-        // If content is not a string, return it as is
-        if (typeof content !== "string") {
-            return content;
-        }
-
-        // Special handling for thought messages to ensure proper markdown formatting
-        if (
-            message.type === AgentMessageType.THOUGHT ||
-            (typeof message.message === "string" &&
-                (message.message.toLowerCase().includes("thinking about") ||
-                    message.message.toLowerCase().includes("i'm thinking") ||
-                    message.message.toLowerCase().includes("💭")))
-        ) {
-            let formattedContent = content;
-
-            // Check for numbering patterns like "1. First item 2. Second item"
-            if (/\d+\.\s+.+/.test(formattedContent)) {
-                // Format numbered lists by adding newlines between items
-                formattedContent = formattedContent.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, "$1\n\n");
-
-                // Make sure nested content under numbered items is properly indented
-                formattedContent = formattedContent.replace(/(\d+\.\s+.+\n)([^\d\n][^:])/g, "$1  $2");
-            }
-
-            // Handle colon-prefixed items that should be on separate lines
-            if (formattedContent.includes(":") && !formattedContent.includes("\n\n")) {
-                formattedContent = formattedContent.replace(
-                    /\b(First|Next|Then|Finally|Lastly|Additionally|Step \d+):\s+/gi,
-                    "\n\n$&",
-                );
-            }
-
-            // Handle thinking points or list-like structures even without numbers
-            if (formattedContent.includes(" - ")) {
-                formattedContent = formattedContent.replace(/\s+-\s+/g, "\n- ");
-            }
-
-            return formattedContent;
-        }
-
-        // Normal processing for non-thinking messages
-        if (/\d+\.\s+.+/.test(content) && !content.includes("\n\n")) {
-            // Add proper line breaks for numbered lists that aren't already properly formatted
-            return content.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, "$1\n\n");
-        }
-
-        return content;
     };
 
     // Render content with markdown support - all messages now rendered as markdown
@@ -242,8 +251,6 @@ function MessageItemComponent({
             </div>
         );
     };
-
-    const messageContent = getMessageContent();
 
     // Resolve artifacts from tool details (e.g. execute_shell.outputFiles)
     const [artifactLinks, setArtifactLinks] = useState<
@@ -321,14 +328,6 @@ function MessageItemComponent({
 
         loadArtifacts();
     }, [runId, outputFilesKey, client, urlCache]);
-
-    // Process content for markdown formatting when message changes
-    useEffect(() => {
-        if (messageContent) {
-            const processed = processContentForMarkdown(messageContent);
-            setProcessedContent(processed);
-        }
-    }, [messageContent]);
 
     const workstreamId = getWorkstreamId(message);
     const { Icon } = styles;

@@ -446,6 +446,18 @@ function ModernAgentConversationInner({
     // Include startTimestamp to preserve chronological order when converting to regular messages
     const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
 
+    // Performance optimization: Batch streaming updates using RAF
+    // Instead of updating state on every chunk (100+ times/sec), batch them per animation frame
+    const pendingStreamingChunks = useRef<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
+    const streamingFlushScheduled = useRef<number | null>(null);
+
+    const flushStreamingChunks = useCallback(() => {
+        if (pendingStreamingChunks.current.size > 0) {
+            setStreamingMessages(new Map(pendingStreamingChunks.current));
+        }
+        streamingFlushScheduled.current = null;
+    }, []);
+
     // Drag and drop state for full-panel file upload
     const [isDragOver, setIsDragOver] = useState(false);
     const dragCounterRef = useRef(0);
@@ -500,6 +512,24 @@ function ModernAgentConversationInner({
         };
     }, [plans, activePlanIndex, workstreamStatusMap]);
 
+    // PERFORMANCE: Stabilize callback props to prevent child re-renders
+    const handleTogglePlanPanel = useCallback(() => {
+        setShowSlidingPanel((prev) => {
+            if (!prev) {
+                sessionStorage.setItem("plan-panel-shown", "true");
+            }
+            return !prev;
+        });
+    }, []);
+
+    const handleChangePlan = useCallback((index: number) => {
+        setActivePlanIndex(index);
+    }, []);
+
+    const handleClosePlanPanel = useCallback(() => {
+        setShowSlidingPanel(false);
+    }, []);
+
     // Show rotating thinking messages
     useEffect(() => {
         if (!isCompleted) {
@@ -535,41 +565,52 @@ function ModernAgentConversationInner({
         checkWorkflowStatus();
         client.store.workflows.streamMessages(run.workflowId, run.runId, (message) => {
             // Handle streaming chunks separately for real-time aggregation
+            // PERFORMANCE: Batch updates using RAF instead of immediate state updates
             if (message.type === AgentMessageType.STREAMING_CHUNK) {
                 const details = message.details as StreamingChunkDetails;
                 if (!details?.streaming_id) return;
 
-                setStreamingMessages((prev) => {
-                    const updated = new Map(prev);
-                    const current = updated.get(details.streaming_id) || {
-                        text: '',
-                        workstreamId: message.workstream_id,
-                        startTimestamp: Date.now() // Track when this streaming message started
-                    };
-                    const newText = current.text + (message.message || '');
+                // Accumulate chunks in the ref (no state update yet)
+                const current = pendingStreamingChunks.current.get(details.streaming_id) || {
+                    text: '',
+                    workstreamId: message.workstream_id,
+                    startTimestamp: Date.now()
+                };
+                const newText = current.text + (message.message || '');
 
-                    // When streaming is done, mark as complete but keep displaying
-                    // The message will be converted to THOUGHT and removed when COMPLETE arrives
-                    updated.set(details.streaming_id, {
-                        text: newText,
-                        workstreamId: message.workstream_id,
-                        isComplete: details.is_final,
-                        startTimestamp: current.startTimestamp, // Preserve the original start timestamp
-                    });
-                    return updated;
+                pendingStreamingChunks.current.set(details.streaming_id, {
+                    text: newText,
+                    workstreamId: message.workstream_id,
+                    isComplete: details.is_final,
+                    startTimestamp: current.startTimestamp,
                 });
+
+                // Schedule a flush if not already scheduled (batches ~60 updates/sec max)
+                if (streamingFlushScheduled.current === null) {
+                    streamingFlushScheduled.current = requestAnimationFrame(flushStreamingChunks);
+                }
                 return;
             }
 
             // When ANSWER arrives, clear streaming messages (they contain the same content)
             // This prevents showing the message twice: once as streaming, once as final ANSWER
             if (message.type === AgentMessageType.ANSWER) {
+                pendingStreamingChunks.current.clear();
+                if (streamingFlushScheduled.current !== null) {
+                    cancelAnimationFrame(streamingFlushScheduled.current);
+                    streamingFlushScheduled.current = null;
+                }
                 setStreamingMessages(new Map());
             }
 
             // When COMPLETE arrives, clear any remaining streaming messages
             // (don't convert to THOUGHT since the content is already in the ANSWER message)
             if (message.type === AgentMessageType.COMPLETE) {
+                pendingStreamingChunks.current.clear();
+                if (streamingFlushScheduled.current !== null) {
+                    cancelAnimationFrame(streamingFlushScheduled.current);
+                    streamingFlushScheduled.current = null;
+                }
                 setStreamingMessages(new Map());
             }
 
@@ -600,9 +641,15 @@ function ModernAgentConversationInner({
         // Clear messages and unsubscribe when component unmounts or runId changes
         return () => {
             setMessages([]);
+            // Cancel any pending streaming flush
+            if (streamingFlushScheduled.current !== null) {
+                cancelAnimationFrame(streamingFlushScheduled.current);
+                streamingFlushScheduled.current = null;
+            }
+            pendingStreamingChunks.current.clear();
             // Client handles unsubscribing from the message stream internally
         };
-    }, [run.runId, client.store.workflows]);
+    }, [run.runId, client.store.workflows, flushStreamingChunks]);
 
 
     // Update completion status when messages change
@@ -989,13 +1036,7 @@ function ModernAgentConversationInner({
                         onViewModeChange={setViewMode}
                         showPlanPanel={showSlidingPanel}
                         hasPlan={plans.length > 0}
-                        onTogglePlanPanel={() => {
-                            setShowSlidingPanel(!showSlidingPanel);
-                            // When opening the plan panel, mark that we've shown it
-                            if (!showSlidingPanel) {
-                                sessionStorage.setItem("plan-panel-shown", "true");
-                            }
-                        }}
+                        onTogglePlanPanel={handleTogglePlanPanel}
                         onDownload={downloadConversation}
                         onCopyRunId={copyRunId}
                         resetWorkflow={resetWorkflow}
@@ -1026,16 +1067,10 @@ function ModernAgentConversationInner({
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
                         showPlanPanel={showSlidingPanel}
-                        onTogglePlanPanel={() => {
-                            console.log(
-                                "Toggle plan panel called, current state:",
-                                showSlidingPanel,
-                            );
-                            setShowSlidingPanel(!showSlidingPanel);
-                        }}
+                        onTogglePlanPanel={handleTogglePlanPanel}
                         plans={plans}
                         activePlanIndex={activePlanIndex}
-                        onChangePlan={(index) => setActivePlanIndex(index)}
+                        onChangePlan={handleChangePlan}
                         taskLabels={getActivePlan.plan.plan?.reduce((acc, task) => {
                             if (task.id && task.goal) {
                                 acc.set(task.id.toString(), task.goal);
@@ -1097,10 +1132,10 @@ function ModernAgentConversationInner({
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
                         isOpen={showSlidingPanel}
-                        onClose={() => setShowSlidingPanel(false)}
+                        onClose={handleClosePlanPanel}
                         plans={plans}
                         activePlanIndex={activePlanIndex}
-                        onChangePlan={setActivePlanIndex}
+                        onChangePlan={handleChangePlan}
                     />
                 </div>
             )}

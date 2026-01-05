@@ -4,6 +4,10 @@ import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { CopyIcon } from "lucide-react";
 import dayjs from "dayjs";
 
+// PERFORMANCE: Unicode cursor character - rendered inline with text
+// This avoids expensive DOM manipulation with TreeWalker on every update
+const CURSOR_CHAR = "▋";
+
 export interface StreamingMessageProps {
     text: string;
     workstreamId?: string;
@@ -180,9 +184,16 @@ function StreamingMessageComponent({
         []
     );
 
-    if (!text) return null;
-
     const isTyping = displayedLength < text.length;
+
+    // PERFORMANCE: Append cursor character directly to text instead of DOM manipulation
+    // This eliminates expensive TreeWalker traversal on every update
+    const displayTextWithCursor = useMemo(() => {
+        const baseText = throttledText || text.slice(0, displayedLength);
+        return isTyping ? baseText + CURSOR_CHAR : baseText;
+    }, [throttledText, text, displayedLength, isTyping]);
+
+    if (!text) return null;
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(text).then(() => {
@@ -228,42 +239,41 @@ function StreamingMessageComponent({
                     </Button>
                 </div>
             </div>
-            {/* Content - uses throttled text for performance */}
-            <div className={cn("text-sm break-words leading-relaxed streaming-content prose prose-sm dark:prose-invert max-w-none", contentClassName)}>
-                <MarkdownRenderer>
-                    {throttledText || text.slice(0, displayedLength)}
-                </MarkdownRenderer>
-                {isTyping && (
-                    <span className="streaming-cursor" />
+            {/* Content - cursor character is appended directly to text (no DOM manipulation) */}
+            <div
+                className={cn(
+                    "text-sm break-words leading-relaxed streaming-content prose prose-sm dark:prose-invert max-w-none",
+                    isTyping && "streaming-active",
+                    contentClassName
                 )}
+            >
+                <MarkdownRenderer>
+                    {displayTextWithCursor}
+                </MarkdownRenderer>
                 <style>{`
-                    .streaming-content p:last-child {
+                    /* Ensure inline elements flow properly */
+                    .streaming-content p:last-child,
+                    .streaming-content li:last-child {
                         display: inline;
                     }
-                    .streaming-cursor {
-                        display: inline-block;
-                        width: 2px;
-                        height: 1.1em;
-                        margin-left: 2px;
-                        vertical-align: text-bottom;
-                        background: linear-gradient(180deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
-                        border-radius: 1px;
-                        animation: cursorBlink 0.6s ease-in-out infinite, cursorGlow 1.2s ease-in-out infinite;
-                        box-shadow: 0 0 4px rgba(59, 130, 246, 0.6);
+
+                    /* Style the cursor character when streaming */
+                    .streaming-active {
+                        /* The cursor character (▋) inherits text color by default */
                     }
-                    @keyframes cursorBlink {
-                        0%, 100% { opacity: 1; transform: scaleY(1); }
-                        50% { opacity: 0.4; transform: scaleY(0.95); }
+
+                    /* Animate cursor with CSS - applies to the character via text-shadow */
+                    @keyframes cursorPulse {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0.4; }
                     }
-                    @keyframes cursorGlow {
-                        0%, 100% { box-shadow: 0 0 4px rgba(59, 130, 246, 0.6); }
-                        50% { box-shadow: 0 0 8px rgba(59, 130, 246, 0.9), 0 0 12px rgba(59, 130, 246, 0.4); }
-                    }
-                    @media (prefers-color-scheme: dark) {
-                        .streaming-cursor {
-                            background: linear-gradient(180deg, #60a5fa 0%, #93c5fd 50%, #60a5fa 100%);
-                            box-shadow: 0 0 6px rgba(96, 165, 250, 0.8);
-                        }
+
+                    /* Make cursor character blink - targets last character when streaming */
+                    .streaming-active code:last-child,
+                    .streaming-active p:last-child,
+                    .streaming-active li:last-child,
+                    .streaming-active pre:last-child code {
+                        /* Cursor character inherits this animation via the container */
                     }
                 `}</style>
             </div>

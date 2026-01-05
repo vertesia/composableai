@@ -1,5 +1,5 @@
 import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
-import React, { useEffect, useMemo, useState, Component, ReactNode } from "react";
+import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import BatchProgressPanel from "./BatchProgressPanel";
 import MessageItem from "./MessageItem";
@@ -77,6 +77,9 @@ interface AllMessagesMixedProps {
     thinkingMessageIndex?: number;
 }
 
+// PERFORMANCE: Throttle interval for auto-scroll (ms)
+const SCROLL_THROTTLE_MS = 100; // Max 10 scrolls per second
+
 function AllMessagesMixedComponent({
     messages,
     bottomRef,
@@ -86,18 +89,48 @@ function AllMessagesMixedComponent({
     onSendMessage,
     thinkingMessageIndex = 0,
 }: AllMessagesMixedProps) {
-    const containerRef = React.useRef<HTMLDivElement | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
 
-    // Auto-scroll to bottom when messages or streaming messages change
-    // Use instant scroll during active streaming for better UX
+    // PERFORMANCE: Throttle auto-scroll to prevent layout thrashing
+    // During streaming, scrollIntoView was being called 30+ times/sec
+    const lastScrollTimeRef = useRef<number>(0);
+    const scrollScheduledRef = useRef<number | null>(null);
+
     const isStreaming = streamingMessages.size > 0;
-    useEffect(() => {
+
+    // Throttled scroll function
+    const performScroll = useCallback(() => {
         if (bottomRef.current) {
-            // Use instant scroll during streaming, smooth scroll otherwise
             bottomRef.current.scrollIntoView({ behavior: isStreaming ? "instant" : "smooth" });
+            lastScrollTimeRef.current = Date.now();
         }
-    }, [messages, streamingMessages, bottomRef, isStreaming]);
+        scrollScheduledRef.current = null;
+    }, [bottomRef, isStreaming]);
+
+    // Auto-scroll to bottom when messages or streaming messages change
+    // Throttled to max 10 scrolls/sec to prevent layout thrashing
+    useEffect(() => {
+        const now = Date.now();
+        const timeSinceLastScroll = now - lastScrollTimeRef.current;
+
+        // If we haven't scrolled recently, scroll immediately
+        if (timeSinceLastScroll >= SCROLL_THROTTLE_MS) {
+            performScroll();
+        } else if (scrollScheduledRef.current === null) {
+            // Schedule a scroll for later if not already scheduled
+            const delay = SCROLL_THROTTLE_MS - timeSinceLastScroll;
+            scrollScheduledRef.current = window.setTimeout(performScroll, delay);
+        }
+
+        // Cleanup scheduled scroll on unmount or before next effect
+        return () => {
+            if (scrollScheduledRef.current !== null) {
+                clearTimeout(scrollScheduledRef.current);
+                scrollScheduledRef.current = null;
+            }
+        };
+    }, [messages.length, streamingMessages.size, performScroll]);
 
     // Sort all messages chronologically and filter out system metadata
     const sortedMessages = React.useMemo(
