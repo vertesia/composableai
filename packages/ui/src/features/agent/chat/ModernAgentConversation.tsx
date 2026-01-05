@@ -174,6 +174,9 @@ function StartWorkflowView({
     title = "Start New Conversation",
     // File upload props
     onFilesSelected,
+    // Attachment callback - used to include attachments in the first message
+    getAttachedDocs,
+    onAttachmentsSent,
 }: ModernAgentConversationProps) {
     const [inputValue, setInputValue] = useState<string>("");
     const [isSending, setIsSending] = useState(false);
@@ -245,8 +248,21 @@ function StartWorkflowView({
                 status: "info",
                 duration: 3000,
             });
-            const newRun = await startWorkflow(message);
+
+            // Get attached document IDs if callback provided
+            const attachedDocs = getAttachedDocs?.() || [];
+
+            // Build message content with attachment references if present
+            let messageContent = message;
+            if (attachedDocs.length > 0 && !/store:\S+/.test(message)) {
+                const lines = attachedDocs.map((id) => `store:${id}`);
+                messageContent = [message, '', 'Attachments:', ...lines].join('\n');
+            }
+
+            const newRun = await startWorkflow(messageContent);
             if (newRun) {
+                // Clear attachments after successful start
+                onAttachmentsSent?.();
                 setRun({
                     runId: newRun.run_id,
                     workflowId: newRun.workflow_id,
