@@ -190,19 +190,6 @@ export interface SkillExecution {
     template?: string;
 }
 
-/**
- * Script file bundled with a skill
- */
-export interface SkillScript {
-    /**
-     * Filename (e.g., "analyze.py")
-     */
-    name: string;
-    /**
-     * Script content
-     */
-    content: string;
-}
 
 /**
  * Skill definition - parsed from SKILL.md or SKILL.jst
@@ -252,7 +239,7 @@ export interface SkillDefinition {
     /**
      * Scripts bundled with this skill (synced to sandbox when skill is used)
      */
-    scripts?: SkillScript[];
+    scripts?: string[];
     /**
      * The name of the widgets provided by this skill (if any)
      * The name will be used to load the widget dynamically from the agent chat
