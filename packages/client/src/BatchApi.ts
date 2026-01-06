@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import type { BatchJob, CreateBatchJobOptions, ListBatchJobsOptions, ListBatchJobsResult } from "@llumiverse/common";
+import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 export default class BatchApi extends ApiTopic {
     constructor(parent: ClientBase) {

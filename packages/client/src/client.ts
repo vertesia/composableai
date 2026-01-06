@@ -11,14 +11,14 @@ import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
 import ProjectsApi from "./ProjectsApi.js";
-import SkillsApi from "./SkillsApi.js";
 import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
 import { RunsApi } from "./RunsApi.js";
+import SkillsApi from "./SkillsApi.js";
 import { ZenoClient } from "./store/client.js";
+import { VERSION, VERSION_HEADER } from "./store/version.js";
 import TrainingApi from "./TrainingApi.js";
 import UsersApi from "./UsersApi.js";
-import { VERSION, VERSION_HEADER } from "./store/version.js";
 
 
 /**
@@ -40,9 +40,9 @@ export type VertesiaClientProps = {
      * @since 0.52.0
      */
     site?:
-        | "api.vertesia.io"
-        | "api-preview.vertesia.io"
-        | "api-staging.vertesia.io";
+    | "api.vertesia.io"
+    | "api-preview.vertesia.io"
+    | "api-staging.vertesia.io";
     serverUrl?: string;
     storeUrl?: string;
     tokenServerUrl?: string;
@@ -94,7 +94,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         }).withApiKey(token);
     }
 
-    static decodeEndpoints() {}
+    static decodeEndpoints() { }
 
     constructor(
         opts: VertesiaClientProps = {
@@ -210,16 +210,16 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.withAuthCallback(
             apiKey
                 ? async () => {
-                      if (!isApiKey(apiKey)) {
-                          return `Bearer ${apiKey}`;
-                      }
+                    if (!isApiKey(apiKey)) {
+                        return `Bearer ${apiKey}`;
+                    }
 
-                      if (isTokenExpired(this._jwt)) {
-                          const jwt = await this.getAuthToken(apiKey);
-                          this._jwt = jwt.token;
-                      }
-                      return `Bearer ${this._jwt}`;
-                  }
+                    if (isTokenExpired(this._jwt)) {
+                        const jwt = await this.getAuthToken(apiKey);
+                        this._jwt = jwt.token;
+                    }
+                    return `Bearer ${this._jwt}`;
+                }
                 : undefined,
         );
     }
