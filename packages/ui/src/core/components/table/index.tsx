@@ -36,13 +36,15 @@ interface TBodySkeletonProps {
     rows?: number
     children: React.ReactNode
 }
-
-export function TBody({ isLoading = false, columns, rows = 3, children }: TBodySkeletonProps) {
+export function TBody({ isLoading = false, columns, rows = 3, children }: Readonly<TBodySkeletonProps>) {
     return (
         <tbody>
-            {isLoading ?
-                Array(rows).fill(0).map((_, index) => <RowSkeleton columns={columns} key={index} />)
-                : children
+            {
+                (isLoading) ? (
+                    Array(rows).fill(0).map((_, index) => <RowSkeleton columns={columns} key={index} />)
+                ) : (
+                    children
+                )
             }
         </tbody>
     )

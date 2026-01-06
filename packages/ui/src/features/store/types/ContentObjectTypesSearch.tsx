@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
-import { ContentObjectTypesTable } from './ContentObjectTypesTable';
-import { useWatchSearchResult } from './search/ObjectTypeSearchContext';
-import { useUserSession } from '@vertesia/ui/session';
-import { EmptyCollection, ErrorBox, Input, SelectBox, useToast, useDebounce, useIntersectionObserver } from '@vertesia/ui/core';
+import { ContentObjectTypesTable } from "./ContentObjectTypesTable";
+import { useWatchSearchResult } from "./search/ObjectTypeSearchContext";
 
-import { CreateOrUpdateTypeModal, CreateOrUpdateTypePayload } from './CreateOrUpdateTypeModal';
+import { EmptyCollection, ErrorBox, Input, SelectBox, useDebounce, useIntersectionObserver, useToast } from "@vertesia/ui/core";
+import { useUserSession } from "@vertesia/ui/session";
+
+import { CreateOrUpdateTypeModal, CreateOrUpdateTypePayload } from "./CreateOrUpdateTypeModal";
 
 enum ChunkableOptions { true = "Yes", false = "No" };
 
@@ -21,7 +22,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     const [isReady, setIsReady] = useState(false);
     const { search, isLoading, error, objects } = useWatchSearchResult();
 
-    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [searchTerm, setSearchTerm] = useState<string>("");
     const debounceValue = useDebounce(searchTerm, 500);
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -30,12 +31,14 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     }, { deps: [isReady] });
 
     useEffect(() => {
-        search.search().then(() => setIsReady(true));
+        search.search()
+            .then(() => setIsReady(true));
     }, []);
 
     useEffect(() => {
         search.query.name = searchTerm;
-        search.search().then(() => setIsReady(true));
+        search.search()
+            .then(() => setIsReady(true));
     }, [debounceValue]);
 
     const [chunkable, setChunkable] = useState(undefined);
@@ -44,8 +47,9 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     };
 
     useEffect(() => {
-        search.query.chunkable = chunkable ? chunkable == 'Yes' : undefined
-        search.search().then(() => setIsReady(true));
+        search.query.chunkable = chunkable ? chunkable == "Yes" : undefined
+        search.search()
+            .then(() => setIsReady(true));
     }, [chunkable]);
 
     useEffect(() => {
@@ -72,16 +76,16 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
         }
         return store.types.create(payload).then(async () => {
             toast({
-                status: 'success',
-                title: 'Type created',
+                status: "success",
+                title: "Type created",
                 duration: 2000
             });
             session.reloadTypes();
             search.search().then(() => setIsReady(true));
         }).catch(err => {
             toast({
-                status: 'error',
-                title: 'Error creating type',
+                status: "error",
+                title: "Error creating type",
                 description: err.message,
                 duration: 5000
             });
@@ -89,19 +93,20 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     };
 
     return (
-        <div className='flex flex-col gap-4 h-full'>
-            <div className="flex gap-4">
+        <div className="flex flex-col gap-4 h-full">
+            <div className="flex flex-shrink-0 gap-4">
                 <Input placeholder="Filter by Name" value={searchTerm} onChange={setSearchTerm} />
                 <SelectBox className="w-60" isClearable options={Object.values(ChunkableOptions)} value={chunkable} onChange={onChunkableChange} placeholder={"Is Chunkable"} />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 overflow-y-auto">
                 {
-                    (!isLoading && objects?.length === 0) ?
-                        <EmptyCollection title="No Type" buttonLabel='Create Type' onClick={onOpenCreateModal}>
+                    (!isLoading && objects?.length === 0) ? (
+                        <EmptyCollection title="No Type" buttonLabel="Create Type" onClick={onOpenCreateModal}>
                             Get started by creating a new Type.
                         </EmptyCollection >
-                        :
+                    ) : (
                         <ContentObjectTypesTable objects={objects} isLoading={isLoading} />
+                    )
                 }
                 <CreateOrUpdateTypeModal okLabel="Create" title="Create Type" isOpen={showCreateModal} onClose={onCloseCreateModal} />
             </div>
