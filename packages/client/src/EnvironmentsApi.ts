@@ -67,19 +67,4 @@ export default class EnvironmentsApi extends ApiTopic {
         });
     }
 
-    /**
-     * Test batch embeddings with a given environment
-     * @param id The environment ID to test with
-     * @returns Batch job details
-     */
-    testBatchEmbeddings(id: string): Promise<{
-        success: boolean;
-        job_id: string;
-        job_status: string;
-        job_type: string;
-        model: string;
-    }> {
-        return this.post('/' + id + '/test-batch-embeddings');
-    }
-
 }

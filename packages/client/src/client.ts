@@ -5,6 +5,7 @@ import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";
 import { ApiKeysApi } from "./ApiKeysApi.js";
 import AppsApi from "./AppsApi.js";
+import BatchApi from "./BatchApi.js";
 import CommandsApi from "./CommandsApi.js";
 import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
@@ -312,6 +313,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
 
     projects = new ProjectsApi(this);
     environments = new EnvironmentsApi(this);
+    batch = new BatchApi(this);
     interactions = new InteractionsApi(this);
     skills = new SkillsApi(this);
     prompts = new PromptsApi(this);
