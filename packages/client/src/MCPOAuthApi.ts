@@ -1,7 +1,7 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 export interface OAuthAuthStatus {
-    collection_name?: string;
+    collection_name: string;
     authenticated: boolean;
     mcp_server_url: string;
     expires_at?: string;
