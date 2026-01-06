@@ -116,6 +116,7 @@ export async function generateEmbeddings(
                 config,
                 document,
                 type,
+                force,
             });
             break;
         case SupportedEmbeddingTypes.properties:
@@ -124,6 +125,7 @@ export async function generateEmbeddings(
                 config,
                 document,
                 type,
+                force,
             });
             break;
         case SupportedEmbeddingTypes.image:
@@ -132,6 +134,7 @@ export async function generateEmbeddings(
                 config,
                 document,
                 type,
+                force,
             });
             break;
         default:
@@ -155,7 +158,7 @@ interface ExecuteGenerateEmbeddingsParams {
 }
 
 async function generateTextEmbeddings(
-    { document, client, type, config }: ExecuteGenerateEmbeddingsParams,
+    { document, client, type, config, force }: ExecuteGenerateEmbeddingsParams,
     parts?: DocPart[],
 ) {
 
@@ -189,19 +192,37 @@ async function generateTextEmbeddings(
 
     const partDefinitions = parts ?? [];
 
-    // Count tokens if not already done
-    if (!document.tokens?.count && type === SupportedEmbeddingTypes.text) {
+    // Compute text etag for comparison
+    const textEtag = document.text_etag ?? (document.text ? md5(document.text) : undefined);
+
+    // Skip if embeddings already exist with matching etag (unless force=true)
+    const existingEmbedding = document.embeddings?.[type];
+    if (!force && existingEmbedding?.etag && textEtag && existingEmbedding.etag === textEtag) {
+        log.info(`Skipping ${type} embeddings for document ${document.id} - etag unchanged`);
+        return {
+            id: document.id,
+            type,
+            status: "skipped",
+            message: "embeddings already exist with matching etag",
+        };
+    }
+
+    // Count tokens if not already done or if the text has changed (etag mismatch)
+    const needsTokenCount = !document.tokens?.count || (textEtag && document.tokens?.etag !== textEtag);
+    const shouldUpdateTokenCount =
+        needsTokenCount && type === SupportedEmbeddingTypes.text && !!document.text && !!textEtag;
+    if (shouldUpdateTokenCount && document.text) {
         log.debug("Updating token count for document: " + document.id);
-        const tokensData = countTokens(document.text!);
+        const tokensData = countTokens(document.text);
         await client.objects.update(document.id, {
             tokens: {
                 ...tokensData,
-                etag: document.text_etag ?? md5(document.text!),
+                etag: textEtag,
             },
         });
         document.tokens = {
             ...tokensData,
-            etag: document.text_etag ?? md5(document.text!),
+            etag: textEtag,
         };
     }
 
@@ -334,7 +355,7 @@ async function generateTextEmbeddings(
         await client.objects.setEmbedding(document.id, type, {
             values: averagedEmbedding,
             model: validPartEmbeddings[0].model,
-            etag: document.text_etag,
+            etag: textEtag,
         });
         log.info(`Object ${document.id} embedding set`, {
             type,
@@ -362,7 +383,7 @@ async function generateTextEmbeddings(
         await client.objects.setEmbedding(document.id, type, {
             values: res.values,
             model: res.model,
-            etag: document.text_etag,
+            etag: textEtag,
         });
 
         return {
@@ -379,6 +400,7 @@ async function generateImageEmbeddings({
     client,
     type,
     config,
+    force,
 }: ExecuteGenerateEmbeddingsParams) {
     log.info("Generating image embeddings for document " + document.id, {
         content: document.content,
@@ -394,6 +416,22 @@ async function generateImageEmbeddings({
             message: "content is not an image",
         };
     }
+
+    // Use content etag for image change detection
+    const contentEtag = document.content?.etag;
+
+    // Skip if embeddings already exist with matching etag (unless force=true)
+    const existingEmbedding = document.embeddings?.[type];
+    if (!force && existingEmbedding?.etag && contentEtag && existingEmbedding.etag === contentEtag) {
+        log.info(`Skipping ${type} embeddings for document ${document.id} - content etag unchanged`);
+        return {
+            id: document.id,
+            type,
+            status: "skipped",
+            message: "embeddings already exist with matching etag",
+        };
+    }
+
     const { environment, model } = config;
 
     const resRnd = await client.store.objects.getRendition(document.id, {
@@ -447,7 +485,7 @@ async function generateImageEmbeddings({
         {
             values: res.values,
             model: res.model,
-            etag: document.text_etag,
+            etag: contentEtag,
         },
     );
 
