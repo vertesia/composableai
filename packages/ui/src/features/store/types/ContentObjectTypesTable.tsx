@@ -16,7 +16,7 @@ export function ContentObjectTypesTable({ objects, isLoading }: ContentObjectTyp
 
     return (
         <Table className="w-full">
-            <THead className="sticky top-0 bg-background z-10 after:absolute after:bottom-0 after:left-0 after:w-full after:h-px after:bg-muted/20">
+            <THead>
                 <tr>
                     <th>Name</th>
                     <th>Strict Mode</th>
