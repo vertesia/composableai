@@ -146,6 +146,14 @@ function looksLikeMarkdown(text: string | undefined): boolean {
     );
 }
 
+/**
+ * Helper function to get panel visibility className.
+ * Returns empty string if visible, 'hidden' if not visible.
+ */
+function getPanelVisibility(isVisible: boolean): string {
+    return isVisible ? '' : 'hidden';
+}
+
 enum PanelView {
     Text = "text",
     Image = "image",
@@ -432,19 +440,19 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     />
                 )}
             </div>
-            <div className={currentPanel === PanelView.Image ? '' : 'hidden'}>
+            <div className={getPanelVisibility(currentPanel === PanelView.Image)}>
                 <ImagePanel object={object} />
             </div>
-            <div className={currentPanel === PanelView.Video ? '' : 'hidden'}>
+            <div className={getPanelVisibility(currentPanel === PanelView.Video)}>
                 <VideoPanel object={object} />
             </div>
             {isPdf && (
-                <div className={currentPanel === PanelView.Pdf ? '' : 'hidden'}>
+                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
                     <PdfPreviewPanel object={object} />
                 </div>
             )}
             {isPreviewableAsPdfDoc && (
-                <div className={currentPanel === PanelView.Pdf ? '' : 'hidden'}>
+                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
                     <OfficePdfPreviewPanel
                         pdfRendition={pdfRendition}
                         officePdfUrl={officePdfUrl}
@@ -455,16 +463,16 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                 </div>
             )}
             {showProcessingPanel && (
-                <div className={currentPanel === PanelView.Text ? '' : 'hidden'}>
+                <div className={getPanelVisibility(currentPanel === PanelView.Text)}>
                     <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
                 </div>
             )}
-            <div className={currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText ? '' : 'hidden'}>
+            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText)}>
                 <div className="flex justify-center items-center flex-1">
                     <Spinner size="lg" />
                 </div>
             </div>
-            <div className={currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText ? '' : 'hidden'}>
+            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText)}>
                 <TextPanel
                     object={object}
                     text={displayText}
