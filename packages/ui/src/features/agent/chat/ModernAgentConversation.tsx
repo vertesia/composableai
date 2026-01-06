@@ -1,14 +1,14 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Cpu, SendIcon, XIcon } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Bot, Cpu, SendIcon, UploadIcon, XIcon } from "lucide-react";
 import { useUserSession } from "@vertesia/ui/session";
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { AgentMessage, AgentMessageType, Plan, UserInputSignal } from "@vertesia/common";
+import { AgentMessage, AgentMessageType, Plan, StreamingChunkDetails, UserInputSignal } from "@vertesia/common";
 import { Button, MessageBox, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
-import MessageInput from "./ModernAgentOutput/MessageInput";
+import MessageInput, { UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
 import { getWorkstreamId, insertMessageInTimeline, isInProgress } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
@@ -69,12 +69,52 @@ interface ModernAgentConversationProps {
     interactive?: boolean;
     onClose?: () => void;
     isModal?: boolean;
+    fullWidth?: boolean;
     initialMessage?: string;
     startWorkflow?: StartWorkflowFn;
     startButtonText?: string;
     placeholder?: string;
     hideUserInput?: boolean;
     resetWorkflow?: () => void;
+
+    // File upload props - passed through to MessageInput
+    /** Called when files are dropped/pasted/selected */
+    onFilesSelected?: (files: File[]) => void;
+    /** Currently uploaded files to display */
+    uploadedFiles?: UploadedFile[];
+    /** Called when user removes an uploaded file */
+    onRemoveFile?: (fileId: string) => void;
+    /** Accepted file types (e.g., ".pdf,.doc,.png") */
+    acceptedFileTypes?: string;
+    /** Max number of files allowed */
+    maxFiles?: number;
+
+    // Document search props (render prop for custom search UI)
+    /** Render custom document search UI - if provided, shows search button */
+    renderDocumentSearch?: (props: {
+        isOpen: boolean;
+        onClose: () => void;
+        onSelect: (doc: SelectedDocument) => void;
+    }) => React.ReactNode;
+    /** Currently selected documents from search */
+    selectedDocuments?: SelectedDocument[];
+    /** Called when user removes a selected document */
+    onRemoveDocument?: (docId: string) => void;
+
+    // Hide the default object linking (for apps that don't use it)
+    hideObjectLinking?: boolean;
+
+    // Callback to get attached document IDs when sending messages
+    // Returns array of document IDs to include in message metadata
+    getAttachedDocs?: () => string[];
+    // Called after attachments are sent to allow clearing them
+    onAttachmentsSent?: () => void;
+
+    // Styling props for Tailwind customization - passed through to MessageInput
+    /** Additional className for the MessageInput container */
+    inputContainerClassName?: string;
+    /** Additional className for the input field */
+    inputClassName?: string;
 }
 
 export function ModernAgentConversation(
@@ -128,15 +168,61 @@ function StartWorkflowView({
     startWorkflow,
     onClose,
     isModal = false,
+    fullWidth = false,
     placeholder = "Type your message...",
     startButtonText = "Start Agent",
     title = "Start New Conversation",
+    // File upload props
+    onFilesSelected,
+    // Attachment callback - used to include attachments in the first message
+    getAttachedDocs,
+    onAttachmentsSent,
 }: ModernAgentConversationProps) {
     const [inputValue, setInputValue] = useState<string>("");
     const [isSending, setIsSending] = useState(false);
     const [run, setRun] = useState<AsyncExecutionResult>();
     const toast = useToast();
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Drag and drop state
+    const [isDragOver, setIsDragOver] = useState(false);
+    const dragCounterRef = useRef(0);
+
+    // Drag and drop handlers
+    const handleDragEnter = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current++;
+        if (onFilesSelected && e.dataTransfer?.types?.includes('Files')) {
+            setIsDragOver(true);
+        }
+    }, [onFilesSelected]);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current--;
+        if (dragCounterRef.current === 0) {
+            setIsDragOver(false);
+        }
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current = 0;
+        setIsDragOver(false);
+
+        if (onFilesSelected && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+            const filesArray = Array.from(e.dataTransfer.files);
+            onFilesSelected(filesArray);
+        }
+    }, [onFilesSelected]);
 
     useEffect(() => {
         // Focus the input field when component mounts
@@ -162,8 +248,21 @@ function StartWorkflowView({
                 status: "info",
                 duration: 3000,
             });
-            const newRun = await startWorkflow(message);
+
+            // Get attached document IDs if callback provided
+            const attachedDocs = getAttachedDocs?.() || [];
+
+            // Build message content with attachment references if present
+            let messageContent = message;
+            if (attachedDocs.length > 0 && !/store:\S+/.test(message)) {
+                const lines = attachedDocs.map((id) => `store:${id}`);
+                messageContent = [message, '', 'Attachments:', ...lines].join('\n');
+            }
+
+            const newRun = await startWorkflow(messageContent);
             if (newRun) {
+                // Clear attachments after successful start
+                onAttachmentsSent?.();
                 setRun({
                     runId: newRun.run_id,
                     workflowId: newRun.workflow_id,
@@ -206,7 +305,22 @@ function StartWorkflowView({
     }
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-gray-900 overflow-hidden border-0">
+        <div
+            className={`flex flex-col h-full bg-white dark:bg-gray-900 overflow-hidden border-0 relative ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            {/* Drag overlay for full-panel file drop */}
+            {isDragOver && (
+                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
+                    <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
+                        <UploadIcon className="size-6" />
+                        Drop files to upload
+                    </div>
+                </div>
+            )}
             {/* Header */}
             <div className="flex items-center justify-between py-2 px-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
                 <div className="flex items-center space-x-2">
@@ -233,14 +347,26 @@ function StartWorkflowView({
             </div>
 
             {/* Empty conversation area with instructions */}
-            <div className="flex-1 overflow-y-auto px-4 py-6 bg-white dark:bg-gray-900 flex flex-col items-center justify-center">
+            <div
+                className={`flex-1 overflow-y-auto px-4 py-6 bg-white dark:bg-gray-900 flex flex-col ${
+                    fullWidth ? 'items-start justify-start' : 'items-center justify-center'
+                }`}
+            >
                 {initialMessage && (
-                    <div className="px-4 py-3 mb-4 bg-blue-50/80 dark:bg-blue-900/30 border-l-2 border-blue-400 dark:border-blue-500 text-blue-700 dark:text-blue-300 max-w-md">
+                    <div
+                        className={`px-4 py-3 mb-4 bg-blue-50/80 dark:bg-blue-900/30 border-l-2 border-blue-400 dark:border-blue-500 text-blue-700 dark:text-blue-300 ${
+                            fullWidth ? 'w-full' : 'max-w-md'
+                        }`}
+                    >
                         {initialMessage}
                     </div>
                 )}
 
-                <div className="bg-white dark:bg-slate-800 p-4 max-w-md border-l-2 border-blue-400 dark:border-blue-500">
+                <div
+                    className={`bg-white dark:bg-slate-800 p-4 border-l-2 border-blue-400 dark:border-blue-500 ${
+                        fullWidth ? 'w-full' : 'max-w-md'
+                    }`}
+                >
                     <div className="text-base text-slate-600 dark:text-slate-300 font-medium">
                         Enter a message to start a conversation
                     </div>
@@ -293,8 +419,27 @@ function ModernAgentConversationInner({
     interactive = true,
     onClose,
     isModal = false,
+    fullWidth = false,
     placeholder = "Type your message...",
     resetWorkflow,
+    // File upload props
+    onFilesSelected,
+    uploadedFiles,
+    onRemoveFile,
+    acceptedFileTypes,
+    maxFiles,
+    // Document search props
+    renderDocumentSearch,
+    selectedDocuments,
+    onRemoveDocument,
+    // Object linking
+    hideObjectLinking,
+    // Attachment callback
+    getAttachedDocs,
+    onAttachmentsSent,
+    // Styling props
+    inputContainerClassName,
+    inputClassName,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
     const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -322,6 +467,61 @@ function ModernAgentConversationInner({
     const toast = useToast();
     const [showInput, setShowInput] = useState(interactive);
     const [workflowStatus, setWorkflowStatus] = useState<string | null>(null);
+    // Track streaming messages by streaming_id for real-time chunk aggregation
+    // Include startTimestamp to preserve chronological order when converting to regular messages
+    const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
+
+    // Performance optimization: Batch streaming updates using RAF
+    // Instead of updating state on every chunk (100+ times/sec), batch them per animation frame
+    const pendingStreamingChunks = useRef<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
+    const streamingFlushScheduled = useRef<number | null>(null);
+
+    const flushStreamingChunks = useCallback(() => {
+        if (pendingStreamingChunks.current.size > 0) {
+            setStreamingMessages(new Map(pendingStreamingChunks.current));
+        }
+        streamingFlushScheduled.current = null;
+    }, []);
+
+    // Drag and drop state for full-panel file upload
+    const [isDragOver, setIsDragOver] = useState(false);
+    const dragCounterRef = useRef(0);
+
+    // Drag and drop handlers for full-panel file upload
+    const handleDragEnter = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current++;
+        if (onFilesSelected && e.dataTransfer?.types?.includes('Files')) {
+            setIsDragOver(true);
+        }
+    }, [onFilesSelected]);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current--;
+        if (dragCounterRef.current === 0) {
+            setIsDragOver(false);
+        }
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current = 0;
+        setIsDragOver(false);
+
+        if (onFilesSelected && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+            const filesArray = Array.from(e.dataTransfer.files);
+            onFilesSelected(filesArray);
+        }
+    }, [onFilesSelected]);
 
     // Helper function to get the current active plan and its workstream status
     const getActivePlan = useMemo(() => {
@@ -336,6 +536,24 @@ function ModernAgentConversationInner({
             workstreamStatus: currentWorkstreamStatus,
         };
     }, [plans, activePlanIndex, workstreamStatusMap]);
+
+    // PERFORMANCE: Stabilize callback props to prevent child re-renders
+    const handleTogglePlanPanel = useCallback(() => {
+        setShowSlidingPanel((prev) => {
+            if (!prev) {
+                sessionStorage.setItem("plan-panel-shown", "true");
+            }
+            return !prev;
+        });
+    }, []);
+
+    const handleChangePlan = useCallback((index: number) => {
+        setActivePlanIndex(index);
+    }, []);
+
+    const handleClosePlanPanel = useCallback(() => {
+        setShowSlidingPanel(false);
+    }, []);
 
     // Show rotating thinking messages
     useEffect(() => {
@@ -367,17 +585,80 @@ function ModernAgentConversationInner({
         setWorkstreamStatusMap(new Map());
         setShowSlidingPanel(false);
         setWorkflowStatus(null);
+        setStreamingMessages(new Map());
 
         checkWorkflowStatus();
         client.store.workflows.streamMessages(run.workflowId, run.runId, (message) => {
+            // Handle streaming chunks separately for real-time aggregation
+            // PERFORMANCE: Batch updates using RAF instead of immediate state updates
+            if (message.type === AgentMessageType.STREAMING_CHUNK) {
+                const details = message.details as StreamingChunkDetails;
+                if (!details?.streaming_id) return;
+
+                // Accumulate chunks in the ref (no state update yet)
+                const current = pendingStreamingChunks.current.get(details.streaming_id) || {
+                    text: '',
+                    workstreamId: message.workstream_id,
+                    startTimestamp: Date.now()
+                };
+                const newText = current.text + (message.message || '');
+
+                pendingStreamingChunks.current.set(details.streaming_id, {
+                    text: newText,
+                    workstreamId: message.workstream_id,
+                    isComplete: details.is_final,
+                    startTimestamp: current.startTimestamp,
+                });
+
+                // Schedule a flush if not already scheduled (batches ~60 updates/sec max)
+                if (streamingFlushScheduled.current === null) {
+                    streamingFlushScheduled.current = requestAnimationFrame(flushStreamingChunks);
+                }
+                return;
+            }
+
+            // When ANSWER arrives, clear streaming messages (they contain the same content)
+            // This prevents showing the message twice: once as streaming, once as final ANSWER
+            if (message.type === AgentMessageType.ANSWER) {
+                pendingStreamingChunks.current.clear();
+                if (streamingFlushScheduled.current !== null) {
+                    cancelAnimationFrame(streamingFlushScheduled.current);
+                    streamingFlushScheduled.current = null;
+                }
+                setStreamingMessages(new Map());
+            }
+
+            // When COMPLETE arrives, clear any remaining streaming messages
+            // (don't convert to THOUGHT since the content is already in the ANSWER message)
+            if (message.type === AgentMessageType.COMPLETE) {
+                pendingStreamingChunks.current.clear();
+                if (streamingFlushScheduled.current !== null) {
+                    cancelAnimationFrame(streamingFlushScheduled.current);
+                    streamingFlushScheduled.current = null;
+                }
+                setStreamingMessages(new Map());
+            }
+
             if (message.message) {
                 setMessages((prev_messages) => {
-                    if (!prev_messages.find((m) => m.timestamp === message.timestamp)) {
-                        insertMessageInTimeline(prev_messages, message);
-                        return [...prev_messages];
-                    } else {
+                    // Check for duplicate by timestamp
+                    if (prev_messages.find((m) => m.timestamp === message.timestamp)) {
                         return prev_messages;
                     }
+
+                    // For QUESTION messages from server, replace any optimistic version
+                    if (message.type === AgentMessageType.QUESTION && !message.details?._optimistic) {
+                        const withoutOptimistic = prev_messages.filter(
+                            (m) => !(m.type === AgentMessageType.QUESTION &&
+                                m.details?._optimistic &&
+                                m.message === message.message)
+                        );
+                        insertMessageInTimeline(withoutOptimistic, message);
+                        return [...withoutOptimistic];
+                    }
+
+                    insertMessageInTimeline(prev_messages, message);
+                    return [...prev_messages];
                 });
             }
         });
@@ -385,9 +666,16 @@ function ModernAgentConversationInner({
         // Clear messages and unsubscribe when component unmounts or runId changes
         return () => {
             setMessages([]);
+            // Cancel any pending streaming flush
+            if (streamingFlushScheduled.current !== null) {
+                cancelAnimationFrame(streamingFlushScheduled.current);
+                streamingFlushScheduled.current = null;
+            }
+            pendingStreamingChunks.current.clear();
             // Client handles unsubscribing from the message stream internally
         };
-    }, [run.runId, client.store.workflows]);
+    }, [run.runId, client.store.workflows, flushStreamingChunks]);
+
 
     // Update completion status when messages change
     // This now accounts for multiple workstreams
@@ -543,19 +831,54 @@ function ModernAgentConversationInner({
 
         setIsSending(true);
 
+        // Add optimistic QUESTION message immediately for better UX
+        const optimisticTimestamp = Date.now();
+        const optimisticMessage: AgentMessage = {
+            timestamp: optimisticTimestamp,
+            workflow_run_id: run.runId,
+            type: AgentMessageType.QUESTION,
+            message: trimmed,
+            workstream_id: "main",
+            details: { _optimistic: true },
+        };
+
+        console.log("[Optimistic] Adding user message:", trimmed);
+
+        setMessages((prev) => {
+            const newMessages = [...prev, optimisticMessage];
+            // Sort by timestamp to maintain order
+            newMessages.sort((a, b) => {
+                const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
+                const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
+                return timeA - timeB;
+            });
+            console.log("[Optimistic] Messages after add:", newMessages.length, "messages");
+            return newMessages;
+        });
+
+        // Get attached document IDs if callback provided
+        const attachedDocs = getAttachedDocs?.() || [];
+
+        // Build message content with attachment references if present
+        let messageContent = trimmed;
+        if (attachedDocs.length > 0 && !/store:\S+/.test(trimmed)) {
+            const lines = attachedDocs.map((id) => `store:${id}`);
+            messageContent = [trimmed, '', 'Attachments:', ...lines].join('\n');
+        }
+
         client.store.workflows
             .sendSignal(run.workflowId, run.runId, "UserInput", {
-                message: trimmed,
+                message: messageContent,
+                metadata: attachedDocs.length > 0 ? { attached_docs: attachedDocs } : undefined,
             } as UserInputSignal)
             .then(() => {
                 setIsCompleted(false);
-                toast({
-                    status: "success",
-                    title: "Message Sent",
-                    duration: 2000,
-                });
+                // Clear attachments after successful send
+                onAttachmentsSent?.();
             })
             .catch((err) => {
+                // Remove optimistic message on failure
+                setMessages((prev) => prev.filter((m) => m.timestamp !== optimisticTimestamp));
                 toast({
                     status: "error",
                     title: "Failed to Send Message",
@@ -712,36 +1035,52 @@ function ModernAgentConversationInner({
 
     return (
         <ArtifactUrlCacheProvider>
-        <div className="flex gap-2 h-full">
+        <div
+            className={`flex gap-2 h-full relative overflow-hidden ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            {/* Drag overlay for full-panel file drop */}
+            {isDragOver && (
+                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
+                    <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
+                        <UploadIcon className="size-6" />
+                        Drop files to upload
+                    </div>
+                </div>
+            )}
             {/* Conversation Area - responsive width based on panel visibility */}
             <div
                 ref={conversationRef}
                 className={`flex flex-col h-full min-h-0 border-0 ${
-                showSlidingPanel ? 'lg:w-2/3 flex-1' : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
+                showSlidingPanel
+                    ? 'lg:w-2/3 flex-1'
+                    : fullWidth
+                        ? 'flex-1 w-full'
+                        : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
             }`}
             >
-                <Header
-                    title={actualTitle}
-                    isCompleted={isCompleted}
-                    onClose={onClose}
-                    isModal={isModal}
-                    run={run}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                    showPlanPanel={showSlidingPanel}
-                    hasPlan={plans.length > 0}
-                    onTogglePlanPanel={() => {
-                        setShowSlidingPanel(!showSlidingPanel);
-                        // When opening the plan panel, mark that we've shown it
-                        if (!showSlidingPanel) {
-                            sessionStorage.setItem("plan-panel-shown", "true");
-                        }
-                    }}
-                    onDownload={downloadConversation}
-                    onCopyRunId={copyRunId}
-                    resetWorkflow={resetWorkflow}
-                    onExportPdf={exportConversationPdf}
-                />
+                {/* Header - flex-shrink-0 to prevent shrinking */}
+                <div className="flex-shrink-0">
+                    <Header
+                        title={actualTitle}
+                        isCompleted={isCompleted}
+                        onClose={onClose}
+                        isModal={isModal}
+                        run={run}
+                        viewMode={viewMode}
+                        onViewModeChange={setViewMode}
+                        showPlanPanel={showSlidingPanel}
+                        hasPlan={plans.length > 0}
+                        onTogglePlanPanel={handleTogglePlanPanel}
+                        onDownload={downloadConversation}
+                        onCopyRunId={copyRunId}
+                        resetWorkflow={resetWorkflow}
+                        onExportPdf={exportConversationPdf}
+                    />
+                </div>
 
                 {messages.length === 0 && !isCompleted ? (
                     <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-6">
@@ -766,31 +1105,30 @@ function ModernAgentConversationInner({
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
                         showPlanPanel={showSlidingPanel}
-                        onTogglePlanPanel={() => {
-                            console.log(
-                                "Toggle plan panel called, current state:",
-                                showSlidingPanel,
-                            );
-                            setShowSlidingPanel(!showSlidingPanel);
-                        }}
+                        onTogglePlanPanel={handleTogglePlanPanel}
                         plans={plans}
                         activePlanIndex={activePlanIndex}
-                        onChangePlan={(index) => setActivePlanIndex(index)}
+                        onChangePlan={handleChangePlan}
                         taskLabels={getActivePlan.plan.plan?.reduce((acc, task) => {
                             if (task.id && task.goal) {
                                 acc.set(task.id.toString(), task.goal);
                             }
                             return acc;
                         }, new Map<string, string>())}
+                        streamingMessages={streamingMessages}
+                        onSendMessage={handleSendMessage}
+                        thinkingMessageIndex={thinkingMessageIndex}
                     />
                 )}
 
-                {workflowStatus && (
-                    workflowStatus !== "RUNNING" ? (
+                {/* Show workflow status message when not running, or show input when running/unknown */}
+                {/* Input area - flex-shrink-0 to stay pinned at bottom, with iOS safe area support */}
+                <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                    {workflowStatus && workflowStatus !== "RUNNING" ? (
                         <MessageBox
                             status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
                             icon={null}
-                            className="flex-shrink-0 m-2"
+                            className="m-2"
                         >
                             This Workflow is {workflowStatus}
                         </MessageBox>
@@ -805,8 +1143,24 @@ function ModernAgentConversationInner({
                             isCompleted={isCompleted}
                             activeTaskCount={getActiveTaskCount()}
                             placeholder={placeholder}
+                            // File upload props
+                            onFilesSelected={onFilesSelected}
+                            uploadedFiles={uploadedFiles}
+                            onRemoveFile={onRemoveFile}
+                            acceptedFileTypes={acceptedFileTypes}
+                            maxFiles={maxFiles}
+                            // Document search props
+                            renderDocumentSearch={renderDocumentSearch}
+                            selectedDocuments={selectedDocuments}
+                            onRemoveDocument={onRemoveDocument}
+                            // Object linking
+                            hideObjectLinking={hideObjectLinking}
+                            // Styling props
+                            className={inputContainerClassName}
+                            inputClassName={inputClassName}
                         />
-                    ))}
+                    )}
+                </div>
             </div>
 
             {/* Plan Panel Area - only rendered when panel should be shown */}
@@ -816,10 +1170,10 @@ function ModernAgentConversationInner({
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
                         isOpen={showSlidingPanel}
-                        onClose={() => setShowSlidingPanel(false)}
+                        onClose={handleClosePlanPanel}
                         plans={plans}
                         activePlanIndex={activePlanIndex}
-                        onChangePlan={setActivePlanIndex}
+                        onChangePlan={handleChangePlan}
                     />
                 </div>
             )}

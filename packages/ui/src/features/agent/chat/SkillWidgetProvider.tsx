@@ -22,7 +22,7 @@ const defaultComponents: Record<string, React.FunctionComponent<CodeBlockRendere
 function RemoteWidgetComponent({ url, code }: { url: string, code: string }) {
     const [Component, setComponent] = useState<React.FunctionComponent<{ code: string }> | null>(null);
     useEffect(() => {
-        import(url).then(module => {
+        import(/* @vite-ignore */url).then(module => {
             // register the component
             // Wrap in arrow function to prevent React from calling it as a state updater
             setComponent(() => module.default)

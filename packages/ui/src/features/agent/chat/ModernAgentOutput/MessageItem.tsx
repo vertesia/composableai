@@ -4,125 +4,145 @@ import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
-import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, MessageSquare, User } from "lucide-react";
-import React, { useEffect, useState, memo } from "react";
-import { AnimatedThinkingDots, PulsatingCircle } from "../AnimatedThinkingDots";
+import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, Layers, MessageSquare, User } from "lucide-react";
+import React, { useEffect, useState, useMemo, memo } from "react";
+import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
 
-interface MessageItemProps {
-    message: AgentMessage;
-    showPulsatingCircle?: boolean;
+// PERFORMANCE: Move pure function outside component to avoid recreation on every render
+// Process content to enhance markdown detection for lists and thinking messages
+function processContentForMarkdown(content: string | object, messageType: AgentMessageType, originalMessage?: string): string | object {
+    // If content is not a string, return it as is
+    if (typeof content !== "string") {
+        return content;
+    }
+
+    // Special handling for thought messages to ensure proper markdown formatting
+    if (
+        messageType === AgentMessageType.THOUGHT ||
+        (typeof originalMessage === "string" &&
+            (originalMessage.toLowerCase().includes("thinking about") ||
+                originalMessage.toLowerCase().includes("i'm thinking") ||
+                originalMessage.toLowerCase().includes("💭")))
+    ) {
+        let formattedContent = content;
+
+        // Check for numbering patterns like "1. First item 2. Second item"
+        if (/\d+\.\s+.+/.test(formattedContent)) {
+            // Format numbered lists by adding newlines between items
+            formattedContent = formattedContent.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, "$1\n\n");
+
+            // Make sure nested content under numbered items is properly indented
+            formattedContent = formattedContent.replace(/(\d+\.\s+.+\n)([^\d\n][^:])/g, "$1  $2");
+        }
+
+        // Handle colon-prefixed items that should be on separate lines
+        if (formattedContent.includes(":") && !formattedContent.includes("\n\n")) {
+            formattedContent = formattedContent.replace(
+                /\b(First|Next|Then|Finally|Lastly|Additionally|Step \d+):\s+/gi,
+                "\n\n$&",
+            );
+        }
+
+        // Handle thinking points or list-like structures even without numbers
+        if (formattedContent.includes(" - ")) {
+            formattedContent = formattedContent.replace(/\s+-\s+/g, "\n- ");
+        }
+
+        return formattedContent;
+    }
+
+    // Normal processing for non-thinking messages
+    if (/\d+\.\s+.+/.test(content) && !content.includes("\n\n")) {
+        // Add proper line breaks for numbered lists that aren't already properly formatted
+        return content.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, "$1\n\n");
+    }
+
+    return content;
 }
 
-function MessageItemComponent({ message, showPulsatingCircle = false }: MessageItemProps) {
+export interface MessageItemProps {
+    message: AgentMessage;
+    showPulsatingCircle?: boolean;
+    /** Callback when user sends a message (e.g., from proposal selection) */
+    onSendMessage?: (message: string) => void;
+    /** Additional className for the outer container */
+    className?: string;
+    /** Additional className for the card wrapper */
+    cardClassName?: string;
+    /** Additional className for the header section */
+    headerClassName?: string;
+    /** Additional className for the content section */
+    contentClassName?: string;
+    /** Additional className for the timestamp */
+    timestampClassName?: string;
+    /** Additional className for the sender label */
+    senderClassName?: string;
+    /** Additional className for the icon wrapper */
+    iconClassName?: string;
+    /** Additional className for the details section */
+    detailsClassName?: string;
+    /** Additional className for the artifacts section */
+    artifactsClassName?: string;
+}
+
+// Consolidated message styling - single source of truth
+const MESSAGE_STYLES: Record<AgentMessageType | 'default', {
+    borderColor: string;
+    bgColor: string;
+    iconColor: string;
+    sender: string;
+    Icon: typeof Bot;
+}> = {
+    [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', bgColor: 'bg-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
+    [AgentMessageType.IDLE]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'Idle', Icon: Clock },
+    [AgentMessageType.REQUEST_INPUT]: { borderColor: 'border-l-attention', bgColor: 'bg-attention', iconColor: 'text-attention', sender: 'Input', Icon: User },
+    [AgentMessageType.QUESTION]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
+    [AgentMessageType.THOUGHT]: { borderColor: 'border-l-purple-500', bgColor: 'bg-purple-50/50 dark:bg-purple-900/10', iconColor: 'text-purple-600 dark:text-purple-400', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ERROR]: { borderColor: 'border-l-destructive', bgColor: 'bg-destructive', iconColor: 'text-destructive', sender: 'Error', Icon: AlertCircle },
+    [AgentMessageType.UPDATE]: { borderColor: 'border-l-success', bgColor: 'bg-success', iconColor: 'text-success', sender: 'Update', Icon: Info },
+    [AgentMessageType.PLAN]: { borderColor: 'border-l-attention', bgColor: 'bg-attention', iconColor: 'text-attention', sender: 'Plan', Icon: MessageSquare },
+    [AgentMessageType.TERMINATED]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'Terminated', Icon: CheckCircle },
+    [AgentMessageType.WARNING]: { borderColor: 'border-l-attention', bgColor: 'bg-attention', iconColor: 'text-attention', sender: 'Warning', Icon: AlertCircle },
+    [AgentMessageType.SYSTEM]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
+    [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-l-blue-500', bgColor: 'bg-blue-50/50 dark:bg-blue-900/10', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
+    default: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
+};
+
+function MessageItemComponent({
+    message,
+    showPulsatingCircle = false,
+    onSendMessage,
+    className,
+    cardClassName,
+    headerClassName,
+    contentClassName,
+    timestampClassName,
+    senderClassName,
+    iconClassName,
+    detailsClassName,
+    artifactsClassName,
+}: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
-    const [processedContent, setProcessedContent] = useState<string | object>("");
-    const [isProcessingImages, setIsProcessingImages] = useState(false);
     const { client } = useUserSession();
     const toast = useToast();
     const urlCache = useArtifactUrlCache();
 
-    // Simplified message styling with minimal distinction between different types
-    const getMessageStyles = () => {
-        // Common styling for all messages with subtle type indication
-        const baseStyle = {
-            containerClass: "bg-white border-l-4 border-l-muted/30 shadow-sm",
-            iconComponent: <Bot className="size-4 text-muted" />,
-            sender: "",
-        };
+    // Get styles from consolidated config
+    const styles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
 
-        // Just add minimal type indicators
-        switch (message.type) {
-            case AgentMessageType.ANSWER:
-                return {
-                    ...baseStyle,
-                    containerClass: "bg-white border-l-4 border-l-muted/30 shadow-sm",
-                    iconComponent: <Bot className="size-4 text-muted" />,
-                    sender: "Agent",
-                };
-            case AgentMessageType.COMPLETE:
-                return {
-                    ...baseStyle,
-                    containerClass: "bg-white border-l-4 border-l-success shadow-sm",
-                    iconComponent: <CheckCircle className="size-4 text-success" />,
-                    sender: "Completed",
-                };
-            case AgentMessageType.TERMINATED:
-                return {
-                    ...baseStyle,
-                    containerClass: "bg-white border-l-4 border-l-attention shadow-sm",
-                    iconComponent: <CheckCircle className="size-4 text-attention" />,
-                    sender: "Terminated",
-                };
-            case AgentMessageType.QUESTION:
-                return {
-                    ...baseStyle,
-                    iconComponent: <User className="size-4 text-muted" />,
-                    sender: "User",
-                };
-            case AgentMessageType.THOUGHT:
-                return {
-                    ...baseStyle,
-                    iconComponent: showPulsatingCircle ? (
-                        <PulsatingCircle size="sm" color="blue" />
-                    ) : (
-                        <Bot className="size-4 text-muted" />
-                    ),
-                    sender: "Agent",
-                };
-            case AgentMessageType.ERROR:
-                return {
-                    ...baseStyle,
-                    iconComponent: <AlertCircle className="size-4 text-muted" />,
-                    sender: "System",
-                };
-            case AgentMessageType.UPDATE:
-                return {
-                    ...baseStyle,
-                    containerClass: "bg-white border-l-4 border-success shadow-sm",
-                    iconComponent: <Info className="size-4 text-success" />,
-                    sender: "Update",
-                };
-            case AgentMessageType.PLAN:
-                return {
-                    ...baseStyle,
-                    iconComponent: <MessageSquare className="size-4 text-muted" />,
-                    sender: "Agent",
-                };
-            default:
-                return {
-                    ...baseStyle,
-                    sender: `Agent`,
-                };
-        }
-    };
-
-    const messageStyles = getMessageStyles();
-
-    // Convert links in the content.
-    // Special schemes like store:, collection:, image:, and artifact:
-    // are now handled centrally in MarkdownRenderer, so this function
-    // only preserves the async shape for backwards compatibility.
-    const convertLinks = async (content: string | object): Promise<string | object> => {
-        // If content is not a string, return it as is
-        if (typeof content !== "string") {
-            return content;
-        }
-
-        return content;
-    };
-
-    // Get the message content to display with thinking message replacement
-    const getMessageContent = () => {
+    // PERFORMANCE: Memoize message content extraction - only recalculates when message changes
+    const messageContent = useMemo(() => {
         let content = "";
 
         if (message.message) {
             // Check if message.message is an object
             if (typeof message.message === "object") {
                 // Use JSONView for objects - we'll need to stringify it for now
-                // as we don't have direct access to JSONView
                 content = JSON.stringify(message.message, null, 2);
             } else if (message.message.trim) {
                 content = message.message.trim();
@@ -140,11 +160,21 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
         }
 
         return content;
-    };
+    }, [message.message]);
+
+    // PERFORMANCE: Memoize processed content - expensive regex operations only run when messageContent changes
+    const processedContent = useMemo(() => {
+        if (!messageContent) return "";
+        return processContentForMarkdown(
+            messageContent,
+            message.type,
+            typeof message.message === "string" ? message.message : undefined
+        );
+    }, [messageContent, message.type, message.message]);
 
     // Copy message content to clipboard
     const copyToClipboard = () => {
-        const messageContent = getMessageContent() || "";
+        const content = messageContent || "";
         const detailsContent =
             typeof message.details === "string"
                 ? message.details
@@ -152,7 +182,7 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
                     ? JSON.stringify(message.details, null, 2)
                     : "";
 
-        const textToCopy = [messageContent, detailsContent ? "\n\nDetails:\n" + detailsContent : ""].join("").trim();
+        const textToCopy = [content, detailsContent ? "\n\nDetails:\n" + detailsContent : ""].join("").trim();
 
         navigator.clipboard.writeText(textToCopy).then(() => {
             toast({
@@ -161,57 +191,6 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
                 duration: 2000,
             });
         });
-    };
-
-    // Process content to enhance markdown detection for lists and thinking messages
-    const processContentForMarkdown = (content: string | object) => {
-        // If content is not a string, return it as is
-        if (typeof content !== "string") {
-            return content;
-        }
-
-        // Special handling for thought messages to ensure proper markdown formatting
-        if (
-            message.type === AgentMessageType.THOUGHT ||
-            (typeof message.message === "string" &&
-                (message.message.toLowerCase().includes("thinking about") ||
-                    message.message.toLowerCase().includes("i'm thinking") ||
-                    message.message.toLowerCase().includes("💭")))
-        ) {
-            let formattedContent = content;
-
-            // Check for numbering patterns like "1. First item 2. Second item"
-            if (/\d+\.\s+.+/.test(formattedContent)) {
-                // Format numbered lists by adding newlines between items
-                formattedContent = formattedContent.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, "$1\n\n");
-
-                // Make sure nested content under numbered items is properly indented
-                formattedContent = formattedContent.replace(/(\d+\.\s+.+\n)([^\d\n][^:])/g, "$1  $2");
-            }
-
-            // Handle colon-prefixed items that should be on separate lines
-            if (formattedContent.includes(":") && !formattedContent.includes("\n\n")) {
-                formattedContent = formattedContent.replace(
-                    /\b(First|Next|Then|Finally|Lastly|Additionally|Step \d+):\s+/gi,
-                    "\n\n$&",
-                );
-            }
-
-            // Handle thinking points or list-like structures even without numbers
-            if (formattedContent.includes(" - ")) {
-                formattedContent = formattedContent.replace(/\s+-\s+/g, "\n- ");
-            }
-
-            return formattedContent;
-        }
-
-        // Normal processing for non-thinking messages
-        if (/\d+\.\s+.+/.test(content) && !content.includes("\n\n")) {
-            // Add proper line breaks for numbered lists that aren't already properly formatted
-            return content.replace(/(\d+\.\s+.+?)(?=\s+\d+\.\s+|$)/g, "$1\n\n");
-        }
-
-        return content;
     };
 
     // Render content with markdown support - all messages now rendered as markdown
@@ -229,9 +208,11 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
         const runId = (message as any).workflow_run_id as string | undefined;
 
         return (
-            <div className="vprose prose-sm">
+            <div className="vprose prose-sm text-sm">
                 <MarkdownRenderer
                     artifactRunId={runId}
+                    onProposalSelect={(optionId) => onSendMessage?.(optionId)}
+                    onProposalSubmit={(text) => onSendMessage?.(text)}
                     components={{
                         a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
                             const href = props.href || "";
@@ -270,8 +251,6 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
             </div>
         );
     };
-
-    const messageContent = getMessageContent();
 
     // Resolve artifacts from tool details (e.g. execute_shell.outputFiles)
     const [artifactLinks, setArtifactLinks] = useState<
@@ -350,159 +329,30 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
         loadArtifacts();
     }, [runId, outputFilesKey, client, urlCache]);
 
-    // Process content with image URL resolution when component mounts or message changes
-    useEffect(() => {
-        const processContent = async () => {
-            if (messageContent) {
-                setIsProcessingImages(true);
-                try {
-                    const processed = await convertLinks(processContentForMarkdown(messageContent));
-                    setProcessedContent(processed);
-                } catch (error) {
-                    console.error('Error processing message content:', error);
-                    setProcessedContent(messageContent);
-                } finally {
-                    setIsProcessingImages(false);
-                }
-            }
-        };
-        processContent();
-    }, [messageContent, client]);
-
     const workstreamId = getWorkstreamId(message);
+    const { Icon } = styles;
 
-    // Different styling based on message type
-    const getMessageTypeStyles = () => {
-        switch (message.type) {
-            case AgentMessageType.ANSWER:
-                return "border-l-info bg-info";
-            case AgentMessageType.COMPLETE:
-                return "border-l-success bg-success";
-            case AgentMessageType.IDLE:
-                return "border-l-muted bg-muted";
-            case AgentMessageType.REQUEST_INPUT:
-                return "border-l-attention bg-attention";
-            case AgentMessageType.QUESTION:
-                return "border-l-muted bg-muted";
-            case AgentMessageType.THOUGHT:
-                return "border-l-accent dark:border-l-purple-500 bg-purple-50/50 dark:bg-purple-900/10";
-            case AgentMessageType.ERROR:
-                return "border-l-destructive bg-destructive";
-            case AgentMessageType.UPDATE:
-                return "border-l-success bg-success";
-            case AgentMessageType.PLAN:
-                return "border-l-attention bg-attention";
-            case AgentMessageType.TERMINATED:
-                return "border-l-muted bg-muted";
-            default:
-                return "border-l-indigo-500 dark:border-l-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10";
+    // Render icon - show pulsating animation for active messages
+    const renderIcon = () => {
+        if (showPulsatingCircle) {
+            return <PulsatingCircle size="sm" color="blue" />;
         }
-    };
-
-    const messageTypeStyles = getMessageTypeStyles();
-
-    // Get the color for the icon based on message type
-    const getIconColor = () => {
-        switch (message.type) {
-            case AgentMessageType.ANSWER:
-                return "text-info";
-            case AgentMessageType.COMPLETE:
-                return "text-success";
-            case AgentMessageType.IDLE:
-                return "text-muted";
-            case AgentMessageType.REQUEST_INPUT:
-                return "text-attention";
-            case AgentMessageType.QUESTION:
-                return "text-muted";
-            case AgentMessageType.THOUGHT:
-                return "text-purple-600 dark:text-purple-400";
-            case AgentMessageType.ERROR:
-                return "text-destructive";
-            case AgentMessageType.UPDATE:
-                return "text-success";
-            case AgentMessageType.PLAN:
-                return "text-attention";
-            default:
-                return "text-muted";
-        }
-    };
-
-    // Get an icon for the message type with enhanced animations
-    const getMessageIcon = () => {
-        const iconColor = getIconColor();
-
-        // Choose an animation style for thinking messages
-        const getThinkingAnimation = (color: 'blue' | 'purple' | 'teal' | 'green' | 'amber') => {
-            // Generate a deterministic but varying number based on the message timestamp
-            // This ensures the same message always gets the same animation style
-            const timestampNum = typeof message.timestamp === 'number'
-                ? message.timestamp
-                : new Date(message.timestamp).getTime();
-
-            // Use only PulsatingCircle and AnimatedThinkingDots
-            return (timestampNum % 2 === 0)
-                ? <PulsatingCircle size="sm" color={color} />
-                : <AnimatedThinkingDots color={color} />;
-        };
-
-        switch (message.type) {
-            case AgentMessageType.ANSWER:
-                return showPulsatingCircle ? (
-                    getThinkingAnimation('blue')
-                ) : (
-                    <Bot className={`size-4 ${iconColor}`} />
-                );
-            case AgentMessageType.COMPLETE:
-                return <CheckCircle className={`size-4 ${iconColor}`} />;
-            case AgentMessageType.TERMINATED:
-                return <CheckCircle className={`size-4 ${iconColor}`} />;
-            case AgentMessageType.IDLE:
-                return <Clock className={`size-4 ${iconColor}`} />;
-            case AgentMessageType.REQUEST_INPUT:
-                return <User className={`size-4 ${iconColor}`} />;
-            case AgentMessageType.QUESTION:
-                return <User className={`size-4 ${iconColor}`} />;
-            case AgentMessageType.THOUGHT:
-                return showPulsatingCircle ? (
-                    getThinkingAnimation('purple')
-                ) : (
-                    <Bot className={`size-4 ${iconColor}`} />
-                );
-            case AgentMessageType.ERROR:
-                return <AlertCircle className={`size-4 ${iconColor}`} />;
-            case AgentMessageType.UPDATE:
-                return showPulsatingCircle ? (
-                    getThinkingAnimation('green')
-                ) : (
-                    <Info className={`size-4 ${iconColor}`} />
-                );
-            case AgentMessageType.PLAN:
-                return showPulsatingCircle ? (
-                    getThinkingAnimation('amber')
-                ) : (
-                    <MessageSquare className={`size-4 ${iconColor}`} />
-                );
-            default:
-                return showPulsatingCircle ? (
-                    getThinkingAnimation('blue')
-                ) : (
-                    <Bot className={`size-4 ${iconColor}`} />
-                );
-        }
+        return <Icon className={`size-4 ${styles.iconColor}`} />;
     };
 
     return (
-        <div
-            className={`border-l-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5 ${messageTypeStyles}`}
-            data-workstream-id={workstreamId}
-        >
-            {/* Enhanced header with icon and timestamp */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                    <div className={showPulsatingCircle ? "animate-fadeIn" : ""}>
-                        {getMessageIcon()}
-                    </div>
-                    <span className="text-xs font-medium text-muted ">{messageStyles.sender}</span>
+        <div className={className}>
+            <div
+                className={`border-l-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5 ${styles.borderColor} ${styles.bgColor} ${cardClassName || ""}`}
+                data-workstream-id={workstreamId}
+            >
+                {/* Header with icon and timestamp */}
+                <div className={`flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm ${headerClassName || ""}`}>
+                    <div className="flex items-center gap-2">
+                        <div className={`${showPulsatingCircle ? "animate-fadeIn" : ""} ${iconClassName || ""}`}>
+                            {renderIcon()}
+                        </div>
+                        <span className={`text-xs font-medium text-muted ${senderClassName || ""}`}>{styles.sender}</span>
 
                     {/* Show workstream badge next to sender for better organization */}
                     {workstreamId !== "main" && workstreamId !== "all" && (
@@ -513,7 +363,7 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
                 </div>
 
                 <div className="flex items-center gap-2 print:hidden">
-                    <span className="text-xs text-muted">
+                    <span className={`text-xs text-muted ${timestampClassName || ""}`}>
                         {dayjs(message.timestamp).format("HH:mm:ss")}
                     </span>
                     <Button
@@ -528,23 +378,16 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
             </div>
 
             {/* Message content */}
-            <div className="px-4 py-3 bg-white dark:bg-gray-900">
+            <div className={`px-4 py-3 bg-white dark:bg-gray-900 ${contentClassName || ""}`}>
                 {messageContent && (
-                    <div className="message-content">
-                        {isProcessingImages ? (
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <AnimatedThinkingDots color="blue" />
-                                <span>Loading images...</span>
-                            </div>
-                        ) : (
-                            renderContent(processedContent || messageContent)
-                        )}
+                    <div className="message-content break-words max-w-full" style={{ overflowWrap: 'anywhere' }}>
+                        {renderContent(processedContent || messageContent)}
                     </div>
                 )}
 
                 {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                 {artifactLinks.length > 0 && (
-                    <div className="mt-3 text-xs">
+                    <div className={`mt-3 text-xs ${artifactsClassName || ""}`}>
                         <div className="font-medium text-muted mb-1">Artifacts</div>
 
                         {/* Inline previews for image artifacts */}
@@ -591,7 +434,7 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
 
                 {/* Optional details section */}
                 {message.details && (
-                    <div className="mt-2 print:hidden">
+                    <div className={`mt-2 print:hidden ${detailsClassName || ""}`}>
                         <button
                             onClick={() => setShowDetails(!showDetails)}
                             className="text-xs text-muted flex items-center"
@@ -622,16 +465,27 @@ function MessageItemComponent({ message, showPulsatingCircle = false }: MessageI
                     </div>
                 )}
             </div>
+            </div>
         </div>
     );
 }
 
 // Memoize the component to prevent unnecessary re-renders
-// Only re-render when message timestamp or showPulsatingCircle changes
+// Only re-render when message timestamp, showPulsatingCircle, or className props change
 const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
     return (
         prevProps.message.timestamp === nextProps.message.timestamp &&
-        prevProps.showPulsatingCircle === nextProps.showPulsatingCircle
+        prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
+        prevProps.onSendMessage === nextProps.onSendMessage &&
+        prevProps.className === nextProps.className &&
+        prevProps.cardClassName === nextProps.cardClassName &&
+        prevProps.headerClassName === nextProps.headerClassName &&
+        prevProps.contentClassName === nextProps.contentClassName &&
+        prevProps.timestampClassName === nextProps.timestampClassName &&
+        prevProps.senderClassName === nextProps.senderClassName &&
+        prevProps.iconClassName === nextProps.iconClassName &&
+        prevProps.detailsClassName === nextProps.detailsClassName &&
+        prevProps.artifactsClassName === nextProps.artifactsClassName
     );
 });
 
