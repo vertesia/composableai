@@ -1,6 +1,7 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 
 export interface OAuthAuthStatus {
+    collection_name?: string;
     authenticated: boolean;
     mcp_server_url: string;
     expires_at?: string;
@@ -12,6 +13,12 @@ export interface OAuthAuthorizeResponse {
     state: string;
 }
 
+export interface OAuthMetadataResponse {
+    collection_name: string;
+    mcp_server_url: string;
+    metadata: any;
+}
+
 export default class MCPOAuthApi extends ApiTopic {
 
     constructor(parent: ClientBase) {
@@ -19,21 +26,42 @@ export default class MCPOAuthApi extends ApiTopic {
     }
 
     /**
-     * Get OAuth authentication status for an app installation
+     * Get OAuth authentication status for all collections in an app installation
      * @param appInstallId - The app installation ID
-     * @returns OAuth authentication status
+     * @returns Array of OAuth authentication statuses
      */
-    getStatus(appInstallId: string): Promise<OAuthAuthStatus> {
+    getStatus(appInstallId: string): Promise<OAuthAuthStatus[]> {
         return this.get(`/status/${appInstallId}`);
     }
 
     /**
-     * Initiate OAuth authorization flow
+     * Get OAuth authentication status for a specific collection
      * @param appInstallId - The app installation ID
+     * @param collectionName - The collection name
+     * @returns OAuth authentication status for the collection
+     */
+    getCollectionStatus(appInstallId: string, collectionName: string): Promise<OAuthAuthStatus> {
+        return this.get(`/status/${appInstallId}/${collectionName}`);
+    }
+
+    /**
+     * Get OAuth metadata for a specific collection
+     * @param appInstallId - The app installation ID
+     * @param collectionName - The collection name
+     * @returns OAuth metadata
+     */
+    getMetadata(appInstallId: string, collectionName: string): Promise<OAuthMetadataResponse> {
+        return this.get(`/metadata/${appInstallId}/${collectionName}`);
+    }
+
+    /**
+     * Initiate OAuth authorization flow for a specific collection
+     * @param appInstallId - The app installation ID
+     * @param collectionName - The collection name
      * @returns Authorization URL to open for user authentication
      */
-    authorize(appInstallId: string): Promise<OAuthAuthorizeResponse> {
-        return this.get(`/authorize/${appInstallId}`);
+    authorize(appInstallId: string, collectionName: string): Promise<OAuthAuthorizeResponse> {
+        return this.get(`/authorize/${appInstallId}/${collectionName}`);
     }
 
     /**

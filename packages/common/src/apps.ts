@@ -26,32 +26,72 @@ export type ToolCollectionAuthType = "oauth" | "other";
 export type ToolCollectionType = "mcp" | "vertesia_sdk";
 
 /**
- * Tool collection configuration (object format)
+ * Base tool collection configuration
  */
-export interface ToolCollectionObject {
+interface BaseToolCollectionObject {
     /**
      * The URL endpoint for the tool collection
      */
     url: string;
 
     /**
-     * The type of tool collection (MCP or Vertesia SDK)
-     */
-    type: ToolCollectionType;
-
-    /**
      * Optional authentication type required for this tool collection
      */
     auth?: ToolCollectionAuthType;
+}
+
+/**
+ * MCP tool collection configuration (requires name, description, and prefix)
+ */
+export interface MCPToolCollectionObject extends BaseToolCollectionObject {
+    type: "mcp";
+
+    /**
+     * Name for the tool collection.
+     * Used as an identifier for the collection (e.g., for OAuth authentication).
+     */
+    name: string;
+
+    /**
+     * Description for the tool collection.
+     * Helps users understand what tools this collection provides.
+     */
+    description: string;
+
+    /**
+     * Prefix to use for tool names from this collection.
+     * Provides clean, readable tool names (e.g., "jira" instead of "https://mcp.atlassian.com/v1/mcp")
+     */
+    prefix: string;
+}
+
+/**
+ * Vertesia SDK tool collection configuration
+ */
+export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObject {
+    type: "vertesia_sdk";
 
     /**
      * Optional prefix to use for tool names from this collection.
      * If not provided, the URL will be used as the prefix.
-     * This is useful for MCP servers to provide clean, readable tool names
-     * (e.g., "jira" instead of "https://mcp.atlassian.com/v1/mcp")
      */
     prefix?: string;
+
+    /**
+     * Optional name for the tool collection.
+     */
+    name?: string;
+
+    /**
+     * Optional description for the tool collection.
+     */
+    description?: string;
 }
+
+/**
+ * Tool collection configuration (object format)
+ */
+export type ToolCollectionObject = MCPToolCollectionObject | VertesiaSDKToolCollectionObject;
 
 /**
  * Tool collection can be either:
@@ -71,9 +111,16 @@ export function normalizeToolCollection(collection: ToolCollection): ToolCollect
     if (typeof collection === 'string') {
         // Legacy string format
         if (collection.startsWith('mcp:')) {
+            const url = collection.substring('mcp:'.length);
+            // For legacy MCP strings, derive name and prefix from URL
+            const urlObj = new URL(url);
+            const name = urlObj.hostname.replace(/\./g, '-');
             return {
-                url: collection.substring('mcp:'.length),
-                type: 'mcp'
+                url,
+                type: 'mcp',
+                name,
+                description: `MCP server at ${url}`,
+                prefix: name
             };
         }
         return {
