@@ -1,8 +1,9 @@
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
 import { ContentObjectTypeItem } from "@vertesia/common";
 import { TBody, Table } from "@vertesia/ui/core";
 import { useNavigate } from "@vertesia/ui/router";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
@@ -14,27 +15,27 @@ export function ContentObjectTypesTable({ objects, isLoading }: ContentObjectTyp
     const navigate = useNavigate();
 
     return (
-        <div>
-            <Table className="w-full">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Strict Mode</th>
-                        <th>Semantic Chunking</th>
-                        <th>Updated At</th>
-                    </tr>
-                </thead>
-                <TBody isLoading={isLoading} columns={3}>
-                    {objects?.map((obj: any) => (
+        <Table className="w-full">
+            <thead className="sticky top-0 bg-background z-10 after:absolute after:bottom-0 after:left-0 after:w-full after:h-px after:bg-muted/20">
+                <tr>
+                    <th>Name</th>
+                    <th>Strict Mode</th>
+                    <th>Semantic Chunking</th>
+                    <th>Updated At</th>
+                </tr>
+            </thead>
+            <TBody isLoading={isLoading && (!objects || objects.length === 0)} columns={4}>
+                {
+                    objects?.map((obj: any) => (
                         <tr key={obj.id} onClick={() => navigate(`/types/${obj.id}`)} className='cursor-pointer hover:bg-muted'>
                             <td>{obj.name}</td>
                             <td>{obj.strict_mode ? 'Yes' : 'No'}</td>
                             <td>{obj.is_chunkable ? 'Yes' : 'No'}</td>
                             <td>{dayjs(obj.updated_at).fromNow()}</td>
                         </tr>
-                    ))}
-                </TBody>
-            </Table>
-        </div>
+                    ))
+                }
+            </TBody>
+        </Table>
     )
 }
