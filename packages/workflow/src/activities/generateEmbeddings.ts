@@ -209,7 +209,9 @@ async function generateTextEmbeddings(
 
     // Count tokens if not already done or if the text has changed (etag mismatch)
     const needsTokenCount = !document.tokens?.count || (textEtag && document.tokens?.etag !== textEtag);
-    if (needsTokenCount && type === SupportedEmbeddingTypes.text && document.text && textEtag) {
+    const shouldUpdateTokenCount =
+        needsTokenCount && type === SupportedEmbeddingTypes.text && !!document.text && !!textEtag;
+    if (shouldUpdateTokenCount) {
         log.debug("Updating token count for document: " + document.id);
         const tokensData = countTokens(document.text);
         await client.objects.update(document.id, {
