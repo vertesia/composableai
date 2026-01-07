@@ -578,3 +578,189 @@ export const DEFAULT_RETENTION_CONFIG: DataStoreRetentionConfig = {
     retention_days: 30,
     snapshots_exempt: true,
 };
+
+// ============================================================================
+// Dashboard Types
+// ============================================================================
+
+/**
+ * Dashboard lifecycle status.
+ */
+export enum DashboardStatus {
+    /** Dashboard is active and usable */
+    ACTIVE = 'active',
+    /** Dashboard has been archived (soft deleted) */
+    ARCHIVED = 'archived',
+}
+
+/**
+ * Named SQL query that maps to a Vega data source.
+ */
+export interface DashboardQuery {
+    /** Query name (used as data source reference in Vega specs) */
+    name: string;
+    /** SQL query (SELECT only) */
+    sql: string;
+    /** Human-readable description */
+    description?: string;
+    /** Maximum rows to return */
+    limit?: number;
+}
+
+/**
+ * Panel position within the dashboard grid.
+ */
+export interface DashboardPanelPosition {
+    /** Row index (0-based) */
+    row: number;
+    /** Column index (0-based) */
+    col: number;
+    /** Width in grid cells (default: 1) */
+    width?: number;
+    /** Height in grid cells (default: 1) */
+    height?: number;
+}
+
+/**
+ * Dashboard panel with Vega/Vega-Lite visualization.
+ */
+export interface DashboardPanel {
+    /** Panel ID (auto-generated if not provided) */
+    id?: string;
+    /** Panel title */
+    title: string;
+    /** Vega or Vega-Lite specification */
+    spec: Record<string, unknown>;
+    /** Whether spec is Vega-Lite (default: true) */
+    vegaLite?: boolean;
+    /** Query names that populate this panel's data sources */
+    dataSources: string[];
+    /** Position in the dashboard grid */
+    position: DashboardPanelPosition;
+}
+
+/**
+ * Dashboard layout configuration.
+ */
+export interface DashboardLayout {
+    /** Number of columns in the grid (default: 2) */
+    columns: number;
+    /** Width of each cell in pixels (default: 600) */
+    cellWidth: number;
+    /** Height of each cell in pixels (default: 400) */
+    cellHeight: number;
+    /** Padding between cells in pixels (default: 20) */
+    padding: number;
+}
+
+/**
+ * Default layout configuration for dashboards.
+ */
+export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayout = {
+    columns: 2,
+    cellWidth: 600,
+    cellHeight: 400,
+    padding: 20,
+};
+
+/**
+ * Summary view of a dashboard (for listings).
+ */
+export interface DashboardItem extends BaseObject {
+    /** Parent data store ID */
+    store_id: string;
+    /** Current status */
+    status: DashboardStatus;
+    /** Number of panels */
+    panel_count: number;
+    /** Number of queries */
+    query_count: number;
+    /** Last render timestamp */
+    last_rendered_at?: string;
+}
+
+/**
+ * Full dashboard with queries, panels, and layout.
+ */
+export interface Dashboard extends DashboardItem {
+    /** Named SQL queries */
+    queries: DashboardQuery[];
+    /** Panel definitions */
+    panels: DashboardPanel[];
+    /** Layout configuration */
+    layout: DashboardLayout;
+    /** URL of last rendered image */
+    last_render_url?: string;
+}
+
+/**
+ * Payload for creating a new dashboard.
+ */
+export interface CreateDashboardPayload {
+    /** Dashboard name (unique within store) */
+    name: string;
+    /** Dashboard description */
+    description?: string;
+    /** Named SQL queries */
+    queries: DashboardQuery[];
+    /** Panel definitions */
+    panels: DashboardPanel[];
+    /** Layout configuration (uses defaults if not provided) */
+    layout?: Partial<DashboardLayout>;
+}
+
+/**
+ * Payload for updating a dashboard.
+ */
+export interface UpdateDashboardPayload {
+    /** Dashboard name */
+    name?: string;
+    /** Dashboard description */
+    description?: string;
+    /** Named SQL queries */
+    queries?: DashboardQuery[];
+    /** Panel definitions */
+    panels?: DashboardPanel[];
+    /** Layout configuration */
+    layout?: Partial<DashboardLayout>;
+}
+
+/**
+ * Payload for previewing a dashboard (render without saving).
+ */
+export interface PreviewDashboardPayload {
+    /** Named SQL queries */
+    queries: DashboardQuery[];
+    /** Panel definitions */
+    panels: DashboardPanel[];
+    /** Layout configuration (uses defaults if not provided) */
+    layout?: Partial<DashboardLayout>;
+}
+
+/**
+ * Options for rendering a dashboard.
+ */
+export interface RenderDashboardOptions {
+    /** Scale factor for higher resolution (default: 1) */
+    scale?: number;
+    /** Force re-render even if cached (default: false) */
+    force?: boolean;
+    /** Background color (default: white) */
+    backgroundColor?: string;
+}
+
+/**
+ * Result of rendering a dashboard.
+ */
+export interface RenderDashboardResult {
+    /** URL to the rendered PNG image */
+    url: string;
+    /** When the URL expires (seconds from now) */
+    expires_in: number;
+    /** When the dashboard was rendered */
+    rendered_at: string;
+    /** Image width in pixels */
+    width: number;
+    /** Image height in pixels */
+    height: number;
+}

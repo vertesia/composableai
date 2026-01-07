@@ -16,6 +16,7 @@ import {
     QueryResult,
     UpdateSchemaPayload,
 } from "@vertesia/common";
+import { DashboardApi } from "./DashboardApi.js";
 
 /**
  * Client API for managing versioned analytical data stores.
@@ -381,6 +382,42 @@ export class DataApi extends ApiTopic {
     getDownloadInfo(id: string, versionId?: string): Promise<DataStoreDownloadInfo> {
         const query = versionId ? `?version_id=${versionId}` : '';
         return this.get(`/${id}/download${query}`);
+    }
+
+    // ============================================================
+    // Dashboard Operations
+    // ============================================================
+
+    /**
+     * Get the Dashboard API for a specific data store.
+     *
+     * @param storeId - Data store ID
+     * @returns DashboardApi instance for managing dashboards
+     *
+     * @example
+     * ```typescript
+     * // List dashboards
+     * const dashboards = await client.data.dashboards(storeId).list();
+     *
+     * // Preview a dashboard before creating
+     * const preview = await client.data.dashboards(storeId).preview({
+     *   queries: [{ name: 'sales', sql: 'SELECT * FROM sales' }],
+     *   panels: [{ title: 'Sales', dataSources: ['sales'], ... }]
+     * });
+     *
+     * // Create a dashboard
+     * const dashboard = await client.data.dashboards(storeId).create({
+     *   name: 'Sales Overview',
+     *   queries: [...],
+     *   panels: [...]
+     * });
+     *
+     * // Render dashboard to PNG
+     * const result = await client.data.dashboards(storeId).render(dashboardId);
+     * ```
+     */
+    dashboards(storeId: string): DashboardApi {
+        return new DashboardApi(this.client, storeId);
     }
 }
 
