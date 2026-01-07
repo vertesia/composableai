@@ -2,11 +2,12 @@ import type { InteractionCollection } from "../InteractionCollection.js";
 import type { SkillCollection } from "../SkillCollection.js";
 import type { ToolCollection } from "../ToolCollection.js";
 import type { ICollection, SkillDefinition, Tool } from "../types.js";
+import { join } from "../utils.js";
 import { baseStyles } from "./styles.js";
 
 type MCPProviderMeta = {
-  name: string;
-  description?: string;
+    name: string;
+    description?: string;
 };
 
 /**
@@ -439,7 +440,7 @@ export function toolCard(tool: Tool<Record<string, unknown>>): string {
  * Render an MCP provider card
  */
 export function mcpProviderCard(provider: MCPProviderMeta): string {
-  return /*html*/`
+    return /*html*/`
 <a class="card" href="/api/mcp/${provider.name}">
     <div class="card-title">${provider.name}</div>
     <div class="card-desc">${provider.description || ''}</div>
@@ -482,9 +483,9 @@ export function toolDetailCard(tool: Tool<Record<string, unknown>>, collectionNa
             ${properties ? /*html*/`
             <div class="info-grid" style="margin-bottom: 1rem;">
                 ${Object.entries(properties).map(([key, value]) => {
-                    const prop = value as Record<string, unknown>;
-                    const isRequired = required?.includes(key);
-                    return /*html*/`
+        const prop = value as Record<string, unknown>;
+        const isRequired = required?.includes(key);
+        return /*html*/`
                     <div class="info-item">
                         <div class="info-label">${key}${isRequired ? ' *' : ''}</div>
                         <div class="info-value">
@@ -492,7 +493,7 @@ export function toolDetailCard(tool: Tool<Record<string, unknown>>, collectionNa
                             ${prop.description ? `<br><span style="color: #6b7280; font-size: 0.85rem;">${prop.description}</span>` : ''}
                         </div>
                     </div>`;
-                }).join('')}
+    }).join('')}
             </div>
             ` : ''}
             <details>
@@ -552,6 +553,7 @@ export function skillDetailCard(skill: SkillDefinition, collection: SkillCollect
     const hasKeywords = skill.context_triggers?.keywords?.length;
     const hasPackages = skill.execution?.packages?.length;
     const hasScripts = skill.scripts?.length;
+    const hasRelatedTools = skill.related_tools?.length;
 
     return /*html*/`
 <div class="detail-card">
@@ -564,6 +566,7 @@ export function skillDetailCard(skill: SkillDefinition, collection: SkillCollect
         <div class="detail-badges">
             <span class="badge skill-type-badge">Skill</span>
             ${skill.execution?.language ? `<span class="badge ${skill.execution.language}">${skill.execution.language}</span>` : ''}
+            ${hasRelatedTools ? `<span class="badge" style="background: #8b5cf6; color: white;">Unlocks ${skill.related_tools?.length} tool${skill.related_tools?.length !== 1 ? 's' : ''}</span>` : ''}
         </div>
     </div>
     <div class="detail-body">
@@ -583,6 +586,16 @@ export function skillDetailCard(skill: SkillDefinition, collection: SkillCollect
                 <div class="info-value">${skillWidgetsTemplate(skill.widgets)}</div>
             </div>
         </div>
+
+        ${hasRelatedTools ? /*html*/`
+        <div class="detail-section">
+            <h4 class="detail-section-title">Unlocks Tools</h4>
+            <p style="color: #6b7280; font-size: 0.85rem; margin: 0 0 0.75rem 0;">These tools become available when this skill is activated:</p>
+            <div class="package-list">
+                ${skill.related_tools?.map(tool => `<span class="package-tag" style="background: #ede9fe; color: #6d28d9;">${tool}</span>`).join('')}
+            </div>
+        </div>
+        ` : ''}
 
         ${hasKeywords ? /*html*/`
         <div class="detail-section">
@@ -609,7 +622,7 @@ export function skillDetailCard(skill: SkillDefinition, collection: SkillCollect
                 ${skill.scripts?.map(script => /*html*/`
                 <div class="script-item">
                     ${fileIcon}
-                    <span class="script-name">${script.name}</span>
+                    <span class="script-name">${join("/scripts", script)}</span>
                 </div>
                 `).join('')}
             </div>
@@ -755,9 +768,9 @@ export function indexPage(
             </div>
             <div class="card-grid">
                 ${skills.map(s => {
-                    const count = Array.from(s).length;
-                    return collectionCard(s, 'skills', `${count} skill${count !== 1 ? 's' : ''}`);
-                }).join('')}
+        const count = Array.from(s).length;
+        return collectionCard(s, 'skills', `${count} skill${count !== 1 ? 's' : ''}`);
+    }).join('')}
             </div>
         </section>
         ` : ''}
@@ -877,9 +890,9 @@ export function toolCollectionPage(collection: ToolCollection): string {
     <h2>${toolsArray.length} Tool${toolsArray.length !== 1 ? 's' : ''}</h2>
 
     ${toolsArray.length > 0 ?
-        toolsArray.map(tool => toolDetailCard(tool, collection.name)).join('') :
-        '<div class="empty-state">No tools in this collection</div>'
-    }
+            toolsArray.map(tool => toolDetailCard(tool, collection.name)).join('') :
+            '<div class="empty-state">No tools in this collection</div>'
+        }
 </body>
 </html>`;
 }
@@ -920,9 +933,9 @@ export function skillCollectionPage(collection: SkillCollection): string {
     <h2>${skillsArray.length} Skill${skillsArray.length !== 1 ? 's' : ''}</h2>
 
     ${skillsArray.length > 0 ?
-        skillsArray.map(skill => skillDetailCard(skill, collection)).join('') :
-        '<div class="empty-state">No skills in this collection</div>'
-    }
+            skillsArray.map(skill => skillDetailCard(skill, collection)).join('') :
+            '<div class="empty-state">No skills in this collection</div>'
+        }
 </body>
 </html>`;
 }

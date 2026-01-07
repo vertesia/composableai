@@ -1,5 +1,5 @@
 import { JSONSchema4 } from "json-schema";
-import { ConversationVisibility, InteractionRef } from "../interaction.js";
+import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
 
 export enum ContentEventName {
     create = "create",
@@ -17,6 +17,15 @@ export interface Queue {
     // use either suffix or full name. fullname has precedence over suffix
     queue_suffix?: string; // suffix to append to the base queue name
     queue_full_name?: string; // full name
+}
+
+export interface WorkflowAncestor {
+    run_id: string;
+    workflow_id: string;
+    /**
+     * the depth of nested parent workflows
+     */
+    run_depth: number;
 }
 
 export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
@@ -69,14 +78,20 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     notify_endpoints?: (string | WebHookSpec)[];
 
     /** If this is a child workflow, parent contains parent's ids  */
-    parent?: {
-        run_id: string;
-        workflow_id: string;
-        /**
-         * the depth of nested parent workflows
-         */
-        run_depth?: number;
-    };
+    parent?: WorkflowAncestor;
+
+    /**
+     * Full ancestry chain from root to immediate parent (for hierarchical aggregation)
+     */
+    ancestors?: WorkflowAncestor[]
+
+    /**
+     * If true, copy workspace artifacts (scripts/, files/, skills/, docs/, out/)
+     * from parent workflow to this workflow on startup.
+     * Defaults to true when spawning child workflows.
+     * conversation.json and tools.json are never copied.
+     */
+    inherit_artifacts?: boolean;
 
     /**
      *  List of enabled processing queues. Managed by the application.
@@ -349,6 +364,11 @@ export interface WorkflowInteractionVars {
     interaction: string,
     interactive: boolean,
     debug_mode?: boolean,
+    /**
+     * Array of channels to use for user communication.
+     * Multiple channels can be active simultaneously.
+     */
+    user_channels?: UserChannel[],
     data?: Record<string, any>,
     tool_names: string[],
     config: {
@@ -427,6 +447,76 @@ export enum AgentMessageType {
     REQUEST_INPUT = "request_input",
     IDLE = "idle",
     TERMINATED = "terminated",
+    STREAMING_CHUNK = "streaming_chunk",
+    BATCH_PROGRESS = "batch_progress",
+}
+
+/**
+ * Details for STREAMING_CHUNK messages used for real-time LLM response streaming
+ */
+export interface StreamingChunkDetails {
+    /** Unique identifier grouping chunks from the same stream */
+    streaming_id: string;
+    /** Order of this chunk within the stream (0-indexed) */
+    chunk_index: number;
+    /** True if this is the final chunk of the stream */
+    is_final: boolean;
+}
+
+/**
+ * Status of a single item in a batch execution
+ */
+export interface BatchItemStatus {
+    /** Unique identifier for this batch item */
+    id: string;
+    /** Current status of the item */
+    status: "pending" | "running" | "success" | "error";
+    /** Optional message (e.g., error message or result summary) */
+    message?: string;
+    /** Execution duration in milliseconds (when completed) */
+    duration_ms?: number;
+}
+
+/**
+ * Details for BATCH_PROGRESS messages used for batch tool execution progress
+ */
+export interface BatchProgressDetails {
+    /** Unique identifier for this batch execution */
+    batch_id: string;
+    /** Name of the tool being batch executed */
+    tool_name: string;
+    /** Total number of items in the batch */
+    total: number;
+    /** Number of items completed */
+    completed: number;
+    /** Number of items that succeeded */
+    succeeded: number;
+    /** Number of items that failed */
+    failed: number;
+    /** Status of individual items */
+    items: BatchItemStatus[];
+    /** Timestamp when batch started */
+    started_at: number;
+    /** Timestamp when batch completed (if done) */
+    completed_at?: number;
+}
+
+/**
+ * Get the Redis pub/sub channel name for workflow messages.
+ * Used by both publishers (workflow activities, studio-server) and subscribers (zeno-server, clients).
+ * @param workflowRunId - The Temporal workflow run ID (NOT the interaction execution run ID)
+ */
+export function getWorkflowChannel(workflowRunId: string): string {
+    return `workflow:${workflowRunId}:channel`;
+}
+
+/**
+ * Get the Redis list key for storing workflow message history.
+ * Messages are stored here for retrieval by reconnecting clients.
+ * @param workflowRunId - The Temporal workflow run ID (NOT the interaction execution run ID)
+ */
+export function getWorkflowUpdatesKey(workflowRunId: string): string {
+    return `workflow:${workflowRunId}:updates`;
 }
 
 export interface PlanTask {
@@ -491,4 +581,90 @@ export interface WorkflowActionPayload {
      * Optional reason for the action.
      */
     reason?: string;
+}
+
+/**
+ * Parameters for the AgentIntakeWorkflow.
+ * This workflow uses an intelligent agent to process documents:
+ * - Select or create appropriate content types
+ * - Extract properties using schema-enforced interactions
+ * - File documents into relevant collections
+ */
+export interface AgentIntakeWorkflowParams {
+    /**
+     * The interaction to use for document intake agent.
+     * Defaults to "sys:DocumentIntakeAgent" if not specified.
+     * Can be overridden with a project-level interaction.
+     */
+    intakeInteraction?: string;
+
+    /**
+     * The interaction to use for property extraction.
+     * Defaults to "sys:ExtractInformation" if not specified.
+     * Can be overridden with a project-level interaction.
+     */
+    extractionInteraction?: string;
+
+    /**
+     * Whether to generate table of contents for documents.
+     * Defaults to true for documents, false for images/videos.
+     */
+    generateTableOfContents?: boolean;
+
+    /**
+     * Whether to generate embeddings after processing.
+     * Defaults to true.
+     */
+    generateEmbeddings?: boolean;
+
+    /**
+     * Max iterations for the agent workflow.
+     * Defaults to 50.
+     */
+    maxIterations?: number;
+
+    /**
+     * Environment ID for LLM execution.
+     */
+    environment?: string;
+
+    /**
+     * Model to use for the agent.
+     */
+    model?: string;
+
+    /**
+     * Additional model options.
+     */
+    model_options?: Record<string, unknown>;
+
+    /**
+     * Whether to use semantic layer (MagicPDF) for PDF processing.
+     */
+    useSemanticLayer?: boolean;
+
+    /**
+     * Whether to use vision for image-based extraction.
+     */
+    useVision?: boolean;
+}
+
+/**
+ * Result of the AgentIntakeWorkflow
+ */
+export interface AgentIntakeWorkflowResult {
+    /** The object ID that was processed */
+    objectId: string;
+    /** Whether text was extracted */
+    hasText: boolean;
+    /** Whether table of contents was generated */
+    hasTableOfContents: boolean;
+    /** The type ID assigned to the document */
+    typeId?: string;
+    /** Whether properties were extracted */
+    hasProperties: boolean;
+    /** Collection IDs the document was added to */
+    collectionIds?: string[];
+    /** Whether embeddings were generated */
+    hasEmbeddings: boolean;
 }

@@ -1,8 +1,8 @@
-import { readdirSync, statSync, existsSync, readFileSync } from "fs";
-import { join } from "path";
 import { ToolDefinition } from "@llumiverse/common";
+import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { join } from "path";
 import type {
     CollectionProperties,
     ICollection,
@@ -10,6 +10,7 @@ import type {
     SkillDefinition,
     SkillExecutionResult,
     ToolCollectionDefinition,
+    ToolDefinitionWithDefault,
     ToolExecutionPayload,
     ToolExecutionResult,
 } from "./types.js";
@@ -83,8 +84,9 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      * Get skills exposed as tool definitions.
      * This allows skills to appear alongside regular tools.
      * When called, they return rendered instructions.
+     * Includes related_tools for dynamic tool discovery.
      */
-    getToolDefinitions(): ToolDefinition[] {
+    getToolDefinitions(): ToolDefinitionWithDefault[] {
         const defaultSchema: ToolDefinition['input_schema'] = {
             type: 'object',
             properties: {
@@ -95,11 +97,20 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             }
         };
 
-        return Array.from(this.skills.values()).map(skill => ({
-            name: `learn_${skill.name}`,
-            description: `[Skill] ${skill.description}. Returns contextual instructions for this task.`,
-            input_schema: skill.input_schema || defaultSchema
-        }));
+        return Array.from(this.skills.values()).map(skill => {
+            // Build description with related tools info if available
+            let description = `[Skill] ${skill.description}. Returns contextual instructions for this task.`;
+            if (skill.related_tools && skill.related_tools.length > 0) {
+                description += ` Unlocks tools: ${skill.related_tools.join(', ')}.`;
+            }
+
+            return {
+                name: `learn_${skill.name}`,
+                description,
+                input_schema: skill.input_schema || defaultSchema,
+                related_tools: skill.related_tools,
+            };
+        });
     }
 
     /**
@@ -220,6 +231,7 @@ interface SkillFrontmatter {
     packages?: string[];
     system_packages?: string[];
     widgets?: string[];
+    scripts?: string[];
 }
 
 /**
@@ -270,6 +282,7 @@ export function parseSkillFile(
         instructions,
         content_type: contentType,
         widgets: frontmatter.widgets || undefined,
+        scripts: frontmatter.scripts || undefined,
     };
 
     // Build context triggers
