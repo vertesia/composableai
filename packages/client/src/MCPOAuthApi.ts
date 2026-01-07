@@ -1,23 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-
-export interface OAuthAuthStatus {
-    collection_name: string;
-    authenticated: boolean;
-    mcp_server_url: string;
-    expires_at?: string;
-    scope?: string;
-}
-
-export interface OAuthAuthorizeResponse {
-    authorization_url: string;
-    state: string;
-}
-
-export interface OAuthMetadataResponse {
-    collection_name: string;
-    mcp_server_url: string;
-    metadata: any;
-}
+import type { OAuthAuthStatus, OAuthAuthorizeResponse, OAuthMetadataResponse } from "@vertesia/common";
 
 export default class MCPOAuthApi extends ApiTopic {
 

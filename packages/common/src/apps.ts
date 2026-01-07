@@ -232,3 +232,31 @@ export interface AppToolCollection {
      */
     tools: { name: string, description?: string }[]
 }
+
+/**
+ * OAuth authentication status for an MCP tool collection
+ */
+export interface OAuthAuthStatus {
+    collection_name: string;
+    authenticated: boolean;
+    mcp_server_url: string;
+    expires_at?: string;
+    scope?: string;
+}
+
+/**
+ * Response from OAuth authorization endpoint
+ */
+export interface OAuthAuthorizeResponse {
+    authorization_url: string;
+    state: string;
+}
+
+/**
+ * Response from OAuth metadata endpoint
+ */
+export interface OAuthMetadataResponse {
+    collection_name: string;
+    mcp_server_url: string;
+    metadata: any;
+}
