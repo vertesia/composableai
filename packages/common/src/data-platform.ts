@@ -1,0 +1,580 @@
+/**
+ * Data Platform Types
+ *
+ * Types for managing versioned analytical data stores with DuckDB + GCS storage.
+ * Supports AI-manageable schemas and multi-table atomic operations.
+ */
+
+import { BaseObject } from './store/common.js';
+
+// ============================================================================
+// Column Types
+// ============================================================================
+
+/**
+ * Supported column data types for DuckDB tables.
+ */
+export enum DataColumnType {
+    STRING = 'STRING',
+    INTEGER = 'INTEGER',
+    BIGINT = 'BIGINT',
+    FLOAT = 'FLOAT',
+    DOUBLE = 'DOUBLE',
+    DECIMAL = 'DECIMAL',
+    BOOLEAN = 'BOOLEAN',
+    DATE = 'DATE',
+    TIMESTAMP = 'TIMESTAMP',
+    JSON = 'JSON',
+}
+
+/**
+ * Semantic types that provide AI agents with context about column meaning.
+ */
+export enum SemanticColumnType {
+    EMAIL = 'email',
+    PHONE = 'phone',
+    URL = 'url',
+    CURRENCY = 'currency',
+    PERCENTAGE = 'percentage',
+    PERSON_NAME = 'person_name',
+    ADDRESS = 'address',
+    COUNTRY = 'country',
+    DATE_ISO = 'date_iso',
+    IDENTIFIER = 'identifier',
+}
+
+/**
+ * Mapping from DataColumnType to DuckDB SQL types.
+ */
+export const DATA_COLUMN_TYPE_TO_DUCKDB: Record<DataColumnType, string> = {
+    [DataColumnType.STRING]: 'VARCHAR',
+    [DataColumnType.INTEGER]: 'INTEGER',
+    [DataColumnType.BIGINT]: 'BIGINT',
+    [DataColumnType.FLOAT]: 'FLOAT',
+    [DataColumnType.DOUBLE]: 'DOUBLE',
+    [DataColumnType.DECIMAL]: 'DECIMAL(18,4)',
+    [DataColumnType.BOOLEAN]: 'BOOLEAN',
+    [DataColumnType.DATE]: 'DATE',
+    [DataColumnType.TIMESTAMP]: 'TIMESTAMP',
+    [DataColumnType.JSON]: 'JSON',
+};
+
+// ============================================================================
+// Schema Types
+// ============================================================================
+
+/**
+ * Column definition for a data table.
+ */
+export interface DataColumn {
+    /** Column name (must be valid SQL identifier) */
+    name: string;
+    /** Data type */
+    type: DataColumnType;
+    /** Human-readable description */
+    description?: string;
+    /** Whether the column allows NULL values */
+    nullable?: boolean;
+    /** Default value (SQL expression as string) */
+    default?: string;
+    /** Whether this is the primary key */
+    primary_key?: boolean;
+    /** Whether values must be unique */
+    unique?: boolean;
+    /** Semantic type for AI understanding */
+    semantic_type?: SemanticColumnType;
+    /** Example values for AI context */
+    examples?: string[];
+}
+
+/**
+ * Foreign key constraint definition.
+ */
+export interface DataForeignKey {
+    /** Column in this table */
+    column: string;
+    /** Referenced table name */
+    references_table: string;
+    /** Referenced column name */
+    references_column: string;
+    /** Action on delete */
+    on_delete?: 'CASCADE' | 'SET NULL' | 'NO ACTION';
+}
+
+/**
+ * Index definition for a table.
+ */
+export interface DataIndex {
+    /** Index name */
+    name: string;
+    /** Columns included in the index */
+    columns: string[];
+    /** Whether the index enforces uniqueness */
+    unique?: boolean;
+}
+
+/**
+ * Semantic type categorization for tables.
+ */
+export type DataTableSemanticType = 'dimension' | 'fact' | 'bridge' | 'staging';
+
+/**
+ * Table definition within a data schema.
+ */
+export interface DataTable {
+    /** Table name (must be valid SQL identifier) */
+    name: string;
+    /** Human-readable description */
+    description?: string;
+    /** Column definitions */
+    columns: DataColumn[];
+    /** Foreign key constraints */
+    foreign_keys?: DataForeignKey[];
+    /** Index definitions */
+    indexes?: DataIndex[];
+    /** Semantic categorization for AI understanding */
+    semantic_type?: DataTableSemanticType;
+    /** Tags for organization */
+    tags?: string[];
+    /** Current row count (updated after imports) */
+    row_count?: number;
+    /** Table creation timestamp */
+    created_at?: string;
+    /** Last modification timestamp */
+    updated_at?: string;
+}
+
+/**
+ * Relationship type between tables.
+ */
+export type DataRelationshipType = 'one-to-one' | 'one-to-many' | 'many-to-many';
+
+/**
+ * Semantic relationship between tables for AI understanding.
+ */
+export interface DataRelationship {
+    /** Relationship name */
+    name: string;
+    /** Source table */
+    from_table: string;
+    /** Source column */
+    from_column: string;
+    /** Target table */
+    to_table: string;
+    /** Target column */
+    to_column: string;
+    /** Relationship cardinality */
+    relationship_type: DataRelationshipType;
+    /** Human-readable description */
+    description?: string;
+}
+
+/**
+ * Complete schema definition for a data store.
+ */
+export interface DataSchema {
+    /** Semantic version (e.g., "1.2.0") */
+    version: string;
+    /** Schema description */
+    description?: string;
+    /** Table definitions */
+    tables: DataTable[];
+    /** Relationship definitions */
+    relationships: DataRelationship[];
+    /** Last update timestamp */
+    updated_at: string;
+    /** User/agent who last updated */
+    updated_by?: string;
+}
+
+// ============================================================================
+// Data Store Types
+// ============================================================================
+
+/**
+ * Data store lifecycle status.
+ */
+export enum DataStoreStatus {
+    /** Store is being created */
+    CREATING = 'creating',
+    /** Store is active and usable */
+    ACTIVE = 'active',
+    /** Store encountered an error */
+    ERROR = 'error',
+    /** Store has been archived (soft deleted) */
+    ARCHIVED = 'archived',
+}
+
+/**
+ * Summary view of a data store (for listings).
+ */
+export interface DataStoreItem extends BaseObject {
+    /** Current status */
+    status: DataStoreStatus;
+    /** Current schema version */
+    schema_version: string;
+    /** Number of tables */
+    table_count: number;
+    /** Total rows across all tables */
+    total_rows: number;
+    /** Storage size in bytes */
+    storage_bytes: number;
+    /** Last import timestamp */
+    last_import_at?: string;
+    /** Number of versions stored */
+    version_count: number;
+}
+
+/**
+ * Full data store with schema details.
+ */
+export interface DataStore extends DataStoreItem {
+    /** Complete schema definition */
+    schema: DataSchema;
+    /** GCS bucket name */
+    gcs_bucket: string;
+    /** Path prefix within the bucket */
+    gcs_path: string;
+}
+
+// ============================================================================
+// Version Types
+// ============================================================================
+
+/**
+ * Table state within a version.
+ */
+export interface DataStoreVersionTableState {
+    /** Row count at this version */
+    row_count: number;
+    /** Content checksum */
+    checksum: string;
+}
+
+/**
+ * A point-in-time version of a data store.
+ */
+export interface DataStoreVersion {
+    /** Version ID */
+    id: string;
+    /** Parent store ID */
+    store_id: string;
+    /** Commit message */
+    message: string;
+    /** Schema version at this point */
+    schema_version: string;
+    /** Table states at this version */
+    tables: Record<string, DataStoreVersionTableState>;
+    /** Creation timestamp */
+    created_at: string;
+    /** User/agent who created */
+    created_by?: string;
+    /** GCS object generation number */
+    gcs_generation: number;
+    /** Whether this is a named snapshot */
+    is_snapshot?: boolean;
+    /** Snapshot name (if is_snapshot) */
+    snapshot_name?: string;
+}
+
+// ============================================================================
+// Import Types
+// ============================================================================
+
+/**
+ * Import job status.
+ */
+export enum ImportStatus {
+    /** Job is queued */
+    PENDING = 'pending',
+    /** Job is running */
+    PROCESSING = 'processing',
+    /** Job completed successfully */
+    COMPLETED = 'completed',
+    /** Job failed */
+    FAILED = 'failed',
+    /** Job was rolled back */
+    ROLLED_BACK = 'rolled_back',
+}
+
+/**
+ * Import job tracking.
+ */
+export interface ImportJob {
+    /** Job ID */
+    id: string;
+    /** Parent store ID */
+    store_id: string;
+    /** Current status */
+    status: ImportStatus;
+    /** Tables being imported */
+    tables: string[];
+    /** Import mode */
+    mode: 'append' | 'replace';
+    /** Commit message */
+    message?: string;
+    /** Error message (if failed) */
+    error?: string;
+    /** Total rows imported */
+    rows_imported: number;
+    /** Job start timestamp */
+    started_at: string;
+    /** Job completion timestamp */
+    completed_at?: string;
+    /** Resulting version ID (if completed) */
+    version_id?: string;
+    /** User/agent who initiated */
+    created_by?: string;
+}
+
+// ============================================================================
+// API Payloads
+// ============================================================================
+
+/**
+ * Payload for creating a new data store.
+ */
+export interface CreateDataStorePayload {
+    /** Store name (unique within project) */
+    name: string;
+    /** Store description */
+    description?: string;
+}
+
+/**
+ * Payload for creating a new table.
+ */
+export interface CreateTablePayload {
+    /** Table name */
+    name: string;
+    /** Table description */
+    description?: string;
+    /** Column definitions (at least one required) */
+    columns: DataColumn[];
+    /** Foreign key constraints */
+    foreign_keys?: DataForeignKey[];
+    /** Index definitions */
+    indexes?: DataIndex[];
+    /** Semantic type */
+    semantic_type?: DataTableSemanticType;
+    /** Tags */
+    tags?: string[];
+}
+
+/**
+ * Schema change operation types.
+ */
+export type AlterTableOperation =
+    | { op: 'add_column'; column: DataColumn }
+    | { op: 'drop_column'; column: string }
+    | { op: 'rename_column'; from: string; to: string }
+    | { op: 'modify_column'; column: string; updates: Partial<Omit<DataColumn, 'name'>> };
+
+/**
+ * Payload for altering a table schema.
+ */
+export interface AlterTablePayload {
+    /** List of schema changes to apply */
+    changes: AlterTableOperation[];
+}
+
+/**
+ * Payload for AI-driven bulk schema updates.
+ */
+export interface UpdateSchemaPayload {
+    /** Updated schema description */
+    description?: string;
+    /** Tables to create or update */
+    tables?: CreateTablePayload[];
+    /** Relationships to set */
+    relationships?: DataRelationship[];
+    /** Tables to drop */
+    drop_tables?: string[];
+    /** Commit message (required) */
+    message: string;
+}
+
+/**
+ * Data source for import.
+ */
+export type ImportDataSource = 'inline' | 'gcs' | 'url';
+
+/**
+ * Data format for external sources.
+ */
+export type ImportDataFormat = 'json' | 'csv' | 'parquet';
+
+/**
+ * Table data specification for import.
+ */
+export interface ImportTableData {
+    /** Where the data comes from */
+    source: ImportDataSource;
+    /** Inline data (when source is 'inline') */
+    data?: Record<string, unknown>[];
+    /** URI for external data (when source is 'gcs' or 'url') */
+    uri?: string;
+    /** Data format for external sources */
+    format?: ImportDataFormat;
+}
+
+/**
+ * Payload for importing data into tables.
+ */
+export interface ImportDataPayload {
+    /** Map of table name to data specification */
+    tables: Record<string, ImportTableData>;
+    /** Import mode */
+    mode: 'append' | 'replace';
+    /** Commit message */
+    message: string;
+}
+
+/**
+ * Payload for creating a named snapshot.
+ */
+export interface CreateSnapshotPayload {
+    /** Snapshot name (must be unique within store) */
+    name: string;
+    /** Snapshot description */
+    message: string;
+}
+
+/**
+ * Payload for executing a query.
+ */
+export interface QueryPayload {
+    /** SQL query (SELECT only) */
+    sql: string;
+    /** Query parameters (for prepared statements) */
+    params?: Record<string, unknown>;
+    /** Maximum rows to return */
+    limit?: number;
+    /** Query against a specific version (optional) */
+    version_id?: string;
+}
+
+/**
+ * Column metadata in query results.
+ */
+export interface QueryResultColumn {
+    /** Column name */
+    name: string;
+    /** Column type */
+    type: string;
+}
+
+/**
+ * Query execution result.
+ */
+export interface QueryResult {
+    /** Column metadata */
+    columns: QueryResultColumn[];
+    /** Result rows */
+    rows: Record<string, unknown>[];
+    /** Number of rows returned */
+    row_count: number;
+    /** Query execution time in milliseconds */
+    execution_time_ms: number;
+}
+
+// ============================================================================
+// AI Agent Interface
+// ============================================================================
+
+/**
+ * Simplified column representation for AI agents.
+ */
+export interface DataColumnForAI {
+    /** Data type */
+    type: DataColumnType;
+    /** Description */
+    description?: string;
+    /** Semantic type */
+    semantic_type?: SemanticColumnType;
+    /** Whether nullable */
+    nullable: boolean;
+    /** Whether primary key */
+    primary_key: boolean;
+    /** Example values */
+    examples?: string[];
+}
+
+/**
+ * Simplified foreign key representation for AI agents.
+ */
+export interface DataForeignKeyForAI {
+    /** Column name */
+    column: string;
+    /** Reference in "table.column" format */
+    references: string;
+}
+
+/**
+ * Simplified table representation for AI agents.
+ */
+export interface DataTableForAI {
+    /** Description */
+    description?: string;
+    /** Semantic type */
+    semantic_type?: DataTableSemanticType;
+    /** Columns by name */
+    columns: Record<string, DataColumnForAI>;
+    /** Foreign keys */
+    foreign_keys: DataForeignKeyForAI[];
+}
+
+/**
+ * Simplified relationship representation for AI agents.
+ */
+export interface DataRelationshipForAI {
+    /** Relationship name */
+    name: string;
+    /** Source in "table.column" format */
+    from: string;
+    /** Target in "table.column" format */
+    to: string;
+    /** Relationship type */
+    type: DataRelationshipType;
+    /** Description */
+    description?: string;
+}
+
+/**
+ * Simplified schema representation optimized for AI agent consumption.
+ * Provides semantic context for understanding the data model.
+ */
+export interface DataSchemaForAI {
+    /** Store name */
+    name: string;
+    /** Schema version */
+    version: string;
+    /** Schema description */
+    description?: string;
+    /** Tables by name */
+    tables: Record<string, DataTableForAI>;
+    /** Relationships */
+    relationships: DataRelationshipForAI[];
+}
+
+// ============================================================================
+// Utility Types
+// ============================================================================
+
+/**
+ * Version retention configuration.
+ */
+export interface DataStoreRetentionConfig {
+    /** Keep versions for this many days */
+    retention_days: number;
+    /** Named snapshots are exempt from retention */
+    snapshots_exempt: boolean;
+}
+
+/**
+ * Default retention configuration: 30 days, snapshots exempt.
+ */
+export const DEFAULT_RETENTION_CONFIG: DataStoreRetentionConfig = {
+    retention_days: 30,
+    snapshots_exempt: true,
+};

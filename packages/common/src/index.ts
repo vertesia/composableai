@@ -4,6 +4,7 @@ export * from './apikey.js';
 export * from './apps.js';
 export * from './channels.js';
 export * from './common.js';
+export * from './data-platform.js';
 export * from './environment.js';
 export * from "./facets.js";
 export * from './group.js';
