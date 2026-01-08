@@ -165,10 +165,13 @@ class UserSession {
         }
     }
 
+    /**
+     * Reload types from the server.
+     * Updates _typeRegistry in place without triggering a full React state update.
+     * Components accessing typeRegistry will get the updated value on their next render.
+     */
     async reloadTypes() {
-        return this._loadTypes().then(() => {
-            this.setSession?.(this.clone());
-        });
+        return this._loadTypes();
     }
 
     /**
