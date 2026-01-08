@@ -29,8 +29,8 @@
     },
     "dependencies": {},
     "devDependencies": {
-        "@types/node": "^22.5.0",
-        "typescript": "^5.7.2"
+        "@types/node": "^22.19.2",
+        "typescript": "^5.9.3"
     },
     "repository": {
         "type": "git",
