@@ -146,6 +146,14 @@ function looksLikeMarkdown(text: string | undefined): boolean {
     );
 }
 
+/**
+ * Helper function to get panel visibility className.
+ * Returns empty string if visible, 'hidden' if not visible.
+ */
+function getPanelVisibility(isVisible: boolean): string {
+    return isVisible ? '' : 'hidden';
+}
+
 enum PanelView {
     Text = "text",
     Image = "image",
@@ -432,40 +440,46 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     />
                 )}
             </div>
-            {currentPanel === PanelView.Image && (
+            <div className={getPanelVisibility(currentPanel === PanelView.Image)}>
                 <ImagePanel object={object} />
-            )}
-            {currentPanel === PanelView.Video && (
+            </div>
+            <div className={getPanelVisibility(currentPanel === PanelView.Video)}>
                 <VideoPanel object={object} />
+            </div>
+            {isPdf && (
+                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
+                    <PdfPreviewPanel object={object} />
+                </div>
             )}
-            {currentPanel === PanelView.Pdf && isPdf && (
-                <PdfPreviewPanel object={object} />
+            {isPreviewableAsPdfDoc && (
+                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
+                    <OfficePdfPreviewPanel
+                        pdfRendition={pdfRendition}
+                        officePdfUrl={officePdfUrl}
+                        officePdfConverting={officePdfConverting}
+                        officePdfError={officePdfError}
+                        onConvert={triggerOfficePdfConversion}
+                    />
+                </div>
             )}
-            {currentPanel === PanelView.Pdf && isPreviewableAsPdfDoc && (
-                <OfficePdfPreviewPanel
-                    pdfRendition={pdfRendition}
-                    officePdfUrl={officePdfUrl}
-                    officePdfConverting={officePdfConverting}
-                    officePdfError={officePdfError}
-                    onConvert={triggerOfficePdfConversion}
-                />
+            {showProcessingPanel && (
+                <div className={getPanelVisibility(currentPanel === PanelView.Text)}>
+                    <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
+                </div>
             )}
-            {currentPanel === PanelView.Text && showProcessingPanel && (
-                <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
-            )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText && (
+            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText)}>
                 <div className="flex justify-center items-center flex-1">
                     <Spinner size="lg" />
                 </div>
-            )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText && (
+            </div>
+            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText)}>
                 <TextPanel
                     object={object}
                     text={displayText}
                     isTextCropped={isTextCropped}
                     textContainerRef={textContainerRef}
                 />
-            )}
+            </div>
         </div>
     );
 }
@@ -789,6 +803,9 @@ function ImagePanel({ object }: { object: ContentObject }) {
 
     useEffect(() => {
         if (isImage) {
+            // Reset image URL when object changes
+            setImageUrl(undefined);
+
             const loadImage = async () => {
                 const isOriginalWebSupported = content?.type && WEB_SUPPORTED_IMAGE_FORMATS.includes(content.type);
 
@@ -818,7 +835,7 @@ function ImagePanel({ object }: { object: ContentObject }) {
 
             loadImage();
         }
-    }, []);
+    }, [object.id, isImage, content?.type, content?.source, client]);
 
     return (
         <div className="mb-4 px-2">
@@ -857,6 +874,13 @@ function VideoPanel({ object }: { object: ContentObject }) {
 
     // Get poster
     const poster = renditions.find(r => r.name === POSTER_RENDITION_NAME);
+
+    // Reset state when object changes
+    useEffect(() => {
+        setVideoUrl(undefined);
+        setPosterUrl(undefined);
+        setIsLoading(true);
+    }, [object.id]);
 
     useEffect(() => {
         const loadPoster = async () => {

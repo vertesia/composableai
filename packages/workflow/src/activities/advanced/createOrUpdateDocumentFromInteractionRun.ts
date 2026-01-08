@@ -107,7 +107,7 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
     let doc = undefined;
     if (params.update_existing_id) {
         log.info(`Updating existing document ${params.update_existing_id}`);
-        doc = await client.objects.update(params.update_existing_id, docPayload);
+        doc = await client.objects.update(params.update_existing_id, docPayload, { suppressWorkflows: true });
     } else {
         log.info(`Creating new document of type ${objectTypeName}`);
         doc = await client.objects.create(docPayload);
