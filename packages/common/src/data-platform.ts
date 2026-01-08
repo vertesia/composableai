@@ -145,6 +145,24 @@ export interface DataTable {
 }
 
 /**
+ * Summary view of a data table (for listings).
+ */
+export interface DataTableSummary {
+    /** Table name */
+    name: string;
+    /** Human-readable description */
+    description?: string;
+    /** Semantic categorization for AI understanding */
+    semantic_type?: DataTableSemanticType;
+    /** Number of columns */
+    column_count: number;
+    /** Current row count */
+    row_count?: number;
+    /** Tags for organization */
+    tags?: string[];
+}
+
+/**
  * Relationship type between tables.
  */
 export type DataRelationshipType = 'one-to-one' | 'one-to-many' | 'many-to-many';
@@ -271,6 +289,8 @@ export interface DataStoreVersion {
     created_by?: string;
     /** GCS object generation number */
     gcs_generation: number;
+    /** Timestamp-based ID used for GCS path (internal) */
+    gcs_path_id?: string;
     /** Whether this is a named snapshot */
     is_snapshot?: boolean;
     /** Snapshot name (if is_snapshot) */

@@ -10,6 +10,7 @@ import {
     DataStoreItem,
     DataStoreVersion,
     DataTable,
+    DataTableSummary,
     ImportDataPayload,
     ImportJob,
     QueryPayload,
@@ -140,9 +141,9 @@ export class DataApi extends ApiTopic {
      * List all tables in a data store.
      *
      * @param id - Data store ID
-     * @returns List of tables with metadata
+     * @returns List of table summaries with metadata
      */
-    listTables(id: string): Promise<DataTable[]> {
+    listTables(id: string): Promise<DataTableSummary[]> {
         return this.get(`/${id}/tables`);
     }
 
