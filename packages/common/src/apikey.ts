@@ -77,7 +77,7 @@ export interface AuthTokenPayload {
         | {
               studio: string;
               store: string;
-              token: string;
+              token?: string;
           };
 
     iss: string; //issuer
