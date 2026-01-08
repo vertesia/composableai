@@ -77,7 +77,20 @@ export class ToolCollection implements ICollection<Tool<any>> {
         let payload: ToolExecutionPayload<any> | undefined;
         try {
             payload = await readPayload(ctx);
-            const session = await authorize(ctx);
+            const toolName = payload.tool_use?.tool_name;
+            const toolUseId = payload.tool_use?.id;
+            const endpointOverrides = payload.metadata?.endpoints;
+
+            const runId = payload.metadata?.run_id;
+
+            console.log(`[ToolCollection] Tool call received: ${toolName}`, {
+                collection: this.name,
+                toolUseId,
+                runId,
+                hasEndpointOverrides: !!endpointOverrides,
+            });
+
+            const session = await authorize(ctx, endpointOverrides, { toolName, toolUseId, runId });
             const r = await this.tools.runTool(payload, session);
             return ctx.json({
                 ...r,
@@ -94,7 +107,6 @@ export class ToolCollection implements ICollection<Tool<any>> {
                 toolUseId,
                 error: err.message,
                 status,
-                toolInput: payload?.tool_use?.tool_input,
                 stack: err.stack,
             });
 

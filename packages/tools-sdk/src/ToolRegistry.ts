@@ -90,8 +90,11 @@ export class ToolRegistry {
 
     runTool<ParamsT extends Record<string, any>>(payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext): Promise<ToolExecutionResult> {
         const toolName = payload.tool_use.tool_name;
-        console.log(`[ToolRegistry] Tool called: ${toolName}`, {
-            tool_use_id: payload.tool_use.id,
+        const toolUseId = payload.tool_use.id;
+        const runId = payload.metadata?.run_id;
+        console.log(`[ToolRegistry] Executing tool: ${toolName}`, {
+            toolUseId,
+            runId,
             input: sanitizeInput(payload.tool_use.tool_input),
         });
         return this.getTool(toolName).run(payload, context);
