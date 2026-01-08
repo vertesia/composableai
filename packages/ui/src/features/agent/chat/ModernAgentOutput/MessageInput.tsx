@@ -209,14 +209,31 @@ export default function MessageInput({
         }
     };
 
+    // Track Escape key presses for double-tap to stop
+    const lastEscapeRef = useRef<number>(0);
+
     const keyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            // If streaming, stop first then send
-            if (isStreaming && onStop) {
-                handleStop();
+            const hasMessage = value.trim().length > 0;
+
+            if (hasMessage) {
+                // If there's a message, send it (this will interrupt + send message via UserInput signal)
+                handleSend();
             }
-            handleSend();
+            // Enter with no text does nothing (don't stop, don't send)
+        }
+
+        // Double Escape to stop the agent
+        if (e.key === "Escape" && isStreaming && onStop) {
+            const now = Date.now();
+            if (now - lastEscapeRef.current < 500) {
+                // Double Escape within 500ms - stop the agent
+                handleStop();
+                lastEscapeRef.current = 0;
+            } else {
+                lastEscapeRef.current = now;
+            }
         }
         // Shift+Enter allows newline (default textarea behavior)
     };
@@ -376,7 +393,7 @@ export default function MessageInput({
                         onChange={(e) => setValue(e.target.value)}
                         onPaste={handlePaste}
                         disabled={disabled}
-                        placeholder={isStreaming ? "Agent is working... (click stop to interrupt)" : (onFilesSelected ? "Ask anything... (drop or paste files)" : placeholder)}
+                        placeholder={isStreaming ? "Agent is working... (Esc Esc to stop)" : (onFilesSelected ? "Ask anything... (drop or paste files)" : placeholder)}
                         className={`flex-1 w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden ${inputClassName || ''}`}
                         rows={2}
                         style={{ minHeight: '60px', maxHeight: '200px' }}
@@ -393,7 +410,9 @@ export default function MessageInput({
                         </Button>
                     )}
                 </div>
-                {isStreaming && onStop ? (
+                {/* Show Stop button only when streaming AND no text entered */}
+                {/* When user types something, show Send button to allow sending a message */}
+                {isStreaming && onStop && !value.trim() ? (
                     <Button
                         onClick={handleStop}
                         disabled={isStopping}
@@ -420,7 +439,7 @@ export default function MessageInput({
                         <span>Agent has {activeTaskCount} active workstream{activeTaskCount !== 1 ? 's' : ''} running</span>
                     </div>
                 ) : isStreaming
-                    ? "Agent is working... Click Stop to interrupt and give new instructions"
+                    ? "Agent is working... Press Esc twice or click Stop to interrupt"
                     : disabled
                         ? "Agent is processing, you can continue once it completes..."
                         : "Enter to send • Shift+Enter for new line"}

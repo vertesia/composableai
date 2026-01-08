@@ -85,8 +85,21 @@ export class ToolCollection implements ICollection<Tool<any>> {
             } satisfies ToolExecutionResponse);
         } catch (err: any) { // HTTPException ?
             const status = err.status || 500;
+            const toolName = payload?.tool_use?.tool_name;
+            const toolUseId = payload?.tool_use?.id;
+
+            console.error("[ToolCollection] Tool execution failed", {
+                collection: this.name,
+                tool: toolName,
+                toolUseId,
+                error: err.message,
+                status,
+                toolInput: payload?.tool_use?.tool_input,
+                stack: err.stack,
+            });
+
             return ctx.json({
-                tool_use_id: payload?.tool_use.id || "undefined",
+                tool_use_id: toolUseId || "undefined",
                 error: err.message || "Error executing tool",
                 status
             } satisfies ToolExecutionResponseError, status)
@@ -115,11 +128,19 @@ export class ToolCollection implements ICollection<Tool<any>> {
 
 
 async function readPayload(ctx: Context) {
+    let rawBody: string | undefined;
     try {
-        return await ctx.req.json() as ToolExecutionPayload<any>;
+        rawBody = await ctx.req.text();
+        return JSON.parse(rawBody) as ToolExecutionPayload<any>;
     } catch (err: any) {
-        throw new HTTPException(500, {
-            message: "Failed to load execution request payload: " + err.message
+        const preview = rawBody ? rawBody.slice(0, 500) : 'empty';
+        console.error("[ToolCollection] Failed to parse request payload", {
+            error: err.message,
+            bodyPreview: preview,
+            contentType: ctx.req.header('content-type'),
+        });
+        throw new HTTPException(400, {
+            message: `Failed to parse execution request payload: ${err.message}. Body preview: ${preview.slice(0, 100)}`
         });
     }
 }

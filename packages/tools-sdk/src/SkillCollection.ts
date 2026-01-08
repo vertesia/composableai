@@ -152,8 +152,23 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      */
     async execute(ctx: Context): Promise<Response> {
         let payload: ToolExecutionPayload<Record<string, any>> | undefined;
+        let rawBody: string | undefined;
         try {
-            payload = await ctx.req.json() as ToolExecutionPayload<Record<string, any>>;
+            rawBody = await ctx.req.text();
+            try {
+                payload = JSON.parse(rawBody) as ToolExecutionPayload<Record<string, any>>;
+            } catch (parseErr: any) {
+                const preview = rawBody ? rawBody.slice(0, 500) : 'empty';
+                console.error("[SkillCollection] Failed to parse request payload", {
+                    error: parseErr.message,
+                    bodyPreview: preview,
+                    contentType: ctx.req.header('content-type'),
+                });
+                throw new HTTPException(400, {
+                    message: `Failed to parse skill execution payload: ${parseErr.message}`
+                });
+            }
+
             const toolName = payload.tool_use.tool_name;
 
             // Extract skill name from tool name (remove "learn_" prefix if present)
@@ -164,6 +179,12 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             const skill = this.skills.get(skillName);
 
             if (!skill) {
+                console.warn("[SkillCollection] Skill not found", {
+                    collection: this.name,
+                    requestedSkill: skillName,
+                    toolName,
+                    availableSkills: Array.from(this.skills.keys()),
+                });
                 throw new HTTPException(404, {
                     message: `Skill not found: ${skillName}`
                 });
@@ -187,8 +208,23 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             } satisfies ToolExecutionResult & { tool_use_id: string });
         } catch (err: any) {
             const status = err.status || 500;
+            const toolName = payload?.tool_use?.tool_name;
+            const toolUseId = payload?.tool_use?.id;
+
+            if (status >= 500) {
+                console.error("[SkillCollection] Skill execution failed", {
+                    collection: this.name,
+                    skill: toolName,
+                    toolUseId,
+                    error: err.message,
+                    status,
+                    toolInput: payload?.tool_use?.tool_input,
+                    stack: err.stack,
+                });
+            }
+
             return ctx.json({
-                tool_use_id: payload?.tool_use?.id || "unknown",
+                tool_use_id: toolUseId || "unknown",
                 is_error: true,
                 content: err.message || "Error executing skill",
             }, status);
