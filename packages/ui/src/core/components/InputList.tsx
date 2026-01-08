@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 
 import { Badge } from './Badge';
 import { Input } from './shadcn/input';
+import { VTooltip } from '@vertesia/ui/core/components/shadcn';
 
 interface InputListProps {
     value?: string[];
@@ -80,15 +81,17 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
             {
                 value && value.length > 0 &&
                 (value.map((v, index) =>
-                    <Badge
-                        variant={"secondary"}
-                        key={index} 
-                        onClick={() => _onClick(index)}
-                        className='cursor-pointer flex-shrink-0'
-                        title={v}
-                    >
-                        <span className='break-all'>{v}</span>
-                    </Badge>
+                    <VTooltip description={'click to delete'} key={index}>
+                        <Badge
+                            variant={"secondary"}
+                            key={index}
+                            onClick={() => _onClick(index)}
+                            className='cursor-pointer flex-shrink-0 hover:bg-destructive hover:text-destructive transition-colors'
+                            title={v}
+                        >
+                            <span className='break-all'>{v}</span>
+                        </Badge>
+                    </VTooltip>
                 ))
             }
             <Input
