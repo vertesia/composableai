@@ -6,7 +6,7 @@
   "main": "lib/server.js",
   "scripts": {
     "dev": "npm run build && concurrently \"npm run build:watch\" \"npm run start:watch\"",
-    "build": "rollup -c && rollup -c rollup.config.widgets.js && node ./lib/copy-assets.js src lib && node ./lib/build-site.js ./dist",
+    "build": "rollup -c && node ./lib/build-site.js ./dist",
     "build:watch": "rollup -c -w",
     "start": "node ./lib/server-node.js",
     "start:watch": "node --watch ./lib/server-node.js",
@@ -35,6 +35,7 @@
     "@types/node": "^22.19.1",
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",
+    "@vertesia/build-tools": "workspace:*",
     "concurrently": "^9.1.2",
     "rollup": "^4.52.5",
     "rollup-plugin-terser": "^7.0.2",
