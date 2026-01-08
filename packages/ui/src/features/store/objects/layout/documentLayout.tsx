@@ -1,5 +1,5 @@
+import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
 import { Table, TBody } from "@vertesia/ui/core";
-import { ContentObjectItem, ColumnLayout } from "@vertesia/common";
 import { ChangeEvent } from "react";
 import { DocumentIcon, DocumentIconSkeleton } from "../components/DocumentIcon";
 import { DocumentSelection } from "../DocumentSelectionProvider";
@@ -57,10 +57,12 @@ export function DocumentGridView({ objects, selection, isLoading, onSelectionCha
     return (
         <>
             <DocumentIconSkeleton isLoading={isLoading} />
-            <div className="w-full gap-2 grid lg:grid-cols-6">
-                {objects.map((document) => (
-                    <DocumentIcon key={document.id} document={document} selection={selection} onSelectionChange={onSelectionChange} onRowClick={onRowClick} previewObject={previewObject} selectedObject={selectedObject} />
-                ))}
+            <div className="w-full gap-2 grid xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 @xs:grid-cols-1 @sm:grid-cols-2 @md:grid-cols-3 @lg:grid-cols-4">
+                {
+                    objects.map((document) => (
+                        <DocumentIcon key={document.id} document={document} selection={selection} onSelectionChange={onSelectionChange} onRowClick={onRowClick} previewObject={previewObject} selectedObject={selectedObject} />
+                    ))
+                }
             </div>
         </>
     )

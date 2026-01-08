@@ -15,7 +15,8 @@ interface ObjectSchemaEditorProps {
     onSchemaUpdate: (jsonSchema: any) => void;
 }
 export function ObjectSchemaEditor({ objectType, onSchemaUpdate }: ObjectSchemaEditorProps) {
-    const { store } = useUserSession();
+    const session = useUserSession();
+    const { store } = session;
     const toast = useToast();
 
     const [isUpdating, setUpdating] = useState(false);
@@ -37,6 +38,7 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate }: ObjectSchemaE
         setUpdating(true);
         store.types.update(objectType.id, { object_schema: schema.schema }).then(() => {
             onSchemaUpdate(schema);
+            session.reloadTypes();
             toast({
                 status: 'success',
                 title: 'Schema updated',
