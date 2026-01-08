@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 import { Badge } from './Badge';
 import { Input } from './shadcn/input';
-import { VTooltip } from '@vertesia/ui/core/components/shadcn';
+import { VTooltip } from '@vertesia/ui/core';
 
 interface InputListProps {
     value?: string[];
