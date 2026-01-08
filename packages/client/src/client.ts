@@ -79,17 +79,22 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      *
      * @param token the raw JWT token
      * @param payload the decoded JWT token as an AuthTokenPayload - optional
+     * @param endpoints optional endpoints to override those in the payload
      */
-    static async fromAuthToken(token: string, payload?: AuthTokenPayload) {
+    static async fromAuthToken(
+        token: string,
+        payload?: AuthTokenPayload,
+        endpoints?: { studio: string; store: string; token?: string }
+    ) {
         if (!payload) {
             payload = decodeJWT(token);
         }
 
-        const endpoints = decodeEndpoints(payload.endpoints);
+        const resolvedEndpoints = endpoints || decodeEndpoints(payload.endpoints);
         return await new VertesiaClient({
-            serverUrl: endpoints.studio,
-            storeUrl: endpoints.store,
-            tokenServerUrl: payload.iss,
+            serverUrl: resolvedEndpoints.studio,
+            storeUrl: resolvedEndpoints.store,
+            tokenServerUrl: resolvedEndpoints.token || payload.iss,
         }).withApiKey(token);
     }
 

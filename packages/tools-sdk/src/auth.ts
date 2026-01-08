@@ -71,17 +71,26 @@ export class AuthSession implements ToolExecutionContext {
     endpoints: {
         studio: string;
         store: string;
+        token: string;
     };
 
     constructor(public token: string, public payload: AuthTokenPayload) {
-        this.endpoints = decodeEndpoints(payload.endpoints) as {
-            studio: string, store: string
+        const decoded = decodeEndpoints(payload.endpoints);
+        this.endpoints = {
+            studio: decoded.studio,
+            store: decoded.store,
+            token: decoded.token || payload.iss,
         };
     }
 
     async getClient() {
         if (!this._client) {
-            this._client = await VertesiaClient.fromAuthToken(this.token, this.payload);
+            console.log(`[VertesiaClient] Initializing client (from JWT payload)`, {
+                'payload.endpoints': this.payload.endpoints,
+                'payload.iss': this.payload.iss,
+                resolved: this.endpoints,
+            });
+            this._client = await VertesiaClient.fromAuthToken(this.token, this.payload, this.endpoints);
         }
         return this._client;
     }
