@@ -75,7 +75,7 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
 
     return (
         <div className={clsx(className,
-            'w-full flex items-center gap-1 p-2 overflow-hidden py-1.5',
+            'w-full flex flex-wrap items-center gap-1 p-2 py-1.5',
             'rounded-md text-sm rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50')}>
             {
                 value && value.length > 0 &&
@@ -93,7 +93,7 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
             }
             <Input
                 clearable={false}
-                className='placeholder:text-muted px-1 flex-1 min-w-0'
+                className='placeholder:text-muted px-1 flex-1 min-w-[120px]'
                 variant='unstyled'
                 type='text'
                 value={text}
