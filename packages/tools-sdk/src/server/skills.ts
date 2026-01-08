@@ -3,9 +3,9 @@
 import { Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { SkillCollection } from "../SkillCollection.js";
-import { SkillDefinition, ToolCollectionDefinition, ToolDefinition, ToolExecutionPayload } from "../types.js";
+import { SkillDefinition, ToolCollectionDefinition, ToolDefinition } from "../types.js";
 import { makeScriptUrl } from "../utils.js";
-import { ToolServerConfig } from "./types.js";
+import { ToolContext, ToolServerConfig } from "./types.js";
 
 export function createSkillsRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { skills = [] } = config;
@@ -44,21 +44,16 @@ export function createSkillsRoute(app: Hono, basePath: string, config: ToolServe
 
     // POST /api/skills - Route to the correct collection based on tool_name
     app.post(basePath, async (c) => {
-        let payload: ToolExecutionPayload<Record<string, any>>;
-        try {
-            payload = await c.req.json();
-        } catch (err: any) {
+        const ctx = c as unknown as ToolContext;
+
+        // Payload is already parsed and validated by middleware
+        if (!ctx.payload) {
             throw new HTTPException(400, {
-                message: `Failed to parse skill execution payload: ${err.message}`
+                message: 'Invalid or missing skill execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
             });
         }
 
-        const toolName = payload?.tool_use?.tool_name;
-        if (!toolName) {
-            throw new HTTPException(400, {
-                message: 'Missing tool_use.tool_name in request payload'
-            });
-        }
+        const toolName = ctx.payload.tool_use.tool_name;
 
         // Find the collection for this skill
         const collection = skillToCollection.get(toolName);
@@ -71,7 +66,7 @@ export function createSkillsRoute(app: Hono, basePath: string, config: ToolServe
         }
 
         // Delegate to the collection's execute method with pre-parsed payload
-        return collection.execute(c, payload);
+        return collection.execute(c, ctx.payload);
     });
 
     // Create skill collection endpoints (exposed as tools)

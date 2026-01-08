@@ -5,6 +5,7 @@ import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { authorize } from "./auth.js";
 import { ToolFilterOptions, ToolRegistry } from "./ToolRegistry.js";
+import { ToolContext } from "./server/types.js";
 import type { CollectionProperties, ICollection, Tool, ToolDefinitionWithDefault, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
 
@@ -141,22 +142,18 @@ export class ToolCollection implements ICollection<Tool<any>> {
 }
 
 
-async function readPayload(ctx: Context) {
-    let rawBody: string | undefined;
-    try {
-        rawBody = await ctx.req.text();
-        return JSON.parse(rawBody) as ToolExecutionPayload<any>;
-    } catch (err: any) {
-        const preview = rawBody ? rawBody.slice(0, 500) : 'empty';
-        console.error("[ToolCollection] Failed to parse request payload", {
-            error: err.message,
-            bodyPreview: preview,
-            contentType: ctx.req.header('content-type'),
-        });
-        throw new HTTPException(400, {
-            message: `Failed to parse execution request payload: ${err.message}. Body preview: ${preview.slice(0, 100)}`
-        });
+function readPayload(ctx: Context): ToolExecutionPayload<any> {
+    const toolCtx = ctx as ToolContext;
+
+    // Check if body was already parsed and validated by middleware
+    if (toolCtx.payload) {
+        return toolCtx.payload;
     }
+
+    // If no payload, middleware couldn't parse/validate - return error
+    throw new HTTPException(400, {
+        message: 'Invalid or missing tool execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
+    });
 }
 
 /**

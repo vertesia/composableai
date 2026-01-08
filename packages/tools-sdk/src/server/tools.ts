@@ -1,8 +1,8 @@
 import { Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { ToolCollection } from "../ToolCollection.js";
-import { ToolCollectionDefinition, ToolDefinition, ToolExecutionPayload } from "../types.js";
-import { ToolServerConfig } from "./types.js";
+import { ToolCollectionDefinition, ToolDefinition } from "../types.js";
+import { ToolContext, ToolServerConfig } from "./types.js";
 
 export function createToolsRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { tools = [] } = config;
@@ -54,21 +54,16 @@ export function createToolsRoute(app: Hono, basePath: string, config: ToolServer
 
     // POST /api/tools - Route to the correct collection based on tool_name
     app.post(basePath, async (c) => {
-        let payload: ToolExecutionPayload<any>;
-        try {
-            payload = await c.req.json();
-        } catch (err: any) {
+        const ctx = c as unknown as ToolContext;
+
+        // Payload is already parsed and validated by middleware
+        if (!ctx.payload) {
             throw new HTTPException(400, {
-                message: `Failed to parse tool execution payload: ${err.message}`
+                message: 'Invalid or missing tool execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
             });
         }
 
-        const toolName = payload?.tool_use?.tool_name;
-        if (!toolName) {
-            throw new HTTPException(400, {
-                message: 'Missing tool_use.tool_name in request payload'
-            });
-        }
+        const toolName = ctx.payload.tool_use.tool_name;
 
         // Find the collection for this tool
         const collection = toolToCollection.get(toolName);
@@ -79,7 +74,7 @@ export function createToolsRoute(app: Hono, basePath: string, config: ToolServer
         }
 
         // Delegate to the collection's execute method with pre-parsed payload
-        return collection.execute(c, payload);
+        return collection.execute(c, ctx.payload);
     });
 
     // Create tool collection endpoints

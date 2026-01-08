@@ -1,13 +1,25 @@
 import { Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
 import { createInteractionsRoute } from "./server/interactions.js";
 import { createMcpRoute } from "./server/mcp.js";
 import { createSiteRoute } from "./server/site.js";
 import { createSkillsRoute } from "./server/skills.js";
 import { createToolsRoute } from "./server/tools.js";
-import { ToolServerConfig } from "./server/types.js";
+import { ToolContext, ToolServerConfig } from "./server/types.js";
+import { ToolExecutionPayload } from "./types.js";
 import { createWidgetsRoute } from "./server/widgets.js";
+
+// Schema for tool execution payload
+const ToolExecutionPayloadSchema = z.object({
+    tool_use: z.object({
+        id: z.string(),
+        tool_name: z.string(),
+        tool_input: z.record(z.string(), z.any()).default({}),
+    }),
+    metadata: z.record(z.string(), z.any()).optional(),
+});
 
 
 
@@ -41,19 +53,21 @@ export function createToolServer(config: ToolServerConfig): Hono {
     // Add CORS middleware globally
     app.use('*', cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'] }));
 
-    // Middleware to extract tool_use_id and tool_name from POST requests for error handling
+    // Middleware to parse and validate body, store on context for reuse
     app.use('*', async (c, next) => {
+        const ctx = c as unknown as ToolContext;
         if (c.req.method === 'POST') {
             try {
-                // Clone the request to read the body without consuming it
-                const clonedReq = c.req.raw.clone();
-                const body = await clonedReq.json();
-                if (body?.tool_use?.id) {
-                    (c as any).toolUseId = body.tool_use.id;
+                const text = await c.req.text();
+                const body = JSON.parse(text);
+                const result = ToolExecutionPayloadSchema.safeParse(body);
+                if (result.success) {
+                    ctx.payload = result.data as ToolExecutionPayload<any>;
+                    ctx.toolUseId = result.data.tool_use.id;
+                    ctx.toolName = result.data.tool_use.tool_name;
                 }
-                if (body?.tool_use?.tool_name) {
-                    (c as any).toolName = body.tool_use.tool_name;
-                }
+                // If validation fails, still store raw body for error reporting
+                // but don't set payload - handlers will return validation error
             } catch {
                 // Ignore parsing errors - body might not be JSON
             }
@@ -93,8 +107,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
 
     // Global error handler - returns ToolExecutionResponseError format
     app.onError((err, c) => {
-        const toolUseId = (c as any).toolUseId as string || 'unknown';
-        const toolName = (c as any).toolName as string | undefined;
+        const ctx = c as unknown as ToolContext;
         const status = err instanceof HTTPException ? err.status : 500;
         const errorMessage = err instanceof HTTPException ? err.message : 'Internal Server Error';
 
@@ -103,22 +116,21 @@ export function createToolServer(config: ToolServerConfig): Hono {
         }
 
         return c.json({
-            tool_use_id: toolUseId,
+            tool_use_id: ctx.toolUseId || 'unknown',
             status,
             error: errorMessage,
-            data: toolName ? { tool_name: toolName } : undefined,
+            data: ctx.toolName ? { tool_name: ctx.toolName } : undefined,
         }, status);
     });
 
     // Not found handler - returns ToolExecutionResponseError format
     app.notFound((c) => {
-        const toolUseId = (c as any).toolUseId as string || 'unknown';
-        const toolName = (c as any).toolName as string | undefined;
+        const ctx = c as unknown as ToolContext;
         return c.json({
-            tool_use_id: toolUseId,
+            tool_use_id: ctx.toolUseId || 'unknown',
             status: 404,
             error: `Not found: ${c.req.method} ${c.req.path}`,
-            data: toolName ? { tool_name: toolName } : undefined,
+            data: ctx.toolName ? { tool_name: ctx.toolName } : undefined,
         }, 404);
     });
 

@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { join } from "path";
+import { ToolContext } from "./server/types.js";
 import type {
     CollectionProperties,
     ICollection,
@@ -154,22 +155,16 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      * @param preParsedPayload - Optional pre-parsed payload (used when routing from root endpoint)
      */
     async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload<Record<string, any>>): Promise<Response> {
+        const toolCtx = ctx as ToolContext;
         let payload: ToolExecutionPayload<Record<string, any>> | undefined = preParsedPayload;
-        let rawBody: string | undefined;
         try {
             if (!payload) {
-                rawBody = await ctx.req.text();
-                try {
-                    payload = JSON.parse(rawBody) as ToolExecutionPayload<Record<string, any>>;
-                } catch (parseErr: any) {
-                    const preview = rawBody ? rawBody.slice(0, 500) : 'empty';
-                    console.error("[SkillCollection] Failed to parse request payload", {
-                        error: parseErr.message,
-                        bodyPreview: preview,
-                        contentType: ctx.req.header('content-type'),
-                    });
+                // Check if body was already parsed and validated by middleware
+                if (toolCtx.payload) {
+                    payload = toolCtx.payload;
+                } else {
                     throw new HTTPException(400, {
-                        message: `Failed to parse skill execution payload: ${parseErr.message}`
+                        message: 'Invalid or missing skill execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
                     });
                 }
             }
