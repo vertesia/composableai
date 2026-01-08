@@ -81,7 +81,7 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
             {
                 value && value.length > 0 &&
                 (value.map((v, index) =>
-                    <VTooltip description={'click to delete'} key={index}>
+                    <VTooltip description={'click to remove'} key={index}>
                         <Badge
                             variant={"secondary"}
                             key={index}
