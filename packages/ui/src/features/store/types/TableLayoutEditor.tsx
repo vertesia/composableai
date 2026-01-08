@@ -16,7 +16,8 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate }: TableLayoutEdi
     const toast = useToast();
 
     const [isUpdating, setUpdating] = useState(false);
-    const { store } = useUserSession();
+    const session = useUserSession();
+    const { store } = session;
 
     const editorRef = useRef<EditorApi | undefined>(undefined);
 
@@ -60,6 +61,7 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate }: TableLayoutEdi
         store.types.update(objectType.id, {
             table_layout
         }).then((response) => {
+            session.reloadTypes();
             toast({
                 status: 'success',
                 title: 'Table Layout updated',
