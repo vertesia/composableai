@@ -4,9 +4,6 @@ import {
     Dashboard,
     DashboardItem,
     DashboardStatus,
-    PreviewDashboardPayload,
-    RenderDashboardOptions,
-    RenderDashboardResult,
     UpdateDashboardPayload,
 } from "@vertesia/common";
 
@@ -16,8 +13,8 @@ import {
  * Dashboards provide:
  * - Multi-panel Vega/Vega-Lite visualizations
  * - SQL-backed data sources via named queries
- * - Server-side PNG rendering
- * - Preview before saving
+ *
+ * Note: Rendering is handled by the tools (data_preview_dashboard, data_render_dashboard).
  */
 export class DashboardApi extends ApiTopic {
     constructor(parent: ClientBase, storeId: string) {
@@ -74,36 +71,6 @@ export class DashboardApi extends ApiTopic {
     }
 
     /**
-     * Preview a dashboard without saving.
-     *
-     * Renders the dashboard to PNG and returns a signed URL.
-     * Use this to iterate on dashboard design before committing.
-     *
-     * @param payload - Dashboard queries, panels, and optional layout
-     * @param options - Render options (scale, backgroundColor)
-     * @returns Render result with image URL
-     *
-     * @example
-     * ```typescript
-     * const result = await client.data.dashboards(storeId).preview({
-     *   queries: [...],
-     *   panels: [...],
-     *   layout: { columns: 2 }
-     * }, { scale: 2 });
-     *
-     * console.log('Preview URL:', result.url);
-     * ```
-     */
-    preview(
-        payload: PreviewDashboardPayload,
-        options?: RenderDashboardOptions
-    ): Promise<RenderDashboardResult> {
-        return this.post("/preview", {
-            payload: { ...payload, ...options },
-        });
-    }
-
-    /**
      * Get a dashboard by ID.
      *
      * @param id - Dashboard ID
@@ -132,28 +99,5 @@ export class DashboardApi extends ApiTopic {
      */
     delete(id: string): Promise<{ id: string; status: DashboardStatus }> {
         return this.del(`/${id}`);
-    }
-
-    /**
-     * Render a saved dashboard to PNG.
-     *
-     * Executes all queries, renders panels, and returns a signed image URL.
-     *
-     * @param id - Dashboard ID
-     * @param options - Render options
-     * @returns Render result with image URL
-     *
-     * @example
-     * ```typescript
-     * const result = await client.data.dashboards(storeId).render(dashboardId, {
-     *   scale: 2,
-     *   force: true  // Skip cache
-     * });
-     *
-     * console.log('Dashboard image:', result.url);
-     * ```
-     */
-    render(id: string, options?: RenderDashboardOptions): Promise<RenderDashboardResult> {
-        return this.post(`/${id}/render`, { payload: options ?? {} });
     }
 }
