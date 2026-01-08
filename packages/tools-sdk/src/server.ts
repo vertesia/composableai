@@ -41,6 +41,26 @@ export function createToolServer(config: ToolServerConfig): Hono {
     // Add CORS middleware globally
     app.use('*', cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'] }));
 
+    // Middleware to extract tool_use_id and tool_name from POST requests for error handling
+    app.use('*', async (c, next) => {
+        if (c.req.method === 'POST') {
+            try {
+                // Clone the request to read the body without consuming it
+                const clonedReq = c.req.raw.clone();
+                const body = await clonedReq.json();
+                if (body?.tool_use?.id) {
+                    (c as any).toolUseId = body.tool_use.id;
+                }
+                if (body?.tool_use?.tool_name) {
+                    (c as any).toolName = body.tool_use.tool_name;
+                }
+            } catch {
+                // Ignore parsing errors - body might not be JSON
+            }
+        }
+        await next();
+    });
+
     // HTML pages (unless disabled)
     if (!disableHtml) {
         createSiteRoute(app, '', config);
@@ -71,13 +91,35 @@ export function createToolServer(config: ToolServerConfig): Hono {
     createMcpRoute(app, `${prefix}/mcp`, config);
 
 
-    // Global error handler
+    // Global error handler - returns ToolExecutionResponseError format
     app.onError((err, c) => {
-        if (err instanceof HTTPException) {
-            return c.json({ error: err.message }, err.status);
+        const toolUseId = (c as any).toolUseId as string || 'unknown';
+        const toolName = (c as any).toolName as string | undefined;
+        const status = err instanceof HTTPException ? err.status : 500;
+        const errorMessage = err instanceof HTTPException ? err.message : 'Internal Server Error';
+
+        if (!(err instanceof HTTPException)) {
+            console.error('Uncaught Error:', err);
         }
-        console.error('Uncaught Error:', err);
-        return c.json({ error: 'Internal Server Error' }, 500);
+
+        return c.json({
+            tool_use_id: toolUseId,
+            status,
+            error: errorMessage,
+            data: toolName ? { tool_name: toolName } : undefined,
+        }, status);
+    });
+
+    // Not found handler - returns ToolExecutionResponseError format
+    app.notFound((c) => {
+        const toolUseId = (c as any).toolUseId as string || 'unknown';
+        const toolName = (c as any).toolName as string | undefined;
+        return c.json({
+            tool_use_id: toolUseId,
+            status: 404,
+            error: `Not found: ${c.req.method} ${c.req.path}`,
+            data: toolName ? { tool_name: toolName } : undefined,
+        }, 404);
     });
 
     return app;
@@ -88,7 +130,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
 // ================== Server Utilities ==================
 
 /**
- * Simple development server with static file handling
+ * Simple development server with static fimesale handling
  * 
  * @deprecated Use tools server template 
  */

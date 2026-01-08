@@ -73,10 +73,12 @@ export class ToolCollection implements ICollection<Tool<any>> {
         return this.tools.getTools().map(callback);
     }
 
-    async execute(ctx: Context): Promise<Response> {
-        let payload: ToolExecutionPayload<any> | undefined;
+    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload<any>): Promise<Response> {
+        let payload: ToolExecutionPayload<any> | undefined = preParsedPayload;
         try {
-            payload = await readPayload(ctx);
+            if (!payload) {
+                payload = await readPayload(ctx);
+            }
             const toolName = payload.tool_use?.tool_name;
             const toolUseId = payload.tool_use?.id;
             const endpointOverrides = payload.metadata?.endpoints;

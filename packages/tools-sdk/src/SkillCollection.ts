@@ -149,24 +149,29 @@ export class SkillCollection implements ICollection<SkillDefinition> {
     /**
      * Execute a skill - accepts standard tool execution payload.
      * Returns rendered instructions in tool result format.
+     *
+     * @param ctx - Hono context
+     * @param preParsedPayload - Optional pre-parsed payload (used when routing from root endpoint)
      */
-    async execute(ctx: Context): Promise<Response> {
-        let payload: ToolExecutionPayload<Record<string, any>> | undefined;
+    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload<Record<string, any>>): Promise<Response> {
+        let payload: ToolExecutionPayload<Record<string, any>> | undefined = preParsedPayload;
         let rawBody: string | undefined;
         try {
-            rawBody = await ctx.req.text();
-            try {
-                payload = JSON.parse(rawBody) as ToolExecutionPayload<Record<string, any>>;
-            } catch (parseErr: any) {
-                const preview = rawBody ? rawBody.slice(0, 500) : 'empty';
-                console.error("[SkillCollection] Failed to parse request payload", {
-                    error: parseErr.message,
-                    bodyPreview: preview,
-                    contentType: ctx.req.header('content-type'),
-                });
-                throw new HTTPException(400, {
-                    message: `Failed to parse skill execution payload: ${parseErr.message}`
-                });
+            if (!payload) {
+                rawBody = await ctx.req.text();
+                try {
+                    payload = JSON.parse(rawBody) as ToolExecutionPayload<Record<string, any>>;
+                } catch (parseErr: any) {
+                    const preview = rawBody ? rawBody.slice(0, 500) : 'empty';
+                    console.error("[SkillCollection] Failed to parse request payload", {
+                        error: parseErr.message,
+                        bodyPreview: preview,
+                        contentType: ctx.req.header('content-type'),
+                    });
+                    throw new HTTPException(400, {
+                        message: `Failed to parse skill execution payload: ${parseErr.message}`
+                    });
+                }
             }
 
             const toolName = payload.tool_use.tool_name;
