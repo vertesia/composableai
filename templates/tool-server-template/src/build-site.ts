@@ -21,14 +21,6 @@ async function build(outDir: string) {
     // Ensure output directory exists
     mkdirSync(outDir, { recursive: true });
 
-    // Copy scripts from skill directories
-    const scriptCount = await copyScriptsFromSkills(`${outDir}/scripts`);
-    if (scriptCount > 0) {
-        console.log(`✓ Copied ${scriptCount} script(s) from skill directories`);
-    } else {
-        console.log('  No scripts found in skill directories');
-    }
-
     // Load interactions
     const interactions = await loadInteractions();
 

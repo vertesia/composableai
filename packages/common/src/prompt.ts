@@ -53,8 +53,9 @@ export interface PromptTemplateRefWithSchema extends PromptTemplateRef {
 }
 
 export enum TemplateType {
-    text = "text",
     jst = "jst",
+    handlebars = "handlebars",
+    text = "text",
 }
 export interface ExecutablePromptTemplate {
     role: PromptRole;
