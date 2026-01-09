@@ -18,6 +18,17 @@ export function Table({ className, children, ...others }: React.HTMLProps<HTMLTa
     )
 }
 
+interface THeadProps {
+    children: React.ReactNode
+}
+export function THead({ children }: Readonly<THeadProps>) {
+    return (
+        <thead className="sticky top-0 bg-background z-10 after:absolute after:bottom-0 after:left-0 after:w-full after:h-px after:bg-muted/20">
+            {children}
+        </thead>
+    )
+}
+
 export function RowSkeleton({ columns }: { columns: number }) {
     return (
         <tr className="hover:bg-muted">
@@ -36,13 +47,15 @@ interface TBodySkeletonProps {
     rows?: number
     children: React.ReactNode
 }
-
-export function TBody({ isLoading = false, columns, rows = 3, children }: TBodySkeletonProps) {
+export function TBody({ isLoading = false, columns, rows = 3, children }: Readonly<TBodySkeletonProps>) {
     return (
         <tbody>
-            {isLoading ?
-                Array(rows).fill(0).map((_, index) => <RowSkeleton columns={columns} key={index} />)
-                : children
+            {
+                (isLoading) ? (
+                    Array(rows).fill(0).map((_, index) => <RowSkeleton columns={columns} key={index} />)
+                ) : (
+                    children
+                )
             }
         </tbody>
     )

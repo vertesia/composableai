@@ -17,6 +17,7 @@ interface ModalProps {
     allowOverflow?: boolean;
     disableCloseOnClickOutside?: boolean;
     size?: "sm" | "md" | "lg" | "xl";
+    action?: React.ReactNode;
 }
 const ModalContext = createContext<boolean>(false)
 export function useIsInModal() {
@@ -36,6 +37,7 @@ export function VModal({
     allowOverflow = false,
     disableCloseOnClickOutside = false,
     size = "md",
+    action
 }: ModalProps) {
     const handleOpenChange = (open: boolean) => {
         if (!open) {
@@ -65,7 +67,7 @@ export function VModal({
                     handleOpenChange(open);
                 }
             }}
-            
+
         >
             {allowOverflow && <DialogOverlay className="z-50 fixed inset-0 bg-black/80" />}
             <VisuallyHidden>
@@ -79,17 +81,26 @@ export function VModal({
                     className
                 )}
             >
-                {!noCloseButton && (
-                    <DialogClose onClick={() => handleOpenChange(false)} asChild autoFocus={false}>
-                        <Button
-                            variant="outline"
-                            alt="Close"
-                            className="top-4 right-4 absolute data-[state=open]:bg-accent opacity-70 hover:opacity-100 rounded-sm focus:outline-none focus:ring-2 focus:ring-ring ring-offset-background focus:ring-offset-2 data-[state=open]:text-muted-foreground transition-opacity disabled:pointer-events-none"
-                        >
-                            <X className="w-4 h-4" />
-                        </Button>
-                    </DialogClose>
-                )}
+                <div className="top-4 right-4 absolute">
+                    <div className="flex gap-2">
+                        {action && (
+                            <>
+                                {action}
+                            </>
+                        )}
+                        {!noCloseButton && (
+                            <DialogClose onClick={() => handleOpenChange(false)} asChild autoFocus={false}>
+                                <Button
+                                    variant="outline"
+                                    alt="Close"
+                                    className="data-[state=open]:bg-accent opacity-70 hover:opacity-100 rounded-sm focus:outline-none focus:ring-2 focus:ring-ring ring-offset-background focus:ring-offset-2 data-[state=open]:text-muted-foreground transition-opacity disabled:pointer-events-none"
+                                >
+                                    <X className="size-4" />
+                                </Button>
+                            </DialogClose>
+                        )}
+                    </div>
+                </div>
                 <ModalContextProvider>
                     {children}
                 </ModalContextProvider>
