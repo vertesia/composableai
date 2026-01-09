@@ -3,7 +3,6 @@ name: user-select
 title: User Selection
 description: Present users with choices and collect their selections for interactive decision-making
 keywords: [ select, choose, option, pick, decision, choice ]
-widgets: [ user-select ]
 ---
 
 # User Selection

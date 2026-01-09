@@ -3,41 +3,15 @@
  *
  * This configuration handles:
  * 1. TypeScript compilation (src → lib) with preserveModules
- * 2. Raw file imports (?raw) for template files
+ * 2. Import transformations via @vertesia/build-tools
+ *    - Raw file imports (?raw) for template files
+ *    - Skill imports (?skill) for markdown skill definitions
  *
  * Browser bundles are in rollup.config.browser.js
  */
 import json from '@rollup/plugin-json';
 import typescript from '@rollup/plugin-typescript';
-import fs from 'fs';
-import path from 'path';
-
-// ============================================================================
-// Raw Plugin - Supports ?raw imports for template files
-// ============================================================================
-function rawPlugin() {
-    return {
-        name: 'raw-loader',
-        resolveId(id, importer) {
-            if (id.endsWith('?raw')) {
-                const cleanId = id.slice(0, -4); // Remove '?raw'
-                if (cleanId.startsWith('.') && importer) {
-                    // Resolve relative path
-                    const resolved = path.resolve(path.dirname(importer), cleanId);
-                    return resolved + '?raw';
-                }
-                return id;
-            }
-        },
-        load(id) {
-            if (id.endsWith('?raw')) {
-                const filePath = id.slice(0, -4); // Remove '?raw'
-                const content = fs.readFileSync(filePath, 'utf-8');
-                return `export default ${JSON.stringify(content)}`;
-            }
-        }
-    };
-}
+import { vertesiaImportPlugin, skillTransformer, rawTransformer } from '@vertesia/build-tools';
 
 // ============================================================================
 // Exit Plugin - Forces process exit after build completes
@@ -61,8 +35,7 @@ const serverBuild = {
     input: {
         server: './src/server.ts',
         'server-node': './src/server-node.ts',
-        'build-site': './src/build-site.ts',
-        'copy-assets': './src/copy-assets.ts'
+        'build-site': './src/build-site.ts'
     },
     output: {
         dir: 'lib',
@@ -81,7 +54,18 @@ const serverBuild = {
         return true;
     },
     plugins: [
-        rawPlugin(),
+        vertesiaImportPlugin({
+            transformers: [
+                skillTransformer,  // Handles .md?skill imports
+                rawTransformer     // Handles ?raw imports
+            ],
+            assetsDir: './dist',
+            widgetConfig: {
+                minify: false,
+                tsconfig: './tsconfig.widgets.json'
+            }
+
+        }),
         typescript({
             tsconfig: './tsconfig.json',
             declaration: true,
