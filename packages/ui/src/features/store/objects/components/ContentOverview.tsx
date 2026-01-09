@@ -3,7 +3,7 @@ import { useEffect, useState, memo, useRef, type RefObject } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME } from "@vertesia/common";
+import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, VideoMetadata, AudioMetadata, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME } from "@vertesia/common";
 import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
 import { isPreviewableAsPdf, printElementToPdf, getWorkflowStatusColor, getWorkflowStatusName } from "../../../utils/index.js";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
@@ -17,6 +17,17 @@ const WEB_SUPPORTED_IMAGE_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'im
 
 // Web-supported video formats for browser display
 const WEB_SUPPORTED_VIDEO_FORMATS = ['video/mp4', 'video/webm'];
+
+// Web-supported audio formats for browser display
+const WEB_SUPPORTED_AUDIO_FORMATS = [
+    'audio/mp4',    // M4A/AAC (official MIME type)
+    'audio/m4a',    // M4A (alternative MIME type)
+    'audio/x-m4a',  // M4A (legacy MIME type)
+    'audio/mpeg',   // MP3
+    'audio/ogg',    // Ogg Vorbis
+    'audio/wav',    // WAV
+    'audio/webm',   // WebM audio
+];
 
 // Panel height constants for consistent layout
 const PANEL_HEIGHTS = {
@@ -158,7 +169,9 @@ enum PanelView {
     Text = "text",
     Image = "image",
     Video = "video",
-    Pdf = "pdf"
+    Audio = "audio",
+    Pdf = "pdf",
+    Transcript = "transcript"
 }
 
 interface ContentOverviewProps {
@@ -307,9 +320,11 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, refetch?: () => Promise<unknown> }) {
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
+    const isAudio = object?.metadata?.type === ContentNature.Audio;
     const isPdf = object?.content?.type === 'application/pdf';
     const isPreviewableAsPdfDoc = object?.content?.type ? isPreviewableAsPdf(object.content.type) : false;
     const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
+    const hasTranscript = !!(object.transcript && (isVideo || isAudio));
 
     // Check if PDF rendition exists for Office documents
     const metadata = object.metadata as DocumentMetadata;
@@ -318,6 +333,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     // Determine initial panel view
     const getInitialView = (): PanelView => {
         if (isVideo) return PanelView.Video;
+        if (isAudio) return PanelView.Audio;
         if (isImage) return PanelView.Image;
         return PanelView.Text;
     };
@@ -386,6 +402,26 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                                 Video
                             </Button>
                         }
+                        {isAudio &&
+                            <Button
+                                variant={currentPanel === PanelView.Audio ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View Audio"
+                                onClick={() => setCurrentPanel(PanelView.Audio)}
+                            >
+                                Audio
+                            </Button>
+                        }
+                        {hasTranscript &&
+                            <Button
+                                variant={currentPanel === PanelView.Transcript ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View Transcript"
+                                onClick={() => setCurrentPanel(PanelView.Transcript)}
+                            >
+                                Transcript
+                            </Button>
+                        }
                         <Button
                             variant={currentPanel === PanelView.Text ? "primary" : "ghost"}
                             size="sm"
@@ -446,6 +482,14 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
             <div className={getPanelVisibility(currentPanel === PanelView.Video)}>
                 <VideoPanel object={object} />
             </div>
+            <div className={getPanelVisibility(currentPanel === PanelView.Audio)}>
+                <AudioPanel object={object} />
+            </div>
+            {hasTranscript && (
+                <div className={getPanelVisibility(currentPanel === PanelView.Transcript)}>
+                    <TranscriptPanel object={object} handleCopyContent={handleCopyContent} />
+                </div>
+            )}
             {isPdf && (
                 <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
                     <PdfPreviewPanel object={object} />
@@ -950,6 +994,163 @@ function VideoPanel({ object }: { object: ContentObject }) {
                     Failed to load video
                 </div>
             )}
+        </div>
+    );
+}
+
+function AudioPanel({ object }: { object: ContentObject }) {
+    const { client } = useUserSession();
+    const [audioUrl, setAudioUrl] = useState<string>();
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    const content = object.content;
+    const isAudio = object.metadata?.type === ContentNature.Audio;
+
+    // Check if there are audio renditions available in metadata
+    const metadata = object.metadata as AudioMetadata;
+    const renditions = metadata?.renditions || [];
+
+    // Find audio rendition by name (AUDIO_RENDITION_NAME = "Audio")
+    const audioRendition = renditions.find(r => r.name === AUDIO_RENDITION_NAME);
+
+    // Check if original file is web-compatible
+    const isOriginalWebSupported = content?.type && WEB_SUPPORTED_AUDIO_FORMATS.includes(content.type);
+
+    // Reset state when object changes
+    useEffect(() => {
+        setAudioUrl(undefined);
+        setIsLoading(true);
+    }, [object.id]);
+
+    useEffect(() => {
+        if (isAudio && (audioRendition?.content?.source || isOriginalWebSupported)) {
+            const loadAudioUrl = async () => {
+                try {
+                    let downloadUrl;
+                    if (audioRendition?.content?.source) {
+                        // Use rendition if available
+                        downloadUrl = await client.files.getDownloadUrl(audioRendition.content.source);
+                    } else if (isOriginalWebSupported && content?.source) {
+                        // Fall back to original file if web-supported
+                        downloadUrl = await client.files.getDownloadUrl(content.source);
+                    }
+                    if (downloadUrl) {
+                        setAudioUrl(downloadUrl.url);
+                    }
+                } catch (error) {
+                    console.error("Failed to get audio URL", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            loadAudioUrl();
+        } else {
+            setIsLoading(false);
+        }
+    }, [isAudio, audioRendition, isOriginalWebSupported, content?.source, client]);
+
+    return (
+        <div className="mb-4 px-2">
+            {!audioRendition && !isOriginalWebSupported ? (
+                <div className="flex justify-center items-center h-[200px] text-muted">
+                    <div className="text-center">
+                        <p>No web-compatible audio rendition available</p>
+                        <p className="text-sm mt-2">MP3, M4A, OGG, WAV, or WebM format required</p>
+                    </div>
+                </div>
+            ) : isLoading ? (
+                <div className="flex justify-center items-center h-[200px]">
+                    <Spinner size="md" />
+                </div>
+            ) : audioUrl ? (
+                <div className="flex flex-col items-center gap-4">
+                    <audio
+                        src={audioUrl}
+                        controls
+                        className="w-full max-w-2xl"
+                    >
+                        Your browser does not support the audio tag.
+                    </audio>
+                    {metadata?.duration && (
+                        <div className="text-sm text-muted">
+                            Duration: {formatDuration(metadata.duration)}
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="flex justify-center items-center h-[200px] text-muted">
+                    Failed to load audio
+                </div>
+            )}
+        </div>
+    );
+}
+
+function formatDuration(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
+    const transcript = object.transcript;
+    const transcriptText = transcript?.text;
+    const segments = transcript?.segments;
+
+    // Build full text from segments if text is not available
+    const fullText = transcriptText || (segments ? segments.map(s => s.text).join(' ') : '');
+
+    const formatTimestamp = (seconds: number): string => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <div className="flex flex-col h-full">
+            <div className="flex justify-end items-center px-2 mb-2">
+                {fullText && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Copy transcript"
+                        onClick={() => handleCopyContent(fullText, "text")}
+                    >
+                        <Copy className="size-4" />
+                    </Button>
+                )}
+            </div>
+            <div className={`${PANEL_HEIGHTS.content} overflow-auto px-2`}>
+                {segments && segments.length > 0 ? (
+                    <div className="space-y-2">
+                        {segments.map((segment, idx) => (
+                            <div key={idx} className="flex gap-3 text-sm">
+                                <span className="text-muted font-mono text-xs shrink-0 pt-0.5">
+                                    {formatTimestamp(segment.start)}
+                                    {segment.end && ` - ${formatTimestamp(segment.end)}`}
+                                </span>
+                                <span className="flex-1">{segment.text}</span>
+                            </div>
+                        ))}
+                    </div>
+                ) : transcriptText ? (
+                    <pre className="text-wrap bg-muted text-muted p-2 whitespace-pre-wrap">
+                        {transcriptText}
+                    </pre>
+                ) : (
+                    <div className="text-muted">No transcript available</div>
+                )}
+            </div>
         </div>
     );
 }
