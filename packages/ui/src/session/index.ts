@@ -4,4 +4,5 @@ export * from "./auth/firebase";
 export * from "./TypeRegistry";
 export * from "./UserSession";
 export * from "./UserSessionProvider";
+export * from "./useTypeRegistry";
 export * from "./useUXTracking";

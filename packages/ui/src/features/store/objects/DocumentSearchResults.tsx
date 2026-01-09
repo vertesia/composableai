@@ -5,7 +5,7 @@ import {
     FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter
 } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
-import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
+import { TypeRegistry, useTypeRegistry, useUserSession } from '@vertesia/ui/session';
 import { Download, RefreshCw, ExternalLink } from 'lucide-react';
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
 import { VectorSearchWidget } from './components/VectorSearchWidget';
@@ -90,18 +90,16 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const searchContext = useDocumentSearch();
     const [isReady, setIsReady] = useState(false);
     const [selectedObject, setSelectedObject] = useState<ContentObjectItem | null>(null);
-    const session = useUserSession();
+    const typeRegistry = useTypeRegistry();
     const { search, isLoading, error, objects, hasMore } = useWatchDocumentSearchResult();
     const [actualLayout, setActualLayout] = useState<ColumnLayout[]>(defaultLayout);
 
-    // Load type registry and update layout
+    // Update layout when type registry or search type changes
     useEffect(() => {
-        session.typeRegistry().then(registry => {
-            if (registry) {
-                setActualLayout(layout || getTableLayout(registry, search.query.type));
-            }
-        });
-    }, [session, layout, search.query.type]);
+        if (typeRegistry) {
+            setActualLayout(layout || getTableLayout(typeRegistry, search.query.type));
+        }
+    }, [typeRegistry, layout, search.query.type]);
 
     //TODO _setRefreshTrigger state not used
     const [refreshTrigger, _setRefreshTrigger] = useState(0);

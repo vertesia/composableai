@@ -1,6 +1,6 @@
 import { ContentObjectTypeItem } from "@vertesia/common";
 import { VSelectBox } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
+import { useTypeRegistry } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
 
 const optionLabel = (t: ContentObjectTypeItem | null) => {
@@ -22,31 +22,28 @@ interface SelectContentTypeProps {
     multiple?: boolean;
 }
 export function SelectContentType({ className, defaultValue, onChange, isClearable, multiple}: SelectContentTypeProps) {
-    const session = useUserSession();
+    const typeRegistry = useTypeRegistry();
     const [isMounted, setIsMounted] = useState(false);
     const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | undefined>();
     const [selectedTypes, setSelectedTypes] = useState<ContentObjectTypeItem[]>([]);
-    const [types, setTypes] = useState<ContentObjectTypeItem[]>([]);
+
+    const types = typeRegistry?.types || [];
 
     useEffect(() => {
-        if (!isMounted) {
+        if (!isMounted && typeRegistry) {
             setIsMounted(true);
-            session.typeRegistry().then(registry => {
-                const loadedTypes = registry?.types || [];
-                setTypes(loadedTypes);
-                if (registry && defaultValue) {
-                    if (multiple && Array.isArray(defaultValue)) {
-                        const selectedTypes = loadedTypes.filter(t => defaultValue.includes(t.id));
-                        setSelectedTypes(selectedTypes);
-                    }
-                    const type = loadedTypes.find(t => t.id === defaultValue);
-                    if (type) {
-                        setSelectedType(type);
-                    }
+            if (defaultValue) {
+                if (multiple && Array.isArray(defaultValue)) {
+                    const selected = types.filter(t => defaultValue.includes(t.id));
+                    setSelectedTypes(selected);
                 }
-            });
+                const type = types.find(t => t.id === defaultValue);
+                if (type) {
+                    setSelectedType(type);
+                }
+            }
         }
-    }, [isMounted, session, defaultValue, multiple])
+    }, [isMounted, typeRegistry, defaultValue, multiple, types])
 
     const _onChange = (option: ContentObjectTypeItem | null) => {
         setSelectedType(option || undefined);

@@ -1,7 +1,7 @@
 import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useState, useEffect } from 'react';
 import { SearchInterface } from './utils/SearchInterface';
-import { useUserSession } from '@vertesia/ui/session';
+import { useTypeRegistry } from '@vertesia/ui/session';
 
 interface CollectionsFacetsNavProps {
     facets: {
@@ -14,7 +14,7 @@ interface CollectionsFacetsNavProps {
 // Hook to create filter groups for collections
 export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['facets']): FilterGroup[] {
     void facets;
-    const session = useUserSession();
+    const typeRegistry = useTypeRegistry();
     const [filterGroups, setFilterGroups] = useState<FilterGroup[]>([]);
 
     useEffect(() => {
@@ -30,30 +30,28 @@ export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['fa
         customFilterGroups.push(nameFilterGroup);
 
         // Load type registry and add type filter
-        session.typeRegistry().then(typeRegistry => {
-            if (typeRegistry) {
-                const typeOptions = typeRegistry.types.map(type => {
-                    return {
-                        label: type.name,
-                        value: type.id
-                    }
-                });
-                const typeFilterGroup = {
-                    name: 'types',
-                    placeholder: 'Type',
-                    type: 'select' as const,
-                    multiple: true,
-                    options: typeOptions,
-                    filterBy: (value: string, searchText: string) => {
-                        const option = typeOptions.find(opt => opt.value === value);
-                        return option?.label?.toLowerCase().includes(searchText.toLowerCase()) ?? false;
-                    }
-                };
-                customFilterGroups.push(typeFilterGroup);
-            }
-            setFilterGroups(customFilterGroups);
-        });
-    }, [session]);
+        if (typeRegistry) {
+            const typeOptions = typeRegistry.types.map(type => {
+                return {
+                    label: type.name,
+                    value: type.id
+                }
+            });
+            const typeFilterGroup = {
+                name: 'types',
+                placeholder: 'Type',
+                type: 'select' as const,
+                multiple: true,
+                options: typeOptions,
+                filterBy: (value: string, searchText: string) => {
+                    const option = typeOptions.find(opt => opt.value === value);
+                    return option?.label?.toLowerCase().includes(searchText.toLowerCase()) ?? false;
+                }
+            };
+            customFilterGroups.push(typeFilterGroup);
+        }
+        setFilterGroups(customFilterGroups);
+    }, [typeRegistry]);
 
     return filterGroups;
 }

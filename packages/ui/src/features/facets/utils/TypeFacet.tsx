@@ -1,4 +1,4 @@
-import { useUserSession } from "@vertesia/ui/session";
+import { useTypeRegistry } from "@vertesia/ui/session";
 import { FacetBucket } from "@vertesia/common";
 import { SelectBox } from "@vertesia/ui/core";
 import { useEffect, useState } from "react";
@@ -21,37 +21,35 @@ interface TypeFacetProps {
 }
 export function TypeFacet({ search, buckets, placeholder = "Filter by Type", className }: TypeFacetProps) {
     const [options, setOptions] = useState<TypeFacetBucket[]>([]);
-    const session = useUserSession();
+    const typeRegistry = useTypeRegistry();
     const filterValue = search.getFilterValue("type") as string;
     const onChange = (option: FacetBucket | undefined) => {
         search.setFilterValue("type", option?._id);
     }
 
     useEffect(() => {
-        session.typeRegistry().then(typeRegistry => {
-            if (typeRegistry) {
-                const options = buckets.map((bucket) => {
-                    let name;
-                    if (bucket._id == null) {
-                        bucket._id = "Document";
-                        name = "Document"
-                    } else {
-                        name = typeRegistry.getTypeName(bucket._id);
-                        if (!name) {
-                            console.warn("Content Object Type not found", bucket._id)
-                            name = bucket._id
-                        }
+        if (typeRegistry) {
+            const mappedOptions = buckets.map((bucket) => {
+                let name;
+                if (bucket._id == null) {
+                    bucket._id = "Document";
+                    name = "Document"
+                } else {
+                    name = typeRegistry.getTypeName(bucket._id);
+                    if (!name) {
+                        console.warn("Content Object Type not found", bucket._id)
+                        name = bucket._id
                     }
-                    return {
-                        ...bucket,
-                        name
-                    }
-                })
-                options.sort((a, b) => a.name.localeCompare(b.name));
-                setOptions(options);
-            }
-        });
-    }, [buckets, session]);
+                }
+                return {
+                    ...bucket,
+                    name
+                }
+            })
+            mappedOptions.sort((a, b) => a.name.localeCompare(b.name));
+            setOptions(mappedOptions);
+        }
+    }, [buckets, typeRegistry]);
 
     const value = options?.find((option) => option._id === filterValue);
 

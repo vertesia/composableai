@@ -1,4 +1,4 @@
-import { useState, ReactNode, useEffect } from "react";
+import { useState, ReactNode } from "react";
 import {
     Button,
     Modal,
@@ -8,7 +8,7 @@ import {
     SelectBox,
 } from "@vertesia/ui/core";
 import { ContentObjectTypeItem } from "@vertesia/common";
-import { useUserSession } from "@vertesia/ui/session";
+import { useTypeRegistry } from "@vertesia/ui/session";
 import { CheckCircleIcon } from "lucide-react";
 
 /**
@@ -49,18 +49,11 @@ export function SelectContentTypeModal({
     confirmLabel = "Select Type",
     allowNone = true,
 }: SelectContentTypeModalProps) {
-    const session = useUserSession();
+    const typeRegistry = useTypeRegistry();
     const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | null>(initialSelectedType);
-    const [types, setTypes] = useState<ContentObjectTypeItem[]>([]);
 
-    // Load types when modal opens
-    useEffect(() => {
-        if (isOpen) {
-            session.typeRegistry().then(registry => {
-                setTypes(registry?.types || []);
-            });
-        }
-    }, [isOpen, session]);
+    // Get available types from the registry
+    const types = typeRegistry?.types || [];
 
     // Handle close/cancel
     const handleClose = () => {
