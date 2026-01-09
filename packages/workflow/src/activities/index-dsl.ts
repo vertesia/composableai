@@ -12,6 +12,7 @@ export { generateOrAssignContentType } from "./generateOrAssignContentType.js";
 export { getObjectFromStore } from "./getObjectFromStore.js";
 export { handleDslError } from "./handleError.js";
 export { prepareVideo } from "./media/prepareVideo.js";
+export { prepareAudio } from "./media/prepareAudio.js";
 export { convertPdfToStructuredText } from "./media/processPdfWithTextract.js";
 export { saveGladiaTranscription } from "./media/saveGladiaTranscription.js";
 export { transcribeMedia } from "./media/transcribeMediaWithGladia.js";
