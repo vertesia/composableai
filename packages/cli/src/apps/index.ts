@@ -33,7 +33,7 @@ const exampleManifest: AppManifestData = {
             type: "mcp",
             name: "example-mcp-server",
             description: "Example MCP server for testing",
-            prefix: "example",
+            namespace: "example",
             auth: "oauth"
         }
     ],
