@@ -129,7 +129,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
                         ))}
                         <div className="mt-3">
                             <span className="mr-2">Limit</span>
-                            <NumberInput type="number" min={1} value={limit} onChange={v => setLimit(v ?? 100)} style={{ width: 80 }} />
+                            <NumberInput type="number" min={1} value={limit} onChange={v => setLimit(Number(v ?? 100))} style={{ width: 80 }} />
                         </div>
                     </div>
                 </ModalBody>
