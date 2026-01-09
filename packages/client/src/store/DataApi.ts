@@ -265,7 +265,7 @@ export class DataApi extends ApiTopic {
      * @returns List of versions
      */
     listVersions(id: string, snapshotsOnly?: boolean): Promise<DataStoreVersion[]> {
-        const query = snapshotsOnly ? '?snapshots=true' : '';
+        const query = snapshotsOnly ? '?snapshots_only=true' : '';
         return this.get(`/${id}/versions${query}`);
     }
 
