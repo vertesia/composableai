@@ -149,7 +149,10 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             search.query.weights = query.weights;
             search.query.score_aggregation = query.score_aggregation;
             search.query.dynamic_scaling = query.dynamic_scaling;
-            search.query.limit = query.limit;
+            if (query.limit !== undefined) {
+                search.limit = query.limit;
+                search.query.limit = query.limit;
+            }
             if (!actualLayout.find((c) => c.name === "Search Score")) {
                 const layout = [
                     ...actualLayout,
@@ -164,7 +167,10 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             search.search().then(() => setIsReady(true));
         } else if (query && query.full_text) {
             search.query.full_text = query.full_text;
-            search.query.limit = query.limit;
+            if (query.limit !== undefined) {
+                search.limit = query.limit;
+                search.query.limit = query.limit;
+            }
             search.search().then(() => setIsReady(true));
         } else if (query === undefined) {
             // Only clear search if this is a user-initiated clear (not initialization)
