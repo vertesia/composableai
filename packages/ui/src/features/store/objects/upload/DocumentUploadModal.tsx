@@ -1,9 +1,9 @@
 import { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
 import { Button, MessageBox, VModal, VModalBody, VModalFooter, VModalTitle, VSelectBox, Spinner, useToast, VTooltip } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
+import { useUserSession, useTypeRegistry } from "@vertesia/ui/session";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { FileUploadAction, FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
 import { DocumentUploadResult } from "./useUploadHandler";
 
@@ -69,7 +69,8 @@ export function DocumentUploadModal({
     showTypeSelectionOnly = false,
     allowFolders = true,
 }: DocumentUploadModalProps) {
-    const { client, typeRegistry } = useUserSession();
+    const { client } = useUserSession();
+    const typeRegistry = useTypeRegistry();
     const toast = useToast();
     const [files, setFiles] = useState<File[]>([]);
     const [processedFiles, setProcessedFiles] = useState<FileWithMetadata[]>([]);
@@ -78,6 +79,9 @@ export function DocumentUploadModal({
     const [fileStatuses, setFileStatuses] = useState<FileUploadStatus[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadComplete, setUploadComplete] = useState(false);
+
+    // Get types from registry
+    const types = typeRegistry?.types || [];
     const [overallProgress, setOverallProgress] = useState(0);
     const [modalKey, setModalKey] = useState(Date.now());
     const [collectionData, setCollectionData] = useState<Collection | DynamicCollection | undefined>(undefined);
@@ -147,11 +151,6 @@ export function DocumentUploadModal({
 
     // Get the smart file processing utility
     const { checkDocumentProcessing } = useSmartFileUploadProcessing();
-
-    // Get available types from the registry
-    const types = useMemo(() => {
-        return typeRegistry?.types || [];
-    }, [typeRegistry?.types]);
 
     // Reset state when modal opens/closes
     useEffect(() => {

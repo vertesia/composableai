@@ -1,6 +1,6 @@
 import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
-import { useUserSession } from '@vertesia/ui/session';
-import { useState } from 'react';
+import { useTypeRegistry } from '@vertesia/ui/session';
+import { useState, useEffect } from 'react';
 import { VStringFacet } from './utils/VStringFacet';
 import { VTypeFacet } from './utils/VTypeFacet';
 import { SearchInterface } from './utils/SearchInterface';
@@ -18,74 +18,80 @@ interface DocumentsFacetsNavProps {
 
 // Hook to create filter groups for documents
 export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets']): FilterGroup[] {
-    const { typeRegistry } = useUserSession();
-    const customFilterGroups: FilterGroup[] = [];
+    const typeRegistry = useTypeRegistry();
+    const [filterGroups, setFilterGroups] = useState<FilterGroup[]>([]);
 
-    customFilterGroups.push({
-        placeholder: 'ID',
-        name: 'id',
-        type: 'text',
-        options: [],
-    });
+    useEffect(() => {
+        const customFilterGroups: FilterGroup[] = [];
 
-    customFilterGroups.push({
-        placeholder: 'Name',
-        name: 'name',
-        type: 'text',
-        options: [],
-    });
-
-    if (facets.type) {
-        const typeFilterGroup = VTypeFacet({
-            buckets: facets.type || [],
-            typeRegistry: typeRegistry,
-            type: 'select',
-            multiple: true
-        });
-        customFilterGroups.push(typeFilterGroup);
-    }
-
-    if (facets.status) {
-        const statusFilterGroup = VStringFacet({
-            search: null as any, // This will be provided by the search context
-            buckets: facets.status || [],
-            name: 'status',
-            placeholder: 'Status',
-            type: 'select',
-            multiple: true
-        });
-        customFilterGroups.push(statusFilterGroup);
-    }
-
-    if (facets.tags) {
         customFilterGroups.push({
-            name: 'tags',
-            placeholder: 'Tags',
-            type: 'stringList',
-            options: facets.tags.map((tag: string) => ({
-                label: tag,
-                value: tag
-            }))
+            placeholder: 'ID',
+            name: 'id',
+            type: 'text',
+            options: [],
         });
-    }
 
-    customFilterGroups.push({
-        name: 'created_at',
-        placeholder: 'Created Date',
-        type: 'date',
-        multiple: true,
-        options: []
-    });
+        customFilterGroups.push({
+            placeholder: 'Name',
+            name: 'name',
+            type: 'text',
+            options: [],
+        });
 
-    customFilterGroups.push({
-        name: 'updated_at',
-        placeholder: 'Updated Date',
-        type: 'date',
-        multiple: true,
-        options: []
-    });
+        if (facets.type) {
+            const typeFilterGroup = VTypeFacet({
+                buckets: facets.type || [],
+                typeRegistry: typeRegistry,
+                type: 'select',
+                multiple: true
+            });
+            customFilterGroups.push(typeFilterGroup);
+        }
 
-    return customFilterGroups;
+        if (facets.status) {
+            const statusFilterGroup = VStringFacet({
+                search: null as any, // This will be provided by the search context
+                buckets: facets.status || [],
+                name: 'status',
+                placeholder: 'Status',
+                type: 'select',
+                multiple: true
+            });
+            customFilterGroups.push(statusFilterGroup);
+        }
+
+        if (facets.tags) {
+            customFilterGroups.push({
+                name: 'tags',
+                placeholder: 'Tags',
+                type: 'stringList',
+                options: facets.tags.map((tag: string) => ({
+                    label: tag,
+                    value: tag
+                }))
+            });
+        }
+
+        customFilterGroups.push({
+            name: 'created_at',
+            placeholder: 'Created Date',
+            type: 'date',
+            multiple: true,
+            options: []
+        });
+
+        customFilterGroups.push({
+            name: 'updated_at',
+            placeholder: 'Updated Date',
+            type: 'date',
+            multiple: true,
+            options: []
+        });
+
+        setFilterGroups(customFilterGroups);
+    }, [facets, typeRegistry]);
+
+    return filterGroups;
 }
 
 // Hook to create filter change handler for documents

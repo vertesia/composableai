@@ -8,7 +8,7 @@ import {
     SelectBox,
 } from "@vertesia/ui/core";
 import { ContentObjectTypeItem } from "@vertesia/common";
-import { useUserSession } from "@vertesia/ui/session";
+import { useTypeRegistry } from "@vertesia/ui/session";
 import { CheckCircleIcon } from "lucide-react";
 
 /**
@@ -49,7 +49,7 @@ export function SelectContentTypeModal({
     confirmLabel = "Select Type",
     allowNone = true,
 }: SelectContentTypeModalProps) {
-    const { typeRegistry } = useUserSession();
+    const typeRegistry = useTypeRegistry();
     const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | null>(initialSelectedType);
 
     // Get available types from the registry
