@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import { ProjectConfiguration, ComplexSearchQuery, SupportedEmbeddingTypes, SearchTypes } from '@vertesia/common';
-import { Button, Input, useToast, Modal, ModalTitle, ModalBody, ModalFooter, Checkbox, NumberInput } from '@vertesia/ui/core';
+import { ComplexSearchQuery, ProjectConfiguration, SearchTypes, SupportedEmbeddingTypes } from '@vertesia/common';
+import { Button, Checkbox, Input, Modal, ModalBody, ModalFooter, ModalTitle, NumberInput, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { Settings } from 'lucide-react';
 
@@ -129,7 +129,7 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
                         ))}
                         <div className="mt-3">
                             <span className="mr-2">Limit</span>
-                            <NumberInput type="number" min={1} value={limit} onChange={v => setLimit(Number(v) || 1)} style={{ width: 80 }} />
+                            <NumberInput type="number" min={1} value={limit} onChange={v => setLimit(Number(v ?? 100))} style={{ width: 80 }} />
                         </div>
                     </div>
                 </ModalBody>

@@ -1,21 +1,26 @@
-import { useRef, useState, useEffect } from "react";
-import { ColumnLayout, ContentObject, ContentObjectItem, ComplexSearchQuery } from '@vertesia/common';
+import { ColumnLayout, ComplexSearchQuery, ContentObject, ContentObjectItem } from '@vertesia/common';
 import {
-    Button, Divider, ErrorBox, SidePanel, Spinner, useIntersectionObserver, useToast,
-    FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter
+    Filter as BaseFilter,
+    Button, Divider, ErrorBox,
+    FilterBar,
+    FilterBtn,
+    FilterClear,
+    FilterProvider,
+    SidePanel, Spinner, useIntersectionObserver, useToast
 } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
-import { Download, RefreshCw, ExternalLink } from 'lucide-react';
+import { Download, ExternalLink, RefreshCw } from 'lucide-react';
+import { useEffect, useRef, useState } from "react";
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
-import { VectorSearchWidget } from './components/VectorSearchWidget';
 import { ContentDispositionButton } from './components/ContentDispositionButton';
+import { ContentOverview } from './components/ContentOverview';
+import { useDownloadDocument } from './components/useDownloadObject';
+import { VectorSearchWidget } from './components/VectorSearchWidget';
 import { DocumentTable } from './DocumentTable';
 import { ExtendedColumnLayout } from './layout/DocumentTableColumn';
 import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from './search/DocumentSearchContext';
 import { useDocumentUploadHandler } from './upload/useUploadHandler';
-import { ContentOverview } from './components/ContentOverview';
-import { useDownloadDocument } from './components/useDownloadObject';
 
 const defaultLayout: ColumnLayout[] = [
     { name: "ID", field: "id", type: "objectId?slice=-7" },
@@ -144,6 +149,10 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             search.query.weights = query.weights;
             search.query.score_aggregation = query.score_aggregation;
             search.query.dynamic_scaling = query.dynamic_scaling;
+            if (query.limit !== undefined) {
+                search.limit = query.limit;
+                search.query.limit = query.limit;
+            }
             if (!actualLayout.find((c) => c.name === "Search Score")) {
                 const layout = [
                     ...actualLayout,
@@ -158,6 +167,10 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             search.search().then(() => setIsReady(true));
         } else if (query && query.full_text) {
             search.query.full_text = query.full_text;
+            if (query.limit !== undefined) {
+                search.limit = query.limit;
+                search.query.limit = query.limit;
+            }
             search.search().then(() => setIsReady(true));
         } else if (query === undefined) {
             // Only clear search if this is a user-initiated clear (not initialization)
