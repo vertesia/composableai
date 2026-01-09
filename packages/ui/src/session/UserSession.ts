@@ -19,7 +19,7 @@ class UserSession {
     client: VertesiaClient;
     authError?: Error;
     authToken?: AuthTokenPayload;
-    private _typeRegistry?: TypeRegistry;
+    typeRegistry?: TypeRegistry;
     setSession?: (session: UserSession) => void;
     lastSelectedAccount?: string | null;
     lastSelectedProject?: string | null;
@@ -64,14 +64,6 @@ class UserSession {
         return this.authToken?.accounts;
     }
 
-    /**
-     * Get type registry. Automatically triggers background reload if cache is stale (>60s old).
-     * Returns cached types immediately, and reloads in background if data is older than 60 seconds.
-     */
-    get typeRegistry(): TypeRegistry | undefined {
-        return this.getTypes();
-    }
-
     get authCallback() {
         return this.rawAuthToken.then(token => `Bearer ${token}`);
     }
@@ -108,8 +100,11 @@ class UserSession {
         // notify the host app of the login
         Env.onLogin?.(this.authToken);
 
-        // Fetch onboarding status only - types will be lazy loaded on first access
-        await this.fetchOnboardingStatus();
+        // Independent async calls
+        await Promise.all([
+            this._loadTypes(),
+            this.fetchOnboardingStatus(),
+        ]);
 
         return Promise.resolve();
 
@@ -128,7 +123,7 @@ class UserSession {
         this.authError = undefined;
         this.isLoading = false;
         this.authToken = undefined;
-        this._typeRegistry = undefined;
+        this.typeRegistry = undefined;
         this.setSession = undefined;
         this.client.withAuthCallback(undefined);
     }
@@ -156,7 +151,7 @@ class UserSession {
 
     async _loadTypes() {
         if (this.project) {
-            return this.store.types.list({}, { layout: true }).then(types => this._typeRegistry = new TypeRegistry(types)).catch(err => {
+            return this.store.types.list({}, { layout: true }).then(types => this.typeRegistry = new TypeRegistry(types)).catch(err => {
                 console.error('Failed to fetch object types', err);
                 throw err;
             })
@@ -169,33 +164,6 @@ class UserSession {
         return this._loadTypes().then(() => {
             this.setSession?.(this.clone());
         });
-    }
-
-    /**
-     * Get types synchronously with lazy loading.
-     * - If cache doesn't exist, triggers first load in background
-     * - If cache is stale (>60s), triggers background reload
-     * Returns undefined during initial load, then returns cached types on subsequent calls.
-     */
-    getTypes(): TypeRegistry | undefined {
-        // Lazy load on first access
-        if (!this._typeRegistry) {
-            // Fire and forget - don't await
-            this.reloadTypes().catch(err => {
-                console.error('Failed to load types', err);
-            });
-            return undefined;
-        }
-
-        // Trigger background reload if stale
-        if (this._typeRegistry.isStale()) {
-            // Fire and forget - don't await
-            this.reloadTypes().catch(err => {
-                console.error('Background type reload failed', err);
-            });
-        }
-
-        return this._typeRegistry;
     }
 
     async fetchAccounts() {
@@ -240,7 +208,7 @@ class UserSession {
         session.setSession = this.setSession;
         session.lastSelectedAccount = this.lastSelectedAccount;
         session.switchAccount = this.switchAccount;
-        session._typeRegistry = this._typeRegistry;
+        session.typeRegistry = this.typeRegistry;
         session.onboardingComplete = this.onboardingComplete;
         return session;
     }
