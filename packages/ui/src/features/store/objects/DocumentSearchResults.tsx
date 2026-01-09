@@ -90,11 +90,18 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const searchContext = useDocumentSearch();
     const [isReady, setIsReady] = useState(false);
     const [selectedObject, setSelectedObject] = useState<ContentObjectItem | null>(null);
-    const { typeRegistry } = useUserSession();
+    const session = useUserSession();
     const { search, isLoading, error, objects, hasMore } = useWatchDocumentSearchResult();
-    const [actualLayout, setActualLayout] = useState<ColumnLayout[]>(
-        typeRegistry ? layout || getTableLayout(typeRegistry, search.query.type) : defaultLayout,
-    );
+    const [actualLayout, setActualLayout] = useState<ColumnLayout[]>(defaultLayout);
+
+    // Load type registry and update layout
+    useEffect(() => {
+        session.typeRegistry().then(registry => {
+            if (registry) {
+                setActualLayout(layout || getTableLayout(registry, search.query.type));
+            }
+        });
+    }, [session, layout, search.query.type]);
 
     //TODO _setRefreshTrigger state not used
     const [refreshTrigger, _setRefreshTrigger] = useState(0);

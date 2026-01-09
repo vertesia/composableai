@@ -65,10 +65,10 @@ class UserSession {
     }
 
     /**
-     * Get type registry. Automatically triggers background reload if cache is stale (>60s old).
-     * Returns cached types immediately, and reloads in background if data is older than 60 seconds.
+     * Get type registry with lazy loading.
+     * Waits for initial load if not cached, returns immediately if cached (with background refresh if stale).
      */
-    get typeRegistry(): TypeRegistry | undefined {
+    async typeRegistry(): Promise<TypeRegistry | undefined> {
         return this.getTypes();
     }
 
@@ -175,22 +175,21 @@ class UserSession {
     }
 
     /**
-     * Get types synchronously with lazy loading.
-     * - If cache doesn't exist, triggers first load in background
-     * - If cache is stale (>60s), triggers background reload
-     * Returns undefined during initial load, then returns cached types on subsequent calls.
+     * Get types with lazy loading.
+     * - If cache doesn't exist, loads types and waits
+     * - If cache is stale (>60s), returns cached data immediately and triggers background reload
+     * Returns a promise that resolves to the type registry, or undefined if loading fails.
      */
-    getTypes(): TypeRegistry | undefined {
-        // Lazy load on first access
+    async getTypes(): Promise<TypeRegistry | undefined> {
+        // Lazy load on first access - wait for initial load
         if (!this._typeRegistry) {
-            // Fire and forget - don't await
-            this.reloadTypes().catch(err => {
+            await this.reloadTypes().catch(err => {
                 console.error('Failed to load types', err);
             });
-            return undefined;
+            return this._typeRegistry;
         }
 
-        // Trigger background reload if stale
+        // Trigger background reload if stale, but return cached data immediately
         if (this._typeRegistry.isStale()) {
             // Fire and forget - don't await
             this.reloadTypes().catch(err => {

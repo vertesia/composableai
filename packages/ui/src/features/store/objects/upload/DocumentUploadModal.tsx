@@ -3,7 +3,7 @@ import { Button, MessageBox, VModal, VModalBody, VModalFooter, VModalTitle, VSel
 import { useUserSession } from "@vertesia/ui/session";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { FileUploadAction, FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
 import { DocumentUploadResult } from "./useUploadHandler";
 
@@ -69,7 +69,8 @@ export function DocumentUploadModal({
     showTypeSelectionOnly = false,
     allowFolders = true,
 }: DocumentUploadModalProps) {
-    const { client, typeRegistry } = useUserSession();
+    const session = useUserSession();
+    const { client } = session;
     const toast = useToast();
     const [files, setFiles] = useState<File[]>([]);
     const [processedFiles, setProcessedFiles] = useState<FileWithMetadata[]>([]);
@@ -78,6 +79,7 @@ export function DocumentUploadModal({
     const [fileStatuses, setFileStatuses] = useState<FileUploadStatus[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadComplete, setUploadComplete] = useState(false);
+    const [types, setTypes] = useState<ContentObjectTypeItem[]>([]);
     const [overallProgress, setOverallProgress] = useState(0);
     const [modalKey, setModalKey] = useState(Date.now());
     const [collectionData, setCollectionData] = useState<Collection | DynamicCollection | undefined>(undefined);
@@ -148,10 +150,14 @@ export function DocumentUploadModal({
     // Get the smart file processing utility
     const { checkDocumentProcessing } = useSmartFileUploadProcessing();
 
-    // Get available types from the registry
-    const types = useMemo(() => {
-        return typeRegistry?.types || [];
-    }, [typeRegistry?.types]);
+    // Load types when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            session.typeRegistry().then(registry => {
+                setTypes(registry?.types || []);
+            });
+        }
+    }, [isOpen, session]);
 
     // Reset state when modal opens/closes
     useEffect(() => {

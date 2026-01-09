@@ -1,4 +1,4 @@
-import { useState, ReactNode } from "react";
+import { useState, ReactNode, useEffect } from "react";
 import {
     Button,
     Modal,
@@ -49,11 +49,18 @@ export function SelectContentTypeModal({
     confirmLabel = "Select Type",
     allowNone = true,
 }: SelectContentTypeModalProps) {
-    const { typeRegistry } = useUserSession();
+    const session = useUserSession();
     const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | null>(initialSelectedType);
+    const [types, setTypes] = useState<ContentObjectTypeItem[]>([]);
 
-    // Get available types from the registry
-    const types = typeRegistry?.types || [];
+    // Load types when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            session.typeRegistry().then(registry => {
+                setTypes(registry?.types || []);
+            });
+        }
+    }, [isOpen, session]);
 
     // Handle close/cancel
     const handleClose = () => {

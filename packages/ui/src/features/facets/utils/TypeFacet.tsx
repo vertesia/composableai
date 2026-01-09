@@ -21,35 +21,37 @@ interface TypeFacetProps {
 }
 export function TypeFacet({ search, buckets, placeholder = "Filter by Type", className }: TypeFacetProps) {
     const [options, setOptions] = useState<TypeFacetBucket[]>([]);
-    const { typeRegistry } = useUserSession();
+    const session = useUserSession();
     const filterValue = search.getFilterValue("type") as string;
     const onChange = (option: FacetBucket | undefined) => {
         search.setFilterValue("type", option?._id);
     }
 
     useEffect(() => {
-        if (typeRegistry) {
-            const options = buckets.map((bucket) => {
-                let name;
-                if (bucket._id == null) {
-                    bucket._id = "Document";
-                    name = "Document"
-                } else {
-                    name = typeRegistry.getTypeName(bucket._id);
-                    if (!name) {
-                        console.warn("Content Object Type not found", bucket._id)
-                        name = bucket._id
+        session.typeRegistry().then(typeRegistry => {
+            if (typeRegistry) {
+                const options = buckets.map((bucket) => {
+                    let name;
+                    if (bucket._id == null) {
+                        bucket._id = "Document";
+                        name = "Document"
+                    } else {
+                        name = typeRegistry.getTypeName(bucket._id);
+                        if (!name) {
+                            console.warn("Content Object Type not found", bucket._id)
+                            name = bucket._id
+                        }
                     }
-                }
-                return {
-                    ...bucket,
-                    name
-                }
-            })
-            options.sort((a, b) => a.name.localeCompare(b.name));
-            setOptions(options);
-        }
-    }, [buckets, typeRegistry]);
+                    return {
+                        ...bucket,
+                        name
+                    }
+                })
+                options.sort((a, b) => a.name.localeCompare(b.name));
+                setOptions(options);
+            }
+        });
+    }, [buckets, session]);
 
     const value = options?.find((option) => option._id === filterValue);
 

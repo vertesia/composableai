@@ -3,6 +3,7 @@ import { Collection } from "@vertesia/common";
 import { DocumentSearchResultsWithDropZone, DocumentSearchResults } from "../objects/DocumentSearchResults";
 import { useToast } from "@vertesia/ui/core";
 import { useDocumentSearch } from "../objects/search/DocumentSearchContext";
+import { useEffect, useState } from "react";
 
 
 interface BrowseCollectionViewProps {
@@ -10,10 +11,19 @@ interface BrowseCollectionViewProps {
 }
 export function BrowseCollectionView({ collection }: BrowseCollectionViewProps) {
     const toast = useToast();
-    const { client, typeRegistry } = useUserSession();
+    const session = useUserSession();
+    const { client } = session;
     const search = useDocumentSearch();
+    const [typeRegistry, setTypeRegistry] = useState<TypeRegistry | undefined>(undefined);
     search.query.all_revisions = true;
-    
+
+    // Load type registry
+    useEffect(() => {
+        session.typeRegistry().then(registry => {
+            setTypeRegistry(registry);
+        });
+    }, [session]);
+
     const onUploadDone = async (objectIds: string[]) => {
         if (objectIds.length > 0) {
             await client.store.collections.addMembers(collection.id, objectIds).catch(err => {

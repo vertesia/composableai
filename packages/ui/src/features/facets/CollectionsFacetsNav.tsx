@@ -1,5 +1,5 @@
 import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SearchInterface } from './utils/SearchInterface';
 import { useUserSession } from '@vertesia/ui/session';
 
@@ -14,42 +14,48 @@ interface CollectionsFacetsNavProps {
 // Hook to create filter groups for collections
 export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['facets']): FilterGroup[] {
     void facets;
-    const { typeRegistry } = useUserSession();
+    const session = useUserSession();
+    const [filterGroups, setFilterGroups] = useState<FilterGroup[]>([]);
 
-    const customFilterGroups: FilterGroup[] = [];
+    useEffect(() => {
+        const customFilterGroups: FilterGroup[] = [];
 
-    // Add name filter as text type
-    const nameFilterGroup = {
-        name: 'name',
-        placeholder: 'Name',
-        type: 'text' as const,
-        multiple: false
-    };
-    customFilterGroups.push(nameFilterGroup);
-
-    // add type filter as select type
-    if (typeRegistry) {
-        const typeOptions = typeRegistry.types.map(type => {
-            return {
-                label: type.name,
-                value: type.id
-            }
-        });
-        const typeFilterGroup = {
-            name: 'types',
-            placeholder: 'Type',
-            type: 'select' as const,
-            multiple: true,
-            options: typeOptions,
-            filterBy: (value: string, searchText: string) => {
-                const option = typeOptions.find(opt => opt.value === value);
-                return option?.label?.toLowerCase().includes(searchText.toLowerCase()) ?? false;
-            }
+        // Add name filter as text type
+        const nameFilterGroup = {
+            name: 'name',
+            placeholder: 'Name',
+            type: 'text' as const,
+            multiple: false
         };
-        customFilterGroups.push(typeFilterGroup);
-    }
+        customFilterGroups.push(nameFilterGroup);
 
-    return customFilterGroups;
+        // Load type registry and add type filter
+        session.typeRegistry().then(typeRegistry => {
+            if (typeRegistry) {
+                const typeOptions = typeRegistry.types.map(type => {
+                    return {
+                        label: type.name,
+                        value: type.id
+                    }
+                });
+                const typeFilterGroup = {
+                    name: 'types',
+                    placeholder: 'Type',
+                    type: 'select' as const,
+                    multiple: true,
+                    options: typeOptions,
+                    filterBy: (value: string, searchText: string) => {
+                        const option = typeOptions.find(opt => opt.value === value);
+                        return option?.label?.toLowerCase().includes(searchText.toLowerCase()) ?? false;
+                    }
+                };
+                customFilterGroups.push(typeFilterGroup);
+            }
+            setFilterGroups(customFilterGroups);
+        });
+    }, [session]);
+
+    return filterGroups;
 }
 
 // Hook to create filter change handler for collections
