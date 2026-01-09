@@ -1,9 +1,9 @@
 import clsx from 'clsx';
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 import { Badge } from './Badge';
 import { Input } from './shadcn/input';
-import { Styles } from './styles';
+import { VTooltip } from '@vertesia/ui/core';
 
 interface InputListProps {
     value?: string[];
@@ -42,6 +42,31 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
         }
     }
 
+    const onPaste = (ev: React.ClipboardEvent<HTMLInputElement>) => {
+        const pastedText = ev.clipboardData.getData('text');
+        if (pastedText) {
+            ev.preventDefault();
+
+            // Create a regex pattern from delimiters
+            const delimiterPattern = delimiters.split('').map((char: string) =>
+                char === ' ' ? '\\s' : char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            ).join('|');
+            const regex = new RegExp(`[${delimiterPattern}]+`);
+
+            // Split the pasted text by delimiters and filter out empty values
+            const newValues = pastedText
+                .split(regex)
+                .map((item: string) => item.trim())
+                .filter((item: string) => item.length > 0);
+
+            if (newValues.length > 0) {
+                onChange([...value, ...newValues]);
+            }
+
+            setText('');
+        }
+    }
+
     const _onClick = (index: any): void => {
         if (value && value.length > 0) {
             value.splice(index, 1);
@@ -50,29 +75,34 @@ export function InputList({ value = [], onChange, className, delimiters = ", ", 
     };
 
     return (
-        <div className={clsx(className, 'w-full flex flex-wrap items-center gap-1 p-2', Styles.INPUT)}>
+        <div className={clsx(className,
+            'w-full flex flex-wrap items-center gap-1 p-2 py-1.5',
+            'rounded-md text-sm rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted focus-visible:outline-none focus-visible:ring-1 ring-inset focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50')}>
             {
                 value && value.length > 0 &&
                 (value.map((v, index) =>
-                    <Badge
-                        variant={"secondary"}
-                        key={index}
-                        onClick={() => _onClick(index)}
-                        className='cursor-pointer'
-                        title={v}
-                    >
-                        <span className='break-all'>{v}</span>
-                    </Badge>
+                    <VTooltip description={'click to remove'} key={index}>
+                        <Badge
+                            variant={"secondary"}
+                            key={index}
+                            onClick={() => _onClick(index)}
+                            className='cursor-pointer flex-shrink-0 hover:bg-destructive hover:text-destructive transition-colors'
+                            title={v}
+                        >
+                            <span className='break-all'>{v}</span>
+                        </Badge>
+                    </VTooltip>
                 ))
             }
             <Input
                 clearable={false}
-                className='placeholder:text-muted-foreground px-1 min-w-0 flex-shrink-0 min-w-[120px]'
+                className='placeholder:text-muted px-1 flex-1 min-w-[120px]'
                 variant='unstyled'
                 type='text'
                 value={text}
                 onBlur={onBlur}
                 onKeyDown={onKeyDown}
+                onPaste={onPaste}
                 onChange={setText}
                 placeholder={!value || value.length === 0 ? placeholder : ''}
                 autoFocus={autoFocus}
