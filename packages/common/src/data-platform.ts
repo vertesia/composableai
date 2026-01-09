@@ -416,8 +416,12 @@ export interface UpdateSchemaPayload {
 
 /**
  * Data source for import.
+ * - 'inline': data provided directly in the payload
+ * - 'gcs': data in Google Cloud Storage (gs://bucket/path)
+ * - 'url': data at an HTTPS URL
+ * - 'artifact': data from workflow artifact (resolved to GCS by tool)
  */
-export type ImportDataSource = 'inline' | 'gcs' | 'url';
+export type ImportDataSource = 'inline' | 'gcs' | 'url' | 'artifact';
 
 /**
  * Data format for external sources.
@@ -432,7 +436,7 @@ export interface ImportTableData {
     source: ImportDataSource;
     /** Inline data (when source is 'inline') */
     data?: Record<string, unknown>[];
-    /** URI for external data (when source is 'gcs' or 'url') */
+    /** URI for external data (gcs: gs://..., url: https://..., artifact: out/file.csv) */
     uri?: string;
     /** Data format for external sources */
     format?: ImportDataFormat;
