@@ -500,6 +500,8 @@ export interface QueryResult {
     row_count: number;
     /** Query execution time in milliseconds */
     execution_time_ms: number;
+    /** Error message if query failed (used in batch queries) */
+    error?: string;
 }
 
 // ============================================================================
