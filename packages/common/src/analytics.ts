@@ -47,3 +47,32 @@ export interface RunAnalyticsResult {
         max: number
     },
 }
+
+/** Entity with status breakdown (requires compound index for covered queries) */
+export interface EntityStatusCounts {
+    id: string;
+    name: string;
+    /** Total count, or null if query failed */
+    total: number | null;
+    /** Counts by status, values are null if individual status query failed */
+    byStatus: Record<string, number | null>;
+    /** True if any query for this entity failed */
+    hasErrors?: boolean;
+}
+
+/** Lightweight analytics summary using covered queries - scalable to 1M+ documents */
+export interface RunsAnalyticsSummary {
+    /** Total count of runs (from estimatedDocumentCount), null if failed */
+    total: number | null;
+    /** Counts by status, values are null if individual query failed */
+    byStatus: Record<string, number | null>;
+    /** Counts by environment with status breakdown (uses { environment: 1, status: 1 } compound index) */
+    byEnvironment: EntityStatusCounts[];
+    /** Counts by interaction with status breakdown (uses { interaction: 1, status: 1 } compound index) */
+    byInteraction: EntityStatusCounts[];
+    /** Number of queries that failed out of total */
+    queryStats?: {
+        total: number;
+        failed: number;
+    };
+}
