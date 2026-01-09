@@ -86,6 +86,24 @@ export interface AuthTokenPayload {
 
     permissions?: string[]; //permissions
     scopes?: string[]; //scopes
+
+    /**
+     * Service caller information for agent and service account tokens.
+     * Contains audit information about who/what initiated the token request.
+     * For agent tokens, includes `onBehalfOf` with the original user's token payload.
+     */
+    service_caller?: {
+        /** The principal that requested the token (e.g., service account identity) */
+        id?: string;
+        name?: string;
+        email?: string;
+        /**
+         * For agent tokens: the verified token payload of the user/apikey the agent acts on behalf of.
+         * Contains the original user's name, email, picture, user_id, etc.
+         */
+        onBehalfOf?: AuthTokenPayload;
+        [key: string]: unknown;
+    };
 }
 
 export enum PrincipalType {

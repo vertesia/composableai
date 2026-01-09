@@ -176,6 +176,13 @@ export interface ProjectConfiguration {
     datacenter?: string;
     storage_bucket?: string;
 
+    /**
+     * Enable real-time streaming of agent LLM responses to clients.
+     * When enabled, LLM responses are streamed chunk-by-chunk via Redis pub/sub.
+     * Defaults to true if not specified.
+     */
+    agent_streaming_enabled?: boolean;
+
 }
 
 // export interface ProjectConfigurationEmbeddings {
