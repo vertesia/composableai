@@ -170,7 +170,8 @@ enum PanelView {
     Image = "image",
     Video = "video",
     Audio = "audio",
-    Pdf = "pdf"
+    Pdf = "pdf",
+    Transcript = "transcript"
 }
 
 interface ContentOverviewProps {
@@ -323,6 +324,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     const isPdf = object?.content?.type === 'application/pdf';
     const isPreviewableAsPdfDoc = object?.content?.type ? isPreviewableAsPdf(object.content.type) : false;
     const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
+    const hasTranscript = !!(object.transcript && (isVideo || isAudio));
 
     // Check if PDF rendition exists for Office documents
     const metadata = object.metadata as DocumentMetadata;
@@ -410,6 +412,16 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                                 Audio
                             </Button>
                         }
+                        {hasTranscript &&
+                            <Button
+                                variant={currentPanel === PanelView.Transcript ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View Transcript"
+                                onClick={() => setCurrentPanel(PanelView.Transcript)}
+                            >
+                                Transcript
+                            </Button>
+                        }
                         <Button
                             variant={currentPanel === PanelView.Text ? "primary" : "ghost"}
                             size="sm"
@@ -473,6 +485,11 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
             <div className={getPanelVisibility(currentPanel === PanelView.Audio)}>
                 <AudioPanel object={object} />
             </div>
+            {hasTranscript && (
+                <div className={getPanelVisibility(currentPanel === PanelView.Transcript)}>
+                    <TranscriptPanel object={object} handleCopyContent={handleCopyContent} />
+                </div>
+            )}
             {isPdf && (
                 <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
                     <PdfPreviewPanel object={object} />
@@ -1078,6 +1095,64 @@ function formatDuration(seconds: number): string {
         return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
+    const transcript = object.transcript;
+    const transcriptText = transcript?.text;
+    const segments = transcript?.segments;
+
+    // Build full text from segments if text is not available
+    const fullText = transcriptText || (segments ? segments.map(s => s.text).join(' ') : '');
+
+    const formatTimestamp = (seconds: number): string => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <div className="flex flex-col h-full">
+            <div className="flex justify-end items-center px-2 mb-2">
+                {fullText && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Copy transcript"
+                        onClick={() => handleCopyContent(fullText, "text")}
+                    >
+                        <Copy className="size-4" />
+                    </Button>
+                )}
+            </div>
+            <div className={`${PANEL_HEIGHTS.content} overflow-auto px-2`}>
+                {segments && segments.length > 0 ? (
+                    <div className="space-y-2">
+                        {segments.map((segment, idx) => (
+                            <div key={idx} className="flex gap-3 text-sm">
+                                <span className="text-muted font-mono text-xs shrink-0 pt-0.5">
+                                    {formatTimestamp(segment.start)}
+                                    {segment.end && ` - ${formatTimestamp(segment.end)}`}
+                                </span>
+                                <span className="flex-1">{segment.text}</span>
+                            </div>
+                        ))}
+                    </div>
+                ) : transcriptText ? (
+                    <pre className="text-wrap bg-muted text-muted p-2 whitespace-pre-wrap">
+                        {transcriptText}
+                    </pre>
+                ) : (
+                    <div className="text-muted">No transcript available</div>
+                )}
+            </div>
+        </div>
+    );
 }
 
 function PdfActions({ object }: { object: ContentObject }) {
