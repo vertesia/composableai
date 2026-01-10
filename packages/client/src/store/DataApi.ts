@@ -3,7 +3,6 @@ import {
     AlterTablePayload,
     CreateDataStorePayload,
     CreateSnapshotPayload,
-    CreateTablePayload,
     CreateTablesPayload,
     DataSchema,
     DataSchemaForAI,
@@ -158,30 +157,7 @@ export class DataApi extends ApiTopic {
     }
 
     /**
-     * Create a new table in a data store.
-     *
-     * @param id - Data store ID
-     * @param payload - Table definition including columns, indexes, etc.
-     * @returns The created table
-     *
-     * @example
-     * ```typescript
-     * const table = await client.data.createTable(storeId, {
-     *   name: 'customers',
-     *   columns: [
-     *     { name: 'id', type: 'INTEGER', primaryKey: true },
-     *     { name: 'email', type: 'STRING', semanticType: 'email' },
-     *     { name: 'revenue', type: 'DECIMAL', semanticType: 'currency' }
-     *   ]
-     * });
-     * ```
-     */
-    createTable(id: string, payload: CreateTablePayload): Promise<DataTable> {
-        return this.post(`/${id}/tables`, { payload, headers: this.storeHeaders(id) });
-    }
-
-    /**
-     * Create multiple tables atomically in a data store.
+     * Create tables in a data store atomically.
      *
      * All tables are created in a single transaction - if any table fails,
      * no tables are created.
@@ -217,7 +193,7 @@ export class DataApi extends ApiTopic {
      * ```
      */
     createTables(id: string, payload: CreateTablesPayload): Promise<DataTable[]> {
-        return this.post(`/${id}/tables/batch`, { payload, headers: this.storeHeaders(id) });
+        return this.post(`/${id}/tables`, { payload, headers: this.storeHeaders(id) });
     }
 
     /**
