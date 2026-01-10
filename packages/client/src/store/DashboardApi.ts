@@ -7,6 +7,7 @@ import {
     DashboardStatus,
     DashboardVersion,
     DashboardVersionItem,
+    DataStoreApiHeaders,
     PromoteDashboardVersionPayload,
     UpdateDashboardPayload,
 } from "@vertesia/common";
@@ -21,8 +22,18 @@ import {
  * Note: Rendering is handled by the tools (data_preview_dashboard, data_render_dashboard).
  */
 export class DashboardApi extends ApiTopic {
+    private readonly storeId: string;
+
     constructor(parent: ClientBase, storeId: string) {
         super(parent, `/api/v1/data/${storeId}/dashboards`);
+        this.storeId = storeId;
+    }
+
+    /**
+     * Create headers with data store ID for Cloud Run session affinity.
+     */
+    private storeHeaders(): Record<string, string> {
+        return { [DataStoreApiHeaders.DATA_STORE_ID]: this.storeId };
     }
 
     // ============================================================
@@ -37,7 +48,7 @@ export class DashboardApi extends ApiTopic {
      */
     list(status?: DashboardStatus): Promise<DashboardItem[]> {
         const query = status ? `?status=${status}` : '';
-        return this.get(`/${query}`);
+        return this.get(`/${query}`, { headers: this.storeHeaders() });
     }
 
     /**
@@ -71,7 +82,7 @@ export class DashboardApi extends ApiTopic {
      * ```
      */
     create(payload: CreateDashboardPayload): Promise<Dashboard> {
-        return this.post("/", { payload });
+        return this.post("/", { payload, headers: this.storeHeaders() });
     }
 
     /**
@@ -81,7 +92,7 @@ export class DashboardApi extends ApiTopic {
      * @returns The dashboard with all details
      */
     retrieve(id: string): Promise<Dashboard> {
-        return this.get(`/${id}`);
+        return this.get(`/${id}`, { headers: this.storeHeaders() });
     }
 
     /**
@@ -92,7 +103,7 @@ export class DashboardApi extends ApiTopic {
      * @returns The updated dashboard
      */
     update(id: string, payload: UpdateDashboardPayload): Promise<Dashboard> {
-        return this.put(`/${id}`, { payload });
+        return this.put(`/${id}`, { payload, headers: this.storeHeaders() });
     }
 
     /**
@@ -102,7 +113,7 @@ export class DashboardApi extends ApiTopic {
      * @returns Object with the archived dashboard ID
      */
     delete(id: string): Promise<{ id: string; status: DashboardStatus }> {
-        return this.del(`/${id}`);
+        return this.del(`/${id}`, { headers: this.storeHeaders() });
     }
 
     // ============================================================
@@ -124,7 +135,7 @@ export class DashboardApi extends ApiTopic {
         if (options?.snapshotsOnly) params.set('snapshots_only', 'true');
         if (options?.limit) params.set('limit', String(options.limit));
         const query = params.toString() ? `?${params}` : '';
-        return this.get(`/${dashboardId}/versions${query}`);
+        return this.get(`/${dashboardId}/versions${query}`, { headers: this.storeHeaders() });
     }
 
     /**
@@ -135,7 +146,7 @@ export class DashboardApi extends ApiTopic {
      * @returns The version with full content
      */
     getVersion(dashboardId: string, versionId: string): Promise<DashboardVersion> {
-        return this.get(`/${dashboardId}/versions/${versionId}`);
+        return this.get(`/${dashboardId}/versions/${versionId}`, { headers: this.storeHeaders() });
     }
 
     /**
@@ -149,7 +160,7 @@ export class DashboardApi extends ApiTopic {
         dashboardId: string,
         payload: CreateDashboardSnapshotPayload
     ): Promise<DashboardVersionItem> {
-        return this.post(`/${dashboardId}/versions`, { payload });
+        return this.post(`/${dashboardId}/versions`, { payload, headers: this.storeHeaders() });
     }
 
     /**
@@ -166,7 +177,7 @@ export class DashboardApi extends ApiTopic {
         versionId: string,
         payload?: PromoteDashboardVersionPayload
     ): Promise<Dashboard> {
-        return this.post(`/${dashboardId}/versions/${versionId}/promote`, { payload: payload || {} });
+        return this.post(`/${dashboardId}/versions/${versionId}/promote`, { payload: payload || {}, headers: this.storeHeaders() });
     }
 
     /**
@@ -180,6 +191,6 @@ export class DashboardApi extends ApiTopic {
         dashboardId: string,
         enabled: boolean
     ): Promise<{ versioning_enabled: boolean }> {
-        return this.put(`/${dashboardId}/versioning`, { payload: { enabled } });
+        return this.put(`/${dashboardId}/versioning`, { payload: { enabled }, headers: this.storeHeaders() });
     }
 }

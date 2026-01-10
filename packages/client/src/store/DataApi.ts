@@ -7,6 +7,7 @@ import {
     DataSchema,
     DataSchemaForAI,
     DataStore,
+    DataStoreApiHeaders,
     DataStoreItem,
     DataStoreVersion,
     DataTable,
@@ -31,6 +32,14 @@ import { DashboardApi } from "./DashboardApi.js";
 export class DataApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, "/api/v1/data");
+    }
+
+    /**
+     * Create headers with data store ID for Cloud Run session affinity.
+     * This routes requests for the same store to the same instance.
+     */
+    private storeHeaders(id: string): Record<string, string> {
+        return { [DataStoreApiHeaders.DATA_STORE_ID]: id };
     }
 
     // ============================================================
@@ -69,7 +78,7 @@ export class DataApi extends ApiTopic {
      * @returns The data store with full details
      */
     retrieve(id: string): Promise<DataStore> {
-        return this.get(`/${id}`);
+        return this.get(`/${id}`, { headers: this.storeHeaders(id) });
     }
 
     /**
@@ -81,7 +90,7 @@ export class DataApi extends ApiTopic {
      * @returns Object with the archived store ID
      */
     delete(id: string): Promise<{ id: string }> {
-        return this.del(`/${id}`);
+        return this.del(`/${id}`, { headers: this.storeHeaders(id) });
     }
 
     // ============================================================
@@ -106,7 +115,7 @@ export class DataApi extends ApiTopic {
      */
     getSchema(id: string, format?: 'ai'): Promise<DataSchema | DataSchemaForAI> {
         const query = format ? `?format=${format}` : '';
-        return this.get(`/${id}/schema${query}`);
+        return this.get(`/${id}/schema${query}`, { headers: this.storeHeaders(id) });
     }
 
     /**
@@ -120,7 +129,7 @@ export class DataApi extends ApiTopic {
      * @returns The updated schema
      */
     updateSchema(id: string, payload: UpdateSchemaPayload): Promise<DataSchema> {
-        return this.put(`/${id}/schema`, { payload });
+        return this.put(`/${id}/schema`, { payload, headers: this.storeHeaders(id) });
     }
 
     /**
@@ -130,7 +139,7 @@ export class DataApi extends ApiTopic {
      * @returns List of schema versions with timestamps
      */
     getSchemaHistory(id: string): Promise<DataStoreVersion[]> {
-        return this.get(`/${id}/schema/history`);
+        return this.get(`/${id}/schema/history`, { headers: this.storeHeaders(id) });
     }
 
     // ============================================================
@@ -144,7 +153,7 @@ export class DataApi extends ApiTopic {
      * @returns List of table summaries with metadata
      */
     listTables(id: string): Promise<DataTableSummary[]> {
-        return this.get(`/${id}/tables`);
+        return this.get(`/${id}/tables`, { headers: this.storeHeaders(id) });
     }
 
     /**
@@ -167,7 +176,7 @@ export class DataApi extends ApiTopic {
      * ```
      */
     createTable(id: string, payload: CreateTablePayload): Promise<DataTable> {
-        return this.post(`/${id}/tables`, { payload });
+        return this.post(`/${id}/tables`, { payload, headers: this.storeHeaders(id) });
     }
 
     /**
@@ -180,7 +189,7 @@ export class DataApi extends ApiTopic {
      */
     getTable(id: string, tableName: string, sample?: boolean): Promise<DataTable & { sampleRows?: Record<string, unknown>[] }> {
         const query = sample ? '?sample=true' : '';
-        return this.get(`/${id}/tables/${tableName}${query}`);
+        return this.get(`/${id}/tables/${tableName}${query}`, { headers: this.storeHeaders(id) });
     }
 
     /**
@@ -192,7 +201,7 @@ export class DataApi extends ApiTopic {
      * @returns The updated table
      */
     alterTable(id: string, tableName: string, payload: AlterTablePayload): Promise<DataTable> {
-        return this.put(`/${id}/tables/${tableName}`, { payload });
+        return this.put(`/${id}/tables/${tableName}`, { payload, headers: this.storeHeaders(id) });
     }
 
     /**
@@ -202,7 +211,7 @@ export class DataApi extends ApiTopic {
      * @param tableName - Table name
      */
     dropTable(id: string, tableName: string): Promise<void> {
-        return this.del(`/${id}/tables/${tableName}`);
+        return this.del(`/${id}/tables/${tableName}`, { headers: this.storeHeaders(id) });
     }
 
     // ============================================================
@@ -239,7 +248,7 @@ export class DataApi extends ApiTopic {
      * ```
      */
     import(id: string, payload: ImportDataPayload): Promise<ImportJob> {
-        return this.post(`/${id}/import`, { payload });
+        return this.post(`/${id}/import`, { payload, headers: this.storeHeaders(id) });
     }
 
     /**
@@ -250,7 +259,7 @@ export class DataApi extends ApiTopic {
      * @returns Import job status
      */
     getImportStatus(id: string, importId: string): Promise<ImportJob> {
-        return this.get(`/${id}/import/${importId}`);
+        return this.get(`/${id}/import/${importId}`, { headers: this.storeHeaders(id) });
     }
 
     // ============================================================
@@ -266,7 +275,7 @@ export class DataApi extends ApiTopic {
      */
     listVersions(id: string, snapshotsOnly?: boolean): Promise<DataStoreVersion[]> {
         const query = snapshotsOnly ? '?snapshots_only=true' : '';
-        return this.get(`/${id}/versions${query}`);
+        return this.get(`/${id}/versions${query}`, { headers: this.storeHeaders(id) });
     }
 
     /**
@@ -287,7 +296,7 @@ export class DataApi extends ApiTopic {
      * ```
      */
     createSnapshot(id: string, payload: CreateSnapshotPayload): Promise<DataStoreVersion> {
-        return this.post(`/${id}/versions`, { payload });
+        return this.post(`/${id}/versions`, { payload, headers: this.storeHeaders(id) });
     }
 
     /**
@@ -300,7 +309,7 @@ export class DataApi extends ApiTopic {
      * @returns The updated data store
      */
     rollback(id: string, versionId: string): Promise<DataStore> {
-        return this.post(`/${id}/versions/${versionId}/rollback`, {});
+        return this.post(`/${id}/versions/${versionId}/rollback`, { headers: this.storeHeaders(id) });
     }
 
     /**
@@ -330,7 +339,7 @@ export class DataApi extends ApiTopic {
      * ```
      */
     queryVersion(id: string, versionId: string, payload: QueryPayload): Promise<QueryResult> {
-        return this.post(`/${id}/versions/${versionId}/query`, { payload });
+        return this.post(`/${id}/versions/${versionId}/query`, { payload, headers: this.storeHeaders(id) });
     }
 
     // ============================================================
@@ -354,7 +363,7 @@ export class DataApi extends ApiTopic {
      * ```
      */
     query(id: string, payload: QueryPayload): Promise<QueryResult> {
-        return this.post(`/${id}/query`, { payload });
+        return this.post(`/${id}/query`, { payload, headers: this.storeHeaders(id) });
     }
 
     // ============================================================
@@ -382,7 +391,7 @@ export class DataApi extends ApiTopic {
      */
     getDownloadInfo(id: string, versionId?: string): Promise<DataStoreDownloadInfo> {
         const query = versionId ? `?version_id=${versionId}` : '';
-        return this.get(`/${id}/download${query}`);
+        return this.get(`/${id}/download${query}`, { headers: this.storeHeaders(id) });
     }
 
     // ============================================================
