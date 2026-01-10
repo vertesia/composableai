@@ -4,6 +4,7 @@ import {
     CreateDataStorePayload,
     CreateSnapshotPayload,
     CreateTablePayload,
+    CreateTablesPayload,
     DataSchema,
     DataSchemaForAI,
     DataStore,
@@ -177,6 +178,46 @@ export class DataApi extends ApiTopic {
      */
     createTable(id: string, payload: CreateTablePayload): Promise<DataTable> {
         return this.post(`/${id}/tables`, { payload, headers: this.storeHeaders(id) });
+    }
+
+    /**
+     * Create multiple tables atomically in a data store.
+     *
+     * All tables are created in a single transaction - if any table fails,
+     * no tables are created.
+     *
+     * @param id - Data store ID
+     * @param payload - Tables to create and commit message
+     * @returns Array of created tables
+     *
+     * @example
+     * ```typescript
+     * const tables = await client.data.createTables(storeId, {
+     *   message: 'Create e-commerce schema',
+     *   tables: [
+     *     {
+     *       name: 'customers',
+     *       columns: [
+     *         { name: 'id', type: 'INTEGER', primary_key: true },
+     *         { name: 'email', type: 'STRING' },
+     *       ]
+     *     },
+     *     {
+     *       name: 'orders',
+     *       columns: [
+     *         { name: 'id', type: 'INTEGER', primary_key: true },
+     *         { name: 'customer_id', type: 'INTEGER' },
+     *       ],
+     *       foreign_keys: [
+     *         { column: 'customer_id', references_table: 'customers', references_column: 'id' }
+     *       ]
+     *     }
+     *   ]
+     * });
+     * ```
+     */
+    createTables(id: string, payload: CreateTablesPayload): Promise<DataTable[]> {
+        return this.post(`/${id}/tables/batch`, { payload, headers: this.storeHeaders(id) });
     }
 
     /**

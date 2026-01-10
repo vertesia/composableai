@@ -318,11 +318,15 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
             {isCollapsed && (
                 <div className="px-4 py-1 space-y-0">
                     {messages.map((m, idx) => {
-                        const details = m.details as { tool?: string } | undefined;
+                        const details = m.details as { tool?: string; files?: string[] } | undefined;
                         const toolName = details?.tool || "tool";
                         const fullMessage = typeof m.message === "string" ? m.message : "";
                         const isAnimating = animatingIndices.has(idx);
                         const isItemExpanded = expandedItems.has(idx);
+                        const files = details?.files as string[] | undefined;
+                        // Separate image files from other files for inline preview
+                        const imageFiles = files?.filter(f => isImageUrl(f)) || [];
+                        const nonImageFiles = files?.filter(f => !isImageUrl(f)) || [];
 
                         return (
                             <div
@@ -357,12 +361,22 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                                         </span>
                                     )}
                                 </div>
-                                {/* Expanded content */}
+                                {/* Always show images inline, regardless of expanded state */}
+                                {imageFiles.length > 0 && (
+                                    <div className="pl-5 pr-3 pb-2">
+                                        <FileDisplay files={imageFiles} />
+                                    </div>
+                                )}
+                                {/* Expanded content - show full message and non-image files */}
                                 {isItemExpanded && (
                                     <div className="pl-5 pr-3 pb-2 text-sm">
                                         <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
                                             <MarkdownRenderer>{fullMessage}</MarkdownRenderer>
                                         </div>
+                                        {/* Non-image files display */}
+                                        {nonImageFiles.length > 0 && (
+                                            <FileDisplay files={nonImageFiles} />
+                                        )}
                                         {/* Show details if available */}
                                         {details && Object.keys(details).length > 1 && (
                                             <details className="mt-2 text-xs">

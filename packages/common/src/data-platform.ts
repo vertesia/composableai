@@ -382,6 +382,16 @@ export interface CreateTablePayload {
 }
 
 /**
+ * Payload for creating multiple tables atomically.
+ */
+export interface CreateTablesPayload {
+    /** Table definitions to create */
+    tables: CreateTablePayload[];
+    /** Commit message */
+    message: string;
+}
+
+/**
  * Schema change operation types.
  */
 export type AlterTableOperation =
