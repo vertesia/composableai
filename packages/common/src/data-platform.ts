@@ -631,16 +631,19 @@ export enum DashboardStatus {
 
 /**
  * Named SQL query that maps to a Vega data source.
+ * Supports parameterized SQL with {{param_name}} placeholders.
  */
 export interface DashboardQuery {
     /** Query name (used as data source reference in Vega specs) */
     name: string;
-    /** SQL query (SELECT only) */
+    /** SQL query (SELECT only). Can include {{param_name}} placeholders for dynamic values. */
     sql: string;
     /** Human-readable description */
     description?: string;
     /** Maximum rows to return */
     limit?: number;
+    /** Default values for SQL parameters. Keys are parameter names (without braces). */
+    parameters?: Record<string, string>;
 }
 
 /**
