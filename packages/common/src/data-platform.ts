@@ -749,6 +749,8 @@ export interface UpdateDashboardPayload {
     panels?: DashboardPanel[];
     /** Layout configuration */
     layout?: Partial<DashboardLayout>;
+    /** Skip auto-version creation. Use when doing iterative work. */
+    skip_versioning?: boolean;
 }
 
 /**
@@ -789,4 +791,85 @@ export interface RenderDashboardResult {
     width: number;
     /** Image height in pixels */
     height: number;
+}
+
+// ============================================================================
+// Dashboard Version Types
+// ============================================================================
+
+/**
+ * A point-in-time version of a dashboard.
+ * Stores full snapshot inline (no external storage needed for small JSON documents).
+ */
+export interface DashboardVersion {
+    /** Version ID */
+    id: string;
+    /** Parent dashboard ID */
+    dashboard_id: string;
+    /** Version number (auto-incremented) */
+    version_number: number;
+    /** Commit message describing the change */
+    message: string;
+    /** Snapshot of queries at this version */
+    queries: DashboardQuery[];
+    /** Snapshot of panels at this version */
+    panels: DashboardPanel[];
+    /** Snapshot of layout at this version */
+    layout: DashboardLayout;
+    /** Whether this is the currently active/displayed version */
+    is_current: boolean;
+    /** Whether this is a named snapshot (protected from TTL cleanup) */
+    is_snapshot: boolean;
+    /** Snapshot name (if is_snapshot) */
+    snapshot_name?: string;
+    /** Creation timestamp */
+    created_at: string;
+    /** User/agent who created this version */
+    created_by?: string;
+}
+
+/**
+ * Summary view of a dashboard version (for listings).
+ */
+export interface DashboardVersionItem {
+    /** Version ID */
+    id: string;
+    /** Parent dashboard ID */
+    dashboard_id: string;
+    /** Version number */
+    version_number: number;
+    /** Commit message */
+    message: string;
+    /** Whether this is the current version */
+    is_current: boolean;
+    /** Whether this is a named snapshot */
+    is_snapshot: boolean;
+    /** Snapshot name (if is_snapshot) */
+    snapshot_name?: string;
+    /** Number of panels in this version */
+    panel_count: number;
+    /** Number of queries in this version */
+    query_count: number;
+    /** Creation timestamp */
+    created_at: string;
+    /** User/agent who created */
+    created_by?: string;
+}
+
+/**
+ * Payload for creating a named snapshot.
+ */
+export interface CreateDashboardSnapshotPayload {
+    /** Snapshot name (must be unique within dashboard) */
+    name: string;
+    /** Snapshot description/message */
+    message: string;
+}
+
+/**
+ * Payload for promoting a version to current.
+ */
+export interface PromoteDashboardVersionPayload {
+    /** Commit message for the promotion */
+    message?: string;
 }

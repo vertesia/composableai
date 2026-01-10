@@ -1,9 +1,13 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     CreateDashboardPayload,
+    CreateDashboardSnapshotPayload,
     Dashboard,
     DashboardItem,
     DashboardStatus,
+    DashboardVersion,
+    DashboardVersionItem,
+    PromoteDashboardVersionPayload,
     UpdateDashboardPayload,
 } from "@vertesia/common";
 
@@ -99,5 +103,83 @@ export class DashboardApi extends ApiTopic {
      */
     delete(id: string): Promise<{ id: string; status: DashboardStatus }> {
         return this.del(`/${id}`);
+    }
+
+    // ============================================================
+    // Version Operations
+    // ============================================================
+
+    /**
+     * List versions for a dashboard.
+     *
+     * @param dashboardId - Dashboard ID
+     * @param options - Filter options
+     * @returns List of version summaries
+     */
+    listVersions(
+        dashboardId: string,
+        options?: { snapshotsOnly?: boolean; limit?: number }
+    ): Promise<DashboardVersionItem[]> {
+        const params = new URLSearchParams();
+        if (options?.snapshotsOnly) params.set('snapshots_only', 'true');
+        if (options?.limit) params.set('limit', String(options.limit));
+        const query = params.toString() ? `?${params}` : '';
+        return this.get(`/${dashboardId}/versions${query}`);
+    }
+
+    /**
+     * Get a specific version with full content.
+     *
+     * @param dashboardId - Dashboard ID
+     * @param versionId - Version ID
+     * @returns The version with full content
+     */
+    getVersion(dashboardId: string, versionId: string): Promise<DashboardVersion> {
+        return this.get(`/${dashboardId}/versions/${versionId}`);
+    }
+
+    /**
+     * Create a named snapshot from current dashboard state.
+     *
+     * @param dashboardId - Dashboard ID
+     * @param payload - Snapshot name and message
+     * @returns The created snapshot version
+     */
+    createSnapshot(
+        dashboardId: string,
+        payload: CreateDashboardSnapshotPayload
+    ): Promise<DashboardVersionItem> {
+        return this.post(`/${dashboardId}/versions`, { payload });
+    }
+
+    /**
+     * Promote a version to be the current/active one.
+     * This restores the version's content to the dashboard.
+     *
+     * @param dashboardId - Dashboard ID
+     * @param versionId - Version ID to promote
+     * @param payload - Optional promotion message
+     * @returns The updated dashboard
+     */
+    promoteVersion(
+        dashboardId: string,
+        versionId: string,
+        payload?: PromoteDashboardVersionPayload
+    ): Promise<Dashboard> {
+        return this.post(`/${dashboardId}/versions/${versionId}/promote`, { payload: payload || {} });
+    }
+
+    /**
+     * Enable or disable versioning for a dashboard.
+     *
+     * @param dashboardId - Dashboard ID
+     * @param enabled - Whether versioning should be enabled
+     * @returns The updated versioning state
+     */
+    setVersioningEnabled(
+        dashboardId: string,
+        enabled: boolean
+    ): Promise<{ versioning_enabled: boolean }> {
+        return this.put(`/${dashboardId}/versioning`, { payload: { enabled } });
     }
 }

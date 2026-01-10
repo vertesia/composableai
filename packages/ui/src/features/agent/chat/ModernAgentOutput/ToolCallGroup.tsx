@@ -20,12 +20,51 @@ interface ToolCallItemProps {
     onToggle: () => void;
 }
 
+// Helper to check if URL is an image
+const isImageUrl = (url: string) => /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(url);
+
+// Component to render files (images inline, others as links)
+function FileDisplay({ files }: { files: string[] }) {
+    if (!files || files.length === 0) return null;
+
+    return (
+        <div className="mt-2 flex flex-wrap gap-2">
+            {files.map((file, idx) => {
+                const fileName = file.split('/').pop()?.split('?')[0] || 'file';
+                if (isImageUrl(file)) {
+                    return (
+                        <a key={idx} href={file} target="_blank" rel="noopener noreferrer" className="block">
+                            <img
+                                src={file}
+                                alt={fileName}
+                                className="max-w-[300px] max-h-[200px] rounded border hover:opacity-80 transition-opacity"
+                            />
+                        </a>
+                    );
+                }
+                return (
+                    <a
+                        key={idx}
+                        href={file}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs hover:bg-muted/80"
+                    >
+                        📎 {fileName}
+                    </a>
+                );
+            })}
+        </div>
+    );
+}
+
 function ToolCallItem({ message, isExpanded, onToggle }: ToolCallItemProps) {
     const [showDetails, setShowDetails] = useState(false);
     const toast = useToast();
 
-    const details = message.details as { tool?: string; [key: string]: unknown } | undefined;
+    const details = message.details as { tool?: string; files?: string[]; [key: string]: unknown } | undefined;
     const toolName = details?.tool || "Tool";
+    const files = details?.files as string[] | undefined;
     const messageContent = typeof message.message === "string" ? message.message : "";
 
     const copyToClipboard = () => {
@@ -88,10 +127,13 @@ function ToolCallItem({ message, isExpanded, onToggle }: ToolCallItemProps) {
             {isExpanded && (
                 <div className="px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30">
                     {messageContent && (
-                        <div className="vprose prose-sm text-sm mb-2">
+                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
                             <MarkdownRenderer>{messageContent}</MarkdownRenderer>
                         </div>
                     )}
+
+                    {/* Files display */}
+                    {files && files.length > 0 && <FileDisplay files={files} />}
 
                     {/* Details toggle */}
                     {details && (
@@ -232,14 +274,14 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
 
     return (
         <div
-            className={`border-l-4 ${getBorderColor()} shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5`}
+            className={`border-l-4 ${getBorderColor()} overflow-hidden bg-white dark:bg-gray-900 mb-4`}
         >
-            {/* Header */}
+            {/* Compact header */}
             <div
-                className="flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-purple-50/50 dark:bg-purple-900/10 cursor-pointer"
+                className="flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                     {renderStatusIndicator()}
                     <span className="text-xs font-medium text-muted">Agent</span>
                     <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
@@ -252,8 +294,8 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                     )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted">
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-muted/70">
                         {dayjs(firstTimestamp).format("HH:mm:ss")}
                         {messages.length > 1 && ` - ${dayjs(lastTimestamp).format("HH:mm:ss")}`}
                     </span>
@@ -264,7 +306,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                             e.stopPropagation();
                             copyAllToClipboard();
                         }}
-                        className="text-muted"
+                        className="text-muted/50 hover:text-muted h-5 w-5 p-0"
                         title="Copy all tool calls"
                     >
                         <CopyIcon className="size-3" />
@@ -318,7 +360,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                                 {/* Expanded content */}
                                 {isItemExpanded && (
                                     <div className="pl-5 pr-3 pb-2 text-sm">
-                                        <div className="vprose prose-sm">
+                                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
                                             <MarkdownRenderer>{fullMessage}</MarkdownRenderer>
                                         </div>
                                         {/* Show details if available */}
