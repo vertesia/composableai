@@ -162,7 +162,7 @@ function StreamingMessageComponent({
         }
     }, [isComplete, text.length, animate]);
 
-    // Throttle markdown updates to every 100ms for performance
+    // Throttle markdown updates for performance (reduced from 100ms to 33ms for responsiveness)
     useEffect(() => {
         // Update immediately if caught up or complete
         if (displayedLength >= text.length || isComplete) {
@@ -170,10 +170,10 @@ function StreamingMessageComponent({
             return;
         }
 
-        // Throttle during active streaming
+        // Throttle during active streaming (~30fps markdown updates)
         const timer = setTimeout(() => {
             setThrottledText(text.slice(0, displayedLengthRef.current));
-        }, 100);
+        }, 33);
 
         return () => clearTimeout(timer);
     }, [displayedLength, text.length, isComplete]);
