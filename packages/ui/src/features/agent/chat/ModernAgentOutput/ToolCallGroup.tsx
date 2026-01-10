@@ -25,36 +25,82 @@ const isImageUrl = (url: string) => /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(
 
 // Component to render files (images inline, others as links)
 function FileDisplay({ files }: { files: string[] }) {
+    const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+
     if (!files || files.length === 0) return null;
 
     return (
-        <div className="mt-2 flex flex-wrap gap-2">
-            {files.map((file, idx) => {
-                const fileName = file.split('/').pop()?.split('?')[0] || 'file';
-                if (isImageUrl(file)) {
+        <>
+            <div className="mt-2 flex flex-wrap gap-2">
+                {files.map((file, idx) => {
+                    const fileName = file.split('/').pop()?.split('?')[0] || 'file';
+                    if (isImageUrl(file)) {
+                        return (
+                            <div
+                                key={idx}
+                                className="cursor-pointer"
+                                onClick={() => setEnlargedImage(file)}
+                                title="Click to enlarge"
+                            >
+                                <img
+                                    src={file}
+                                    alt={fileName}
+                                    className="max-w-[300px] max-h-[200px] rounded border hover:opacity-80 transition-opacity hover:shadow-lg"
+                                />
+                            </div>
+                        );
+                    }
                     return (
-                        <a key={idx} href={file} target="_blank" rel="noopener noreferrer" className="block">
-                            <img
-                                src={file}
-                                alt={fileName}
-                                className="max-w-[300px] max-h-[200px] rounded border hover:opacity-80 transition-opacity"
-                            />
+                        <a
+                            key={idx}
+                            href={file}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs hover:bg-muted/80"
+                        >
+                            📎 {fileName}
                         </a>
                     );
-                }
-                return (
-                    <a
-                        key={idx}
-                        href={file}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs hover:bg-muted/80"
-                    >
-                        📎 {fileName}
-                    </a>
-                );
-            })}
-        </div>
+                })}
+            </div>
+
+            {/* Lightbox modal for enlarged images */}
+            {enlargedImage && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                    onClick={() => setEnlargedImage(null)}
+                >
+                    <div className="relative max-w-[90vw] max-h-[90vh]">
+                        <img
+                            src={enlargedImage}
+                            alt="Enlarged view"
+                            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                        />
+                        <button
+                            className="absolute top-2 right-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
+                            onClick={() => setEnlargedImage(null)}
+                            title="Close"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <a
+                            href={enlargedImage}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute bottom-2 right-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Open in new tab"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
 
@@ -66,6 +112,10 @@ function ToolCallItem({ message, isExpanded, onToggle }: ToolCallItemProps) {
     const toolName = details?.tool || "Tool";
     const files = details?.files as string[] | undefined;
     const messageContent = typeof message.message === "string" ? message.message : "";
+
+    // Separate image files from other files for inline preview
+    const imageFiles = files?.filter(f => isImageUrl(f)) || [];
+    const nonImageFiles = files?.filter(f => !isImageUrl(f)) || [];
 
     const copyToClipboard = () => {
         const textToCopy = [
@@ -123,6 +173,13 @@ function ToolCallItem({ message, isExpanded, onToggle }: ToolCallItemProps) {
                 </div>
             </div>
 
+            {/* Always show images inline, regardless of expanded state */}
+            {imageFiles.length > 0 && (
+                <div className="px-4 pb-2">
+                    <FileDisplay files={imageFiles} />
+                </div>
+            )}
+
             {/* Expanded content */}
             {isExpanded && (
                 <div className="px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30">
@@ -132,8 +189,8 @@ function ToolCallItem({ message, isExpanded, onToggle }: ToolCallItemProps) {
                         </div>
                     )}
 
-                    {/* Files display */}
-                    {files && files.length > 0 && <FileDisplay files={files} />}
+                    {/* Non-image files display */}
+                    {nonImageFiles.length > 0 && <FileDisplay files={nonImageFiles} />}
 
                     {/* Details toggle */}
                     {details && (
