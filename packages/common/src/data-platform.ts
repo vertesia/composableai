@@ -135,7 +135,7 @@ export interface DataTable {
     /** Semantic categorization for AI understanding */
     semantic_type?: DataTableSemanticType;
     /** Tags for organization */
-    tags?: string[];
+    tags: string[];
     /** Current row count (updated after imports) */
     row_count?: number;
     /** Table creation timestamp */
@@ -159,7 +159,7 @@ export interface DataTableSummary {
     /** Current row count */
     row_count?: number;
     /** Tags for organization */
-    tags?: string[];
+    tags: string[];
 }
 
 /**
@@ -242,7 +242,7 @@ export interface DataStoreItem extends BaseObject {
     /** Number of versions stored */
     version_count: number;
     /** Tags for organization */
-    tags?: string[];
+    tags: string[];
 }
 
 /**
@@ -719,7 +719,7 @@ export interface DashboardItem extends BaseObject {
     /** Last render timestamp */
     last_rendered_at?: string;
     /** Tags for organization */
-    tags?: string[];
+    tags: string[];
 }
 
 /**
