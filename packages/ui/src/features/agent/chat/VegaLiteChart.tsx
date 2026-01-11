@@ -242,6 +242,72 @@ function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, a
 }
 
 /**
+ * Apply parameter values to a Vega-Lite spec.
+ * Updates the 'value' field of named params, allowing models to set
+ * initial values for interactive controls (sliders, dropdowns, etc.).
+ * @exported for testing
+ */
+export function applyParameterValues(
+    spec: Record<string, any>,
+    parameterValues: Record<string, any>
+): Record<string, any> {
+    if (!parameterValues || Object.keys(parameterValues).length === 0) {
+        return spec;
+    }
+
+    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
+
+    // Helper to update params in a view
+    const updateParams = (params: any[]) => {
+        for (const param of params) {
+            if (param && typeof param === 'object' && param.name && param.name in parameterValues) {
+                param.value = parameterValues[param.name];
+            }
+        }
+    };
+
+    // Update root-level params
+    if (Array.isArray(result.params)) {
+        updateParams(result.params);
+    }
+
+    // Update params in nested views (vconcat, hconcat, concat)
+    const updateNestedViews = (views: any[]) => {
+        if (!Array.isArray(views)) return;
+        for (const view of views) {
+            if (view && Array.isArray(view.params)) {
+                updateParams(view.params);
+            }
+            // Recursively handle nested concatenations
+            if (view.vconcat) updateNestedViews(view.vconcat);
+            if (view.hconcat) updateNestedViews(view.hconcat);
+            if (view.concat) updateNestedViews(view.concat);
+            // Handle layers
+            if (Array.isArray(view.layer)) {
+                for (const layer of view.layer) {
+                    if (layer && Array.isArray(layer.params)) {
+                        updateParams(layer.params);
+                    }
+                }
+            }
+        }
+    };
+
+    if (result.vconcat) updateNestedViews(result.vconcat);
+    if (result.hconcat) updateNestedViews(result.hconcat);
+    if (result.concat) updateNestedViews(result.concat);
+    if (Array.isArray(result.layer)) {
+        for (const layer of result.layer) {
+            if (layer && Array.isArray(layer.params)) {
+                updateParams(layer.params);
+            }
+        }
+    }
+
+    return result;
+}
+
+/**
  * Check if a view has encoding using any of the specified fields.
  */
 function viewHasField(view: Record<string, any>, fields: string[]): boolean {
@@ -658,10 +724,16 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         if (hasArtifactReferences && !resolvedSpec) {
             return null;
         }
-        const specToUse = resolvedSpec || vegaSpec;
+        let specToUse = resolvedSpec || vegaSpec;
         if (!specToUse) return null;
+
+        // Apply parameter values if provided (allows model to set initial slider/dropdown values)
+        if (options?.parameterValues) {
+            specToUse = applyParameterValues(specToUse, options.parameterValues);
+        }
+
         return fixVegaLiteSelectionParams(specToUse);
-    }, [resolvedSpec, vegaSpec, hasArtifactReferences]);
+    }, [resolvedSpec, vegaSpec, hasArtifactReferences, options?.parameterValues]);
 
     // Scale widths in concatenated views to fit container
     const scaleSpecWidths = useCallback((spec: any, availableWidth: number): any => {
