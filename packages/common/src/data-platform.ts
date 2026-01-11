@@ -241,6 +241,8 @@ export interface DataStoreItem extends BaseObject {
     last_import_at?: string;
     /** Number of versions stored */
     version_count: number;
+    /** Tags for organization */
+    tags?: string[];
 }
 
 /**
@@ -716,6 +718,8 @@ export interface DashboardItem extends BaseObject {
     query_count: number;
     /** Last render timestamp */
     last_rendered_at?: string;
+    /** Tags for organization */
+    tags?: string[];
 }
 
 /**
