@@ -361,6 +361,8 @@ export interface CreateDataStorePayload {
     name: string;
     /** Store description */
     description?: string;
+    /** Tags for organization */
+    tags?: string[];
 }
 
 /**
