@@ -383,6 +383,38 @@ export class DataApi extends ApiTopic {
         return this.post(`/${id}/query`, { payload, headers: this.storeHeaders(id) });
     }
 
+    /**
+     * Validate SQL queries without executing them.
+     *
+     * Uses DuckDB's EXPLAIN to check syntax and table/column references
+     * against the store's schema. Useful for validating dashboard queries
+     * before saving.
+     *
+     * @param id - Data store ID
+     * @param queries - Array of queries to validate
+     * @returns Validation result with any errors
+     *
+     * @example
+     * ```typescript
+     * const result = await client.data.validateQueries(storeId, [
+     *   { name: 'sales', sql: 'SELECT * FROM sales WHERE date > {{start_date}}' },
+     *   { name: 'products', sql: 'SELECT * FROM productss' } // typo!
+     * ]);
+     *
+     * if (!result.valid) {
+     *   for (const err of result.errors) {
+     *     console.log(`Query '${err.query}': ${err.error}`);
+     *   }
+     * }
+     * ```
+     */
+    validateQueries(
+        id: string,
+        queries: Array<{ name: string; sql: string }>
+    ): Promise<QueryValidationResult> {
+        return this.post(`/${id}/query/validate`, { payload: { queries }, headers: this.storeHeaders(id) });
+    }
+
     // ============================================================
     // Download Operations (for sandbox sync)
     // ============================================================
@@ -466,4 +498,19 @@ export interface DataStoreDownloadInfo {
     tables: string[];
     /** URL expiry time in seconds */
     expires_in: number;
+}
+
+/**
+ * Result from SQL query validation.
+ */
+export interface QueryValidationResult {
+    /** Whether all queries are valid */
+    valid: boolean;
+    /** Validation errors (if any) */
+    errors: Array<{
+        /** Query name that failed validation */
+        query: string;
+        /** Error message describing the issue */
+        error: string;
+    }>;
 }
