@@ -49,7 +49,7 @@
     "@vertesia/client": "workspace:*",
     "@vertesia/tools-sdk": "workspace:*",
     "dotenv": "^17.2.3",
-    "hono": "^4.10.3",
+    "hono": "^4.11.4",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   }

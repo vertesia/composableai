@@ -876,7 +876,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.19.5
-        version: 1.19.7(hono@4.11.3)
+        version: 1.19.7(hono@4.11.4)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -893,8 +893,8 @@ importers:
         specifier: ^17.2.3
         version: 17.2.3
       hono:
-        specifier: ^4.10.3
-        version: 4.11.3
+        specifier: ^4.11.4
+        version: 4.11.4
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -4782,6 +4782,10 @@ packages:
     resolution: {integrity: sha512-PmQi306+M/ct/m5s66Hrg+adPnkD5jiO6IjA7WhWw0gSBSo1EcRegwuI1deZ+wd5pzCGynCcn2DprnE4/yEV4w==}
     engines: {node: '>=16.9.0'}
 
+  hono@4.11.4:
+    resolution: {integrity: sha512-U7tt8JsyrxSRKspfhtLET79pU8K+tInj5QZXs1jSugO1Vq5dFj3kmZsRldo29mTBfcjDRVRXrEZ6LS63Cog9ZA==}
+    engines: {node: '>=16.9.0'}
+
   html-to-image@1.11.13:
     resolution: {integrity: sha512-cuOPoI7WApyhBElTTb9oqsawRvZ0rHhaHwghRLlTuffoD1B2aDemlCruLeZrUIIdvG7gs9xeELEPm6PhuASqrg==}
 
@@ -8297,9 +8301,9 @@ snapshots:
       react-dom: 19.2.3(react@19.2.3)
       use-sync-external-store: 1.6.0(react@19.2.3)
 
-  '@hono/node-server@1.19.7(hono@4.11.3)':
+  '@hono/node-server@1.19.7(hono@4.11.4)':
     dependencies:
-      hono: 4.11.3
+      hono: 4.11.4
 
   '@humanfs/core@0.19.1': {}
 
@@ -11546,6 +11550,8 @@ snapshots:
   heap-js@2.7.1: {}
 
   hono@4.11.3: {}
+
+  hono@4.11.4: {}
 
   html-to-image@1.11.13: {}
 
