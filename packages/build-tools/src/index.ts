@@ -36,6 +36,7 @@ export type {
 export {
     skillTransformer,
     rawTransformer,
+    skillCollectionTransformer,
     SkillDefinitionSchema,
     type SkillDefinition,
     type SkillContentType

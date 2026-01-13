@@ -18,6 +18,11 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "**/node_modules/@vertesia/**",
+                "!**/node_modules/**"
+            ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
         }

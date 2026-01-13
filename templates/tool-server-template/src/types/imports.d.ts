@@ -16,6 +16,13 @@ declare module '*/SKILL.md' {
   export default skill;
 }
 
+// Skill collection imports - any file with ?skills suffix
+declare module '*?skills' {
+  import type { SkillDefinition } from '@vertesia/build-tools';
+  const skills: SkillDefinition[];
+  export default skills;
+}
+
 // Raw imports - any file with ?raw suffix
 declare module '*?raw' {
   const content: string;
