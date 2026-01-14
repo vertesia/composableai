@@ -526,6 +526,9 @@ importers:
       '@vertesia/common':
         specifier: workspace:*
         version: link:../common
+      ajv:
+        specifier: ^8.17.1
+        version: 8.17.1
       hono:
         specifier: ^4.10.0
         version: 4.11.3

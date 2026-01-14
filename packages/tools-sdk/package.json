@@ -38,6 +38,7 @@
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
+        "ajv": "^8.17.1",
         "jose": "^6.0.11"
     },
     "repository": {
