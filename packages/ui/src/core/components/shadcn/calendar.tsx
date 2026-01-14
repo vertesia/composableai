@@ -18,9 +18,8 @@ function Calendar({
 
   return (
     <DatePicker
-      className={`${className ?? ''} ${sizeClass}`}
-      calendarIcon={null}
-      clearIcon={null}
+      className={`${className} ${sizeClass}`}
+      calendarIcon={false}
       {...props}
     />
   )
