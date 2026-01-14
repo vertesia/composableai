@@ -806,33 +806,21 @@ export interface Dashboard extends DashboardItem {
 
 /**
  * Payload for creating a new dashboard.
- *
- * **New architecture (v2):** Use `query` + `spec`
- * **Legacy (v1):** Use `queries` + `panels` + `layout`
+ * Requires query (SQL) and spec (Vega-Lite).
  */
 export interface CreateDashboardPayload {
     /** Dashboard name (unique within store) */
     name: string;
-    /** Dashboard description */
-    description?: string;
-
-    // ============= New architecture (v2) =============
+    /** Dashboard summary */
+    summary?: string;
     /** SQL query that returns all data for the dashboard */
-    query?: string;
+    query: string;
     /** Maximum rows to return from the query (default: 10000) */
     queryLimit?: number;
-    /** Default values for SQL parameters */
+    /** Default values for SQL {{param}} placeholders */
     queryParameters?: Record<string, string>;
-    /** Complete Vega-Lite specification for the entire dashboard */
-    spec?: Record<string, unknown>;
-
-    // ============= Legacy architecture (v1, deprecated) =============
-    /** @deprecated Use single `query` field instead */
-    queries?: DashboardQuery[];
-    /** @deprecated Use single `spec` field with vconcat/hconcat instead */
-    panels?: DashboardPanel[];
-    /** @deprecated Layout is now handled within the Vega-Lite spec */
-    layout?: Partial<DashboardLayout>;
+    /** Complete Vega-Lite specification (use vconcat/hconcat for multiple panels) */
+    spec: Record<string, unknown>;
 }
 
 /**
@@ -841,28 +829,17 @@ export interface CreateDashboardPayload {
 export interface UpdateDashboardPayload {
     /** Dashboard name */
     name?: string;
-    /** Dashboard description */
-    description?: string;
-
-    // ============= New architecture (v2) =============
+    /** Dashboard summary */
+    summary?: string;
     /** SQL query that returns all data for the dashboard */
     query?: string;
     /** Maximum rows to return from the query (default: 10000) */
     queryLimit?: number;
-    /** Default values for SQL parameters */
+    /** Default values for SQL {{param}} placeholders */
     queryParameters?: Record<string, string>;
-    /** Complete Vega-Lite specification for the entire dashboard */
+    /** Complete Vega-Lite specification (use vconcat/hconcat for multiple panels) */
     spec?: Record<string, unknown>;
-
-    // ============= Legacy architecture (v1, deprecated) =============
-    /** @deprecated Use single `query` field instead */
-    queries?: DashboardQuery[];
-    /** @deprecated Use single `spec` field with vconcat/hconcat instead */
-    panels?: DashboardPanel[];
-    /** @deprecated Layout is now handled within the Vega-Lite spec */
-    layout?: Partial<DashboardLayout>;
-
-    /** Skip auto-version creation. Use when doing iterative work. */
+    /** Skip auto-version creation */
     skip_versioning?: boolean;
 }
 

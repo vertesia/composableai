@@ -260,7 +260,8 @@ function MessageItemComponent({
     // Create stable key from message for dependency tracking
     const runId = (message as any).workflow_run_id as string | undefined;
     const details = message.details as any;
-    const outputFiles: unknown = details && details.outputFiles;
+    // Check both outputFiles (from execute_shell) and files (from tool results like dashboard tools)
+    const outputFiles: unknown = details?.outputFiles ?? details?.files;
     const outputFilesKey = Array.isArray(outputFiles) ? outputFiles.join(",") : "";
 
     useEffect(() => {
