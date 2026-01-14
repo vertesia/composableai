@@ -814,7 +814,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         const { width: _specWidth, ...specWithoutWidth } = scaledSpec as any;
 
         return {
-            $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+            $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
             ...(!isConcatenatedView && width ? { width } : {}),
             height: forFullscreen ? undefined : height,
             autosize,
