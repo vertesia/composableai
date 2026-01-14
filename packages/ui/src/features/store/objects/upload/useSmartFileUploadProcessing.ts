@@ -65,7 +65,7 @@ async function prepareFilesWithMetadata(files: File[], selectedFolder?: string |
         const metadataResults = await Promise.all(
             batch.map(async (file) => {
                 // Determine the location for this file
-                let location = selectedFolder || undefined;
+                let location = selectedFolder || "/";
 
                 // If file has relative path, use it to determine location
                 const hasRelativePath = !!(file as any).webkitRelativePath;

@@ -68,7 +68,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
     }, [document])
 
     return (
-        <Card className={`relative flex flex-col border h-fit ${selectedObject?.id === document.id ? 'border-attention border-4' : ''}`} onClick={() => (onRowClick && onRowClick(document))}>
+        <Card className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''}`} onClick={() => (onRowClick && onRowClick(document))}>
             {
                 selection && (
                     <div

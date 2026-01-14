@@ -6,8 +6,9 @@ import { EditorView, ViewUpdate } from '@codemirror/view';
 import { useSafeLayoutEffect } from '@vertesia/ui/core';
 
 import { getSharedEditorState } from './CodemirrorStateSingleton';
+import { IEditorApi } from "./MonacoEditor.js";
 
-export class EditorApi {
+export class EditorApi implements IEditorApi {
     constructor(public editor: EditorView) { }
     setValue(value?: string) {
         this.editor.dispatch({
