@@ -21,4 +21,3 @@ export * from './heading';
 export * from './text';
 export * from './resizeable';
 export * from './textarea';
-export * from './calendar';
