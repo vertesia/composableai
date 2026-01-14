@@ -76,3 +76,28 @@ export interface RunsAnalyticsSummary {
         failed: number;
     };
 }
+
+/** Date range filter for analytics queries (uses created_at field) */
+export interface DateRangeQuery {
+    /** Start date in ISO format, optional (unbounded if omitted) */
+    start?: string;
+    /** End date in ISO format, optional (unbounded if omitted) */
+    end?: string;
+}
+
+/** Token usage for a single environment */
+export interface TokenUsageByEnvironment {
+    environmentId: string;
+    environmentName: string;
+    /** Total prompt tokens, null if query failed */
+    totalPromptTokens: number | null;
+}
+
+/** Summary of token usage by environment (requires { environment: 1, created_at: -1, "token_use.prompt": 1 } index) */
+export interface TokenUsageSummary {
+    byEnvironment: TokenUsageByEnvironment[];
+    queryStats: {
+        total: number;
+        failed: number;
+    };
+}
