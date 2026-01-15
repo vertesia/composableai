@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import { useState, memo, useEffect, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
+import { useImageLightbox } from "../ImageLightbox";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
 import { ToolExecutionStatus } from "./utils";
 
@@ -28,82 +29,43 @@ const isImageUrl = (url: string) => /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(
 
 // Component to render files (images inline, others as links)
 function FileDisplay({ files }: { files: string[] }) {
-    const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+    const { openImage } = useImageLightbox();
 
     if (!files || files.length === 0) return null;
 
     return (
-        <>
-            <div className="mt-2 flex flex-wrap gap-2">
-                {files.map((file, idx) => {
-                    const fileName = file.split('/').pop()?.split('?')[0] || 'file';
-                    if (isImageUrl(file)) {
-                        return (
-                            <div
-                                key={idx}
-                                className="cursor-pointer"
-                                onClick={() => setEnlargedImage(file)}
-                                title="Click to enlarge"
-                            >
-                                <img
-                                    src={file}
-                                    alt={fileName}
-                                    className="max-w-[300px] max-h-[200px] rounded border hover:opacity-80 transition-opacity hover:shadow-lg"
-                                />
-                            </div>
-                        );
-                    }
+        <div className="mt-2 flex flex-wrap gap-2">
+            {files.map((file, idx) => {
+                const fileName = file.split('/').pop()?.split('?')[0] || 'file';
+                if (isImageUrl(file)) {
                     return (
-                        <a
+                        <div
                             key={idx}
-                            href={file}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs hover:bg-muted/80"
+                            className="cursor-pointer"
+                            onClick={() => openImage(file, fileName)}
+                            title="Click to enlarge"
                         >
-                            📎 {fileName}
-                        </a>
+                            <img
+                                src={file}
+                                alt={fileName}
+                                className="max-w-[300px] max-h-[200px] rounded border hover:opacity-80 transition-opacity hover:shadow-lg"
+                            />
+                        </div>
                     );
-                })}
-            </div>
-
-            {/* Lightbox modal for enlarged images */}
-            {enlargedImage && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-                    onClick={() => setEnlargedImage(null)}
-                >
-                    <div className="relative max-w-[90vw] max-h-[90vh]">
-                        <img
-                            src={enlargedImage}
-                            alt="Enlarged view"
-                            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-                        />
-                        <button
-                            className="absolute top-2 right-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
-                            onClick={() => setEnlargedImage(null)}
-                            title="Close"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                        <a
-                            href={enlargedImage}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="absolute bottom-2 right-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
-                            onClick={(e) => e.stopPropagation()}
-                            title="Open in new tab"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-            )}
-        </>
+                }
+                return (
+                    <a
+                        key={idx}
+                        href={file}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs hover:bg-muted/80"
+                    >
+                        📎 {fileName}
+                    </a>
+                );
+            })}
+        </div>
     );
 }
 

@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, Layers, MessageSquare, User } from "lucide-react";
 import React, { useEffect, useState, useMemo, memo } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
+import { useImageLightbox } from "../ImageLightbox";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
@@ -131,6 +132,7 @@ function MessageItemComponent({
     const { client } = useUserSession();
     const toast = useToast();
     const urlCache = useArtifactUrlCache();
+    const { openImage } = useImageLightbox();
 
     // Get styles from consolidated config
     const styles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
@@ -240,7 +242,7 @@ function MessageItemComponent({
                                     {...props}
                                     className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
                                     loading="lazy"
-                                    onClick={() => props.src && window.open(props.src, '_blank')}
+                                    onClick={() => props.src && openImage(props.src, props.alt)}
                                 />
                             );
                         },
@@ -397,7 +399,7 @@ function MessageItemComponent({
                                         <div
                                             key={`${artifactPath}-preview`}
                                             className="max-w-xs cursor-pointer"
-                                            onClick={() => window.open(url, "_blank")}
+                                            onClick={() => openImage(url, displayName)}
                                         >
                                             <img
                                                 src={url}

@@ -6,6 +6,7 @@ import { AgentMessage, AgentMessageType, Plan, StreamingChunkDetails, UserInputS
 import { Button, MessageBox, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
+import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
 import MessageInput, { UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
@@ -1035,6 +1036,7 @@ function ModernAgentConversationInner({
 
     return (
         <ArtifactUrlCacheProvider>
+        <ImageLightboxProvider>
         <div
             className={`flex gap-2 h-full relative overflow-hidden ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
             onDragEnter={handleDragEnter}
@@ -1197,6 +1199,7 @@ function ModernAgentConversationInner({
                 </VModalFooter>
             </VModal>
         </div>
+        </ImageLightboxProvider>
         </ArtifactUrlCacheProvider>
     );
 }
