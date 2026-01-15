@@ -141,3 +141,15 @@ export class ToolNotFoundError extends HTTPException {
     }
 }
 
+export class ToolInputValidationError extends HTTPException {
+    constructor(toolName: string, errors: Array<{ instancePath?: string; message?: string; keyword?: string; params?: Record<string, unknown> }>) {
+        const errorMessages = errors.map(e => {
+            const path = e.instancePath || '/';
+            const msg = e.message || 'validation failed';
+            return `${path}: ${msg}`;
+        }).join('; ');
+        super(400, { message: `Invalid input for tool '${toolName}': ${errorMessages}` });
+        this.name = "ToolInputValidationError";
+    }
+}
+
