@@ -7,10 +7,6 @@ export default class AnalyticsApi extends ApiTopic {
         super(parent, "/api/v1/analytics")
     }
 
-    runs(params: RunAnalyticsQuery): Promise<RunAnalyticsResult[]> {
-        return this.post('/runs', { payload: params });
-    }
-
     runsSummary(query?: DateRangeQuery): Promise<RunsAnalyticsSummary> {
         const params = new URLSearchParams();
         if (query?.start) params.set('start', query.start);
