@@ -116,6 +116,26 @@ export class DashboardApi extends ApiTopic {
         return this.del(`/${id}`, { headers: this.storeHeaders() });
     }
 
+    /**
+     * Archive (soft delete) multiple dashboards.
+     *
+     * @param ids - Array of dashboard IDs
+     * @returns Object with counts of archived and failed dashboards
+     */
+    bulkArchive(ids: string[]): Promise<{ archived: number; failed: number }> {
+        return this.post('/bulk/archive', { payload: { ids }, headers: this.storeHeaders() });
+    }
+
+    /**
+     * Permanently delete multiple dashboards.
+     *
+     * @param ids - Array of dashboard IDs
+     * @returns Object with counts of deleted and failed dashboards
+     */
+    bulkDelete(ids: string[]): Promise<{ deleted: number; failed: number }> {
+        return this.post('/bulk/delete', { payload: { ids }, headers: this.storeHeaders() });
+    }
+
     // ============================================================
     // Version Operations
     // ============================================================
