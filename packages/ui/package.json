@@ -7,7 +7,8 @@
     "files": [
         "lib",
         "src",
-        "tsconfig.dist.json"
+        "tsconfig.dist.json",
+        "llms.txt"
     ],
     "license": "Apache-2.0",
     "homepage": "https://docs.vertesiahq.com",
@@ -68,7 +69,10 @@
         "react-markdown": "^10.1.0",
         "react-pdf": "^10.2.0",
         "react-resizable-panels": "^3.0.6",
-        "react-vega": "^7.6.0",
+        "react-vega": "^8.0.0",
+        "vega": "^6.2.0",
+        "vega-embed": "^7.1.0",
+        "vega-lite": "^6.4.1",
         "recharts": "^3.5.0",
         "remark-gfm": "^4.0.1",
         "tailwind-merge": "^3.4.0",

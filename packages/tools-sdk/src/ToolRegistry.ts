@@ -1,5 +1,5 @@
-import { HTTPException } from "hono/http-exception";
 import { Ajv, ValidateFunction } from "ajv";
+import { HTTPException } from "hono/http-exception";
 import { Tool, ToolDefinitionWithDefault, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult } from "./types.js";
 
 // Singleton AJV instance with coercion enabled for LLM compatibility
@@ -141,14 +141,3 @@ export class ToolNotFoundError extends HTTPException {
     }
 }
 
-export class ToolInputValidationError extends HTTPException {
-    constructor(toolName: string, errors: Array<{ instancePath?: string; message?: string; keyword?: string; params?: Record<string, unknown> }>) {
-        const errorMessages = errors.map(e => {
-            const path = e.instancePath || '/';
-            const msg = e.message || 'validation failed';
-            return `${path}: ${msg}`;
-        }).join('; ');
-        super(400, { message: `Invalid input for tool '${toolName}': ${errorMessages}` });
-        this.name = "ToolInputValidationError";
-    }
-}

@@ -370,6 +370,30 @@ Bind parameters to sliders and dropdowns:
 | height | number | 280/500 | Explicit height (auto-calculated for vconcat) |
 | enableFullscreen | boolean | true (dashboard) | Show fullscreen button |
 | renderer | "canvas" \\| "svg" | "canvas" | SVG for print quality |
+| parameterValues | object | {} | Set initial param values (see below) |
+
+### SETTING PARAMETER VALUES
+
+Override default param values to test different configurations:
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "options": {
+    "mode": "dashboard",
+    "parameterValues": {"threshold": 75, "colorScheme": "tableau10"}
+  },
+  "spec": {
+    "params": [
+      {"name": "threshold", "value": 50, "bind": {"input": "range", "min": 0, "max": 100}},
+      {"name": "colorScheme", "value": "category10", "bind": {"input": "select", "options": ["category10", "tableau10"]}}
+    ],
+    ...
+  }
+}
+\`\`\`
+
+The chart renders with threshold=75 (instead of default 50). Interactive controls still work.
 
 ### INTERACTIVE FEATURES (params)
 

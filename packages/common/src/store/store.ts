@@ -12,6 +12,15 @@ export enum ContentObjectApiHeaders {
     SUPPRESS_WORKFLOWS = 'x-suppress-workflows',
 }
 
+/**
+ * Headers for Data Store API calls.
+ * Used for Cloud Run session affinity to route requests to the same instance.
+ */
+export enum DataStoreApiHeaders {
+    /** Data store ID for session affinity - routes requests for same store to same instance */
+    DATA_STORE_ID = 'x-data-store-id',
+}
+
 export enum ContentObjectStatus {
     created = "created",
     processing = "processing", // the was created and still processing

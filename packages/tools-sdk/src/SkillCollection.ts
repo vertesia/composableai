@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { join } from "path";
+import { ToolContext } from "./server/types.js";
 import type {
     CollectionProperties,
     ICollection,
@@ -149,11 +150,25 @@ export class SkillCollection implements ICollection<SkillDefinition> {
     /**
      * Execute a skill - accepts standard tool execution payload.
      * Returns rendered instructions in tool result format.
+     *
+     * @param ctx - Hono context
+     * @param preParsedPayload - Optional pre-parsed payload (used when routing from root endpoint)
      */
-    async execute(ctx: Context): Promise<Response> {
-        let payload: ToolExecutionPayload<Record<string, any>> | undefined;
+    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload<Record<string, any>>): Promise<Response> {
+        const toolCtx = ctx as ToolContext;
+        let payload: ToolExecutionPayload<Record<string, any>> | undefined = preParsedPayload;
         try {
-            payload = await ctx.req.json() as ToolExecutionPayload<Record<string, any>>;
+            if (!payload) {
+                // Check if body was already parsed and validated by middleware
+                if (toolCtx.payload) {
+                    payload = toolCtx.payload;
+                } else {
+                    throw new HTTPException(400, {
+                        message: 'Invalid or missing skill execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
+                    });
+                }
+            }
+
             const toolName = payload.tool_use.tool_name;
 
             // Extract skill name from tool name (remove "learn_" prefix if present)
@@ -164,6 +179,12 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             const skill = this.skills.get(skillName);
 
             if (!skill) {
+                console.warn("[SkillCollection] Skill not found", {
+                    collection: this.name,
+                    requestedSkill: skillName,
+                    toolName,
+                    availableSkills: Array.from(this.skills.keys()),
+                });
                 throw new HTTPException(404, {
                     message: `Skill not found: ${skillName}`
                 });
@@ -187,8 +208,23 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             } satisfies ToolExecutionResult & { tool_use_id: string });
         } catch (err: any) {
             const status = err.status || 500;
+            const toolName = payload?.tool_use?.tool_name;
+            const toolUseId = payload?.tool_use?.id;
+
+            if (status >= 500) {
+                console.error("[SkillCollection] Skill execution failed", {
+                    collection: this.name,
+                    skill: toolName,
+                    toolUseId,
+                    error: err.message,
+                    status,
+                    toolInput: payload?.tool_use?.tool_input,
+                    stack: err.stack,
+                });
+            }
+
             return ctx.json({
-                tool_use_id: payload?.tool_use?.id || "unknown",
+                tool_use_id: toolUseId || "unknown",
                 is_error: true,
                 content: err.message || "Error executing skill",
             }, status);

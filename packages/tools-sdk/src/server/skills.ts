@@ -5,10 +5,20 @@ import { HTTPException } from "hono/http-exception";
 import { SkillCollection } from "../SkillCollection.js";
 import { SkillDefinition, ToolCollectionDefinition, ToolDefinition } from "../types.js";
 import { makeScriptUrl } from "../utils.js";
-import { ToolServerConfig } from "./types.js";
+import { ToolContext, ToolServerConfig } from "./types.js";
 
 export function createSkillsRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { skills = [] } = config;
+
+    // Build a map of skill name -> collection for routing
+    const skillToCollection = new Map<string, SkillCollection>();
+    for (const coll of skills) {
+        for (const skill of coll.getSkillDefinitions()) {
+            skillToCollection.set(skill.name, coll);
+            // Also map the learn_ prefixed name
+            skillToCollection.set(`learn_${skill.name}`, coll);
+        }
+    }
 
     // GET /api/skills - Returns all skills from all collections
     app.get(basePath, (c) => {
@@ -30,6 +40,33 @@ export function createSkillsRoute(app: Hono, basePath: string, config: ToolServe
                 description: s.description,
             })),
         } satisfies ToolCollectionDefinition & { collections: any[] });
+    });
+
+    // POST /api/skills - Route to the correct collection based on tool_name
+    app.post(basePath, async (c) => {
+        const ctx = c as unknown as ToolContext;
+
+        // Payload is already parsed and validated by middleware
+        if (!ctx.payload) {
+            throw new HTTPException(400, {
+                message: 'Invalid or missing skill execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
+            });
+        }
+
+        const toolName = ctx.payload.tool_use.tool_name;
+
+        // Find the collection for this skill
+        const collection = skillToCollection.get(toolName);
+        if (!collection) {
+            // Extract skill name for better error message
+            const skillName = toolName.startsWith('learn_') ? toolName.slice(6) : toolName;
+            throw new HTTPException(404, {
+                message: `Skill not found: ${skillName}. Available skills: ${Array.from(skillToCollection.keys()).filter(k => !k.startsWith('learn_')).join(', ')}`
+            });
+        }
+
+        // Delegate to the collection's execute method with pre-parsed payload
+        return collection.execute(c, ctx.payload);
     });
 
     // Create skill collection endpoints (exposed as tools)

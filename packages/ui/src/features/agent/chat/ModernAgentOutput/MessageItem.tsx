@@ -98,7 +98,7 @@ const MESSAGE_STYLES: Record<AgentMessageType | 'default', {
 }> = {
     [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
     [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', bgColor: 'bg-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
-    [AgentMessageType.IDLE]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'Idle', Icon: Clock },
+    [AgentMessageType.IDLE]: { borderColor: 'border-l-info', bgColor: 'bg-info/50', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
     [AgentMessageType.REQUEST_INPUT]: { borderColor: 'border-l-attention', bgColor: 'bg-attention', iconColor: 'text-attention', sender: 'Input', Icon: User },
     [AgentMessageType.QUESTION]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
     [AgentMessageType.THOUGHT]: { borderColor: 'border-l-purple-500', bgColor: 'bg-purple-50/50 dark:bg-purple-900/10', iconColor: 'text-purple-600 dark:text-purple-400', sender: 'Agent', Icon: Bot },
@@ -208,7 +208,7 @@ function MessageItemComponent({
         const runId = (message as any).workflow_run_id as string | undefined;
 
         return (
-            <div className="vprose prose-sm text-sm">
+            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-2 prose-headings:font-semibold prose-headings:tracking-tight prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2 max-w-none text-[15px]">
                 <MarkdownRenderer
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
@@ -260,7 +260,8 @@ function MessageItemComponent({
     // Create stable key from message for dependency tracking
     const runId = (message as any).workflow_run_id as string | undefined;
     const details = message.details as any;
-    const outputFiles: unknown = details && details.outputFiles;
+    // Check both outputFiles (from execute_shell) and files (from tool results like dashboard tools)
+    const outputFiles: unknown = details?.outputFiles ?? details?.files;
     const outputFilesKey = Array.isArray(outputFiles) ? outputFiles.join(",") : "";
 
     useEffect(() => {
@@ -343,42 +344,39 @@ function MessageItemComponent({
     return (
         <div className={className}>
             <div
-                className={`border-l-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5 ${styles.borderColor} ${styles.bgColor} ${cardClassName || ""}`}
+                className={`border-l-4 overflow-hidden bg-white dark:bg-gray-900 mb-4 ${styles.borderColor} ${cardClassName || ""}`}
                 data-workstream-id={workstreamId}
             >
-                {/* Header with icon and timestamp */}
-                <div className={`flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm ${headerClassName || ""}`}>
-                    <div className="flex items-center gap-2">
+                {/* Compact header */}
+                <div className={`flex items-center justify-between px-4 py-1.5 ${headerClassName || ""}`}>
+                    <div className="flex items-center gap-1.5">
                         <div className={`${showPulsatingCircle ? "animate-fadeIn" : ""} ${iconClassName || ""}`}>
                             {renderIcon()}
                         </div>
                         <span className={`text-xs font-medium text-muted ${senderClassName || ""}`}>{styles.sender}</span>
-
-                    {/* Show workstream badge next to sender for better organization */}
-                    {workstreamId !== "main" && workstreamId !== "all" && (
-                        <Badge variant="default" className="text-xs text-muted">
-                            {workstreamId}
-                        </Badge>
-                    )}
+                        {workstreamId !== "main" && workstreamId !== "all" && (
+                            <Badge variant="default" className="text-xs text-muted ml-1">
+                                {workstreamId}
+                            </Badge>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-1.5 print:hidden">
+                        <span className={`text-[11px] text-muted/70 ${timestampClassName || ""}`}>
+                            {dayjs(message.timestamp).format("HH:mm:ss")}
+                        </span>
+                        <Button
+                            variant="ghost" size="xs"
+                            onClick={copyToClipboard}
+                            className="text-muted/50 hover:text-muted h-5 w-5 p-0"
+                            title="Copy message"
+                        >
+                            <CopyIcon className="size-3" />
+                        </Button>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-2 print:hidden">
-                    <span className={`text-xs text-muted ${timestampClassName || ""}`}>
-                        {dayjs(message.timestamp).format("HH:mm:ss")}
-                    </span>
-                    <Button
-                        variant="ghost" size="xs"
-                        onClick={copyToClipboard}
-                        className="text-muted"
-                        title="Copy message"
-                    >
-                        <CopyIcon className="size-3" />
-                    </Button>
-                </div>
-            </div>
-
-            {/* Message content */}
-            <div className={`px-4 py-3 bg-white dark:bg-gray-900 ${contentClassName || ""}`}>
+                {/* Message content */}
+                <div className={`px-4 pb-3 bg-white dark:bg-gray-900 ${contentClassName || ""}`}>
                 {messageContent && (
                     <div className="message-content break-words max-w-full" style={{ overflowWrap: 'anywhere' }}>
                         {renderContent(processedContent || messageContent)}
