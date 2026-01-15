@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { DateRangeQuery, RunAnalyticsQuery, RunAnalyticsResult, RunsAnalyticsSummary, TokenUsageSummary } from "@vertesia/common";
+import { DateRangeQuery, RunsAnalyticsSummary, TokenUsageSummary } from "@vertesia/common";
 
 export default class AnalyticsApi extends ApiTopic {
 
@@ -7,18 +7,20 @@ export default class AnalyticsApi extends ApiTopic {
         super(parent, "/api/v1/analytics")
     }
 
-    runsSummary(query?: DateRangeQuery): Promise<RunsAnalyticsSummary> {
+    runsSummary(query?: DateRangeQuery, environmentId?: string): Promise<RunsAnalyticsSummary> {
         const params = new URLSearchParams();
         if (query?.start) params.set('start', query.start);
         if (query?.end) params.set('end', query.end);
+        if (environmentId) params.set('environment', environmentId);
         const qs = params.toString();
         return this.get('/runs/summary' + (qs ? '?' + qs : ''));
     }
 
-    runsTimeSeries(query?: DateRangeQuery): Promise<Array<{ timestamp: Date; count: number }>> {
+    runsTimeSeries(query?: DateRangeQuery, environmentId?: string): Promise<Array<{ timestamp: Date; count: number }>> {
         const params = new URLSearchParams();
         if (query?.start) params.set('start', query.start);
         if (query?.end) params.set('end', query.end);
+        if (environmentId) params.set('environment', environmentId);
         const qs = params.toString();
         return this.get('/runs/time-series' + (qs ? '?' + qs : ''));
     }
