@@ -1,10 +1,7 @@
 import { Tool, ToolExecutionContext, ToolExecutionPayload } from "@vertesia/tools-sdk";
-import manifest from "./manifest.js";
+import { type CalculatorParams } from "./schema.js";
 import { ToolResultContent } from "@vertesia/common";
 
-interface CalculatorParams {
-    expression: string;
-}
 
 /**
  * Safely evaluates a mathematical expression
@@ -34,7 +31,7 @@ function evaluateExpression(expr: string): number {
     }
 }
 
-async function calculate(
+export async function calculate(
     payload: ToolExecutionPayload<CalculatorParams>,
     _context: ToolExecutionContext
 ): Promise<ToolResultContent> {
@@ -53,8 +50,3 @@ async function calculate(
         } satisfies ToolResultContent;
     }
 }
-
-export const CalculatorTool = {
-    ...manifest,
-    run: calculate
-} satisfies Tool<CalculatorParams>;

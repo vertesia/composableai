@@ -1,5 +1,5 @@
-import { CalculatorTools } from "./calculator/index.js";
+import { ExampleTools } from "./examples/index.js";
 
 export const tools = [
-    CalculatorTools
+    ExampleTools
 ];

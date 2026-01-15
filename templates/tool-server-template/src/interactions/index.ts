@@ -1,7 +1,7 @@
-import { SummarizeInteractions } from "./summarize/index.js";
+import { ExampleInteractions } from "./examples/index.js";
 
 export async function loadInteractions() {
     return [
-        SummarizeInteractions
+        ExampleInteractions
     ];
 }
