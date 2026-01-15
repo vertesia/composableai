@@ -1,10 +1,12 @@
 import { AgentMessage } from "@vertesia/common";
 import { Button, useToast } from "@vertesia/ui/core";
+import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import { useState, memo, useEffect, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
+import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
 import { ToolExecutionStatus } from "./utils";
 
 interface ToolCallGroupProps {
@@ -18,6 +20,7 @@ interface ToolCallItemProps {
     message: AgentMessage;
     isExpanded: boolean;
     onToggle: () => void;
+    artifactRunId?: string;
 }
 
 // Helper to check if URL is an image
@@ -104,18 +107,71 @@ function FileDisplay({ files }: { files: string[] }) {
     );
 }
 
-function ToolCallItem({ message, isExpanded, onToggle }: ToolCallItemProps) {
+function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCallItemProps) {
     const [showDetails, setShowDetails] = useState(false);
+    const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const toast = useToast();
+    const { client } = useUserSession();
+    const urlCache = useArtifactUrlCache();
 
     const details = message.details as { tool?: string; files?: string[]; [key: string]: unknown } | undefined;
     const toolName = details?.tool || "Tool";
     const files = details?.files as string[] | undefined;
     const messageContent = typeof message.message === "string" ? message.message : "";
 
+    // Resolve artifact paths to signed URLs
+    useEffect(() => {
+        if (!files || files.length === 0 || !artifactRunId) {
+            setResolvedFiles([]);
+            return;
+        }
+
+        let cancelled = false;
+        const resolveFiles = async () => {
+            const resolved = await Promise.all(
+                files.map(async (file) => {
+                    if (!file || typeof file !== "string") return null;
+                    // If it's already a full URL, return as-is
+                    if (file.startsWith("http://") || file.startsWith("https://")) {
+                        return file;
+                    }
+                    // Resolve artifact path to signed URL
+                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
+                        ? file
+                        : `out/${file}`;
+                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
+                    const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
+                    const isImage = imageExtensions.has(ext);
+                    const disposition = isImage ? "inline" : "attachment";
+
+                    try {
+                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, disposition);
+                        if (urlCache) {
+                            return await urlCache.getOrFetch(cacheKey, async () => {
+                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                                return result.url;
+                            });
+                        } else {
+                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                            return result.url;
+                        }
+                    } catch (err) {
+                        console.error(`Failed to resolve artifact URL for ${artifactPath}`, err);
+                        return null;
+                    }
+                })
+            );
+            if (!cancelled) {
+                setResolvedFiles(resolved.filter((f): f is string => !!f));
+            }
+        };
+        resolveFiles();
+        return () => { cancelled = true; };
+    }, [files, artifactRunId, client, urlCache]);
+
     // Separate image files from other files for inline preview
-    const imageFiles = files?.filter(f => isImageUrl(f)) || [];
-    const nonImageFiles = files?.filter(f => !isImageUrl(f)) || [];
+    const imageFiles = resolvedFiles.filter(f => isImageUrl(f));
+    const nonImageFiles = resolvedFiles.filter(f => !isImageUrl(f));
 
     const copyToClipboard = () => {
         const textToCopy = [
@@ -185,7 +241,7 @@ function ToolCallItem({ message, isExpanded, onToggle }: ToolCallItemProps) {
                 <div className="px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30">
                     {messageContent && (
                         <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
-                            <MarkdownRenderer>{messageContent}</MarkdownRenderer>
+                            <MarkdownRenderer artifactRunId={artifactRunId}>{messageContent}</MarkdownRenderer>
                         </div>
                     )}
 
@@ -229,12 +285,88 @@ function ToolCallItem({ message, isExpanded, onToggle }: ToolCallItemProps) {
     );
 }
 
+// Component for resolving and displaying files from a collapsed tool message
+function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefined; artifactRunId?: string }) {
+    const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
+    const { client } = useUserSession();
+    const urlCache = useArtifactUrlCache();
+
+    useEffect(() => {
+        if (!files || files.length === 0 || !artifactRunId) {
+            setResolvedFiles([]);
+            return;
+        }
+
+        let cancelled = false;
+        const resolveFiles = async () => {
+            const resolved = await Promise.all(
+                files.map(async (file) => {
+                    if (!file || typeof file !== "string") return null;
+                    if (file.startsWith("http://") || file.startsWith("https://")) {
+                        return file;
+                    }
+                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
+                        ? file
+                        : `out/${file}`;
+                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
+                    const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
+                    const isImage = imageExtensions.has(ext);
+                    const disposition = isImage ? "inline" : "attachment";
+
+                    try {
+                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, disposition);
+                        if (urlCache) {
+                            return await urlCache.getOrFetch(cacheKey, async () => {
+                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                                return result.url;
+                            });
+                        } else {
+                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                            return result.url;
+                        }
+                    } catch (err) {
+                        console.error(`Failed to resolve artifact URL for ${artifactPath}`, err);
+                        return null;
+                    }
+                })
+            );
+            if (!cancelled) {
+                setResolvedFiles(resolved.filter((f): f is string => !!f));
+            }
+        };
+        resolveFiles();
+        return () => { cancelled = true; };
+    }, [files, artifactRunId, client, urlCache]);
+
+    const imageFiles = resolvedFiles.filter(f => isImageUrl(f));
+    const nonImageFiles = resolvedFiles.filter(f => !isImageUrl(f));
+
+    return (
+        <>
+            {imageFiles.length > 0 && (
+                <div className="pl-5 pr-3 pb-2">
+                    <FileDisplay files={imageFiles} />
+                </div>
+            )}
+            {nonImageFiles.length > 0 && (
+                <div className="pl-5 pr-3 pb-2">
+                    <FileDisplay files={nonImageFiles} />
+                </div>
+            )}
+        </>
+    );
+}
+
 function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRunId: _toolRunId, toolStatus }: ToolCallGroupProps) {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
     const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(new Set());
     const prevCountRef = useRef(messages.length);
     const toast = useToast();
+
+    // Extract workflow_run_id from messages (any message in the group should have it)
+    const artifactRunId = messages.find(m => (m as any).workflow_run_id)?.workflow_run_id as string | undefined
+        ?? (messages[0] as any)?.workflow_run_id;
 
     // Render status indicator based on tool execution status
     const renderStatusIndicator = () => {
@@ -381,9 +513,6 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                         const isAnimating = animatingIndices.has(idx);
                         const isItemExpanded = expandedItems.has(idx);
                         const files = details?.files as string[] | undefined;
-                        // Separate image files from other files for inline preview
-                        const imageFiles = files?.filter(f => isImageUrl(f)) || [];
-                        const nonImageFiles = files?.filter(f => !isImageUrl(f)) || [];
 
                         return (
                             <div
@@ -418,22 +547,14 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                                         </span>
                                     )}
                                 </div>
-                                {/* Always show images inline, regardless of expanded state */}
-                                {imageFiles.length > 0 && (
-                                    <div className="pl-5 pr-3 pb-2">
-                                        <FileDisplay files={imageFiles} />
-                                    </div>
-                                )}
-                                {/* Expanded content - show full message and non-image files */}
+                                {/* Always show images inline with resolved URLs */}
+                                <CollapsedItemFiles files={files} artifactRunId={artifactRunId} />
+                                {/* Expanded content - show full message */}
                                 {isItemExpanded && (
                                     <div className="pl-5 pr-3 pb-2 text-sm">
                                         <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
-                                            <MarkdownRenderer>{fullMessage}</MarkdownRenderer>
+                                            <MarkdownRenderer artifactRunId={artifactRunId}>{fullMessage}</MarkdownRenderer>
                                         </div>
-                                        {/* Non-image files display */}
-                                        {nonImageFiles.length > 0 && (
-                                            <FileDisplay files={nonImageFiles} />
-                                        )}
                                         {/* Show details if available */}
                                         {details && Object.keys(details).length > 1 && (
                                             <details className="mt-2 text-xs">
@@ -474,6 +595,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                             message={message}
                             isExpanded={expandedItems.has(index)}
                             onToggle={() => toggleItem(index)}
+                            artifactRunId={artifactRunId}
                         />
                     ))}
                 </div>
