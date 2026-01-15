@@ -1,14 +1,9 @@
 import { SkillCollection } from "@vertesia/tools-sdk";
-
-import CodeReviewSkill from "./code-review/SKILL.md";
-import UserSelectSkill from "./user-select/SKILL.md";
+import skills from "./all?skills";
 
 export const ExampleSkills = new SkillCollection({
     name: "examples",
     title: "Example Skills",
     description: "Example skills demonstrating various functionalities",
-    skills: [
-        UserSelectSkill,
-        CodeReviewSkill
-    ]
+    skills
 });
