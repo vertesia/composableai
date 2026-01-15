@@ -113,12 +113,12 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
                 }
 
                 // Generate code
+                const imports = result.imports ? result.imports.join('\n') + '\n\n' : '';
                 if (result.code) {
-                    // Custom code provided
-                    return result.code;
+                    // Custom code provided - prepend imports
+                    return imports + result.code;
                 } else {
                     // Default: export data (escape if string, otherwise stringify as JSON)
-                    const imports = result.imports ? result.imports.join('\n') + '\n\n' : '';
                     const dataJson = JSON.stringify(result.data, null, 2);
                     return `${imports}export default ${dataJson};`;
                 }

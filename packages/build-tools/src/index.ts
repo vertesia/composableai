@@ -37,9 +37,15 @@ export {
     skillTransformer,
     rawTransformer,
     skillCollectionTransformer,
+    promptTransformer,
     SkillDefinitionSchema,
+    PromptDefinitionSchema,
     type SkillDefinition,
-    type SkillContentType
+    type SkillContentType,
+    type PromptDefinition,
+    type PromptContentType,
+    PromptRole,
+    TemplateType
 } from './presets/index.js';
 
 // Utilities

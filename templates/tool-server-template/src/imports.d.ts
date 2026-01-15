@@ -28,3 +28,10 @@ declare module '*?raw' {
   const content: string;
   export default content;
 }
+
+// Prompt imports - template files with ?prompt suffix
+declare module '*?prompt' {
+  import type { PromptDefinition } from '@vertesia/build-tools';
+  const prompt: PromptDefinition;
+  export default prompt;
+}
