@@ -32,7 +32,7 @@
         "outDir": "lib"
     },
     "peerDependencies": {
-        "hono": "^4.10.0"
+        "hono": "^4.11.4"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
