@@ -11,7 +11,7 @@ import {
 } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
-import { fetchBlobAsBase64 } from "../utils/blobs.js";
+import { fetchBlobAsBase64, md5 } from "../utils/blobs.js";
 import { DocPart } from "../utils/chunks.js";
 import { countTokens } from "../utils/tokens.js";
 
