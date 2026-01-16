@@ -6,11 +6,7 @@
       "Bash(find:*)",
       "Bash(pnpm exec vitest:*)",
       "Bash(pnpm test:*)",
-      "Bash(pnpm build:*)",
-      "Bash(npm ls:*)",
-      "Bash(pnpm ls:*)",
-      "Bash(pnpm turbo build:*)",
-      "Bash(pnpm install:*)"
+      "Bash(pnpm build:*)"
     ],
     "deny": []
   }
