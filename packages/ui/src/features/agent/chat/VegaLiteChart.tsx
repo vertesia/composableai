@@ -1,6 +1,7 @@
 import { memo, useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Download, Copy, Check, Maximize2, Minimize2, X, Loader2 } from 'lucide-react';
-import { VegaLite, type VisualizationSpec } from 'react-vega';
+import { VegaEmbed } from 'react-vega';
+import type { VisualizationSpec } from 'vega-embed';
 import type { View } from 'vega';
 import type { VegaLiteChartSpec } from './AgentChart';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
@@ -803,9 +804,10 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         fullscreenViewRef.current = view;
     }, []);
 
-    const handleError = useCallback((err: Error) => {
+    const handleError = useCallback((err: unknown) => {
         console.error('Vega-Lite rendering error:', err);
-        setError(err.message || 'Unknown error');
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message || 'Unknown error');
     }, []);
 
     const toggleFullscreen = useCallback(() => {
@@ -967,12 +969,11 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
                         className="bg-white dark:bg-gray-900 rounded overflow-hidden"
                         style={{ width: '100%', height: baseHeight, minWidth: 0 }}
                     >
-                        <VegaLite
+                        <VegaEmbed
                             spec={chartSpec}
-                            onNewView={handleNewView}
+                            onEmbed={(result) => handleNewView(result.view)}
                             onError={handleError}
-                            renderer={options?.renderer || 'canvas'}
-                            actions={false}
+                            options={{ renderer: options?.renderer || 'canvas', actions: false }}
                         />
                     </div>
                 </div>
@@ -987,12 +988,11 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
             >
                 <div className="w-full h-full min-h-[calc(100vh-200px)]">
                     {fullscreenSpec && (
-                        <VegaLite
+                        <VegaEmbed
                             spec={fullscreenSpec}
-                            onNewView={handleFullscreenNewView}
+                            onEmbed={(result) => handleFullscreenNewView(result.view)}
                             onError={handleError}
-                            renderer={options?.renderer || 'canvas'}
-                            actions={false}
+                            options={{ renderer: options?.renderer || 'canvas', actions: false }}
                         />
                     )}
                 </div>
