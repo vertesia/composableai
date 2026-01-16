@@ -698,9 +698,6 @@ importers:
       unist-util-visit:
         specifier: ^5.0.0
         version: 5.0.0
-      vega:
-        specifier: ^6.2.0
-        version: 6.2.0
       vega-embed:
         specifier: ^7.1.0
         version: 7.1.0(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0)
