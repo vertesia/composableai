@@ -1,0 +1,67 @@
+{
+  "name": "@vertesia/build-tools",
+  "version": "0.80.0",
+  "description": "Build tools for Vertesia projects - Rollup and Vite plugins for transforming imports, bundling skills, and compiling widgets",
+  "type": "module",
+  "main": "./lib/esm/index.js",
+  "types": "./lib/types/index.d.ts",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "vitest run",
+    "build": "pnpm exec tsmod build && pnpm exec rollup -c",
+    "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+  },
+  "exports": {
+    "types": "./lib/types/index.d.ts",
+    "import": "./lib/esm/index.js",
+    "require": "./lib/cjs/index.js"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/node": "^25.0.3",
+    "rollup": "^4.40.2",
+    "rollup-plugin-terser": "^7.0.2",
+    "ts-dual-module": "^0.6.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "zod": "^3.24.1"
+  },
+  "peerDependencies": {
+    "rollup": "^4.0.0"
+  },
+  "ts_dual_module": {
+    "outDir": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vertesia/composableai.git",
+    "directory": "packages/build-tools"
+  },
+  "keywords": [
+    "vertesia",
+    "rollup",
+    "rollup-plugin",
+    "vite",
+    "vite-plugin",
+    "build-tools",
+    "imports",
+    "transform",
+    "compiler",
+    "skill",
+    "markdown",
+    "frontmatter",
+    "widget",
+    "bundler",
+    "zod",
+    "validation"
+  ]
+}

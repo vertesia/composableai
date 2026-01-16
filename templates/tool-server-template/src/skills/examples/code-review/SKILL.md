@@ -1,7 +1,8 @@
 ---
 name: code-review
 title: Code Review Assistant
-keywords: code, review, quality, best-practices, refactoring
+description: Skill for reviewing and analyzing code quality
+keywords: [code, review, quality, best-practices, refactoring]
 ---
 
 # Code Review Assistant
