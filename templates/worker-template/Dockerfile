@@ -1,4 +1,4 @@
-FROM node:23.5-slim AS base
+FROM node:23.11-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
