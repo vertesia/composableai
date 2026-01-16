@@ -71,7 +71,7 @@ export interface RunsAnalyticsSummary {
     /** Counts by interaction with status breakdown (uses { interaction: 1, status: 1 } compound index) */
     byInteraction: EntityStatusCounts[];
     /** Number of queries that failed out of total */
-    queryStats?: {
+    queryStats: {
         total: number;
         failed: number;
     };
