@@ -12,6 +12,8 @@ export interface UploadedFile {
     size?: number;
     /** Optional preview URL for images */
     previewUrl?: string;
+    /** Artifact path where file is stored (e.g., "files/image.png") */
+    artifact_path?: string;
 }
 
 /** Represents a selected document from search */

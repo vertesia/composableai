@@ -26,7 +26,7 @@ import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
 
-type StartWorkflowFn = (
+export type StartWorkflowFn = (
     initialMessage?: string,
 ) => Promise<{ run_id: string; workflow_id: string } | undefined>;
 
