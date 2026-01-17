@@ -26,7 +26,7 @@
         "vitest": "^4.0.16"
     },
     "dependencies": {
-        "sharp": "^0.33.5",
+        "sharp": "^0.34.5",
         "tmp": "^0.2.5"
     },
     "repository": {
