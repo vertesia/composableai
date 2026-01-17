@@ -502,6 +502,85 @@ export interface BatchProgressDetails {
 }
 
 /**
+ * Status of a file being processed for conversation use.
+ */
+export enum FileProcessingStatus {
+    /** File is being uploaded to artifact storage */
+    UPLOADING = "uploading",
+    /** File uploaded, text extraction in progress */
+    PROCESSING = "processing",
+    /** File is ready for use in conversation */
+    READY = "ready",
+    /** File processing failed */
+    ERROR = "error",
+}
+
+/**
+ * Represents a file being processed in a conversation workflow.
+ */
+export interface ConversationFile {
+    /** Unique ID for tracking this file (generated client-side) */
+    id: string;
+    /** Original filename */
+    name: string;
+    /** MIME type */
+    content_type: string;
+    /** Size in bytes */
+    size: number;
+    /** Current processing status */
+    status: FileProcessingStatus;
+    /** Artifact path (e.g., "files/document.pdf") - set after upload */
+    artifact_path?: string;
+    /** Full artifact reference URI (e.g., "artifact:files/document.pdf") */
+    reference?: string;
+    /** Path to extracted text markdown (e.g., "files/document.pdf.md") */
+    md_path?: string;
+    /** Whether text extraction completed successfully */
+    text_extracted?: boolean;
+    /** Error message if status is ERROR */
+    error?: string;
+    /** Timestamp when upload started */
+    started_at: number;
+    /** Timestamp when processing completed */
+    completed_at?: number;
+}
+
+/**
+ * Details for file processing SYSTEM messages.
+ * Used when type is AgentMessageType.SYSTEM with system_type: 'file_processing'.
+ */
+export interface FileProcessingDetails {
+    /** Discriminator for SYSTEM message subtypes */
+    system_type: 'file_processing';
+    /** Batch ID for grouping related file operations */
+    batch_id: string;
+    /** All files in this batch with their current status */
+    files: ConversationFile[];
+    /** Number of files still being processed */
+    pending_count: number;
+    /** Number of files ready for use */
+    ready_count: number;
+    /** Number of files that failed */
+    error_count: number;
+}
+
+/**
+ * Reference to a file uploaded via the UI for conversation use.
+ */
+export interface ConversationFileRef {
+    /** Client-generated unique ID */
+    id: string;
+    /** Original filename */
+    name: string;
+    /** MIME type */
+    content_type: string;
+    /** Artifact reference (e.g., "artifact:files/document.pdf") */
+    reference: string;
+    /** Artifact path without prefix (e.g., "files/document.pdf") */
+    artifact_path: string;
+}
+
+/**
  * Get the Redis pub/sub channel name for workflow messages.
  * Used by both publishers (workflow activities, studio-server) and subscribers (zeno-server, clients).
  * @param workflowRunId - The Temporal workflow run ID (NOT the interaction execution run ID)

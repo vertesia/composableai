@@ -2,7 +2,17 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Bot, Cpu, SendIcon, UploadIcon, XIcon } from "lucide-react";
 import { useUserSession } from "@vertesia/ui/session";
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { AgentMessage, AgentMessageType, Plan, StreamingChunkDetails, UserInputSignal } from "@vertesia/common";
+import {
+    AgentMessage,
+    AgentMessageType,
+    ConversationFile,
+    ConversationFileRef,
+    FileProcessingDetails,
+    FileProcessingStatus,
+    Plan,
+    StreamingChunkDetails,
+    UserInputSignal,
+} from "@vertesia/common";
 import { Button, MessageBox, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
@@ -472,14 +482,30 @@ function ModernAgentConversationInner({
     // Include startTimestamp to preserve chronological order when converting to regular messages
     const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
 
+    // Track files being processed by the workflow
+    const [processingFiles, setProcessingFiles] = useState<Map<string, ConversationFile>>(new Map());
+
+    // Check if any files are still uploading or processing
+    const hasProcessingFiles = useMemo(() =>
+        Array.from(processingFiles.values()).some(
+            f => f.status === FileProcessingStatus.UPLOADING || f.status === FileProcessingStatus.PROCESSING
+        ), [processingFiles]);
+
     // Performance optimization: Batch streaming updates using RAF
     // Instead of updating state on every chunk (100+ times/sec), batch them per animation frame
     const pendingStreamingChunks = useRef<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
     const streamingFlushScheduled = useRef<number | null>(null);
 
+    // Debug: Track chunk arrivals and renders
+    const [debugChunkCount, setDebugChunkCount] = useState(0);
+    const [debugRenderCount, setDebugRenderCount] = useState(0);
+    const [debugChunkFlash, setDebugChunkFlash] = useState(false);
+    const debugFlashTimeout = useRef<NodeJS.Timeout | null>(null);
+
     const flushStreamingChunks = useCallback(() => {
         if (pendingStreamingChunks.current.size > 0) {
             setStreamingMessages(new Map(pendingStreamingChunks.current));
+            setDebugRenderCount(c => c + 1);
         }
         streamingFlushScheduled.current = null;
     }, []);
@@ -596,6 +622,12 @@ function ModernAgentConversationInner({
                 const details = message.details as StreamingChunkDetails;
                 if (!details?.streaming_id) return;
 
+                // Debug: Track chunk arrival with flash
+                setDebugChunkCount(c => c + 1);
+                setDebugChunkFlash(true);
+                if (debugFlashTimeout.current) clearTimeout(debugFlashTimeout.current);
+                debugFlashTimeout.current = setTimeout(() => setDebugChunkFlash(false), 50);
+
                 // Accumulate chunks in the ref (no state update yet)
                 const current = pendingStreamingChunks.current.get(details.streaming_id) || {
                     text: '',
@@ -616,6 +648,22 @@ function ModernAgentConversationInner({
                     streamingFlushScheduled.current = requestAnimationFrame(flushStreamingChunks);
                 }
                 return;
+            }
+
+            // Handle file processing status updates (SYSTEM messages with system_type: 'file_processing')
+            if (message.type === AgentMessageType.SYSTEM) {
+                const details = message.details as FileProcessingDetails | undefined;
+                if (details?.system_type === 'file_processing' && details.files) {
+                    setProcessingFiles(prev => {
+                        const newMap = new Map(prev);
+                        for (const file of details.files) {
+                            newMap.set(file.id, file);
+                        }
+                        return newMap;
+                    });
+                    return; // Don't add to messages array - this is status only
+                }
+                // Other SYSTEM messages fall through to normal handling
             }
 
             // When ANSWER arrives, clear streaming messages (they contain the same content)
@@ -830,6 +878,17 @@ function ModernAgentConversationInner({
         const trimmed = message.trim();
         if (!trimmed || isSending) return;
 
+        // Block if files are still processing
+        if (hasProcessingFiles) {
+            toast({
+                status: "warning",
+                title: "Files Still Processing",
+                description: "Please wait for all files to finish processing before sending",
+                duration: 3000,
+            });
+            return;
+        }
+
         setIsSending(true);
 
         // Add optimistic QUESTION message immediately for better UX
@@ -891,6 +950,77 @@ function ModernAgentConversationInner({
                 setIsSending(false);
             });
     };
+
+    // Handle file uploads - upload to artifact storage and signal workflow
+    const handleFileUpload = useCallback(async (files: File[]) => {
+        for (const file of files) {
+            const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const artifactPath = `files/${file.name}`;
+
+            // Add to local state immediately (optimistic - uploading status)
+            const fileState: ConversationFile = {
+                id: fileId,
+                name: file.name,
+                content_type: file.type || 'application/octet-stream',
+                size: file.size,
+                status: FileProcessingStatus.UPLOADING,
+                started_at: Date.now(),
+            };
+
+            setProcessingFiles(prev => new Map(prev).set(fileId, fileState));
+
+            try {
+                // Upload to artifact storage
+                await client.files.uploadArtifact(run.runId, artifactPath, file);
+
+                // Update local state to processing
+                setProcessingFiles(prev => {
+                    const newMap = new Map(prev);
+                    const f = newMap.get(fileId);
+                    if (f) {
+                        f.status = FileProcessingStatus.PROCESSING;
+                        f.artifact_path = artifactPath;
+                        f.reference = `artifact:${artifactPath}`;
+                    }
+                    return newMap;
+                });
+
+                // Signal workflow that file was uploaded
+                await client.store.workflows.sendSignal(
+                    run.workflowId,
+                    run.runId,
+                    "FileUploaded",
+                    {
+                        id: fileId,
+                        name: file.name,
+                        content_type: file.type || 'application/octet-stream',
+                        reference: `artifact:${artifactPath}`,
+                        artifact_path: artifactPath,
+                    } as ConversationFileRef
+                );
+
+            } catch (error) {
+                // Update local state to error
+                setProcessingFiles(prev => {
+                    const newMap = new Map(prev);
+                    const f = newMap.get(fileId);
+                    if (f) {
+                        f.status = FileProcessingStatus.ERROR;
+                        f.error = error instanceof Error ? error.message : 'Upload failed';
+                        f.completed_at = Date.now();
+                    }
+                    return newMap;
+                });
+
+                toast({
+                    status: "error",
+                    title: "Upload Failed",
+                    description: error instanceof Error ? error.message : "Failed to upload file",
+                    duration: 3000,
+                });
+            }
+        }
+    }, [client, run, toast]);
 
     // Stop/interrupt the active workflow
     const handleStopWorkflow = async () => {
@@ -1064,6 +1194,20 @@ function ModernAgentConversationInner({
                         : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
             }`}
             >
+                {/* Debug: Streaming chunk indicator */}
+                <div className="absolute top-2 right-2 z-50 flex items-center gap-2 bg-black/80 text-white text-xs px-2 py-1 rounded font-mono">
+                    <div
+                        className={`w-3 h-3 rounded-full transition-colors duration-50 ${
+                            debugChunkFlash ? 'bg-green-400 shadow-[0_0_8px_2px_rgba(74,222,128,0.8)]' : 'bg-gray-600'
+                        }`}
+                    />
+                    <span>Chunks: {debugChunkCount}</span>
+                    <span className="text-gray-400">|</span>
+                    <span>Renders: {debugRenderCount}</span>
+                    <span className="text-gray-400">|</span>
+                    <span className="text-yellow-400">Ratio: {debugRenderCount > 0 ? (debugChunkCount / debugRenderCount).toFixed(1) : '-'}x</span>
+                </div>
+
                 {/* Header - flex-shrink-0 to prevent shrinking */}
                 <div className="flex-shrink-0">
                     <Header
@@ -1145,12 +1289,15 @@ function ModernAgentConversationInner({
                             isCompleted={isCompleted}
                             activeTaskCount={getActiveTaskCount()}
                             placeholder={placeholder}
-                            // File upload props
-                            onFilesSelected={onFilesSelected}
+                            // File upload props - use internal handler that signals workflow
+                            onFilesSelected={handleFileUpload}
                             uploadedFiles={uploadedFiles}
                             onRemoveFile={onRemoveFile}
                             acceptedFileTypes={acceptedFileTypes}
                             maxFiles={maxFiles}
+                            // File processing state
+                            processingFiles={processingFiles}
+                            hasProcessingFiles={hasProcessingFiles}
                             // Document search props
                             renderDocumentSearch={renderDocumentSearch}
                             selectedDocuments={selectedDocuments}

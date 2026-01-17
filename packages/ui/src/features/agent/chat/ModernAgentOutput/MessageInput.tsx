@@ -1,6 +1,7 @@
 import { Button, Spinner, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core";
-import { Activity, FileTextIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
+import { Activity, CheckIcon, FileTextIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
 import { SelectDocument } from "../../../store";
 
 /** Represents an uploaded file attachment */
@@ -41,6 +42,10 @@ interface MessageInputProps {
     acceptedFileTypes?: string;
     /** Max number of files allowed */
     maxFiles?: number;
+    /** Files being processed by the workflow */
+    processingFiles?: Map<string, ConversationFile>;
+    /** Whether any files are still uploading or processing */
+    hasProcessingFiles?: boolean;
 
     // Document search props (render prop for custom search UI)
     /** Render custom document search UI - if provided, shows search button */
@@ -80,6 +85,8 @@ export default function MessageInput({
     onRemoveFile,
     acceptedFileTypes = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp",
     maxFiles = 5,
+    processingFiles,
+    hasProcessingFiles = false,
     // Document search props
     renderDocumentSearch,
     selectedDocuments = [],
@@ -279,7 +286,7 @@ export default function MessageInput({
         }, 100);
     };
 
-    const hasAttachments = uploadedFiles.length > 0 || selectedDocuments.length > 0;
+    const hasAttachments = uploadedFiles.length > 0 || selectedDocuments.length > 0 || (processingFiles && processingFiles.size > 0);
 
     return (
         <div
@@ -348,6 +355,39 @@ export default function MessageInput({
                                     <XIcon className="size-3" />
                                 </button>
                             )}
+                        </div>
+                    ))}
+                    {/* Processing files from workflow */}
+                    {processingFiles && Array.from(processingFiles.values()).map((file) => (
+                        <div
+                            key={file.id}
+                            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm ${
+                                file.status === FileProcessingStatus.ERROR
+                                    ? 'bg-destructive/10 text-destructive'
+                                    : file.status === FileProcessingStatus.READY
+                                        ? 'bg-success/10 text-success'
+                                        : 'bg-attention/10 text-attention'
+                            }`}
+                        >
+                            {file.status === FileProcessingStatus.UPLOADING && (
+                                <Spinner size="xs" />
+                            )}
+                            {file.status === FileProcessingStatus.PROCESSING && (
+                                <Spinner size="xs" />
+                            )}
+                            {file.status === FileProcessingStatus.READY && (
+                                <CheckIcon className="size-3.5" />
+                            )}
+                            {file.status === FileProcessingStatus.ERROR && (
+                                <XIcon className="size-3.5" />
+                            )}
+                            <span className="max-w-[120px] truncate">{file.name}</span>
+                            <span className="text-xs opacity-70">
+                                {file.status === FileProcessingStatus.UPLOADING && 'Uploading...'}
+                                {file.status === FileProcessingStatus.PROCESSING && 'Processing...'}
+                                {file.status === FileProcessingStatus.READY && 'Ready'}
+                                {file.status === FileProcessingStatus.ERROR && (file.error || 'Error')}
+                            </span>
                         </div>
                     ))}
                 </div>
@@ -424,10 +464,12 @@ export default function MessageInput({
                 ) : (
                     <Button
                         onClick={handleSend}
-                        disabled={disabled || isSending || !value.trim()}
+                        disabled={disabled || isSending || !value.trim() || hasProcessingFiles}
                         className="px-4 py-2.5"
+                        title={hasProcessingFiles ? "Wait for files to finish processing" : undefined}
                     >
-                        {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className="size-4 mr-2" />} Send
+                        {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className="size-4 mr-2" />}
+                        {hasProcessingFiles ? "Processing..." : "Send"}
                     </Button>
                 )}
             </div>
