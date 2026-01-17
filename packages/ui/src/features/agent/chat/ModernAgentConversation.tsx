@@ -120,6 +120,8 @@ interface ModernAgentConversationProps {
     getAttachedDocs?: () => string[];
     // Called after attachments are sent to allow clearing them
     onAttachmentsSent?: () => void;
+    // Whether files are currently being uploaded - disables send/start buttons
+    isUploading?: boolean;
 
     // Styling props for Tailwind customization - passed through to MessageInput
     /** Additional className for the MessageInput container */
@@ -188,6 +190,8 @@ function StartWorkflowView({
     // Attachment callback - used to include attachments in the first message
     getAttachedDocs,
     onAttachmentsSent,
+    // Upload state
+    isUploading = false,
 }: ModernAgentConversationProps) {
     const [inputValue, setInputValue] = useState<string>("");
     const [isSending, setIsSending] = useState(false);
@@ -404,10 +408,12 @@ function StartWorkflowView({
                     </div>
                     <Button
                         onClick={startWorkflowWithMessage}
-                        disabled={!inputValue.trim() || isSending}
+                        disabled={!inputValue.trim() || isSending || isUploading}
                         className="px-3 py-2 bg-gray-800 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-xs rounded-md transition-colors"
                     >
                         {isSending ? (
+                            <Spinner size="sm" className="mr-1.5" />
+                        ) : isUploading ? (
                             <Spinner size="sm" className="mr-1.5" />
                         ) : (
                             <SendIcon className="size-3.5 mr-1.5" />
@@ -448,6 +454,8 @@ function ModernAgentConversationInner({
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
+    // Upload state
+    isUploading = false,
     // Styling props
     inputContainerClassName,
     inputClassName,
@@ -1282,8 +1290,8 @@ function ModernAgentConversationInner({
                         <MessageInput
                             onSend={handleSendMessage}
                             onStop={handleStopWorkflow}
-                            disabled={false}
-                            isSending={isSending}
+                            disabled={isUploading}
+                            isSending={isSending || isUploading}
                             isStopping={isStopping}
                             isStreaming={!isCompleted}
                             isCompleted={isCompleted}
