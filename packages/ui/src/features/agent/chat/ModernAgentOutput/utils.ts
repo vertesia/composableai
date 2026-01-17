@@ -201,3 +201,266 @@ export async function getConversationUrl(
         .getDownloadUrl(`agents/${workflowRunId}/conversation.json`)
         .then((r) => r.url);
 }
+
+/**
+ * Represents a group of messages for display purposes
+ * Either a single message or a group of consecutive tool calls
+ */
+export type MessageGroup =
+    | { type: 'single'; message: AgentMessage }
+    | { type: 'tool_group'; messages: AgentMessage[]; firstTimestamp: number | string };
+
+/**
+ * Streaming message data structure
+ */
+export interface StreamingData {
+    text: string;
+    workstreamId?: string;
+    isComplete?: boolean;
+    startTimestamp: number;
+}
+
+/**
+ * Tool execution status for display purposes
+ */
+export type ToolExecutionStatus = "running" | "completed" | "error" | "warning";
+
+/**
+ * Extended group type that includes streaming messages for interleaved rendering
+ */
+export type RenderableGroup =
+    | { type: 'single'; message: AgentMessage }
+    | { type: 'tool_group'; messages: AgentMessage[]; firstTimestamp: number; toolRunId?: string; toolStatus?: ToolExecutionStatus }
+    | { type: 'streaming'; streamingId: string; text: string; workstreamId?: string; startTimestamp: number; isComplete?: boolean };
+
+/**
+ * Check if a message is a tool call (THOUGHT with tool details)
+ */
+export function isToolCallMessage(message: AgentMessage): boolean {
+    return message.type === AgentMessageType.THOUGHT && !!message.details?.tool;
+}
+
+/**
+ * Get the tool_run_id from a message's details, if present
+ */
+export function getToolRunId(message: AgentMessage): string | undefined {
+    return message.details?.tool_run_id;
+}
+
+/**
+ * Get the tool execution status from a message's details
+ */
+export function getToolStatus(message: AgentMessage): ToolExecutionStatus | undefined {
+    return message.details?.tool_status;
+}
+
+/**
+ * Group consecutive tool call messages together for a cleaner display
+ * Non-tool messages remain as single items
+ *
+ * @param messages Sorted array of messages
+ * @returns Array of message groups
+ */
+export function groupConsecutiveToolCalls(messages: AgentMessage[]): MessageGroup[] {
+    const groups: MessageGroup[] = [];
+    let currentToolGroup: AgentMessage[] = [];
+
+    const flushToolGroup = () => {
+        if (currentToolGroup.length > 0) {
+            if (currentToolGroup.length === 1) {
+                // Single tool call - no need to group
+                groups.push({ type: 'single', message: currentToolGroup[0] });
+            } else {
+                // Multiple consecutive tool calls - group them
+                groups.push({
+                    type: 'tool_group',
+                    messages: currentToolGroup,
+                    firstTimestamp: currentToolGroup[0].timestamp
+                });
+            }
+            currentToolGroup = [];
+        }
+    };
+
+    for (const message of messages) {
+        if (isToolCallMessage(message)) {
+            currentToolGroup.push(message);
+        } else {
+            // Flush any pending tool group before adding non-tool message
+            flushToolGroup();
+            groups.push({ type: 'single', message });
+        }
+    }
+
+    // Flush any remaining tool group
+    flushToolGroup();
+
+    return groups;
+}
+
+/**
+ * Helper to get timestamp as number
+ */
+function getTimestampMs(timestamp: number | string): number {
+    return typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
+}
+
+/**
+ * Group messages with streaming messages interleaved in chronological order
+ * Messages with the same tool_run_id are grouped together
+ * Messages without tool_run_id fall back to consecutive grouping
+ *
+ * @param messages Sorted array of messages
+ * @param streamingMessages Map of streaming messages by ID
+ * @param activeWorkstream Optional workstream filter
+ * @returns Array of renderable groups with streaming interleaved
+ */
+export function groupMessagesWithStreaming(
+    messages: AgentMessage[],
+    streamingMessages: Map<string, StreamingData>,
+    activeWorkstream?: string
+): RenderableGroup[] {
+    // First pass: collect messages by tool_run_id
+    const toolRunGroups = new Map<string, {
+        messages: AgentMessage[];
+        firstTimestamp: number;
+    }>();
+
+    // Messages without tool_run_id will be processed separately
+    const standaloneMessages: AgentMessage[] = [];
+
+    for (const message of messages) {
+        if (isToolCallMessage(message)) {
+            const toolRunId = getToolRunId(message);
+            if (toolRunId) {
+                // Group by tool_run_id
+                if (!toolRunGroups.has(toolRunId)) {
+                    toolRunGroups.set(toolRunId, {
+                        messages: [],
+                        firstTimestamp: getTimestampMs(message.timestamp)
+                    });
+                }
+                toolRunGroups.get(toolRunId)!.messages.push(message);
+            } else {
+                // No tool_run_id - will use consecutive grouping
+                standaloneMessages.push(message);
+            }
+        } else {
+            standaloneMessages.push(message);
+        }
+    }
+
+    // Create unified list of items with timestamps
+    type GroupedItem =
+        | { kind: 'message'; message: AgentMessage; timestamp: number }
+        | { kind: 'streaming'; streamingId: string; data: StreamingData; timestamp: number }
+        | { kind: 'tool_run'; toolRunId: string; messages: AgentMessage[]; timestamp: number };
+
+    const items: GroupedItem[] = [];
+
+    // Add tool_run groups as single items
+    toolRunGroups.forEach((group, toolRunId) => {
+        items.push({
+            kind: 'tool_run',
+            toolRunId,
+            messages: group.messages,
+            timestamp: group.firstTimestamp
+        });
+    });
+
+    // Add standalone messages
+    for (const message of standaloneMessages) {
+        items.push({
+            kind: 'message',
+            message,
+            timestamp: getTimestampMs(message.timestamp)
+        });
+    }
+
+    // Add streaming messages (filter by workstream if specified)
+    streamingMessages.forEach((data, streamingId) => {
+        // Skip empty streaming messages
+        if (!data.text) return;
+
+        // Filter by workstream if specified
+        if (activeWorkstream && activeWorkstream !== "all") {
+            const streamWorkstream = data.workstreamId || "main";
+            if (activeWorkstream !== streamWorkstream) return;
+        }
+
+        items.push({
+            kind: 'streaming',
+            streamingId,
+            data,
+            timestamp: data.startTimestamp
+        });
+    });
+
+    // Sort by timestamp
+    items.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Build final groups with consecutive grouping for standalone tool messages
+    const groups: RenderableGroup[] = [];
+    let currentToolGroup: AgentMessage[] = [];
+
+    const flushToolGroup = () => {
+        if (currentToolGroup.length > 0) {
+            if (currentToolGroup.length === 1) {
+                groups.push({ type: 'single', message: currentToolGroup[0] });
+            } else {
+                groups.push({
+                    type: 'tool_group',
+                    messages: currentToolGroup,
+                    firstTimestamp: getTimestampMs(currentToolGroup[0].timestamp)
+                });
+            }
+            currentToolGroup = [];
+        }
+    };
+
+    for (const item of items) {
+        if (item.kind === 'streaming') {
+            // Streaming breaks consecutive tool grouping
+            flushToolGroup();
+            groups.push({
+                type: 'streaming',
+                streamingId: item.streamingId,
+                text: item.data.text,
+                workstreamId: item.data.workstreamId,
+                startTimestamp: item.data.startTimestamp,
+                isComplete: item.data.isComplete
+            });
+        } else if (item.kind === 'tool_run') {
+            // Tool run group - already grouped by tool_run_id
+            flushToolGroup();
+            // Sort messages within the group by timestamp
+            const sortedMessages = [...item.messages].sort(
+                (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp)
+            );
+            // Get the latest status from the group
+            const latestStatus = sortedMessages.reduce<ToolExecutionStatus | undefined>(
+                (status, msg) => getToolStatus(msg) || status,
+                undefined
+            );
+            groups.push({
+                type: 'tool_group',
+                messages: sortedMessages,
+                firstTimestamp: item.timestamp,
+                toolRunId: item.toolRunId,
+                toolStatus: latestStatus
+            });
+        } else if (isToolCallMessage(item.message)) {
+            // Standalone tool message - use consecutive grouping
+            currentToolGroup.push(item.message);
+        } else {
+            // Non-tool message breaks grouping
+            flushToolGroup();
+            groups.push({ type: 'single', message: item.message });
+        }
+    }
+
+    // Flush any remaining tool group
+    flushToolGroup();
+
+    return groups;
+}
