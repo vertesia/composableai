@@ -8,6 +8,7 @@ import { SKIP, visit } from "unist-util-visit";
 import { AgentChart, type AgentChartSpec } from "../../features/agent/chat/AgentChart";
 import { AskUserWidget, type AskUserWidgetProps } from "../../features/agent/chat/AskUserWidget";
 import { useArtifactUrlCache, getArtifactCacheKey, getFileCacheKey } from "../../features/agent/chat/useArtifactUrlCache.js";
+import { MermaidDiagram } from "./MermaidDiagram";
 
 // Custom URL schemes that we handle in our components
 const ALLOWED_CUSTOM_SCHEMES = [
@@ -185,6 +186,14 @@ export function MarkdownRenderer({
                     }
                 } catch (e) {
                     // Not valid JSON or not a proposal - fall through to regular code rendering
+                }
+            }
+
+            // Detect mermaid diagram blocks
+            if (!isInline && (language === "mermaid" || className?.includes("language-mermaid"))) {
+                const code = String(children || "").trim();
+                if (code) {
+                    return <MermaidDiagram code={code} />;
                 }
             }
 

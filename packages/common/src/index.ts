@@ -2,6 +2,7 @@ export * from './access-control.js';
 export * from './analytics.js';
 export * from './apikey.js';
 export * from './apps.js';
+export * from './ask-user.js';
 export * from './channels.js';
 export * from './common.js';
 export * from './data-platform.js';

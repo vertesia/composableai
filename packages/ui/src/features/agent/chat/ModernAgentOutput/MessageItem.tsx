@@ -1,4 +1,4 @@
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
+import { AgentMessage, AgentMessageType, AskUserMessageDetails } from "@vertesia/common";
 import { Badge, Button, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, Layers, MessageSquare, User } from "lucide-react";
 import React, { useEffect, useState, useMemo, memo } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
+import { AskUserWidget } from "../AskUserWidget";
 import { useImageLightbox } from "../ImageLightbox";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
@@ -379,7 +380,26 @@ function MessageItemComponent({
 
                 {/* Message content */}
                 <div className={`px-4 pb-3 bg-white dark:bg-gray-900 ${contentClassName || ""}`}>
-                {messageContent && (
+                {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
+                {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
+                    (() => {
+                        const uxConfig = (message.details as AskUserMessageDetails).ux!;
+                        return (
+                            <AskUserWidget
+                                question={typeof messageContent === 'string' ? messageContent : ''}
+                                options={uxConfig.options}
+                                variant={uxConfig.variant}
+                                multiSelect={uxConfig.multiSelect}
+                                allowFreeResponse={uxConfig.allowFreeResponse}
+                                placeholder={uxConfig.placeholder}
+                                onSelect={(optionId) => onSendMessage?.(optionId)}
+                                onMultiSelect={(optionIds) => onSendMessage?.(optionIds.join(", "))}
+                                onSubmit={(text) => onSendMessage?.(text)}
+                                hideBorder
+                            />
+                        );
+                    })()
+                ) : messageContent && (
                     <div className="message-content break-words max-w-full" style={{ overflowWrap: 'anywhere' }}>
                         {renderContent(processedContent || messageContent)}
                     </div>
