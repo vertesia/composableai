@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(git push:*)",
-      "Bash(gh pr view:*)"
+      "Bash(gh pr view:*)",
+      "Bash(find:*)",
+      "Bash(pnpm exec vitest:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm build:*)"
     ],
     "deny": []
   }

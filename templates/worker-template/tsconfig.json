@@ -35,5 +35,10 @@
     "**/*.test.ts",
     "tools"
   ],
-  "references": []
+  "references": [
+    { "path": "../../../packages/worker/tsconfig.json" },
+    { "path": "../../packages/client/tsconfig.json" },
+    { "path": "../../packages/common/tsconfig.json" },
+    { "path": "../../packages/workflow/tsconfig.json" }
+  ]
 }

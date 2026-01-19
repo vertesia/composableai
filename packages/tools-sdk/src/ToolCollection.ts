@@ -4,8 +4,8 @@ import { pathToFileURL } from "url";
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { authorize } from "./auth.js";
-import { ToolRegistry } from "./ToolRegistry.js";
-import type { CollectionProperties, ICollection, Tool, ToolDefinition, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
+import { ToolFilterOptions, ToolRegistry } from "./ToolRegistry.js";
+import type { CollectionProperties, ICollection, Tool, ToolDefinitionWithDefault, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
 
 export interface ToolCollectionProperties extends CollectionProperties {
@@ -93,8 +93,22 @@ export class ToolCollection implements ICollection<Tool<any>> {
         }
     }
 
-    getToolDefinitions(): ToolDefinition[] {
-        return this.tools.getDefinitions();
+    /**
+     * Get tool definitions with optional filtering.
+     * @param options - Filtering options for default/unlocked tools
+     * @returns Filtered tool definitions
+     */
+    getToolDefinitions(options?: ToolFilterOptions): ToolDefinitionWithDefault[] {
+        return this.tools.getDefinitions(options);
+    }
+
+    /**
+     * Get tools that are in reserve (default: false and not unlocked).
+     * @param unlockedTools - List of tool names that are unlocked
+     * @returns Tool definitions for reserve tools
+     */
+    getReserveTools(unlockedTools: string[] = []): ToolDefinitionWithDefault[] {
+        return this.tools.getReserveTools(unlockedTools);
     }
 
 }

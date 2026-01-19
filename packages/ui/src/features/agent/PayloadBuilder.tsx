@@ -1,24 +1,15 @@
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { AgentSearchScope, ExecutionEnvironmentRef, InCodeInteraction, mergeInCodePromptSchemas, supportsToolUse, WorkflowInteractionVars } from "@vertesia/common";
+import { AgentSearchScope, ExecutionEnvironmentRef, InCodeInteraction, mergeInCodePromptSchemas, supportsToolUse, UserChannel, WorkflowInteractionVars } from "@vertesia/common";
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
 import type { JSONSchema4 } from "json-schema";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-
-// export interface ConversationWorkflowPayload {
-//     config: {
-//         environment?: ExecutionEnvironmentRef | undefined;
-//         model?: string;
-//     }
-//     data?: JSONObject | undefined,
-//     tool_names: string[],
-// }
-
 export class PayloadBuilder {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
+    _user_channels: UserChannel[] | undefined;
     _collection: string | undefined;
     _start: boolean = false;
     _preserveRunValues: boolean = false;
@@ -52,6 +43,7 @@ export class PayloadBuilder {
         builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
+        builder._user_channels = this._user_channels ? [...this._user_channels] : undefined;
         builder._inputValidator = this._inputValidator;
         builder._start = this._start;
         builder._collection = this._collection;
@@ -79,6 +71,15 @@ export class PayloadBuilder {
             this._debug_mode = debug_mode;
             this.onStateChanged();
         }
+    }
+
+    get user_channels(): UserChannel[] | undefined {
+        return this._user_channels;
+    }
+
+    set user_channels(user_channels: UserChannel[] | undefined) {
+        this._user_channels = user_channels;
+        this.onStateChanged();
     }
 
     get collection() {
@@ -126,6 +127,7 @@ export class PayloadBuilder {
         this._data = context.data;
         this._interactive = context.interactive;
         this._debug_mode = context.debug_mode ?? false;
+        this._user_channels = context.user_channels;
         this.collection = context.collection_id ?? undefined;
 
         // we need to trigger the setter to deal with default models
@@ -243,6 +245,7 @@ export class PayloadBuilder {
         this._start = false;
         this._interactive = true;
         this._debug_mode = false;
+        this._user_channels = undefined;
         this._collection = undefined;
         this._preserveRunValues = false;
         this._model = '';

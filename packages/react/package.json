@@ -27,7 +27,7 @@
     "devDependencies": {
         "@types/json-schema": "^7.0.15",
         "@types/react": "^19.2.3",
-        "typescript": "^5.0.2"
+        "typescript": "^5.9.3"
     },
     "peerDependencies": {
         "react": ">=16.8.0"

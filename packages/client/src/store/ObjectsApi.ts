@@ -1,5 +1,6 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
+    canGenerateRendition,
     ContentObjectApiHeaders,
     ComplexSearchPayload,
     ComputeObjectFacetPayload,
@@ -16,12 +17,17 @@ import {
     GetFileUrlResponse,
     GetRenditionParams,
     GetRenditionResponse,
+    getSupportedRenditionFormats,
     GetUploadUrlPayload,
     ListWorkflowRunsResponse,
     ObjectSearchPayload,
     ObjectSearchQuery,
     SupportedEmbeddingTypes,
+    supportsVisualRendition,
 } from "@vertesia/common";
+
+// Re-export rendition utilities for consumers
+export { canGenerateRendition, getSupportedRenditionFormats, supportsVisualRendition };
 
 import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
@@ -284,6 +290,7 @@ export class ObjectsApi extends ApiTopic {
      * @param options Additional options
      * @param options.createRevision Whether to create a new revision instead of updating in place
      * @param options.revisionLabel Optional label for the revision (e.g., "v1.2")
+     * @param options.suppressWorkflows When true, prevents this update from triggering workflow rules
      * @returns The updated object or newly created revision
      */
     async update(
@@ -293,6 +300,7 @@ export class ObjectsApi extends ApiTopic {
             createRevision?: boolean;
             revisionLabel?: string;
             processing_priority?: ContentObjectProcessingPriority;
+            suppressWorkflows?: boolean;
         },
     ): Promise<ContentObject> {
         const updatePayload: Partial<CreateContentObjectPayload> = {
@@ -316,6 +324,9 @@ export class ObjectsApi extends ApiTopic {
             if (options.revisionLabel) {
                 headers[ContentObjectApiHeaders.REVISION_LABEL] = options.revisionLabel;
             }
+        }
+        if (options?.suppressWorkflows) {
+            headers[ContentObjectApiHeaders.SUPPRESS_WORKFLOWS] = "true";
         }
 
         return this.put(`/${id}`, {
@@ -370,6 +381,35 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${documentId}/renditions/${options.format}`, {
             query,
         });
+    }
+
+    /**
+     * Get rendition with pre-validation of content type compatibility.
+     * Returns null instead of throwing if the format is not supported for the content type.
+     *
+     * @param documentId - The document ID
+     * @param contentType - The content type of the document (e.g., 'image/png', 'text/markdown')
+     * @param options - Rendition options including format
+     * @returns The rendition response, or null if format is not supported for the content type
+     *
+     * @example
+     * const rendition = await client.objects.getRenditionSafe(docId, doc.content?.type, {
+     *     format: ImageRenditionFormat.jpeg,
+     *     generate_if_missing: true
+     * });
+     * if (!rendition) {
+     *     console.log('Document does not support JPEG renditions');
+     * }
+     */
+    getRenditionSafe(
+        documentId: string,
+        contentType: string | undefined,
+        options: GetRenditionParams,
+    ): Promise<GetRenditionResponse | null> {
+        if (!canGenerateRendition(contentType, options.format)) {
+            return Promise.resolve(null);
+        }
+        return this.getRendition(documentId, options);
     }
 
     exportProperties(

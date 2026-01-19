@@ -24,12 +24,35 @@ import {
     TemplateType,
 } from "./prompt.js";
 import { ExecutionRunDocRef } from "./runs.js";
+import { ConversationState } from "./store/conversation-state.js";
 import { AccountRef } from "./user.js";
+import { LlmCallType } from "./workflow-analytics.js";
 
 export interface InteractionExecutionError {
     code: string;
     message: string;
     data?: any;
+}
+
+/**
+ * Configuration for stripping large data from conversation history
+ * to prevent JSON serialization issues and reduce storage bloat.
+ */
+export interface ConversationStripOptions {
+    /**
+     * Number of turns to keep images before stripping them.
+     * - 0: Strip images immediately after each turn (default)
+     * - N > 0: Keep images for N turns before stripping
+     * - Infinity: Never strip images
+     */
+    images_after_turns?: number;
+
+    /**
+     * Maximum tokens for text content before truncation.
+     * Text content exceeding this limit will be truncated with a marker.
+     * Uses ~4 characters per token estimate.
+     */
+    text_max_tokens?: number;
 }
 
 
@@ -495,6 +518,12 @@ export interface InteractionExecutionPayload {
      * These are temporary interactions using "tmp:" suffix.
      */
     prompts?: InCodePrompt[];
+
+    /**
+     * Options for async completion and/or streaming LLM response chunks to Redis.
+     * Used by agent workflows for async activity completion and real-time streaming.
+     */
+    asyncCompletion?: AsyncCompletionOptions;
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
@@ -608,6 +637,22 @@ export interface AgentRunnerOptions {
     collection_id?: string;
 }
 
+// ================= User Communication Channels ====================
+// Import for local use
+import type { UserChannel } from "./email.js";
+// Re-exported from email.ts for backwards compatibility
+export type {
+    EmailChannel,
+    InteractiveChannel,
+    UserChannel,
+    EmailRouteData,
+} from "./email.js";
+export {
+    isEmailChannel,
+    isInteractiveChannel,
+} from "./email.js";
+// ================= end user communication channels ====================
+
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
     type: "conversation";
 
@@ -634,6 +679,13 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     interactive?: boolean;
 
     /**
+     * Array of channels to use for user communication.
+     * Multiple channels can be active simultaneously (e.g., both email and interactive).
+     * Each channel contains its own configuration and state (e.g., email threading info).
+     */
+    user_channels?: UserChannel[];
+
+    /**
      * Whether to disable the generation of interaction tools or not.
      */
     disable_interaction_tools?: boolean;
@@ -656,6 +708,12 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      */
     checkpoint_tokens?: number;
 
+    /**
+     * Configuration for stripping large data (images, text) from conversation history
+     * to prevent JSON serialization issues and reduce storage bloat.
+     */
+    strip_options?: ConversationStripOptions;
+
     /** In child execution workflow, this is the curent task_id */
     task_id?: string;
 
@@ -664,6 +722,14 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
 
     /** Maximum depth for nested conversations to prevent infinite recursion (default: 5) */
     max_nested_conversation_depth?: number;
+
+    /**
+     * Metadata inherited from parent workflow.
+     * Used to propagate context (e.g., apiKey, session info) to child workflows/workstreams.
+     * When a workstream is spawned, the parent's `data` is preserved here so that
+     * child tools can access it via metadata.parent_metadata.
+     */
+    parent_metadata?: Record<string, any>;
 
 }
 
@@ -679,12 +745,99 @@ export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadB
 
 export type AsyncExecutionPayload = AsyncConversationExecutionPayload | AsyncInteractionExecutionPayload;
 
+/**
+ * Telemetry context for streaming mode.
+ * Contains info not available in current_state needed to send LlmCallEvent.
+ */
+export interface StreamingTelemetryContext {
+    /** Workflow ID for ingestEvents API call */
+    workflowId: string;
+    /** Type of LLM call: start, resume after user message, or resume after tool results */
+    callType: LlmCallType;
+    /** Activity retry attempt number */
+    attemptNumber?: number;
+    /** Timestamp when inference started (for duration calculation) */
+    inferenceStartTime: number;
+}
+
+/**
+ * Options for storing inference results to cloud storage
+ */
+export interface ResultStorageOptions {
+    /** Full storage path for the result (e.g., "pages/doc123/page-1.md") */
+    path: string;
+    // Note: content_type is inferred from execution context:
+    // - If result_schema → application/json
+    // - Otherwise → text/markdown or text/plain
+}
+
+/**
+ * Streaming-specific options (only needed when stream=true)
+ */
+export interface StreamingOptions {
+    /** Redis channel to publish streaming chunks to */
+    redis_channel: string;
+    /** Optional workstream ID for multi-workstream agents */
+    workstream_id?: string;
+}
+
+/**
+ * Options for async completion and/or streaming LLM responses
+ */
+export interface AsyncCompletionOptions {
+    /** Workflow run ID for message context */
+    run_id: string;
+    /** Whether to stream chunks to Redis */
+    stream?: boolean;
+    /** Streaming-specific options (required if stream=true) */
+    streaming?: StreamingOptions;
+    /**
+     * Temporal task token for async activity completion (base64url encoded).
+     * When provided, Studio will complete the activity after execution finishes,
+     * allowing the worker to release the activity slot immediately.
+     */
+    task_token?: string;
+    /**
+     * Activity ID for idempotency metadata when storing conversation.
+     * Required when task_token is provided.
+     */
+    activity_id?: string;
+    /**
+     * Current conversation state to merge with execution result.
+     * Studio will store the conversation and complete the activity with merged state.
+     * Required when task_token is provided.
+     */
+    current_state?: ConversationState;
+    /**
+     * Interval in milliseconds for sending heartbeats to Temporal during streaming.
+     * When provided, Studio will send periodic heartbeats to keep the activity alive.
+     * Recommended: 10000 (10 seconds). Activity heartbeat timeout should be ~3x this value.
+     */
+    heartbeat_interval_ms?: number;
+    /**
+     * Telemetry context for sending LlmCallEvent after streaming completes.
+     * Studio will use this to send token usage telemetry since the activity
+     * exits before the response is available in async completion mode.
+     */
+    telemetry?: StreamingTelemetryContext;
+    /**
+     * Storage options for inference result.
+     * When provided, Studio will store the result to the specified path
+     * after inference completes (before completing the Temporal activity).
+     */
+    result_storage?: ResultStorageOptions;
+}
+
 interface ResumeConversationPayload {
     run: ExecutionRunDocRef; // the run created by the first execution.
     environment: string; // the environment ID
     options: StatelessExecutionOptions; // the options used on the first execution
     conversation: unknown; // the conversation state
     tools: ToolDefinition[]; // the tools to be used
+    /** Configuration for stripping large data from conversation history */
+    strip_options?: ConversationStripOptions;
+    /** Options for async completion and/or streaming LLM response chunks to Redis */
+    asyncCompletion?: AsyncCompletionOptions;
 }
 
 
@@ -700,6 +853,11 @@ export interface ToolResultContent {
 
 export interface ToolResult extends ToolResultContent {
     tool_use_id: string;
+    /**
+     * Gemini thinking models require thought_signature to be passed back with tool results.
+     * Copy this from the ToolUse.thought_signature that requested this tool call.
+     */
+    thought_signature?: string;
 }
 
 /**
@@ -759,7 +917,7 @@ export interface BaseExecutionRun<P = any> {
     interaction?: string | Interaction;
     // only set when the target interaction is an in-code interaction
     interaction_code?: string; // Interaction code name in case of in-code interaction (not stored in the DB as an Interaction document)
-    //TODO a string is returned when execution not the env object
+    /** Environment reference - populated with full object in API responses */
     environment: ExecutionEnvironmentRef;
     modelId: string;
     result_schema: JSONSchema4;
@@ -906,4 +1064,79 @@ export interface RateLimitRequestPayload {
 
 export interface RateLimitRequestResponse {
     delay_ms: number;
+}
+
+/**
+ * Source of the resolved model configuration
+ */
+export enum ModelSource {
+    /** Model was explicitly provided in the execution config */
+    config = "config",
+    /** Model comes from the interaction definition */
+    interaction = "interaction",
+    /** Model comes from environment's default_model */
+    environmentDefault = "environmentDefault",
+    /** Model comes from project system interaction defaults */
+    projectSystemDefault = "projectSystemDefault",
+    /** Model comes from project base defaults */
+    projectBaseDefault = "projectBaseDefault",
+    /** Model comes from project modality-specific defaults */
+    projectModalityDefault = "projectModalityDefault",
+    /** Model comes from legacy project defaults */
+    projectLegacyDefault = "projectLegacyDefault",
+}
+
+/**
+ * Resolved environment information
+ */
+export interface ResolvedEnvironmentInfo {
+    id: string;
+    name: string;
+    provider: string;
+}
+
+/**
+ * Resolved runtime configuration for an interaction
+ */
+export interface ResolvedRuntimeConfig {
+    environment: ResolvedEnvironmentInfo;
+    model?: string;
+    model_source: ModelSource;
+}
+
+/**
+ * Resolved execution info for an interaction.
+ * Contains the interaction ID, basic metadata, and the resolved runtime configuration
+ * (environment, model) that would be used at execution time.
+ */
+export interface ResolvedInteractionExecutionInfo {
+    /**
+     * The resolved interaction ID
+     */
+    id: string;
+
+    /**
+     * The interaction endpoint name
+     */
+    name: string;
+
+    /**
+     * The interaction version number
+     */
+    version: number;
+
+    /**
+     * The interaction status (draft or published)
+     */
+    status: InteractionStatus;
+
+    /**
+     * The interaction tags (can include version tags like "production", "staging")
+     */
+    tags: string[];
+
+    /**
+     * The resolved runtime configuration
+     */
+    resolved: ResolvedRuntimeConfig;
 }
