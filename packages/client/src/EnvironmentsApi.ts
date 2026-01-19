@@ -7,7 +7,8 @@ import {
     ExecutionEnvironmentUpdatePayload,
     LoadBalancingEnvConfig,
     MediatorEnvConfig,
-    MigrateEnvironmentInteractionModelsPayload
+    MigrateEnvironmentInteractionModelsPayload,
+    MigrateEnvironmentInteractionModelsResult
 } from "@vertesia/common";
 
 export default class EnvironmentsApi extends ApiTopic {
@@ -83,7 +84,7 @@ export default class EnvironmentsApi extends ApiTopic {
      * @param payload - The migration payload containing modelId and interactionIds
      * @returns The count of matched and modified interactions
      */
-    migrateInteractionsModel(envId: string, payload: MigrateEnvironmentInteractionModelsPayload): Promise<{ modifiedCount: number; matchedCount: number }> {
+    migrateInteractionsModel(envId: string, payload: MigrateEnvironmentInteractionModelsPayload): Promise<MigrateEnvironmentInteractionModelsResult> {
         return this.post(`/${envId}/models/migrate-interactions`, {
             payload
         });

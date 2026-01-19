@@ -118,3 +118,8 @@ export interface MigrateEnvironmentInteractionModelsPayload {
     model_id: string;
     interaction_ids: string[];
 }
+
+export interface MigrateEnvironmentInteractionModelsResult {
+    matched_count: number;
+    modified_count: number;
+}
