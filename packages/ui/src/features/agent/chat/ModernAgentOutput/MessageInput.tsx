@@ -1,5 +1,5 @@
-import { Button, Spinner, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core";
-import { Activity, CheckIcon, FileTextIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
+import { Button, Spinner, VModal, VModalBody, VModalTitle, VTooltip } from "@vertesia/ui/core";
+import { Activity, CheckIcon, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
 import { SelectDocument } from "../../../store";
@@ -322,76 +322,112 @@ export default function MessageInput({
 
             {/* Attachments preview */}
             {hasAttachments && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                    {/* Uploaded files */}
-                    {uploadedFiles.map((file) => (
-                        <div
-                            key={file.id}
-                            className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md text-sm"
-                        >
-                            <FileTextIcon className="size-3.5 text-gray-500" />
-                            <span className="max-w-[120px] truncate">{file.name}</span>
-                            {onRemoveFile && (
-                                <button
-                                    onClick={() => onRemoveFile(file.id)}
-                                    className="ml-1 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                <div className="flex flex-col gap-2 mb-3">
+                    {/* Uploaded files section */}
+                    {(uploadedFiles.length > 0 || (processingFiles && processingFiles.size > 0)) && (
+                        <div>
+                            <div className="flex items-center gap-1 mb-1">
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                    Uploaded Files
+                                </span>
+                                <VTooltip
+                                    description="Files uploaded to this conversation remain available throughout. The agent can access them anytime."
+                                    placement="top"
+                                    size="md"
                                 >
-                                    <XIcon className="size-3" />
-                                </button>
-                            )}
+                                    <HelpCircleIcon className="size-3 text-gray-400 dark:text-gray-500" />
+                                </VTooltip>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {uploadedFiles.map((file) => (
+                                    <div
+                                        key={file.id}
+                                        className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md text-sm"
+                                    >
+                                        <FileTextIcon className="size-3.5 text-gray-500" />
+                                        <span className="max-w-[120px] truncate">{file.name}</span>
+                                        {onRemoveFile && (
+                                            <button
+                                                onClick={() => onRemoveFile(file.id)}
+                                                className="ml-1 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                            >
+                                                <XIcon className="size-3" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                {/* Processing files from workflow */}
+                                {processingFiles && Array.from(processingFiles.values()).map((file) => (
+                                    <div
+                                        key={file.id}
+                                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm ${
+                                            file.status === FileProcessingStatus.ERROR
+                                                ? 'bg-destructive/10 text-destructive'
+                                                : file.status === FileProcessingStatus.READY
+                                                    ? 'bg-success/10 text-success'
+                                                    : 'bg-attention/10 text-attention'
+                                        }`}
+                                    >
+                                        {file.status === FileProcessingStatus.UPLOADING && (
+                                            <Spinner size="xs" />
+                                        )}
+                                        {file.status === FileProcessingStatus.PROCESSING && (
+                                            <Spinner size="xs" />
+                                        )}
+                                        {file.status === FileProcessingStatus.READY && (
+                                            <CheckIcon className="size-3.5" />
+                                        )}
+                                        {file.status === FileProcessingStatus.ERROR && (
+                                            <XIcon className="size-3.5" />
+                                        )}
+                                        <span className="max-w-[120px] truncate">{file.name}</span>
+                                        <span className="text-xs opacity-70">
+                                            {file.status === FileProcessingStatus.UPLOADING && 'Uploading...'}
+                                            {file.status === FileProcessingStatus.PROCESSING && 'Processing...'}
+                                            {file.status === FileProcessingStatus.READY && 'Ready'}
+                                            {file.status === FileProcessingStatus.ERROR && (file.error || 'Error')}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    ))}
-                    {/* Selected documents */}
-                    {selectedDocuments.map((doc) => (
-                        <div
-                            key={doc.id}
-                            className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-md text-sm text-blue-700 dark:text-blue-300"
-                        >
-                            <FileTextIcon className="size-3.5" />
-                            <span className="max-w-[120px] truncate">{doc.name}</span>
-                            {onRemoveDocument && (
-                                <button
-                                    onClick={() => onRemoveDocument(doc.id)}
-                                    className="ml-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
+                    )}
+                    {/* Selected documents section */}
+                    {selectedDocuments.length > 0 && (
+                        <div>
+                            <div className="flex items-center gap-1 mb-1">
+                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                                    Document Attachments
+                                </span>
+                                <VTooltip
+                                    description="Documents from the store attached to this message. The agent can re-fetch them by ID anytime, or re-attach to include content directly."
+                                    placement="top"
+                                    size="md"
                                 >
-                                    <XIcon className="size-3" />
-                                </button>
-                            )}
+                                    <HelpCircleIcon className="size-3 text-blue-400 dark:text-blue-500" />
+                                </VTooltip>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {selectedDocuments.map((doc) => (
+                                    <div
+                                        key={doc.id}
+                                        className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-md text-sm text-blue-700 dark:text-blue-300"
+                                    >
+                                        <FileTextIcon className="size-3.5" />
+                                        <span className="max-w-[120px] truncate">{doc.name}</span>
+                                        {onRemoveDocument && (
+                                            <button
+                                                onClick={() => onRemoveDocument(doc.id)}
+                                                className="ml-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
+                                            >
+                                                <XIcon className="size-3" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    ))}
-                    {/* Processing files from workflow */}
-                    {processingFiles && Array.from(processingFiles.values()).map((file) => (
-                        <div
-                            key={file.id}
-                            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm ${
-                                file.status === FileProcessingStatus.ERROR
-                                    ? 'bg-destructive/10 text-destructive'
-                                    : file.status === FileProcessingStatus.READY
-                                        ? 'bg-success/10 text-success'
-                                        : 'bg-attention/10 text-attention'
-                            }`}
-                        >
-                            {file.status === FileProcessingStatus.UPLOADING && (
-                                <Spinner size="xs" />
-                            )}
-                            {file.status === FileProcessingStatus.PROCESSING && (
-                                <Spinner size="xs" />
-                            )}
-                            {file.status === FileProcessingStatus.READY && (
-                                <CheckIcon className="size-3.5" />
-                            )}
-                            {file.status === FileProcessingStatus.ERROR && (
-                                <XIcon className="size-3.5" />
-                            )}
-                            <span className="max-w-[120px] truncate">{file.name}</span>
-                            <span className="text-xs opacity-70">
-                                {file.status === FileProcessingStatus.UPLOADING && 'Uploading...'}
-                                {file.status === FileProcessingStatus.PROCESSING && 'Processing...'}
-                                {file.status === FileProcessingStatus.READY && 'Ready'}
-                                {file.status === FileProcessingStatus.ERROR && (file.error || 'Error')}
-                            </span>
-                        </div>
-                    ))}
+                    )}
                 </div>
             )}
 

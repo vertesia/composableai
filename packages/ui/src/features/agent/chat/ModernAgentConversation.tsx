@@ -603,8 +603,8 @@ function ModernAgentConversationInner({
     const streamingFlushScheduled = useRef<number | null>(null);
 
     // Debug: Track chunk arrivals and renders
-    const [debugChunkCount, setDebugChunkCount] = useState(0);
-    const [debugRenderCount, setDebugRenderCount] = useState(0);
+    const [_debugChunkCount, setDebugChunkCount] = useState(0);
+    const [_debugRenderCount, setDebugRenderCount] = useState(0);
     const [debugChunkFlash, setDebugChunkFlash] = useState(false);
     const debugFlashTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -1304,19 +1304,12 @@ function ModernAgentConversationInner({
                         : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
             }`}
             >
-                {/* Debug: Streaming chunk indicator */}
-                <div className="absolute top-2 right-2 z-50 flex items-center gap-2 bg-black/80 text-white text-xs px-2 py-1 rounded font-mono">
-                    <div
-                        className={`w-3 h-3 rounded-full transition-colors duration-50 ${
-                            debugChunkFlash ? 'bg-green-400 shadow-[0_0_8px_2px_rgba(74,222,128,0.8)]' : 'bg-gray-600'
-                        }`}
-                    />
-                    <span>Chunks: {debugChunkCount}</span>
-                    <span className="text-gray-400">|</span>
-                    <span>Renders: {debugRenderCount}</span>
-                    <span className="text-gray-400">|</span>
-                    <span className="text-yellow-400">Ratio: {debugRenderCount > 0 ? (debugChunkCount / debugRenderCount).toFixed(1) : '-'}x</span>
-                </div>
+                {/* Streaming activity indicator - only visible when receiving chunks */}
+                {debugChunkFlash && (
+                    <div className="absolute top-2 right-2 z-50">
+                        <div className="w-3 h-3 rounded-full bg-green-400 shadow-[0_0_8px_2px_rgba(74,222,128,0.8)]" />
+                    </div>
+                )}
 
                 {/* Header - flex-shrink-0 to prevent shrinking */}
                 <div className="flex-shrink-0">
