@@ -99,6 +99,16 @@ function AllMessagesMixedComponent({
 
     const isStreaming = streamingMessages.size > 0;
 
+    // Compute bucketed streaming content length for scroll dependency
+    // Changes every ~200 chars to trigger scroll without excessive updates
+    const streamingContentBucket = useMemo(() => {
+        let total = 0;
+        streamingMessages.forEach((data) => {
+            total += data.text?.length || 0;
+        });
+        return Math.floor(total / 200); // Bucket by 200 chars
+    }, [streamingMessages]);
+
     // Throttled scroll function
     const performScroll = useCallback(() => {
         if (bottomRef.current) {
@@ -130,7 +140,7 @@ function AllMessagesMixedComponent({
                 scrollScheduledRef.current = null;
             }
         };
-    }, [messages.length, streamingMessages.size, performScroll]);
+    }, [messages.length, streamingMessages.size, streamingContentBucket, performScroll]);
 
     // Sort all messages chronologically and filter out system metadata
     const sortedMessages = React.useMemo(
