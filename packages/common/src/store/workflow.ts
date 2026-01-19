@@ -435,24 +435,25 @@ export interface AgentMessage {
 }
 
 export enum AgentMessageType {
-    SYSTEM = "system",
-    THOUGHT = "thought",
-    PLAN = "plan",
-    UPDATE = "update",
-    COMPLETE = "complete",
-    WARNING = "warning",
-    ERROR = "error",
-    ANSWER = "answer",
-    QUESTION = "question",
-    REQUEST_INPUT = "request_input",
-    IDLE = "idle",
-    TERMINATED = "terminated",
-    STREAMING_CHUNK = "streaming_chunk",
-    BATCH_PROGRESS = "batch_progress",
+    SYSTEM = 0,
+    THOUGHT = 1,
+    PLAN = 2,
+    UPDATE = 3,
+    COMPLETE = 4,
+    WARNING = 5,
+    ERROR = 6,
+    ANSWER = 7,
+    QUESTION = 8,
+    REQUEST_INPUT = 9,
+    IDLE = 10,
+    TERMINATED = 11,
+    STREAMING_CHUNK = 12,
+    BATCH_PROGRESS = 13,
 }
 
 /**
  * Details for STREAMING_CHUNK messages used for real-time LLM response streaming
+ * @deprecated Use CompactMessage with f field for streaming chunks
  */
 export interface StreamingChunkDetails {
     /** Unique identifier grouping chunks from the same stream */
@@ -461,6 +462,202 @@ export interface StreamingChunkDetails {
     chunk_index: number;
     /** True if this is the final chunk of the stream */
     is_final: boolean;
+}
+
+// ============================================
+// COMPACT MESSAGE FORMAT
+// ============================================
+
+/**
+ * Compact message format for efficient wire transfer.
+ * Primary type used throughout the system.
+ * ~85% smaller than legacy AgentMessage format.
+ */
+export interface CompactMessage {
+    /** Message type (integer enum) */
+    t: AgentMessageType;
+    /** Message content */
+    m?: string;
+    /** Workstream ID (only when not "main") */
+    w?: string;
+    /** Type-specific details */
+    d?: unknown;
+    /** Is final chunk (only for STREAMING_CHUNK, 0 or 1) */
+    f?: 0 | 1;
+    /** Timestamp (only for stored/persisted messages) */
+    ts?: number;
+}
+
+/**
+ * Legacy message format for backward compatibility.
+ * @deprecated Use CompactMessage instead
+ */
+export type LegacyAgentMessage = AgentMessage;
+
+// ============================================
+// TYPE GUARDS
+// ============================================
+
+/**
+ * Check if a message is in compact format
+ */
+export function isCompactMessage(msg: unknown): msg is CompactMessage {
+    return typeof msg === 'object' && msg !== null && 't' in msg;
+}
+
+/**
+ * Check if a message is in legacy format
+ */
+export function isLegacyMessage(msg: unknown): msg is LegacyAgentMessage {
+    return typeof msg === 'object' && msg !== null && 'type' in msg && !('t' in msg);
+}
+
+// ============================================
+// CONVERTERS
+// ============================================
+
+/**
+ * Map old string enum values to AgentMessageType
+ */
+const STRING_TO_TYPE_MAP: Record<string, AgentMessageType> = {
+    'system': AgentMessageType.SYSTEM,
+    'thought': AgentMessageType.THOUGHT,
+    'plan': AgentMessageType.PLAN,
+    'update': AgentMessageType.UPDATE,
+    'complete': AgentMessageType.COMPLETE,
+    'warning': AgentMessageType.WARNING,
+    'error': AgentMessageType.ERROR,
+    'answer': AgentMessageType.ANSWER,
+    'question': AgentMessageType.QUESTION,
+    'request_input': AgentMessageType.REQUEST_INPUT,
+    'idle': AgentMessageType.IDLE,
+    'terminated': AgentMessageType.TERMINATED,
+    'streaming_chunk': AgentMessageType.STREAMING_CHUNK,
+    'batch_progress': AgentMessageType.BATCH_PROGRESS,
+};
+
+/**
+ * Map integer values to AgentMessageType (primary format)
+ */
+const INT_TO_TYPE_MAP: Record<number, AgentMessageType> = {
+    0: AgentMessageType.SYSTEM,
+    1: AgentMessageType.THOUGHT,
+    2: AgentMessageType.PLAN,
+    3: AgentMessageType.UPDATE,
+    4: AgentMessageType.COMPLETE,
+    5: AgentMessageType.WARNING,
+    6: AgentMessageType.ERROR,
+    7: AgentMessageType.ANSWER,
+    8: AgentMessageType.QUESTION,
+    9: AgentMessageType.REQUEST_INPUT,
+    10: AgentMessageType.IDLE,
+    11: AgentMessageType.TERMINATED,
+    12: AgentMessageType.STREAMING_CHUNK,
+    13: AgentMessageType.BATCH_PROGRESS,
+};
+
+/**
+ * Normalize message type from string or number to AgentMessageType
+ */
+export function normalizeMessageType(type: string | number | AgentMessageType): AgentMessageType {
+    // Handle integer type (current format and AgentMessageType enum values)
+    if (typeof type === 'number') {
+        return INT_TO_TYPE_MAP[type] ?? AgentMessageType.UPDATE;
+    }
+    // Handle string type (legacy messages from Redis with 90-day TTL)
+    if (typeof type === 'string') {
+        return STRING_TO_TYPE_MAP[type] ?? AgentMessageType.UPDATE;
+    }
+    return AgentMessageType.UPDATE;
+}
+
+/**
+ * Convert legacy AgentMessage to CompactMessage
+ */
+export function toCompactMessage(legacy: LegacyAgentMessage): CompactMessage {
+    const compact: CompactMessage = {
+        t: normalizeMessageType(legacy.type),
+    };
+
+    if (legacy.message) compact.m = legacy.message;
+    if (legacy.workstream_id && legacy.workstream_id !== 'main') compact.w = legacy.workstream_id;
+    if (legacy.timestamp) compact.ts = legacy.timestamp;
+
+    // Handle legacy streaming chunk details
+    if (compact.t === AgentMessageType.STREAMING_CHUNK && legacy.details) {
+        const d = legacy.details as StreamingChunkDetails;
+        if (d.is_final) compact.f = 1;
+        // streaming_id and chunk_index are no longer needed
+    } else if (legacy.details) {
+        compact.d = legacy.details;
+    }
+
+    return compact;
+}
+
+/**
+ * Parse any message format (compact or legacy) into CompactMessage.
+ * Use this as the entry point for all received messages.
+ */
+export function parseMessage(data: string | object): CompactMessage {
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    if (isCompactMessage(parsed)) return parsed;
+    if (isLegacyMessage(parsed)) return toCompactMessage(parsed);
+    throw new Error('Unknown message format');
+}
+
+/**
+ * Create a compact message (convenience function for server-side)
+ */
+export function createCompactMessage(
+    type: AgentMessageType,
+    options: {
+        message?: string;
+        workstreamId?: string;
+        details?: unknown;
+        isFinal?: boolean;
+        timestamp?: number;
+    } = {}
+): CompactMessage {
+    const compact: CompactMessage = { t: type };
+
+    if (options.message) compact.m = options.message;
+    if (options.workstreamId && options.workstreamId !== 'main') compact.w = options.workstreamId;
+    if (options.details) compact.d = options.details;
+    if (options.isFinal) compact.f = 1;
+    if (options.timestamp) compact.ts = options.timestamp;
+
+    return compact;
+}
+
+/**
+ * Convert CompactMessage back to AgentMessage (for UI components).
+ * This allows UI to continue using familiar field names while wire format is compact.
+ * @param compact The compact message to convert
+ * @param workflowRunId Optional workflow_run_id (known from SSE context, not in compact format)
+ */
+export function toAgentMessage(compact: CompactMessage, workflowRunId: string = ''): AgentMessage {
+    const message: AgentMessage = {
+        type: compact.t,
+        timestamp: compact.ts || Date.now(),
+        workflow_run_id: workflowRunId,
+        message: compact.m || '',
+        workstream_id: compact.w || 'main',
+    };
+
+    if (compact.d !== undefined) message.details = compact.d;
+
+    // For streaming chunks, restore is_final and streaming_id in details
+    // (streaming_id removed from wire format, use workstream_id as grouping key)
+    if (compact.t === AgentMessageType.STREAMING_CHUNK) {
+        message.details = {
+            ...(typeof compact.d === 'object' ? compact.d : {}),
+            streaming_id: compact.w || 'main', // Use workstream_id as streaming_id
+            is_final: compact.f === 1,
+        };
+    }
+
+    return message;
 }
 
 /**

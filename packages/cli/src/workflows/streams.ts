@@ -1,4 +1,4 @@
-import { AgentMessage, UserInputSignal } from "@vertesia/common";
+import { AgentMessageType, CompactMessage, toAgentMessage, UserInputSignal } from "@vertesia/common";
 import chalk from "chalk";
 import { getClient } from "../client.js";
 import boxen from "boxen";
@@ -9,52 +9,55 @@ import logUpdate from "log-update";
 import logSymbols from "log-symbols";
 import * as readline from "readline";
 
-// Define emoji icons for different message types
-const typeIcons = {
-    init: figures.pointer,
-    system: figures.hamburger,
-    thought: figures.questionMarkPrefix,
-    plan: figures.arrowRight,
-    update: figures.arrowUp,
-    complete: figures.tick,
-    warning: figures.warning,
-    error: figures.cross,
+// Define emoji icons for different message types (using integer enum keys)
+const typeIcons: Partial<Record<AgentMessageType, string>> = {
+    [AgentMessageType.SYSTEM]: figures.hamburger,
+    [AgentMessageType.THOUGHT]: figures.questionMarkPrefix,
+    [AgentMessageType.PLAN]: figures.arrowRight,
+    [AgentMessageType.UPDATE]: figures.arrowUp,
+    [AgentMessageType.COMPLETE]: figures.tick,
+    [AgentMessageType.WARNING]: figures.warning,
+    [AgentMessageType.ERROR]: figures.cross,
 };
 
-// Enhanced color palette with gradients
-const typeColors = {
-    init: gradient.pastel,
-    system: gradient.atlas,
-    thought: gradient.mind,
-    plan: gradient.passion,
-    update: gradient.cristal,
-    complete: gradient.summer,
-    warning: gradient.morning,
-    error: gradient.fruit,
-    heartbeat: chalk.gray,
+// Enhanced color palette with gradients (using integer enum keys)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const typeColors: Partial<Record<AgentMessageType, any>> = {
+    [AgentMessageType.SYSTEM]: gradient.atlas,
+    [AgentMessageType.THOUGHT]: gradient.mind,
+    [AgentMessageType.PLAN]: gradient.passion,
+    [AgentMessageType.UPDATE]: gradient.cristal,
+    [AgentMessageType.COMPLETE]: gradient.summer,
+    [AgentMessageType.WARNING]: gradient.morning,
+    [AgentMessageType.ERROR]: gradient.fruit,
 };
 
-// Define styles for boxen with proper types
-const boxStyles = {
-    error: {
+// Get display name for message type
+const getTypeName = (type: AgentMessageType): string => {
+    return AgentMessageType[type] || 'UPDATE';
+};
+
+// Define styles for boxen with proper types (using integer enum keys)
+const boxStyles: Partial<Record<AgentMessageType, { padding: number; margin: number; borderStyle: 'round'; borderColor: string; backgroundColor: string }>> = {
+    [AgentMessageType.ERROR]: {
         padding: 1,
         margin: 1,
         borderStyle: "round" as const,
-        borderColor: "red" as const,
+        borderColor: "red",
         backgroundColor: "#400",
     },
-    warning: {
+    [AgentMessageType.WARNING]: {
         padding: 1,
         margin: 1,
         borderStyle: "round" as const,
-        borderColor: "yellow" as const,
+        borderColor: "yellow",
         backgroundColor: "#440",
     },
-    complete: {
+    [AgentMessageType.COMPLETE]: {
         padding: 1,
         margin: 1,
         borderStyle: "round" as const,
-        borderColor: "green" as const,
+        borderColor: "green",
         backgroundColor: "#040",
     },
 };
@@ -126,9 +129,12 @@ export async function streamRun(workflowId: string, runId: string, program: any,
     let heartbeatCount = 0;
     spinner = ora("Waiting for messages...").start();
 
-    const onMessage = (message: AgentMessage) => {
+    const onMessage = (compactMessage: CompactMessage) => {
         // Skip processing if we're terminating
         if (isTerminating) return;
+
+        // Convert compact wire format to AgentMessage for CLI display
+        const message = toAgentMessage(compactMessage, runId);
 
         try {
             // Stop spinner when a message arrives
@@ -176,21 +182,22 @@ export async function streamRun(workflowId: string, runId: string, program: any,
 
             const time = chalk.gray(timeString);
 
-            // Handle undefined message type
-            if (!message.type) {
+            // Handle undefined message type (shouldn't happen with proper conversion)
+            if (message.type === undefined || message.type === null) {
                 console.log(`${time} [HEARTBEAT]: ping`);
                 spinner = ora("Waiting for messages...").start();
                 return;
             }
 
-            const messageType = message.type.toLowerCase();
-            const icon = typeIcons[messageType as keyof typeof typeIcons] || figures.bullet;
-            const colorGradient = typeColors[messageType as keyof typeof typeColors] || gradient.rainbow;
-            const type = colorGradient(`${icon} ${message.type.toUpperCase()}`);
+            const messageType = message.type;
+            const typeName = getTypeName(messageType);
+            const icon = typeIcons[messageType] || figures.bullet;
+            const colorGradient = typeColors[messageType] || gradient.rainbow;
+            const typeDisplay = colorGradient(`${icon} ${typeName}`);
 
             // Handle undefined message content
-            if (message.type && !message.message) {
-                console.log(`${time} [${type}]: <no content>`);
+            if (!message.message) {
+                console.log(`${time} [${typeDisplay}]: <no content>`);
                 spinner = ora("Waiting for messages...").start();
                 return;
             }
@@ -198,19 +205,19 @@ export async function streamRun(workflowId: string, runId: string, program: any,
             const content = formatMessageContent(message.message);
 
             // Special message formatting based on type
-            if (messageType === "error" || messageType === "warning" || messageType === "complete") {
-                const boxStyle = boxStyles[messageType as keyof typeof boxStyles];
-                const formattedContent = `${time}\n[${type}]:\n\n${content}`;
+            if (messageType === AgentMessageType.ERROR || messageType === AgentMessageType.WARNING || messageType === AgentMessageType.COMPLETE) {
+                const boxStyle = boxStyles[messageType];
+                const formattedContent = `${time}\n[${typeDisplay}]:\n\n${content}`;
                 console.log(boxen(formattedContent, boxStyle));
                 return Promise.resolve();
             } else {
-                console.log(`${time} [${type}]: ${content}`);
+                console.log(`${time} [${typeDisplay}]: ${content}`);
             }
 
             // Check if message details are long plan or complex data
             if (message.details) {
                 // Special handling for plans - they can be very long
-                if (messageType === "plan" && typeof message.details === "object" && message.details.plan) {
+                if (messageType === AgentMessageType.PLAN && typeof message.details === "object" && message.details.plan) {
                     console.log(gradient.passion("\n▸ Plan Summary"));
 
                     try {
