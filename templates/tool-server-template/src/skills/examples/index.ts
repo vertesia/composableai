@@ -1,12 +1,14 @@
-import { SkillCollection, loadSkillsFromDirectory } from "@vertesia/tools-sdk";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { SkillCollection } from "@vertesia/tools-sdk";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import CodeReviewSkill from "./code-review/SKILL.md";
+import UserSelectSkill from "./user-select/SKILL.md";
 
 export const ExampleSkills = new SkillCollection({
     name: "examples",
     title: "Example Skills",
     description: "Example skills demonstrating various functionalities",
-    skills: loadSkillsFromDirectory(__dirname)
+    skills: [
+        UserSelectSkill,
+        CodeReviewSkill
+    ]
 });

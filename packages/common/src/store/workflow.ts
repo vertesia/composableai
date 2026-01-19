@@ -109,6 +109,33 @@ export interface WebHookSpec {
      * the API version to use if any
      */
     version?: number;
+    /**
+     * Custom headers to include in the webhook request
+     */
+    headers?: Record<string, string>;
+    /**
+     * Additional custom data to include in the webhook body.
+     * When custom data is provided, the workflow result will always be nested
+     * to prevent field collisions. Use result_path to control where it's nested.
+     */
+    data?: Record<string, any>;
+    /**
+     * Path where the workflow result should be nested in the webhook body.
+     * Defaults to "result" when custom data is provided.
+     *
+     * Example: With result_path="workflow_result" and data={customer_id: "123"}:
+     * {
+     *   "workflow_result": { ...workflow result... },
+     *   "customer_id": "123"
+     * }
+     *
+     * Example: With data={customer_id: "123"} but no result_path (uses default):
+     * {
+     *   "result": { ...workflow result... },
+     *   "customer_id": "123"
+     * }
+     */
+    result_path?: string;
 }
 
 export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {

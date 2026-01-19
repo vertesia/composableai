@@ -41,7 +41,7 @@ interface BaseToolCollectionObject {
 }
 
 /**
- * MCP tool collection configuration (requires name, description, and prefix)
+ * MCP tool collection configuration (requires name, description, and namespace)
  */
 export interface MCPToolCollectionObject extends BaseToolCollectionObject {
     type: "mcp";
@@ -62,7 +62,7 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
      * Prefix to use for tool names from this collection.
      * Provides clean, readable tool names (e.g., "jira" instead of "https://mcp.atlassian.com/v1/mcp")
      */
-    prefix: string;
+    namespace: string;
 }
 
 /**
@@ -72,18 +72,20 @@ export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObjec
     type: "vertesia_sdk";
 
     /**
-     * Optional prefix to use for tool names from this collection.
-     * If not provided, the URL will be used as the prefix.
+     * Optional namespace to use for tool names from this collection.
+     * If not provided, the tool server default will be used.
      */
-    prefix?: string;
+    namespace?: string;
 
     /**
      * Optional name for the tool collection.
+     * If not provided, the tool server default will be used.
      */
     name?: string;
 
     /**
      * Optional description for the tool collection.
+     * If not provided, the tool server default will be used.
      */
     description?: string;
 }
@@ -120,7 +122,7 @@ export function normalizeToolCollection(collection: ToolCollection): ToolCollect
                 type: 'mcp',
                 name,
                 description: `MCP server at ${url}`,
-                prefix: name
+                namespace: name
             };
         }
         return {

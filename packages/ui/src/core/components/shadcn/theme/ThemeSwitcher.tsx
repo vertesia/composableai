@@ -18,7 +18,7 @@ export function ModeOption({ option, current, setTheme, icon }: ModeOptionProps)
   );
 }
 
-export default function ModeToggle() {
+export function ModeToggle() {
   const { setTheme } = useTheme()
   const theme = useTheme().theme
 

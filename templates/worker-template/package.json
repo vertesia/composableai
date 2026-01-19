@@ -1,6 +1,6 @@
 {
     "name": "@{{WORKER_ORG}}/{{WORKER_NAME}}",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "{{PROJECT_DESCRIPTION}}",
     "type": "module",
     "main": "lib/main.js",
