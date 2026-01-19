@@ -208,7 +208,9 @@ function AllMessagesMixedComponent({
             msg.type === AgentMessageType.TERMINATED ||
             msg.type === AgentMessageType.ERROR ||
             // Include THOUGHT messages that have tool details (progress from message_to_human)
-            (msg.type === AgentMessageType.THOUGHT && msg.details?.tool)
+            (msg.type === AgentMessageType.THOUGHT && msg.details?.tool) ||
+            // Include toolkit_ready SYSTEM message (shows at conversation start)
+            (msg.type === AgentMessageType.SYSTEM && msg.details?.system_type === 'toolkit_ready')
         );
 
         // Latest thinking: show only the most recent generic thinking message (UPDATE/PLAN or THOUGHT without tool)
