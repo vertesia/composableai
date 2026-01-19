@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import React from 'react';
 
 interface FlexibleHeightLayoutProps {
-    children: (React.ReactElement | undefined | null) | (React.ReactElement | undefined | null)[];
+    children: React.ReactNode;
     className?: string;
 }
 export function FullHeightLayout({ className, children }: FlexibleHeightLayoutProps) {

@@ -8,11 +8,130 @@ export interface AppUIConfig {
      */
     src: string;
     /**
-     * The isolation strategy. If not specified it defaults to shadow 
+     * The isolation strategy. If not specified it defaults to shadow
      * - shadow - use Shadow DOM to fully isolate the plugin from the host.
      * - css - use CSS processing (like prefixing or other isolation techniques). Ligther but plugins may conflict with the host
      */
     isolation?: "shadow" | "css";
+}
+
+/**
+ * Authentication type for tool collections
+ */
+export type ToolCollectionAuthType = "oauth" | "other";
+
+/**
+ * Tool collection type
+ */
+export type ToolCollectionType = "mcp" | "vertesia_sdk";
+
+/**
+ * Base tool collection configuration
+ */
+interface BaseToolCollectionObject {
+    /**
+     * The URL endpoint for the tool collection
+     */
+    url: string;
+
+    /**
+     * Optional authentication type required for this tool collection
+     */
+    auth?: ToolCollectionAuthType;
+}
+
+/**
+ * MCP tool collection configuration (requires name, description, and namespace)
+ */
+export interface MCPToolCollectionObject extends BaseToolCollectionObject {
+    type: "mcp";
+
+    /**
+     * Name for the tool collection.
+     * Used as an identifier for the collection (e.g., for OAuth authentication).
+     */
+    name: string;
+
+    /**
+     * Description for the tool collection.
+     * Helps users understand what tools this collection provides.
+     */
+    description: string;
+
+    /**
+     * Prefix to use for tool names from this collection.
+     * Provides clean, readable tool names (e.g., "jira" instead of "https://mcp.atlassian.com/v1/mcp")
+     */
+    namespace: string;
+}
+
+/**
+ * Vertesia SDK tool collection configuration
+ */
+export interface VertesiaSDKToolCollectionObject extends BaseToolCollectionObject {
+    type: "vertesia_sdk";
+
+    /**
+     * Optional namespace to use for tool names from this collection.
+     * If not provided, the tool server default will be used.
+     */
+    namespace?: string;
+
+    /**
+     * Optional name for the tool collection.
+     * If not provided, the tool server default will be used.
+     */
+    name?: string;
+
+    /**
+     * Optional description for the tool collection.
+     * If not provided, the tool server default will be used.
+     */
+    description?: string;
+}
+
+/**
+ * Tool collection configuration (object format)
+ */
+export type ToolCollectionObject = MCPToolCollectionObject | VertesiaSDKToolCollectionObject;
+
+/**
+ * Tool collection can be either:
+ * - A string URL (legacy format, with "mcp:" prefix for MCP servers)
+ * - An object with url, type, and optional auth (new format)
+ */
+export type ToolCollection = string | ToolCollectionObject;
+
+/**
+ * Normalizes a tool collection to the object format.
+ * Handles backward compatibility with string URLs.
+ *
+ * @param collection - String URL or ToolCollectionObject
+ * @returns Normalized ToolCollectionObject
+ */
+export function normalizeToolCollection(collection: ToolCollection): ToolCollectionObject {
+    if (typeof collection === 'string') {
+        // Legacy string format
+        if (collection.startsWith('mcp:')) {
+            const url = collection.substring('mcp:'.length);
+            // For legacy MCP strings, derive name and prefix from URL
+            const urlObj = new URL(url);
+            const name = urlObj.hostname.replace(/\./g, '-');
+            return {
+                url,
+                type: 'mcp',
+                name,
+                description: `MCP server at ${url}`,
+                namespace: name
+            };
+        }
+        return {
+            url: collection,
+            type: 'vertesia_sdk'
+        };
+    }
+    // Already in object format
+    return collection;
 }
 
 export interface AppManifestData {
@@ -54,7 +173,7 @@ export interface AppManifestData {
      * A tools collection endpoint is an URL which may end with a `?import` query string.
      * If the `?import` query string is used the tool will be imported as a javascript module and not executed through a POST on the collections endpoint.
      */
-    tool_collections?: string[]
+    tool_collections?: ToolCollection[]
 
     /**
      * An URL providing interactions definitions in JSON format.
@@ -97,7 +216,7 @@ export interface AppInstallationPayload {
 export type AppInstallationKind = 'ui' | 'tools' | 'all';
 
 /**
- * A descriptiojn of the tools provided by an app
+ * A description of the tools provided by an app
  */
 export interface AppToolCollection {
     /**
@@ -114,4 +233,64 @@ export interface AppToolCollection {
      * the tools provided by this collection
      */
     tools: { name: string, description?: string }[]
+}
+
+/**
+ * Information about a tool and its associated app installation.
+ * Used to look up which app provides a specific tool.
+ */
+export interface ProjectToolInfo {
+    /**
+     * The tool name
+     */
+    tool_name: string;
+
+    /**
+     * Optional tool description
+     */
+    tool_description?: string;
+
+    /**
+     * The app name that provides this tool
+     */
+    app_name: string;
+
+    /**
+     * The app installation ID
+     */
+    app_install_id: string;
+
+    /**
+     * The app installation settings.
+     * Only included for agent tokens, not user tokens (security: may contain API keys).
+     */
+    settings?: Record<string, any>;
+}
+
+/**
+ * OAuth authentication status for an MCP tool collection
+ */
+export interface OAuthAuthStatus {
+    collection_name: string;
+    authenticated: boolean;
+    mcp_server_url: string;
+    expires_at?: string;
+    scope?: string;
+}
+
+/**
+ * Response from OAuth authorization endpoint
+ */
+export interface OAuthAuthorizeResponse {
+    authorization_url: string;
+    state: string;
+}
+
+/**
+ * Response from OAuth metadata endpoint
+ */
+export interface OAuthMetadataResponse {
+    collection_name: string;
+    mcp_server_url: string;
+    metadata: any;
 }
