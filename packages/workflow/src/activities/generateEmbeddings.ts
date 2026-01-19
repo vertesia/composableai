@@ -12,7 +12,7 @@ import {
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
 import { fetchBlobAsBase64, md5 } from "../utils/blobs.js";
-import { DocPart, getContentParts } from "../utils/chunks.js";
+import { DocPart } from "../utils/chunks.js";
 import { countTokens } from "../utils/tokens.js";
 
 export interface GenerateEmbeddingsParams {
@@ -158,8 +158,7 @@ interface ExecuteGenerateEmbeddingsParams {
 }
 
 async function generateTextEmbeddings(
-    { document, client, type, config, force }: ExecuteGenerateEmbeddingsParams,
-    parts?: DocPart[],
+    { document, client, type, config, force }: ExecuteGenerateEmbeddingsParams
 ) {
 
     if (!document) {
@@ -188,9 +187,7 @@ async function generateTextEmbeddings(
         };
     }
 
-    const { environment, model } = config;
-
-    const partDefinitions = parts ?? [];
+    const { environment } = config;
 
     // Compute text etag for comparison
     const textEtag = document.text_etag ?? (document.text ? md5(document.text) : undefined);
@@ -207,160 +204,30 @@ async function generateTextEmbeddings(
         };
     }
 
-    // Count tokens if not already done or if the text has changed (etag mismatch)
-    const needsTokenCount = !document.tokens?.count || (textEtag && document.tokens?.etag !== textEtag);
-    const shouldUpdateTokenCount =
-        needsTokenCount && type === SupportedEmbeddingTypes.text && !!document.text && !!textEtag;
-    if (shouldUpdateTokenCount && document.text) {
-        log.debug("Updating token count for document: " + document.id);
-        const tokensData = countTokens(document.text);
-        await client.objects.update(document.id, {
-            tokens: {
-                ...tokensData,
-                etag: textEtag,
-            },
-        });
-        document.tokens = {
-            ...tokensData,
-            etag: textEtag,
-        };
+    // Count tokens if needed, do not rely on existing token count
+    let tokenCount : number | undefined = undefined;
+    if (type === SupportedEmbeddingTypes.text && document.text) {
+        tokenCount = countTokens(document.text).count;
     }
 
     const maxTokens = config.max_tokens ?? 8000;
 
     //generate embeddings for the main doc if document isn't too large
-    //if too large, we'll just generate embeddings for the parts
-    //then we can generate embeddings for the main document by averaging the tensors
     log.info(`Generating ${type} embeddings for document ${document.id}`);
     if (
         type === SupportedEmbeddingTypes.text &&
-        document.tokens?.count &&
-        document.tokens?.count > maxTokens
+        tokenCount !== undefined &&
+        tokenCount > maxTokens
     ) {
-        log.info("Document too large, generating embeddings for parts");
-
-        if (!document.text) {
-            return {
-                id: document.id,
-                status: "failed",
-                message: "no text found",
-            };
+        //TODO: Review strategy for large documents
+        log.warn(
+            `Document too large for ${type} embeddings generation, skipping (${tokenCount} tokens)`,
+        );
+        return {
+            id: document.id,
+            status: "skipped",
+            message: `${type} embeddings generation, skipped for large document (${tokenCount} tokens)`,
         }
-
-        if (!partDefinitions || partDefinitions.length === 0) {
-            log.info(
-                "No parts found for document, skipping embeddings generation",
-            );
-            return {
-                id: document.id,
-                status: "failed",
-                message: "no parts found",
-            };
-        }
-
-        log.info("Generating embeddings for parts", {
-            parts: partDefinitions,
-            max_tokens: maxTokens,
-        });
-        const docParts = getContentParts(document.text, partDefinitions);
-
-        log.info(`Retrieved ${docParts.length} parts`);
-        const start = new Date().getTime();
-        const generatePartEmbeddings = async (
-            partContent: string,
-            i: number,
-        ) => {
-            const localStart = new Date().getTime();
-            try {
-                log.info(`Generating embeddings for part ${i}`, {
-                    text_len: partContent.length,
-                });
-                if (!partContent) {
-                    return {
-                        id: i,
-                        number: i,
-                        result: null,
-                        status: "skipped",
-                        message: "no text found",
-                    };
-                }
-
-                const e = await generateEmbeddingsFromStudio(
-                    partContent,
-                    environment,
-                    client,
-                    model,
-                ).catch((e) => {
-                    log.error("Error generating embeddings for part " + i, {
-                        text_length: partContent.length,
-                        error: e,
-                    });
-                    return null;
-                });
-
-                if (!e || !e.values) {
-                    return {
-                        id: i,
-                        number: i,
-                        result: null,
-                        message: "no embeddings generated",
-                    };
-                }
-
-                if (e.values.length === 0) {
-                    return {
-                        id: i,
-                        number: i,
-                        result: null,
-                        message: "no embeddings generated",
-                    };
-                }
-                log.info(`Generated embeddings for part ${i}`, {
-                    len: e.values.length,
-                    duration: new Date().getTime() - localStart,
-                });
-
-                return { number: i, result: e };
-            } catch (err: any) {
-                log.info(
-                    `Error generating ${type} embeddings for part ${i} of ${document.id}`,
-                    { error: err },
-                );
-                return {
-                    number: i,
-                    result: null,
-                    message: "error generating embeddings",
-                    error: err.message,
-                };
-            }
-        };
-
-        const partEmbeddings = await Promise.all(
-            docParts.map((part, i) => generatePartEmbeddings(part, i)),
-        );
-        const validPartEmbeddings = partEmbeddings
-            .filter((e) => e.result !== null)
-            .map((e) => e.result);
-        const averagedEmbedding = computeAttentionEmbedding(
-            validPartEmbeddings.map((e) => e.values),
-        );
-        log.info(
-            `Averaged embeddings for document ${document.id} in ${(new Date().getTime() - start) / 1000} seconds`,
-            {
-                len: averagedEmbedding.length,
-                count: validPartEmbeddings.length,
-                max_tokens: maxTokens,
-            },
-        );
-        await client.objects.setEmbedding(document.id, type, {
-            values: averagedEmbedding,
-            model: validPartEmbeddings[0].model,
-            etag: textEtag,
-        });
-        log.info(`Object ${document.id} embedding set`, {
-            type,
-            len: averagedEmbedding.length,
-        });
     } else {
         log.info(`Generating ${type} embeddings for document`);
 
@@ -517,41 +384,4 @@ async function generateEmbeddingsFromStudio(
             log.error("Error generating embeddings for text", { error: e });
             throw e;
         });
-}
-
-//Simplified attention mechanism
-// This is a naive implementation and should be replaced with a more sophisticated
-// using tensorflow in a specific package
-function computeAttentionEmbedding(chunkEmbeddings: number[][]): number[] {
-    if (chunkEmbeddings.length === 0) return [];
-
-    const start = new Date().getTime();
-
-    // Generate random attention weights
-    const attentionWeights = chunkEmbeddings.map(() => Math.random());
-
-    // Apply softmax to get attention scores
-    const expWeights = attentionWeights.map((w) => Math.exp(w));
-    const sumExpWeights = expWeights.reduce((sum, val) => sum + val, 0);
-    const attentionScores = expWeights.map((w) => w / sumExpWeights);
-
-    // Get embedding dimension
-    const embeddingDim = chunkEmbeddings[0].length;
-
-    // Initialize document embedding
-    const documentEmbedding = new Array(embeddingDim).fill(0);
-
-    // Weighted sum of embeddings
-    for (let i = 0; i < chunkEmbeddings.length; i++) {
-        for (let j = 0; j < embeddingDim; j++) {
-            documentEmbedding[j] += chunkEmbeddings[i][j] * attentionScores[i];
-        }
-    }
-
-    const duration = new Date().getTime() - start;
-    console.log(
-        `Computed document embedding in ${duration}ms for ${chunkEmbeddings.length} chunks`,
-    );
-
-    return documentEmbedding;
 }

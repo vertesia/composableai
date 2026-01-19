@@ -10,7 +10,6 @@ export interface ICreateProjectPayload {
 export enum ProjectRoles {
     owner = "owner", // all permissions
     admin = "admin", // all permissions
-    project_admin = "project_admin", // all permissions but manage_account, manage_billing
     manager = "manager", // all permissions but manage_account, manage_billing
     developer = "developer", // all permissions but manage_account, manage_billing, manage_roles, delete
     application = "application", // executor + request_pk

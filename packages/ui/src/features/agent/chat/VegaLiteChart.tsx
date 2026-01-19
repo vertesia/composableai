@@ -1,14 +1,14 @@
-import { memo, useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Download, Copy, Check, Maximize2, Minimize2, X, Loader2 } from 'lucide-react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { Check, Copy, Download, Loader2, Maximize2, Minimize2, X } from 'lucide-react';
+import Papa from 'papaparse';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VegaEmbed } from 'react-vega';
 import type { View } from 'vega';
 import type { TopLevelSpec as VisualizationSpec } from 'vega-lite';
-import type { VegaLiteChartSpec } from './AgentChart';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
-import Papa from 'papaparse';
 import { cn } from '../../../core/components/libs/utils';
 import { useUserSession } from '../../../session';
-import { useArtifactUrlCache, getArtifactCacheKey, getFileCacheKey } from './useArtifactUrlCache';
+import type { VegaLiteChartSpec } from './AgentChart';
+import { getArtifactCacheKey, getFileCacheKey, useArtifactUrlCache } from './useArtifactUrlCache';
 
 type VegaLiteChartProps = {
     spec: VegaLiteChartSpec;
