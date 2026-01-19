@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Cpu, SendIcon, UploadIcon, XIcon } from "lucide-react";
+import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from "lucide-react";
 import { useUserSession } from "@vertesia/ui/session";
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
 import {
@@ -176,6 +176,7 @@ function EmptyState() {
 }
 
 // Start workflow view - allows initiating a new agent conversation
+// Files can be staged locally before workflow starts, then uploaded when the workflow is created
 function StartWorkflowView({
     initialMessage,
     startWorkflow,
@@ -185,33 +186,37 @@ function StartWorkflowView({
     placeholder = "Type your message...",
     startButtonText = "Start Agent",
     title = "Start New Conversation",
-    // File upload props
-    onFilesSelected,
-    // Attachment callback - used to include attachments in the first message
+    // Attachment callback - used to include existing document attachments in the first message
     getAttachedDocs,
     onAttachmentsSent,
-    // Upload state
-    isUploading = false,
+    // File upload props
+    acceptedFileTypes = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp",
+    maxFiles = 5,
 }: ModernAgentConversationProps) {
+    const { client } = useUserSession();
     const [inputValue, setInputValue] = useState<string>("");
     const [isSending, setIsSending] = useState(false);
     const [run, setRun] = useState<AsyncExecutionResult>();
     const toast = useToast();
     const inputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Staged files - stored locally until workflow starts
+    const [stagedFiles, setStagedFiles] = useState<File[]>([]);
 
     // Drag and drop state
     const [isDragOver, setIsDragOver] = useState(false);
     const dragCounterRef = useRef(0);
 
-    // Drag and drop handlers
+    // Drag and drop handlers for file staging
     const handleDragEnter = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current++;
-        if (onFilesSelected && e.dataTransfer?.types?.includes('Files')) {
+        if (e.dataTransfer?.types?.includes('Files')) {
             setIsDragOver(true);
         }
-    }, [onFilesSelected]);
+    }, []);
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -233,11 +238,30 @@ function StartWorkflowView({
         dragCounterRef.current = 0;
         setIsDragOver(false);
 
-        if (onFilesSelected && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
             const filesArray = Array.from(e.dataTransfer.files);
-            onFilesSelected(filesArray);
+            setStagedFiles(prev => {
+                const newFiles = [...prev, ...filesArray].slice(0, maxFiles);
+                return newFiles;
+            });
         }
-    }, [onFilesSelected]);
+    }, [maxFiles]);
+
+    const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const filesArray = Array.from(e.target.files);
+            setStagedFiles(prev => {
+                const newFiles = [...prev, ...filesArray].slice(0, maxFiles);
+                return newFiles;
+            });
+        }
+        // Reset input so the same file can be selected again
+        e.target.value = '';
+    }, [maxFiles]);
+
+    const removeStagedFile = useCallback((index: number) => {
+        setStagedFiles(prev => prev.filter((_, i) => i !== index));
+    }, []);
 
     useEffect(() => {
         // Focus the input field when component mounts
@@ -259,7 +283,7 @@ function StartWorkflowView({
             sessionStorage.removeItem("plan-panel-shown");
 
             toast({
-                title: "Starting agent...",
+                title: stagedFiles.length > 0 ? "Starting agent and uploading files..." : "Starting agent...",
                 status: "info",
                 duration: 3000,
             });
@@ -276,6 +300,34 @@ function StartWorkflowView({
 
             const newRun = await startWorkflow(messageContent);
             if (newRun) {
+                // Upload staged files to the new run's artifact space and signal workflow
+                if (stagedFiles.length > 0) {
+                    for (const file of stagedFiles) {
+                        try {
+                            const artifactPath = `files/${file.name}`;
+                            await client.files.uploadArtifact(newRun.run_id, artifactPath, file);
+
+                            // Signal workflow that file was uploaded
+                            await client.store.workflows.sendSignal(
+                                newRun.workflow_id,
+                                newRun.run_id,
+                                "FileUploaded",
+                                {
+                                    id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                                    name: file.name,
+                                    content_type: file.type || 'application/octet-stream',
+                                    reference: `artifact:${artifactPath}`,
+                                    artifact_path: artifactPath,
+                                } as ConversationFileRef
+                            );
+                        } catch (uploadErr) {
+                            console.error(`Failed to upload staged file ${file.name}:`, uploadErr);
+                            // Continue with other files
+                        }
+                    }
+                    setStagedFiles([]);
+                }
+
                 // Clear attachments after successful start
                 onAttachmentsSent?.();
                 setRun({
@@ -332,10 +384,21 @@ function StartWorkflowView({
                 <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
                     <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
                         <UploadIcon className="size-6" />
-                        Drop files to upload
+                        Drop files to stage for upload
                     </div>
                 </div>
             )}
+
+            {/* Hidden file input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept={acceptedFileTypes}
+                onChange={handleFileInputChange}
+                className="hidden"
+            />
+
             {/* Header */}
             <div className="flex items-center justify-between py-2 px-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
                 <div className="flex items-center space-x-2">
@@ -394,6 +457,42 @@ function StartWorkflowView({
 
             {/* Input Area */}
             <div className="py-3 px-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+                {/* Staged files display */}
+                {stagedFiles.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                        {stagedFiles.map((file, index) => (
+                            <div
+                                key={`${file.name}-${index}`}
+                                className="flex items-center gap-1.5 px-2 py-1 bg-attention/10 text-attention rounded-md text-sm"
+                            >
+                                <FileTextIcon className="size-3.5" />
+                                <span className="max-w-[120px] truncate">{file.name}</span>
+                                <span className="text-xs opacity-70">Staged</span>
+                                <button
+                                    onClick={() => removeStagedFile(index)}
+                                    className="ml-1 p-0.5 hover:bg-attention/20 rounded"
+                                >
+                                    <XIcon className="size-3" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Upload button row */}
+                <div className="flex gap-2 mb-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isSending || stagedFiles.length >= maxFiles}
+                        className="text-xs"
+                    >
+                        <UploadIcon className="size-3.5 mr-1.5" />
+                        Upload
+                    </Button>
+                </div>
+
                 <div className="flex items-center gap-2">
                     <div className="flex-1">
                         <input
@@ -408,12 +507,10 @@ function StartWorkflowView({
                     </div>
                     <Button
                         onClick={startWorkflowWithMessage}
-                        disabled={!inputValue.trim() || isSending || isUploading}
+                        disabled={!inputValue.trim() || isSending}
                         className="px-3 py-2 bg-gray-800 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-xs rounded-md transition-colors"
                     >
                         {isSending ? (
-                            <Spinner size="sm" className="mr-1.5" />
-                        ) : isUploading ? (
                             <Spinner size="sm" className="mr-1.5" />
                         ) : (
                             <SendIcon className="size-3.5 mr-1.5" />
@@ -422,7 +519,9 @@ function StartWorkflowView({
                     </Button>
                 </div>
                 <div className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
-                    Type a message to start the conversation
+                    {stagedFiles.length > 0
+                        ? `${stagedFiles.length} file${stagedFiles.length > 1 ? 's' : ''} staged - will upload when conversation starts`
+                        : 'Type a message to start the conversation'}
                 </div>
             </div>
         </div>
@@ -439,8 +538,7 @@ function ModernAgentConversationInner({
     fullWidth = false,
     placeholder = "Type your message...",
     resetWorkflow,
-    // File upload props
-    onFilesSelected,
+    // File upload props (onFilesSelected handled internally by handleFileUpload)
     uploadedFiles,
     onRemoveFile,
     acceptedFileTypes,
@@ -521,42 +619,6 @@ function ModernAgentConversationInner({
     // Drag and drop state for full-panel file upload
     const [isDragOver, setIsDragOver] = useState(false);
     const dragCounterRef = useRef(0);
-
-    // Drag and drop handlers for full-panel file upload
-    const handleDragEnter = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounterRef.current++;
-        if (onFilesSelected && e.dataTransfer?.types?.includes('Files')) {
-            setIsDragOver(true);
-        }
-    }, [onFilesSelected]);
-
-    const handleDragOver = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-    }, []);
-
-    const handleDragLeave = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounterRef.current--;
-        if (dragCounterRef.current === 0) {
-            setIsDragOver(false);
-        }
-    }, []);
-
-    const handleDrop = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounterRef.current = 0;
-        setIsDragOver(false);
-
-        if (onFilesSelected && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-            const filesArray = Array.from(e.dataTransfer.files);
-            onFilesSelected(filesArray);
-        }
-    }, [onFilesSelected]);
 
     // Helper function to get the current active plan and its workstream status
     const getActivePlan = useMemo(() => {
@@ -1031,6 +1093,44 @@ function ModernAgentConversationInner({
             }
         }
     }, [client, run, toast]);
+
+    // Drag and drop handlers for full-panel file upload
+    const handleDragEnter = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current++;
+        // Enable drag if we have a run (for internal file processing)
+        if (run && e.dataTransfer?.types?.includes('Files')) {
+            setIsDragOver(true);
+        }
+    }, [run]);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current--;
+        if (dragCounterRef.current === 0) {
+            setIsDragOver(false);
+        }
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounterRef.current = 0;
+        setIsDragOver(false);
+
+        // Use internal handleFileUpload for proper workflow signaling and status tracking
+        if (run && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+            const filesArray = Array.from(e.dataTransfer.files);
+            handleFileUpload(filesArray);
+        }
+    }, [run, handleFileUpload]);
 
     // Stop/interrupt the active workflow
     const handleStopWorkflow = async () => {
