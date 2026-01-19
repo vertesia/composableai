@@ -433,8 +433,14 @@ export function groupMessagesWithStreaming(
         });
     });
 
-    // Sort by timestamp
-    items.sort((a, b) => a.timestamp - b.timestamp);
+    // Sort by timestamp, but streaming always goes at the end
+    items.sort((a, b) => {
+        // Streaming messages always come last
+        if (a.kind === 'streaming' && b.kind !== 'streaming') return 1;
+        if (b.kind === 'streaming' && a.kind !== 'streaming') return -1;
+        // Both streaming or both non-streaming: sort by timestamp
+        return a.timestamp - b.timestamp;
+    });
 
     // Build final groups with consecutive grouping for standalone tool messages
     const groups: RenderableGroup[] = [];

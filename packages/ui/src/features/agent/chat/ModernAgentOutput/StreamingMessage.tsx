@@ -46,6 +46,7 @@ function StreamingMessageComponent({
     const targetLengthRef = useRef(text.length);
     const displayedLengthRef = useRef(0);
     const startTime = useRef(timestamp || Date.now());
+    const textRef = useRef(text); // Keep latest text for interval callback
 
     // Track model's generation rate for adaptive speed using exponential moving average
     const lastTextLengthRef = useRef(0);
@@ -78,6 +79,7 @@ function StreamingMessageComponent({
 
     // Keep refs in sync
     targetLengthRef.current = text.length;
+    textRef.current = text;
 
     const animate = useCallback(() => {
         let lastTime = performance.now();
@@ -167,21 +169,51 @@ function StreamingMessageComponent({
         }
     }, [isComplete, text.length, animate]);
 
-    // Throttle markdown updates for performance (reduced from 100ms to 33ms for responsiveness)
+    // Throttle markdown updates for performance using a consistent interval
+    // This avoids the issue where timeout-based throttling gets cancelled on every displayedLength change
+    const throttleIntervalRef = useRef<number | null>(null);
+    const lastThrottledLengthRef = useRef(0);
+
+    // Handle immediate updates when caught up or complete
     useEffect(() => {
-        // Update immediately if caught up or complete
-        if (displayedLength >= text.length || isComplete) {
-            setThrottledText(text.slice(0, displayedLength));
+        if (displayedLength >= targetLengthRef.current || isComplete) {
+            setThrottledText(textRef.current.slice(0, displayedLength));
+            lastThrottledLengthRef.current = displayedLength;
+        }
+    }, [displayedLength, isComplete]);
+
+    // Manage the throttle interval - starts when streaming, stops when caught up
+    const isStreaming = displayedLength < text.length && !isComplete;
+
+    useEffect(() => {
+        if (!isStreaming) {
+            // Not streaming - clear interval
+            if (throttleIntervalRef.current) {
+                clearInterval(throttleIntervalRef.current);
+                throttleIntervalRef.current = null;
+            }
             return;
         }
 
-        // Throttle during active streaming (~30fps markdown updates)
-        const timer = setTimeout(() => {
-            setThrottledText(text.slice(0, displayedLengthRef.current));
-        }, 33);
+        // Start interval if not already running (~30fps markdown updates)
+        if (!throttleIntervalRef.current) {
+            throttleIntervalRef.current = window.setInterval(() => {
+                const currentLength = displayedLengthRef.current;
+                // Only update if there's new content to show
+                if (currentLength > lastThrottledLengthRef.current) {
+                    setThrottledText(textRef.current.slice(0, currentLength));
+                    lastThrottledLengthRef.current = currentLength;
+                }
+            }, 33);
+        }
 
-        return () => clearTimeout(timer);
-    }, [displayedLength, text.length, isComplete]);
+        return () => {
+            if (throttleIntervalRef.current) {
+                clearInterval(throttleIntervalRef.current);
+                throttleIntervalRef.current = null;
+            }
+        };
+    }, [isStreaming]);
 
     const toast = useToast();
     const formattedTime = useMemo(() =>
