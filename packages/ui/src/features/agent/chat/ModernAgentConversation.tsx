@@ -11,7 +11,6 @@ import {
     FileProcessingStatus,
     Plan,
     StreamingChunkDetails,
-    toAgentMessage,
     UserInputSignal,
 } from "@vertesia/common";
 import { Button, MessageBox, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
@@ -624,9 +623,8 @@ function ModernAgentConversationInner({
         setStreamingMessages(new Map());
 
         checkWorkflowStatus();
-        client.store.workflows.streamMessages(run.workflowId, run.runId, (compactMessage) => {
-            // Convert compact wire format to AgentMessage for UI components
-            const message = toAgentMessage(compactMessage, run.runId);
+        client.store.workflows.streamMessages(run.workflowId, run.runId, (message) => {
+            // Client now converts compact wire format to AgentMessage internally
 
             // Handle streaming chunks separately for real-time aggregation
             // PERFORMANCE: Batch updates using RAF instead of immediate state updates

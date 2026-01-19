@@ -16,6 +16,8 @@ import {
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
     parseMessage,
+    toAgentMessage,
+    toCompactMessage,
     PromptSizeAnalyticsResponse,
     RunsByAgentAnalyticsResponse,
     TimeToFirstResponseAnalyticsResponse,
@@ -112,14 +114,19 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs/${runId}/updates`, { payload: msg });
     }
 
-    retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
-        const query = {
-            since,
-        };
-        return this.get(`/runs/${workflowId}/${runId}/updates`, { query });
+    /**
+     * Retrieve historical messages for a workflow run.
+     * Returns messages in AgentMessage format for backward compatibility.
+     * This endpoint returns gzip-compressed responses for large payloads (> 3KB).
+     */
+    async retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
+        const query = { since };
+        const response = await this.get<{ messages: CompactMessage[] }>(`/runs/${workflowId}/${runId}/updates`, { query });
+        // Convert compact messages to AgentMessage for backward compatibility
+        return response.messages.map((m: CompactMessage) => toAgentMessage(m, runId));
     }
 
-    async streamMessages(workflowId: string, runId: string, onMessage?: (message: CompactMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
+    async streamMessages(workflowId: string, runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
         return new Promise<unknown>((resolve, reject) => {
             let reconnectAttempts = 0;
             let lastMessageTimestamp = since || 0;
@@ -205,22 +212,26 @@ export class WorkflowsApi extends ApiTopic {
 
                         try {
                             // Parse message using parseMessage() which handles both compact and legacy formats
-                            const message = parseMessage(ev.data);
+                            const compactMessage = parseMessage(ev.data);
 
                             // Update last message timestamp for reconnection (use ts field or current time)
-                            if (message.ts) {
-                                lastMessageTimestamp = Math.max(lastMessageTimestamp, message.ts);
+                            if (compactMessage.ts) {
+                                lastMessageTimestamp = Math.max(lastMessageTimestamp, compactMessage.ts);
                             } else {
                                 lastMessageTimestamp = Date.now();
                             }
 
-                            if (onMessage) onMessage(message, exit);
+                            // Convert to AgentMessage for consumers (they shouldn't need to know about compact format)
+                            if (onMessage) {
+                                const agentMessage = toAgentMessage(compactMessage, runId);
+                                onMessage(agentMessage, exit);
+                            }
 
                             // Get workstream ID (defaults to 'main' if not set)
-                            const workstreamId = message.w || 'main';
+                            const workstreamId = compactMessage.w || 'main';
 
-                            const streamIsOver = message.t === AgentMessageType.TERMINATED ||
-                                (message.t === AgentMessageType.COMPLETE && workstreamId === 'main');
+                            const streamIsOver = compactMessage.t === AgentMessageType.TERMINATED ||
+                                (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
 
                             // Only close the stream when the main workstream completes or terminates
                             if (streamIsOver) {
@@ -230,7 +241,7 @@ export class WorkflowsApi extends ApiTopic {
                                     cleanup();
                                     resolve(null);
                                 }
-                            } else if (message.t === AgentMessageType.COMPLETE) {
+                            } else if (compactMessage.t === AgentMessageType.COMPLETE) {
                                 console.log(`Received COMPLETE message from non-main workstream: ${workstreamId}, keeping stream open`);
                             }
                         } catch (err) {
