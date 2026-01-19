@@ -1,4 +1,4 @@
-import { AgentMessageType, CompactMessage, toAgentMessage, UserInputSignal } from "@vertesia/common";
+import { AgentMessage, AgentMessageType, UserInputSignal } from "@vertesia/common";
 import chalk from "chalk";
 import { getClient } from "../client.js";
 import boxen from "boxen";
@@ -129,12 +129,9 @@ export async function streamRun(workflowId: string, runId: string, program: any,
     let heartbeatCount = 0;
     spinner = ora("Waiting for messages...").start();
 
-    const onMessage = (compactMessage: CompactMessage) => {
+    const onMessage = (message: AgentMessage) => {
         // Skip processing if we're terminating
         if (isTerminating) return;
-
-        // Convert compact wire format to AgentMessage for CLI display
-        const message = toAgentMessage(compactMessage, runId);
 
         try {
             // Stop spinner when a message arrives

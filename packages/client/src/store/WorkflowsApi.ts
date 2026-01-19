@@ -17,7 +17,6 @@ import {
     ListWorkflowRunsResponse,
     parseMessage,
     toAgentMessage,
-    toCompactMessage,
     PromptSizeAnalyticsResponse,
     RunsByAgentAnalyticsResponse,
     TimeToFirstResponseAnalyticsResponse,
@@ -121,13 +120,22 @@ export class WorkflowsApi extends ApiTopic {
      */
     async retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
         const query = { since };
-        const response = await this.get<{ messages: CompactMessage[] }>(`/runs/${workflowId}/${runId}/updates`, { query });
+        const response = await this.get(`/runs/${workflowId}/${runId}/updates`, { query }) as { messages: CompactMessage[] };
         // Convert compact messages to AgentMessage for backward compatibility
         return response.messages.map((m: CompactMessage) => toAgentMessage(m, runId));
     }
 
+    /**
+     * Stream workflow messages in real-time via SSE.
+     *
+     * This method fetches historical messages via GET /updates (gzip-compressed for large payloads)
+     * then connects to SSE for real-time updates only (skipHistory=true).
+     *
+     * This approach provides better performance for conversations with large historical messages
+     * since HTTP responses are compressed while SSE streams cannot be compressed.
+     */
     async streamMessages(workflowId: string, runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
-        return new Promise<unknown>((resolve, reject) => {
+        return new Promise<unknown>(async (resolve, reject) => {
             let reconnectAttempts = 0;
             let lastMessageTimestamp = since || 0;
             let isClosed = false;
@@ -164,6 +172,35 @@ export class WorkflowsApi extends ApiTopic {
                 }
             };
 
+            // 1. Fetch historical messages via GET /updates (gzip-compressed if > 3KB)
+            // This is more efficient than receiving historical over uncompressed SSE
+            try {
+                const historical = await this.retrieveMessages(workflowId, runId, since);
+                for (const msg of historical) {
+                    // Update timestamp for SSE connection
+                    lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
+
+                    // Deliver historical messages to consumer
+                    if (onMessage) {
+                        onMessage(msg, exit);
+                    }
+
+                    // Check if workflow already completed
+                    const workstreamId = msg.workstream_id || 'main';
+                    const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
+                        (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
+                    if (streamIsOver) {
+                        console.log("Workflow already completed in historical messages");
+                        resolve(null);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn("Failed to fetch historical messages, continuing with SSE:", err);
+                // Continue to SSE - it will send historical if skipHistory is not set
+            }
+
+            // 2. Connect to SSE for real-time updates only (skipHistory=true)
             const setupStream = async (isReconnect: boolean = false) => {
                 if (isClosed) return;
 
@@ -176,6 +213,9 @@ export class WorkflowsApi extends ApiTopic {
                     if (lastMessageTimestamp > 0) {
                         streamUrl.searchParams.set("since", lastMessageTimestamp.toString());
                     }
+
+                    // Skip historical messages - we already fetched them via GET /updates
+                    streamUrl.searchParams.set("skipHistory", "true");
 
                     const bearerToken = client._auth ? await client._auth() : undefined;
                     if (!bearerToken) {
