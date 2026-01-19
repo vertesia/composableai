@@ -147,6 +147,8 @@ export type VegaLiteChartSpec = {
         // Interactive features
         enableTooltips?: boolean; // Enable Vega tooltips (default: true)
         enableSignalListeners?: boolean; // Enable external signal listeners (default: false)
+        // Parameter values - set initial values for Vega-Lite params (sliders, dropdowns, etc.)
+        parameterValues?: Record<string, any>;
     };
 };
 
