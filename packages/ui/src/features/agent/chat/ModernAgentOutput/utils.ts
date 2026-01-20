@@ -248,6 +248,14 @@ export function getToolRunId(message: AgentMessage): string | undefined {
 }
 
 /**
+ * Get the tool_iteration from a message's details, if present
+ * This is used to group parallel tool calls from the same iteration
+ */
+export function getToolIteration(message: AgentMessage): number | undefined {
+    return message.details?.tool_iteration;
+}
+
+/**
  * Get the tool execution status from a message's details
  */
 export function getToolStatus(message: AgentMessage): ToolExecutionStatus | undefined {
@@ -307,8 +315,9 @@ function getTimestampMs(timestamp: number | string): number {
 
 /**
  * Group messages with streaming messages interleaved in chronological order
- * Messages with the same tool_run_id are grouped together
- * Messages without tool_run_id fall back to consecutive grouping
+ * Messages with the same tool_iteration are grouped together (parallel tool calls)
+ * Messages with the same tool_run_id are grouped together (same tool execution)
+ * Messages without either fall back to consecutive grouping
  *
  * @param messages Sorted array of messages
  * @param streamingMessages Map of streaming messages by ID
@@ -320,20 +329,37 @@ export function groupMessagesWithStreaming(
     streamingMessages: Map<string, StreamingData>,
     activeWorkstream?: string
 ): RenderableGroup[] {
-    // First pass: collect messages by tool_run_id
+    // First pass: collect messages by tool_iteration (for parallel tool calls in same iteration)
+    const iterationGroups = new Map<number, {
+        messages: AgentMessage[];
+        firstTimestamp: number;
+    }>();
+
+    // Also collect messages by tool_run_id (for sub-messages within same tool)
     const toolRunGroups = new Map<string, {
         messages: AgentMessage[];
         firstTimestamp: number;
     }>();
 
-    // Messages without tool_run_id will be processed separately
+    // Messages without tool_iteration or tool_run_id will be processed separately
     const standaloneMessages: AgentMessage[] = [];
 
     for (const message of messages) {
         if (isToolCallMessage(message)) {
+            const toolIteration = getToolIteration(message);
             const toolRunId = getToolRunId(message);
-            if (toolRunId) {
-                // Group by tool_run_id
+
+            if (toolIteration !== undefined) {
+                // Group by tool_iteration - this groups parallel tool calls together
+                if (!iterationGroups.has(toolIteration)) {
+                    iterationGroups.set(toolIteration, {
+                        messages: [],
+                        firstTimestamp: getTimestampMs(message.timestamp)
+                    });
+                }
+                iterationGroups.get(toolIteration)!.messages.push(message);
+            } else if (toolRunId) {
+                // Fallback: group by tool_run_id if no iteration
                 if (!toolRunGroups.has(toolRunId)) {
                     toolRunGroups.set(toolRunId, {
                         messages: [],
@@ -342,7 +368,7 @@ export function groupMessagesWithStreaming(
                 }
                 toolRunGroups.get(toolRunId)!.messages.push(message);
             } else {
-                // No tool_run_id - will use consecutive grouping
+                // No tool_iteration or tool_run_id - will use consecutive grouping
                 standaloneMessages.push(message);
             }
         } else {
@@ -354,9 +380,20 @@ export function groupMessagesWithStreaming(
     type GroupedItem =
         | { kind: 'message'; message: AgentMessage; timestamp: number }
         | { kind: 'streaming'; streamingId: string; data: StreamingData; timestamp: number }
+        | { kind: 'iteration_group'; iteration: number; messages: AgentMessage[]; timestamp: number }
         | { kind: 'tool_run'; toolRunId: string; messages: AgentMessage[]; timestamp: number };
 
     const items: GroupedItem[] = [];
+
+    // Add iteration groups (parallel tool calls from same iteration)
+    iterationGroups.forEach((group, iteration) => {
+        items.push({
+            kind: 'iteration_group',
+            iteration,
+            messages: group.messages,
+            timestamp: group.firstTimestamp
+        });
+    });
 
     // Add tool_run groups as single items
     toolRunGroups.forEach((group, toolRunId) => {
@@ -396,8 +433,14 @@ export function groupMessagesWithStreaming(
         });
     });
 
-    // Sort by timestamp
-    items.sort((a, b) => a.timestamp - b.timestamp);
+    // Sort by timestamp, but streaming always goes at the end
+    items.sort((a, b) => {
+        // Streaming messages always come last
+        if (a.kind === 'streaming' && b.kind !== 'streaming') return 1;
+        if (b.kind === 'streaming' && a.kind !== 'streaming') return -1;
+        // Both streaming or both non-streaming: sort by timestamp
+        return a.timestamp - b.timestamp;
+    });
 
     // Build final groups with consecutive grouping for standalone tool messages
     const groups: RenderableGroup[] = [];
@@ -429,6 +472,24 @@ export function groupMessagesWithStreaming(
                 workstreamId: item.data.workstreamId,
                 startTimestamp: item.data.startTimestamp,
                 isComplete: item.data.isComplete
+            });
+        } else if (item.kind === 'iteration_group') {
+            // Iteration group - parallel tool calls from same iteration
+            flushToolGroup();
+            // Sort messages within the group by timestamp
+            const sortedMessages = [...item.messages].sort(
+                (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp)
+            );
+            // Get the latest status from the group
+            const latestStatus = sortedMessages.reduce<ToolExecutionStatus | undefined>(
+                (status, msg) => getToolStatus(msg) || status,
+                undefined
+            );
+            groups.push({
+                type: 'tool_group',
+                messages: sortedMessages,
+                firstTimestamp: item.timestamp,
+                toolStatus: latestStatus
             });
         } else if (item.kind === 'tool_run') {
             // Tool run group - already grouped by tool_run_id

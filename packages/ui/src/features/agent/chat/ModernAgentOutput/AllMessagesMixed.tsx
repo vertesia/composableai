@@ -99,6 +99,16 @@ function AllMessagesMixedComponent({
 
     const isStreaming = streamingMessages.size > 0;
 
+    // Compute bucketed streaming content length for scroll dependency
+    // Changes every ~200 chars to trigger scroll without excessive updates
+    const streamingContentBucket = useMemo(() => {
+        let total = 0;
+        streamingMessages.forEach((data) => {
+            total += data.text?.length || 0;
+        });
+        return Math.floor(total / 200); // Bucket by 200 chars
+    }, [streamingMessages]);
+
     // Throttled scroll function
     const performScroll = useCallback(() => {
         if (bottomRef.current) {
@@ -130,7 +140,7 @@ function AllMessagesMixedComponent({
                 scrollScheduledRef.current = null;
             }
         };
-    }, [messages.length, streamingMessages.size, performScroll]);
+    }, [messages.length, streamingMessages.size, streamingContentBucket, performScroll]);
 
     // Sort all messages chronologically and filter out system metadata
     const sortedMessages = React.useMemo(
@@ -198,7 +208,9 @@ function AllMessagesMixedComponent({
             msg.type === AgentMessageType.TERMINATED ||
             msg.type === AgentMessageType.ERROR ||
             // Include THOUGHT messages that have tool details (progress from message_to_human)
-            (msg.type === AgentMessageType.THOUGHT && msg.details?.tool)
+            (msg.type === AgentMessageType.THOUGHT && msg.details?.tool) ||
+            // Include toolkit_ready SYSTEM message (shows at conversation start)
+            (msg.type === AgentMessageType.SYSTEM && msg.details?.system_type === 'toolkit_ready')
         );
 
         // Latest thinking: show only the most recent generic thinking message (UPDATE/PLAN or THOUGHT without tool)

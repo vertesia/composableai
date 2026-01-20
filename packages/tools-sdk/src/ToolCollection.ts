@@ -5,6 +5,7 @@ import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { authorize } from "./auth.js";
 import { ToolFilterOptions, ToolRegistry } from "./ToolRegistry.js";
+import { ToolContext } from "./server/types.js";
 import type { CollectionProperties, ICollection, Tool, ToolDefinitionWithDefault, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
 
@@ -73,11 +74,26 @@ export class ToolCollection implements ICollection<Tool<any>> {
         return this.tools.getTools().map(callback);
     }
 
-    async execute(ctx: Context): Promise<Response> {
-        let payload: ToolExecutionPayload<any> | undefined;
+    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload<any>): Promise<Response> {
+        let payload: ToolExecutionPayload<any> | undefined = preParsedPayload;
         try {
-            payload = await readPayload(ctx);
-            const session = await authorize(ctx);
+            if (!payload) {
+                payload = await readPayload(ctx);
+            }
+            const toolName = payload.tool_use?.tool_name;
+            const toolUseId = payload.tool_use?.id;
+            const endpointOverrides = payload.metadata?.endpoints;
+
+            const runId = payload.metadata?.run_id;
+
+            console.log(`[ToolCollection] Tool call received: ${toolName}`, {
+                collection: this.name,
+                toolUseId,
+                runId,
+                hasEndpointOverrides: !!endpointOverrides,
+            });
+
+            const session = await authorize(ctx, endpointOverrides, { toolName, toolUseId, runId });
             const r = await this.tools.runTool(payload, session);
             return ctx.json({
                 ...r,
@@ -85,8 +101,20 @@ export class ToolCollection implements ICollection<Tool<any>> {
             } satisfies ToolExecutionResponse);
         } catch (err: any) { // HTTPException ?
             const status = err.status || 500;
+            const toolName = payload?.tool_use?.tool_name;
+            const toolUseId = payload?.tool_use?.id;
+
+            console.error("[ToolCollection] Tool execution failed", {
+                collection: this.name,
+                tool: toolName,
+                toolUseId,
+                error: err.message,
+                status,
+                stack: err.stack,
+            });
+
             return ctx.json({
-                tool_use_id: payload?.tool_use.id || "undefined",
+                tool_use_id: toolUseId || "undefined",
                 error: err.message || "Error executing tool",
                 status
             } satisfies ToolExecutionResponseError, status)
@@ -114,14 +142,18 @@ export class ToolCollection implements ICollection<Tool<any>> {
 }
 
 
-async function readPayload(ctx: Context) {
-    try {
-        return await ctx.req.json() as ToolExecutionPayload<any>;
-    } catch (err: any) {
-        throw new HTTPException(500, {
-            message: "Failed to load execution request payload: " + err.message
-        });
+function readPayload(ctx: Context): ToolExecutionPayload<any> {
+    const toolCtx = ctx as ToolContext;
+
+    // Check if body was already parsed and validated by middleware
+    if (toolCtx.payload) {
+        return toolCtx.payload;
     }
+
+    // If no payload, middleware couldn't parse/validate - return error
+    throw new HTTPException(400, {
+        message: 'Invalid or missing tool execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
+    });
 }
 
 /**

@@ -1,6 +1,8 @@
 import type { ToolDefinition, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
-import { AuthTokenPayload, ToolResult, ToolResultContent } from "@vertesia/common";
+import { AuthTokenPayload, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
+
+export type { ToolExecutionMetadata };
 
 export type ICollection<T = any> = CollectionProperties & Iterable<T>
 
@@ -80,7 +82,7 @@ export interface ToolExecutionPayload<ParamsT extends Record<string, any>> {
     /**
      * Optional metadata related to the current execution request
      */
-    metadata?: Record<string, any>,
+    metadata?: ToolExecutionMetadata,
 }
 
 export type ToolFn<ParamsT extends Record<string, any>> = (payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext) => Promise<ToolExecutionResult>;

@@ -71,6 +71,7 @@ export const EXTERNALS = [
     /^vega-lite\/.*/,
     "html-to-image",
     /^framer-motion\/.*/,
+    "mermaid",
     "react-pdf",
     /^react-pdf\/.*/,
     "pdfjs-dist",

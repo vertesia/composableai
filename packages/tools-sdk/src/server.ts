@@ -1,13 +1,25 @@
 import { Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
 import { createInteractionsRoute } from "./server/interactions.js";
 import { createMcpRoute } from "./server/mcp.js";
 import { createSiteRoute } from "./server/site.js";
 import { createSkillsRoute } from "./server/skills.js";
 import { createToolsRoute } from "./server/tools.js";
-import { ToolServerConfig } from "./server/types.js";
+import { ToolContext, ToolServerConfig } from "./server/types.js";
+import { ToolExecutionPayload } from "./types.js";
 import { createWidgetsRoute } from "./server/widgets.js";
+
+// Schema for tool execution payload
+const ToolExecutionPayloadSchema = z.object({
+    tool_use: z.object({
+        id: z.string(),
+        tool_name: z.string(),
+        tool_input: z.record(z.string(), z.any()).default({}),
+    }),
+    metadata: z.record(z.string(), z.any()).optional(),
+});
 
 
 
@@ -41,6 +53,28 @@ export function createToolServer(config: ToolServerConfig): Hono {
     // Add CORS middleware globally
     app.use('*', cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'] }));
 
+    // Middleware to parse and validate body, store on context for reuse
+    app.use('*', async (c, next) => {
+        const ctx = c as unknown as ToolContext;
+        if (c.req.method === 'POST') {
+            try {
+                const text = await c.req.text();
+                const body = JSON.parse(text);
+                const result = ToolExecutionPayloadSchema.safeParse(body);
+                if (result.success) {
+                    ctx.payload = result.data as ToolExecutionPayload<any>;
+                    ctx.toolUseId = result.data.tool_use.id;
+                    ctx.toolName = result.data.tool_use.tool_name;
+                }
+                // If validation fails, still store raw body for error reporting
+                // but don't set payload - handlers will return validation error
+            } catch {
+                // Ignore parsing errors - body might not be JSON
+            }
+        }
+        await next();
+    });
+
     // HTML pages (unless disabled)
     if (!disableHtml) {
         createSiteRoute(app, '', config);
@@ -71,13 +105,33 @@ export function createToolServer(config: ToolServerConfig): Hono {
     createMcpRoute(app, `${prefix}/mcp`, config);
 
 
-    // Global error handler
+    // Global error handler - returns ToolExecutionResponseError format
     app.onError((err, c) => {
-        if (err instanceof HTTPException) {
-            return c.json({ error: err.message }, err.status);
+        const ctx = c as unknown as ToolContext;
+        const status = err instanceof HTTPException ? err.status : 500;
+        const errorMessage = err instanceof HTTPException ? err.message : 'Internal Server Error';
+
+        if (!(err instanceof HTTPException)) {
+            console.error('Uncaught Error:', err);
         }
-        console.error('Uncaught Error:', err);
-        return c.json({ error: 'Internal Server Error' }, 500);
+
+        return c.json({
+            tool_use_id: ctx.toolUseId || 'unknown',
+            status,
+            error: errorMessage,
+            data: ctx.toolName ? { tool_name: ctx.toolName } : undefined,
+        }, status);
+    });
+
+    // Not found handler - returns ToolExecutionResponseError format
+    app.notFound((c) => {
+        const ctx = c as unknown as ToolContext;
+        return c.json({
+            tool_use_id: ctx.toolUseId || 'unknown',
+            status: 404,
+            error: `Not found: ${c.req.method} ${c.req.path}`,
+            data: ctx.toolName ? { tool_name: ctx.toolName } : undefined,
+        }, 404);
     });
 
     return app;
@@ -88,7 +142,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
 // ================== Server Utilities ==================
 
 /**
- * Simple development server with static file handling
+ * Simple development server with static fimesale handling
  * 
  * @deprecated Use tools server template 
  */

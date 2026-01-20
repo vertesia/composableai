@@ -32,13 +32,14 @@
         "outDir": "lib"
     },
     "peerDependencies": {
-        "hono": "^4.10.0"
+        "hono": "^4.11.4"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "jose": "^6.0.11"
+        "jose": "^6.0.11",
+        "zod": "^4.3.5"
     },
     "repository": {
         "type": "git",

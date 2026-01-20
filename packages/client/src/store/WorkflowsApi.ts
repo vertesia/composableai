@@ -4,6 +4,7 @@ import {
     AgentEvent,
     AgentMessage,
     AgentMessageType,
+    CompactMessage,
     CreateWorkflowRulePayload,
     DSLWorkflowDefinition,
     DSLWorkflowSpec,
@@ -14,6 +15,8 @@ import {
     ListWorkflowInteractionsResponse,
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
+    parseMessage,
+    toAgentMessage,
     PromptSizeAnalyticsResponse,
     RunsByAgentAnalyticsResponse,
     TimeToFirstResponseAnalyticsResponse,
@@ -110,15 +113,29 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs/${runId}/updates`, { payload: msg });
     }
 
-    retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
-        const query = {
-            since,
-        };
-        return this.get(`/runs/${workflowId}/${runId}/updates`, { query });
+    /**
+     * Retrieve historical messages for a workflow run.
+     * Returns messages in AgentMessage format for backward compatibility.
+     * This endpoint returns gzip-compressed responses for large payloads (> 3KB).
+     */
+    async retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
+        const query = { since };
+        const response = await this.get(`/runs/${workflowId}/${runId}/updates`, { query }) as { messages: CompactMessage[] };
+        // Convert compact messages to AgentMessage for backward compatibility
+        return response.messages.map((m: CompactMessage) => toAgentMessage(m, runId));
     }
 
+    /**
+     * Stream workflow messages in real-time via SSE.
+     *
+     * This method fetches historical messages via GET /updates (gzip-compressed for large payloads)
+     * then connects to SSE for real-time updates only (skipHistory=true).
+     *
+     * This approach provides better performance for conversations with large historical messages
+     * since HTTP responses are compressed while SSE streams cannot be compressed.
+     */
     async streamMessages(workflowId: string, runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
-        return new Promise<unknown>((resolve, reject) => {
+        return new Promise<unknown>(async (resolve, reject) => {
             let reconnectAttempts = 0;
             let lastMessageTimestamp = since || 0;
             let isClosed = false;
@@ -155,6 +172,35 @@ export class WorkflowsApi extends ApiTopic {
                 }
             };
 
+            // 1. Fetch historical messages via GET /updates (gzip-compressed if > 3KB)
+            // This is more efficient than receiving historical over uncompressed SSE
+            try {
+                const historical = await this.retrieveMessages(workflowId, runId, since);
+                for (const msg of historical) {
+                    // Update timestamp for SSE connection
+                    lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
+
+                    // Deliver historical messages to consumer
+                    if (onMessage) {
+                        onMessage(msg, exit);
+                    }
+
+                    // Check if workflow already completed
+                    const workstreamId = msg.workstream_id || 'main';
+                    const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
+                        (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
+                    if (streamIsOver) {
+                        console.log("Workflow already completed in historical messages");
+                        resolve(null);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn("Failed to fetch historical messages, continuing with SSE:", err);
+                // Continue to SSE - it will send historical if skipHistory is not set
+            }
+
+            // 2. Connect to SSE for real-time updates only (skipHistory=true)
             const setupStream = async (isReconnect: boolean = false) => {
                 if (isClosed) return;
 
@@ -167,6 +213,9 @@ export class WorkflowsApi extends ApiTopic {
                     if (lastMessageTimestamp > 0) {
                         streamUrl.searchParams.set("since", lastMessageTimestamp.toString());
                     }
+
+                    // Skip historical messages - we already fetched them via GET /updates
+                    streamUrl.searchParams.set("skipHistory", "true");
 
                     const bearerToken = client._auth ? await client._auth() : undefined;
                     if (!bearerToken) {
@@ -202,18 +251,27 @@ export class WorkflowsApi extends ApiTopic {
                         }
 
                         try {
-                            const message = JSON.parse(ev.data) as AgentMessage;
+                            // Parse message using parseMessage() which handles both compact and legacy formats
+                            const compactMessage = parseMessage(ev.data);
 
-                            // Update last message timestamp for reconnection
-                            if (message.timestamp) {
-                                lastMessageTimestamp = Math.max(lastMessageTimestamp, message.timestamp);
+                            // Update last message timestamp for reconnection (use ts field or current time)
+                            if (compactMessage.ts) {
+                                lastMessageTimestamp = Math.max(lastMessageTimestamp, compactMessage.ts);
+                            } else {
+                                lastMessageTimestamp = Date.now();
                             }
 
-                            if (onMessage) onMessage(message, exit);
+                            // Convert to AgentMessage for consumers (they shouldn't need to know about compact format)
+                            if (onMessage) {
+                                const agentMessage = toAgentMessage(compactMessage, runId);
+                                onMessage(agentMessage, exit);
+                            }
 
-                            const streamIsOver = message.type === AgentMessageType.TERMINATED ||
-                                (message.type === AgentMessageType.COMPLETE &&
-                                    (!message.workstream_id || message.workstream_id === 'main'));
+                            // Get workstream ID (defaults to 'main' if not set)
+                            const workstreamId = compactMessage.w || 'main';
+
+                            const streamIsOver = compactMessage.t === AgentMessageType.TERMINATED ||
+                                (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
 
                             // Only close the stream when the main workstream completes or terminates
                             if (streamIsOver) {
@@ -223,8 +281,8 @@ export class WorkflowsApi extends ApiTopic {
                                     cleanup();
                                     resolve(null);
                                 }
-                            } else if (message.type === AgentMessageType.COMPLETE) {
-                                console.log(`Received COMPLETE message from non-main workstream: ${message.workstream_id || 'unknown'}, keeping stream open`);
+                            } else if (compactMessage.t === AgentMessageType.COMPLETE) {
+                                console.log(`Received COMPLETE message from non-main workstream: ${workstreamId}, keeping stream open`);
                             }
                         } catch (err) {
                             console.error("Failed to parse SSE message:", err, ev.data);
@@ -285,14 +343,14 @@ export class WorkflowsApi extends ApiTopic {
      * Stream workflow messages via WebSocket (for mobile/React Native clients)
      * @param workflowId The workflow ID
      * @param runId The run ID
-     * @param onMessage Callback for incoming messages
+     * @param onMessage Callback for incoming messages (CompactMessage format)
      * @param since Optional timestamp to resume from
      * @returns Promise that resolves with cleanup function and sendSignal helper
      */
     async streamMessagesWS(
         workflowId: string,
         runId: string,
-        onMessage?: (message: AgentMessage) => void,
+        onMessage?: (message: CompactMessage) => void,
         since?: number
     ): Promise<{ cleanup: () => void; sendSignal: (signalName: string, data: any) => void }> {
         return new Promise((resolve, reject) => {
@@ -375,40 +433,49 @@ export class WorkflowsApi extends ApiTopic {
 
                     ws.onmessage = (event: MessageEvent) => {
                         try {
-                            const message = JSON.parse(event.data) as WebSocketServerMessage;
+                            const rawMessage = JSON.parse(event.data) as WebSocketServerMessage;
 
-                            // Handle different message types
-                            if ('workflow_run_id' in message) {
-                                // This is an AgentMessage
-                                const agentMessage = message as AgentMessage;
-
-                                if (agentMessage.timestamp) {
-                                    lastMessageTimestamp = Math.max(lastMessageTimestamp, agentMessage.timestamp);
+                            // Handle control messages (pong, ack, error)
+                            if ('type' in rawMessage && typeof rawMessage.type === 'string') {
+                                if (rawMessage.type === 'pong') {
+                                    console.debug('Received pong');
+                                    return;
+                                } else if (rawMessage.type === 'ack') {
+                                    console.debug('Signal acknowledged', rawMessage);
+                                    return;
+                                } else if (rawMessage.type === 'error') {
+                                    console.error('WebSocket error message', rawMessage);
+                                    return;
                                 }
+                            }
 
-                                if (onMessage) onMessage(agentMessage);
+                            // Parse agent message (handles both compact and legacy formats)
+                            const message = parseMessage(rawMessage);
 
-                                // Check for stream completion
-                                const streamIsOver =
-                                    agentMessage.type === AgentMessageType.TERMINATED ||
-                                    (agentMessage.type === AgentMessageType.COMPLETE &&
-                                        (!agentMessage.workstream_id || agentMessage.workstream_id === 'main'));
+                            // Update timestamp for reconnection
+                            if (message.ts) {
+                                lastMessageTimestamp = Math.max(lastMessageTimestamp, message.ts);
+                            } else {
+                                lastMessageTimestamp = Date.now();
+                            }
 
-                                if (streamIsOver) {
-                                    console.log('Closing WebSocket due to workflow completion');
-                                    isClosed = true;
-                                    if (ws) {
-                                        ws.close();
-                                        ws = null;
-                                    }
+                            if (onMessage) onMessage(message);
+
+                            // Get workstream ID (defaults to 'main' if not set)
+                            const workstreamId = message.w || 'main';
+
+                            // Check for stream completion
+                            const streamIsOver =
+                                message.t === AgentMessageType.TERMINATED ||
+                                (message.t === AgentMessageType.COMPLETE && workstreamId === 'main');
+
+                            if (streamIsOver) {
+                                console.log('Closing WebSocket due to workflow completion');
+                                isClosed = true;
+                                if (ws) {
+                                    ws.close();
+                                    ws = null;
                                 }
-                            } else if (message.type === 'pong') {
-                                // Heartbeat response
-                                console.debug('Received pong');
-                            } else if (message.type === 'ack') {
-                                console.debug('Signal acknowledged', message);
-                            } else if (message.type === 'error') {
-                                console.error('WebSocket error message', message);
                             }
                         } catch (err) {
                             console.error('Failed to parse WebSocket message', err);

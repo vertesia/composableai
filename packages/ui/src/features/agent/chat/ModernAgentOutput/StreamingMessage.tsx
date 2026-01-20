@@ -46,31 +46,31 @@ function StreamingMessageComponent({
     const targetLengthRef = useRef(text.length);
     const displayedLengthRef = useRef(0);
     const startTime = useRef(timestamp || Date.now());
+    const textRef = useRef(text); // Keep latest text for interval callback
 
-    // Track model's generation rate for adaptive speed
+    // Track model's generation rate for adaptive speed using exponential moving average
     const lastTextLengthRef = useRef(0);
     const lastTextTimeRef = useRef(performance.now());
-    const modelRateRef = useRef(revealSpeed); // chars per second from model
-    const rateHistoryRef = useRef<number[]>([]); // smoothed rate history
+    const modelRateRef = useRef(revealSpeed); // chars per second from model (EMA smoothed)
+    const fractionalCharsRef = useRef(0); // sub-character accumulation for smooth reveal
 
-    // Update model rate when new text arrives
+    // Update model rate when new text arrives using EMA for smoother tracking
     useEffect(() => {
         const now = performance.now();
         const newChars = text.length - lastTextLengthRef.current;
         const elapsed = now - lastTextTimeRef.current;
 
-        if (newChars > 0 && elapsed > 0) {
+        // Only update rate if meaningful time has passed (avoid divide-by-tiny-number issues)
+        if (newChars > 0 && elapsed > 30) {
             const instantRate = (newChars / elapsed) * 1000; // chars per second
 
-            // Add to history and compute smoothed rate (moving average)
-            rateHistoryRef.current.push(instantRate);
-            if (rateHistoryRef.current.length > 5) {
-                rateHistoryRef.current.shift();
-            }
-            const avgRate = rateHistoryRef.current.reduce((a, b) => a + b, 0) / rateHistoryRef.current.length;
+            // Exponential moving average - 20% weight to new sample
+            // This creates smoother rate transitions than simple averaging
+            const alpha = 0.2;
+            modelRateRef.current = modelRateRef.current * (1 - alpha) + instantRate * alpha;
 
-            // Update model rate with some smoothing
-            modelRateRef.current = Math.max(50, avgRate); // minimum 50 chars/sec
+            // Clamp to reasonable range
+            modelRateRef.current = Math.max(50, Math.min(2000, modelRateRef.current));
         }
 
         lastTextLengthRef.current = text.length;
@@ -79,63 +79,70 @@ function StreamingMessageComponent({
 
     // Keep refs in sync
     targetLengthRef.current = text.length;
+    textRef.current = text;
 
     const animate = useCallback(() => {
         let lastTime = performance.now();
 
         const step = (currentTime: number) => {
             const elapsed = currentTime - lastTime;
-            const behindBy = targetLengthRef.current - displayedLengthRef.current;
+            lastTime = currentTime;
 
-            // Adaptive speed based on model rate and buffer
-            // When close to caught up (small buffer), match model rate
-            // When far behind, speed up to catch up
-            let targetSpeed: number;
+            const buffer = targetLengthRef.current - displayedLengthRef.current;
 
-            if (isComplete) {
-                // Fast finish when streaming is done
-                targetSpeed = revealSpeed * 5;
-            } else if (behindBy < 30) {
-                // Close to caught up - slow down to match model rate
-                // This prevents the "catch up then pause" effect
-                targetSpeed = modelRateRef.current * 0.9; // slightly slower than model
-            } else if (behindBy < 100) {
-                // Small buffer - match model rate
-                targetSpeed = modelRateRef.current;
-            } else if (behindBy < 300) {
-                // Medium buffer - gradually speed up
-                const speedup = 1 + (behindBy - 100) / 100; // 1x to 3x
-                targetSpeed = modelRateRef.current * speedup;
-            } else {
-                // Large buffer - catch up fast
-                targetSpeed = revealSpeed * 10;
+            // Nothing to reveal - keep animation running to catch new chunks
+            if (buffer <= 0) {
+                fractionalCharsRef.current = 0;
+                animationRef.current = requestAnimationFrame(step);
+                return;
             }
 
-            const msPerChar = 1000 / targetSpeed;
+            // Smooth adaptive speed based on buffer size
+            // Key insight: maintain a small buffer intentionally to smooth out arrival jitter
+            let targetRate: number;
 
-            // Chunk size based on buffer
-            const minChunk = behindBy > 200 ? 15 : behindBy > 50 ? 8 : 3;
-            const charsToAdd = Math.max(minChunk, Math.floor(elapsed / msPerChar));
+            if (isComplete) {
+                // Streaming done - finish smoothly but not instant
+                // Use 2x baseline or minimum 500 chars/sec for responsive feel
+                targetRate = Math.max(500, modelRateRef.current * 2);
+            } else if (buffer < 20) {
+                // Nearly caught up - slow down slightly to maintain buffer
+                // This prevents the "catch up then pause" jerkiness
+                targetRate = modelRateRef.current * 0.85;
+            } else if (buffer < 100) {
+                // Healthy buffer - match model rate exactly
+                targetRate = modelRateRef.current;
+            } else if (buffer < 500) {
+                // Buffer growing - gently speed up using continuous curve (1x to 1.5x)
+                // Smoother than discrete steps
+                const t = (buffer - 100) / 400; // 0 to 1
+                targetRate = modelRateRef.current * (1 + t * 0.5);
+            } else {
+                // Large buffer - cap at 2x (not 10x like before)
+                // This prevents jarring "catch up" bursts
+                targetRate = modelRateRef.current * 2;
+            }
 
-            if (elapsed >= msPerChar * minChunk) {
+            // Calculate chars to reveal with fractional accumulation for sub-char precision
+            // This allows smoother reveal even at low rates
+            const charsFloat = (targetRate * elapsed / 1000) + fractionalCharsRef.current;
+            const charsToAdd = Math.floor(charsFloat);
+            fractionalCharsRef.current = charsFloat - charsToAdd;
+
+            if (charsToAdd > 0) {
                 displayedLengthRef.current = Math.min(
                     displayedLengthRef.current + charsToAdd,
                     targetLengthRef.current
                 );
                 setDisplayedLength(displayedLengthRef.current);
-                lastTime = currentTime;
             }
 
-            // Continue if not caught up
-            if (displayedLengthRef.current < targetLengthRef.current) {
-                animationRef.current = requestAnimationFrame(step);
-            } else {
-                animationRef.current = null;
-            }
+            // Continue animation loop
+            animationRef.current = requestAnimationFrame(step);
         };
 
         animationRef.current = requestAnimationFrame(step);
-    }, [revealSpeed, isComplete]);
+    }, [isComplete]);
 
     // Start/continue animation when text grows
     useEffect(() => {
@@ -162,21 +169,51 @@ function StreamingMessageComponent({
         }
     }, [isComplete, text.length, animate]);
 
-    // Throttle markdown updates to every 100ms for performance
+    // Throttle markdown updates for performance using a consistent interval
+    // This avoids the issue where timeout-based throttling gets cancelled on every displayedLength change
+    const throttleIntervalRef = useRef<number | null>(null);
+    const lastThrottledLengthRef = useRef(0);
+
+    // Handle immediate updates when caught up or complete
     useEffect(() => {
-        // Update immediately if caught up or complete
-        if (displayedLength >= text.length || isComplete) {
-            setThrottledText(text.slice(0, displayedLength));
+        if (displayedLength >= targetLengthRef.current || isComplete) {
+            setThrottledText(textRef.current.slice(0, displayedLength));
+            lastThrottledLengthRef.current = displayedLength;
+        }
+    }, [displayedLength, isComplete]);
+
+    // Manage the throttle interval - starts when streaming, stops when caught up
+    const isStreaming = displayedLength < text.length && !isComplete;
+
+    useEffect(() => {
+        if (!isStreaming) {
+            // Not streaming - clear interval
+            if (throttleIntervalRef.current) {
+                clearInterval(throttleIntervalRef.current);
+                throttleIntervalRef.current = null;
+            }
             return;
         }
 
-        // Throttle during active streaming
-        const timer = setTimeout(() => {
-            setThrottledText(text.slice(0, displayedLengthRef.current));
-        }, 100);
+        // Start interval if not already running (~30fps markdown updates)
+        if (!throttleIntervalRef.current) {
+            throttleIntervalRef.current = window.setInterval(() => {
+                const currentLength = displayedLengthRef.current;
+                // Only update if there's new content to show
+                if (currentLength > lastThrottledLengthRef.current) {
+                    setThrottledText(textRef.current.slice(0, currentLength));
+                    lastThrottledLengthRef.current = currentLength;
+                }
+            }, 33);
+        }
 
-        return () => clearTimeout(timer);
-    }, [displayedLength, text.length, isComplete]);
+        return () => {
+            if (throttleIntervalRef.current) {
+                clearInterval(throttleIntervalRef.current);
+                throttleIntervalRef.current = null;
+            }
+        };
+    }, [isStreaming]);
 
     const toast = useToast();
     const formattedTime = useMemo(() =>
