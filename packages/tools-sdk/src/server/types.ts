@@ -1,6 +1,20 @@
+import { Context } from "hono";
 import { InteractionCollection } from "../InteractionCollection.js";
 import { SkillCollection } from "../SkillCollection.js";
 import { ToolCollection } from "../ToolCollection.js";
+import { ToolExecutionPayload } from "../types.js";
+
+/**
+ * Extended context with parsed payload for tool/skill execution
+ */
+export interface ToolContext extends Context {
+    /** The parsed request payload */
+    payload?: ToolExecutionPayload<any>;
+    /** The tool_use.id from the payload */
+    toolUseId?: string;
+    /** The tool_use.tool_name from the payload */
+    toolName?: string;
+}
 
 /**
  * MCP Provider interface for server configuration

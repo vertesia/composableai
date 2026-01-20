@@ -1,14 +1,14 @@
-import { memo, useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Download, Copy, Check, Maximize2, Minimize2, X, Loader2 } from 'lucide-react';
-import { VegaEmbed } from 'react-vega';
-import type { VisualizationSpec } from 'vega-embed';
-import type { View } from 'vega';
-import type { VegaLiteChartSpec } from './AgentChart';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { Check, Copy, Download, Loader2, Maximize2, Minimize2, X } from 'lucide-react';
 import Papa from 'papaparse';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { VegaEmbed } from 'react-vega';
+import type { View } from 'vega';
+import type { TopLevelSpec as VisualizationSpec } from 'vega-lite';
 import { cn } from '../../../core/components/libs/utils';
 import { useUserSession } from '../../../session';
-import { useArtifactUrlCache, getArtifactCacheKey, getFileCacheKey } from './useArtifactUrlCache';
+import type { VegaLiteChartSpec } from './AgentChart';
+import { getArtifactCacheKey, getFileCacheKey, useArtifactUrlCache } from './useArtifactUrlCache';
 
 type VegaLiteChartProps = {
     spec: VegaLiteChartSpec;
@@ -236,6 +236,72 @@ function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, a
     // Clean up empty params array at root
     if (Array.isArray(result.params) && result.params.length === 0) {
         delete result.params;
+    }
+
+    return result;
+}
+
+/**
+ * Apply parameter values to a Vega-Lite spec.
+ * Updates the 'value' field of named params, allowing models to set
+ * initial values for interactive controls (sliders, dropdowns, etc.).
+ * @exported for testing
+ */
+export function applyParameterValues(
+    spec: Record<string, any>,
+    parameterValues: Record<string, any>
+): Record<string, any> {
+    if (!parameterValues || Object.keys(parameterValues).length === 0) {
+        return spec;
+    }
+
+    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
+
+    // Helper to update params in a view
+    const updateParams = (params: any[]) => {
+        for (const param of params) {
+            if (param && typeof param === 'object' && param.name && param.name in parameterValues) {
+                param.value = parameterValues[param.name];
+            }
+        }
+    };
+
+    // Update root-level params
+    if (Array.isArray(result.params)) {
+        updateParams(result.params);
+    }
+
+    // Update params in nested views (vconcat, hconcat, concat)
+    const updateNestedViews = (views: any[]) => {
+        if (!Array.isArray(views)) return;
+        for (const view of views) {
+            if (view && Array.isArray(view.params)) {
+                updateParams(view.params);
+            }
+            // Recursively handle nested concatenations
+            if (view.vconcat) updateNestedViews(view.vconcat);
+            if (view.hconcat) updateNestedViews(view.hconcat);
+            if (view.concat) updateNestedViews(view.concat);
+            // Handle layers
+            if (Array.isArray(view.layer)) {
+                for (const layer of view.layer) {
+                    if (layer && Array.isArray(layer.params)) {
+                        updateParams(layer.params);
+                    }
+                }
+            }
+        }
+    };
+
+    if (result.vconcat) updateNestedViews(result.vconcat);
+    if (result.hconcat) updateNestedViews(result.hconcat);
+    if (result.concat) updateNestedViews(result.concat);
+    if (Array.isArray(result.layer)) {
+        for (const layer of result.layer) {
+            if (layer && Array.isArray(layer.params)) {
+                updateParams(layer.params);
+            }
+        }
     }
 
     return result;
@@ -658,10 +724,16 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         if (hasArtifactReferences && !resolvedSpec) {
             return null;
         }
-        const specToUse = resolvedSpec || vegaSpec;
+        let specToUse = resolvedSpec || vegaSpec;
         if (!specToUse) return null;
+
+        // Apply parameter values if provided (allows model to set initial slider/dropdown values)
+        if (options?.parameterValues) {
+            specToUse = applyParameterValues(specToUse, options.parameterValues);
+        }
+
         return fixVegaLiteSelectionParams(specToUse);
-    }, [resolvedSpec, vegaSpec, hasArtifactReferences]);
+    }, [resolvedSpec, vegaSpec, hasArtifactReferences, options?.parameterValues]);
 
     // Scale widths in concatenated views to fit container
     const scaleSpecWidths = useCallback((spec: any, availableWidth: number): any => {
@@ -742,7 +814,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         const { width: _specWidth, ...specWithoutWidth } = scaledSpec as any;
 
         return {
-            $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+            $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
             ...(!isConcatenatedView && width ? { width } : {}),
             height: forFullscreen ? undefined : height,
             autosize,
@@ -806,8 +878,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
     const handleError = useCallback((err: unknown) => {
         console.error('Vega-Lite rendering error:', err);
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message || 'Unknown error');
+        setError(err instanceof Error ? err.message : 'Unknown error');
     }, []);
 
     const toggleFullscreen = useCallback(() => {

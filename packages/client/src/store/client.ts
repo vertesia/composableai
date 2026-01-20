@@ -2,6 +2,7 @@ import { AbstractFetchClient, RequestError } from "@vertesia/api-fetch-client";
 import { BulkOperationPayload, BulkOperationResult } from "@vertesia/common";
 import { CollectionsApi } from "./CollectionsApi.js";
 import { CommandsApi } from "./CommandsApi.js";
+import { DataApi } from "./DataApi.js";
 import { EmailApi } from "./EmailApi.js";
 import { EmbeddingsApi } from "./EmbeddingsApi.js";
 import { ZenoClientNotFoundError } from "./errors.js";
@@ -9,8 +10,8 @@ import { FilesApi } from "./FilesApi.js";
 import { ObjectsApi } from "./ObjectsApi.js";
 import { PendingAsksApi } from "./PendingAsksApi.js";
 import { SchedulesApi } from "./SchedulesApi.js";
-import { TypesApi } from "./TypesApi.js";
 import { ToolsApi } from "./ToolsApi.js";
+import { TypesApi } from "./TypesApi.js";
 import { VERSION, VERSION_HEADER } from "./version.js";
 import { WorkersApi } from "./WorkersApi.js";
 import { WorkflowsApi } from "./WorkflowsApi.js";
@@ -89,5 +90,6 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     embeddings = new EmbeddingsApi(this);
     email = new EmailApi(this);
     pendingAsks = new PendingAsksApi(this);
+    data = new DataApi(this);
     tools = new ToolsApi(this);
 }
