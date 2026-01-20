@@ -122,6 +122,9 @@ interface ModernAgentConversationProps {
     onAttachmentsSent?: () => void;
     // Whether files are currently being uploaded - disables send/start buttons
     isUploading?: boolean;
+    // Callback to get additional context metadata to include in every message
+    // Returns object with context like { fundId, fundName } to include in signal metadata
+    getMessageContext?: () => Record<string, unknown> | undefined;
 
     // Styling props for Tailwind customization - passed through to MessageInput
     /** Additional className for the MessageInput container */
@@ -554,6 +557,8 @@ function ModernAgentConversationInner({
     onAttachmentsSent,
     // Upload state
     isUploading = false,
+    // Context callback
+    getMessageContext,
     // Styling props
     inputContainerClassName,
     inputClassName,
@@ -991,6 +996,9 @@ function ModernAgentConversationInner({
         // Get attached document IDs if callback provided
         const attachedDocs = getAttachedDocs?.() || [];
 
+        // Get additional context metadata if callback provided (e.g., fundId)
+        const contextMetadata = getMessageContext?.() || {};
+
         // Build message content with attachment references if present
         let messageContent = trimmed;
         if (attachedDocs.length > 0 && !/store:\S+/.test(trimmed)) {
@@ -998,10 +1006,16 @@ function ModernAgentConversationInner({
             messageContent = [trimmed, '', 'Attachments:', ...lines].join('\n');
         }
 
+        // Build metadata combining attached docs and context
+        const metadata = {
+            ...(attachedDocs.length > 0 ? { attached_docs: attachedDocs } : {}),
+            ...contextMetadata,
+        };
+
         client.store.workflows
             .sendSignal(run.workflowId, run.runId, "UserInput", {
                 message: messageContent,
-                metadata: attachedDocs.length > 0 ? { attached_docs: attachedDocs } : undefined,
+                metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
             } as UserInputSignal)
             .then(() => {
                 setIsCompleted(false);

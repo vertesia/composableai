@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, VTooltip } from "@vertesia/ui/core";
+import { Button } from "@vertesia/ui/core";
 import { MessageSquare, CheckCircle, XCircle, AlertCircle, HelpCircle, Send } from "lucide-react";
 
 /** Option for user to select */
@@ -204,38 +204,36 @@ export function AskUserWidget({
                         {multiSelect ? (
                             /* Multi-select mode with checkboxes */
                             <div className="space-y-2">
-                                {options.map((option) => {
-                                    const checkbox = (
-                                        <label
-                                            className={`flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors
-                                                ${selectedOptions.has(option.id)
-                                                    ? "bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700"
-                                                    : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-                                                }
-                                                ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedOptions.has(option.id)}
-                                                onChange={() => toggleOption(option.id)}
-                                                disabled={isLoading}
-                                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-                                            />
-                                            <span className="flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100">
+                                {options.map((option) => (
+                                    <label
+                                        key={option.id}
+                                        className={`flex items-start gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors
+                                            ${selectedOptions.has(option.id)
+                                                ? "bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700"
+                                                : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            }
+                                            ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedOptions.has(option.id)}
+                                            onChange={() => toggleOption(option.id)}
+                                            disabled={isLoading}
+                                            className="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100">
                                                 {option.icon}
                                                 {option.label}
-                                            </span>
-                                        </label>
-                                    );
-
-                                    return option.description ? (
-                                        <VTooltip key={option.id} description={option.description} placement="right" asChild>
-                                            {checkbox}
-                                        </VTooltip>
-                                    ) : (
-                                        <React.Fragment key={option.id}>{checkbox}</React.Fragment>
-                                    );
-                                })}
+                                            </div>
+                                            {option.description && (
+                                                <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                    {option.description}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </label>
+                                ))}
                                 <div className="pt-2">
                                     <Button
                                         size="sm"
@@ -249,11 +247,47 @@ export function AskUserWidget({
                                 </div>
                             </div>
                         ) : (
-                            /* Single-select mode with buttons */
-                            <div className="flex flex-wrap gap-2">
-                                {options.map((option) => {
-                                    const button = (
+                            /* Single-select mode - use cards when any option has a description, otherwise buttons */
+                            options.some(opt => opt.description) ? (
+                                <div className="space-y-2">
+                                    {options.map((option) => (
+                                        <button
+                                            key={option.id}
+                                            onClick={() => onSelect?.(option.id)}
+                                            disabled={isLoading}
+                                            className={`w-full text-left px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700
+                                                bg-white dark:bg-gray-800
+                                                hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600
+                                                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+                                                transition-colors
+                                                ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                                                ${buttonClassName || ""}`}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                {option.icon && (
+                                                    <span className="flex-shrink-0 mt-0.5 text-gray-500 dark:text-gray-400">
+                                                        {option.icon}
+                                                    </span>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                                                        {option.label}
+                                                    </div>
+                                                    {option.description && (
+                                                        <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                            {option.description}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    {options.map((option) => (
                                         <Button
+                                            key={option.id}
                                             variant="outline"
                                             size="sm"
                                             onClick={() => onSelect?.(option.id)}
@@ -263,17 +297,9 @@ export function AskUserWidget({
                                             {option.icon}
                                             {option.label}
                                         </Button>
-                                    );
-
-                                    return option.description ? (
-                                        <VTooltip key={option.id} description={option.description} placement="top" asChild>
-                                            {button}
-                                        </VTooltip>
-                                    ) : (
-                                        <React.Fragment key={option.id}>{button}</React.Fragment>
-                                    );
-                                })}
-                            </div>
+                                    ))}
+                                </div>
+                            )
                         )}
                     </div>
                 )}
