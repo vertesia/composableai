@@ -123,7 +123,7 @@ export function MarkdownRenderer({
                 }
             }
 
-            if (!isInline && (language === "chart" || className?.includes("language-chart"))) {
+            if (!isInline && (language === "chart" || language === "vega-lite" || className?.includes("language-chart"))) {
                 try {
                     let raw = String(children || "").trim();
                     // Extract just the JSON object - handle cases where extra content is appended
