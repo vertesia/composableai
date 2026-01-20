@@ -173,20 +173,15 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
                         ) : (
                             <span className="text-xs text-muted italic">Tool: {toolName}</span>
                         )}
-                        {/* Secondary: Tool name badge */}
-                        {messageContent && !isExpanded && (
-                            <div className="mt-1">
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                                    {toolName}
-                                </span>
-                            </div>
-                        )}
                     </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs text-muted">
-                        {dayjs(message.timestamp).format("HH:mm:ss")}
-                    </span>
+                    {/* Tool name badge on the right */}
+                    {!isExpanded && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                            {toolName}
+                        </span>
+                    )}
                     <Button
                         variant="ghost"
                         size="xs"
@@ -509,18 +504,13 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                                         ) : (
                                             <span className="text-muted italic">Tool: {toolName}</span>
                                         )}
-                                        {/* Secondary: Tool name badge (only if message exists) */}
-                                        {fullMessage && !isItemExpanded && (
-                                            <div className="mt-1">
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                                                    {toolName}
-                                                </span>
-                                            </div>
-                                        )}
                                     </div>
-                                    <span className="text-[11px] text-muted/70 flex-shrink-0">
-                                        {dayjs(m.timestamp).format("HH:mm:ss")}
-                                    </span>
+                                    {/* Tool name badge on the right */}
+                                    {!isItemExpanded && (
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground flex-shrink-0">
+                                            {toolName}
+                                        </span>
+                                    )}
                                 </div>
                                 {/* Always show images inline with resolved URLs */}
                                 <CollapsedItemFiles files={files} artifactRunId={artifactRunId} />
