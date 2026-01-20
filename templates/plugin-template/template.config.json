@@ -12,7 +12,7 @@
       "type": "text",
       "name": "PROJECT_DESCRIPTION",
       "message": "Project description",
-      "initial": "A custom UI plugin for Vertesia"
+      "initial": "My vertesia plugin"
     },
     {
       "type": "select",
@@ -41,13 +41,17 @@
     "PluginComponentName": {
       "from": "PROJECT_NAME",
       "transform": "pascalCase"
+    },
+    "SERVER_TITLE": {
+      "from": "PROJECT_NAME",
+      "transform": "titleCase"
     }
   },
   "files": [
     "vite.config.ts",
     "index.html",
-    "src/env.ts",
-    "src/plugin.tsx"
+    "src/ui/env.ts",
+    "src/ui/plugin.tsx"
   ],
   "removeAfterInstall": [
     "template.config.json"
