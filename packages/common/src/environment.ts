@@ -115,7 +115,15 @@ export interface ExecutionEnvironmentCreatePayload extends Omit<ExecutionEnviron
 export interface ExecutionEnvironmentUpdatePayload extends Partial<Omit<ExecutionEnvironment, 'id' | 'account' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>> { }
 
 export interface MigrateEnvironmentInteractionModelsPayload {
-    model_id: string;
+    /**
+     * The new model ID to set in the Interactions
+     */
+    new_model_id: string;
+    /**
+     * The list of Interaction IDs to update.
+     *
+     * The Interactions must be in draft status.
+     */
     interaction_ids: string[];
 }
 

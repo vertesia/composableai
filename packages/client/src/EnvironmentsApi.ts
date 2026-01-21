@@ -80,12 +80,11 @@ export default class EnvironmentsApi extends ApiTopic {
      * Batch update the LLM model ID for multiple interactions.
      * Only updates interactions that are in draft status and belong to the specified environment.
      *
-     * @param envId - The environment ID
      * @param payload - The migration payload containing modelId and interactionIds
      * @returns The count of matched and modified interactions
      */
-    migrateInteractionsModel(envId: string, payload: MigrateEnvironmentInteractionModelsPayload): Promise<MigrateEnvironmentInteractionModelsResult> {
-        return this.post(`/${envId}/models/migrate-interactions`, {
+    migrateInteractionsModel(payload: MigrateEnvironmentInteractionModelsPayload): Promise<MigrateEnvironmentInteractionModelsResult> {
+        return this.post(`/migrate-interactions-model`, {
             payload
         });
     }
