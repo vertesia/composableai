@@ -114,7 +114,7 @@ export const ExecutionEnvironmentRefPopulate = "id name provider enabled_models 
 export interface ExecutionEnvironmentCreatePayload extends Omit<ExecutionEnvironment, 'id' | 'account' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'project'> { }
 export interface ExecutionEnvironmentUpdatePayload extends Partial<Omit<ExecutionEnvironment, 'id' | 'account' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>> { }
 
-export interface MigrateEnvironmentInteractionModelsPayload {
+export interface MigrateInteractionsPayload {
     /**
      * The new environment ID to set in the Interactions
      */
@@ -131,7 +131,7 @@ export interface MigrateEnvironmentInteractionModelsPayload {
     interaction_ids: string[];
 }
 
-export interface MigrateEnvironmentInteractionModelsResult {
+export interface MigrateInteractionsResult {
     matched_count: number;
     modified_count: number;
 }
