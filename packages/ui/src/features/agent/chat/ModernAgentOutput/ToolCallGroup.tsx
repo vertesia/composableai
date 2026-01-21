@@ -69,15 +69,22 @@ function FileDisplay({ files }: { files: string[] }) {
     );
 }
 
+// Helper to get files from tool details (checks both files and outputFiles)
+const getFilesFromDetails = (details: { files?: string[]; outputFiles?: string[]; [key: string]: unknown } | undefined): string[] | undefined => {
+    if (!details) return undefined;
+    const files = details.files ?? details.outputFiles;
+    return Array.isArray(files) ? files : undefined;
+};
+
 function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCallItemProps) {
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const toast = useToast();
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
 
-    const details = message.details as { tool?: string; files?: string[]; [key: string]: unknown } | undefined;
+    const details = message.details as { tool?: string; files?: string[]; outputFiles?: string[]; [key: string]: unknown } | undefined;
     const toolName = details?.tool || "Tool";
-    const files = details?.files as string[] | undefined;
+    const files = getFilesFromDetails(details);
     const messageContent = typeof message.message === "string" ? message.message : "";
 
     // Resolve artifact paths to signed URLs
@@ -240,7 +247,8 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
     );
 }
 
-// Component for resolving and displaying files from a collapsed tool message
+// Component for resolving and displaying non-image files from a collapsed tool message
+// Note: Images are shown at the group level by GroupImageDisplay, so this only shows other files
 function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefined; artifactRunId?: string }) {
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const { client } = useUserSession();
@@ -257,26 +265,28 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
             const resolved = await Promise.all(
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
+
+                    // Skip image files - they're shown at the group level
+                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
+                    if (imageExtensions.has(ext)) return null;
+
                     if (file.startsWith("http://") || file.startsWith("https://")) {
                         return file;
                     }
                     const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
                         ? file
                         : `out/${file}`;
-                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
-                    const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
-                    const isImage = imageExtensions.has(ext);
-                    const disposition = isImage ? "inline" : "attachment";
 
                     try {
-                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, disposition);
+                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "attachment");
                         if (urlCache) {
                             return await urlCache.getOrFetch(cacheKey, async () => {
-                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
                                 return result.url;
                             });
                         } else {
-                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
                             return result.url;
                         }
                     } catch (err) {
@@ -293,22 +303,96 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
         return () => { cancelled = true; };
     }, [files, artifactRunId, client, urlCache]);
 
-    const imageFiles = resolvedFiles.filter(f => isImageUrl(f));
-    const nonImageFiles = resolvedFiles.filter(f => !isImageUrl(f));
+    // Only show non-image files (images are shown at group level)
+    if (resolvedFiles.length === 0) return null;
 
     return (
-        <>
-            {imageFiles.length > 0 && (
-                <div className="pl-5 pr-3 pb-2">
-                    <FileDisplay files={imageFiles} />
-                </div>
-            )}
-            {nonImageFiles.length > 0 && (
-                <div className="pl-5 pr-3 pb-2">
-                    <FileDisplay files={nonImageFiles} />
-                </div>
-            )}
-        </>
+        <div className="pl-5 pr-3 pb-2">
+            <FileDisplay files={resolvedFiles} />
+        </div>
+    );
+}
+
+// Component to show all images from a group of tool calls prominently at the top
+function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage[]; artifactRunId?: string }) {
+    const [resolvedImages, setResolvedImages] = useState<string[]>([]);
+    const { client } = useUserSession();
+    const urlCache = useArtifactUrlCache();
+
+    // Collect all files from all messages in the group
+    useEffect(() => {
+        if (!artifactRunId) {
+            setResolvedImages([]);
+            return;
+        }
+
+        // Collect all files from all messages
+        const allFiles: string[] = [];
+        for (const m of messages) {
+            const details = m.details as { files?: string[]; outputFiles?: string[] } | undefined;
+            const files = getFilesFromDetails(details);
+            if (files) {
+                allFiles.push(...files);
+            }
+        }
+
+        if (allFiles.length === 0) {
+            setResolvedImages([]);
+            return;
+        }
+
+        let cancelled = false;
+        const resolveFiles = async () => {
+            const resolved = await Promise.all(
+                allFiles.map(async (file) => {
+                    if (!file || typeof file !== "string") return null;
+
+                    // Check if it's an image file
+                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
+                    if (!imageExtensions.has(ext)) return null;
+
+                    // If it's already a full URL, return as-is
+                    if (file.startsWith("http://") || file.startsWith("https://")) {
+                        return file;
+                    }
+
+                    // Resolve artifact path to signed URL
+                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
+                        ? file
+                        : `out/${file}`;
+
+                    try {
+                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "inline");
+                        if (urlCache) {
+                            return await urlCache.getOrFetch(cacheKey, async () => {
+                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "inline");
+                                return result.url;
+                            });
+                        } else {
+                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "inline");
+                            return result.url;
+                        }
+                    } catch (err) {
+                        console.error(`Failed to resolve artifact URL for ${artifactPath}`, err);
+                        return null;
+                    }
+                })
+            );
+            if (!cancelled) {
+                setResolvedImages(resolved.filter((f): f is string => !!f));
+            }
+        };
+        resolveFiles();
+        return () => { cancelled = true; };
+    }, [messages, artifactRunId, client, urlCache]);
+
+    if (resolvedImages.length === 0) return null;
+
+    return (
+        <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+            <FileDisplay files={resolvedImages} />
+        </div>
     );
 }
 
@@ -458,16 +542,19 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                 </div>
             </div>
 
+            {/* Show all images from the group prominently at the top */}
+            <GroupImageDisplay messages={messages} artifactRunId={artifactRunId} />
+
             {/* Collapsed summary - show tool calls as single-line rows with expand option */}
             {isCollapsed && (
                 <div className="px-4 py-1 space-y-0">
                     {messages.map((m, idx) => {
-                        const details = m.details as { tool?: string; files?: string[] } | undefined;
+                        const details = m.details as { tool?: string; files?: string[]; outputFiles?: string[] } | undefined;
                         const toolName = details?.tool || "tool";
                         const fullMessage = typeof m.message === "string" ? m.message : "";
                         const isAnimating = animatingIndices.has(idx);
                         const isItemExpanded = expandedItems.has(idx);
-                        const files = details?.files as string[] | undefined;
+                        const files = getFilesFromDetails(details);
 
                         return (
                             <div
