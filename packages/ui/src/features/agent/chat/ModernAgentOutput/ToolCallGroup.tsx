@@ -313,30 +313,25 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
     );
 }
 
-// Component to show all images from a group of tool calls prominently at the top
+// Component to show images from the most recent tool call prominently at the top
 function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage[]; artifactRunId?: string }) {
     const [resolvedImages, setResolvedImages] = useState<string[]>([]);
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
 
-    // Collect all files from all messages in the group
+    // Only show files from the last (most recent) message in the group
     useEffect(() => {
-        if (!artifactRunId) {
+        if (!artifactRunId || messages.length === 0) {
             setResolvedImages([]);
             return;
         }
 
-        // Collect all files from all messages
-        const allFiles: string[] = [];
-        for (const m of messages) {
-            const details = m.details as { files?: string[]; outputFiles?: string[] } | undefined;
-            const files = getFilesFromDetails(details);
-            if (files) {
-                allFiles.push(...files);
-            }
-        }
+        // Get files from only the last message (most recent tool output)
+        const lastMessage = messages[messages.length - 1];
+        const details = lastMessage.details as { files?: string[]; outputFiles?: string[] } | undefined;
+        const files = getFilesFromDetails(details);
 
-        if (allFiles.length === 0) {
+        if (!files || files.length === 0) {
             setResolvedImages([]);
             return;
         }
@@ -344,7 +339,7 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
         let cancelled = false;
         const resolveFiles = async () => {
             const resolved = await Promise.all(
-                allFiles.map(async (file) => {
+                files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
 
                     // Check if it's an image file
