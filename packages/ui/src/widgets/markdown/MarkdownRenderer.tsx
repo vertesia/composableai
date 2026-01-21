@@ -1,9 +1,14 @@
+import { useUserSession } from "@vertesia/ui/session";
+import { useCodeBlockRendererRegistry } from "./CodeBlockRendering";
+import type { Element } from "hast";
 import React from "react";
 import Markdown, { defaultUrlTransform } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { visit, SKIP } from "unist-util-visit";
+import { SKIP, visit } from "unist-util-visit";
 import { AgentChart, type AgentChartSpec } from "../../features/agent/chat/AgentChart";
-import { useUserSession } from "@vertesia/ui/session";
+import { AskUserWidget, type AskUserWidgetProps } from "../../features/agent/chat/AskUserWidget";
+import { useArtifactUrlCache, getArtifactCacheKey, getFileCacheKey } from "../../features/agent/chat/useArtifactUrlCache.js";
+import { MermaidDiagram } from "./MermaidDiagram";
 
 // Custom URL schemes that we handle in our components
 const ALLOWED_CUSTOM_SCHEMES = [
@@ -41,7 +46,7 @@ function remarkRemoveComments() {
     };
 }
 
-interface MarkdownRendererProps {
+export interface MarkdownRendererProps {
     children: string;
     components?: any;
     remarkPlugins?: any[];
@@ -50,18 +55,41 @@ interface MarkdownRendererProps {
      * Optional workflow run id used to resolve shorthand artifact paths (e.g. artifact:out/result.csv)
      */
     artifactRunId?: string;
+    /** Additional className for the markdown wrapper */
+    className?: string;
+    /** Additional className for code blocks */
+    codeClassName?: string;
+    /** Additional className for inline code */
+    inlineCodeClassName?: string;
+    /** Additional className for links */
+    linkClassName?: string;
+    /** Additional className for images */
+    imageClassName?: string;
+    /** Callback when user selects a proposal option */
+    onProposalSelect?: (optionId: string) => void;
+    /** Callback when user submits free-form response to proposal */
+    onProposalSubmit?: (response: string) => void;
 }
 
-export function MarkdownRenderer({ 
-    children, 
-    components, 
-    remarkPlugins = [], 
+export function MarkdownRenderer({
+    children,
+    components,
+    remarkPlugins = [],
     removeComments = true,
     artifactRunId,
+    className,
+    codeClassName,
+    inlineCodeClassName,
+    linkClassName,
+    imageClassName,
+    onProposalSelect,
+    onProposalSubmit,
 }: MarkdownRendererProps) {
     const { client } = useUserSession();
+    const urlCache = useArtifactUrlCache();
+    const codeBlockRegistry = useCodeBlockRendererRegistry();
     const plugins = [remarkGfm, ...remarkPlugins];
-    
+
     if (removeComments) {
         plugins.push(remarkRemoveComments);
     }
@@ -78,23 +106,94 @@ export function MarkdownRenderer({
             children,
             ...props
         }: {
-            node?: any;
+            node?: Element;
             className?: string;
             children?: React.ReactNode;
         }) => {
-            const match = /language-(\w+)/.exec(className || "");
+            const match = /language-([\w-]+)/.exec(className || "");
             const isInline = !match;
             const language = match ? match[1] : "";
 
+            // Check if there's a custom renderer for this language
+            if (!isInline && language && codeBlockRegistry) {
+                const CustomComponent = codeBlockRegistry.getComponent(language);
+                if (CustomComponent) {
+                    const code = String(children || "").trim();
+                    return <CustomComponent code={code} />;
+                }
+            }
+
             if (!isInline && (language === "chart" || className?.includes("language-chart"))) {
                 try {
-                    const raw = String(children || "").trim();
-                    const spec = JSON.parse(raw) as AgentChartSpec;
-                    if (spec && spec.chart && Array.isArray(spec.data)) {
-                        return <AgentChart spec={spec} />;
+                    let raw = String(children || "").trim();
+                    // Extract just the JSON object - handle cases where extra content is appended
+                    const jsonStart = raw.indexOf('{');
+                    const jsonEnd = raw.lastIndexOf('}');
+                    if (jsonStart !== -1 && jsonEnd > jsonStart) {
+                        raw = raw.slice(jsonStart, jsonEnd + 1);
+                    }
+                    const spec = JSON.parse(raw) as Record<string, unknown>;
+                    // Support Vega-Lite, Recharts, and native Vega-Lite JSON with $schema
+                    if (spec) {
+                        // Detect Vega-Lite by $schema containing "vega"
+                        const hasVegaSchema = typeof spec.$schema === 'string' && spec.$schema.includes('vega');
+                        const isVegaLite = spec.library === 'vega-lite' && 'spec' in spec;
+                        // Recharts: check for 'chart' property OR library === 'recharts' with data
+                        const isRecharts = (
+                            ('chart' in spec || 'type' in spec || spec.library === 'recharts') &&
+                            'data' in spec &&
+                            Array.isArray(spec.data)
+                        );
+                        if (hasVegaSchema || isVegaLite || isRecharts) {
+                            // Wrap native Vega-Lite spec in expected format
+                            const chartSpec = hasVegaSchema && !isVegaLite
+                                ? { library: 'vega-lite', spec }
+                                : spec;
+                            return <AgentChart spec={chartSpec as AgentChartSpec} artifactRunId={artifactRunId} />;
+                        }
                     }
                 } catch (e) {
-                    console.warn("Failed to parse chart spec:", e);
+                    // Not valid JSON or not a chart - fall through to regular code rendering
+                }
+            }
+
+            // Detect proposal/askuser blocks
+            if (!isInline && (language === "proposal" || language === "askuser")) {
+                try {
+                    const raw = String(children || "").trim();
+                    const spec = JSON.parse(raw);
+
+                    if (spec.options && (spec.question || spec.title)) {
+                        const widgetProps: AskUserWidgetProps = {
+                            question: spec.question || spec.title || '',
+                            description: spec.description,
+                            options: Array.isArray(spec.options)
+                                ? spec.options.map((opt: any) => ({
+                                    id: opt.id || opt.value || '',
+                                    label: opt.label || '',
+                                    description: opt.description,
+                                }))
+                                : undefined,
+                            allowFreeResponse: spec.allowFreeResponse ?? spec.multiple,
+                            variant: spec.variant,
+                            onSelect: onProposalSelect,
+                            onSubmit: onProposalSubmit,
+                        };
+
+                        if (widgetProps.question && widgetProps.options && widgetProps.options.length > 0) {
+                            return <AskUserWidget {...widgetProps} />;
+                        }
+                    }
+                } catch (e) {
+                    // Not valid JSON or not a proposal - fall through to regular code rendering
+                }
+            }
+
+            // Detect mermaid diagram blocks
+            if (!isInline && (language === "mermaid" || className?.includes("language-mermaid"))) {
+                const code = String(children || "").trim();
+                if (code) {
+                    return <MermaidDiagram code={code} />;
                 }
             }
 
@@ -102,13 +201,16 @@ export function MarkdownRenderer({
                 return <ExistingCode node={node} className={className} {...props}>{children}</ExistingCode>;
             }
 
+            const baseInlineClass = "px-1.5 py-0.5 rounded";
+            const baseCodeClass = "text-muted";
+
             return (
                 <code
                     {...props}
                     className={
                         isInline
-                            ? "px-1.5 py-0.5 rounded"
-                            : "text-muted"
+                            ? `${baseInlineClass} ${inlineCodeClassName || ""}`
+                            : `${baseCodeClass} ${codeClassName || ""}`
                     }
                 >
                     {children}
@@ -116,16 +218,31 @@ export function MarkdownRenderer({
             );
         };
 
-        const LinkComponent = (props: { node?: any; href?: string; children?: React.ReactNode }) => {
+        const LinkComponent = (props: { node?: Element; href?: string; children?: React.ReactNode }) => {
             const { node, href, children, ...rest } = props as any;
             const rawHref = href || "";
             const isArtifactLink = rawHref.startsWith("artifact:");
             const artifactPath = isArtifactLink ? rawHref.replace(/^artifact:/, "").trim() : "";
             const isImageLink = rawHref.startsWith("image:");
             const imagePath = isImageLink ? rawHref.replace(/^image:/, "").trim() : "";
-            const [resolvedHref, setResolvedHref] = React.useState<string | undefined>(undefined);
+            const [resolvedHref, setResolvedHref] = React.useState<string | undefined>(() => {
+                // Initialize from cache if available
+                if (urlCache) {
+                    if (isArtifactLink && artifactRunId && !artifactPath.startsWith("agents/")) {
+                        return urlCache.getUrl(getArtifactCacheKey(artifactRunId, artifactPath, "attachment"));
+                    } else if (isArtifactLink) {
+                        return urlCache.getUrl(getFileCacheKey(artifactPath));
+                    } else if (isImageLink) {
+                        return urlCache.getUrl(getFileCacheKey(imagePath));
+                    }
+                }
+                return undefined;
+            });
 
             React.useEffect(() => {
+                // Skip if already resolved from cache
+                if (resolvedHref) return;
+
                 let cancelled = false;
                 const resolve = async () => {
                     if (!isArtifactLink && !isImageLink) {
@@ -136,24 +253,50 @@ export function MarkdownRenderer({
                         if (isArtifactLink) {
                             // If we have a run id and the path looks like a shorthand (e.g. out/...), use artifact API.
                             if (artifactRunId && !artifactPath.startsWith("agents/")) {
-                                const { url } = await client.files.getArtifactDownloadUrl(
-                                    artifactRunId,
-                                    artifactPath,
-                                    "attachment",
-                                );
+                                const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "attachment");
+                                let url: string;
+                                if (urlCache) {
+                                    url = await urlCache.getOrFetch(cacheKey, async () => {
+                                        const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
+                                        return result.url;
+                                    });
+                                } else {
+                                    const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
+                                    url = result.url;
+                                }
                                 if (!cancelled) {
                                     setResolvedHref(url);
                                 }
                             } else {
                                 // Otherwise, treat it as a direct file path.
-                                const { url } = await client.files.getDownloadUrl(artifactPath);
+                                const cacheKey = getFileCacheKey(artifactPath);
+                                let url: string;
+                                if (urlCache) {
+                                    url = await urlCache.getOrFetch(cacheKey, async () => {
+                                        const result = await client.files.getDownloadUrl(artifactPath);
+                                        return result.url;
+                                    });
+                                } else {
+                                    const result = await client.files.getDownloadUrl(artifactPath);
+                                    url = result.url;
+                                }
                                 if (!cancelled) {
                                     setResolvedHref(url);
                                 }
                             }
                         } else if (isImageLink) {
                             // image:<path> is treated as a direct file path resolved via files API
-                            const { url } = await client.files.getDownloadUrl(imagePath);
+                            const cacheKey = getFileCacheKey(imagePath);
+                            let url: string;
+                            if (urlCache) {
+                                url = await urlCache.getOrFetch(cacheKey, async () => {
+                                    const result = await client.files.getDownloadUrl(imagePath);
+                                    return result.url;
+                                });
+                            } else {
+                                const result = await client.files.getDownloadUrl(imagePath);
+                                url = result.url;
+                            }
                             if (!cancelled) {
                                 setResolvedHref(url);
                             }
@@ -170,7 +313,7 @@ export function MarkdownRenderer({
                 return () => {
                     cancelled = true;
                 };
-            }, [isArtifactLink, artifactPath, isImageLink, imagePath, artifactRunId, client]);
+            }, [isArtifactLink, artifactPath, isImageLink, imagePath, artifactRunId, client, resolvedHref, urlCache]);
 
             // Handle document://<id> links by mapping them to /store/objects/<id>
             if (rawHref.startsWith("document://")) {
@@ -185,6 +328,7 @@ export function MarkdownRenderer({
                     <a
                         href={mappedHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -206,6 +350,7 @@ export function MarkdownRenderer({
                     <a
                         href={mappedHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -227,6 +372,7 @@ export function MarkdownRenderer({
                     <a
                         href={mappedHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -248,6 +394,7 @@ export function MarkdownRenderer({
                     <a
                         href={finalHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -264,6 +411,7 @@ export function MarkdownRenderer({
                     <a
                         href={finalHref}
                         {...rest}
+                        className={linkClassName}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -277,6 +425,7 @@ export function MarkdownRenderer({
                 <a
                     href={href}
                     {...rest}
+                    className={linkClassName}
                     target="_blank"
                     rel="noopener noreferrer"
                 >
@@ -292,9 +441,24 @@ export function MarkdownRenderer({
             const isImageRef = rawSrc.startsWith("image:");
             const isArtifactOrImageRef = isArtifactRef || isImageRef;
             const path = isArtifactOrImageRef ? rawSrc.replace(/^artifact:/, "").replace(/^image:/, "").trim() : "";
-            const [resolvedSrc, setResolvedSrc] = React.useState<string | undefined>(undefined);
+            const [resolvedSrc, setResolvedSrc] = React.useState<string | undefined>(() => {
+                // Initialize from cache if available
+                if (urlCache && isArtifactOrImageRef) {
+                    if (isArtifactRef && artifactRunId && !path.startsWith("agents/")) {
+                        return urlCache.getUrl(getArtifactCacheKey(artifactRunId, path, "inline"));
+                    } else if (isArtifactRef) {
+                        return urlCache.getUrl(getFileCacheKey(path));
+                    } else if (isImageRef) {
+                        return urlCache.getUrl(getFileCacheKey(path));
+                    }
+                }
+                return undefined;
+            });
 
             React.useEffect(() => {
+                // Skip if already resolved from cache
+                if (resolvedSrc) return;
+
                 let cancelled = false;
                 const resolve = async () => {
                     if (!isArtifactOrImageRef) {
@@ -305,23 +469,49 @@ export function MarkdownRenderer({
                         if (isArtifactRef) {
                             // Allow shorthand artifact paths when we have a run id
                             if (artifactRunId && !path.startsWith("agents/")) {
-                                const { url } = await client.files.getArtifactDownloadUrl(
-                                    artifactRunId,
-                                    path,
-                                    "inline",
-                                );
+                                const cacheKey = getArtifactCacheKey(artifactRunId, path, "inline");
+                                let url: string;
+                                if (urlCache) {
+                                    url = await urlCache.getOrFetch(cacheKey, async () => {
+                                        const result = await client.files.getArtifactDownloadUrl(artifactRunId, path, "inline");
+                                        return result.url;
+                                    });
+                                } else {
+                                    const result = await client.files.getArtifactDownloadUrl(artifactRunId, path, "inline");
+                                    url = result.url;
+                                }
                                 if (!cancelled) {
                                     setResolvedSrc(url);
                                 }
                             } else {
-                                const { url } = await client.files.getDownloadUrl(path);
+                                const cacheKey = getFileCacheKey(path);
+                                let url: string;
+                                if (urlCache) {
+                                    url = await urlCache.getOrFetch(cacheKey, async () => {
+                                        const result = await client.files.getDownloadUrl(path);
+                                        return result.url;
+                                    });
+                                } else {
+                                    const result = await client.files.getDownloadUrl(path);
+                                    url = result.url;
+                                }
                                 if (!cancelled) {
                                     setResolvedSrc(url);
                                 }
                             }
                         } else if (isImageRef) {
                             // image:<path> is always resolved via files API
-                            const { url } = await client.files.getDownloadUrl(path);
+                            const cacheKey = getFileCacheKey(path);
+                            let url: string;
+                            if (urlCache) {
+                                url = await urlCache.getOrFetch(cacheKey, async () => {
+                                    const result = await client.files.getDownloadUrl(path);
+                                    return result.url;
+                                });
+                            } else {
+                                const result = await client.files.getDownloadUrl(path);
+                                url = result.url;
+                            }
                             if (!cancelled) {
                                 setResolvedSrc(url);
                             }
@@ -337,7 +527,7 @@ export function MarkdownRenderer({
                 return () => {
                     cancelled = true;
                 };
-            }, [isArtifactOrImageRef, path, artifactRunId, client]);
+            }, [isArtifactOrImageRef, path, artifactRunId, client, resolvedSrc, urlCache]);
 
             // If a custom img component was passed and this is not an artifact:/image: URL, delegate.
             if (!isArtifactOrImageRef && typeof ExistingImg === "function") {
@@ -354,6 +544,7 @@ export function MarkdownRenderer({
                     <img
                         src={resolvedSrc}
                         alt={alt}
+                        className={imageClassName}
                         {...rest}
                     />
                 );
@@ -364,6 +555,7 @@ export function MarkdownRenderer({
                 <img
                     src={src}
                     alt={alt}
+                    className={imageClassName}
                     {...rest}
                 />
             );
@@ -375,9 +567,9 @@ export function MarkdownRenderer({
             a: LinkComponent,
             img: ImageComponent,
         };
-    }, [components, client, artifactRunId]);
+    }, [components, client, artifactRunId, urlCache, codeClassName, inlineCodeClassName, linkClassName, imageClassName, onProposalSelect, onProposalSubmit]);
 
-    return (
+    const markdownContent = (
         <Markdown
             remarkPlugins={plugins}
             components={componentsWithCharts}
@@ -386,4 +578,11 @@ export function MarkdownRenderer({
             {children}
         </Markdown>
     );
+
+    // Wrap in a div if className is provided, otherwise return Markdown directly
+    if (className) {
+        return <div className={className}>{markdownContent}</div>;
+    }
+
+    return markdownContent;
 }

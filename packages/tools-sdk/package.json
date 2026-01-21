@@ -23,22 +23,23 @@
         "tools-sdk-copy-assets": "./lib/esm/copy-assets.js"
     },
     "devDependencies": {
-        "@types/node": "^24.10.1",
+        "@types/node": "^22.19.2",
         "ts-dual-module": "^0.6.3",
-        "typescript": "^5.0.2",
-        "vitest": "^3.0.9"
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.16"
     },
     "ts_dual_module": {
         "outDir": "lib"
     },
     "peerDependencies": {
-        "hono": "^4.10.0"
+        "hono": "^4.11.4"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
-        "jose": "^6.0.11"
+        "jose": "^6.0.11",
+        "zod": "^4.3.5"
     },
     "repository": {
         "type": "git",
