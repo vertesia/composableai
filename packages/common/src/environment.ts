@@ -116,6 +116,10 @@ export interface ExecutionEnvironmentUpdatePayload extends Partial<Omit<Executio
 
 export interface MigrateEnvironmentInteractionModelsPayload {
     /**
+     * The new environment ID to set in the Interactions
+     */
+    new_env_id: string;
+    /**
      * The new model ID to set in the Interactions
      */
     new_model_id: string;
