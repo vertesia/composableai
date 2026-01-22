@@ -207,8 +207,8 @@ function AllMessagesMixedComponent({
             msg.type === AgentMessageType.REQUEST_INPUT ||
             msg.type === AgentMessageType.TERMINATED ||
             msg.type === AgentMessageType.ERROR ||
-            // Include THOUGHT messages that have tool details (progress from message_to_human)
-            (msg.type === AgentMessageType.THOUGHT && msg.details?.tool) ||
+            // Include THOUGHT messages that have tool details (progress from message_to_human or streamed content)
+            (msg.type === AgentMessageType.THOUGHT && (msg.details?.tool || msg.details?.tools || msg.details?.streamed)) ||
             // Include toolkit_ready SYSTEM message (shows at conversation start)
             (msg.type === AgentMessageType.SYSTEM && msg.details?.system_type === 'toolkit_ready')
         );
@@ -220,7 +220,7 @@ function AllMessagesMixedComponent({
                 .filter(msg =>
                     msg.type === AgentMessageType.UPDATE ||
                     msg.type === AgentMessageType.PLAN ||
-                    (msg.type === AgentMessageType.THOUGHT && !msg.details?.tool))
+                    (msg.type === AgentMessageType.THOUGHT && !msg.details?.tool && !msg.details?.tools && !msg.details?.streamed))
                 .slice(-1) // Show only the latest thinking message
             : [];
 
