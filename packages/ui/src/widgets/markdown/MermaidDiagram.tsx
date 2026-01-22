@@ -7,6 +7,7 @@ mermaid.initialize({
     theme: 'default',
     securityLevel: 'loose',
     fontFamily: 'inherit',
+    suppressErrorRendering: true,
 });
 
 export interface MermaidDiagramProps {
@@ -76,25 +77,9 @@ export function MermaidDiagram({ code, className }: MermaidDiagramProps) {
         };
     }, [code, uniqueId]);
 
+    // Silently ignore mermaid syntax errors - just render nothing
     if (error) {
-        return (
-            <div className={`my-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg ${className || ''}`}>
-                <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
-                    Mermaid Diagram Error
-                </div>
-                <pre className="text-xs text-red-600 dark:text-red-300 whitespace-pre-wrap overflow-x-auto">
-                    {error}
-                </pre>
-                <details className="mt-2">
-                    <summary className="text-xs text-red-500 dark:text-red-400 cursor-pointer">
-                        Show diagram code
-                    </summary>
-                    <pre className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs overflow-x-auto">
-                        {code}
-                    </pre>
-                </details>
-            </div>
-        );
+        return null;
     }
 
     if (!svg) {
