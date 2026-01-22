@@ -743,45 +743,13 @@ function ModernAgentConversationInner({
                 // Other SYSTEM messages fall through to normal handling
             }
 
-            // ANSWER messages don't clear streaming - let the streaming content stay visible
-            // It will be converted to THOUGHT when COMPLETE/IDLE arrives
-
-            // When COMPLETE or IDLE arrives, convert remaining streaming messages to THOUGHT messages
-            // This preserves intermediate agent output that wasn't captured in an ANSWER message
+            // Don't clear streaming on ANSWER, COMPLETE, or IDLE
+            // Streaming messages stay visible in the timeline where they are
+            // They're already marked isComplete when is_final:true arrives
             if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
-                // First flush any pending chunks to ensure we have the latest content
+                // Just flush any pending chunks to ensure content is complete
                 if (pendingStreamingChunks.current.size > 0) {
                     flushStreamingChunks();
-                }
-
-                // Convert streaming messages to THOUGHT messages before clearing
-                setStreamingMessages(currentStreaming => {
-                    if (currentStreaming.size > 0) {
-                        setMessages(prevMessages => {
-                            const newMessages = [...prevMessages];
-                            currentStreaming.forEach((data, _id) => {
-                                if (data.text && data.text.trim()) {
-                                    const thoughtMessage: AgentMessage = {
-                                        type: AgentMessageType.THOUGHT,
-                                        message: data.text,
-                                        timestamp: data.startTimestamp,
-                                        workflow_run_id: run.runId,
-                                        workstream_id: data.workstreamId,
-                                        details: { source: 'streaming_preserved' }
-                                    };
-                                    insertMessageInTimeline(newMessages, thoughtMessage);
-                                }
-                            });
-                            return newMessages;
-                        });
-                    }
-                    return new Map(); // Clear after converting
-                });
-
-                pendingStreamingChunks.current.clear();
-                if (streamingFlushScheduled.current !== null) {
-                    cancelAnimationFrame(streamingFlushScheduled.current);
-                    streamingFlushScheduled.current = null;
                 }
             }
 
