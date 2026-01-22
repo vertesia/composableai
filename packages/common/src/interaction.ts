@@ -1146,3 +1146,43 @@ export interface ResolvedInteractionExecutionInfo {
      */
     resolved: ResolvedRuntimeConfig;
 }
+
+/**
+ * A builtin tool definition from the tools catalog
+ */
+export interface BuiltinToolDefinition {
+    /**
+     * The unique tool name
+     */
+    name: string;
+
+    /**
+     * Human-readable description of what the tool does
+     */
+    description: string;
+
+    /**
+     * JSON schema for the tool's parameters
+     */
+    params: JSONSchema;
+}
+
+/**
+ * Response from the builtin tools catalog endpoint
+ */
+export interface BuiltinToolsCatalogResponse {
+    /**
+     * List of available builtin tools
+     */
+    tools: BuiltinToolDefinition[];
+
+    /**
+     * When the catalog was generated
+     */
+    generated_at: string;
+
+    /**
+     * Total number of tools in the catalog
+     */
+    total_tools: number;
+}

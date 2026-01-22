@@ -10,6 +10,7 @@ import { FilesApi } from "./FilesApi.js";
 import { ObjectsApi } from "./ObjectsApi.js";
 import { PendingAsksApi } from "./PendingAsksApi.js";
 import { SchedulesApi } from "./SchedulesApi.js";
+import { ToolsApi } from "./ToolsApi.js";
 import { TypesApi } from "./TypesApi.js";
 import { VERSION, VERSION_HEADER } from "./version.js";
 import { WorkersApi } from "./WorkersApi.js";
@@ -90,4 +91,5 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     email = new EmailApi(this);
     pendingAsks = new PendingAsksApi(this);
     data = new DataApi(this);
+    tools = new ToolsApi(this);
 }

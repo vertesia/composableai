@@ -75,6 +75,9 @@ export interface ConversationState {
     /** Reference to tools stored in GCP instead of embedding full tool definitions */
     tool_reference?: ToolReference;
 
+    /** Names of currently active tools (base + unlocked). Tool definitions loaded from tool_reference. */
+    active_tool_names?: string[];
+
     /** Skills that have been used in this conversation (for auto-syncing scripts and package installation) */
     used_skills?: UsedSkill[];
 
