@@ -227,16 +227,40 @@ function AllMessagesMixedComponent({
         return { importantMessages: important, recentThinking: thinkingMessages };
     }, [displayMessages, isCompleted, streamingMessages.size]);
 
-    // Group messages with streaming interleaved for stacked view
+    // Split streaming messages: complete ones get interleaved, incomplete ones render at end
+    // This prevents re-grouping all messages when incomplete streaming updates
+    const { completeStreaming, incompleteStreaming } = React.useMemo(() => {
+        const complete = new Map<string, StreamingData>();
+        const incomplete: Array<{ id: string; data: StreamingData }> = [];
+
+        streamingMessages.forEach((data, id) => {
+            // Filter by workstream if specified
+            if (activeWorkstream && activeWorkstream !== "all") {
+                const streamWorkstream = data.workstreamId || "main";
+                if (activeWorkstream !== streamWorkstream) return;
+            }
+
+            if (data.isComplete) {
+                complete.set(id, data);
+            } else if (data.text) {
+                incomplete.push({ id, data });
+            }
+        });
+
+        return { completeStreaming: complete, incompleteStreaming: incomplete };
+    }, [streamingMessages, activeWorkstream]);
+
+    // Group messages with ONLY complete streaming interleaved for stacked view
+    // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk)
     const groupedMessages = React.useMemo(
-        () => groupMessagesWithStreaming(displayMessages, streamingMessages, activeWorkstream),
-        [displayMessages, streamingMessages, activeWorkstream]
+        () => groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream),
+        [displayMessages, completeStreaming, activeWorkstream]
     );
 
-    // Group important messages with streaming interleaved for sliding view
+    // Group important messages with ONLY complete streaming interleaved for sliding view
     const groupedImportantMessages = React.useMemo(
-        () => groupMessagesWithStreaming(importantMessages, streamingMessages, activeWorkstream),
-        [importantMessages, streamingMessages, activeWorkstream]
+        () => groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream),
+        [importantMessages, completeStreaming, activeWorkstream]
     );
 
     // Show working indicator when agent is actively processing
@@ -376,8 +400,18 @@ function AllMessagesMixedComponent({
                                     );
                                 }
                             })}
+                            {/* Incomplete streaming - rendered separately to avoid re-grouping on every chunk */}
+                            {incompleteStreaming.map(({ id, data }) => (
+                                <MessageErrorBoundary key={`streaming-incomplete-${id}`}>
+                                    <StreamingMessage
+                                        text={data.text}
+                                        workstreamId={data.workstreamId}
+                                        isComplete={false}
+                                    />
+                                </MessageErrorBoundary>
+                            ))}
                             {/* Working indicator - shows agent is actively processing */}
-                            {isAgentWorking && streamingMessages.size === 0 && (
+                            {isAgentWorking && incompleteStreaming.length === 0 && (
                                 <div className="flex items-center gap-3 p-4 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-sm text-muted">Working...</span>
@@ -462,8 +496,18 @@ function AllMessagesMixedComponent({
                                     />
                                 </MessageErrorBoundary>
                             ))}
+                            {/* Incomplete streaming - rendered separately to avoid re-grouping on every chunk */}
+                            {incompleteStreaming.map(({ id, data }) => (
+                                <MessageErrorBoundary key={`streaming-incomplete-${id}`}>
+                                    <StreamingMessage
+                                        text={data.text}
+                                        workstreamId={data.workstreamId}
+                                        isComplete={false}
+                                    />
+                                </MessageErrorBoundary>
+                            ))}
                             {/* Working indicator - shows agent is actively processing */}
-                            {isAgentWorking && recentThinking.length === 0 && streamingMessages.size === 0 && (
+                            {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
                                 <div className="flex items-center gap-3 p-4 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-sm text-muted">Working...</span>
