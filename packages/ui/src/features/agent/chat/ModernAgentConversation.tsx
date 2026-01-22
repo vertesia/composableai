@@ -591,7 +591,7 @@ function ModernAgentConversationInner({
     const [workflowStatus, setWorkflowStatus] = useState<string | null>(null);
     // Track streaming messages by streaming_id for real-time chunk aggregation
     // Include startTimestamp to preserve chronological order when converting to regular messages
-    const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
+    const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number; activityId?: string }>>(new Map());
 
     // Track files being processed by the workflow
     const [processingFiles, setProcessingFiles] = useState<Map<string, ConversationFile>>(new Map());
@@ -604,7 +604,7 @@ function ModernAgentConversationInner({
 
     // Performance optimization: Batch streaming updates using RAF
     // Instead of updating state on every chunk (100+ times/sec), batch them per animation frame
-    const pendingStreamingChunks = useRef<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
+    const pendingStreamingChunks = useRef<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number; activityId?: string }>>(new Map());
     const streamingFlushScheduled = useRef<number | null>(null);
 
     // Debug: Track chunk arrivals and renders
@@ -697,7 +697,9 @@ function ModernAgentConversationInner({
             // PERFORMANCE: Batch updates using RAF instead of immediate state updates
             if (message.type === AgentMessageType.STREAMING_CHUNK) {
                 const details = message.details as StreamingChunkDetails;
-                if (!details?.streaming_id) return;
+                // Use activity_id as key if available (for dedup), fall back to streaming_id
+                const streamKey = details?.activity_id || details?.streaming_id;
+                if (!streamKey) return;
 
                 // Debug: Track chunk arrival with flash
                 setDebugChunkCount(c => c + 1);
@@ -706,18 +708,20 @@ function ModernAgentConversationInner({
                 debugFlashTimeout.current = setTimeout(() => setDebugChunkFlash(false), 50);
 
                 // Accumulate chunks in the ref (no state update yet)
-                const current = pendingStreamingChunks.current.get(details.streaming_id) || {
+                const current = pendingStreamingChunks.current.get(streamKey) || {
                     text: '',
                     workstreamId: message.workstream_id,
-                    startTimestamp: Date.now()
+                    startTimestamp: Date.now(),
+                    activityId: details?.activity_id,
                 };
                 const newText = current.text + (message.message || '');
 
-                pendingStreamingChunks.current.set(details.streaming_id, {
+                pendingStreamingChunks.current.set(streamKey, {
                     text: newText,
                     workstreamId: message.workstream_id,
                     isComplete: details.is_final,
                     startTimestamp: current.startTimestamp,
+                    activityId: details?.activity_id,
                 });
 
                 // Schedule a flush if not already scheduled (batches ~60 updates/sec max)
@@ -743,53 +747,27 @@ function ModernAgentConversationInner({
                 // Other SYSTEM messages fall through to normal handling
             }
 
-            // When ANSWER arrives, clear streaming messages (they contain the same content)
-            // This prevents showing the message twice: once as streaming, once as final ANSWER
-            if (message.type === AgentMessageType.ANSWER) {
-                pendingStreamingChunks.current.clear();
-                if (streamingFlushScheduled.current !== null) {
-                    cancelAnimationFrame(streamingFlushScheduled.current);
-                    streamingFlushScheduled.current = null;
-                }
-                setStreamingMessages(new Map());
+            // When THOUGHT or ANSWER arrives with activity_id, remove matching streaming message
+            // This prevents duplicate content (streamed content replaced by final message)
+            if ((message.type === AgentMessageType.THOUGHT || message.type === AgentMessageType.ANSWER) && message.details?.activity_id) {
+                const activityId = message.details.activity_id as string;
+                // Remove from pending chunks
+                pendingStreamingChunks.current.delete(activityId);
+                // Remove from streaming messages state
+                setStreamingMessages(prev => {
+                    if (prev.has(activityId)) {
+                        const next = new Map(prev);
+                        next.delete(activityId);
+                        return next;
+                    }
+                    return prev;
+                });
             }
 
-            // When COMPLETE or IDLE arrives, convert remaining streaming messages to THOUGHT messages
-            // This preserves intermediate agent output that wasn't captured in an ANSWER message
+            // On COMPLETE or IDLE, just flush any pending chunks
             if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
-                // First flush any pending chunks to ensure we have the latest content
                 if (pendingStreamingChunks.current.size > 0) {
                     flushStreamingChunks();
-                }
-
-                // Convert streaming messages to THOUGHT messages before clearing
-                setStreamingMessages(currentStreaming => {
-                    if (currentStreaming.size > 0) {
-                        setMessages(prevMessages => {
-                            const newMessages = [...prevMessages];
-                            currentStreaming.forEach((data, _id) => {
-                                if (data.text && data.text.trim()) {
-                                    const thoughtMessage: AgentMessage = {
-                                        type: AgentMessageType.THOUGHT,
-                                        message: data.text,
-                                        timestamp: data.startTimestamp,
-                                        workflow_run_id: run.runId,
-                                        workstream_id: data.workstreamId,
-                                        details: { source: 'streaming_preserved' }
-                                    };
-                                    insertMessageInTimeline(newMessages, thoughtMessage);
-                                }
-                            });
-                            return newMessages;
-                        });
-                    }
-                    return new Map(); // Clear after converting
-                });
-
-                pendingStreamingChunks.current.clear();
-                if (streamingFlushScheduled.current !== null) {
-                    cancelAnimationFrame(streamingFlushScheduled.current);
-                    streamingFlushScheduled.current = null;
                 }
             }
 
