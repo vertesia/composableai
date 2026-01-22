@@ -49,9 +49,16 @@ class MessageErrorBoundary extends Component<
     }
 
     render() {
-        // Silent fail - just don't render the broken message
         if (this.state.hasError) {
-            return null;
+            // Show error indicator instead of silently failing
+            return (
+                <div className="border-l-4 border-l-destructive bg-destructive/10 px-4 py-2 my-2 rounded-r">
+                    <p className="text-sm text-destructive font-medium">Failed to render message</p>
+                    <p className="text-xs text-muted mt-1 truncate">
+                        {this.state.error?.message || 'Unknown error'}
+                    </p>
+                </div>
+            );
         }
         return this.props.children;
     }
