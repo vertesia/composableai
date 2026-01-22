@@ -7,33 +7,18 @@ import { z } from 'zod';
 import type { TransformerPreset } from '../types.js';
 import { parseFrontmatter } from '../parsers/frontmatter.js';
 import path from 'path';
+import { TemplateType } from '@vertesia/common';
+import { PromptRole } from '@llumiverse/common';
 
 /**
- * Template type for prompt content
- * MUST match TemplateType from @vertesia/common
+ * Re-export types for backwards compatibility
  */
-export enum TemplateType {
-    jst = "jst",
-    handlebars = "handlebars",
-    text = "text",
-}
+export { TemplateType, PromptRole };
 
 /**
  * Template type alias
  */
 export type PromptContentType = TemplateType;
-
-/**
- * Prompt role enum
- * MUST match PromptRole from @llumiverse/common
- */
-export enum PromptRole {
-    safety = "safety",
-    system = "system",
-    user = "user",
-    assistant = "assistant",
-    negative = "negative",
-}
 
 /**
  * Zod schema for prompt frontmatter validation
