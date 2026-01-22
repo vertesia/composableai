@@ -489,6 +489,8 @@ export interface StreamingChunkDetails {
     chunk_index: number;
     /** True if this is the final chunk of the stream */
     is_final: boolean;
+    /** Activity ID for deduplication with final THOUGHT/ANSWER message */
+    activity_id?: string;
 }
 
 // ============================================
@@ -513,6 +515,8 @@ export interface CompactMessage {
     f?: 0 | 1;
     /** Timestamp (only for stored/persisted messages) */
     ts?: number;
+    /** Activity ID for deduplication between streaming chunks and final messages */
+    i?: string;
 }
 
 /**
@@ -681,6 +685,7 @@ export function toAgentMessage(compact: CompactMessage, workflowRunId: string = 
             ...(typeof compact.d === 'object' ? compact.d : {}),
             streaming_id: compact.w || 'main', // Use workstream_id as streaming_id
             is_final: compact.f === 1,
+            activity_id: compact.i, // For deduplication with final THOUGHT/ANSWER
         };
     }
 

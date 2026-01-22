@@ -245,26 +245,21 @@ function StreamingMessageComponent({
     return (
         <div
             className={cn(
-                "flex flex-col gap-1 p-3 rounded-lg",
-                "bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30",
-                "min-h-[3rem]",
+                "flex flex-col gap-1 pl-4 py-2",
+                "border-l-2 border-l-purple-500",
                 className
             )}
         >
-            {/* Header with task, timestamp and copy button */}
-            <div className={cn("flex items-center justify-between", headerClassName)}>
+            {/* Header with task and timestamp */}
+            <div className={cn("flex items-center justify-between text-xs text-muted", headerClassName)}>
                 <div className="flex items-center gap-2">
+                    <span className="font-medium text-purple-600 dark:text-purple-400">Agent</span>
                     {workstreamId && workstreamId !== "main" && (
-                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                            Task: {workstreamId}
-                        </span>
-                    )}
-                    {isTyping && (
-                        <span className="text-xs text-muted">Streaming...</span>
+                        <span>• Task: {workstreamId}</span>
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted">{formattedTime}</span>
+                    <span>{formattedTime}</span>
                     <Button
                         variant="ghost"
                         size="xs"
