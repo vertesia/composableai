@@ -773,6 +773,7 @@ function ModernAgentConversationInner({
                                         type: AgentMessageType.THOUGHT,
                                         message: data.text,
                                         timestamp: data.startTimestamp,
+                                        workflow_run_id: run.runId,
                                         workstream_id: data.workstreamId,
                                         details: { source: 'streaming_preserved' }
                                     };
