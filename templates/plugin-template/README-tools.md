@@ -16,24 +16,33 @@ A template for building custom tool servers that expose LLM tools, skills, inter
 ## Project Structure
 
 ```
-tool-server-template/
+plugin-template/
 ├── src/
-│   ├── tools/              # Tool collections
-│   │   └── calculator/     # Example: calculator tool
-│   │       ├── manifest.ts
-│   │       ├── calculator.ts
-│   │       ├── icon.svg.ts
-│   │       └── index.ts
-│   ├── skills/             # Skill collections
-│   │   └── code-review/    # Example: code review skill
-│   │       └── SKILL.md
-│   ├── interactions/       # Interaction collections
-│   │   └── summarize/      # Example: text summarization
-│   │       └── text_summarizer/
-│   │           ├── prompt.jst
-│   │           └── index.ts
-│   ├── server.ts           # Hono server entry point
-│   └── build-site.ts       # Static HTML generator
+│   ├── tool-server/        # Tool server code
+│   │   ├── tools/          # Tool collections
+│   │   │   └── examples/   # Example: calculator tool
+│   │   │       ├── calculator/
+│   │   │       │   ├── schema.ts
+│   │   │       │   ├── calculator.ts
+│   │   │       │   └── index.ts
+│   │   │       ├── icon.svg.ts
+│   │   │       └── index.ts
+│   │   ├── skills/         # Skill collections
+│   │   │   └── examples/   # Example: user-select skill
+│   │   │       └── user-select/
+│   │   │           ├── SKILL.md
+│   │   │           └── user-select.tsx
+│   │   ├── interactions/   # Interaction collections
+│   │   │   └── examples/   # Example: what_color interaction
+│   │   │       └── what_color/
+│   │   │           ├── prompt.hbs
+│   │   │           ├── prompt_schema.ts
+│   │   │           ├── result_schema.ts
+│   │   │           └── index.ts
+│   │   ├── server.ts       # Hono server entry point
+│   │   ├── server-node.ts  # Node.js HTTP server
+│   │   └── build-site.ts   # Static HTML generator
+│   └── ui/                 # UI plugin code (see README-ui.md)
 ├── api/
 │   └── index.js            # Vercel adapter
 ├── lib/                    # Compiled code (TypeScript → JavaScript)
@@ -131,7 +140,7 @@ Tools are executable functions that can be invoked via API.
 
 **Structure:**
 ```
-src/tools/my-tool/
+src/tool-server/tools/my-tool/
 ├── manifest.ts      # Tool metadata and schema
 ├── my-tool.ts       # Implementation
 ├── icon.svg.ts      # SVG icon
@@ -198,7 +207,7 @@ export const MyTools = new ToolCollection({
 
 **Register the collection:**
 
-Add to `src/tools/index.ts`:
+Add to `src/tool-server/tools/index.ts`:
 ```typescript
 import { MyTools } from "./my-tool/index.js";
 
@@ -214,7 +223,7 @@ Skills are AI capabilities defined as markdown prompts.
 
 **Structure:**
 ```
-src/skills/my-skill/
+src/tool-server/skills/my-skill/
 ├── SKILL.md         # Skill definition
 └── helper.py        # Optional helper script
 ```
@@ -247,7 +256,7 @@ You are an AI assistant with expertise in [domain].
 
 **Register the collection:**
 
-Create `src/skills/my-skill/index.ts`:
+Create `src/tool-server/skills/my-skill/index.ts`:
 ```typescript
 import { SkillCollection, loadSkillsFromDirectory } from "@vertesia/tools-sdk";
 
@@ -259,7 +268,7 @@ export const MySkills = new SkillCollection({
 });
 ```
 
-Add to `src/skills/index.ts`:
+Add to `src/tool-server/skills/index.ts`:
 ```typescript
 import { MySkills } from "./my-skill/index.js";
 
@@ -275,7 +284,7 @@ Interactions are multi-step workflows with templated prompts.
 
 **Structure:**
 ```
-src/interactions/my-interaction/
+src/tool-server/interactions/my-interaction/
 └── my_workflow/
     ├── prompt.jst   # JavaScript template string
     └── index.ts     # Interaction spec
@@ -339,7 +348,7 @@ export default {
 
 **Register the collection:**
 
-Create `src/interactions/my-interaction/index.ts`:
+Create `src/tool-server/interactions/my-interaction/index.ts`:
 ```typescript
 import { InteractionCollection } from "@vertesia/tools-sdk";
 import myWorkflow from "./my_workflow/index.js";
@@ -354,7 +363,7 @@ export const MyInteractions = new InteractionCollection({
 });
 ```
 
-Add to `src/interactions/index.ts`:
+Add to `src/tool-server/interactions/index.ts`:
 ```typescript
 import { MyInteractions } from "./my-interaction/index.js";
 
@@ -431,7 +440,7 @@ The `api/index.js` adapter automatically converts your Hono server to Vercel Fun
 
 Best for: Cloud Run, Railway, Fly.io, Docker, VPS
 
-The template includes `src/server-node.ts` which creates a standalone HTTP server.
+The template includes `src/tool-server/server-node.ts` which creates a standalone HTTP server.
 
 **Deploy to Cloud Run:**
 ```bash
@@ -462,7 +471,7 @@ CMD ["npm", "start"]
 ```bash
 # On your server
 git clone <your-repo>
-cd tool-server-template
+cd plugin-template
 npm install
 npm run build
 npm start
@@ -487,7 +496,7 @@ See [Hono documentation](https://hono.dev/getting-started/basic) for platform-sp
 
 ### Customization
 
-Edit `src/server.ts` to customize:
+Edit `src/tool-server/server.ts` to customize:
 
 ```typescript
 const server = createToolServer({

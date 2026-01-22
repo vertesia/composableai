@@ -14,7 +14,7 @@ This project serves as a template for building Vertesia plugins that can be inte
 ## Project Structure
 
 ```txt
-src/
+src/ui/
 ├── app.tsx          # Main app component with router
 ├── plugin.tsx       # Plugin entry point for Vertesia integration
 ├── routes.tsx       # Application route definitions

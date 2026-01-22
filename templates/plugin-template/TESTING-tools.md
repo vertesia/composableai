@@ -340,7 +340,7 @@ If `?raw` imports aren't working, check:
 grep -A 10 "rawPlugin" rollup.config.js
 
 # Check the imported file exists
-ls -la src/interactions/*/prompts/*.jst
+ls -la src/tool-server/interactions/*/prompts/*.jst
 ```
 
 ## Performance Testing
@@ -421,7 +421,7 @@ PORT=8080 pnpm start
 
 ### Problem: Tool execution returns 404
 
-**Solution:** Check that the tool is properly registered in `src/tools/index.ts` and rebuild:
+**Solution:** Check that the tool is properly registered in `src/tool-server/tools/index.ts` and rebuild:
 ```bash
 pnpm build
 ```
