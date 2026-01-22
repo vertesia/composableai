@@ -743,15 +743,46 @@ function ModernAgentConversationInner({
                 // Other SYSTEM messages fall through to normal handling
             }
 
-            // When ANSWER arrives, clear streaming messages (they contain the same content)
-            // This prevents showing the message twice: once as streaming, once as final ANSWER
+            // When ANSWER arrives, convert streaming messages to THOUGHT if they contain different content
+            // This preserves intermediate agent commentary that isn't part of the final answer
             if (message.type === AgentMessageType.ANSWER) {
+                // First flush any pending chunks
+                if (pendingStreamingChunks.current.size > 0) {
+                    flushStreamingChunks();
+                }
+
+                const answerText = message.message || '';
+
+                // Convert streaming messages that don't match the ANSWER to THOUGHT messages
+                setStreamingMessages(currentStreaming => {
+                    if (currentStreaming.size > 0) {
+                        setMessages(prevMessages => {
+                            const newMessages = [...prevMessages];
+                            currentStreaming.forEach((data, _id) => {
+                                // Only preserve if text is different from the answer (not duplicate content)
+                                if (data.text && data.text.trim() && !answerText.includes(data.text.trim())) {
+                                    const thoughtMessage: AgentMessage = {
+                                        type: AgentMessageType.THOUGHT,
+                                        message: data.text,
+                                        timestamp: data.startTimestamp,
+                                        workflow_run_id: run.runId,
+                                        workstream_id: data.workstreamId,
+                                        details: { source: 'streaming_preserved' }
+                                    };
+                                    insertMessageInTimeline(newMessages, thoughtMessage);
+                                }
+                            });
+                            return newMessages;
+                        });
+                    }
+                    return new Map(); // Clear after converting
+                });
+
                 pendingStreamingChunks.current.clear();
                 if (streamingFlushScheduled.current !== null) {
                     cancelAnimationFrame(streamingFlushScheduled.current);
                     streamingFlushScheduled.current = null;
                 }
-                setStreamingMessages(new Map());
             }
 
             // When COMPLETE or IDLE arrives, convert remaining streaming messages to THOUGHT messages
