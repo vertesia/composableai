@@ -411,7 +411,7 @@ function AllMessagesMixedComponent({
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full overflow-hidden">
+                <div className="flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full">
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
                         // Details view - show ALL messages with streaming interleaved

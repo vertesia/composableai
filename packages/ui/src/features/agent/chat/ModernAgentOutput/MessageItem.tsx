@@ -353,9 +353,9 @@ function MessageItemComponent({
     };
 
     return (
-        <div className={`w-full max-w-full overflow-hidden ${className || ""}`}>
+        <div className={`w-full max-w-full ${className || ""}`}>
             <div
-                className={`border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full ${styles.borderColor} ${cardClassName || ""}`}
+                className={`border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden ${styles.borderColor} ${cardClassName || ""}`}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
