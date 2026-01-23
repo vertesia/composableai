@@ -3,11 +3,11 @@ import { Button, cn, useToast } from "@vertesia/ui/core";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { Bot, CopyIcon } from "lucide-react";
 import dayjs from "dayjs";
-import { PulsatingCircle } from "../AnimatedThinkingDots";
 
 // PERFORMANCE: Unicode cursor character - rendered inline with text
 // This avoids expensive DOM manipulation with TreeWalker on every update
-const CURSOR_CHAR = "▋";
+// Using thin pipe for softer visual appearance
+const CURSOR_CHAR = "│";
 
 export interface StreamingMessageProps {
     text: string;
@@ -255,7 +255,7 @@ function StreamingMessageComponent({
                     <div className="flex items-center gap-1.5">
                         <div className="animate-fadeIn">
                             {isTyping ? (
-                                <PulsatingCircle size="sm" color="blue" />
+                                <span className="size-2 rounded-full bg-blue-500 animate-pulse inline-block" />
                             ) : (
                                 <Bot className="size-4 text-purple-600 dark:text-purple-400" />
                             )}
@@ -297,6 +297,11 @@ function StreamingMessageComponent({
                         .streaming-content p:last-child,
                         .streaming-content li:last-child {
                             display: inline;
+                        }
+                        /* Soft fade at reveal edge */
+                        .streaming-active .vprose {
+                            mask-image: linear-gradient(to right, black 97%, transparent 100%);
+                            -webkit-mask-image: linear-gradient(to right, black 97%, transparent 100%);
                         }
                     `}</style>
                 </div>
