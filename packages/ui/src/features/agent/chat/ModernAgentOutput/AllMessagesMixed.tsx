@@ -318,6 +318,77 @@ function AllMessagesMixedComponent({
             className="flex-1 min-h-0 h-full overflow-y-auto overflow-x-hidden px-4 sm:px-2 lg:px-4 flex flex-col relative"
             data-testid="all-messages-mixed"
         >
+            {/* Global styles for vprose markdown content */}
+            <style>{`
+                /* Better vertical rhythm for markdown */
+                .vprose > * + * {
+                    margin-top: 0.875rem;
+                }
+                .vprose > h1 + *,
+                .vprose > h2 + *,
+                .vprose > h3 + * {
+                    margin-top: 0.5rem;
+                }
+                /* Tables need more separation and better styling */
+                .vprose table {
+                    margin-top: 1.25rem;
+                    margin-bottom: 1.25rem;
+                    border-collapse: collapse;
+                    width: 100%;
+                }
+                .vprose th,
+                .vprose td {
+                    padding: 0.625rem 0.875rem;
+                    border: 1px solid var(--gray-6, #e5e7eb);
+                    text-align: left;
+                }
+                .vprose thead th {
+                    background-color: var(--gray-3, #f3f4f6);
+                    font-weight: 600;
+                    color: var(--gray-11, #6b7280);
+                    font-size: 0.75rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                }
+                .vprose tbody tr:hover {
+                    background-color: var(--gray-2, #f9fafb);
+                }
+                /* Dark mode table styles */
+                .dark .vprose th,
+                .dark .vprose td {
+                    border-color: var(--gray-7, #374151);
+                }
+                .dark .vprose thead th {
+                    background-color: var(--gray-4, #1f2937);
+                    color: var(--gray-11, #9ca3af);
+                }
+                .dark .vprose tbody tr:hover {
+                    background-color: var(--gray-3, #111827);
+                }
+                /* Horizontal rules as section dividers */
+                .vprose hr {
+                    margin-top: 1.5rem;
+                    margin-bottom: 1.5rem;
+                    border-color: var(--gray-5, #d1d5db);
+                }
+                /* Better blockquote styling */
+                .vprose blockquote {
+                    margin-top: 1.25rem;
+                    margin-bottom: 1.25rem;
+                    padding-left: 1rem;
+                    border-left-width: 3px;
+                    border-left-color: var(--gray-6, #d1d5db);
+                    color: var(--gray-11, #6b7280);
+                }
+                /* Code blocks */
+                .vprose pre {
+                    margin-top: 1rem;
+                    margin-bottom: 1rem;
+                    padding: 1rem;
+                    border-radius: 0.5rem;
+                    overflow-x: auto;
+                }
+            `}</style>
 
             {/* Workstream tabs with completion indicators */}
             <div className="sticky top-0 z-10">

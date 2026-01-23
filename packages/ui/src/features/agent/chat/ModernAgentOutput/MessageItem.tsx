@@ -216,7 +216,7 @@ function MessageItemComponent({
         const runId = (message as any).workflow_run_id as string | undefined;
 
         return (
-            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-2 prose-headings:font-semibold prose-headings:tracking-tight prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2 max-w-none text-[15px]">
+            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px]">
                 <MarkdownRenderer
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
