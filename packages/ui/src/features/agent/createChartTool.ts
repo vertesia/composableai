@@ -5,7 +5,7 @@
  * how to create charts in their responses.
  */
 
-import type { AgentChartSpec } from './chat/AgentChart';
+import type { AgentChartSpec, RechartsChartSpec, VegaLiteChartSpec } from './chat/AgentChart';
 
 /**
  * Tool definition for creating charts.
@@ -17,16 +17,54 @@ export const createChartToolDefinition = {
 
 IMPORTANT: You don't actually "call" this tool. Instead, you include a markdown code block with language "chart" in your response.
 
-Charts are created using JSON specifications in markdown code blocks:
+## CHART LIBRARIES
+
+Two chart libraries are available:
+
+### 1. Recharts (Default) - Simple Charts
+For standard bar, line, pie, area charts. Use when you need quick, simple visualizations.
 
 \`\`\`chart
 {
+  "library": "recharts",
   "chart": "bar|line|area|composed|pie|scatter|radar|radialBar|funnel|treemap",
   "title": "Chart Title",
   "data": [...],
-  ...
+  "xKey": "...",
+  "series": [...]
 }
 \`\`\`
+
+### 2. Vega-Lite (Advanced) - Complex Visualizations
+For heatmaps, geographic maps, layered charts, faceted charts, statistical plots.
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "title": "Chart Title",
+  "spec": {
+    "data": {"values": [...]},
+    "mark": "bar|line|point|rect|arc|...",
+    "encoding": {...}
+  }
+}
+\`\`\`
+
+## WHEN TO USE EACH LIBRARY
+
+| Use Case | Library |
+|----------|---------|
+| Simple bar, line, pie charts | recharts (default) |
+| Heatmaps / correlation matrices | **vega-lite** |
+| Geographic maps | **vega-lite** |
+| Faceted / small multiples | **vega-lite** |
+| Layered charts (scatter + regression) | **vega-lite** |
+| Statistical plots (boxplot, violin) | **vega-lite** |
+| Standard business charts | recharts |
+
+---
+
+## RECHARTS EXAMPLES
 
 ## CHART TYPES & WHEN TO USE
 
@@ -134,7 +172,237 @@ Charts are created using JSON specifications in markdown code blocks:
 - Pink #ec4899 - Highlight
 - Teal #14b8a6 - Alternative
 
-Numbers auto-format: 1K, 1M, 1B`,
+Numbers auto-format: 1K, 1M, 1B
+
+---
+
+## VEGA-LITE EXAMPLES
+
+### Heatmap
+\`\`\`chart
+{"library":"vega-lite","title":"Correlation Matrix","spec":{"data":{"values":[{"x":"A","y":"A","v":1},{"x":"A","y":"B","v":0.7},{"x":"B","y":"A","v":0.7},{"x":"B","y":"B","v":1}]},"mark":"rect","encoding":{"x":{"field":"x","type":"nominal"},"y":{"field":"y","type":"nominal"},"color":{"field":"v","type":"quantitative","scale":{"scheme":"redblue","domain":[-1,1]}}}}}
+\`\`\`
+
+### Layered Chart (Scatter + Trend Line)
+\`\`\`chart
+{"library":"vega-lite","title":"Sales Trend","spec":{"data":{"values":[{"x":1,"y":10},{"x":2,"y":18},{"x":3,"y":25},{"x":4,"y":31}]},"layer":[{"mark":"point","encoding":{"x":{"field":"x"},"y":{"field":"y"}}},{"mark":{"type":"line","color":"red"},"transform":[{"regression":"y","on":"x"}],"encoding":{"x":{"field":"x"},"y":{"field":"y"}}}]}}
+\`\`\`
+
+### Faceted Chart
+\`\`\`chart
+{"library":"vega-lite","title":"Sales by Category","spec":{"data":{"values":[{"cat":"A","region":"N","val":10},{"cat":"A","region":"S","val":15},{"cat":"B","region":"N","val":8},{"cat":"B","region":"S","val":12}]},"mark":"bar","encoding":{"x":{"field":"region"},"y":{"field":"val"},"color":{"field":"region"}},"facet":{"field":"cat","columns":2}}}
+\`\`\`
+
+### Box Plot
+\`\`\`chart
+{"library":"vega-lite","title":"Distribution","spec":{"data":{"values":[{"group":"A","val":10},{"group":"A","val":15},{"group":"A","val":12},{"group":"B","val":20},{"group":"B","val":25}]},"mark":"boxplot","encoding":{"x":{"field":"group"},"y":{"field":"val","type":"quantitative"}}}}
+\`\`\`
+
+## VEGA-LITE REFERENCE
+
+### Mark Types
+- bar, line, point, area, rect, arc, circle, text, boxplot, errorbar
+
+### Encoding Types
+- quantitative (Q): Numbers
+- nominal (N): Categories
+- ordinal (O): Ordered categories
+- temporal (T): Dates
+
+### Color Schemes
+- Sequential: blues, greens, viridis
+- Diverging: redblue, redyellowgreen
+- Categorical: category10, tableau10
+
+---
+
+## INTERACTIVE DASHBOARDS
+
+For interactive dashboards with cross-filtering and linked views, use \`options.mode: "dashboard"\`.
+Dashboard mode enables:
+- Larger default height (500px vs 280px)
+- Fullscreen button for exploration
+- "Interactive" badge indicator
+
+### Dashboard with Cross-Filter Selection
+Click on a bar to filter the line chart below:
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "title": "Sales Dashboard",
+  "description": "Click a category to filter the trend",
+  "options": {"mode": "dashboard", "height": 600},
+  "spec": {
+    "data": {"values": [
+      {"category": "Electronics", "month": "Jan", "sales": 100},
+      {"category": "Electronics", "month": "Feb", "sales": 120},
+      {"category": "Electronics", "month": "Mar", "sales": 140},
+      {"category": "Clothing", "month": "Jan", "sales": 80},
+      {"category": "Clothing", "month": "Feb", "sales": 95},
+      {"category": "Clothing", "month": "Mar", "sales": 110},
+      {"category": "Food", "month": "Jan", "sales": 60},
+      {"category": "Food", "month": "Feb", "sales": 70},
+      {"category": "Food", "month": "Mar", "sales": 85}
+    ]},
+    "params": [{"name": "categorySelect", "select": {"type": "point", "fields": ["category"]}}],
+    "vconcat": [
+      {
+        "mark": "bar",
+        "encoding": {
+          "x": {"field": "category", "type": "nominal"},
+          "y": {"aggregate": "sum", "field": "sales"},
+          "color": {"condition": {"param": "categorySelect", "field": "category"}, "value": "lightgray"},
+          "opacity": {"condition": {"param": "categorySelect", "value": 1}, "value": 0.5}
+        }
+      },
+      {
+        "mark": "line",
+        "transform": [{"filter": {"param": "categorySelect"}}],
+        "encoding": {
+          "x": {"field": "month", "type": "ordinal"},
+          "y": {"field": "sales", "type": "quantitative"},
+          "color": {"field": "category", "type": "nominal"}
+        }
+      }
+    ]
+  }
+}
+\`\`\`
+
+### Dashboard with Interval Brush Selection
+Brush to select a time range in the overview, detail view updates:
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "title": "Focus + Context",
+  "options": {"mode": "dashboard", "height": 500},
+  "spec": {
+    "data": {"values": [
+      {"date": "2024-01-01", "value": 28}, {"date": "2024-02-01", "value": 55},
+      {"date": "2024-03-01", "value": 43}, {"date": "2024-04-01", "value": 91},
+      {"date": "2024-05-01", "value": 81}, {"date": "2024-06-01", "value": 53},
+      {"date": "2024-07-01", "value": 19}, {"date": "2024-08-01", "value": 87},
+      {"date": "2024-09-01", "value": 52}, {"date": "2024-10-01", "value": 48}
+    ]},
+    "vconcat": [
+      {
+        "height": 250,
+        "mark": "area",
+        "encoding": {
+          "x": {"field": "date", "type": "temporal", "scale": {"domain": {"param": "brush"}}, "axis": {"title": ""}},
+          "y": {"field": "value", "type": "quantitative"}
+        }
+      },
+      {
+        "height": 60,
+        "params": [{"name": "brush", "select": {"type": "interval", "encodings": ["x"]}}],
+        "mark": "area",
+        "encoding": {
+          "x": {"field": "date", "type": "temporal"},
+          "y": {"field": "value", "type": "quantitative", "axis": {"tickCount": 3}}
+        }
+      }
+    ]
+  }
+}
+\`\`\`
+
+### Dashboard with Legend Filter
+Click legend items to filter:
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "title": "Multi-Series with Legend Filter",
+  "options": {"mode": "dashboard"},
+  "spec": {
+    "data": {"values": [
+      {"series": "A", "x": 1, "y": 10}, {"series": "A", "x": 2, "y": 15},
+      {"series": "B", "x": 1, "y": 20}, {"series": "B", "x": 2, "y": 12},
+      {"series": "C", "x": 1, "y": 8}, {"series": "C", "x": 2, "y": 18}
+    ]},
+    "params": [{"name": "seriesFilter", "select": {"type": "point", "fields": ["series"]}, "bind": "legend"}],
+    "mark": "line",
+    "encoding": {
+      "x": {"field": "x", "type": "quantitative"},
+      "y": {"field": "y", "type": "quantitative"},
+      "color": {"field": "series", "type": "nominal"},
+      "opacity": {"condition": {"param": "seriesFilter", "value": 1}, "value": 0.2}
+    }
+  }
+}
+\`\`\`
+
+### Dashboard with Input Widgets
+Bind parameters to sliders and dropdowns:
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "title": "Interactive Controls",
+  "options": {"mode": "dashboard"},
+  "spec": {
+    "params": [
+      {"name": "threshold", "value": 50, "bind": {"input": "range", "min": 0, "max": 100, "step": 5}},
+      {"name": "colorScheme", "value": "category10", "bind": {"input": "select", "options": ["category10", "tableau10", "set1"]}}
+    ],
+    "data": {"values": [{"x": "A", "y": 30}, {"x": "B", "y": 60}, {"x": "C", "y": 80}, {"x": "D", "y": 45}]},
+    "mark": "bar",
+    "encoding": {
+      "x": {"field": "x", "type": "nominal"},
+      "y": {"field": "y", "type": "quantitative"},
+      "color": {
+        "condition": {"test": "datum.y > threshold", "value": "steelblue"},
+        "value": "lightgray"
+      }
+    }
+  }
+}
+\`\`\`
+
+### DASHBOARD OPTIONS
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| mode | "chart" \\| "dashboard" | "chart" | Dashboard mode enables fullscreen + larger height |
+| height | number | 280/500 | Explicit height (auto-calculated for vconcat) |
+| enableFullscreen | boolean | true (dashboard) | Show fullscreen button |
+| renderer | "canvas" \\| "svg" | "canvas" | SVG for print quality |
+| parameterValues | object | {} | Set initial param values (see below) |
+
+### SETTING PARAMETER VALUES
+
+Override default param values to test different configurations:
+
+\`\`\`chart
+{
+  "library": "vega-lite",
+  "options": {
+    "mode": "dashboard",
+    "parameterValues": {"threshold": 75, "colorScheme": "tableau10"}
+  },
+  "spec": {
+    "params": [
+      {"name": "threshold", "value": 50, "bind": {"input": "range", "min": 0, "max": 100}},
+      {"name": "colorScheme", "value": "category10", "bind": {"input": "select", "options": ["category10", "tableau10"]}}
+    ],
+    ...
+  }
+}
+\`\`\`
+
+The chart renders with threshold=75 (instead of default 50). Interactive controls still work.
+
+### INTERACTIVE FEATURES (params)
+
+| Selection Type | Use Case | Example |
+|---------------|----------|---------|
+| point | Click to select | \`{"select": {"type": "point", "fields": ["category"]}}\` |
+| interval | Brush selection | \`{"select": {"type": "interval", "encodings": ["x"]}}\` |
+| bind: "legend" | Legend toggle | \`{"select": {...}, "bind": "legend"}\` |
+| bind: input | Widgets | \`{"bind": {"input": "range", "min": 0, "max": 100}}\` |`,
 
     input_schema: {
         type: 'object',
@@ -324,16 +592,27 @@ Colors: Blue #4f46e5 (primary), Green #22c55e (positive), Red #ef4444 (negative)
  * Use this when you want to build charts programmatically.
  */
 export function buildChartSpec(spec: AgentChartSpec): string {
-    // Validate the spec
-    if (!spec.chart || !spec.data || !spec.xKey || !spec.series) {
+    // Check if it's a Vega-Lite spec
+    if (spec.library === 'vega-lite') {
+        const vegaSpec = spec as VegaLiteChartSpec;
+        if (!vegaSpec.spec) {
+            throw new Error('Invalid Vega-Lite chart spec: missing required "spec" field');
+        }
+        const json = JSON.stringify(spec, null, 2);
+        return `\`\`\`chart\n${json}\n\`\`\``;
+    }
+
+    // Recharts validation
+    const rechartsSpec = spec as RechartsChartSpec;
+    if (!rechartsSpec.chart || !rechartsSpec.data || !rechartsSpec.xKey || !rechartsSpec.series) {
         throw new Error('Invalid chart spec: missing required fields (chart, data, xKey, series)');
     }
 
-    if (!Array.isArray(spec.data)) {
+    if (!Array.isArray(rechartsSpec.data)) {
         throw new Error('Invalid chart spec: data must be an array');
     }
 
-    if (!Array.isArray(spec.series) || spec.series.length === 0) {
+    if (!Array.isArray(rechartsSpec.series) || rechartsSpec.series.length === 0) {
         throw new Error('Invalid chart spec: series must be a non-empty array');
     }
 

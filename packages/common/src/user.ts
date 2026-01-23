@@ -5,6 +5,7 @@ export interface UserWithAccounts extends User {
     accounts: AccountRef[];
 }
 
+
 export interface User {
     id: string;
     externalId: string;
@@ -19,12 +20,14 @@ export interface User {
     source?: 'firebase' | 'scim';
 }
 
+
 export interface UserRef {
     id: string;
     name: string;
     email: string;
     picture?: string;
 }
+
 export const UserRefPopulate = "id name email picture";
 
 export enum Datacenters {
@@ -32,6 +35,7 @@ export enum Datacenters {
     gcp = 'gcp',
     azure = 'azure'
 }
+
 
 export enum BillingMethod {
     stripe = 'stripe',
@@ -50,6 +54,7 @@ export interface AccountBilling {
     method: BillingMethod;
     stripe_customer_id?: string;
 }
+
 
 export interface Account {
     id: string;
@@ -74,16 +79,19 @@ export interface Account {
     updated_at: string;
 }
 
+
 export interface UpdateAccountPayload {
     name?: string;
     email_domains?: string[];
     billing?: AccountBilling;
 }
 
+
 export interface AccountRef {
     id: string;
     name: string;
 }
+
 export const AccountRefPopulate = "id name";
 
 export interface InviteUserRequestPayload {
@@ -91,9 +99,11 @@ export interface InviteUserRequestPayload {
     role: ProjectRoles;
 }
 
+
 export interface InviteUserResponsePayload {
     action: 'invited' | 'added';
 }
+
 
 
 type UserOrApiKey<T extends User | ApiKey> = T extends User ? User : ApiKey;
@@ -108,6 +118,7 @@ export interface SessionInfo<T extends User | ApiKey> {
     accounts: AccountRef[];
 }
 
+
 export interface UserSessionInfo extends SessionInfo<User> { }
 export interface ApiKeySessionInfo extends SessionInfo<ApiKey> { }
 
@@ -117,6 +128,7 @@ export interface OnboardingProgress {
     environments: boolean,
     default_environment_defined: boolean
 }
+
 
 
 /**
@@ -130,6 +142,7 @@ export interface SignupData {
     companyWebsite?: string;
     maturity?: string;
 }
+
 
 /**
  * Signup Payload: used to create a new user

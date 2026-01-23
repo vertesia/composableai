@@ -1,6 +1,8 @@
 import type { ToolDefinition, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
-import { AuthTokenPayload, ToolResult, ToolResultContent } from "@vertesia/common";
+import { AuthTokenPayload, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
+
+export type { ToolExecutionMetadata };
 
 export type ICollection<T = any> = CollectionProperties & Iterable<T>
 
@@ -80,23 +82,46 @@ export interface ToolExecutionPayload<ParamsT extends Record<string, any>> {
     /**
      * Optional metadata related to the current execution request
      */
-    metadata?: Record<string, any>,
+    metadata?: ToolExecutionMetadata,
 }
 
 export type ToolFn<ParamsT extends Record<string, any>> = (payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext) => Promise<ToolExecutionResult>;
 
 export interface Tool<ParamsT extends Record<string, any>> extends ToolDefinition {
     run: ToolFn<ParamsT>;
+    /**
+     * Whether this tool is available by default.
+     * - true/undefined: Tool is always available to agents
+     * - false: Tool is only available when activated by a skill's related_tools
+     */
+    default?: boolean;
 }
 
 /**
- * The interface that should be return when requesting a collection endpoint using a GET 
+ * Tool definition with optional activation control for agent exposure.
+ */
+export interface ToolDefinitionWithDefault extends ToolDefinition {
+    /**
+     * Whether this tool is available by default.
+     * - true/undefined: Tool is always available to agents
+     * - false: Tool is only available when activated by a skill's related_tools
+     */
+    default?: boolean;
+    /**
+     * For skill tools (learn_*): list of related tool names that become available
+     * when this skill is called. Used for dynamic tool discovery.
+     */
+    related_tools?: string[];
+}
+
+/**
+ * The interface that should be returned when requesting a collection endpoint using a GET
  */
 export interface ToolCollectionDefinition {
     title: string;
     description: string;
     src: string;
-    tools: ToolDefinition[];
+    tools: ToolDefinitionWithDefault[];
 }
 
 export type { ToolDefinition };
@@ -167,19 +192,6 @@ export interface SkillExecution {
     template?: string;
 }
 
-/**
- * Script file bundled with a skill
- */
-export interface SkillScript {
-    /**
-     * Filename (e.g., "analyze.py")
-     */
-    name: string;
-    /**
-     * Script content
-     */
-    content: string;
-}
 
 /**
  * Skill definition - parsed from SKILL.md or SKILL.jst
@@ -229,7 +241,15 @@ export interface SkillDefinition {
     /**
      * Scripts bundled with this skill (synced to sandbox when skill is used)
      */
-    scripts?: SkillScript[];
+    scripts?: string[];
+    /**
+     * The name of the widgets provided by this skill (if any)
+     * The name will be used to load the widget dynamically from the agent chat
+     * and must match the code block language returned by the LLM (e.g., ```my-widget)
+     * which will be rendered using the widget.
+     * The widget file must be located in the skill directory under the name {{widget-name}}.tsx.
+     */
+    widgets?: string[];
 }
 
 /**
