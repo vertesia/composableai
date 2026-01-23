@@ -13,6 +13,7 @@ const TabsContext = React.createContext<{
   responsive?: boolean;
   variant?: "tabs" | "pills";
   updateHash?: boolean;
+  keepMounted?: boolean;
 }>({
   size: undefined,
   tabs: undefined,
@@ -20,7 +21,8 @@ const TabsContext = React.createContext<{
   setTab: undefined,
   responsive: false,
   variant: "tabs",
-  updateHash: true
+  updateHash: true,
+  keepMounted: false
 });
 
 interface TabsProps {
@@ -34,6 +36,7 @@ interface TabsProps {
   responsive?: boolean;
   variant?: "tabs" | "pills";
   updateHash?: boolean;
+  keepMounted?: boolean;
 }
 
 const VTabs = ({
@@ -46,7 +49,8 @@ const VTabs = ({
   onTabChange,
   responsive = false,
   variant = "tabs",
-  updateHash = true
+  updateHash = true,
+  keepMounted = false
 }: TabsProps) => {
   // Initialize value
   const [value, setValue] = React.useState(() => {
@@ -122,7 +126,7 @@ const VTabs = ({
   }, [handleValueChange]);
 
   return (
-    <TabsContext.Provider value={{ tabs, size: fullWidth ? tabs.length : 0, current: value, setTab, responsive: responsive, variant, updateHash }}>
+    <TabsContext.Provider value={{ tabs, size: fullWidth ? tabs.length : 0, current: value, setTab, responsive: responsive, variant, updateHash, keepMounted }}>
       <TabsPrimitive.Root
         defaultValue={value || tabs[0]?.name}
         value={value}
@@ -195,14 +199,20 @@ const VTabsBar = ({ className }: { className?: string }) => {
 };
 
 const VTabsPanel = ({ className }: { className?: string }) => {
-  const { tabs } = React.useContext(TabsContext);
+  const { tabs, keepMounted, current } = React.useContext(TabsContext);
 
   if (!tabs) return null;
 
   return (
     <>
       {tabs.map((tab) => (
-        <TabsContent key={tab.name} value={tab.name} className={className}>
+        <TabsContent
+          key={tab.name}
+          value={tab.name}
+          className={className}
+          forceMount={keepMounted ? true : undefined}
+          style={keepMounted && current !== tab.name ? { display: 'none' } : undefined}
+        >
           {tab.content}
         </TabsContent>
       ))}

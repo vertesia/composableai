@@ -525,3 +525,150 @@ export function groupMessagesWithStreaming(
 
     return groups;
 }
+
+/**
+ * Tool call information extracted from messages for observability view
+ */
+export interface ToolCallInfo {
+    toolName: string;
+    toolUseId?: string;
+    toolRunId?: string;
+    toolType?: 'builtin' | 'interaction' | 'remote' | 'skill';
+    iteration?: number;
+    timestamp: number;
+    durationMs?: number;
+    status: ToolExecutionStatus;
+    parameters?: Record<string, unknown>;
+    result?: string;
+    error?: {
+        type: string;
+        message: string;
+    };
+    files?: any[];
+    workstreamId?: string;
+    message: AgentMessage; // Keep reference to original message for details
+}
+
+/**
+ * Summary statistics for tool calls
+ */
+export interface ToolCallMetrics {
+    totalCalls: number;
+    successfulCalls: number;
+    failedCalls: number;
+    warningCalls: number;
+    runningCalls: number;
+    averageDurationMs?: number;
+    totalDurationMs?: number;
+    toolsByName: Map<string, number>;
+    mostUsedTool?: string;
+}
+
+/**
+ * Extract tool call information from THOUGHT messages with tool details
+ */
+export function extractToolCalls(messages: AgentMessage[]): ToolCallInfo[] {
+    const toolCalls: ToolCallInfo[] = [];
+
+    for (const message of messages) {
+        if (!isToolCallMessage(message)) continue;
+
+        const details = message.details || {};
+        const toolName = details.tool || 'unknown';
+        const status = getToolStatus(message) || 'running';
+
+        const toolCall: ToolCallInfo = {
+            toolName,
+            toolUseId: details.tool_use_id,
+            toolRunId: getToolRunId(message),
+            toolType: details.tool_type,
+            iteration: getToolIteration(message),
+            timestamp: getTimestampMs(message.timestamp),
+            status,
+            parameters: details.parameters,
+            result: message.message,
+            files: details.files || details.outputFiles,
+            workstreamId: getWorkstreamId(message),
+            message, // Keep reference for full details
+        };
+
+        // Extract duration if available
+        if (details.duration_ms !== undefined) {
+            toolCall.durationMs = details.duration_ms;
+        }
+
+        // Extract error information
+        if (status === 'error' && details.error) {
+            toolCall.error = {
+                type: details.error.type || 'unknown',
+                message: details.error.message || message.message,
+            };
+        }
+
+        toolCalls.push(toolCall);
+    }
+
+    return toolCalls;
+}
+
+/**
+ * Calculate summary statistics for tool calls
+ */
+export function calculateToolMetrics(toolCalls: ToolCallInfo[]): ToolCallMetrics {
+    const metrics: ToolCallMetrics = {
+        totalCalls: toolCalls.length,
+        successfulCalls: 0,
+        failedCalls: 0,
+        warningCalls: 0,
+        runningCalls: 0,
+        toolsByName: new Map<string, number>(),
+    };
+
+    let totalDuration = 0;
+    let durationCount = 0;
+
+    for (const call of toolCalls) {
+        // Count by status
+        switch (call.status) {
+            case 'completed':
+                metrics.successfulCalls++;
+                break;
+            case 'error':
+                metrics.failedCalls++;
+                break;
+            case 'warning':
+                metrics.warningCalls++;
+                break;
+            case 'running':
+                metrics.runningCalls++;
+                break;
+        }
+
+        // Count by tool name
+        const currentCount = metrics.toolsByName.get(call.toolName) || 0;
+        metrics.toolsByName.set(call.toolName, currentCount + 1);
+
+        // Sum durations
+        if (call.durationMs !== undefined) {
+            totalDuration += call.durationMs;
+            durationCount++;
+        }
+    }
+
+    // Calculate average duration
+    if (durationCount > 0) {
+        metrics.averageDurationMs = totalDuration / durationCount;
+        metrics.totalDurationMs = totalDuration;
+    }
+
+    // Find most used tool
+    let maxCount = 0;
+    for (const [toolName, count] of metrics.toolsByName.entries()) {
+        if (count > maxCount) {
+            maxCount = count;
+            metrics.mostUsedTool = toolName;
+        }
+    }
+
+    return metrics;
+}
