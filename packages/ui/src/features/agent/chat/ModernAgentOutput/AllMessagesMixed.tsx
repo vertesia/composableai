@@ -315,7 +315,8 @@ function AllMessagesMixedComponent({
     return (
         <div
             ref={containerRef}
-            className="flex-1 min-h-0 h-full overflow-y-auto overflow-x-hidden px-4 sm:px-2 lg:px-4 flex flex-col relative"
+            tabIndex={0}
+            className="flex-1 min-h-0 h-full overflow-y-auto overflow-x-hidden px-4 sm:px-2 lg:px-4 flex flex-col relative focus:outline-none"
             data-testid="all-messages-mixed"
         >
 

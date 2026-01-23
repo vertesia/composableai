@@ -11,8 +11,19 @@ interface SkillWidgetProviderProperties {
 
 const AgentChartWidget = ({ code }: { code: string }) => {
     const spec = useMemo(() => {
-        return JSON.parse(code) as AgentChartSpec;
+        try {
+            return JSON.parse(code) as AgentChartSpec;
+        } catch {
+            // During streaming, code may be incomplete JSON - return null to skip rendering
+            return null;
+        }
     }, [code]);
+
+    // Don't render anything while JSON is incomplete (during streaming)
+    if (!spec) {
+        return null;
+    }
+
     return <AgentChart spec={spec} />
 }
 
