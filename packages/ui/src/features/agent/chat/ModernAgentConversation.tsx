@@ -201,7 +201,7 @@ function StartWorkflowView({
     const [isSending, setIsSending] = useState(false);
     const [run, setRun] = useState<AsyncExecutionResult>();
     const toast = useToast();
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Staged files - stored locally until workflow starts
@@ -301,9 +301,20 @@ function StartWorkflowView({
                 messageContent = [message, '', 'Attachments:', ...lines].join('\n');
             }
 
+            // If files are staged, add a note to the message so the agent knows files are coming
+            if (stagedFiles.length > 0) {
+                const fileNames = stagedFiles.map(f => f.name).join(', ');
+                messageContent = [
+                    messageContent,
+                    '',
+                    `[System: ${stagedFiles.length} file(s) are being uploaded: ${fileNames}. Please wait for the "Files Ready" notification before processing them.]`
+                ].join('\n');
+            }
+
             const newRun = await startWorkflow(messageContent);
             if (newRun) {
                 // Upload staged files to the new run's artifact space and signal workflow
+                const uploadedFiles: string[] = [];
                 if (stagedFiles.length > 0) {
                     for (const file of stagedFiles) {
                         try {
@@ -323,11 +334,33 @@ function StartWorkflowView({
                                     artifact_path: artifactPath,
                                 } as ConversationFileRef
                             );
+                            uploadedFiles.push(file.name);
                         } catch (uploadErr) {
                             console.error(`Failed to upload staged file ${file.name}:`, uploadErr);
                             // Continue with other files
                         }
                     }
+
+                    // Send a follow-up message to notify the agent that all files are ready
+                    if (uploadedFiles.length > 0) {
+                        try {
+                            await client.store.workflows.sendSignal(
+                                newRun.workflow_id,
+                                newRun.run_id,
+                                "UserInput",
+                                {
+                                    message: `[Files Ready] All ${uploadedFiles.length} file(s) have been uploaded and are now available: ${uploadedFiles.join(', ')}. You can now process them.`,
+                                    metadata: {
+                                        type: 'files_ready',
+                                        files: uploadedFiles,
+                                    },
+                                } as UserInputSignal
+                            );
+                        } catch (signalErr) {
+                            console.error('Failed to send files ready signal:', signalErr);
+                        }
+                    }
+
                     setStagedFiles([]);
                 }
 
@@ -356,12 +389,26 @@ function StartWorkflowView({
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             startWorkflowWithMessage();
         }
+        // Shift+Enter allows newline (default textarea behavior)
     };
+
+    // Auto-resize textarea as content grows
+    const adjustTextareaHeight = useCallback(() => {
+        const textarea = inputRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+        }
+    }, []);
+
+    useEffect(() => {
+        adjustTextareaHeight();
+    }, [inputValue, adjustTextareaHeight]);
 
     // If a run has been started, show the conversation
     if (run) {
@@ -496,22 +543,24 @@ function StartWorkflowView({
                     </Button>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-end gap-2">
                     <div className="flex-1">
-                        <input
+                        <textarea
                             ref={inputRef}
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={placeholder}
                             disabled={isSending}
-                            className="w-full py-2 px-3 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:ring-0 rounded-md"
+                            rows={2}
+                            className="w-full py-2.5 px-3 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden"
+                            style={{ minHeight: '60px', maxHeight: '200px' }}
                         />
                     </div>
                     <Button
                         onClick={startWorkflowWithMessage}
                         disabled={!inputValue.trim() || isSending}
-                        className="px-3 py-2 bg-gray-800 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-xs rounded-md transition-colors"
+                        className="px-3 py-2.5 bg-gray-800 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-xs rounded-md transition-colors"
                     >
                         {isSending ? (
                             <Spinner size="sm" className="mr-1.5" />
@@ -524,7 +573,7 @@ function StartWorkflowView({
                 <div className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
                     {stagedFiles.length > 0
                         ? `${stagedFiles.length} file${stagedFiles.length > 1 ? 's' : ''} staged - will upload when conversation starts`
-                        : 'Type a message to start the conversation'}
+                        : 'Enter to send • Shift+Enter for new line'}
                 </div>
             </div>
         </div>

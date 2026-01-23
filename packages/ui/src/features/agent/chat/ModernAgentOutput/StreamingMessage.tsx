@@ -244,10 +244,10 @@ function StreamingMessageComponent({
     };
 
     return (
-        <div className={className}>
+        <div className={cn("w-full max-w-full overflow-hidden", className)}>
             {/* Card wrapper matching MessageItem structure */}
             <div
-                className="border-l-4 overflow-hidden bg-white dark:bg-gray-900 mb-4 border-l-purple-500"
+                className="border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 w-full max-w-full"
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
@@ -287,7 +287,7 @@ function StreamingMessageComponent({
                         contentClassName
                     )}
                 >
-                    <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-2 prose-headings:font-semibold prose-headings:tracking-tight prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2 max-w-none text-[15px]">
+                    <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words" style={{ overflowWrap: 'anywhere' }}>
                         <MarkdownRenderer>
                             {displayTextWithCursor}
                         </MarkdownRenderer>
