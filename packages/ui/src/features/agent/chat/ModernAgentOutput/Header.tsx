@@ -60,13 +60,27 @@ export default function Header({
                 </div>
                 <div className={`flex justify-end items-center space-x-2 ml-auto ${actionsClassName || ""}`}>
                     {/* View Mode Toggle */}
-                    <div className="flex items-center space-x-1 bg-muted rounded p-0.5">
-                        <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("stacked")}>
+                    <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5 border border-gray-200 dark:border-gray-700">
+                        <button
+                            onClick={() => onViewModeChange("stacked")}
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 ${
+                                viewMode === "stacked"
+                                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            }`}
+                        >
                             Details
-                        </Button>
-                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("sliding")}>
-                            Most Important
-                        </Button>
+                        </button>
+                        <button
+                            onClick={() => onViewModeChange("sliding")}
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 ${
+                                viewMode === "sliding"
+                                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            }`}
+                        >
+                            Summary
+                        </button>
                     </div>
 
                     {/* Plan Panel Toggle - Nicer styled button */}
