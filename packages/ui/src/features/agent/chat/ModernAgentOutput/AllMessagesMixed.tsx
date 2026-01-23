@@ -315,7 +315,7 @@ function AllMessagesMixedComponent({
     return (
         <div
             ref={containerRef}
-            className="flex-1 min-h-0 h-full overflow-y-auto overflow-x-hidden px-4 sm:px-2 lg:px-4 flex flex-col relative"
+            className="flex-1 min-h-0 h-full w-full max-w-full overflow-y-auto overflow-x-hidden px-2 sm:px-3 lg:px-4 flex flex-col relative"
             data-testid="all-messages-mixed"
         >
             {/* Global styles for vprose markdown content */}
@@ -410,7 +410,7 @@ function AllMessagesMixedComponent({
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col justify-start pb-4 space-y-2">
+                <div className="flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full overflow-hidden">
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
                         // Details view - show ALL messages with streaming interleaved
