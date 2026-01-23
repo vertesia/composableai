@@ -201,7 +201,7 @@ function MessageItemComponent({
         // Handle object content (JSON)
         if (typeof content === "object") {
             return (
-                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700 ">
+                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto max-w-full bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700 ">
                     {JSON.stringify(content, null, 2)}
                 </pre>
             );
@@ -211,7 +211,7 @@ function MessageItemComponent({
         const runId = (message as any).workflow_run_id as string | undefined;
 
         return (
-            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-2 prose-headings:font-semibold prose-headings:tracking-tight prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2 max-w-none text-[15px]">
+            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-2 prose-headings:font-semibold prose-headings:tracking-tight prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2 max-w-none text-[15px] break-words overflow-hidden">
                 <MarkdownRenderer
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
@@ -400,7 +400,7 @@ function MessageItemComponent({
                         );
                     })()
                 ) : messageContent && (
-                    <div className="message-content break-words max-w-full" style={{ overflowWrap: 'anywhere' }}>
+                    <div className="message-content break-words max-w-full overflow-x-hidden" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                         {renderContent(processedContent || messageContent)}
                     </div>
                 )}

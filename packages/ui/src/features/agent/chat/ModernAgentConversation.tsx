@@ -1296,7 +1296,7 @@ function ModernAgentConversationInner({
             {/* Conversation Area - responsive width based on panel visibility */}
             <div
                 ref={conversationRef}
-                className={`flex flex-col h-full min-h-0 border-0 ${
+                className={`flex flex-col h-full min-h-0 border-0 overflow-x-hidden ${
                 showSlidingPanel
                     ? 'lg:w-2/3 flex-1'
                     : fullWidth
