@@ -28,7 +28,9 @@ const AgentChartWidget = ({ code }: { code: string }) => {
 }
 
 const defaultComponents: Record<string, React.FunctionComponent<CodeBlockRendererProps>> = {
-    "chart": AgentChartWidget
+    "chart": AgentChartWidget,
+    "vega-lite": AgentChartWidget,
+    "vegalite": AgentChartWidget,
 }
 
 function RemoteWidgetComponent({ url, code }: { url: string, code: string }) {

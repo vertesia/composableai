@@ -220,9 +220,10 @@ export function createDefaultCodeBlockHandlers(): Record<
     React.FunctionComponent<CodeBlockRendererProps>
 > {
     return {
-        // Chart handlers
+        // Chart handlers - support multiple naming conventions
         chart: ChartCodeBlockHandler,
         'vega-lite': ChartCodeBlockHandler,
+        'vegalite': ChartCodeBlockHandler,
 
         // Mermaid handler
         mermaid: MermaidCodeBlockHandler,

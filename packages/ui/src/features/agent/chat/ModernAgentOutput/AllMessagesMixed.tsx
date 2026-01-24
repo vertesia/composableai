@@ -447,16 +447,15 @@ function AllMessagesMixedComponent({
                                         </MessageErrorBoundary>
                                     );
                                 } else if (group.type === 'streaming') {
-                                    // Render streaming message with reveal animation
+                                    // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
-                                        <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`} >
-                                            <StreamingMessage
-                                                text={group.text}
-                                                workstreamId={group.workstreamId}
-                                                isComplete={group.isComplete}
-                                                timestamp={group.startTimestamp}
-                                            />
-                                        </MessageErrorBoundary>
+                                        <StreamingMessage
+                                            key={`streaming-${group.streamingId}-${groupIndex}`}
+                                            text={group.text}
+                                            workstreamId={group.workstreamId}
+                                            isComplete={group.isComplete}
+                                            timestamp={group.startTimestamp}
+                                        />
                                     );
                                 } else {
                                     // Render single message
@@ -489,16 +488,15 @@ function AllMessagesMixedComponent({
                                     );
                                 }
                             })}
-                            {/* Incomplete streaming - uses StreamingMessage for reveal animation */}
+                            {/* Incomplete streaming - no error boundary to avoid interrupting streaming */}
                             {incompleteStreaming.map(({ id, data }) => (
-                                <MessageErrorBoundary key={`streaming-incomplete-${id}`} >
-                                    <StreamingMessage
-                                        text={data.text}
-                                        workstreamId={data.workstreamId}
-                                        isComplete={false}
-                                        timestamp={data.startTimestamp}
-                                    />
-                                </MessageErrorBoundary>
+                                <StreamingMessage
+                                    key={`streaming-incomplete-${id}`}
+                                    text={data.text}
+                                    workstreamId={data.workstreamId}
+                                    isComplete={false}
+                                    timestamp={data.startTimestamp}
+                                />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && incompleteStreaming.length === 0 && (
@@ -534,16 +532,15 @@ function AllMessagesMixedComponent({
                                         </MessageErrorBoundary>
                                     );
                                 } else if (group.type === 'streaming') {
-                                    // Render streaming message with reveal animation
+                                    // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
-                                        <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`} >
-                                            <StreamingMessage
-                                                text={group.text}
-                                                workstreamId={group.workstreamId}
-                                                isComplete={group.isComplete}
-                                                timestamp={group.startTimestamp}
-                                            />
-                                        </MessageErrorBoundary>
+                                        <StreamingMessage
+                                            key={`streaming-${group.streamingId}-${groupIndex}`}
+                                            text={group.text}
+                                            workstreamId={group.workstreamId}
+                                            isComplete={group.isComplete}
+                                            timestamp={group.startTimestamp}
+                                        />
                                     );
                                 } else {
                                     // Render single message
@@ -579,25 +576,23 @@ function AllMessagesMixedComponent({
                             })}
                             {/* Recent thinking messages - displayed with streaming reveal */}
                             {recentThinking.map((thinking, idx) => (
-                                <MessageErrorBoundary key={`thinking-${thinking.timestamp}-${idx}`}>
-                                    <StreamingMessage
-                                        text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
-                                        workstreamId={getWorkstreamId(thinking)}
-                                        isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
-                                        timestamp={thinking.timestamp}
-                                    />
-                                </MessageErrorBoundary>
+                                <StreamingMessage
+                                    key={`thinking-${thinking.timestamp}-${idx}`}
+                                    text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
+                                    workstreamId={getWorkstreamId(thinking)}
+                                    isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
+                                    timestamp={thinking.timestamp}
+                                />
                             ))}
-                            {/* Incomplete streaming - uses StreamingMessage for reveal animation */}
+                            {/* Incomplete streaming - no error boundary to avoid interrupting streaming */}
                             {incompleteStreaming.map(({ id, data }) => (
-                                <MessageErrorBoundary key={`streaming-incomplete-${id}`} >
-                                    <StreamingMessage
-                                        text={data.text}
-                                        workstreamId={data.workstreamId}
-                                        isComplete={false}
-                                        timestamp={data.startTimestamp}
-                                    />
-                                </MessageErrorBoundary>
+                                <StreamingMessage
+                                    key={`streaming-incomplete-${id}`}
+                                    text={data.text}
+                                    workstreamId={data.workstreamId}
+                                    isComplete={false}
+                                    timestamp={data.startTimestamp}
+                                />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
