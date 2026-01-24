@@ -1,0 +1,198 @@
+/**
+ * Fusion Fragment Types
+ *
+ * These types define the structure of model-generated UI templates.
+ * Models generate templates (structure), the system provides data (values).
+ */
+
+// ============ Template Types (Model-Generated) ============
+
+/**
+ * Root template structure for a fusion fragment
+ */
+export interface FragmentTemplate {
+  /** Optional title displayed at the top */
+  title?: string;
+  /** Type of entity being displayed - helps with context */
+  entityType?: 'fund' | 'scenario' | 'portfolio' | 'transaction' | 'custom';
+  /** Sections containing fields */
+  sections: SectionTemplate[];
+  /** Optional footer text */
+  footer?: string;
+}
+
+/**
+ * A section within the fragment, containing related fields or a table
+ */
+export interface SectionTemplate {
+  /** Section title/header */
+  title: string;
+  /** Layout mode for the fields */
+  layout?: 'grid-2' | 'grid-3' | 'grid-4' | 'list' | 'table';
+  /** Whether the section is initially collapsed */
+  collapsed?: boolean;
+  /** Fields in this section (for grid/list layouts) */
+  fields?: FieldTemplate[];
+  /** Table columns (for table layout) */
+  columns?: ColumnTemplate[];
+  /** Data key for table rows - points to an array in data */
+  dataKey?: string;
+}
+
+/**
+ * A column definition for table layout
+ */
+export interface ColumnTemplate {
+  /** Column header text */
+  header: string;
+  /** Key to look up in each row object */
+  key: string;
+  /** Display format */
+  format?: 'text' | 'number' | 'currency' | 'percent' | 'date' | 'boolean';
+  /** Column width (optional, e.g., '100px', '20%') */
+  width?: string;
+  /** Text alignment */
+  align?: 'left' | 'center' | 'right';
+  /** Currency code for currency format */
+  currency?: string;
+  /** Number of decimal places */
+  decimals?: number;
+  /** Highlight based on value (function key in data or static) */
+  highlight?: 'success' | 'warning' | 'error' | 'info';
+}
+
+/**
+ * A single field definition
+ */
+export interface FieldTemplate {
+  /** Display label for the field */
+  label: string;
+  /** Key to look up in data - REQUIRED */
+  key: string;
+  /** Display format */
+  format?: 'text' | 'number' | 'currency' | 'percent' | 'date' | 'boolean';
+  /** Unit to display after value (e.g., "years", "USD") */
+  unit?: string;
+  /** Whether this field is editable */
+  editable?: boolean;
+  /** Input type when editing */
+  inputType?: 'text' | 'number' | 'date' | 'select' | 'checkbox';
+  /** Options for select input type */
+  options?: Array<{ label: string; value: string }>;
+  /** Min value for number inputs */
+  min?: number;
+  /** Max value for number inputs */
+  max?: number;
+  /** Visual highlight style */
+  highlight?: 'success' | 'warning' | 'error' | 'info';
+  /** Tooltip text on hover */
+  tooltip?: string;
+  /** Number of decimal places for number format */
+  decimals?: number;
+  /** Currency code for currency format */
+  currency?: string;
+}
+
+// ============ Validation Types ============
+
+/**
+ * Result of template validation
+ */
+export interface ValidationResult {
+  /** Whether the template is valid */
+  valid: boolean;
+  /** List of validation errors */
+  errors: ValidationError[];
+}
+
+/**
+ * A single validation error with path and suggestion
+ */
+export interface ValidationError {
+  /** JSON path to the error (e.g., "sections[0].fields[2].key") */
+  path: string;
+  /** Human-readable error message */
+  message: string;
+  /** Suggested fix (for model feedback) */
+  suggestion?: string;
+}
+
+// ============ Component Props ============
+
+/**
+ * Props for the main FusionFragmentRenderer component
+ */
+export interface FusionFragmentRendererProps {
+  /** The template structure (from model) */
+  template: FragmentTemplate;
+  /** Actual data values to display */
+  data: Record<string, unknown>;
+  /** Callback for field updates (direct mode) */
+  onUpdate?: (key: string, value: unknown) => Promise<void>;
+  /** Agent mode configuration */
+  agentMode?: {
+    enabled: true;
+    /** Send message to conversation */
+    sendMessage: (message: string) => void;
+  };
+  /** CSS class name */
+  className?: string;
+}
+
+/**
+ * Props for section renderer
+ */
+export interface SectionRendererProps {
+  /** Section template */
+  section: SectionTemplate;
+  /** Data for fields */
+  data: Record<string, unknown>;
+  /** Update callback */
+  onUpdate?: (key: string, value: unknown) => Promise<void>;
+  /** Agent mode */
+  agentMode?: FusionFragmentRendererProps['agentMode'];
+}
+
+/**
+ * Props for field renderer
+ */
+export interface FieldRendererProps {
+  /** Field template */
+  field: FieldTemplate;
+  /** Field value from data */
+  value: unknown;
+  /** Update callback */
+  onUpdate?: (value: unknown) => Promise<void>;
+  /** Agent mode */
+  agentMode?: FusionFragmentRendererProps['agentMode'];
+}
+
+// ============ Context Types ============
+
+/**
+ * Context value for FusionFragment components
+ */
+export interface FusionFragmentContextValue {
+  /** Data to display */
+  data: Record<string, unknown>;
+  /** Update callback */
+  onUpdate?: (key: string, value: unknown) => Promise<void>;
+  /** Send message to agent */
+  sendMessage?: (message: string) => void;
+}
+
+// ============ Tool Types ============
+
+/**
+ * Input for validate_fusion_fragment tool
+ */
+export interface ValidateFusionFragmentInput {
+  /** The template to validate */
+  template: FragmentTemplate;
+  /** Available data keys */
+  dataKeys: string[];
+  /** Optional sample data for preview rendering */
+  sampleData?: Record<string, unknown>;
+  /** Preview mode */
+  preview?: 'image' | 'text' | 'none';
+}

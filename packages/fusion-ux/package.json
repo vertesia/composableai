@@ -1,0 +1,72 @@
+{
+  "name": "@vertesia/fusion-ux",
+  "version": "0.81.0",
+  "description": "Dynamic model-generated UI components for Vertesia",
+  "type": "module",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "license": "Apache-2.0",
+  "homepage": "https://docs.vertesiahq.com",
+  "keywords": [
+    "vertesia",
+    "fusion",
+    "ui",
+    "dynamic",
+    "model-generated",
+    "react"
+  ],
+  "scripts": {
+    "build": "pnpm lint && pnpm exec rimraf ./lib && tsc -b",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.68",
+    "@vertesia/ui": "workspace:*",
+    "@vertesia/common": "workspace:*",
+    "@vertesia/tools-sdk": "workspace:*",
+    "ajv": "^8.17.1",
+    "html-to-image": "^1.11.13",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.27.0",
+    "@types/react": "^19.2.3",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.27.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "rimraf": "^6.1.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.49.0",
+    "vitest": "^4.0.16"
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./server": {
+      "types": "./lib/server.d.ts",
+      "default": "./lib/server.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "server": [
+        "./lib/server.d.ts"
+      ]
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vertesia/composableai.git",
+    "directory": "packages/fusion-ux"
+  }
+}
