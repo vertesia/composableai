@@ -80,6 +80,37 @@ function detectChartLibrary(
 }
 
 /**
+ * Vega-Lite code block handler
+ * Always treats content as native Vega-Lite specification
+ */
+export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
+    const { artifactRunId } = useCodeBlockContext();
+
+    const chartSpec = useMemo(() => {
+        const spec = parseChartJson(code);
+        if (!spec) return null;
+
+        // Always wrap as Vega-Lite since this handler is for vega-lite code blocks
+        return { library: 'vega-lite' as const, spec };
+    }, [code]);
+
+    if (!chartSpec) {
+        return (
+            <CodeBlockPlaceholder
+                type="chart"
+                error="Invalid Vega-Lite specification"
+            />
+        );
+    }
+
+    return (
+        <CodeBlockErrorBoundary type="chart" fallbackCode={code}>
+            <AgentChart spec={chartSpec as AgentChartSpec} artifactRunId={artifactRunId} />
+        </CodeBlockErrorBoundary>
+    );
+}
+
+/**
  * Chart code block handler
  * Supports both Vega-Lite and Recharts specifications
  */
@@ -220,10 +251,11 @@ export function createDefaultCodeBlockHandlers(): Record<
     React.FunctionComponent<CodeBlockRendererProps>
 > {
     return {
-        // Chart handlers - support multiple naming conventions
+        // Chart handler for generic chart code blocks (auto-detects library)
         chart: ChartCodeBlockHandler,
-        'vega-lite': ChartCodeBlockHandler,
-        'vegalite': ChartCodeBlockHandler,
+        // Vega-Lite handlers - always treat as Vega-Lite
+        'vega-lite': VegaLiteCodeBlockHandler,
+        'vegalite': VegaLiteCodeBlockHandler,
 
         // Mermaid handler
         mermaid: MermaidCodeBlockHandler,
