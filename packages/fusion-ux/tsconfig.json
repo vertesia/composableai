@@ -19,7 +19,6 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules", "lib"],
   "references": [
-    { "path": "../common/tsconfig.json" },
-    { "path": "../tools-sdk/tsconfig.json" }
+    { "path": "../common/tsconfig.json" }
   ]
 }

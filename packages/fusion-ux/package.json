@@ -29,7 +29,6 @@
     "@napi-rs/canvas": "^0.1.68",
     "@vertesia/ui": "workspace:*",
     "@vertesia/common": "workspace:*",
-    "@vertesia/tools-sdk": "workspace:*",
     "ajv": "^8.17.1",
     "html-to-image": "^1.11.13",
     "react": "^19.2.3",
@@ -39,6 +38,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
+    "@types/node": "^22.15.0",
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.27.0",
@@ -53,17 +53,6 @@
     ".": {
       "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
-    },
-    "./server": {
-      "types": "./lib/server.d.ts",
-      "default": "./lib/server.js"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      "server": [
-        "./lib/server.d.ts"
-      ]
     }
   },
   "repository": {
