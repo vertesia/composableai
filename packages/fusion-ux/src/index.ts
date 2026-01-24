@@ -42,6 +42,8 @@ export type {
   SectionTemplate,
   FieldTemplate,
   ColumnTemplate,
+  ChartTemplate,
+  VegaLiteSpec,
   ValidationResult,
   ValidationError,
   FusionFragmentRendererProps,

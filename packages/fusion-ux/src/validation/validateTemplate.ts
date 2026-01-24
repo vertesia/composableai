@@ -89,11 +89,54 @@ export function validateTemplate(
       continue;
     }
 
-    // Validate non-table sections have fields
+    // Validate chart sections
+    if (section.layout === 'chart') {
+      if (!section.chart) {
+        errors.push({
+          path: `${sectionPath}.chart`,
+          message: 'Chart layout requires a chart specification',
+          suggestion: 'Add chart: { spec: { mark: "bar", encoding: {...} } }'
+        });
+      } else {
+        // Validate chart spec has required properties
+        if (!section.chart.spec) {
+          errors.push({
+            path: `${sectionPath}.chart.spec`,
+            message: 'Chart requires a Vega-Lite spec',
+            suggestion: 'Add spec: { mark: "bar", encoding: {...}, data: {...} }'
+          });
+        } else {
+          // Check for mark or layer/concat
+          const spec = section.chart.spec;
+          const hasContent = spec.mark || spec.layer || spec.vconcat || spec.hconcat;
+          if (!hasContent) {
+            errors.push({
+              path: `${sectionPath}.chart.spec`,
+              message: 'Chart spec requires mark, layer, vconcat, or hconcat',
+              suggestion: 'Add mark: "bar" or mark: "line" etc.'
+            });
+          }
+        }
+
+        // Validate dataKey if provided
+        if (section.chart.dataKey && !dataKeys.includes(section.chart.dataKey)) {
+          const closest = findClosestKey(section.chart.dataKey, dataKeys);
+          errors.push({
+            path: `${sectionPath}.chart.dataKey`,
+            message: `Unknown dataKey '${section.chart.dataKey}'`,
+            suggestion: closest ? `Did you mean '${closest}'?` : undefined
+          });
+        }
+      }
+      // Skip field validation for chart sections
+      continue;
+    }
+
+    // Validate non-table/non-chart sections have fields
     if (!section.fields || section.fields.length === 0) {
       errors.push({
         path: `${sectionPath}.fields`,
-        message: 'Non-table sections require fields array',
+        message: 'Non-table/chart sections require fields array',
         suggestion: 'Add fields: [{ label: "...", key: "..." }]'
       });
       continue;

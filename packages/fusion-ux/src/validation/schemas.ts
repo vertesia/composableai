@@ -90,15 +90,45 @@ export const ColumnTemplateSchema: JSONSchemaType<ColumnTemplate> = {
 };
 
 /**
- * Schema for a section template
+ * Schema for Vega-Lite spec (flexible - allows any valid Vega-Lite properties)
+ * We validate structure loosely and let Vega-Lite handle detailed validation
+ * Note: Using loose typing since VegaLiteSpec is intentionally flexible
  */
-export const SectionTemplateSchema: JSONSchemaType<SectionTemplate> = {
+export const VegaLiteSpecSchema = {
+  type: 'object' as const,
+  additionalProperties: true, // Allow any Vega-Lite properties
+  // We don't enforce specific properties since Vega-Lite has many valid forms
+};
+
+/**
+ * Schema for chart template
+ * Note: Using loose typing for spec since VegaLiteSpec is flexible
+ */
+export const ChartTemplateSchema = {
+  type: 'object' as const,
+  properties: {
+    title: { type: 'string' as const, nullable: true },
+    description: { type: 'string' as const, nullable: true },
+    spec: VegaLiteSpecSchema,
+    height: { type: 'number' as const, nullable: true },
+    width: { type: 'number' as const, nullable: true },
+    dataKey: { type: 'string' as const, nullable: true }
+  },
+  required: ['spec'] as const,
+  additionalProperties: false
+};
+
+/**
+ * Schema for a section template
+ * Note: Using type assertion due to ChartTemplate's flexible VegaLiteSpec
+ */
+export const SectionTemplateSchema = {
   type: 'object',
   properties: {
     title: { type: 'string' },
     layout: {
       type: 'string',
-      enum: ['grid-2', 'grid-3', 'grid-4', 'list', 'table'],
+      enum: ['grid-2', 'grid-3', 'grid-4', 'list', 'table', 'chart'],
       nullable: true
     },
     collapsed: { type: 'boolean', nullable: true },
@@ -112,16 +142,20 @@ export const SectionTemplateSchema: JSONSchemaType<SectionTemplate> = {
       items: ColumnTemplateSchema,
       nullable: true
     },
-    dataKey: { type: 'string', nullable: true }
+    dataKey: { type: 'string', nullable: true },
+    chart: {
+      ...ChartTemplateSchema,
+      nullable: true
+    }
   },
   required: ['title'],
   additionalProperties: false
-};
+} as JSONSchemaType<SectionTemplate>;
 
 /**
  * Schema for the root fragment template
  */
-export const FragmentTemplateSchema: JSONSchemaType<FragmentTemplate> = {
+export const FragmentTemplateSchema = {
   type: 'object',
   properties: {
     title: { type: 'string', nullable: true },
@@ -138,4 +172,4 @@ export const FragmentTemplateSchema: JSONSchemaType<FragmentTemplate> = {
   },
   required: ['sections'],
   additionalProperties: false
-};
+} as JSONSchemaType<FragmentTemplate>;

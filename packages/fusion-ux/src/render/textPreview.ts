@@ -95,6 +95,36 @@ export function generateTextPreview(
           lines.push(colLine);
         }
       }
+    } else if (layout === 'chart') {
+      lines.push(`Layout: chart`);
+      if (section.chart) {
+        const chart = section.chart;
+        if (chart.title) {
+          lines.push(`Chart title: ${chart.title}`);
+        }
+        if (chart.description) {
+          lines.push(`Description: ${chart.description}`);
+        }
+
+        const markType = chart.spec.mark
+          ? (typeof chart.spec.mark === 'string' ? chart.spec.mark : (chart.spec.mark as { type?: string }).type || 'unknown')
+          : 'composite';
+        lines.push(`Chart type: ${markType}`);
+
+        if (chart.dataKey) {
+          lines.push(`Data key: \`${chart.dataKey}\``);
+          if (!dataKeys.includes(chart.dataKey)) {
+            lines.push('\u26a0\ufe0f **dataKey not found in data**');
+          }
+        } else if (chart.spec.data?.values) {
+          lines.push(`Inline data: ${(chart.spec.data.values as unknown[]).length} points`);
+        }
+
+        if (chart.height) {
+          lines.push(`Height: ${chart.height}px`);
+        }
+      }
+      lines.push('');
     } else {
       const layoutDesc = layout === 'list' ? 'vertical list' : `${layout.split('-')[1]}-column grid`;
       lines.push(`Layout: ${layoutDesc}${section.collapsed ? ' (collapsed by default)' : ''}`);
@@ -175,6 +205,13 @@ export function generateCompactPreview(template: FragmentTemplate): string {
         .join(', ');
       const more = s.columns.length > 3 ? `, +${s.columns.length - 3} more` : '';
       return `${s.title} (table): ${colList}${more}`;
+    }
+
+    if (s.layout === 'chart' && s.chart) {
+      const markType = s.chart.spec.mark
+        ? (typeof s.chart.spec.mark === 'string' ? s.chart.spec.mark : (s.chart.spec.mark as { type?: string }).type || 'chart')
+        : 'chart';
+      return `${s.title} (${markType} chart)`;
     }
 
     if (s.fields) {

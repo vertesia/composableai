@@ -7,6 +7,7 @@ import React, { useState, useMemo, type ReactElement } from 'react';
 import type { SectionRendererProps } from '../types.js';
 import { FieldRenderer } from './FieldRenderer.js';
 import { TableRenderer } from './TableRenderer.js';
+import { ChartRenderer } from './ChartRenderer.js';
 
 // Layout grid configurations
 const gridLayouts = {
@@ -116,7 +117,8 @@ export function SectionRenderer({
 
   const layout = section.layout || 'grid-3';
   const isTable = layout === 'table';
-  const layoutStyle = isTable ? {} : gridLayouts[layout as keyof typeof gridLayouts];
+  const isChart = layout === 'chart';
+  const layoutStyle = isTable || isChart ? {} : gridLayouts[layout as keyof typeof gridLayouts];
 
   const isCollapsible = section.collapsed !== undefined;
 
@@ -150,6 +152,30 @@ export function SectionRenderer({
     }
   };
 
+  // Render content based on layout type
+  const renderContent = () => {
+    if (isTable && section.columns) {
+      return <TableRenderer columns={section.columns} rows={tableRows} />;
+    }
+
+    if (isChart && section.chart) {
+      return <ChartRenderer chart={section.chart} data={data} />;
+    }
+
+    // Default: render fields
+    return section.fields?.map((field, index) => (
+      <FieldRenderer
+        key={field.key || index}
+        field={field}
+        value={data[field.key]}
+        onUpdate={
+          onUpdate ? (value) => onUpdate(field.key, value) : undefined
+        }
+        agentMode={agentMode}
+      />
+    ));
+  };
+
   return (
     <div style={styles.section}>
       <div
@@ -163,21 +189,7 @@ export function SectionRenderer({
       </div>
 
       <div style={contentStyle}>
-        {isTable && section.columns ? (
-          <TableRenderer columns={section.columns} rows={tableRows} />
-        ) : (
-          section.fields?.map((field, index) => (
-            <FieldRenderer
-              key={field.key || index}
-              field={field}
-              value={data[field.key]}
-              onUpdate={
-                onUpdate ? (value) => onUpdate(field.key, value) : undefined
-              }
-              agentMode={agentMode}
-            />
-          ))
-        )}
+        {renderContent()}
       </div>
     </div>
   );

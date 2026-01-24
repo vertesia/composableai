@@ -45,6 +45,7 @@ export {
 // Serverless canvas rendering (requires @napi-rs/canvas)
 export {
   renderToBuffer,
+  renderToBufferAsync,
   renderToBase64,
   renderToDataUrl,
 } from './render/serverlessRender.js';
@@ -54,6 +55,9 @@ export type {
   FragmentTemplate,
   SectionTemplate,
   FieldTemplate,
+  ColumnTemplate,
+  ChartTemplate,
+  VegaLiteSpec,
   ValidationResult,
   ValidationError,
   ValidateFusionFragmentInput,

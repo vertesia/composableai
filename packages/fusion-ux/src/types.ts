@@ -22,13 +22,13 @@ export interface FragmentTemplate {
 }
 
 /**
- * A section within the fragment, containing related fields or a table
+ * A section within the fragment, containing related fields, a table, or a chart
  */
 export interface SectionTemplate {
   /** Section title/header */
   title: string;
   /** Layout mode for the fields */
-  layout?: 'grid-2' | 'grid-3' | 'grid-4' | 'list' | 'table';
+  layout?: 'grid-2' | 'grid-3' | 'grid-4' | 'list' | 'table' | 'chart';
   /** Whether the section is initially collapsed */
   collapsed?: boolean;
   /** Fields in this section (for grid/list layouts) */
@@ -37,6 +37,8 @@ export interface SectionTemplate {
   columns?: ColumnTemplate[];
   /** Data key for table rows - points to an array in data */
   dataKey?: string;
+  /** Chart specification (for chart layout) */
+  chart?: ChartTemplate;
 }
 
 /**
@@ -59,6 +61,60 @@ export interface ColumnTemplate {
   decimals?: number;
   /** Highlight based on value (function key in data or static) */
   highlight?: 'success' | 'warning' | 'error' | 'info';
+}
+
+/**
+ * Chart specification for chart layout (Vega-Lite based)
+ */
+export interface ChartTemplate {
+  /** Chart title (displayed above the chart) */
+  title?: string;
+  /** Chart description */
+  description?: string;
+  /** Vega-Lite specification */
+  spec: VegaLiteSpec;
+  /** Chart height in pixels */
+  height?: number;
+  /** Chart width in pixels (defaults to container width) */
+  width?: number;
+  /** Data key - if provided, data from this key replaces spec.data.values */
+  dataKey?: string;
+}
+
+/**
+ * Vega-Lite specification (simplified subset)
+ * Full spec: https://vega.github.io/vega-lite/docs/spec.html
+ */
+export interface VegaLiteSpec {
+  /** Schema URL (optional) */
+  $schema?: string;
+  /** Inline data or data source */
+  data?: {
+    /** Inline data values */
+    values?: Record<string, unknown>[];
+    /** URL to fetch data from */
+    url?: string;
+    /** Data format */
+    format?: { type?: 'json' | 'csv' | 'tsv' };
+  };
+  /** Mark type (bar, line, point, area, etc.) */
+  mark?: string | { type: string; [key: string]: unknown };
+  /** Encoding channels (x, y, color, size, etc.) */
+  encoding?: Record<string, unknown>;
+  /** Vertical concatenation */
+  vconcat?: VegaLiteSpec[];
+  /** Horizontal concatenation */
+  hconcat?: VegaLiteSpec[];
+  /** Layer multiple marks */
+  layer?: VegaLiteSpec[];
+  /** Transform operations */
+  transform?: Record<string, unknown>[];
+  /** Interactive parameters */
+  params?: Record<string, unknown>[];
+  /** Chart configuration */
+  config?: Record<string, unknown>;
+  /** Allow additional Vega-Lite properties */
+  [key: string]: unknown;
 }
 
 /**
