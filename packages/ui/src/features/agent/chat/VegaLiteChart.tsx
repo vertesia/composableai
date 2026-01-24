@@ -408,12 +408,9 @@ function replaceArtifactData(
         const path = pathKey.split('.');
         let current: any = result;
 
-        console.log(`Replacing artifact data at path: ${pathKey}, path parts:`, path);
-
         // Navigate to the parent of the data object
         for (let i = 0; i < path.length - 1; i++) {
             if (current[path[i]] === undefined) {
-                console.warn(`Path navigation failed at step ${i}, key "${path[i]}" not found in:`, Object.keys(current));
                 break;
             }
             current = current[path[i]];
@@ -422,12 +419,8 @@ function replaceArtifactData(
         // Replace data.url with data.values
         const lastKey = path[path.length - 1];
         if (current[lastKey] && typeof current[lastKey] === 'object') {
-            const oldUrl = current[lastKey].url;
             delete current[lastKey].url;
             current[lastKey].values = data;
-            console.log(`Replaced artifact URL "${oldUrl}" with ${data.length} data rows`);
-        } else {
-            console.warn(`Could not find data object at path ${pathKey}. current[${lastKey}]:`, current[lastKey]);
         }
     }
 
@@ -647,22 +640,11 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
                             skipEmptyLines: true,
                             dynamicTyping: true, // Auto-convert numbers and booleans
                         });
-                        if (parseResult.errors.length > 0) {
-                            console.warn(`CSV parse warnings for ${ref.artifactPath}:`, parseResult.errors);
-                        }
                         data = parseResult.data as any[];
                     } else {
                         // Parse as JSON
                         const jsonData = await response.json();
                         data = Array.isArray(jsonData) ? jsonData : [jsonData];
-                    }
-
-                    // Log for debugging
-                    console.log(`Artifact ${ref.artifactPath}: loaded ${data.length} rows`);
-
-                    // Check for empty data
-                    if (!data || data.length === 0) {
-                        console.warn(`Artifact ${ref.artifactPath}: returned empty data`);
                     }
 
                     resolvedData.set(pathKey, data);
@@ -677,8 +659,6 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
             if (!cancelled) {
                 const newSpec = replaceArtifactData(vegaSpec, resolvedData);
-                // Log the resolved spec for debugging
-                console.log('Resolved spec with artifact data:', JSON.stringify(newSpec).slice(0, 500) + '...');
                 setResolvedSpec(newSpec);
                 setIsLoadingArtifacts(false);
             }
@@ -1001,19 +981,13 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         return null;
     }
 
-    // Debug: Log the final spec being rendered
-    console.log('VegaLite rendering with spec:', {
-        title,
-        hasData: !!(chartSpec as any).data?.values,
-        dataLength: (chartSpec as any).data?.values?.length,
-        spec: JSON.stringify(chartSpec).slice(0, 1000) + '...'
-    });
-
-    // Check if spec has data
-    const specData = (chartSpec as any).data;
-    const hasNoData = specData && !specData.values && !specData.url;
-    if (hasNoData) {
-        console.warn('VegaLite spec has no data:', chartSpec);
+    // Debug: Log renders to track unnecessary re-renders (enable with localStorage)
+    if (typeof window !== 'undefined' && localStorage.getItem('DEBUG_VEGA_RENDERS')) {
+        console.log('VegaLite rendering with spec:', {
+            title,
+            hasData: !!(chartSpec as any).data?.values,
+            dataLength: (chartSpec as any).data?.values?.length,
+        });
     }
 
     return (

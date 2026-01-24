@@ -2,7 +2,7 @@ import { VertesiaClient } from "@vertesia/client";
 import { normalizeToolCollection } from "@vertesia/common";
 import { useUserSession } from "@vertesia/ui/session";
 import { CodeBlockRendererProps, CodeBlockRendererProvider } from "@vertesia/ui/widgets";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { AgentChart, AgentChartSpec } from "./AgentChart";
 import { VegaLiteChart } from "./VegaLiteChart";
 
@@ -14,7 +14,7 @@ interface SkillWidgetProviderProperties {
  * Widget for rendering Recharts-based charts (bar, line, pie, etc.)
  * Used for `chart` code blocks that use Recharts format
  */
-const RechartsChartWidget = ({ code }: { code: string }) => {
+const RechartsChartWidget = memo(function RechartsChartWidget({ code }: { code: string }) {
     const spec = useMemo(() => {
         try {
             return JSON.parse(code) as AgentChartSpec;
@@ -30,13 +30,13 @@ const RechartsChartWidget = ({ code }: { code: string }) => {
     }
 
     return <AgentChart spec={spec} />
-}
+});
 
 /**
  * Widget for rendering Vega-Lite charts directly
  * Used for `vega-lite` and `vegalite` code blocks
  */
-const VegaLiteChartWidget = ({ code }: { code: string }) => {
+const VegaLiteChartWidget = memo(function VegaLiteChartWidget({ code }: { code: string }) {
     const spec = useMemo(() => {
         try {
             const parsed = JSON.parse(code);
@@ -55,7 +55,7 @@ const VegaLiteChartWidget = ({ code }: { code: string }) => {
 
     // Render VegaLiteChart directly - bypass AgentChart routing
     return <VegaLiteChart spec={spec} />
-}
+});
 
 const defaultComponents: Record<string, React.FunctionComponent<CodeBlockRendererProps>> = {
     "chart": RechartsChartWidget,
