@@ -1,6 +1,6 @@
 import { useCodeBlockRendererRegistry } from './CodeBlockRendering';
 import type { Element } from 'hast';
-import React from 'react';
+import React, { Component, ReactNode } from 'react';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { SKIP, visit } from 'unist-util-visit';
@@ -10,6 +10,38 @@ import {
     CodeBlockHandlerProvider,
     createDefaultCodeBlockHandlers,
 } from './codeBlockHandlers';
+
+/**
+ * Internal error boundary that catches markdown parsing errors and falls back to plain text.
+ * Auto-resets when children change, making it safe for streaming content.
+ */
+class MarkdownErrorBoundary extends Component<
+    { children: ReactNode; fallback: ReactNode },
+    { hasError: boolean }
+> {
+    constructor(props: { children: ReactNode; fallback: ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+
+    componentDidUpdate(prevProps: { children: ReactNode; fallback: ReactNode }) {
+        // Auto-reset when content changes - allows recovery during streaming
+        if (this.state.hasError && prevProps.fallback !== this.props.fallback) {
+            this.setState({ hasError: false });
+        }
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return this.props.fallback;
+        }
+        return this.props.children;
+    }
+}
 
 // Custom URL schemes that we handle in our components
 const ALLOWED_CUSTOM_SCHEMES = [
@@ -216,20 +248,27 @@ export function MarkdownRenderer({
         imageClassName,
     ]);
 
+    // Plain text fallback for when markdown parsing fails (e.g., during streaming)
+    const plainTextFallback = (
+        <span style={{ whiteSpace: 'pre-wrap' }}>{children}</span>
+    );
+
     const markdownContent = (
-        <CodeBlockHandlerProvider
-            artifactRunId={artifactRunId}
-            onProposalSelect={onProposalSelect}
-            onProposalSubmit={onProposalSubmit}
-        >
-            <Markdown
-                remarkPlugins={plugins}
-                components={componentsWithOverrides}
-                urlTransform={customUrlTransform}
+        <MarkdownErrorBoundary fallback={plainTextFallback}>
+            <CodeBlockHandlerProvider
+                artifactRunId={artifactRunId}
+                onProposalSelect={onProposalSelect}
+                onProposalSubmit={onProposalSubmit}
             >
-                {children}
-            </Markdown>
-        </CodeBlockHandlerProvider>
+                <Markdown
+                    remarkPlugins={plugins}
+                    components={componentsWithOverrides}
+                    urlTransform={customUrlTransform}
+                >
+                    {children}
+                </Markdown>
+            </CodeBlockHandlerProvider>
+        </MarkdownErrorBoundary>
     );
 
     if (className) {

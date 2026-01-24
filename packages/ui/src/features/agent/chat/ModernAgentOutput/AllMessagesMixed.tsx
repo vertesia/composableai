@@ -34,12 +34,13 @@ const isSystemMetadataMessage = (message: AgentMessage): boolean => {
 };
 
 // Error boundary to catch and isolate errors in individual message components
-// For streaming content, we silently recover since incomplete markdown/JSON is expected
+// Note: Markdown parsing errors are handled internally by MarkdownRenderer,
+// so this mainly catches other component errors (e.g., artifact loading, charts)
 class MessageErrorBoundary extends Component<
-    { children: ReactNode; isStreaming?: boolean },
+    { children: ReactNode },
     { hasError: boolean; error?: Error }
 > {
-    constructor(props: { children: ReactNode; isStreaming?: boolean }) {
+    constructor(props: { children: ReactNode }) {
         super(props);
         this.state = { hasError: false };
     }
@@ -49,9 +50,9 @@ class MessageErrorBoundary extends Component<
         return { hasError: true, error };
     }
 
-    componentDidUpdate(prevProps: { children: ReactNode; isStreaming?: boolean }) {
-        // Auto-reset error state when children change (new streaming content)
-        // This allows recovery from transient parsing errors during streaming
+    componentDidUpdate(prevProps: { children: ReactNode }) {
+        // Auto-reset error state when children change
+        // This allows recovery from transient errors during streaming
         if (this.state.hasError && prevProps.children !== this.props.children) {
             this.setState({ hasError: false, error: undefined });
         }
@@ -59,11 +60,6 @@ class MessageErrorBoundary extends Component<
 
     render() {
         if (this.state.hasError) {
-            // For streaming content, silently fail to allow recovery on next update
-            if (this.props.isStreaming) {
-                return null;
-            }
-            // Show error indicator for completed messages
             return (
                 <div className="border-l-4 border-l-destructive bg-destructive/10 px-4 py-2 my-2 rounded-r">
                     <p className="text-sm text-destructive font-medium">Failed to render message</p>
@@ -453,7 +449,7 @@ function AllMessagesMixedComponent({
                                 } else if (group.type === 'streaming') {
                                     // Render streaming message with reveal animation
                                     return (
-                                        <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`} isStreaming={!group.isComplete}>
+                                        <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`} >
                                             <StreamingMessage
                                                 text={group.text}
                                                 workstreamId={group.workstreamId}
@@ -495,7 +491,7 @@ function AllMessagesMixedComponent({
                             })}
                             {/* Incomplete streaming - uses StreamingMessage for reveal animation */}
                             {incompleteStreaming.map(({ id, data }) => (
-                                <MessageErrorBoundary key={`streaming-incomplete-${id}`} isStreaming>
+                                <MessageErrorBoundary key={`streaming-incomplete-${id}`} >
                                     <StreamingMessage
                                         text={data.text}
                                         workstreamId={data.workstreamId}
@@ -540,7 +536,7 @@ function AllMessagesMixedComponent({
                                 } else if (group.type === 'streaming') {
                                     // Render streaming message with reveal animation
                                     return (
-                                        <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`} isStreaming={!group.isComplete}>
+                                        <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`} >
                                             <StreamingMessage
                                                 text={group.text}
                                                 workstreamId={group.workstreamId}
@@ -583,7 +579,7 @@ function AllMessagesMixedComponent({
                             })}
                             {/* Recent thinking messages - displayed with streaming reveal */}
                             {recentThinking.map((thinking, idx) => (
-                                <MessageErrorBoundary key={`thinking-${thinking.timestamp}-${idx}`} isStreaming={idx === recentThinking.length - 1}>
+                                <MessageErrorBoundary key={`thinking-${thinking.timestamp}-${idx}`}>
                                     <StreamingMessage
                                         text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
                                         workstreamId={getWorkstreamId(thinking)}
@@ -594,7 +590,7 @@ function AllMessagesMixedComponent({
                             ))}
                             {/* Incomplete streaming - uses StreamingMessage for reveal animation */}
                             {incompleteStreaming.map(({ id, data }) => (
-                                <MessageErrorBoundary key={`streaming-incomplete-${id}`} isStreaming>
+                                <MessageErrorBoundary key={`streaming-incomplete-${id}`} >
                                     <StreamingMessage
                                         text={data.text}
                                         workstreamId={data.workstreamId}
