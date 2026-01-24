@@ -4,12 +4,17 @@ import { useUserSession } from "@vertesia/ui/session";
 import { CodeBlockRendererProps, CodeBlockRendererProvider } from "@vertesia/ui/widgets";
 import { useEffect, useMemo, useState } from "react";
 import { AgentChart, AgentChartSpec } from "./AgentChart";
+import { VegaLiteChart } from "./VegaLiteChart";
 
 interface SkillWidgetProviderProperties {
     children: React.ReactNode;
 }
 
-const AgentChartWidget = ({ code }: { code: string }) => {
+/**
+ * Widget for rendering Recharts-based charts (bar, line, pie, etc.)
+ * Used for `chart` code blocks that use Recharts format
+ */
+const RechartsChartWidget = ({ code }: { code: string }) => {
     const spec = useMemo(() => {
         try {
             return JSON.parse(code) as AgentChartSpec;
@@ -27,10 +32,35 @@ const AgentChartWidget = ({ code }: { code: string }) => {
     return <AgentChart spec={spec} />
 }
 
+/**
+ * Widget for rendering Vega-Lite charts directly
+ * Used for `vega-lite` and `vegalite` code blocks
+ */
+const VegaLiteChartWidget = ({ code }: { code: string }) => {
+    const spec = useMemo(() => {
+        try {
+            const parsed = JSON.parse(code);
+            // Wrap native Vega-Lite spec in the expected format
+            return { library: 'vega-lite' as const, spec: parsed };
+        } catch {
+            // During streaming, code may be incomplete JSON - return null to skip rendering
+            return null;
+        }
+    }, [code]);
+
+    // Don't render anything while JSON is incomplete (during streaming)
+    if (!spec) {
+        return null;
+    }
+
+    // Render VegaLiteChart directly - bypass AgentChart routing
+    return <VegaLiteChart spec={spec} />
+}
+
 const defaultComponents: Record<string, React.FunctionComponent<CodeBlockRendererProps>> = {
-    "chart": AgentChartWidget,
-    "vega-lite": AgentChartWidget,
-    "vegalite": AgentChartWidget,
+    "chart": RechartsChartWidget,
+    "vega-lite": VegaLiteChartWidget,
+    "vegalite": VegaLiteChartWidget,
 }
 
 function RemoteWidgetComponent({ url, code }: { url: string, code: string }) {
