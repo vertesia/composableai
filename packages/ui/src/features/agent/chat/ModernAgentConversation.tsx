@@ -1373,12 +1373,7 @@ function ModernAgentConversationInner({
                         : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
             }`}
             >
-                {/* Streaming activity indicator - only visible when receiving chunks */}
-                {debugChunkFlash && (
-                    <div className="absolute top-2 right-2 z-50">
-                        <div className="w-3 h-3 rounded-full bg-green-400 shadow-[0_0_8px_2px_rgba(74,222,128,0.8)]" />
-                    </div>
-                )}
+                {/* Streaming activity indicator moved to Header */}
 
                 {/* Header - flex-shrink-0 to prevent shrinking */}
                 <div className="flex-shrink-0">
@@ -1397,6 +1392,7 @@ function ModernAgentConversationInner({
                         onCopyRunId={copyRunId}
                         resetWorkflow={resetWorkflow}
                         onExportPdf={exportConversationPdf}
+                        isReceivingChunks={debugChunkFlash}
                     />
                 </div>
 

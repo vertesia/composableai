@@ -20,6 +20,8 @@ export interface HeaderProps {
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
+    /** Show green indicator when receiving streaming chunks */
+    isReceivingChunks?: boolean;
     /** Additional className for the outer container */
     className?: string;
     /** Additional className for the title section */
@@ -42,6 +44,7 @@ export default function Header({
     onCopyRunId,
     resetWorkflow,
     onExportPdf,
+    isReceivingChunks = false,
     className,
     titleClassName,
     actionsClassName,
@@ -53,6 +56,10 @@ export default function Header({
                     <div className="flex items-center space-x-1">
                         <Bot className="size-5 text-muted" />
                         <span className="font-medium">{title}</span>
+                        {/* Streaming chunk indicator */}
+                        {isReceivingChunks && (
+                            <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_2px_rgba(74,222,128,0.6)]" />
+                        )}
                     </div>
                     <span className="text-xs text-muted ml-1">
                         (Run ID: {run.runId.substring(0, 8)}...)
