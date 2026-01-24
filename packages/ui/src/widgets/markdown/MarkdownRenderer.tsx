@@ -126,7 +126,7 @@ export function MarkdownRenderer({
                     const CustomComponent = codeBlockRegistry.getComponent(language);
                     if (CustomComponent) {
                         const code = String(codeChildren || '').trim();
-                        return <CustomComponent code={code} />;
+                        return <CustomComponent code={code} language={language} />;
                     }
                 }
 
@@ -134,7 +134,7 @@ export function MarkdownRenderer({
                 const DefaultHandler = defaultCodeBlockHandlers[language];
                 if (DefaultHandler) {
                     const code = String(codeChildren || '').trim();
-                    return <DefaultHandler code={code} />;
+                    return <DefaultHandler code={code} language={language} />;
                 }
             }
 

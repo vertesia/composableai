@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import type { CodeBlockRendererProps } from './CodeBlockRendering';
 import { CodeBlockPlaceholder, CodeBlockErrorBoundary } from './CodeBlockPlaceholder';
 import { AgentChart, type AgentChartSpec } from '../../features/agent/chat/AgentChart';
+import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { MermaidDiagram } from './MermaidDiagram';
 import { AskUserWidget, type AskUserWidgetProps } from '../../features/agent/chat/AskUserWidget';
 
@@ -81,7 +82,7 @@ function detectChartLibrary(
 
 /**
  * Vega-Lite code block handler
- * Always treats content as native Vega-Lite specification
+ * Always renders with VegaLiteChart directly - no routing through AgentChart
  */
 export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const { artifactRunId } = useCodeBlockContext();
@@ -90,7 +91,7 @@ export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
         const spec = parseChartJson(code);
         if (!spec) return null;
 
-        // Always wrap as Vega-Lite since this handler is for vega-lite code blocks
+        // Wrap as VegaLiteChartSpec format
         return { library: 'vega-lite' as const, spec };
     }, [code]);
 
@@ -103,9 +104,10 @@ export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
         );
     }
 
+    // Render VegaLiteChart directly - bypass AgentChart routing
     return (
         <CodeBlockErrorBoundary type="chart" fallbackCode={code}>
-            <AgentChart spec={chartSpec as AgentChartSpec} artifactRunId={artifactRunId} />
+            <VegaLiteChart spec={chartSpec} artifactRunId={artifactRunId} />
         </CodeBlockErrorBoundary>
     );
 }
