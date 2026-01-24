@@ -115,27 +115,30 @@ export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
 /**
  * Chart code block handler
  * Supports both Vega-Lite and Recharts specifications
+ * Routes directly to the appropriate chart component based on detected library
  */
 export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const { artifactRunId } = useCodeBlockContext();
 
-    const chartSpec = useMemo(() => {
+    const { chartSpec, isVegaLite } = useMemo(() => {
         const spec = parseChartJson(code);
-        if (!spec) return null;
+        if (!spec) return { chartSpec: null, isVegaLite: false };
 
         const library = detectChartLibrary(spec);
-        if (!library) return null;
+        if (!library) return { chartSpec: null, isVegaLite: false };
 
-        // Wrap native Vega-Lite spec (with $schema) in expected format
-        if (
-            library === 'vega-lite' &&
-            typeof spec.$schema === 'string' &&
-            spec.library !== 'vega-lite'
-        ) {
-            return { library: 'vega-lite' as const, spec };
+        // Vega-Lite spec - wrap in expected format
+        if (library === 'vega-lite') {
+            // If already wrapped (has library: 'vega-lite' and spec property), use as-is
+            if (spec.library === 'vega-lite' && 'spec' in spec) {
+                return { chartSpec: spec, isVegaLite: true };
+            }
+            // Native Vega-Lite spec - wrap it
+            return { chartSpec: { library: 'vega-lite' as const, spec }, isVegaLite: true };
         }
 
-        return spec;
+        // Recharts spec
+        return { chartSpec: spec, isVegaLite: false };
     }, [code]);
 
     if (!chartSpec) {
@@ -144,6 +147,15 @@ export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
                 type="chart"
                 error="Invalid chart specification"
             />
+        );
+    }
+
+    // Route directly to the appropriate chart component
+    if (isVegaLite) {
+        return (
+            <CodeBlockErrorBoundary type="chart" fallbackCode={code}>
+                <VegaLiteChart spec={chartSpec as any} artifactRunId={artifactRunId} />
+            </CodeBlockErrorBoundary>
         );
     }
 
