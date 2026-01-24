@@ -91,10 +91,10 @@ function StreamingMessageComponent({
 
             const buffer = targetLengthRef.current - displayedLengthRef.current;
 
-            // Nothing to reveal - keep animation running to catch new chunks
+            // Nothing to reveal - stop animation, it will restart when new text arrives
             if (buffer <= 0) {
                 fractionalCharsRef.current = 0;
-                animationRef.current = requestAnimationFrame(step);
+                animationRef.current = null;
                 return;
             }
 

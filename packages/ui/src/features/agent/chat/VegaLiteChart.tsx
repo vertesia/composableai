@@ -673,9 +673,15 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
     // Detect dark mode
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const isDarkModeRef = useRef(false);
     useEffect(() => {
         const checkDarkMode = () => {
-            setIsDarkMode(document.documentElement.classList.contains('dark'));
+            const newDarkMode = document.documentElement.classList.contains('dark');
+            // Only update state if dark mode actually changed
+            if (newDarkMode !== isDarkModeRef.current) {
+                isDarkModeRef.current = newDarkMode;
+                setIsDarkMode(newDarkMode);
+            }
         };
         checkDarkMode();
         const observer = new MutationObserver(checkDarkMode);
@@ -685,17 +691,30 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
     // Track container width for responsive sizing
     const [containerWidth, setContainerWidth] = useState(0);
+    const containerWidthRef = useRef(0);
     useEffect(() => {
         if (!containerRef.current) return;
+        let resizeTimeout: ReturnType<typeof setTimeout>;
         const resizeObserver = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                setContainerWidth(entry.contentRect.width);
-            }
+            // Debounce resize callbacks to ~100ms to avoid excessive state updates
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const width = entries[0]?.contentRect.width;
+                if (width && width !== containerWidthRef.current) {
+                    containerWidthRef.current = width;
+                    setContainerWidth(width);
+                }
+            }, 100);
         });
         resizeObserver.observe(containerRef.current);
         // Initial width
-        setContainerWidth(containerRef.current.clientWidth);
-        return () => resizeObserver.disconnect();
+        const initialWidth = containerRef.current.clientWidth;
+        containerWidthRef.current = initialWidth;
+        setContainerWidth(initialWidth);
+        return () => {
+            clearTimeout(resizeTimeout);
+            resizeObserver.disconnect();
+        };
     }, []);
 
     // Check if there are artifact references that need resolution
