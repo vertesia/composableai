@@ -37,6 +37,72 @@ export function useCodeBlockContext() {
 }
 
 /**
+ * Check if JSON parsing failed due to incomplete content (streaming)
+ * vs actually invalid JSON structure
+ */
+function isIncompleteJson(code: string): boolean {
+    const trimmed = code.trim();
+
+    // Empty or very short content is likely incomplete
+    if (trimmed.length < 2) return true;
+
+    // Must start with { for a valid JSON object
+    if (!trimmed.startsWith('{')) return false;
+
+    // Try to parse - if it succeeds, it's not incomplete
+    try {
+        JSON.parse(trimmed);
+        return false; // Valid JSON
+    } catch (e) {
+        const message = e instanceof Error ? e.message : '';
+
+        // Common indicators of incomplete JSON during streaming
+        const incompleteIndicators = [
+            'unexpected end',
+            'unterminated string',
+            'expected',
+            'unexpected token',
+        ];
+
+        const lowerMessage = message.toLowerCase();
+        if (incompleteIndicators.some(ind => lowerMessage.includes(ind))) {
+            // Additional check: count brackets to see if they're unbalanced
+            let braceCount = 0;
+            let bracketCount = 0;
+            let inString = false;
+            let escaped = false;
+
+            for (const char of trimmed) {
+                if (escaped) {
+                    escaped = false;
+                    continue;
+                }
+                if (char === '\\') {
+                    escaped = true;
+                    continue;
+                }
+                if (char === '"') {
+                    inString = !inString;
+                    continue;
+                }
+                if (!inString) {
+                    if (char === '{') braceCount++;
+                    else if (char === '}') braceCount--;
+                    else if (char === '[') bracketCount++;
+                    else if (char === ']') bracketCount--;
+                }
+            }
+
+            // If brackets are unbalanced or we're in an unclosed string, it's incomplete
+            return braceCount > 0 || bracketCount > 0 || inString;
+        }
+
+        // For other parse errors, consider it invalid rather than incomplete
+        return false;
+    }
+}
+
+/**
  * Parses chart JSON from code block content.
  * Handles cases where extra content is appended after the JSON.
  */
@@ -89,13 +155,27 @@ function detectChartLibrary(
 export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const { artifactRunId } = useCodeBlockContext();
 
+    // Check if JSON is incomplete (streaming in progress)
+    const incomplete = useMemo(() => isIncompleteJson(code), [code]);
+
     const chartSpec = useMemo(() => {
+        if (incomplete) return null;
         const spec = parseChartJson(code);
         if (!spec) return null;
 
         // Wrap as VegaLiteChartSpec format
         return { library: 'vega-lite' as const, spec };
-    }, [code]);
+    }, [code, incomplete]);
+
+    // Show loading placeholder for incomplete JSON (streaming)
+    if (incomplete) {
+        return (
+            <CodeBlockPlaceholder
+                type="chart"
+                message="Loading chart..."
+            />
+        );
+    }
 
     if (!chartSpec) {
         return (
@@ -122,7 +202,12 @@ export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
 export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const { artifactRunId } = useCodeBlockContext();
 
+    // Check if JSON is incomplete (streaming in progress)
+    const incomplete = useMemo(() => isIncompleteJson(code), [code]);
+
     const { chartSpec, isVegaLite } = useMemo(() => {
+        if (incomplete) return { chartSpec: null, isVegaLite: false };
+
         const spec = parseChartJson(code);
         if (!spec) return { chartSpec: null, isVegaLite: false };
 
@@ -141,7 +226,17 @@ export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
 
         // Recharts spec
         return { chartSpec: spec, isVegaLite: false };
-    }, [code]);
+    }, [code, incomplete]);
+
+    // Show loading placeholder for incomplete JSON (streaming)
+    if (incomplete) {
+        return (
+            <CodeBlockPlaceholder
+                type="chart"
+                message="Loading chart..."
+            />
+        );
+    }
 
     if (!chartSpec) {
         return (
@@ -196,7 +291,12 @@ export function MermaidCodeBlockHandler({ code }: CodeBlockRendererProps) {
 export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const { onProposalSelect, onProposalSubmit } = useCodeBlockContext();
 
+    // Check if JSON is incomplete (streaming in progress)
+    const incomplete = useMemo(() => isIncompleteJson(code), [code]);
+
     const widgetProps = useMemo((): AskUserWidgetProps | null => {
+        if (incomplete) return null;
+
         try {
             const raw = code.trim();
             const spec = JSON.parse(raw);
@@ -229,7 +329,17 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
         } catch {
             return null;
         }
-    }, [code, onProposalSelect, onProposalSubmit]);
+    }, [code, onProposalSelect, onProposalSubmit, incomplete]);
+
+    // Show loading placeholder for incomplete JSON (streaming)
+    if (incomplete) {
+        return (
+            <CodeBlockPlaceholder
+                type="proposal"
+                message="Loading options..."
+            />
+        );
+    }
 
     if (!widgetProps) {
         return (
