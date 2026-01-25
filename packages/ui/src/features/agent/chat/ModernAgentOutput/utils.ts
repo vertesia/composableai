@@ -433,12 +433,17 @@ export function groupMessagesWithStreaming(
         });
     });
 
-    // Sort by timestamp, but streaming always goes at the end
+    // Sort by timestamp, but incomplete streaming goes at the end
+    // Complete/final streaming messages stay at their chronological position
     items.sort((a, b) => {
-        // Streaming messages always come last
-        if (a.kind === 'streaming' && b.kind !== 'streaming') return 1;
-        if (b.kind === 'streaming' && a.kind !== 'streaming') return -1;
-        // Both streaming or both non-streaming: sort by timestamp
+        const aIsIncompleteStreaming = a.kind === 'streaming' && !a.data.isComplete;
+        const bIsIncompleteStreaming = b.kind === 'streaming' && !b.data.isComplete;
+
+        // Only incomplete streaming messages go last
+        if (aIsIncompleteStreaming && !bIsIncompleteStreaming) return 1;
+        if (bIsIncompleteStreaming && !aIsIncompleteStreaming) return -1;
+
+        // Both are same type (both incomplete streaming, both complete, or both non-streaming): sort by timestamp
         return a.timestamp - b.timestamp;
     });
 

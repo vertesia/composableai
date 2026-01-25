@@ -207,8 +207,8 @@ function AllMessagesMixedComponent({
             msg.type === AgentMessageType.REQUEST_INPUT ||
             msg.type === AgentMessageType.TERMINATED ||
             msg.type === AgentMessageType.ERROR ||
-            // Include THOUGHT messages that have tool details (progress from message_to_human)
-            (msg.type === AgentMessageType.THOUGHT && msg.details?.tool) ||
+            // Include THOUGHT messages that have tool details (progress from message_to_human or streamed content)
+            (msg.type === AgentMessageType.THOUGHT && (msg.details?.tool || msg.details?.tools || msg.details?.streamed)) ||
             // Include toolkit_ready SYSTEM message (shows at conversation start)
             (msg.type === AgentMessageType.SYSTEM && msg.details?.system_type === 'toolkit_ready')
         );
@@ -220,23 +220,47 @@ function AllMessagesMixedComponent({
                 .filter(msg =>
                     msg.type === AgentMessageType.UPDATE ||
                     msg.type === AgentMessageType.PLAN ||
-                    (msg.type === AgentMessageType.THOUGHT && !msg.details?.tool))
+                    (msg.type === AgentMessageType.THOUGHT && !msg.details?.tool && !msg.details?.tools && !msg.details?.streamed))
                 .slice(-1) // Show only the latest thinking message
             : [];
 
         return { importantMessages: important, recentThinking: thinkingMessages };
     }, [displayMessages, isCompleted, streamingMessages.size]);
 
-    // Group messages with streaming interleaved for stacked view
+    // Split streaming messages: complete ones get interleaved, incomplete ones render at end
+    // This prevents re-grouping all messages when incomplete streaming updates
+    const { completeStreaming, incompleteStreaming } = React.useMemo(() => {
+        const complete = new Map<string, StreamingData>();
+        const incomplete: Array<{ id: string; data: StreamingData }> = [];
+
+        streamingMessages.forEach((data, id) => {
+            // Filter by workstream if specified
+            if (activeWorkstream && activeWorkstream !== "all") {
+                const streamWorkstream = data.workstreamId || "main";
+                if (activeWorkstream !== streamWorkstream) return;
+            }
+
+            if (data.isComplete) {
+                complete.set(id, data);
+            } else if (data.text) {
+                incomplete.push({ id, data });
+            }
+        });
+
+        return { completeStreaming: complete, incompleteStreaming: incomplete };
+    }, [streamingMessages, activeWorkstream]);
+
+    // Group messages with ONLY complete streaming interleaved for stacked view
+    // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk)
     const groupedMessages = React.useMemo(
-        () => groupMessagesWithStreaming(displayMessages, streamingMessages, activeWorkstream),
-        [displayMessages, streamingMessages, activeWorkstream]
+        () => groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream),
+        [displayMessages, completeStreaming, activeWorkstream]
     );
 
-    // Group important messages with streaming interleaved for sliding view
+    // Group important messages with ONLY complete streaming interleaved for sliding view
     const groupedImportantMessages = React.useMemo(
-        () => groupMessagesWithStreaming(importantMessages, streamingMessages, activeWorkstream),
-        [importantMessages, streamingMessages, activeWorkstream]
+        () => groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream),
+        [importantMessages, completeStreaming, activeWorkstream]
     );
 
     // Show working indicator when agent is actively processing
@@ -335,13 +359,14 @@ function AllMessagesMixedComponent({
                                         </MessageErrorBoundary>
                                     );
                                 } else if (group.type === 'streaming') {
-                                    // Render streaming message inline
+                                    // Render streaming message with reveal animation
                                     return (
                                         <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`}>
                                             <StreamingMessage
                                                 text={group.text}
                                                 workstreamId={group.workstreamId}
                                                 isComplete={group.isComplete}
+                                                timestamp={group.startTimestamp}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -376,9 +401,20 @@ function AllMessagesMixedComponent({
                                     );
                                 }
                             })}
+                            {/* Incomplete streaming - uses StreamingMessage for reveal animation */}
+                            {incompleteStreaming.map(({ id, data }) => (
+                                <MessageErrorBoundary key={`streaming-incomplete-${id}`}>
+                                    <StreamingMessage
+                                        text={data.text}
+                                        workstreamId={data.workstreamId}
+                                        isComplete={false}
+                                        timestamp={data.startTimestamp}
+                                    />
+                                </MessageErrorBoundary>
+                            ))}
                             {/* Working indicator - shows agent is actively processing */}
-                            {isAgentWorking && streamingMessages.size === 0 && (
-                                <div className="flex items-center gap-3 p-4 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
+                            {isAgentWorking && incompleteStreaming.length === 0 && (
+                                <div className="flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500">
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-sm text-muted">Working...</span>
                                 </div>
@@ -410,13 +446,14 @@ function AllMessagesMixedComponent({
                                         </MessageErrorBoundary>
                                     );
                                 } else if (group.type === 'streaming') {
-                                    // Render streaming message inline
+                                    // Render streaming message with reveal animation
                                     return (
                                         <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`}>
                                             <StreamingMessage
                                                 text={group.text}
                                                 workstreamId={group.workstreamId}
                                                 isComplete={group.isComplete}
+                                                timestamp={group.startTimestamp}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -452,19 +489,31 @@ function AllMessagesMixedComponent({
                                     );
                                 }
                             })}
-                            {/* Recent thinking messages - displayed like streaming */}
+                            {/* Recent thinking messages - displayed with streaming reveal */}
                             {recentThinking.map((thinking, idx) => (
                                 <MessageErrorBoundary key={`thinking-${thinking.timestamp}-${idx}`}>
                                     <StreamingMessage
                                         text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
                                         workstreamId={getWorkstreamId(thinking)}
                                         isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
+                                        timestamp={thinking.timestamp}
+                                    />
+                                </MessageErrorBoundary>
+                            ))}
+                            {/* Incomplete streaming - uses StreamingMessage for reveal animation */}
+                            {incompleteStreaming.map(({ id, data }) => (
+                                <MessageErrorBoundary key={`streaming-incomplete-${id}`}>
+                                    <StreamingMessage
+                                        text={data.text}
+                                        workstreamId={data.workstreamId}
+                                        isComplete={false}
+                                        timestamp={data.startTimestamp}
                                     />
                                 </MessageErrorBoundary>
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
-                            {isAgentWorking && recentThinking.length === 0 && streamingMessages.size === 0 && (
-                                <div className="flex items-center gap-3 p-4 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30">
+                            {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
+                                <div className="flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500">
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-sm text-muted">Working...</span>
                                 </div>

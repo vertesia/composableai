@@ -5,7 +5,7 @@ import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, Layers, MessageSquare, User } from "lucide-react";
-import React, { useEffect, useState, useMemo, memo } from "react";
+import React, { useEffect, useState, useMemo, memo, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
 import { useImageLightbox } from "../ImageLightbox";
@@ -134,6 +134,11 @@ function MessageItemComponent({
     const toast = useToast();
     const urlCache = useArtifactUrlCache();
     const { openImage } = useImageLightbox();
+    // Use refs to avoid triggering effect re-runs when these stable values are accessed
+    const clientRef = useRef(client);
+    clientRef.current = client;
+    const urlCacheRef = useRef(urlCache);
+    urlCacheRef.current = urlCache;
 
     // Get styles from consolidated config
     const styles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
@@ -274,6 +279,9 @@ function MessageItemComponent({
                 return;
             }
 
+            const currentClient = clientRef.current;
+            const currentUrlCache = urlCacheRef.current;
+
             try {
                 const entries = await Promise.all(
                     outputFiles.map(async (name: unknown) => {
@@ -296,13 +304,13 @@ function MessageItemComponent({
                             const cacheKey = getArtifactCacheKey(runId, artifactPath, disposition);
                             let url: string;
 
-                            if (urlCache) {
-                                url = await urlCache.getOrFetch(cacheKey, async () => {
-                                    const result = await client.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
+                            if (currentUrlCache) {
+                                url = await currentUrlCache.getOrFetch(cacheKey, async () => {
+                                    const result = await currentClient.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
                                     return result.url;
                                 });
                             } else {
-                                const result = await client.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
+                                const result = await currentClient.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
                                 url = result.url;
                             }
 
@@ -331,7 +339,7 @@ function MessageItemComponent({
         };
 
         loadArtifacts();
-    }, [runId, outputFilesKey, client, urlCache]);
+    }, [runId, outputFilesKey]);
 
     const workstreamId = getWorkstreamId(message);
     const { Icon } = styles;

@@ -559,6 +559,11 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
     // Artifact resolution state
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
+    // Use refs to avoid triggering effect re-runs when these stable values are accessed
+    const clientRef = useRef(client);
+    clientRef.current = client;
+    const urlCacheRef = useRef(urlCache);
+    urlCacheRef.current = urlCache;
     const [resolvedSpec, setResolvedSpec] = useState<Record<string, any> | null>(null);
     const [isLoadingArtifacts, setIsLoadingArtifacts] = useState(false);
     const [artifactError, setArtifactError] = useState<string | null>(null);
@@ -589,6 +594,8 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
         const resolveArtifacts = async () => {
             const resolvedData = new Map<string, any[]>();
+            const currentClient = clientRef.current;
+            const currentUrlCache = urlCacheRef.current;
 
             for (const ref of references) {
                 try {
@@ -599,25 +606,25 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
                     if (artifactRunId && !ref.artifactPath.startsWith('agents/')) {
                         // Shorthand path - use artifact API
                         const cacheKey = getArtifactCacheKey(artifactRunId, ref.artifactPath, 'inline');
-                        if (urlCache) {
-                            url = await urlCache.getOrFetch(cacheKey, async () => {
-                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
+                        if (currentUrlCache) {
+                            url = await currentUrlCache.getOrFetch(cacheKey, async () => {
+                                const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
                                 return result.url;
                             });
                         } else {
-                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
+                            const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
                             url = result.url;
                         }
                     } else {
                         // Full path - use files API
                         const cacheKey = getFileCacheKey(ref.artifactPath);
-                        if (urlCache) {
-                            url = await urlCache.getOrFetch(cacheKey, async () => {
-                                const result = await client.files.getDownloadUrl(ref.artifactPath);
+                        if (currentUrlCache) {
+                            url = await currentUrlCache.getOrFetch(cacheKey, async () => {
+                                const result = await currentClient.files.getDownloadUrl(ref.artifactPath);
                                 return result.url;
                             });
                         } else {
-                            const result = await client.files.getDownloadUrl(ref.artifactPath);
+                            const result = await currentClient.files.getDownloadUrl(ref.artifactPath);
                             url = result.url;
                         }
                     }
@@ -682,7 +689,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         return () => {
             cancelled = true;
         };
-    }, [vegaSpec, artifactRunId, client, urlCache]);
+    }, [vegaSpec, artifactRunId]);
 
     // Detect dark mode
     const [isDarkMode, setIsDarkMode] = useState(false);
