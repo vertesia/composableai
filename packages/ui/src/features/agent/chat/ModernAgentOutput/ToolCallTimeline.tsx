@@ -2,10 +2,9 @@ import { WorkflowRunEvent } from "@vertesia/common";
 import { useMemo, useState } from "react";
 import { ToolMetricsSummary } from "./ToolMetricsSummary";
 import { calculateToolMetrics, extractToolCallsFromHistory, ToolCallInfo } from "./utils";
-import { Button, MessageBox, SidePanel } from "@vertesia/ui/core";
-import { RefreshCw, Wrench, AlertCircle, CheckCircle2, Clock, AlertTriangle, Loader2 } from "lucide-react";
+import { Button, MessageBox, SidePanel, Spinner } from "@vertesia/ui/core";
+import { RefreshCw, Wrench, AlertCircle, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import dayjs from "dayjs";
-import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-async-light';
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -20,8 +19,6 @@ interface ToolCallTimelineProps {
 }
 
 export function ToolCallTimeline({ history, onRefresh, isWorkflowComplete, isLoading = false }: ToolCallTimelineProps) {
-    console.log('[ToolCallTimeline] Rendering with history length:', history?.length || 0);
-
     // Extract tool calls and calculate metrics
     const toolCalls = useMemo(() => extractToolCallsFromHistory(history), [history]);
     const metrics = useMemo(() => calculateToolMetrics(toolCalls), [toolCalls]);
@@ -32,23 +29,14 @@ export function ToolCallTimeline({ history, onRefresh, isWorkflowComplete, isLoa
     // Dark mode detection for syntax highlighting
     const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-    console.log('[ToolCallTimeline] Tool calls count:', toolCalls.length);
-
     // Loading state
     if (isLoading) {
         return (
-            <div className="flex-1 flex items-center justify-center p-6">
-                <MessageBox
-                    status="info"
-                    icon={<Loader2 className="size-16 text-info animate-spin mb-4" />}
-                >
-                    <div className="text-base font-medium">
-                        Loading tool history...
-                    </div>
-                    <div className="mt-3 text-sm text-muted">
-                        Fetching workflow execution details
-                    </div>
-                </MessageBox>
+            <div className="flex-1 flex flex-col items-center justify-center p-6">
+                <Spinner size="lg" className="mb-4" />
+                <div className="text-base font-medium">
+                    Loading trace
+                </div>
             </div>
         );
     }
@@ -184,14 +172,59 @@ export function ToolCallTimeline({ history, onRefresh, isWorkflowComplete, isLoa
                         )}
 
                         {/* Output */}
-                        {selectedTool.result && selectedTool.result.trim().length > 0 && !selectedTool.error && (
-                            <div>
-                                <h3 className="text-sm font-semibold mb-2">Output</h3>
-                                <div className="p-3 bg-muted/30 rounded-md prose prose-sm max-w-none dark:prose-invert">
-                                    <MarkdownRenderer>{selectedTool.result}</MarkdownRenderer>
-                                </div>
-                            </div>
-                        )}
+                        {selectedTool.result && selectedTool.result.trim().length > 0 && !selectedTool.error && (() => {
+                            try {
+                                // Try to parse result as JSON and extract content
+                                const parsed = JSON.parse(selectedTool.result);
+                                const content = parsed.content || selectedTool.result;
+
+                                // Try to parse content as JSON
+                                try {
+                                    const contentParsed = JSON.parse(content);
+                                    return (
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-2">Output</h3>
+                                            <div className="rounded-md border">
+                                                <SyntaxHighlighter
+                                                    language="json"
+                                                    style={isDarkMode ? oneDark : oneLight}
+                                                    customStyle={{
+                                                        fontSize: '12px',
+                                                        margin: 0,
+                                                        borderRadius: '0.375rem'
+                                                    }}
+                                                    codeTagProps={{
+                                                        style: { whiteSpace: 'pre-wrap' }
+                                                    }}
+                                                >
+                                                    {JSON.stringify(contentParsed, null, 2)}
+                                                </SyntaxHighlighter>
+                                            </div>
+                                        </div>
+                                    );
+                                } catch {
+                                    // Content is not JSON, display as plain text
+                                    return (
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-2">Output</h3>
+                                            <div className="shadow rounded-md p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                                <pre className="text-xs whitespace-pre-wrap break-words dark:text-gray-200">{content}</pre>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                            } catch {
+                                // Result is not JSON, display as plain text
+                                return (
+                                    <div>
+                                        <h3 className="text-sm font-semibold mb-2">Output</h3>
+                                        <div className="shadow rounded-md p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                            <pre className="text-xs whitespace-pre-wrap break-words dark:text-gray-200">{selectedTool.result}</pre>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        })()}
                     </div>
                 </SidePanel>
             )}

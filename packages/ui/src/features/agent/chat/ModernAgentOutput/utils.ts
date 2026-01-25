@@ -683,9 +683,7 @@ export function calculateToolMetrics(toolCalls: ToolCallInfo[]): ToolCallMetrics
  * This is used by the observability tab to show tool execution traces
  */
 export function extractToolCallsFromHistory(history: WorkflowRunEvent[]): ToolCallInfo[] {
-    console.log('[extractToolCallsFromHistory] Called with history length:', history?.length || 0);
     if (!history || history.length === 0) {
-        console.log('[extractToolCallsFromHistory] No history, returning empty array');
         return [];
     }
 
