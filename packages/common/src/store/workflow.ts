@@ -268,7 +268,7 @@ export interface ListWorkflowRunsPayload {
     next_page_token?: string;
 }
 
-interface WorkflowRunEvent {
+export interface WorkflowRunEvent {
     event_id: number;
     event_time: number;
     event_type: string;

@@ -70,17 +70,23 @@ export function ToolCallItem({ toolCall }: ToolCallItemProps) {
         <div className={`border-l-4 ${getBorderColor()} bg-white dark:bg-gray-900 rounded-md shadow-sm mb-3 overflow-hidden`}>
             {/* Header */}
             <div className="px-4 py-3 bg-muted/20">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Wrench className="size-4 text-muted" />
-                        <span className="font-medium text-sm">{toolCall.toolName}</span>
+                <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <Wrench className="size-4 text-muted flex-shrink-0" />
+                        <span
+                            className="font-medium text-sm break-words"
+                            style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                            title={toolCall.toolName}
+                        >
+                            {toolCall.toolName}
+                        </span>
                         {toolCall.toolType && (
-                            <span className="text-xs px-2 py-0.5 bg-muted rounded text-muted">
+                            <span className="text-xs px-2 py-0.5 bg-muted rounded text-muted flex-shrink-0 whitespace-nowrap">
                                 {toolCall.toolType}
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-shrink-0 whitespace-nowrap">
                         <div className="flex items-center gap-1 text-xs">
                             {getStatusIcon()}
                             <span className="font-medium">{getStatusLabel()}</span>
@@ -179,15 +185,9 @@ export function ToolCallItem({ toolCall }: ToolCallItemProps) {
                     {showMetrics && (
                         <div className="mt-2 p-3 bg-muted/30 rounded-md space-y-1 text-xs">
                             {toolCall.toolUseId && (
-                                <div className="flex justify-between">
-                                    <span className="text-muted">Tool Use ID:</span>
-                                    <span className="font-mono">{toolCall.toolUseId.substring(0, 12)}...</span>
-                                </div>
-                            )}
-                            {toolCall.toolRunId && (
-                                <div className="flex justify-between">
-                                    <span className="text-muted">Tool Run ID:</span>
-                                    <span className="font-mono">{toolCall.toolRunId.substring(0, 12)}...</span>
+                                <div className="flex justify-between gap-2">
+                                    <span className="text-muted flex-shrink-0">Tool Use ID:</span>
+                                    <span className="font-mono break-all text-right" title={toolCall.toolUseId}>{toolCall.toolUseId}</span>
                                 </div>
                             )}
                             {toolCall.iteration !== undefined && (

@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
+import { AgentMessage, AgentMessageType, WorkflowRunEvent } from "@vertesia/common";
 import { VertesiaClient } from "@vertesia/client";
 
 export function insertMessageInTimeline(arr: AgentMessage[], m: AgentMessage) {
@@ -671,4 +671,249 @@ export function calculateToolMetrics(toolCalls: ToolCallInfo[]): ToolCallMetrics
     }
 
     return metrics;
+}
+
+/**
+ * Extract tool call information from workflow history events
+ * This is used by the observability tab to show tool execution traces
+ */
+export function extractToolCallsFromHistory(history: WorkflowRunEvent[]): ToolCallInfo[] {
+    console.log('[extractToolCallsFromHistory] Called with history length:', history?.length || 0);
+    if (!history || history.length === 0) {
+        console.log('[extractToolCallsFromHistory] No history, returning empty array');
+        return [];
+    }
+
+    // Group activities by ID to track their lifecycle
+    const activityMap = new Map<string, {
+        scheduled?: WorkflowRunEvent;
+        started?: WorkflowRunEvent;
+        completed?: WorkflowRunEvent;
+        failed?: WorkflowRunEvent;
+    }>();
+
+    // Build event lookup by event_id for resolving scheduledEventId references
+    const eventById = new Map<number, WorkflowRunEvent>();
+    for (const event of history) {
+        if (event.event_id) {
+            eventById.set(event.event_id, event);
+        }
+    }
+
+    // First pass: collect all activity events by ID
+    // Note: For scheduled events, activity.id is present
+    // For started/completed/failed events, we need to look up the scheduled event via scheduledEventId
+    let eventTypesSeen = new Set<string>();
+    for (const event of history) {
+        if (!event.activity) continue;
+
+        let activityId: string | undefined;
+
+        // Scheduled events have the activity ID directly
+        if (event.event_type === 'EVENT_TYPE_ACTIVITY_TASK_SCHEDULED' && event.activity.id) {
+            activityId = event.activity.id;
+        }
+        // Other activity events reference the scheduled event
+        else if (event.activity.scheduledEventId) {
+            const scheduledEventId = Number(event.activity.scheduledEventId);
+            const scheduledEvent = eventById.get(scheduledEventId);
+            if (scheduledEvent?.activity?.id) {
+                activityId = scheduledEvent.activity.id;
+            }
+        }
+
+        if (!activityId) continue;
+
+        if (!activityMap.has(activityId)) {
+            activityMap.set(activityId, {});
+        }
+
+        const lifecycle = activityMap.get(activityId)!;
+
+        if (event.event_type === 'EVENT_TYPE_ACTIVITY_TASK_SCHEDULED') {
+            lifecycle.scheduled = event;
+        } else if (event.event_type === 'EVENT_TYPE_ACTIVITY_TASK_STARTED') {
+            lifecycle.started = event;
+        } else if (event.event_type === 'EVENT_TYPE_ACTIVITY_TASK_COMPLETED') {
+            lifecycle.completed = event;
+            console.log('[extractToolCallsFromHistory] Found completed event for activity:', activityId, 'event_type:', event.event_type);
+        } else if (event.event_type === 'EVENT_TYPE_ACTIVITY_TASK_FAILED') {
+            lifecycle.failed = event;
+        }
+
+        eventTypesSeen.add(event.event_type);
+    }
+
+    console.log('[extractToolCallsFromHistory] Event types seen in history:', Array.from(eventTypesSeen));
+
+    // Second pass: extract tool calls from activities that have tool payloads
+    const toolCalls: ToolCallInfo[] = [];
+
+    console.log('[extractToolCallsFromHistory] Checking', activityMap.size, 'activities for tool payloads');
+    let activityIndex = 0;
+
+    for (const [activityId, lifecycle] of activityMap.entries()) {
+        activityIndex++;
+        const scheduled = lifecycle.scheduled;
+
+        if (activityIndex <= 3) {
+            console.log(`[extractToolCallsFromHistory] Activity ${activityIndex}/${activityMap.size}:`, {
+                eventType: scheduled?.event_type,
+                activityKeys: scheduled?.activity ? Object.keys(scheduled.activity) : 'no activity',
+                activity: scheduled?.activity
+            });
+        }
+
+        if (!scheduled?.activity?.input) continue;
+
+        // Parse the activity input to check if it's a tool activity
+        // Note: Activity input from the server is a string or string array (JSON stringified)
+        let payload: any;
+        try {
+            if (Array.isArray(scheduled.activity.input) && scheduled.activity.input.length > 0) {
+                // input is an array of JSON strings - parse the first one
+                const firstInput = scheduled.activity.input[0];
+                payload = typeof firstInput === 'string' ? JSON.parse(firstInput) : firstInput;
+            } else if (typeof scheduled.activity.input === 'string') {
+                // input is a single JSON string
+                payload = JSON.parse(scheduled.activity.input);
+            } else {
+                // input is already an object (shouldn't happen based on server code)
+                payload = scheduled.activity.input;
+            }
+
+            if (activityIndex <= 3) {
+                console.log('[extractToolCallsFromHistory] Activity:', scheduled.activity.name, 'input type:', typeof scheduled.activity.input, 'payload type:', typeof payload, 'has toolName:', !!payload?.toolName, 'has toolUseId:', !!payload?.toolUseId, 'keys:', payload ? Object.keys(payload).slice(0, 10) : 'null');
+            }
+
+            // Check if this is a tool activity (has toolName and toolUseId)
+            if (!payload || typeof payload !== 'object') {
+                if (activityIndex <= 3) {
+                    console.log('[extractToolCallsFromHistory] Skipping - payload not an object');
+                }
+                continue;
+            }
+            if (!payload.toolName || !payload.toolUseId) {
+                if (activityIndex <= 3) {
+                    console.log('[extractToolCallsFromHistory] Skipping - missing toolName or toolUseId');
+                }
+                continue;
+            }
+
+            console.log('[extractToolCallsFromHistory] Found tool activity:', payload.toolName, payload.toolUseId);
+
+            // Determine status based on lifecycle
+            let status: ToolExecutionStatus = 'running';
+            let durationMs: number | undefined;
+            let result: string | undefined;
+            let error: { type: string; message: string; } | undefined;
+
+            console.log('[extractToolCallsFromHistory] Activity lifecycle check:', {
+                toolName: payload.toolName,
+                activityId,
+                hasCompleted: !!lifecycle.completed,
+                completedEventType: lifecycle.completed?.event_type,
+                hasFailed: !!lifecycle.failed,
+                hasStarted: !!lifecycle.started,
+                startedEventType: lifecycle.started?.event_type
+            });
+
+            if (lifecycle.completed) {
+                durationMs = lifecycle.completed.event_time - scheduled.event_time;
+                // Extract result if available
+                if (lifecycle.completed.result) {
+                    try {
+                        // Parse the result to check if it's an error
+                        // Note: Result might be an array like input (JSON stringified)
+                        let parsedResult: any;
+                        if (Array.isArray(lifecycle.completed.result) && lifecycle.completed.result.length > 0) {
+                            // Result is an array of JSON strings - parse the first one
+                            const firstResult = lifecycle.completed.result[0];
+                            parsedResult = typeof firstResult === 'string' ? JSON.parse(firstResult) : firstResult;
+                        } else if (typeof lifecycle.completed.result === 'string') {
+                            try {
+                                parsedResult = JSON.parse(lifecycle.completed.result);
+                            } catch {
+                                // Not JSON, treat as plain string
+                                parsedResult = lifecycle.completed.result;
+                            }
+                        } else {
+                            parsedResult = lifecycle.completed.result;
+                        }
+
+                        console.log('[extractToolCallsFromHistory] Tool result check:', {
+                            toolName: payload.toolName,
+                            resultType: typeof lifecycle.completed.result,
+                            isArray: Array.isArray(lifecycle.completed.result),
+                            parsedResultType: typeof parsedResult,
+                            hasIsError: parsedResult?.is_error,
+                            isErrorValue: parsedResult?.is_error === true
+                        });
+
+                        // Check if result indicates an error
+                        if (parsedResult && typeof parsedResult === 'object' && parsedResult.is_error === true) {
+                            status = 'error';
+                            error = {
+                                type: 'Tool Error',
+                                message: parsedResult.content || 'The tool encountered an error',
+                            };
+                            result = parsedResult.content;
+                        } else {
+                            status = 'completed';
+                            result = typeof parsedResult === 'string'
+                                ? parsedResult
+                                : JSON.stringify(parsedResult, null, 2);
+                        }
+                    } catch (err) {
+                        console.warn('[extractToolCallsFromHistory] Failed to parse result:', err);
+                        status = 'completed';
+                        result = String(lifecycle.completed.result);
+                    }
+                } else {
+                    status = 'completed';
+                }
+            } else if (lifecycle.failed) {
+                status = 'error';
+                durationMs = lifecycle.failed.event_time - scheduled.event_time;
+                error = {
+                    type: lifecycle.failed.error?.type || 'Error',
+                    message: lifecycle.failed.error?.message || 'Activity failed',
+                };
+            } else if (lifecycle.started) {
+                status = 'running';
+            }
+
+            // Extract parameters from payload.params.input
+            let parameters: Record<string, unknown> | undefined;
+            if (payload.params?.input) {
+                parameters = payload.params.input as Record<string, unknown>;
+            }
+
+            const toolCall: ToolCallInfo = {
+                toolName: payload.toolName,
+                toolUseId: payload.toolUseId,
+                toolRunId: activityId,
+                toolType: payload.toolType,
+                iteration: payload.iteration,
+                timestamp: scheduled.event_time,
+                status,
+                parameters,
+                result,
+                error,
+                durationMs,
+                message: scheduled as any, // Keep reference for compatibility
+            };
+
+            toolCalls.push(toolCall);
+        } catch (err) {
+            console.warn('Failed to parse activity payload:', err);
+            continue;
+        }
+    }
+
+    // Sort by timestamp (ascending order)
+    toolCalls.sort((a, b) => a.timestamp - b.timestamp);
+
+    console.log('[extractToolCallsFromHistory] Extracted', toolCalls.length, 'tool calls from', activityMap.size, 'activities');
+    return toolCalls;
 }

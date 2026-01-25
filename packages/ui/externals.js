@@ -62,6 +62,8 @@ export const EXTERNALS = [
     "react-calendar",
     "framer-motion",
     "react-resizable-panels",
+    "react-syntax-highlighter",
+    /^react-syntax-highlighter\/.*/,
     "recharts",
     "react-vega",
     "vega",
