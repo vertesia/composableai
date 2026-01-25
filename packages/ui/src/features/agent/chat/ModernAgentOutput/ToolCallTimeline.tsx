@@ -2,8 +2,8 @@ import { WorkflowRunEvent } from "@vertesia/common";
 import { useMemo, useState } from "react";
 import { ToolMetricsSummary } from "./ToolMetricsSummary";
 import { calculateToolMetrics, extractToolCallsFromHistory, ToolCallInfo } from "./utils";
-import { Button, MessageBox } from "@vertesia/ui/core";
-import { RefreshCw, Wrench, AlertCircle, CheckCircle2, Clock, AlertTriangle, X, Loader2 } from "lucide-react";
+import { Button, MessageBox, SidePanel } from "@vertesia/ui/core";
+import { RefreshCw, Wrench, AlertCircle, CheckCircle2, Clock, AlertTriangle, Loader2 } from "lucide-react";
 import dayjs from "dayjs";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-async-light';
@@ -108,9 +108,94 @@ export function ToolCallTimeline({ history, onRefresh, isWorkflowComplete, isLoa
     };
 
     return (
-        <div className="flex-1 flex overflow-hidden">
-            {/* Main content */}
-            <div className={`flex-1 flex flex-col overflow-hidden ${selectedTool ? 'mr-[500px]' : ''}`}>
+        <>
+            {selectedTool && (
+                <SidePanel isOpen={true} onClose={() => setSelectedTool(null)} title="Tool Call Details">
+                    <div className="space-y-6">
+                        {/* Tool Information */}
+                        <div>
+                            <h3 className="text-sm font-semibold mb-2">Tool Information</h3>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-muted">Name:</span>
+                                    <span className="font-medium">{selectedTool.toolName}</span>
+                                </div>
+                                {selectedTool.toolType && (
+                                    <div className="flex justify-between">
+                                        <span className="text-muted">Type:</span>
+                                        <span className="px-2 py-0.5 rounded text-xs bg-muted">{selectedTool.toolType}</span>
+                                    </div>
+                                )}
+                                {selectedTool.toolUseId && (
+                                    <div className="flex justify-between gap-2">
+                                        <span className="text-muted">Tool Use ID:</span>
+                                        <span className="font-mono text-xs break-all text-right">{selectedTool.toolUseId}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between">
+                                    <span className="text-muted">Status:</span>
+                                    <span>{getStatusBadge(selectedTool.status)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted">Started:</span>
+                                    <span>{formatTimestamp(selectedTool.timestamp)}</span>
+                                </div>
+                                {selectedTool.durationMs !== undefined && (
+                                    <div className="flex justify-between">
+                                        <span className="text-muted">Duration:</span>
+                                        <span>{formatDuration(selectedTool.durationMs)}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Error */}
+                        {selectedTool.error && (
+                            <div>
+                                <h3 className="text-sm font-semibold mb-2">Error</h3>
+                                <div className="p-3 bg-destructive/10 border border-destructive rounded-md">
+                                    <div className="text-sm font-medium text-destructive">{selectedTool.error.type}</div>
+                                    <div className="text-sm text-destructive/80 mt-1">{selectedTool.error.message}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Parameters */}
+                        {selectedTool.parameters && Object.keys(selectedTool.parameters).length > 0 && (
+                            <div>
+                                <h3 className="text-sm font-semibold mb-2">Tool Parameters</h3>
+                                <div className="rounded-md border">
+                                    <SyntaxHighlighter
+                                        language="json"
+                                        style={isDarkMode ? oneDark : oneLight}
+                                        customStyle={{
+                                            fontSize: '12px',
+                                            margin: 0,
+                                            borderRadius: '0.375rem'
+                                        }}
+                                        codeTagProps={{
+                                            style: { whiteSpace: 'pre-wrap' }
+                                        }}
+                                    >
+                                        {JSON.stringify(selectedTool.parameters, null, 2)}
+                                    </SyntaxHighlighter>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Output */}
+                        {selectedTool.result && selectedTool.result.trim().length > 0 && !selectedTool.error && (
+                            <div>
+                                <h3 className="text-sm font-semibold mb-2">Output</h3>
+                                <div className="p-3 bg-muted/30 rounded-md prose prose-sm max-w-none dark:prose-invert">
+                                    <MarkdownRenderer>{selectedTool.result}</MarkdownRenderer>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </SidePanel>
+            )}
+            <div className="flex-1 flex flex-col overflow-hidden">
                 <div className="flex-1 overflow-y-auto">
                     {/* Metrics Summary with Refresh Button */}
                     <div className="flex items-center justify-between px-4 py-4 border-b">
@@ -164,128 +249,6 @@ export function ToolCallTimeline({ history, onRefresh, isWorkflowComplete, isLoa
                     </table>
                 </div>
             </div>
-
-            {/* Drawer */}
-            {selectedTool && (
-                <div className="fixed right-0 top-0 bottom-0 w-[500px] bg-background border-l shadow-lg overflow-hidden flex flex-col z-50">
-                    {/* Drawer Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b">
-                        <h2 className="text-lg font-semibold">Tool Call Details</h2>
-                        <button
-                            onClick={() => setSelectedTool(null)}
-                            className="p-1 hover:bg-muted rounded"
-                        >
-                            <X className="size-4" />
-                        </button>
-                    </div>
-
-                    {/* Drawer Content */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {/* Tool Information */}
-                        <div>
-                            <h3 className="text-sm font-semibold mb-2">Tool Information</h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-muted">Name:</span>
-                                    <span className="font-medium">{selectedTool.toolName}</span>
-                                </div>
-                                {selectedTool.toolType && (
-                                    <div className="flex justify-between">
-                                        <span className="text-muted">Type:</span>
-                                        <span className="px-2 py-0.5 rounded text-xs bg-muted">{selectedTool.toolType}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between">
-                                    <span className="text-muted">Status:</span>
-                                    <span>{getStatusBadge(selectedTool.status)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted">Started:</span>
-                                    <span>{formatTimestamp(selectedTool.timestamp)}</span>
-                                </div>
-                                {selectedTool.durationMs !== undefined && (
-                                    <div className="flex justify-between">
-                                        <span className="text-muted">Duration:</span>
-                                        <span>{formatDuration(selectedTool.durationMs)}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Error */}
-                        {selectedTool.error && (
-                            <div>
-                                <h3 className="text-sm font-semibold mb-2">Error</h3>
-                                <div className="p-3 bg-destructive/10 border border-destructive rounded-md">
-                                    <div className="text-sm font-medium text-destructive">{selectedTool.error.type}</div>
-                                    <div className="text-sm text-destructive/80 mt-1">{selectedTool.error.message}</div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Parameters */}
-                        {selectedTool.parameters && Object.keys(selectedTool.parameters).length > 0 && (
-                            <div>
-                                <h3 className="text-sm font-semibold mb-2">Tool Parameters</h3>
-                                <div className="rounded-md border max-h-96 overflow-auto">
-                                    <SyntaxHighlighter
-                                        language="json"
-                                        style={isDarkMode ? oneDark : oneLight}
-                                        customStyle={{
-                                            fontSize: '12px',
-                                            margin: 0,
-                                            borderRadius: '0.375rem'
-                                        }}
-                                    >
-                                        {JSON.stringify(selectedTool.parameters, null, 2)}
-                                    </SyntaxHighlighter>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Output */}
-                        {selectedTool.result && selectedTool.result.trim().length > 0 && (
-                            <div>
-                                <h3 className="text-sm font-semibold mb-2">Output</h3>
-                                <div className="p-3 bg-muted/30 rounded-md prose prose-sm max-w-none dark:prose-invert">
-                                    <MarkdownRenderer>{selectedTool.result}</MarkdownRenderer>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Activity Parameters (Metrics) */}
-                        <div>
-                            <h3 className="text-sm font-semibold mb-2">Activity Parameters</h3>
-                            <div className="space-y-1 text-xs">
-                                {selectedTool.toolUseId && (
-                                    <div className="flex justify-between gap-2">
-                                        <span className="text-muted">Tool Use ID:</span>
-                                        <span className="font-mono break-all text-right">{selectedTool.toolUseId}</span>
-                                    </div>
-                                )}
-                                {selectedTool.toolRunId && (
-                                    <div className="flex justify-between gap-2">
-                                        <span className="text-muted">Activity ID:</span>
-                                        <span className="font-mono break-all text-right">{selectedTool.toolRunId}</span>
-                                    </div>
-                                )}
-                                {selectedTool.iteration !== undefined && (
-                                    <div className="flex justify-between">
-                                        <span className="text-muted">Iteration:</span>
-                                        <span>{selectedTool.iteration}</span>
-                                    </div>
-                                )}
-                                {selectedTool.workstreamId && (
-                                    <div className="flex justify-between">
-                                        <span className="text-muted">Workstream:</span>
-                                        <span>{selectedTool.workstreamId}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+        </>
     );
 }
