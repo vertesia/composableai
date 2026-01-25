@@ -1,0 +1,288 @@
+/**
+ * ArtifactContentRenderer - Renders artifact content by type
+ *
+ * Supports rendering charts, tables, markdown, fusion fragments, and more.
+ */
+
+import { useMemo, type ReactElement } from 'react';
+import { CodeBlockPlaceholder, CodeBlockErrorBoundary } from './CodeBlockPlaceholder';
+import { AgentChart, type AgentChartSpec, type VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
+import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
+import { FusionFragmentHandler } from '@vertesia/fusion-ux';
+import { MarkdownRenderer } from './MarkdownRenderer';
+
+// Render type mapping
+export type ExpandRenderType =
+    | 'chart'
+    | 'vega-lite'
+    | 'table'
+    | 'markdown'
+    | 'fusion-fragment'
+    | 'code'
+    | 'image'
+    | 'auto';
+
+export interface ArtifactContentRendererProps {
+    /** The fetched content (parsed JSON or string) */
+    content: unknown;
+    /** The explicit render type (from expand:type syntax) */
+    renderType: ExpandRenderType;
+    /** Artifact path (for display and type detection) */
+    path: string;
+    /** Run ID for nested artifact references */
+    runId?: string;
+    /** Content type detected from path */
+    contentType?: 'json' | 'text' | 'binary';
+}
+
+/**
+ * Auto-detect render type from content and path
+ */
+function autoDetectRenderType(
+    content: unknown,
+    path: string,
+    contentType?: 'json' | 'text' | 'binary'
+): ExpandRenderType {
+    const ext = path.split('.').pop()?.toLowerCase();
+
+    // Image extensions
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext || '')) {
+        return 'image';
+    }
+
+    // Markdown
+    if (ext === 'md') {
+        return 'markdown';
+    }
+
+    // CSV as table
+    if (ext === 'csv') {
+        return 'table';
+    }
+
+    // JSON content - try to detect chart or table
+    if (contentType === 'json' && typeof content === 'object' && content !== null) {
+        const obj = content as Record<string, unknown>;
+
+        // Check for Vega-Lite schema
+        if (typeof obj.$schema === 'string' && obj.$schema.includes('vega')) {
+            return 'vega-lite';
+        }
+
+        // Check for wrapped Vega-Lite
+        if (obj.library === 'vega-lite' && 'spec' in obj) {
+            return 'vega-lite';
+        }
+
+        // Check for Recharts format
+        if (('chart' in obj || 'type' in obj) && 'data' in obj && Array.isArray(obj.data)) {
+            return 'chart';
+        }
+
+        // Check for fusion fragment template with data
+        if ('template' in obj && 'data' in obj) {
+            return 'fusion-fragment';
+        }
+
+        // Check for table data (array of objects)
+        if (Array.isArray(content) && content.length > 0 && typeof content[0] === 'object') {
+            return 'table';
+        }
+    }
+
+    // Default to code
+    return 'code';
+}
+
+/**
+ * Table renderer for array data or CSV
+ */
+function TableRenderer({ content }: { content: unknown }): ReactElement {
+    const { headers, rows } = useMemo(() => {
+        if (!Array.isArray(content) || content.length === 0) {
+            return { headers: [], rows: [] };
+        }
+
+        // Extract headers from first object
+        const first = content[0];
+        if (typeof first !== 'object' || first === null) {
+            return { headers: [], rows: [] };
+        }
+
+        const headers = Object.keys(first);
+        const rows = content.map(row =>
+            headers.map(h => {
+                const val = (row as Record<string, unknown>)[h];
+                if (val === null || val === undefined) return '';
+                if (typeof val === 'object') return JSON.stringify(val);
+                return String(val);
+            })
+        );
+
+        return { headers, rows };
+    }, [content]);
+
+    if (headers.length === 0) {
+        return (
+            <CodeBlockPlaceholder type="table" error="No table data found" />
+        );
+    }
+
+    return (
+        <div className="overflow-x-auto">
+            <table className="min-w-full text-sm border-collapse">
+                <thead>
+                    <tr className="border-b">
+                        {headers.map((h, i) => (
+                            <th key={i} className="px-3 py-2 text-left font-medium text-muted">
+                                {h}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.slice(0, 100).map((row, i) => (
+                        <tr key={i} className="border-b border-muted/20">
+                            {row.map((cell, j) => (
+                                <td key={j} className="px-3 py-2">
+                                    {cell}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            {rows.length > 100 && (
+                <div className="text-sm text-muted py-2">
+                    Showing 100 of {rows.length} rows
+                </div>
+            )}
+        </div>
+    );
+}
+
+/**
+ * Code block renderer for raw content
+ */
+function CodeRenderer({ content, path }: { content: unknown; path: string }): ReactElement {
+    const ext = path.split('.').pop()?.toLowerCase() || '';
+    const code = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+
+    return (
+        <pre className="overflow-x-auto p-3 bg-muted/10 rounded text-sm">
+            <code className={`language-${ext}`}>{code}</code>
+        </pre>
+    );
+}
+
+/**
+ * Image renderer
+ */
+function ImageRenderer({ content, path }: { content: unknown; path: string }): ReactElement {
+    const url = typeof content === 'string' ? content : '';
+    const alt = path.split('/').pop() || 'Artifact image';
+
+    return (
+        <img
+            src={url}
+            alt={alt}
+            className="max-w-full h-auto rounded"
+            loading="lazy"
+        />
+    );
+}
+
+/**
+ * ArtifactContentRenderer - Main component
+ *
+ * Renders artifact content based on explicit type or auto-detection.
+ */
+export function ArtifactContentRenderer({
+    content,
+    renderType,
+    path,
+    runId,
+    contentType,
+}: ArtifactContentRendererProps): ReactElement {
+    // Determine actual render type
+    const actualType = useMemo(() => {
+        if (renderType !== 'auto') {
+            return renderType;
+        }
+        return autoDetectRenderType(content, path, contentType);
+    }, [content, path, contentType, renderType]);
+
+    // Render based on type
+    switch (actualType) {
+        case 'chart': {
+            return (
+                <CodeBlockErrorBoundary type="chart" fallbackCode={JSON.stringify(content, null, 2)}>
+                    <AgentChart spec={content as AgentChartSpec} artifactRunId={runId} />
+                </CodeBlockErrorBoundary>
+            );
+        }
+
+        case 'vega-lite': {
+            const spec: VegaLiteChartSpec = typeof content === 'object' && content !== null
+                ? ('library' in (content as Record<string, unknown>)
+                    ? content as VegaLiteChartSpec
+                    : { library: 'vega-lite', spec: content as Record<string, unknown> })
+                : { library: 'vega-lite', spec: content as Record<string, unknown> };
+            return (
+                <CodeBlockErrorBoundary type="chart" fallbackCode={JSON.stringify(content, null, 2)}>
+                    <VegaLiteChart spec={spec} artifactRunId={runId} />
+                </CodeBlockErrorBoundary>
+            );
+        }
+
+        case 'fusion-fragment': {
+            // For fusion fragments, content should have { template, data }
+            const fragmentContent = content as { template?: unknown; data?: Record<string, unknown> };
+            if (fragmentContent.template && fragmentContent.data) {
+                return (
+                    <CodeBlockErrorBoundary type="fusion-fragment" fallbackCode={JSON.stringify(content, null, 2)}>
+                        <FusionFragmentHandler
+                            code={JSON.stringify(fragmentContent.template)}
+                            data={fragmentContent.data}
+                        />
+                    </CodeBlockErrorBoundary>
+                );
+            }
+            // If no data wrapper, treat as template-only (needs context)
+            return (
+                <CodeBlockErrorBoundary type="fusion-fragment" fallbackCode={JSON.stringify(content, null, 2)}>
+                    <FusionFragmentHandler code={JSON.stringify(content)} />
+                </CodeBlockErrorBoundary>
+            );
+        }
+
+        case 'table':
+            return (
+                <CodeBlockErrorBoundary type="table" fallbackCode={JSON.stringify(content, null, 2)}>
+                    <TableRenderer content={content} />
+                </CodeBlockErrorBoundary>
+            );
+
+        case 'markdown': {
+            const markdownContent = typeof content === 'string' ? content : String(content);
+            return (
+                <CodeBlockErrorBoundary type="markdown" fallbackCode={markdownContent}>
+                    <MarkdownRenderer artifactRunId={runId}>
+                        {markdownContent}
+                    </MarkdownRenderer>
+                </CodeBlockErrorBoundary>
+            );
+        }
+
+        case 'image':
+            return (
+                <CodeBlockErrorBoundary type="image" fallbackCode={path}>
+                    <ImageRenderer content={content} path={path} />
+                </CodeBlockErrorBoundary>
+            );
+
+        case 'code':
+        default:
+            return <CodeRenderer content={content} path={path} />;
+    }
+}

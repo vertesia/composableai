@@ -5,6 +5,8 @@ import { AgentChart, type AgentChartSpec } from '../../features/agent/chat/Agent
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { MermaidDiagram } from './MermaidDiagram';
 import { AskUserWidget, type AskUserWidgetProps } from '../../features/agent/chat/AskUserWidget';
+import { useArtifactContent } from './useArtifactContent';
+import { ArtifactContentRenderer, type ExpandRenderType } from './ArtifactContentRenderer';
 
 /**
  * Context for passing artifact run ID and callbacks to code block handlers
@@ -243,6 +245,96 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
             <AskUserWidget {...widgetProps} />
         </CodeBlockErrorBoundary>
     );
+}
+
+/**
+ * Expand code block handler - fetches artifact and renders content inline.
+ *
+ * Usage: ```expand:chart, ```expand:table, ```expand:markdown, ```expand:fusion-fragment, etc.
+ * The type after colon specifies the renderer.
+ *
+ * @example
+ * ```expand:chart
+ * direct/chart_abc123.json
+ * ```
+ */
+export function ExpandCodeBlockHandler({ code, language }: CodeBlockRendererProps) {
+    const { artifactRunId } = useCodeBlockContext();
+    const artifactPath = code.trim();
+
+    // Extract render type from language (e.g., "expand:chart" → "chart")
+    const renderType: ExpandRenderType = useMemo(() => {
+        if (!language?.includes(':')) {
+            return 'auto';
+        }
+        const type = language.split(':')[1] as ExpandRenderType;
+        // Validate known types
+        const validTypes: ExpandRenderType[] = [
+            'chart', 'vega-lite', 'table', 'markdown',
+            'fusion-fragment', 'code', 'image', 'auto'
+        ];
+        return validTypes.includes(type) ? type : 'auto';
+    }, [language]);
+
+    // Fetch artifact content from GCS
+    const { data, isLoading, error, contentType } = useArtifactContent({
+        runId: artifactRunId,
+        path: artifactPath,
+    });
+
+    if (!artifactRunId) {
+        return (
+            <CodeBlockPlaceholder
+                type="expand"
+                error="No artifact run ID available"
+            />
+        );
+    }
+
+    if (isLoading) {
+        return (
+            <CodeBlockPlaceholder
+                type="expand"
+                message={`Loading ${artifactPath}...`}
+            />
+        );
+    }
+
+    if (error) {
+        return (
+            <CodeBlockPlaceholder
+                type="expand"
+                error={`Failed to load artifact: ${error}`}
+            />
+        );
+    }
+
+    if (data === undefined) {
+        return (
+            <CodeBlockPlaceholder
+                type="expand"
+                error="No content found in artifact"
+            />
+        );
+    }
+
+    // Render with explicit type
+    return (
+        <ArtifactContentRenderer
+            content={data}
+            renderType={renderType}
+            path={artifactPath}
+            runId={artifactRunId}
+            contentType={contentType}
+        />
+    );
+}
+
+/**
+ * Check if a language string is an expand:* pattern
+ */
+export function isExpandLanguage(language: string | undefined): boolean {
+    return language?.startsWith('expand') ?? false;
 }
 
 /**

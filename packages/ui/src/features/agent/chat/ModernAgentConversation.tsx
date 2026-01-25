@@ -13,6 +13,7 @@ import {
     StreamingChunkDetails,
     UserInputSignal,
 } from "@vertesia/common";
+import { FusionFragmentProvider } from "@vertesia/fusion-ux";
 import { Button, MessageBox, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
@@ -131,6 +132,15 @@ interface ModernAgentConversationProps {
     inputContainerClassName?: string;
     /** Additional className for the input field */
     inputClassName?: string;
+
+    // Fusion fragment props
+    /**
+     * Data to provide to fusion-fragment code blocks for rendering.
+     * When provided, fusion-fragments in agent responses will display
+     * this data according to their template structure.
+     * @example { fundName: "Tech Growth IV", vintage: 2024, totalCommitments: 500000000 }
+     */
+    fusionData?: Record<string, unknown>;
 }
 
 export function ModernAgentConversation(
@@ -611,6 +621,8 @@ function ModernAgentConversationInner({
     // Styling props
     inputContainerClassName,
     inputClassName,
+    // Fusion fragment data
+    fusionData,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
     const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -1343,7 +1355,8 @@ function ModernAgentConversationInner({
         setIsPdfModalOpen(false);
     };
 
-    return (
+    // Main content - wrapped with FusionFragmentProvider when fusionData is provided
+    const mainContent = (
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
         <div
@@ -1517,6 +1530,22 @@ function ModernAgentConversationInner({
         </ImageLightboxProvider>
         </ArtifactUrlCacheProvider>
     );
+
+    // Wrap with FusionFragmentProvider when fusionData is provided
+    // This enables fusion-fragment code blocks to display data and supports
+    // agent-mode interactions where clicking editable fields sends messages
+    if (fusionData) {
+        return (
+            <FusionFragmentProvider
+                data={fusionData}
+                sendMessage={handleSendMessage}
+            >
+                {mainContent}
+            </FusionFragmentProvider>
+        );
+    }
+
+    return mainContent;
 }
 
 // Helper function to get conversation URL - used by other components

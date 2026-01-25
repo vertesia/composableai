@@ -1,5 +1,6 @@
 import { VertesiaClient } from "@vertesia/client";
 import { normalizeToolCollection } from "@vertesia/common";
+import { FusionFragmentHandler } from "@vertesia/fusion-ux";
 import { useUserSession } from "@vertesia/ui/session";
 import { CodeBlockRendererProps, CodeBlockRendererProvider } from "@vertesia/ui/widgets";
 import { memo, useEffect, useMemo, useState } from "react";
@@ -61,6 +62,7 @@ const defaultComponents: Record<string, React.FunctionComponent<CodeBlockRendere
     "chart": RechartsChartWidget,
     "vega-lite": VegaLiteChartWidget,
     "vegalite": VegaLiteChartWidget,
+    "fusion-fragment": FusionFragmentHandler,
 }
 
 function RemoteWidgetComponent({ url, code }: { url: string, code: string }) {

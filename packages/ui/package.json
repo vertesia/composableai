@@ -42,6 +42,7 @@
     "@radix-ui/react-tooltip": "^1.2.6",
     "@vertesia/client": "workspace:*",
     "@vertesia/common": "workspace:*",
+    "@vertesia/fusion-ux": "workspace:*",
     "@vertesia/json": "workspace:*",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",

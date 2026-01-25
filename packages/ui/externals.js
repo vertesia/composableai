@@ -49,6 +49,7 @@ export const EXTERNALS = [
     "@llumiverse/common",
     "@vertesia/client",
     "@vertesia/common",
+    "@vertesia/fusion-ux",
     "@vertesia/json",
     "ajv",
     "ajv-formats",

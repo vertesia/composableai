@@ -4,7 +4,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { validateTemplate } from '../src/validation/index.js';
-import { renderToBuffer } from '../src/render/serverlessRender.js';
 import { generateTextPreview } from '../src/render/textPreview.js';
 import type { FragmentTemplate } from '../src/types.js';
 
@@ -123,97 +122,8 @@ describe('chart layout validation', () => {
   });
 });
 
-describe('chart serverless rendering', () => {
-  const chartTemplate: FragmentTemplate = {
-    title: 'Fund Performance',
-    sections: [{
-      title: 'NAV Trend',
-      layout: 'chart',
-      chart: {
-        title: 'NAV Over Time',
-        height: 200,
-        spec: {
-          mark: 'line',
-          encoding: {
-            x: { field: 'date', type: 'temporal' },
-            y: { field: 'nav', type: 'quantitative' }
-          }
-        },
-        dataKey: 'navHistory'
-      }
-    }],
-  };
-
-  it('renders chart placeholder (sync mode)', () => {
-    const data = {
-      navHistory: [
-        { date: '2024-01-01', nav: 100 },
-        { date: '2024-02-01', nav: 110 },
-        { date: '2024-03-01', nav: 105 },
-      ],
-    };
-
-    const buffer = renderToBuffer(chartTemplate, data);
-    expect(buffer).toBeInstanceOf(Buffer);
-    expect(buffer[0]).toBe(0x89); // PNG magic byte
-  });
-
-  it('renders mixed sections (fields, chart, table)', () => {
-    const mixedTemplate: FragmentTemplate = {
-      title: 'Fund Dashboard',
-      sections: [
-        {
-          title: 'Summary',
-          layout: 'grid-2',
-          fields: [
-            { label: 'Fund Name', key: 'name' },
-            { label: 'NAV', key: 'currentNav', format: 'currency' },
-          ],
-        },
-        {
-          title: 'Performance Chart',
-          layout: 'chart',
-          chart: {
-            height: 200,
-            spec: {
-              mark: 'bar',
-              encoding: {
-                x: { field: 'period', type: 'nominal' },
-                y: { field: 'return', type: 'quantitative' }
-              }
-            },
-            dataKey: 'returns'
-          }
-        },
-        {
-          title: 'Transactions',
-          layout: 'table',
-          columns: [
-            { header: 'Date', key: 'date', format: 'date' },
-            { header: 'Amount', key: 'amount', format: 'currency' },
-          ],
-          dataKey: 'transactions',
-        },
-      ],
-    };
-
-    const data = {
-      name: 'Acme Fund',
-      currentNav: 150000000,
-      returns: [
-        { period: 'Q1', return: 5.2 },
-        { period: 'Q2', return: 3.8 },
-      ],
-      transactions: [
-        { date: '2024-01-01', amount: 50000000 },
-      ],
-    };
-
-    const buffer = renderToBuffer(mixedTemplate, data);
-    expect(buffer).toBeInstanceOf(Buffer);
-    expect(buffer.length).toBeGreaterThan(1000);
-  });
-});
+// NOTE: Serverless rendering tests have been moved to apps/tools
+// See apps/tools/src/tools/fusion-ux/_shared/renderFragment.ts
 
 describe('chart text preview', () => {
   it('generates preview for chart section', () => {

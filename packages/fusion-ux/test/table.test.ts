@@ -4,7 +4,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { validateTemplate } from '../src/validation/index.js';
-import { renderToBuffer } from '../src/render/serverlessRender.js';
 import { generateTextPreview } from '../src/render/textPreview.js';
 import type { FragmentTemplate } from '../src/types.js';
 
@@ -87,86 +86,8 @@ describe('table layout validation', () => {
   });
 });
 
-describe('table serverless rendering', () => {
-  const tableTemplate: FragmentTemplate = {
-    title: 'Transaction History',
-    sections: [{
-      title: 'Recent Transactions',
-      layout: 'table',
-      columns: [
-        { header: 'Date', key: 'date', format: 'date' },
-        { header: 'Description', key: 'description' },
-        { header: 'Amount', key: 'amount', format: 'currency' },
-      ],
-      dataKey: 'transactions',
-    }],
-  };
-
-  it('renders table with data', () => {
-    const data = {
-      transactions: [
-        { date: '2024-01-15', description: 'Capital Call', amount: 5000000 },
-        { date: '2024-02-01', description: 'Distribution', amount: -2000000 },
-        { date: '2024-03-15', description: 'Capital Call', amount: 3000000 },
-      ],
-    };
-
-    const buffer = renderToBuffer(tableTemplate, data);
-    expect(buffer).toBeInstanceOf(Buffer);
-    expect(buffer[0]).toBe(0x89); // PNG magic byte
-  });
-
-  it('renders empty table', () => {
-    const data = {
-      transactions: [],
-    };
-
-    const buffer = renderToBuffer(tableTemplate, data);
-    expect(buffer).toBeInstanceOf(Buffer);
-  });
-
-  it('handles missing dataKey in data', () => {
-    const buffer = renderToBuffer(tableTemplate, {});
-    expect(buffer).toBeInstanceOf(Buffer);
-  });
-
-  it('renders mixed sections (fields and table)', () => {
-    const mixedTemplate: FragmentTemplate = {
-      title: 'Fund Overview',
-      sections: [
-        {
-          title: 'Summary',
-          layout: 'grid-2',
-          fields: [
-            { label: 'Fund Name', key: 'name' },
-            { label: 'Total Value', key: 'value', format: 'currency' },
-          ],
-        },
-        {
-          title: 'Transactions',
-          layout: 'table',
-          columns: [
-            { header: 'Date', key: 'date', format: 'date' },
-            { header: 'Amount', key: 'amount', format: 'currency' },
-          ],
-          dataKey: 'transactions',
-        },
-      ],
-    };
-
-    const data = {
-      name: 'Acme Fund',
-      value: 100000000,
-      transactions: [
-        { date: '2024-01-01', amount: 50000000 },
-      ],
-    };
-
-    const buffer = renderToBuffer(mixedTemplate, data);
-    expect(buffer).toBeInstanceOf(Buffer);
-    expect(buffer.length).toBeGreaterThan(1000);
-  });
-});
+// NOTE: Serverless rendering tests have been moved to apps/tools
+// See apps/tools/src/tools/fusion-ux/_shared/renderFragment.ts
 
 describe('table text preview', () => {
   it('generates preview for table section', () => {
