@@ -32,6 +32,15 @@ export function ChartRenderer({
   const ChartComponent = context?.ChartComponent;
   const artifactRunId = context?.artifactRunId;
 
+  // Debug logging
+  console.log('[ChartRenderer] Context:', {
+    hasContext: !!context,
+    hasChartComponent: !!ChartComponent,
+    artifactRunId,
+    chartTitle: chart.title,
+    dataKey: chart.dataKey,
+  });
+
   // Resolve data from context if dataKey is provided
   const resolvedSpec = { ...chart.spec };
 

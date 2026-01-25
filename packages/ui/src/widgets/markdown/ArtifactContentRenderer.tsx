@@ -8,7 +8,7 @@ import { useMemo, type ReactElement } from 'react';
 import { CodeBlockPlaceholder, CodeBlockErrorBoundary } from './CodeBlockPlaceholder';
 import { AgentChart, type AgentChartSpec, type VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
-import { FusionFragmentHandler } from '@vertesia/fusion-ux';
+import { FusionFragmentHandler, FusionFragmentProvider } from '@vertesia/fusion-ux';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
 // Render type mapping
@@ -237,18 +237,31 @@ export function ArtifactContentRenderer({
 
         case 'fusion-fragment': {
             // For fusion fragments, content should have { template, data }
+            // Wrap with FusionFragmentProvider to inject VegaLiteChart for embedded charts
             const fragmentContent = content as { template?: unknown; data?: Record<string, unknown> };
+            console.log('[ArtifactContentRenderer] fusion-fragment:', {
+                hasTemplate: !!fragmentContent.template,
+                hasData: !!fragmentContent.data,
+                runId,
+                hasVegaLiteChart: !!VegaLiteChart,
+            });
             if (fragmentContent.template && fragmentContent.data) {
                 return (
                     <CodeBlockErrorBoundary type="fusion-fragment" fallbackCode={JSON.stringify(content, null, 2)}>
-                        <FusionFragmentHandler
-                            code={JSON.stringify(fragmentContent.template)}
+                        <FusionFragmentProvider
                             data={fragmentContent.data}
-                        />
+                            ChartComponent={VegaLiteChart}
+                            artifactRunId={runId}
+                        >
+                            <FusionFragmentHandler
+                                code={JSON.stringify(fragmentContent.template)}
+                                data={fragmentContent.data}
+                            />
+                        </FusionFragmentProvider>
                     </CodeBlockErrorBoundary>
                 );
             }
-            // If no data wrapper, treat as template-only (needs context)
+            // If no data wrapper, treat as template-only (needs context from parent provider)
             return (
                 <CodeBlockErrorBoundary type="fusion-fragment" fallbackCode={JSON.stringify(content, null, 2)}>
                     <FusionFragmentHandler code={JSON.stringify(content)} />

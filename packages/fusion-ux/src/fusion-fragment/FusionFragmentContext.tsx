@@ -52,6 +52,14 @@ export function FusionFragmentProvider({
     [data, onUpdate, sendMessage, ChartComponent, artifactRunId]
   );
 
+  // Debug logging
+  console.log('[FusionFragmentProvider] Created with:', {
+    hasData: !!data,
+    dataKeys: data ? Object.keys(data) : [],
+    hasChartComponent: !!ChartComponent,
+    artifactRunId,
+  });
+
   return (
     <FusionFragmentContext.Provider value={value}>
       {children}
