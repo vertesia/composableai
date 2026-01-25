@@ -5,6 +5,8 @@
  * Models generate templates (structure), the system provides data (values).
  */
 
+import type React from 'react';
+
 // ============ Template Types (Model-Generated) ============
 
 /**
@@ -226,6 +228,24 @@ export interface FieldRendererProps {
 // ============ Context Types ============
 
 /**
+ * Props for the injected chart component (matches @vertesia/ui VegaLiteChart)
+ */
+export interface ChartComponentProps {
+  /** The chart specification in VegaLiteChartSpec format */
+  spec: {
+    library: 'vega-lite';
+    title?: string;
+    description?: string;
+    spec: Record<string, unknown>;
+    options?: {
+      height?: number;
+    };
+  };
+  /** Optional artifact run ID for resolving artifact: URLs */
+  artifactRunId?: string;
+}
+
+/**
  * Context value for FusionFragment components
  */
 export interface FusionFragmentContextValue {
@@ -235,6 +255,10 @@ export interface FusionFragmentContextValue {
   onUpdate?: (key: string, value: unknown) => Promise<void>;
   /** Send message to agent */
   sendMessage?: (message: string) => void;
+  /** Optional chart component to render Vega-Lite charts (injected to avoid circular deps) */
+  ChartComponent?: React.ComponentType<ChartComponentProps>;
+  /** Optional artifact run ID for resolving artifact references */
+  artifactRunId?: string;
 }
 
 // ============ Tool Types ============

@@ -4,7 +4,7 @@
  */
 
 import { createContext, useContext, useMemo, type ReactNode, type ReactElement } from 'react';
-import type { FusionFragmentContextValue } from '../types.js';
+import type { FusionFragmentContextValue, ChartComponentProps } from '../types.js';
 
 const FusionFragmentContext = createContext<FusionFragmentContextValue | null>(null);
 
@@ -15,6 +15,10 @@ export interface FusionFragmentProviderProps {
   onUpdate?: (key: string, value: unknown) => Promise<void>;
   /** Send message to conversation (agent mode) */
   sendMessage?: (message: string) => void;
+  /** Chart component to render Vega-Lite charts (injected to avoid circular deps) */
+  ChartComponent?: React.ComponentType<ChartComponentProps>;
+  /** Artifact run ID for resolving artifact references */
+  artifactRunId?: string;
   /** Children components */
   children: ReactNode;
 }
@@ -39,11 +43,13 @@ export function FusionFragmentProvider({
   data,
   onUpdate,
   sendMessage,
+  ChartComponent,
+  artifactRunId,
   children
 }: FusionFragmentProviderProps): ReactElement {
   const value = useMemo<FusionFragmentContextValue>(
-    () => ({ data, onUpdate, sendMessage }),
-    [data, onUpdate, sendMessage]
+    () => ({ data, onUpdate, sendMessage, ChartComponent, artifactRunId }),
+    [data, onUpdate, sendMessage, ChartComponent, artifactRunId]
   );
 
   return (

@@ -2,11 +2,12 @@
  * Chart Renderer Component
  *
  * Renders Vega-Lite charts within fusion fragments.
- * This component wraps the VegaLiteChart from @vertesia/ui.
+ * Uses the ChartComponent from context when available, otherwise shows a placeholder.
  */
 
 import type { ReactElement } from 'react';
 import type { ChartTemplate } from '../types.js';
+import { useFusionFragmentContextSafe } from './FusionFragmentContext.js';
 
 export interface ChartRendererProps {
   /** Chart template configuration */
@@ -20,12 +21,17 @@ export interface ChartRendererProps {
 /**
  * Renders a Vega-Lite chart from a chart template.
  * If dataKey is provided, it merges data from context into the spec.
+ * Uses the ChartComponent from FusionFragmentContext if available.
  */
 export function ChartRenderer({
   chart,
   data,
   className
 }: ChartRendererProps): ReactElement {
+  const context = useFusionFragmentContextSafe();
+  const ChartComponent = context?.ChartComponent;
+  const artifactRunId = context?.artifactRunId;
+
   // Resolve data from context if dataKey is provided
   const resolvedSpec = { ...chart.spec };
 
@@ -48,10 +54,16 @@ export function ChartRenderer({
     }
   };
 
-  // For now, render a placeholder with spec info
-  // In production, this would import VegaLiteChart from @vertesia/ui
-  // But fusion-ux is a dependency of ui, so we need to avoid circular deps
-  // The actual rendering happens in the host app via FusionFragmentContext
+  // If a ChartComponent is provided via context, use it to render the actual chart
+  if (ChartComponent) {
+    return (
+      <div className={className}>
+        <ChartComponent spec={vegaSpec} artifactRunId={artifactRunId} />
+      </div>
+    );
+  }
+
+  // Fallback: render a placeholder with spec info when no ChartComponent is injected
   return (
     <div
       className={className}

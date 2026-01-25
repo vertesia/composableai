@@ -26,6 +26,7 @@ import { ThinkingMessages } from "./WaitingMessages";
 import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
+import { VegaLiteChart } from "./VegaLiteChart";
 
 export type StartWorkflowFn = (
     initialMessage?: string,
@@ -1539,6 +1540,8 @@ function ModernAgentConversationInner({
             <FusionFragmentProvider
                 data={fusionData}
                 sendMessage={handleSendMessage}
+                ChartComponent={VegaLiteChart}
+                artifactRunId={run.runId}
             >
                 {mainContent}
             </FusionFragmentProvider>
