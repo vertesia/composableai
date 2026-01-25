@@ -739,7 +739,6 @@ export function extractToolCallsFromHistory(history: WorkflowRunEvent[]): ToolCa
             lifecycle.started = event;
         } else if (event.event_type === 'EVENT_TYPE_ACTIVITY_TASK_COMPLETED') {
             lifecycle.completed = event;
-            console.log('[extractToolCallsFromHistory] Found completed event for activity:', activityId, 'event_type:', event.event_type);
         } else if (event.event_type === 'EVENT_TYPE_ACTIVITY_TASK_FAILED') {
             lifecycle.failed = event;
         }
@@ -747,25 +746,14 @@ export function extractToolCallsFromHistory(history: WorkflowRunEvent[]): ToolCa
         eventTypesSeen.add(event.event_type);
     }
 
-    console.log('[extractToolCallsFromHistory] Event types seen in history:', Array.from(eventTypesSeen));
-
     // Second pass: extract tool calls from activities that have tool payloads
     const toolCalls: ToolCallInfo[] = [];
 
-    console.log('[extractToolCallsFromHistory] Checking', activityMap.size, 'activities for tool payloads');
     let activityIndex = 0;
 
     for (const [activityId, lifecycle] of activityMap.entries()) {
         activityIndex++;
         const scheduled = lifecycle.scheduled;
-
-        if (activityIndex <= 3) {
-            console.log(`[extractToolCallsFromHistory] Activity ${activityIndex}/${activityMap.size}:`, {
-                eventType: scheduled?.event_type,
-                activityKeys: scheduled?.activity ? Object.keys(scheduled.activity) : 'no activity',
-                activity: scheduled?.activity
-            });
-        }
 
         if (!scheduled?.activity?.input) continue;
 
@@ -785,41 +773,19 @@ export function extractToolCallsFromHistory(history: WorkflowRunEvent[]): ToolCa
                 payload = scheduled.activity.input;
             }
 
-            if (activityIndex <= 3) {
-                console.log('[extractToolCallsFromHistory] Activity:', scheduled.activity.name, 'input type:', typeof scheduled.activity.input, 'payload type:', typeof payload, 'has toolName:', !!payload?.toolName, 'has toolUseId:', !!payload?.toolUseId, 'keys:', payload ? Object.keys(payload).slice(0, 10) : 'null');
-            }
-
             // Check if this is a tool activity (has toolName and toolUseId)
             if (!payload || typeof payload !== 'object') {
-                if (activityIndex <= 3) {
-                    console.log('[extractToolCallsFromHistory] Skipping - payload not an object');
-                }
                 continue;
             }
             if (!payload.toolName || !payload.toolUseId) {
-                if (activityIndex <= 3) {
-                    console.log('[extractToolCallsFromHistory] Skipping - missing toolName or toolUseId');
-                }
                 continue;
             }
-
-            console.log('[extractToolCallsFromHistory] Found tool activity:', payload.toolName, payload.toolUseId);
 
             // Determine status based on lifecycle
             let status: ToolExecutionStatus = 'running';
             let durationMs: number | undefined;
             let result: string | undefined;
             let error: { type: string; message: string; } | undefined;
-
-            console.log('[extractToolCallsFromHistory] Activity lifecycle check:', {
-                toolName: payload.toolName,
-                activityId,
-                hasCompleted: !!lifecycle.completed,
-                completedEventType: lifecycle.completed?.event_type,
-                hasFailed: !!lifecycle.failed,
-                hasStarted: !!lifecycle.started,
-                startedEventType: lifecycle.started?.event_type
-            });
 
             if (lifecycle.completed) {
                 durationMs = lifecycle.completed.event_time - scheduled.event_time;
@@ -843,15 +809,6 @@ export function extractToolCallsFromHistory(history: WorkflowRunEvent[]): ToolCa
                         } else {
                             parsedResult = lifecycle.completed.result;
                         }
-
-                        console.log('[extractToolCallsFromHistory] Tool result check:', {
-                            toolName: payload.toolName,
-                            resultType: typeof lifecycle.completed.result,
-                            isArray: Array.isArray(lifecycle.completed.result),
-                            parsedResultType: typeof parsedResult,
-                            hasIsError: parsedResult?.is_error,
-                            isErrorValue: parsedResult?.is_error === true
-                        });
 
                         // Check if result indicates an error
                         if (parsedResult && typeof parsedResult === 'object' && parsedResult.is_error === true) {
@@ -917,6 +874,5 @@ export function extractToolCallsFromHistory(history: WorkflowRunEvent[]): ToolCa
     // Sort by timestamp (ascending order)
     toolCalls.sort((a, b) => a.timestamp - b.timestamp);
 
-    console.log('[extractToolCallsFromHistory] Extracted', toolCalls.length, 'tool calls from', activityMap.size, 'activities');
     return toolCalls;
 }
