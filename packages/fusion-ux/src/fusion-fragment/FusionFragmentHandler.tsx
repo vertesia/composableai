@@ -3,7 +3,7 @@
  * Parses fusion-fragment code blocks and renders them
  */
 
-import React, { useMemo, type ReactElement } from 'react';
+import { useMemo, type ReactElement } from 'react';
 import type { FragmentTemplate } from '../types.js';
 import { parseAndValidateTemplate } from '../validation/validateTemplate.js';
 import { FusionFragmentRenderer } from './FusionFragmentRenderer.js';

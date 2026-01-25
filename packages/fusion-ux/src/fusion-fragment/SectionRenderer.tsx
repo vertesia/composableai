@@ -3,7 +3,7 @@
  * Renders a section with grid layout and collapsible behavior
  */
 
-import React, { useState, useMemo, type ReactElement } from 'react';
+import { useState, useMemo, type ReactElement } from 'react';
 import type { SectionRendererProps } from '../types.js';
 import { FieldRenderer } from './FieldRenderer.js';
 import { TableRenderer } from './TableRenderer.js';

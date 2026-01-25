@@ -3,7 +3,7 @@
  * Renders a model-generated template with actual data values
  */
 
-import React, { useMemo, type ReactElement } from 'react';
+import { useMemo, type ReactElement } from 'react';
 import type { FusionFragmentRendererProps, ValidationError } from '../types.js';
 import { validateTemplate } from '../validation/validateTemplate.js';
 import { SectionRenderer } from './SectionRenderer.js';

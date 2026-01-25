@@ -3,7 +3,7 @@
  * Provides data and update handlers to nested components
  */
 
-import React, { createContext, useContext, useMemo, type ReactNode, type ReactElement } from 'react';
+import { createContext, useContext, useMemo, type ReactNode, type ReactElement } from 'react';
 import type { FusionFragmentContextValue } from '../types.js';
 
 const FusionFragmentContext = createContext<FusionFragmentContextValue | null>(null);

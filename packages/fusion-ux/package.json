@@ -3,8 +3,8 @@
   "version": "0.81.0",
   "description": "Dynamic model-generated UI components for Vertesia",
   "type": "module",
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
+  "main": "./lib/esm/index.js",
+  "types": "./lib/types/index.d.ts",
   "files": [
     "lib",
     "src"
@@ -51,8 +51,13 @@
   },
   "exports": {
     ".": {
-      "types": "./lib/index.d.ts",
-      "default": "./lib/index.js"
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/esm/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": ["./lib/types/index.d.ts"]
     }
   },
   "repository": {

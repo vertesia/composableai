@@ -3,7 +3,7 @@
  * Renders a single field with formatting and optional edit capability
  */
 
-import React, { useMemo, useState, useCallback, type ReactElement } from 'react';
+import { useMemo, useState, useCallback, type ReactElement } from 'react';
 import type { FieldRendererProps, FieldTemplate } from '../types.js';
 
 // Styles as constants
