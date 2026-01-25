@@ -846,7 +846,13 @@ export function extractToolCallsFromHistory(history: WorkflowRunEvent[]): ToolCa
             // Extract parameters from payload.params.input
             let parameters: Record<string, unknown> | undefined;
             if (payload.params?.input) {
-                parameters = payload.params.input as Record<string, unknown>;
+                const input = payload.params.input;
+                // For remote tools, extract only the tool_input to hide MCP metadata
+                if (payload.toolType === 'remote' && input.tool_use?.tool_input) {
+                    parameters = input.tool_use.tool_input as Record<string, unknown>;
+                } else {
+                    parameters = input as Record<string, unknown>;
+                }
             }
 
             const toolCall: ToolCallInfo = {
