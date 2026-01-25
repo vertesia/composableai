@@ -1,17 +1,13 @@
 /**
  * Render module exports
  *
- * NOTE: Serverless rendering (renderToBuffer, renderToBase64, renderToDataUrl) has been
- * moved to @vertesiahq/tools (apps/tools/src/tools/fusion-ux/_shared/renderFragment.ts)
- * because it uses @napi-rs/canvas which is a Node.js-only native module that cannot
- * be bundled for browser use.
+ * NOTE: All image rendering (renderToBuffer, renderToBase64, renderToDataUrl, renderToImage)
+ * has been moved to apps/tools/src/tools/fusion-ux/_shared/renderFragment.ts
+ * because it requires Node.js-only modules (@napi-rs/canvas) or DOM APIs that
+ * cannot be bundled for browser use.
+ *
+ * This module only exports text-based preview utilities that work in any environment.
  */
-
-export {
-  renderToImage,
-  extractBase64FromDataUrl,
-  createImageContentBlock,
-} from './headlessRender.js';
 
 export {
   generateTextPreview,

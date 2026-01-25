@@ -81,12 +81,9 @@ export {
   formatAvailableKeys,
 } from './validation/index.js';
 
-// Render utilities
+// Render utilities (text preview only - image rendering is in apps/tools)
 export {
   generateTextPreview,
   generateSampleData,
   generateCompactPreview,
-  renderToImage,
-  extractBase64FromDataUrl,
-  createImageContentBlock,
 } from './render/index.js';
