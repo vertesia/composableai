@@ -72,7 +72,7 @@ export default function MessageInput({
     };
 
     return (
-        <div className="p-3 border-t border-muted flex-shrink-0" style={{ minHeight: "90px" }}>
+        <div className="p-3 border-t border-muted flex-shrink-0 fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background z-10" style={{ minHeight: "90px" }}>
             <div className="flex items-center space-x-2">
                 <div className="flex flex-1 space-x-1" >
                     <Input
