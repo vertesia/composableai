@@ -82,7 +82,7 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                 <FormItem label="Description" className="mt-2">
                     <Textarea
                         value={payload.description || ""}
-                        onChange={(ev) => setPayloadProp("description", ev)}
+                        onChange={(ev) => setPayloadProp("description", ev.target.value)}
                     />
                 </FormItem>
                 <FormItem label="Dynamic Collection" className="mt-2" direction="row" description="Dynamically fetch content for the collection based on a query. If not enabled, then content must be added by users or agents.">
