@@ -18,7 +18,7 @@ import {
     useTransitionStyles
 } from "@floating-ui/react";
 import clsx from "clsx";
-import { ReactElement, ReactNode, useState } from "react";
+import { CSSProperties, ReactElement, ReactNode, useState } from "react";
 import { PopoverContext } from "./context";
 import { defineSlot, processSlots } from "./slots";
 
@@ -128,11 +128,11 @@ function ResolvedPopover({ middleware, offset: defaultOffset, trigger, dismiss =
                 {
                     isMounted && (
                         <div ref={setFloating}
-                            style={{ ...floatingStyles, zIndex: zIndex }}
+                            style={{ ...floatingStyles, zIndex: zIndex } as CSSProperties}
                             {...getFloatingProps()}
                         >
                             <FloatingFocusManager context={context}>
-                                <div className={clsx(content.className, "bg-popover rounded-md text-popover-foreground max-w-md")} style={transitionStyles}>
+                                <div className={clsx(content.className, "bg-popover rounded-md text-popover-foreground max-w-md")} style={transitionStyles as CSSProperties}>
                                     {content.children}
                                 </div>
                             </FloatingFocusManager>

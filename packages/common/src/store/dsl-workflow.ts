@@ -195,6 +195,12 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
      * If spec is defined then the name must be "dslWorkflow"
      */
     spec?: DSLWorkflowSpec;
+    /**
+     * If true, copy the parent's workspace artifacts (scripts/, files/, skills/, docs/, out/)
+     * to the child workflow's agent space before execution. Defaults to true.
+     * conversation.json and tools.json are never copied.
+     */
+    inherit_artifacts?: boolean;
     options?: {
         memo?: Record<string, any>;
         retry?: DSLRetryPolicy;

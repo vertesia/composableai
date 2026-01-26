@@ -1,8 +1,9 @@
-import { readdirSync, statSync, existsSync, readFileSync } from "fs";
-import { join } from "path";
 import { ToolDefinition } from "@llumiverse/common";
+import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { join } from "path";
+import { ToolContext } from "./server/types.js";
 import type {
     CollectionProperties,
     ICollection,
@@ -10,6 +11,7 @@ import type {
     SkillDefinition,
     SkillExecutionResult,
     ToolCollectionDefinition,
+    ToolDefinitionWithDefault,
     ToolExecutionPayload,
     ToolExecutionResult,
 } from "./types.js";
@@ -83,8 +85,9 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      * Get skills exposed as tool definitions.
      * This allows skills to appear alongside regular tools.
      * When called, they return rendered instructions.
+     * Includes related_tools for dynamic tool discovery.
      */
-    getToolDefinitions(): ToolDefinition[] {
+    getToolDefinitions(): ToolDefinitionWithDefault[] {
         const defaultSchema: ToolDefinition['input_schema'] = {
             type: 'object',
             properties: {
@@ -95,11 +98,20 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             }
         };
 
-        return Array.from(this.skills.values()).map(skill => ({
-            name: `skill_${skill.name}`,
-            description: `[Skill] ${skill.description}. Returns contextual instructions for this task.`,
-            input_schema: skill.input_schema || defaultSchema
-        }));
+        return Array.from(this.skills.values()).map(skill => {
+            // Build description with related tools info if available
+            let description = `[Skill] ${skill.description}. Returns contextual instructions for this task.`;
+            if (skill.related_tools && skill.related_tools.length > 0) {
+                description += ` Unlocks tools: ${skill.related_tools.join(', ')}.`;
+            }
+
+            return {
+                name: `learn_${skill.name}`,
+                description,
+                input_schema: skill.input_schema || defaultSchema,
+                related_tools: skill.related_tools,
+            };
+        });
     }
 
     /**
@@ -114,24 +126,65 @@ export class SkillCollection implements ICollection<SkillDefinition> {
         };
     }
 
+    getWidgets(): {
+        name: string;
+        skill: string;
+    }[] {
+        const out: {
+            name: string;
+            skill: string;
+        }[] = [];
+        for (const skill of this.skills.values()) {
+            if (skill.widgets) {
+                for (const widget of skill.widgets) {
+                    out.push({
+                        name: widget,
+                        skill: skill.name,
+                    });
+                }
+            }
+        }
+        return Array.from(out);
+    }
+
     /**
      * Execute a skill - accepts standard tool execution payload.
      * Returns rendered instructions in tool result format.
+     *
+     * @param ctx - Hono context
+     * @param preParsedPayload - Optional pre-parsed payload (used when routing from root endpoint)
      */
-    async execute(ctx: Context): Promise<Response> {
-        let payload: ToolExecutionPayload<Record<string, any>> | undefined;
+    async execute(ctx: Context, preParsedPayload?: ToolExecutionPayload<Record<string, any>>): Promise<Response> {
+        const toolCtx = ctx as ToolContext;
+        let payload: ToolExecutionPayload<Record<string, any>> | undefined = preParsedPayload;
         try {
-            payload = await ctx.req.json() as ToolExecutionPayload<Record<string, any>>;
+            if (!payload) {
+                // Check if body was already parsed and validated by middleware
+                if (toolCtx.payload) {
+                    payload = toolCtx.payload;
+                } else {
+                    throw new HTTPException(400, {
+                        message: 'Invalid or missing skill execution payload. Expected { tool_use: { id, tool_name, tool_input? }, metadata? }'
+                    });
+                }
+            }
+
             const toolName = payload.tool_use.tool_name;
 
-            // Extract skill name from tool name (remove "skill_" prefix if present)
-            const skillName = toolName.startsWith('skill_')
-                ? toolName.slice(6)
+            // Extract skill name from tool name (remove "learn_" prefix if present)
+            const skillName = toolName.startsWith('learn_')
+                ? toolName.replace('learn_', '')
                 : toolName;
 
             const skill = this.skills.get(skillName);
 
             if (!skill) {
+                console.warn("[SkillCollection] Skill not found", {
+                    collection: this.name,
+                    requestedSkill: skillName,
+                    toolName,
+                    availableSkills: Array.from(this.skills.keys()),
+                });
                 throw new HTTPException(404, {
                     message: `Skill not found: ${skillName}`
                 });
@@ -155,8 +208,23 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             } satisfies ToolExecutionResult & { tool_use_id: string });
         } catch (err: any) {
             const status = err.status || 500;
+            const toolName = payload?.tool_use?.tool_name;
+            const toolUseId = payload?.tool_use?.id;
+
+            if (status >= 500) {
+                console.error("[SkillCollection] Skill execution failed", {
+                    collection: this.name,
+                    skill: toolName,
+                    toolUseId,
+                    error: err.message,
+                    status,
+                    toolInput: payload?.tool_use?.tool_input,
+                    stack: err.stack,
+                });
+            }
+
             return ctx.json({
-                tool_use_id: payload?.tool_use?.id || "unknown",
+                tool_use_id: toolUseId || "unknown",
                 is_error: true,
                 content: err.message || "Error executing skill",
             }, status);
@@ -198,6 +266,8 @@ interface SkillFrontmatter {
     language?: string;
     packages?: string[];
     system_packages?: string[];
+    widgets?: string[];
+    scripts?: string[];
 }
 
 /**
@@ -247,6 +317,8 @@ export function parseSkillFile(
         description: frontmatter.description,
         instructions,
         content_type: contentType,
+        widgets: frontmatter.widgets || undefined,
+        scripts: frontmatter.scripts || undefined,
     };
 
     // Build context triggers

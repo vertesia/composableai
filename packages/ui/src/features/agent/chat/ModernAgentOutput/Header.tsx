@@ -5,7 +5,7 @@ import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, MoreVert
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
 import { getConversationUrl } from "./utils";
 
-interface HeaderProps {
+export interface HeaderProps {
     title: string;
     isCompleted: boolean;
     onClose?: () => void;
@@ -20,6 +20,12 @@ interface HeaderProps {
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
+    /** Additional className for the outer container */
+    className?: string;
+    /** Additional className for the title section */
+    titleClassName?: string;
+    /** Additional className for the actions section */
+    actionsClassName?: string;
 }
 
 export default function Header({
@@ -36,11 +42,14 @@ export default function Header({
     onCopyRunId,
     resetWorkflow,
     onExportPdf,
+    className,
+    titleClassName,
+    actionsClassName,
 }: HeaderProps) {
     return (
         <PayloadBuilderProvider>
-            <div className="flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0">
-                <div className="flex flex-wrap items-center space-x-2">
+            <div className={`flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0 ${className || ""}`}>
+                <div className={`flex flex-wrap items-center space-x-2 ${titleClassName || ""}`}>
                     <div className="flex items-center space-x-1">
                         <Bot className="size-5 text-muted" />
                         <span className="font-medium">{title}</span>
@@ -49,7 +58,7 @@ export default function Header({
                         (Run ID: {run.runId.substring(0, 8)}...)
                     </span>
                 </div>
-                <div className="flex justify-end items-center space-x-2 ml-auto">
+                <div className={`flex justify-end items-center space-x-2 ml-auto ${actionsClassName || ""}`}>
                     {/* View Mode Toggle */}
                     <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
                         <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("stacked")}>
