@@ -27,7 +27,7 @@ server.all("*", async (c: Context, next: Next) => {
 
 serve({
     fetch: server.fetch,
-    port
+    port,
 }, (info) => {
     console.log(`✓ Server is running at http://localhost:${info.port}`);
 });

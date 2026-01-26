@@ -90,6 +90,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
 function defineAppConfig(): UserConfig {
 
     return {
+        base: './', // Use relative paths for assets
         plugins: [
             tailwindcss(),
             react(),

@@ -10,6 +10,7 @@ const interactions = await loadInteractions();
 
 // Create server using tools-sdk
 const server = createToolServer({
+    disableHtml: true,
     title: CONFIG__SERVER_TITLE,
     prefix: '/api',
     tools,
