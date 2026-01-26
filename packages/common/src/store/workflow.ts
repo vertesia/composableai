@@ -318,20 +318,25 @@ export interface WorkflowRunEvent {
     result?: any;
 }
 
-// Task status for processed history
-export type TaskStatus =
-    | 'scheduled'
-    | 'running'
-    | 'completed'
-    | 'failed'
-    | 'canceled'
-    | 'timed_out'
-    | 'terminated'
-    | 'sent'      // for signals
-    | 'received'; // for signals
+// Task status enum for processed history
+export enum TaskStatus {
+    SCHEDULED = 'scheduled',
+    RUNNING = 'running',
+    COMPLETED = 'completed',
+    FAILED = 'failed',
+    CANCELED = 'canceled',
+    TIMED_OUT = 'timed_out',
+    TERMINATED = 'terminated',
+    SENT = 'sent',        // for signals
+    RECEIVED = 'received', // for signals
+}
 
-// Task type discriminator
-export type TaskType = 'activity' | 'childWorkflow' | 'signal';
+// Task type enum
+export enum TaskType {
+    ACTIVITY = 'activity',
+    CHILD_WORKFLOW = 'childWorkflow',
+    SIGNAL = 'signal',
+}
 
 // Base task interface
 interface TaskBase {
@@ -350,19 +355,19 @@ interface TaskBase {
 
 // Activity-specific task
 export interface ActivityTask extends TaskBase {
-    type: 'activity';
+    type: TaskType.ACTIVITY;
 }
 
 // Child workflow-specific task
 export interface ChildWorkflowTask extends TaskBase {
-    type: 'childWorkflow';
+    type: TaskType.CHILD_WORKFLOW;
     workflowType?: string;
     runId?: string;
 }
 
 // Signal-specific task
 export interface SignalTask extends TaskBase {
-    type: 'signal';
+    type: TaskType.SIGNAL;
     signalName?: string;
     direction?: 'sending' | 'receiving';
     sender?: {
@@ -376,7 +381,7 @@ export interface SignalTask extends TaskBase {
 }
 
 // Union type for all processed tasks
-export type ProcessedTask =
+export type WorkflowTask =
     | ActivityTask
     | ChildWorkflowTask
     | SignalTask;
@@ -384,7 +389,7 @@ export type ProcessedTask =
 // History format discriminated union
 export type WorkflowHistory =
     | { type: 'events'; events: WorkflowRunEvent[] }
-    | { type: 'tasks'; tasks: ProcessedTask[] }
+    | { type: 'tasks'; tasks: WorkflowTask[] }
     | { type: 'agent'; data: any };  // Placeholder for future agent format
 
 // History format query parameter type
