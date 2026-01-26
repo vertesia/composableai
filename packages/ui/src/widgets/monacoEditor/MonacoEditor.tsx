@@ -171,6 +171,10 @@ export function MonacoEditor({
         lineDecorationsWidth: 0,
         lineNumbersMinChars: 3,
         automaticLayout: true,
+        formatOnPaste: true,
+        formatOnType: true,
+        tabSize: 2,
+        insertSpaces: true,
         glyphMargin: true, // Enable better error reporting
         renderValidationDecorations: 'on', // Show error squiggles
         renderLineHighlight: 'line', // Highlight entire line for errors
