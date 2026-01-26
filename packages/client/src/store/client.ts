@@ -15,6 +15,7 @@ import { TypesApi } from "./TypesApi.js";
 import { VERSION, VERSION_HEADER } from "./version.js";
 import { WorkersApi } from "./WorkersApi.js";
 import { WorkflowsApi } from "./WorkflowsApi.js";
+import { FusionApi } from "./FusionApi.js";
 
 export interface ZenoClientProps {
     serverUrl?: string;
@@ -92,4 +93,5 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     pendingAsks = new PendingAsksApi(this);
     data = new DataApi(this);
     tools = new ToolsApi(this);
+    fusion = new FusionApi(this);
 }

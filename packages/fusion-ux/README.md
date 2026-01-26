@@ -1,6 +1,17 @@
 # @vertesia/fusion-ux
 
-Dynamic model-generated UI components for Vertesia. Models generate templates (structure), the system provides values (data).
+Dynamic model-generated UI components for Vertesia. This package provides React components for rendering AI-generated business applications, pages, navigation, and data-bound templates.
+
+## Overview
+
+The Fusion UX package enables the creation of complete business applications from AI-generated specifications:
+
+- **Fusion Fragments**: Dynamic UI templates for displaying structured data as formatted cards, tables, and charts
+- **Fusion Pages**: Complete page layouts with regions, content types, data bindings, and actions
+- **Fusion Navigation**: Sidebar, topbar, and footer navigation with dynamic data-driven items
+- **Fusion Applications**: Full application runtime with routing, theming, and global data
+- **Fusion Runtime**: Server-side rendering, hydration, and runtime state management
+- **Data Binding**: Flexible data resolution from multiple sources
 
 ## Installation
 
@@ -10,151 +21,342 @@ pnpm add @vertesia/fusion-ux
 
 ## Quick Start
 
-### Client-side (React)
+### Rendering a Fragment
 
 ```tsx
-import {
-  FusionFragmentRenderer,
-  FusionFragmentProvider,
-  FusionFragmentHandler,
-} from '@vertesia/fusion-ux';
+import { FusionFragmentRenderer } from '@vertesia/fusion-ux';
 
-// Option 1: Direct rendering with template and data
-<FusionFragmentRenderer
-  template={{
-    title: "Fund Parameters",
-    sections: [{
-      title: "Identity",
-      layout: "grid-3",
+const template = {
+  title: 'Customer Details',
+  sections: [
+    {
+      title: 'Information',
+      layout: 'grid-3',
       fields: [
-        { label: "Firm Name", key: "firmName" },
-        { label: "Vintage", key: "vintageYear", format: "number" }
+        { label: 'Name', key: 'name' },
+        { label: 'Email', key: 'email' },
+        { label: 'Status', key: 'status', highlight: 'success' }
       ]
-    }]
-  }}
-  data={{ firmName: "Acme Capital", vintageYear: 2024 }}
-  onUpdate={async (key, value) => {
-    // Handle field updates
-  }}
-/>
-
-// Option 2: Context-based rendering (for markdown code blocks)
-<FusionFragmentProvider data={fund.parameters} onUpdate={handleUpdate}>
-  <MarkdownRenderer content={agentResponse} />
-</FusionFragmentProvider>
-
-// Option 3: Code block handler for markdown renderers
-const codeBlockRenderers = {
-  'fusion-fragment': ({ code }) => <FusionFragmentHandler code={code} />
+    }
+  ]
 };
+
+<FusionFragmentRenderer
+  template={template}
+  data={{ name: 'John Doe', email: 'john@example.com', status: 'Active' }}
+  onUpdate={(key, value) => console.log(`Updated ${key} to ${value}`)}
+/>
 ```
 
-### Server-side (Tools)
+### Rendering a Page
 
-```typescript
-import { fusionUxTools } from '@vertesia/fusion-ux/server';
+```tsx
+import { FusionPageRenderer, createDataBindingResolver } from '@vertesia/fusion-ux';
 
-// Register tools with your server
-server.registerCollection(fusionUxTools);
+const page = {
+  id: 'customer-details',
+  title: 'Customer Details',
+  layout: { type: 'sidebar-left' },
+  regions: [
+    { id: 'sidebar', content: [{ type: 'fragment', key: 'customerNav' }] },
+    { id: 'main', content: [{ type: 'fragment', key: 'customerDetails' }] }
+  ],
+  dataBindings: [
+    { key: 'customer', source: 'contentObject', objectId: '{{route.id}}' }
+  ]
+};
+
+const resolver = createDataBindingResolver({
+  fetchers: {
+    fetchContentObject: (id) => api.getObject(id),
+    queryObjects: (query) => api.queryObjects(query),
+    fetchDataStore: (key) => dataStore.get(key),
+    fetchArtifact: (path) => artifacts.get(path),
+  }
+});
+
+<FusionPageRenderer
+  page={page}
+  context={{ route: { id: 'cust_123' } }}
+  resolver={resolver}
+  onNavigate={(href) => router.push(href)}
+  onAction={(action) => handleAction(action)}
+/>
 ```
 
-## Template Structure
+### Rendering an Application
 
-```typescript
-interface FragmentTemplate {
-  title?: string;
-  entityType?: 'fund' | 'scenario' | 'portfolio' | 'transaction' | 'custom';
-  sections: SectionTemplate[];
-  footer?: string;
-}
+```tsx
+import { FusionApplicationRenderer } from '@vertesia/fusion-ux';
 
-interface SectionTemplate {
-  title: string;
-  layout?: 'grid-2' | 'grid-3' | 'grid-4' | 'list';
-  collapsed?: boolean;
-  fields: FieldTemplate[];
-}
-
-interface FieldTemplate {
-  label: string;           // Display label
-  key: string;             // Data key (required)
-  format?: 'text' | 'number' | 'currency' | 'percent' | 'date' | 'boolean';
-  unit?: string;           // e.g., "years", "USD"
-  editable?: boolean;
-  highlight?: 'success' | 'warning' | 'error' | 'info';
-  tooltip?: string;
-  decimals?: number;       // For number/currency/percent
-  currency?: string;       // For currency format
-}
-```
-
-## Validation Tool
-
-The `validate_fusion_fragment` tool allows models to validate templates:
-
-```json
-{
-  "template": {
-    "sections": [{
-      "title": "Identity",
-      "fields": [{ "label": "Firm", "key": "firmName" }]
-    }]
+const application = {
+  id: 'inventory-app',
+  title: 'Inventory Manager',
+  navigation: {
+    sidebar: [
+      {
+        id: 'main',
+        title: 'Menu',
+        items: [
+          { id: 'dashboard', type: 'link', label: 'Dashboard', icon: { type: 'lucide', value: 'home' }, href: '/dashboard' },
+          { id: 'products', type: 'link', label: 'Products', href: '/products' }
+        ]
+      }
+    ]
   },
-  "dataKeys": ["firmName", "fundName", "vintageYear"],
-  "preview": "text"
-}
+  routes: [
+    { path: '/dashboard', pageId: 'page_dashboard' },
+    { path: '/products', pageId: 'page_products' },
+    { path: '/products/:id', pageId: 'page_product_details' }
+  ],
+  defaultRoute: '/dashboard',
+  theme: {
+    primaryColor: '#3B82F6',
+    borderRadius: 'md'
+  }
+};
+
+<FusionApplicationRenderer
+  application={application}
+  currentPath={router.pathname}
+  loadPage={(pageId) => api.fusion.pages.retrieve(pageId)}
+  resolver={resolver}
+  user={{ id: 'user_123', roles: ['admin'] }}
+  onNavigate={(href) => router.push(href)}
+/>
 ```
 
-Returns errors with suggestions or a text preview of the template.
+## Module Reference
 
-## API
+### 1. Fusion Fragment
 
-### Components
+Renders dynamic UI templates for displaying structured data.
 
-- `FusionFragmentRenderer` - Main renderer component
-- `FusionFragmentProvider` - Context provider for data
-- `FusionFragmentHandler` - Code block handler
-- `SectionRenderer` - Section renderer
-- `FieldRenderer` - Field renderer
+**Components:**
+- `FusionFragmentRenderer` - Main fragment component
+- `SectionRenderer` - Renders individual sections
+- `FieldRenderer` - Renders individual fields
+- `FusionFragmentProvider` - Context for markdown integration
 
-### Validation
+**Layouts:** `grid-2`, `grid-3`, `grid-4`, `list`, `table`, `chart`
 
-- `validateTemplate(template, dataKeys)` - Validate a template
-- `parseAndValidateTemplate(jsonString, dataKeys)` - Parse and validate
-- `findClosestKey(input, validKeys)` - Fuzzy key matching
-- `formatValidationErrors(errors)` - Format errors for models
+**Field Formats:** `text`, `number`, `currency`, `percent`, `date`, `boolean`
 
-### Server
+**Highlighting:** `success`, `warning`, `error`, `info`
 
-- `fusionUxTools` - Tool collection for registration
-- `ValidateFusionFragmentTool` - The validation tool
+### 2. Fusion Page
 
-### Serverless Rendering
+Renders complete page layouts with multiple content types.
 
-Render templates to PNG without a browser using `@napi-rs/canvas`:
+**Components:**
+- `FusionPageRenderer` - Main page component
+- `PageLayoutRenderer` - Handles layout types
+- `RegionRenderer` - Renders content regions
+- `ContentRenderer` - Renders content types
+- `PageHeader` - Header with breadcrumbs and actions
+- `ActionButton` - Configurable action buttons
 
-```typescript
-import { renderToBuffer, renderToBase64, renderToDataUrl } from '@vertesia/fusion-ux/server';
+**Layout Types:**
+| Type | Description | Regions |
+|------|-------------|---------|
+| `single` | Full-width column | main |
+| `sidebar-left` | Left sidebar | sidebar, main |
+| `sidebar-right` | Right sidebar | main, sidebar |
+| `two-column` | Two equal columns | left, right |
+| `three-column` | Three columns | left, center, right |
+| `tabs` | Tabbed interface | Per tab |
+| `accordion` | Collapsible sections | Per section |
+| `dashboard` | Grid-based | Multiple |
 
-// Render to PNG buffer
-const buffer = renderToBuffer(template, data);
-fs.writeFileSync('preview.png', buffer);
+**Content Types:** `fragment`, `table`, `chart`, `form`, `html`, `markdown`, `empty-state`, `component`
 
-// Render to base64 string
-const base64 = renderToBase64(template, data);
+### 3. Fusion Navigation
 
-// Render to data URL
-const dataUrl = renderToDataUrl(template, data);
-// Returns: "data:image/png;base64,..."
+Renders application navigation structures.
 
-// With custom options
-const buffer = renderToBuffer(template, data, {
-  width: 800,      // Canvas width (default: 600)
-  padding: 24,     // Padding around content (default: 20)
-  fieldHeight: 60, // Height per field row (default: 50)
+**Components:**
+- `SidebarNavigation` - Main sidebar
+- `TopbarNavigation` - Horizontal nav
+- `NavigationSection` - Grouped items
+- `NavigationItem` - Individual items
+- `DynamicNavigation` - Data-driven items
+
+**Item Types:** `link`, `group`, `action`, `divider`
+
+### 4. Fusion Application
+
+Complete application runtime.
+
+**Components:**
+- `FusionApplicationRenderer` - Main app component
+- `ApplicationShell` - Layout with navigation
+- `ApplicationRouter` - Route matching
+- `ThemeProvider` - Theme customization
+- `ApplicationContext` - App state
+
+**Hooks:**
+- `useApplicationContext` - Access app context
+- `useCurrentRoute` - Get matched route
+- `useCurrentPage` - Get current page
+- `useGlobalData` - Access global data
+- `useNavigation` - Navigation helpers
+
+### 5. Fusion Runtime
+
+Server-side rendering and runtime.
+
+**Class:**
+- `FusionRuntime` - Runtime initialization and state
+
+**Hooks:**
+- `useFusionRuntime` - Access runtime
+- `useRuntimeState` - Get state
+- `useRuntimeNavigation` - Navigate
+- `useAnalytics` - Track events
+
+**Server Utilities:**
+- `loadServerData` - SSR data loading
+- `generateHeadElements` - Meta tags
+- `createHydrationData` - Hydration data
+- `parseHydrationData` - Client hydration
+
+### 6. Data Binding
+
+Resolves data from various sources.
+
+**Resolver:**
+```tsx
+const resolver = createDataBindingResolver({
+  fetchers: {
+    fetchContentObject: (id, options) => Promise<object>,
+    queryObjects: (query) => Promise<{ items: object[] }>,
+    fetchDataStore: (key) => Promise<unknown>,
+    fetchArtifact: (path) => Promise<unknown>,
+  },
+  cache: optionalCache,
+  defaultTimeout: 30000,
+  transforms: { customTransform: (data, ctx) => transformedData }
 });
 ```
 
+**Data Sources:**
+| Source | Description |
+|--------|-------------|
+| `contentObject` | Single object by ID |
+| `objectQuery` | Query multiple objects |
+| `dataStore` | Key-value store |
+| `artifact` | Artifact storage |
+| `api` | REST API endpoint |
+| `static` | Static data |
+| `route` | Route parameters |
+
+**Hooks:**
+- `usePageData(bindings, context)` - Load all bindings
+- `useBinding(binding, context)` - Load single binding
+- `usePollingData(binding, context, interval)` - Auto-refresh
+
+## Validation
+
+```tsx
+import { validateTemplate, parseAndValidateTemplate } from '@vertesia/fusion-ux';
+
+// Validate a template object
+const result = validateTemplate(template, ['firmName', 'fundName', 'vintageYear']);
+if (!result.valid) {
+  console.log(result.errors);
+  // Includes suggestions for typos
+}
+
+// Parse and validate JSON string
+const result = parseAndValidateTemplate(jsonString, availableKeys);
+```
+
+## Server-Side Rendering
+
+```tsx
+import {
+  loadServerData,
+  createHydrationData,
+  generateHydrationScript
+} from '@vertesia/fusion-ux';
+
+// In your server route handler
+export async function handleRequest(req) {
+  const result = await loadServerData({
+    application,
+    path: req.url,
+    config: { dataFetchers: serverFetchers },
+    user: req.user,
+  });
+
+  if (result.redirect) {
+    return redirect(result.redirect);
+  }
+
+  const hydrationData = createHydrationData(
+    application,
+    result.page,
+    result.data,
+    req.url,
+    req.user
+  );
+
+  return renderToString(
+    <>
+      <FusionApplicationRenderer
+        application={application}
+        currentPath={req.url}
+        {...otherProps}
+      />
+      <script dangerouslySetInnerHTML={{
+        __html: generateHydrationScript(hydrationData)
+      }} />
+    </>
+  );
+}
+```
+
+## Type Exports
+
+```tsx
+import type {
+  // Fragment
+  FragmentTemplate, SectionTemplate, FieldTemplate, ChartTemplate,
+  FusionFragmentRendererProps, ValidationResult,
+
+  // Page
+  FusionPageRendererProps, PageLayoutRendererProps,
+  RegionRendererProps, ContentRendererProps,
+  FusionPageContextValue,
+
+  // Navigation
+  NavigationRendererProps, SidebarNavigationProps,
+  NavigationItemProps, NavigationContextValue,
+
+  // Application
+  FusionApplicationRendererProps, ApplicationShellProps,
+  ApplicationContextValue, MatchedRoute, RouteUtils,
+
+  // Runtime
+  FusionRuntimeConfig, FusionRuntimeState,
+  SSRResult, SSRHeadElements, HydrationData,
+
+  // Data Binding
+  DataBindingResolver, ResolutionContext,
+  PageDataResult, DataFetchers, ResolverConfig,
+} from '@vertesia/fusion-ux';
+```
+
+## AI Tool Integration
+
+The package integrates with AI tools through skills:
+
+- **fusion-fragment**: Generate and validate UI templates
+- **fusion-page**: Create and manage pages
+- **fusion-application**: Create and manage applications
+
+See the skills documentation in `apps/tools/src/skills/fusion-ux/`.
+
 ## License
 
-Apache-2.0
+Proprietary - Vertesia Inc.

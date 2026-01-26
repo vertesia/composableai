@@ -8,4 +8,5 @@ export * from "./PendingAsksApi.js";
 export * from "./SchedulesApi.js";
 export * from "./TypesApi.js";
 export * from "./WorkflowsApi.js";
+export * from "./FusionApi.js";
 
