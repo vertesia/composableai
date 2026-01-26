@@ -675,12 +675,12 @@ function ModernAgentConversationInner({
     };
 
     return (
-        <div className="flex gap-2 h-full">
+        <div className="flex flex-col lg:flex-row gap-2 h-full">
             {/* Conversation Area - responsive width based on panel visibility */}
             <div
                 ref={conversationRef}
-                className={`flex flex-col h-full min-h-0 border-0 ${
-                showSlidingPanel ? 'lg:w-2/3 flex-1' : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
+                className={`flex flex-col min-h-0 border-0 ${
+                showSlidingPanel ? 'w-full lg:w-2/3 flex-1 min-h-[50vh]' : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
             }`}
             >
                 <Header
@@ -771,7 +771,7 @@ function ModernAgentConversationInner({
 
             {/* Plan Panel Area - only rendered when panel should be shown */}
             {showSlidingPanel && (
-                <div className="h-full lg:w-1/3 border-l">
+                <div className="w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l">
                     <InlineSlidingPlanPanel
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
