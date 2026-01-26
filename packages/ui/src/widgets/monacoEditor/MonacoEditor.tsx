@@ -1,6 +1,7 @@
 import { Editor } from '@monaco-editor/react';
 import { useTheme } from '@vertesia/ui/core';
 import debounce from 'debounce';
+import clsx from 'clsx';
 import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type * as monaco from 'monaco-editor';
 
@@ -13,7 +14,7 @@ export interface IEditorApi {
 }
 
 // Define Monaco ViewUpdate interface
-interface ViewUpdate {
+export interface ViewUpdate {
     docChanged: boolean;
     state: {
         doc: {
@@ -47,6 +48,8 @@ interface MonacoEditorProps {
     beforeMount?: (monaco: typeof import('monaco-editor')) => void;
     onMount?: (editor: monaco.editor.IStandaloneCodeEditor) => void;
     defaultValue?: string;
+    minLines?: number; // Minimum lines to show (default: 10)
+    maxLines?: number; // Maximum lines before scrolling (default: unlimited)
 }
 
 export function MonacoEditor({
@@ -59,7 +62,9 @@ export function MonacoEditor({
     options = {},
     beforeMount,
     onMount,
-    defaultValue
+    defaultValue,
+    minLines = 10,
+    maxLines
 }: MonacoEditorProps) {
     const [editorValue, setEditorValue] = useState(value);
     const editorInstanceRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
@@ -144,9 +149,9 @@ export function MonacoEditor({
 
         // Call custom onMount if provided
         onMount?.(editor);
-    }, [language, onMount, theme]);
+    }, [onMount, theme]);
 
-    // Update editor value when prop changes
+    // Update editor value when prop changes from outside
     useEffect(() => {
         if (value !== editorValue) {
             setEditorValue(value);
@@ -154,7 +159,7 @@ export function MonacoEditor({
                 editorInstanceRef.current.setValue(value);
             }
         }
-    }, [value]);
+    }, [value]); // Only depend on value prop, not editorValue
 
     const defaultOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
         fontSize: 14,
@@ -182,9 +187,21 @@ export function MonacoEditor({
         ...options
     };
 
+    // Calculate fixed height based on minLines/maxLines
+    const lineHeight = 19; // Monaco default line height
+    const padding = 20; // top/bottom padding
+    const displayLines = maxLines || minLines;
+    const editorHeight = displayLines * lineHeight + padding;
+
     return (
-        <div className={className}>
+        <div
+            className={clsx(className, 'w-full')}
+            style={{
+                height: `${editorHeight}px`
+            }}
+        >
             <Editor
+                className="h-full w-full"
                 height="100%"
                 theme={theme === 'dark' ? 'vs-dark' : 'light'}
                 language={language}

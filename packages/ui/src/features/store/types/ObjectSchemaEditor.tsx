@@ -1,14 +1,10 @@
-import { basicSetup } from 'codemirror';
 import { useMemo, useRef, useState } from 'react';
 
 import { useUserSession } from '@vertesia/ui/session';
-import { json } from '@codemirror/lang-json';
-import { CodeMirrorEditor, EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
-import { Button, useToast } from '@vertesia/ui/core';
+import { MonacoEditor, EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
+import { Button, useToast, useTheme } from '@vertesia/ui/core';
 import { ContentObjectType } from '@vertesia/common';
 import { Ajv } from "ajv";
-
-const CODE_MIRROR_EXTENSIONS = [basicSetup, json()];
 
 interface ObjectSchemaEditorProps {
     objectType: ContentObjectType;
@@ -17,6 +13,7 @@ interface ObjectSchemaEditorProps {
 export function ObjectSchemaEditor({ objectType, onSchemaUpdate }: ObjectSchemaEditorProps) {
     const { store } = useUserSession();
     const toast = useToast();
+    const { theme } = useTheme();
 
     const [isUpdating, setUpdating] = useState(false);
     const schema = useSchema(objectType.object_schema);
@@ -103,7 +100,23 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate }: ObjectSchemaE
             <div className="px-4 py-2">
                 {
                     displayJson
-                        ? <CodeMirrorEditor value={value} extensions={CODE_MIRROR_EXTENSIONS} editorRef={editorRef} />
+                        ? <MonacoEditor
+                            value={value}
+                            language="json"
+                            editorRef={editorRef}
+                            theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+                            options={{
+                                fontSize: 14,
+                                minimap: { enabled: false },
+                                scrollBeyondLastLine: false,
+                                wordWrap: 'on',
+                                lineNumbers: 'on',
+                                automaticLayout: true,
+                                formatOnPaste: true,
+                                formatOnType: true,
+                                tabSize: 2,
+                            }}
+                        />
                         : <SchemaEditor schema={schema} />
                 }
             </div>
