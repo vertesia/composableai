@@ -39,6 +39,11 @@ export const EXTERNALS = [
     "tailwind-merge",
     "debounce",
     "fast-xml-parser",
+    // codemirror
+    "codemirror",
+    "@codemirror/state",
+    "@codemirror/view",
+    "@codemirror/lang-json",
     // verteisa deps
     "@llumiverse/common",
     "@vertesia/client",
