@@ -3,9 +3,6 @@
   "references": [
     { "path": "./tsconfig.ui.json" },
     { "path": "./tsconfig.tool-server.json" },
-    { "path": "./tsconfig.node.json" },
-    { "path": "../../packages/common/tsconfig.json" },
-    { "path": "../../packages/ui/tsconfig.json" },
-    { "path": "../../packages/plugin-builder/tsconfig.json" }
+    { "path": "./tsconfig.node.json" }
   ]
 }

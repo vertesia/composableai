@@ -17,18 +17,6 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
-    "paths": {
-      "@vertesia/common": [
-        "./node_modules/@vertesia/common/src/index.ts"
-      ],
-      "@vertesia/client": [
-        "./node_modules/@vertesia/client/src/index.ts",
-      ],
-      "@vertesia/ui/*": [
-        "./node_modules/@vertesia/ui/src/*"
-      ]
-    },
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
@@ -39,13 +27,5 @@
   },
   "include": [
     "src"
-  ],
-  "references": [
-    {
-      "path": "./node_modules/@vertesia/common/tsconfig.dist.json"
-    },
-    {
-      "path": "./node_modules/@vertesia/ui/tsconfig.dist.json"
-    }
   ]
 }
