@@ -96,17 +96,25 @@ export function FusionApplicationRenderer({
         return match;
     }, [currentPath, application.routes]);
 
-    // Build resolution context
-    const context: ResolutionContext = useMemo(
+    // Build base resolution context (without globalData to avoid circular dependency)
+    const baseContext: ResolutionContext = useMemo(
         () => ({
             route: matchedRoute
                 ? applyParamDefaults(matchedRoute.params, matchedRoute.route)
                 : {},
             settings,
             user: user || undefined,
+        }),
+        [matchedRoute, settings, user]
+    );
+
+    // Build full resolution context (includes resolved globalData for page rendering)
+    const context: ResolutionContext = useMemo(
+        () => ({
+            ...baseContext,
             resolved: globalData,
         }),
-        [matchedRoute, settings, user, globalData]
+        [baseContext, globalData]
     );
 
     // Check route permissions
@@ -152,9 +160,10 @@ export function FusionApplicationRenderer({
                 return;
             }
 
-            // Resolve all bindings
+            // Resolve all bindings using baseContext to avoid circular dependency
+            // (baseContext doesn't include globalData)
             const bindings = prefetchSources.map((source) => source.binding);
-            const result: PageDataResult = await resolver.resolveAll(bindings, context);
+            const result: PageDataResult = await resolver.resolveAll(bindings, baseContext);
 
             if (!result.success && result.errors.length > 0) {
                 // Log errors but still set partial data
@@ -173,7 +182,7 @@ export function FusionApplicationRenderer({
         } finally {
             setGlobalLoading(false);
         }
-    }, [application.globalDataSources, resolver, context, onError]);
+    }, [application.globalDataSources, resolver, baseContext, onError]);
 
     // Load global data on mount
     useEffect(() => {

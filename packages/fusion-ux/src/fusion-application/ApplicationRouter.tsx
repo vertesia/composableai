@@ -4,7 +4,7 @@
  * Handles route matching and page rendering within a fusion application.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { FusionPage, ActionSpec } from '@vertesia/common';
 import type { ApplicationRouterProps } from './types.js';
 import { matchRoute, applyParamDefaults } from './routing.js';
@@ -81,8 +81,11 @@ export function ApplicationRouter({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Match the current route
-    const matchedRoute = matchRoute(currentPath, routes);
+    // Match the current route (memoized to prevent unnecessary re-renders)
+    const matchedRoute = useMemo(
+        () => matchRoute(currentPath, routes),
+        [currentPath, routes]
+    );
 
     // Wrap the action handler to adapt between application and page action formats
     // Must be declared before any conditional returns to follow React hooks rules
@@ -95,13 +98,16 @@ export function ApplicationRouter({
         [onAction]
     );
 
-    // Build resolution context with route params
-    const pageContext = {
-        ...context,
-        route: matchedRoute
-            ? applyParamDefaults(matchedRoute.params, matchedRoute.route)
-            : {},
-    };
+    // Build resolution context with route params (memoized to prevent re-renders)
+    const pageContext = useMemo(
+        () => ({
+            ...context,
+            route: matchedRoute
+                ? applyParamDefaults(matchedRoute.params, matchedRoute.route)
+                : {},
+        }),
+        [context, matchedRoute]
+    );
 
     // Load the page when route changes
     const loadCurrentPage = useCallback(async () => {
