@@ -91,8 +91,10 @@ export function matchRoute(
     path: string,
     routes: RouteSpec[]
 ): MatchedRoute | null {
+    // Strip query string and hash before matching
+    const pathWithoutQuery = path.split('?')[0].split('#')[0];
     // Normalize path - remove trailing slash (except for root)
-    const normalizedPath = path === '/' ? '/' : path.replace(/\/$/, '');
+    const normalizedPath = pathWithoutQuery === '/' ? '/' : pathWithoutQuery.replace(/\/$/, '');
 
     for (const route of routes) {
         const params = matchPath(normalizedPath, route.path);

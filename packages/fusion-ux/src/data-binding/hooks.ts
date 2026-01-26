@@ -103,8 +103,15 @@ export function usePageData(
     // Track abort controller for cleanup
     const abortControllerRef = useRef<AbortController | null>(null);
 
+    // Use ref for resolveOptions to prevent unnecessary refetches
+    const resolveOptionsRef = useRef(resolveOptions);
+    resolveOptionsRef.current = resolveOptions;
+
     // Memoize context to prevent unnecessary refetches
     const contextKey = useMemo(() => JSON.stringify(context), [context]);
+
+    // Memoize bindings key to detect actual changes
+    const bindingsKey = useMemo(() => JSON.stringify(bindings), [bindings]);
 
     const refetch = useCallback(async () => {
         if (!bindings?.length) {
@@ -128,7 +135,7 @@ export function usePageData(
 
         try {
             const pageResult = await resolver.resolveAll(bindings, context, {
-                ...resolveOptions,
+                ...resolveOptionsRef.current,
                 signal: abortController.signal,
             });
 
@@ -154,7 +161,7 @@ export function usePageData(
                 setLoading(false);
             }
         }
-    }, [bindings, contextKey, resolver, resolveOptions]);
+    }, [bindingsKey, contextKey, resolver, bindings, context]);
 
     const invalidate = useCallback(
         async (key: string) => {

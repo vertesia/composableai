@@ -4,7 +4,7 @@
  * Handles route matching and page rendering within a fusion application.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { FusionPage, ActionSpec } from '@vertesia/common';
 import type { ApplicationRouterProps } from './types.js';
 import { matchRoute, applyParamDefaults } from './routing.js';
@@ -81,6 +81,16 @@ export function ApplicationRouter({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Use refs for callbacks to prevent unnecessary effect re-runs
+    const loadPageRef = useRef(loadPage);
+    const onNavigateRef = useRef(onNavigate);
+    loadPageRef.current = loadPage;
+    onNavigateRef.current = onNavigate;
+
+    // Track current loading/loaded page to prevent duplicate loads
+    const loadingPageRef = useRef<string | null>(null);
+    const loadedPageIdRef = useRef<string | null>(null);
+
     // Match the current route (memoized to prevent unnecessary re-renders)
     const matchedRoute = useMemo(
         () => matchRoute(currentPath, routes),
@@ -111,15 +121,13 @@ export function ApplicationRouter({
 
     // Load the page when route changes
     const loadCurrentPage = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        setPage(null);
-
         // No matching route - redirect to default or show not found
         if (!matchedRoute) {
+            loadingPageRef.current = null;
+            setPage(null);
             // If we're at root, redirect to default route
-            if (currentPath === '/' && onNavigate) {
-                onNavigate(defaultRoute);
+            if (currentPath === '/' && onNavigateRef.current) {
+                onNavigateRef.current(defaultRoute);
                 return;
             }
             setLoading(false);
@@ -130,6 +138,7 @@ export function ApplicationRouter({
 
         // Inline page template
         if (route.inlinePage) {
+            loadingPageRef.current = null;
             // Convert inline template to a minimal page object
             const inlinePage: FusionPage = {
                 id: `inline-${route.path}`,
@@ -154,30 +163,54 @@ export function ApplicationRouter({
 
         // Page ID reference
         if (route.pageId) {
-            if (!loadPage) {
+            // Prevent duplicate loads: skip if currently loading OR already loaded this page
+            if (loadingPageRef.current === route.pageId || loadedPageIdRef.current === route.pageId) {
+                return;
+            }
+
+            if (!loadPageRef.current) {
                 setError('Page loader not configured');
                 setLoading(false);
                 return;
             }
 
+            // Clear previous loaded page ref since we're loading a new one
+            loadedPageIdRef.current = null;
+            loadingPageRef.current = route.pageId;
+            setLoading(true);
+            setError(null);
+            setPage(null);
+
             try {
-                const loadedPage = await loadPage(route.pageId);
-                setPage(loadedPage);
+                const loadedPage = await loadPageRef.current(route.pageId);
+                // Only set state if we're still loading this page
+                if (loadingPageRef.current === route.pageId) {
+                    loadingPageRef.current = null;
+                    loadedPageIdRef.current = route.pageId; // Mark as loaded
+                    setPage(loadedPage);
+                    setLoading(false);
+                }
             } catch (err) {
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : 'Failed to load page'
-                );
+                // Only set error if we're still loading this page
+                if (loadingPageRef.current === route.pageId) {
+                    loadingPageRef.current = null;
+                    // Don't set loadedPageIdRef on error - allow retry
+                    setError(
+                        err instanceof Error
+                            ? err.message
+                            : 'Failed to load page'
+                    );
+                    setLoading(false);
+                }
             }
-            setLoading(false);
             return;
         }
 
         // No page configured for this route
+        loadingPageRef.current = null;
         setError('No page configured for this route');
         setLoading(false);
-    }, [currentPath, matchedRoute, loadPage, defaultRoute, onNavigate]);
+    }, [currentPath, matchedRoute, defaultRoute]);
 
     useEffect(() => {
         loadCurrentPage();

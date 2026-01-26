@@ -4,7 +4,7 @@
  * Main component for rendering a complete fusion application.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { FusionPage, ActionSpec } from '@vertesia/common';
 import type { FusionApplicationRendererProps, MatchedRoute } from './types.js';
 import type { ResolutionContext, PageDataResult } from '../data-binding/types.js';
@@ -131,15 +131,25 @@ export function FusionApplicationRenderer({
         }
     }, [matchedRoute, user, onNavigate]);
 
+    // Track whether global data has been loaded to prevent re-fetching
+    const globalDataLoadedRef = useRef(false);
+
     // Load global data sources
     const loadGlobalData = useCallback(async () => {
+        // Prevent re-loading if already loaded
+        if (globalDataLoadedRef.current) {
+            return;
+        }
+
         if (!application.globalDataSources || application.globalDataSources.length === 0) {
+            globalDataLoadedRef.current = true;
             setGlobalData({});
             setGlobalLoading(false);
             return;
         }
 
         if (!resolver) {
+            globalDataLoadedRef.current = true;
             setGlobalData({});
             setGlobalLoading(false);
             return;
@@ -171,6 +181,7 @@ export function FusionApplicationRenderer({
                 console.error('Global data errors:', errorMessages);
             }
 
+            globalDataLoadedRef.current = true;
             setGlobalData(result.data);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to load global data';
