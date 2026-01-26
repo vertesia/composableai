@@ -268,7 +268,7 @@ export interface ListWorkflowRunsPayload {
     next_page_token?: string;
 }
 
-interface WorkflowRunEvent {
+export interface WorkflowRunEvent {
     event_id: number;
     event_time: number;
     event_type: string;
@@ -318,6 +318,78 @@ interface WorkflowRunEvent {
     result?: any;
 }
 
+// Task status for processed history
+export type TaskStatus =
+    | 'scheduled'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'canceled'
+    | 'timed_out'
+    | 'terminated'
+    | 'sent'      // for signals
+    | 'received'; // for signals
+
+// Task type discriminator
+export type TaskType = 'activity' | 'childWorkflow' | 'signal';
+
+// Base task interface
+interface TaskBase {
+    type: TaskType;
+    activityId: string;
+    activityName?: string;
+    input?: any;
+    scheduled: number | null;
+    status: TaskStatus;
+    attempts: number;
+    started: number | null;
+    completed: number | null;
+    error: string | null;
+    result: any;
+}
+
+// Activity-specific task
+export interface ActivityTask extends TaskBase {
+    type: 'activity';
+}
+
+// Child workflow-specific task
+export interface ChildWorkflowTask extends TaskBase {
+    type: 'childWorkflow';
+    workflowType?: string;
+    runId?: string;
+}
+
+// Signal-specific task
+export interface SignalTask extends TaskBase {
+    type: 'signal';
+    signalName?: string;
+    direction?: 'sending' | 'receiving';
+    sender?: {
+        workflowId?: string;
+        runId?: string;
+    };
+    recipient?: {
+        workflowId?: string;
+        runId?: string;
+    };
+}
+
+// Union type for all processed tasks
+export type ProcessedTask =
+    | ActivityTask
+    | ChildWorkflowTask
+    | SignalTask;
+
+// History format discriminated union
+export type WorkflowHistory =
+    | { type: 'events'; events: WorkflowRunEvent[] }
+    | { type: 'tasks'; tasks: ProcessedTask[] }
+    | { type: 'agent'; data: any };  // Placeholder for future agent format
+
+// History format query parameter type
+export type HistoryFormat = 'events' | 'tasks' | 'agent';
+
 export interface WorkflowRun {
     status?: WorkflowExecutionStatus | string;
     /**
@@ -361,7 +433,7 @@ export interface WorkflowRun {
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
-    history?: WorkflowRunEvent[];
+    history?: WorkflowHistory;
     memo?: {
         [key: string]: any;
     } | null;

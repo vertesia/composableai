@@ -68,8 +68,26 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
     }
 
-    getRunDetails(runId: string, workflowId: string, includeHistory: boolean = false): Promise<WorkflowRunWithDetails> {
-        const query = { include_history: includeHistory };
+    getRunDetails(
+        runId: string,
+        workflowId: string,
+        options?: {
+            includeHistory?: boolean;
+            historyFormat?: 'events' | 'tasks' | 'agent';
+        }
+    ): Promise<WorkflowRunWithDetails> {
+        const query: Record<string, any> = {};
+
+        // Support legacy includeHistory parameter
+        if (options?.includeHistory !== undefined) {
+            query.include_history = options.includeHistory;
+        }
+
+        // Support new historyFormat parameter
+        if (options?.historyFormat !== undefined) {
+            query.history_format = options.historyFormat;
+        }
+
         return this.get(`/runs/${workflowId}/${runId}`, { query });
     }
 
