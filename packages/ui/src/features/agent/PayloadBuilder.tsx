@@ -235,8 +235,33 @@ export class PayloadBuilder {
     set interactionParamsSchema(schema: JSONSchema4 | null | undefined) {
         if (this._interactionParamsSchema !== schema) {
             this._interactionParamsSchema = schema;
+            // Booleans must be true or false, never undefined
+            if (schema) {
+                this._data = this.initializeBooleanDefaults(this._data || {}, schema);
+            }
             this.onStateChanged();
         }
+    }
+
+    /**
+     * Initialize boolean fields to false if not already set.
+     * Booleans are binary (true/false) - undefined is not a valid boolean state.
+     */
+    private initializeBooleanDefaults(data: JSONObject, schema: JSONSchema4): JSONObject {
+        if (!schema.properties) {
+            return data;
+        }
+
+        const result = { ...data };
+
+        for (const [name, propSchema] of Object.entries(schema.properties)) {
+            const prop = propSchema as JSONSchema4;
+            if (prop.type === "boolean" && result[name] === undefined) {
+                result[name] = false;
+            }
+        }
+
+        return result;
     }
 
     reset() {
