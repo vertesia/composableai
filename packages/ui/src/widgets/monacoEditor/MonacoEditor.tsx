@@ -6,8 +6,6 @@ import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 're
 import type * as monaco from 'monaco-editor';
 
 
-// Define our own editor API interface
-// todo: remove code-mirror dependency after migrating all editors to monaco, and then remove this export
 export interface IEditorApi {
     getValue(): string;
     setValue(value?: string): void;
