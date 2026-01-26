@@ -1,12 +1,8 @@
-import { basicSetup } from 'codemirror';
 import { useMemo, useRef, useState } from 'react';
-import { json } from '@codemirror/lang-json';
 import { ColumnLayout, ContentObjectType } from '@vertesia/common';
-import { Button, useToast } from '@vertesia/ui/core';
+import { Button, useToast, useTheme } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { CodeMirrorEditor, EditorApi } from '@vertesia/ui/widgets';
-
-const extensions = [basicSetup, json()];
+import { MonacoEditor, EditorApi } from '@vertesia/ui/widgets';
 
 interface TableLayoutEditorProps {
     objectType: ContentObjectType;
@@ -14,6 +10,7 @@ interface TableLayoutEditorProps {
 }
 export function TableLayoutEditor({ objectType, onLayoutUpdate }: TableLayoutEditorProps) {
     const toast = useToast();
+    const { theme } = useTheme();
 
     const [isUpdating, setUpdating] = useState(false);
     const { store } = useUserSession();
@@ -89,7 +86,23 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate }: TableLayoutEdi
                 </div>
             </div>
             <div className="px-4 py-2">
-                <CodeMirrorEditor value={value} extensions={extensions} editorRef={editorRef} />
+                <MonacoEditor
+                    value={value}
+                    language="json"
+                    editorRef={editorRef}
+                    theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+                    options={{
+                        fontSize: 14,
+                        minimap: { enabled: false },
+                        scrollBeyondLastLine: false,
+                        wordWrap: 'on',
+                        lineNumbers: 'on',
+                        automaticLayout: true,
+                        formatOnPaste: true,
+                        formatOnType: true,
+                        tabSize: 2,
+                    }}
+                />
             </div>
         </div>
     )
