@@ -268,6 +268,34 @@ export interface ListWorkflowRunsPayload {
     next_page_token?: string;
 }
 
+/**
+ * Signal event properties for workflow events
+ */
+export interface SignalEventProperties {
+    direction: 'receiving' | 'sending';
+    signalName?: string;
+    input?: any;
+    sender?: {
+        workflowId?: string;
+        runId?: string;
+    };
+    recipient?: {
+        workflowId?: string;
+        runId?: string;
+    };
+    initiatedEventId?: string;
+}
+
+/**
+ * Error information from failed workflow events
+ */
+export interface EventError {
+    message?: string;
+    source?: string;
+    stacktrace?: string;
+    type?: string;
+}
+
 export interface WorkflowRunEvent {
     event_id: number;
     event_time: number;
@@ -293,27 +321,9 @@ export interface WorkflowRunEvent {
         result?: any,
     };
 
-    signal?: {
-        direction: "receiving" | "sending";
-        signalName?: string,
-        input?: any,
-        sender?: {
-            workflowId?: string,
-            runId?: string
-        }
-        recipient?: {
-            workflowId?: string,
-            runId?: string
-        },
-        initiatedEventId?: string,
-    }
+    signal?: SignalEventProperties;
 
-    error?: {
-        message?: string;
-        source?: string;
-        stacktrace?: string;
-        type?: string;
-    };
+    error?: EventError;
 
     result?: any;
 }
