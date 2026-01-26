@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type * as monaco from 'monaco-editor';
 
+export type Monaco = typeof monaco;
 
 export interface IEditorApi {
     getValue(): string;
@@ -44,7 +45,7 @@ interface MonacoEditorProps {
     theme?: string;
     options?: monaco.editor.IStandaloneEditorConstructionOptions;
     beforeMount?: (monaco: typeof import('monaco-editor')) => void;
-    onMount?: (editor: monaco.editor.IStandaloneCodeEditor) => void;
+    onMount?: (editor: monaco.editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) => void;
     defaultValue?: string;
     minLines?: number; // Minimum lines to show (default: 10)
     maxLines?: number; // Maximum lines before scrolling (default: unlimited)
@@ -146,7 +147,7 @@ export function MonacoEditor({
         monacoInstance.editor.setTheme('errorLineTheme');
 
         // Call custom onMount if provided
-        onMount?.(editor);
+        onMount?.(editor, monacoInstance);
     }, [onMount, theme]);
 
     // Update editor value when prop changes from outside
