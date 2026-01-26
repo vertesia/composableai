@@ -171,7 +171,6 @@ export class ManagedProperty extends Node<PropertySchema> {
 
     constructor(parent: ManagedObjectBase, schema: PropertySchema) {
         super(parent, schema, schema.name);
-        // Apply explicit schema defaults for undefined values
         if (parent.value[this.name] === undefined && schema.defaultValue !== undefined) {
             parent.value[this.name] = schema.defaultValue;
         }
