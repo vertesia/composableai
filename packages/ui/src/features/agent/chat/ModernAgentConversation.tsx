@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Cpu, SendIcon, XIcon } from "lucide-react";
+import { Bot, Cpu, XIcon } from "lucide-react";
 import { useUserSession } from "@vertesia/ui/session";
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
 import { AgentMessage, AgentMessageType, Plan, UserInputSignal } from "@vertesia/common";
-import { Button, MessageBox, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
+import { Button, MessageBox, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
@@ -119,17 +119,11 @@ function EmptyState() {
 // Start workflow view - allows initiating a new agent conversation
 function StartWorkflowView({
     initialMessage,
-    startWorkflow,
     onClose,
     isModal = false,
-    placeholder = "Type your message...",
     startButtonText = "Start Agent",
     title = "Start New Conversation",
 }: ModernAgentConversationProps) {
-    const [inputValue, setInputValue] = useState<string>("");
-    const [isSending, setIsSending] = useState(false);
-    const [run, setRun] = useState<AsyncExecutionResult>();
-    const toast = useToast();
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -138,66 +132,6 @@ function StartWorkflowView({
             inputRef.current.focus();
         }
     }, []);
-
-    // Start a new workflow with the message
-    const startWorkflowWithMessage = async () => {
-        if (!startWorkflow) return;
-
-        const message = inputValue.trim();
-        if (!message || isSending) return;
-
-        setIsSending(true);
-        try {
-            // Reset plan panel state when starting a new agent
-            sessionStorage.removeItem("plan-panel-shown");
-
-            toast({
-                title: "Starting agent...",
-                status: "info",
-                duration: 3000,
-            });
-            const newRun = await startWorkflow(message);
-            if (newRun) {
-                setRun({
-                    runId: newRun.run_id,
-                    workflowId: newRun.workflow_id,
-                });
-                setInputValue("");
-                toast({
-                    title: "Agent started",
-                    status: "success",
-                    duration: 3000,
-                });
-            }
-        } catch (err: any) {
-            toast({
-                title: "Error starting workflow",
-                status: "error",
-                duration: 3000,
-                description: err instanceof Error ? err.message : "Unknown error",
-            });
-        } finally {
-            setIsSending(false);
-        }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            startWorkflowWithMessage();
-        }
-    };
-
-    // If a run has been started, show the conversation
-    if (run) {
-        return (
-            <ModernAgentConversationInner
-                {...{ onClose, isModal, initialMessage, placeholder }}
-                run={run}
-                title={title}
-            />
-        );
-    }
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-gray-900 overflow-hidden border-0">
@@ -245,37 +179,6 @@ function StartWorkflowView({
                 </div>
             </div>
 
-            {/* Input Area */}
-            <div className="py-3 px-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-                <div className="flex items-center gap-2">
-                    <div className="flex-1">
-                        <input
-                            ref={inputRef}
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder={placeholder}
-                            disabled={isSending}
-                            className="w-full py-2 px-3 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:ring-0 rounded-md"
-                        />
-                    </div>
-                    <Button
-                        onClick={startWorkflowWithMessage}
-                        disabled={!inputValue.trim() || isSending}
-                        className="px-3 py-2 bg-gray-800 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-xs rounded-md transition-colors"
-                    >
-                        {isSending ? (
-                            <Spinner size="sm" className="mr-1.5" />
-                        ) : (
-                            <SendIcon className="size-3.5 mr-1.5" />
-                        )}
-                        {startButtonText}
-                    </Button>
-                </div>
-                <div className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
-                    Type a message to start the conversation
-                </div>
-            </div>
         </div>
     );
 }
@@ -679,9 +582,8 @@ function ModernAgentConversationInner({
             {/* Conversation Area - responsive width based on panel visibility */}
             <div
                 ref={conversationRef}
-                className={`flex flex-col min-h-0 border-0 ${
-                showSlidingPanel ? 'w-full lg:w-2/3 flex-1 min-h-[50vh]' : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
-            }`}
+                className={`flex flex-col min-h-0 border-0 ${showSlidingPanel ? 'w-full lg:w-2/3 flex-1 min-h-[50vh]' : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
+                    }`}
             >
                 <Header
                     title={actualTitle}

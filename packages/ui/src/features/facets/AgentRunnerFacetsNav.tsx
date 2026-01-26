@@ -21,7 +21,8 @@ export function useAgentRunnerFilterGroups(facets: AgentRunnerFacetsNavProps['fa
         const statusFilterGroup = VStringFacet({
             search: null as any, // This will be provided by the search context
             buckets: facets.statuses || [],
-            name: 'status'
+            name: 'status',
+            placeholder: 'Status',
         });
         customFilterGroups.push(statusFilterGroup);
     }
