@@ -171,8 +171,12 @@ export class ManagedProperty extends Node<PropertySchema> {
 
     constructor(parent: ManagedObjectBase, schema: PropertySchema) {
         super(parent, schema, schema.name);
-        if (parent.value[this.name] === undefined && schema.defaultValue !== undefined) {
-            parent.value[this.name] = schema.defaultValue;
+        if (parent.value[this.name] === undefined) {
+            if (schema.defaultValue !== undefined) {
+                parent.value[this.name] = schema.defaultValue;
+            } else if (schema.isBoolean) {
+                parent.value[this.name] = false;
+            }
         }
     }
 
