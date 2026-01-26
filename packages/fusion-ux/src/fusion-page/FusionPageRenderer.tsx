@@ -83,7 +83,9 @@ export function FusionPageRenderer({
     const context: ResolutionContext = providedContext || { route: {} };
 
     // Use internal data loading if no data provided and autoLoadData is true
-    const shouldLoadData = autoLoadData && !providedData && page.dataBindings?.length;
+    // Treat empty object as "no data provided" to allow page data bindings to load
+    const hasProvidedData = providedData && Object.keys(providedData).length > 0;
+    const shouldLoadData = autoLoadData && !hasProvidedData && page.dataBindings?.length;
     const {
         data: loadedData,
         loading,

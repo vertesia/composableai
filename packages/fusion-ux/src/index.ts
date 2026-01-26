@@ -218,6 +218,9 @@ export {
   getUnauthorizedRedirect,
 } from './fusion-application/index.js';
 
+// Default styles (import for styling)
+// Usage: import '@vertesia/fusion-ux/styles';
+
 // Fusion Runtime
 export {
   // Types

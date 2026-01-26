@@ -51,7 +51,9 @@
     ".": {
       "types": "./lib/types/index.d.ts",
       "default": "./lib/esm/index.js"
-    }
+    },
+    "./styles": "./src/styles/fusion-defaults.css",
+    "./styles.css": "./src/styles/fusion-defaults.css"
   },
   "typesVersions": {
     "*": {

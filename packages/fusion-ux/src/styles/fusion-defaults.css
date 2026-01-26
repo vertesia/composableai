@@ -1,0 +1,718 @@
+/**
+ * Fusion UX Default Styles
+ *
+ * Default styling for fusion application components.
+ * Can be overridden by custom themes or CSS.
+ */
+
+/* ============================================================================
+ * CSS Variables (Theme Tokens)
+ * ============================================================================ */
+
+:root {
+  --fusion-sidebar-width: 260px;
+  --fusion-sidebar-collapsed-width: 64px;
+  --fusion-topbar-height: 56px;
+  --fusion-spacing-xs: 4px;
+  --fusion-spacing-sm: 8px;
+  --fusion-spacing-md: 16px;
+  --fusion-spacing-lg: 24px;
+  --fusion-spacing-xl: 32px;
+  --fusion-radius-sm: 4px;
+  --fusion-radius-md: 6px;
+  --fusion-radius-lg: 8px;
+
+  /* Colors - Light Mode */
+  --fusion-bg: #ffffff;
+  --fusion-bg-subtle: #f8fafc;
+  --fusion-bg-muted: #f1f5f9;
+  --fusion-sidebar-bg: #1e293b;
+  --fusion-sidebar-text: #e2e8f0;
+  --fusion-sidebar-text-muted: #94a3b8;
+  --fusion-sidebar-hover: #334155;
+  --fusion-sidebar-active: #3b82f6;
+  --fusion-border: #e2e8f0;
+  --fusion-text: #1e293b;
+  --fusion-text-muted: #64748b;
+  --fusion-primary: #3b82f6;
+  --fusion-primary-hover: #2563eb;
+}
+
+/* ============================================================================
+ * Application Shell
+ * ============================================================================ */
+
+.fusion-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--fusion-bg);
+  color: var(--fusion-text);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.fusion-app-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.fusion-app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fusion-app-content {
+  flex: 1;
+  overflow: auto;
+  padding: var(--fusion-spacing-lg);
+  background: var(--fusion-bg-subtle);
+}
+
+/* ============================================================================
+ * Sidebar Navigation
+ * ============================================================================ */
+
+.fusion-sidebar {
+  width: var(--fusion-sidebar-width);
+  background: var(--fusion-sidebar-bg);
+  color: var(--fusion-sidebar-text);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.2s ease;
+}
+
+.fusion-sidebar-collapsed {
+  width: var(--fusion-sidebar-collapsed-width);
+}
+
+.fusion-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--fusion-spacing-sm) 0;
+}
+
+.fusion-sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fusion-spacing-sm);
+  background: transparent;
+  border: none;
+  color: var(--fusion-sidebar-text-muted);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.fusion-sidebar-toggle:hover {
+  color: var(--fusion-sidebar-text);
+}
+
+/* Navigation Sections */
+.fusion-nav-section {
+  margin-bottom: var(--fusion-spacing-md);
+}
+
+.fusion-nav-section-header {
+  padding: var(--fusion-spacing-xs) var(--fusion-spacing-md);
+}
+
+.fusion-nav-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--fusion-spacing-xs) 0;
+  background: transparent;
+  border: none;
+  color: var(--fusion-sidebar-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.fusion-nav-section-title:hover {
+  color: var(--fusion-sidebar-text);
+}
+
+.fusion-nav-section-arrow {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.fusion-nav-section-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Navigation Items */
+.fusion-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--fusion-spacing-sm);
+  padding: var(--fusion-spacing-sm) var(--fusion-spacing-md);
+  color: var(--fusion-sidebar-text);
+  text-decoration: none;
+  font-size: 14px;
+  border-radius: var(--fusion-radius-sm);
+  margin: 0 var(--fusion-spacing-sm);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.fusion-nav-item:hover {
+  background: var(--fusion-sidebar-hover);
+}
+
+.fusion-nav-item.fusion-nav-active {
+  background: var(--fusion-sidebar-active);
+  color: white;
+}
+
+.fusion-nav-item.fusion-nav-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fusion-nav-link {
+  border: none;
+  background: transparent;
+  text-align: left;
+  width: calc(100% - var(--fusion-spacing-md));
+}
+
+.fusion-nav-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.fusion-nav-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fusion-nav-badge {
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 10px;
+  background: var(--fusion-primary);
+  color: white;
+}
+
+.fusion-nav-badge-attention {
+  background: #f59e0b;
+}
+
+.fusion-nav-badge-success {
+  background: #22c55e;
+}
+
+/* Navigation Groups */
+.fusion-nav-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--fusion-spacing-sm);
+  width: calc(100% - var(--fusion-spacing-md));
+  padding: var(--fusion-spacing-sm) var(--fusion-spacing-md);
+  background: transparent;
+  border: none;
+  color: var(--fusion-sidebar-text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--fusion-radius-sm);
+  margin: 0 var(--fusion-spacing-sm);
+  transition: background 0.15s;
+}
+
+.fusion-nav-group-header:hover {
+  background: var(--fusion-sidebar-hover);
+}
+
+.fusion-nav-group-arrow {
+  margin-left: auto;
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.fusion-nav-group-children {
+  margin-top: 2px;
+}
+
+/* Navigation Divider */
+.fusion-nav-divider {
+  margin: var(--fusion-spacing-sm) var(--fusion-spacing-md);
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fusion-nav-divider-label {
+  display: block;
+  padding: var(--fusion-spacing-xs) 0;
+  font-size: 11px;
+  color: var(--fusion-sidebar-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================================
+ * Topbar
+ * ============================================================================ */
+
+.fusion-topbar {
+  height: var(--fusion-topbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--fusion-spacing-lg);
+  background: var(--fusion-bg);
+  border-bottom: 1px solid var(--fusion-border);
+}
+
+.fusion-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--fusion-spacing-md);
+}
+
+.fusion-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--fusion-spacing-sm);
+}
+
+.fusion-topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--fusion-spacing-sm);
+}
+
+.fusion-topbar-logo img {
+  height: 32px;
+  width: auto;
+}
+
+.fusion-topbar-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--fusion-text);
+}
+
+/* ============================================================================
+ * Page Layout
+ * ============================================================================ */
+
+.fusion-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.fusion-page-header {
+  padding: var(--fusion-spacing-lg);
+  background: var(--fusion-bg);
+  border-bottom: 1px solid var(--fusion-border);
+}
+
+.fusion-page-header-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--fusion-spacing-lg);
+}
+
+.fusion-page-header-info {
+  flex: 1;
+}
+
+.fusion-page-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--fusion-spacing-xs);
+  margin-bottom: var(--fusion-spacing-sm);
+  font-size: 13px;
+  color: var(--fusion-text-muted);
+}
+
+.fusion-page-breadcrumbs a {
+  color: var(--fusion-text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.fusion-page-breadcrumbs a:hover {
+  color: var(--fusion-primary);
+}
+
+.fusion-page-breadcrumbs-separator {
+  opacity: 0.5;
+}
+
+.fusion-page-title {
+  display: flex;
+  align-items: center;
+  gap: var(--fusion-spacing-sm);
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--fusion-text);
+}
+
+.fusion-page-title-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fusion-primary);
+}
+
+.fusion-page-description {
+  margin-top: var(--fusion-spacing-xs);
+  font-size: 14px;
+  color: var(--fusion-text-muted);
+}
+
+.fusion-page-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--fusion-spacing-sm);
+}
+
+/* ============================================================================
+ * Page Content & Regions
+ * ============================================================================ */
+
+.fusion-page-content {
+  flex: 1;
+  overflow: auto;
+}
+
+.fusion-page-layout {
+  padding: var(--fusion-spacing-lg);
+}
+
+.fusion-page-layout-single {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.fusion-page-layout-sidebar-left,
+.fusion-page-layout-sidebar-right {
+  display: grid;
+  gap: var(--fusion-spacing-lg);
+}
+
+.fusion-page-layout-sidebar-left {
+  grid-template-columns: 280px 1fr;
+}
+
+.fusion-page-layout-sidebar-right {
+  grid-template-columns: 1fr 280px;
+}
+
+.fusion-page-layout-two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fusion-spacing-lg);
+}
+
+.fusion-page-layout-three-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--fusion-spacing-lg);
+}
+
+.fusion-page-layout-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--fusion-spacing-lg);
+}
+
+/* Regions */
+.fusion-region {
+  background: var(--fusion-bg);
+  border: 1px solid var(--fusion-border);
+  border-radius: var(--fusion-radius-lg);
+  overflow: hidden;
+}
+
+.fusion-region-header {
+  padding: var(--fusion-spacing-md);
+  border-bottom: 1px solid var(--fusion-border);
+  font-weight: 600;
+}
+
+.fusion-region-content {
+  padding: var(--fusion-spacing-md);
+}
+
+/* ============================================================================
+ * Content Types
+ * ============================================================================ */
+
+/* Fragment */
+.fusion-fragment {
+  padding: var(--fusion-spacing-md);
+}
+
+.fusion-fragment-section {
+  margin-bottom: var(--fusion-spacing-lg);
+}
+
+.fusion-fragment-section:last-child {
+  margin-bottom: 0;
+}
+
+.fusion-fragment-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--fusion-spacing-md);
+  color: var(--fusion-text);
+}
+
+.fusion-fragment-fields {
+  display: grid;
+  gap: var(--fusion-spacing-md);
+}
+
+.fusion-fragment-fields-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.fusion-fragment-fields-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.fusion-fragment-fields-grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.fusion-fragment-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fusion-spacing-xs);
+}
+
+.fusion-fragment-field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fusion-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.fusion-fragment-field-value {
+  font-size: 14px;
+  color: var(--fusion-text);
+}
+
+/* Table */
+.fusion-table-container {
+  overflow-x: auto;
+}
+
+.fusion-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.fusion-table th,
+.fusion-table td {
+  padding: var(--fusion-spacing-sm) var(--fusion-spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--fusion-border);
+}
+
+.fusion-table th {
+  font-weight: 600;
+  color: var(--fusion-text-muted);
+  background: var(--fusion-bg-muted);
+}
+
+.fusion-table tr:hover {
+  background: var(--fusion-bg-subtle);
+}
+
+/* Empty State */
+.fusion-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fusion-spacing-xl);
+  text-align: center;
+}
+
+.fusion-empty-state-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--fusion-spacing-md);
+  color: var(--fusion-text-muted);
+  opacity: 0.5;
+}
+
+.fusion-empty-state-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fusion-text);
+  margin-bottom: var(--fusion-spacing-xs);
+}
+
+.fusion-empty-state-description {
+  font-size: 14px;
+  color: var(--fusion-text-muted);
+  margin-bottom: var(--fusion-spacing-md);
+}
+
+/* ============================================================================
+ * Buttons
+ * ============================================================================ */
+
+.fusion-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fusion-spacing-sm);
+  padding: var(--fusion-spacing-sm) var(--fusion-spacing-md);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--fusion-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fusion-button-primary {
+  background: var(--fusion-primary);
+  color: white;
+}
+
+.fusion-button-primary:hover {
+  background: var(--fusion-primary-hover);
+}
+
+.fusion-button-secondary {
+  background: var(--fusion-bg);
+  color: var(--fusion-text);
+  border-color: var(--fusion-border);
+}
+
+.fusion-button-secondary:hover {
+  background: var(--fusion-bg-muted);
+}
+
+.fusion-button-ghost {
+  background: transparent;
+  color: var(--fusion-text);
+}
+
+.fusion-button-ghost:hover {
+  background: var(--fusion-bg-muted);
+}
+
+/* ============================================================================
+ * Loading & Error States
+ * ============================================================================ */
+
+.fusion-app-loading,
+.fusion-page-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fusion-spacing-xl);
+  gap: var(--fusion-spacing-md);
+  color: var(--fusion-text-muted);
+}
+
+.fusion-app-loading-spinner,
+.fusion-page-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--fusion-border);
+  border-top-color: var(--fusion-primary);
+  border-radius: 50%;
+  animation: fusion-spin 0.8s linear infinite;
+}
+
+@keyframes fusion-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fusion-app-error,
+.fusion-page-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fusion-spacing-xl);
+  text-align: center;
+}
+
+.fusion-app-error-icon,
+.fusion-page-error-icon {
+  font-size: 48px;
+  margin-bottom: var(--fusion-spacing-md);
+}
+
+.fusion-app-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fusion-spacing-xl);
+  text-align: center;
+}
+
+.fusion-app-not-found-icon {
+  font-size: 48px;
+  margin-bottom: var(--fusion-spacing-md);
+}
+
+/* ============================================================================
+ * Responsive
+ * ============================================================================ */
+
+@media (max-width: 768px) {
+  .fusion-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .fusion-sidebar.fusion-sidebar-open {
+    transform: translateX(0);
+  }
+
+  .fusion-page-layout-sidebar-left,
+  .fusion-page-layout-sidebar-right {
+    grid-template-columns: 1fr;
+  }
+
+  .fusion-page-layout-two-column,
+  .fusion-page-layout-three-column {
+    grid-template-columns: 1fr;
+  }
+}

@@ -87,9 +87,8 @@ export function ApplicationRouter({
     loadPageRef.current = loadPage;
     onNavigateRef.current = onNavigate;
 
-    // Track current loading/loaded page to prevent duplicate loads
+    // Track current loading page to prevent duplicate concurrent loads
     const loadingPageRef = useRef<string | null>(null);
-    const loadedPageIdRef = useRef<string | null>(null);
 
     // Match the current route (memoized to prevent unnecessary re-renders)
     const matchedRoute = useMemo(
@@ -163,8 +162,8 @@ export function ApplicationRouter({
 
         // Page ID reference
         if (route.pageId) {
-            // Prevent duplicate loads: skip if currently loading OR already loaded this page
-            if (loadingPageRef.current === route.pageId || loadedPageIdRef.current === route.pageId) {
+            // Only skip if we're currently in the middle of loading this exact page
+            if (loadingPageRef.current === route.pageId) {
                 return;
             }
 
@@ -174,8 +173,6 @@ export function ApplicationRouter({
                 return;
             }
 
-            // Clear previous loaded page ref since we're loading a new one
-            loadedPageIdRef.current = null;
             loadingPageRef.current = route.pageId;
             setLoading(true);
             setError(null);
@@ -183,10 +180,9 @@ export function ApplicationRouter({
 
             try {
                 const loadedPage = await loadPageRef.current(route.pageId);
-                // Only set state if we're still loading this page
+                // Only set state if we're still loading this page (not cancelled by navigation)
                 if (loadingPageRef.current === route.pageId) {
                     loadingPageRef.current = null;
-                    loadedPageIdRef.current = route.pageId; // Mark as loaded
                     setPage(loadedPage);
                     setLoading(false);
                 }
@@ -194,7 +190,6 @@ export function ApplicationRouter({
                 // Only set error if we're still loading this page
                 if (loadingPageRef.current === route.pageId) {
                     loadingPageRef.current = null;
-                    // Don't set loadedPageIdRef on error - allow retry
                     setError(
                         err instanceof Error
                             ? err.message
