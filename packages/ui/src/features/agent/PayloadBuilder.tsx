@@ -243,11 +243,6 @@ export class PayloadBuilder {
         }
     }
 
-    /**
-     * Initialize boolean fields to false if not already set.
-     * Booleans are binary (true/false) - undefined is not a valid boolean state.
-     * Recursively handles nested objects.
-     */
     private initializeBooleanDefaults(data: JSONObject, schema: JSONSchema4): JSONObject {
         if (!schema.properties) {
             return data;
@@ -257,11 +252,11 @@ export class PayloadBuilder {
 
         for (const [name, propSchema] of Object.entries(schema.properties)) {
             const prop = propSchema as JSONSchema4;
-
+            // Initialize boolean fields to false if not already set
             if (prop.type === "boolean" && result[name] === undefined) {
                 result[name] = false;
             } else if (prop.type === "object" && prop.properties) {
-                // Recursively initialize nested objects
+                // Recursively initialize nested object booleans
                 result[name] = this.initializeBooleanDefaults(
                     (result[name] as JSONObject) || {},
                     prop
