@@ -38,6 +38,14 @@ export enum BillingMethod {
     invoice = 'invoice'
 }
 
+export enum AccountType {
+    vertesia = 'vertesia',
+    partner = 'partner',
+    free = 'free',
+    customer = 'customer',
+    unknown = 'unknown'
+}
+
 export interface AccountBilling {
     method: BillingMethod;
     stripe_customer_id?: string;
@@ -55,6 +63,8 @@ export interface Account {
     };
 
     datacenter: string;
+
+    account_type: AccountType;
 
     billing: AccountBilling;
 
