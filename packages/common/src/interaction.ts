@@ -311,6 +311,7 @@ export interface InteractionRef {
     name: string;
     endpoint: string;
     parent?: string;
+    model?: string;
     description?: string;
     status: InteractionStatus;
     visibility?: InteractionVisibility;

@@ -25,9 +25,6 @@
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix"
   },
   "dependencies": {
-    "@codemirror/lang-json": "^6.0.1",
-    "@codemirror/state": "^6.5.2",
-    "@codemirror/view": "^6.36.8",
     "@floating-ui/dom": "^1.7.1",
     "@floating-ui/react": "^0.27.11",
     "@headlessui/react": "^2.2.9",
@@ -49,7 +46,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "codemirror": "^6.0.1",
     "dayjs": "^1.11.19",
     "debounce": "^2.2.0",
     "fast-xml-parser": "^5.2.3",
@@ -58,7 +54,7 @@
     "html-to-image": "^1.11.13",
     "json-schema": "^0.4.0",
     "jwt-decode": "^4.0.0",
-    "lodash-es": "^4.17.21",
+    "lodash-es": "^4.17.23",
     "lucide-react": "^0.562.0",
     "mermaid": "^11.4.0",
     "monaco-editor": "^0.52.2",

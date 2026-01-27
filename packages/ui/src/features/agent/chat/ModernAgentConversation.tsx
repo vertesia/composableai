@@ -1361,7 +1361,7 @@ function ModernAgentConversationInner({
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
         <div
-            className={`flex gap-2 h-full relative overflow-hidden ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
+            className={`flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -1379,9 +1379,9 @@ function ModernAgentConversationInner({
             {/* Conversation Area - responsive width based on panel visibility */}
             <div
                 ref={conversationRef}
-                className={`flex flex-col h-full min-h-0 border-0 ${
+                className={`flex flex-col min-h-0 border-0 ${
                 showSlidingPanel
-                    ? 'lg:w-2/3 flex-1'
+                    ? 'w-full lg:w-2/3 flex-1 min-h-[50vh]'
                     : fullWidth
                         ? 'flex-1 w-full'
                         : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
@@ -1496,7 +1496,7 @@ function ModernAgentConversationInner({
 
             {/* Plan Panel Area - only rendered when panel should be shown */}
             {showSlidingPanel && (
-                <div className="h-full lg:w-1/3 border-l">
+                <div className="w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l">
                     <InlineSlidingPlanPanel
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
