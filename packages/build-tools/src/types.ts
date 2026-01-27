@@ -60,6 +60,9 @@ export interface TransformerRule {
     /** Optional: Zod schema for validation */
     schema?: z.ZodType<any>;
 
+    /** Optional: If true, the transformer generates virtual modules (no file to read) */
+    virtual?: boolean;
+
     /** Optional: additional options for this transformer */
     options?: Record<string, unknown>;
 }

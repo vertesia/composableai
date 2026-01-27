@@ -7,7 +7,7 @@ import {
 import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { glob } from "node:fs/promises";
 import { basename } from "node:path";
-import { loadInteractions } from "./interactions/index.js";
+import { ServerConfig } from "./config.js";
 import { skills } from "./skills/index.js";
 import { tools } from "./tools/index.js";
 
@@ -22,13 +22,13 @@ async function build(outDir: string) {
     mkdirSync(outDir, { recursive: true });
 
     // Load interactions
-    const interactions = await loadInteractions();
+    const interactions = ServerConfig.interactions;
 
     // Create main index page
     console.log('Creating index page...');
     writeFile(
         `${outDir}/index.html`,
-        indexPage(tools, skills, interactions, 'Tool Server Template')
+        indexPage(ServerConfig)
     );
 
     // Create pages for each tool collection

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUserSession } from '@vertesia/ui/session';
 import {
     useArtifactUrlCache,
@@ -85,6 +85,11 @@ export function useResolvedUrl({
 }: UseResolvedUrlOptions): ResolvedUrlState {
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
+    // Use refs to avoid triggering effect/callback re-runs when these stable values are accessed
+    const clientRef = useRef(client);
+    clientRef.current = client;
+    const urlCacheRef = useRef(urlCache);
+    urlCacheRef.current = urlCache;
     const { scheme, path } = parseUrlScheme(rawUrl);
 
     // For schemes that map to routes, resolve immediately
@@ -139,15 +144,18 @@ export function useResolvedUrl({
 
         setState(prev => ({ ...prev, isLoading: true, error: undefined }));
 
+        const currentClient = clientRef.current;
+        const currentUrlCache = urlCacheRef.current;
+
         try {
             let url: string;
 
             if (scheme === 'artifact') {
                 if (artifactRunId && !path.startsWith('agents/')) {
                     const cacheKey = getArtifactCacheKey(artifactRunId, path, disposition);
-                    if (urlCache) {
-                        url = await urlCache.getOrFetch(cacheKey, async () => {
-                            const result = await client.files.getArtifactDownloadUrl(
+                    if (currentUrlCache) {
+                        url = await currentUrlCache.getOrFetch(cacheKey, async () => {
+                            const result = await currentClient.files.getArtifactDownloadUrl(
                                 artifactRunId,
                                 path,
                                 disposition
@@ -155,7 +163,7 @@ export function useResolvedUrl({
                             return result.url;
                         });
                     } else {
-                        const result = await client.files.getArtifactDownloadUrl(
+                        const result = await currentClient.files.getArtifactDownloadUrl(
                             artifactRunId,
                             path,
                             disposition
@@ -164,26 +172,26 @@ export function useResolvedUrl({
                     }
                 } else {
                     const cacheKey = getFileCacheKey(path);
-                    if (urlCache) {
-                        url = await urlCache.getOrFetch(cacheKey, async () => {
-                            const result = await client.files.getDownloadUrl(path);
+                    if (currentUrlCache) {
+                        url = await currentUrlCache.getOrFetch(cacheKey, async () => {
+                            const result = await currentClient.files.getDownloadUrl(path);
                             return result.url;
                         });
                     } else {
-                        const result = await client.files.getDownloadUrl(path);
+                        const result = await currentClient.files.getDownloadUrl(path);
                         url = result.url;
                     }
                 }
             } else {
                 // image: scheme
                 const cacheKey = getFileCacheKey(path);
-                if (urlCache) {
-                    url = await urlCache.getOrFetch(cacheKey, async () => {
-                        const result = await client.files.getDownloadUrl(path);
+                if (currentUrlCache) {
+                    url = await currentUrlCache.getOrFetch(cacheKey, async () => {
+                        const result = await currentClient.files.getDownloadUrl(path);
                         return result.url;
                     });
                 } else {
-                    const result = await client.files.getDownloadUrl(path);
+                    const result = await currentClient.files.getDownloadUrl(path);
                     url = result.url;
                 }
             }
@@ -194,7 +202,7 @@ export function useResolvedUrl({
             console.error('Failed to resolve URL:', path, err);
             setState({ url: undefined, isLoading: false, error: errorMessage });
         }
-    }, [scheme, path, artifactRunId, disposition, client, urlCache, mappedRoute]);
+    }, [scheme, path, artifactRunId, disposition, mappedRoute]);
 
     useEffect(() => {
         // Skip if already resolved

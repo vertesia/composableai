@@ -32,6 +32,8 @@
     "vitest": "^4.0.16"
   },
   "dependencies": {
+    "@llumiverse/common": "workspace:*",
+    "@vertesia/common": "workspace:*",
     "gray-matter": "^4.0.3",
     "zod": "^3.24.1"
   },

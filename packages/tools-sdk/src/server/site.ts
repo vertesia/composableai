@@ -10,16 +10,14 @@ import { ToolServerConfig } from "./types.js";
 
 export function createSiteRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const {
-        title = 'Tools Server',
         tools = [],
         interactions = [],
         skills = [],
-        mcpProviders = [],
     } = config;
 
     // Index page
     app.get(`${basePath}/`, (c) => {
-        return c.html(indexPage(tools, skills, interactions, mcpProviders, title));
+        return c.html(indexPage(config));
     });
 
     // Tool collection pages
