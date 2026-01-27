@@ -282,13 +282,13 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                 >
                     <div
                         className={clsx(
-                            "flex flex-col w-full rounded-md text-sm items-center justify-center truncate",
+                            "flex flex-col w-full rounded-md text-sm min-h-6 items-center justify-center truncate",
                             !disabled && "",
                             isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && "pr-6"
                         )}
                     >
                         {label && <div className='w-full text-left text-xs font-semibold'>{label}</div>}
-                        <div className={clsx('w-full text-left min-h-6', !disabled && '', isMissingValue && 'text-destructive')}>
+                        <div className={clsx('w-full text-left ', !disabled && '', isMissingValue && 'text-destructive')}>
                             {isMissingValue && (
                                 <VTooltip description={missingValueWarning} placement="top" asChild>
                                     <AlertTriangle className="inline-block size-4 mr-1 -mt-0.5 cursor-help" />
