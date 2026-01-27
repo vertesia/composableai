@@ -525,6 +525,7 @@ export enum WorkflowExecutionStatus {
     TERMINATED = 5,
     CONTINUED_AS_NEW = 6,
     TIMED_OUT = 7,
+    ERROR = 8,
 }
 
 /**
