@@ -7,10 +7,9 @@ import {
 import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { glob } from "node:fs/promises";
 import { basename } from "node:path";
-import { loadInteractions } from "./interactions/index.js";
+import { ServerConfig } from "./config.js";
 import { skills } from "./skills/index.js";
 import { tools } from "./tools/index.js";
-
 /**
  * Generates static HTML pages for all tool collections, skills, and interactions
  * This runs during the build process to create browsable documentation
@@ -22,11 +21,11 @@ async function build(outDir: string) {
     mkdirSync(outDir, { recursive: true });
 
     // Load interactions
-    const interactions = await loadInteractions();
+    const interactions = ServerConfig.interactions;
 
     // Create main index page
     console.log('Creating index page...');
-    let indexHtml = indexPage(tools, skills, interactions, 'Plugin Template');
+    let indexHtml = indexPage(ServerConfig);
 
     // Add link to UI dev build (if it exists)
     const uiLink = '\n<div style="margin: 20px 0; padding: 15px; background: #f0f0f0; border-radius: 5px;">\n' +

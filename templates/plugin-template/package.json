@@ -12,7 +12,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev:ui": "vite dev",
-    "dev": "npm run build:server && concurrently \"npm run build:server:watch\" \"npm run start:watch\"",
+    "dev": "npm run build:server && node ./lib/server-node.js",
     "build": "npm run build:server && npm run build:ui",
     "build:server": "rollup -c && node ./lib/build-site.js ./dist",
     "build:server:watch": "rollup -c -w",

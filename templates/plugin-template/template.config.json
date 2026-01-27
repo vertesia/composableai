@@ -50,6 +50,7 @@
   "files": [
     "vite.config.ts",
     "index.html",
+    "src/tool-server/config.ts",
     "src/ui/env.ts",
     "src/ui/plugin.tsx"
   ],
