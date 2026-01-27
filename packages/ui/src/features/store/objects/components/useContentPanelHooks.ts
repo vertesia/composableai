@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { useUserSession } from "@vertesia/ui/session";
 import { DocAnalyzerProgress, DocProcessorOutputFormat, MarkdownRenditionFormat, WorkflowExecutionStatus } from "@vertesia/common";
+import { useUserSession } from "@vertesia/ui/session";
+import { useCallback, useEffect, useState } from "react";
 
 // Maximum text size before cropping (128K characters)
 const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
@@ -29,7 +29,7 @@ export function useObjectText(objectId: string, initialText?: string, loadOnMoun
             .getObjectText(objectId)
             .then((res) => {
                 setFullText(res.text);
-                if (res.text.length > MAX_TEXT_DISPLAY_SIZE) {
+                if (res.text && res.text.length > MAX_TEXT_DISPLAY_SIZE) {
                     setDisplayText(res.text.substring(0, MAX_TEXT_DISPLAY_SIZE));
                     setIsCropped(true);
                 } else {

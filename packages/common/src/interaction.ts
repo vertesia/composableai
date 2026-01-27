@@ -311,6 +311,7 @@ export interface InteractionRef {
     name: string;
     endpoint: string;
     parent?: string;
+    model?: string;
     description?: string;
     status: InteractionStatus;
     visibility?: InteractionVisibility;
@@ -845,6 +846,12 @@ export interface ToolResultContent {
     content: string;
     is_error: boolean;
     files?: string[];
+    /**
+     * Optional message to display in the UI instead of the content.
+     * Use this when the content is large or technical (e.g., document text)
+     * and you want to show a friendly message to the user.
+     */
+    display_message?: string;
     /**
      * Can contain metadata returned by the tool executor.
      */

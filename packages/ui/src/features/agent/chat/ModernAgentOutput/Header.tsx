@@ -60,7 +60,7 @@ export default function Header({
                 </div>
                 <div className={`flex justify-end items-center space-x-2 ml-auto ${actionsClassName || ""}`}>
                     {/* View Mode Toggle */}
-                    <div className="flex items-center space-x-1 bg-muted rounded p-0.5">
+                    <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
                         <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("stacked")}>
                             Details
                         </Button>

@@ -14,3 +14,4 @@ export { DocumentsFacetsNav, useDocumentFilterGroups, useDocumentFilterHandler }
 export { InteractionsFacetsNav, useInteractionsFilterGroups, useInteractionsFilterHandler } from "./InteractionsFacetsNav";
 export { PromptsFacetsNav, usePromptsFilterGroups, usePromptsFilterHandler } from "./PromptsFacetsNav";
 export { CollectionsFacetsNav, useCollectionsFilterGroups, useCollectionsFilterHandler } from "./CollectionsFacetsNav";
+export { AgentRunnerFacetsNav, useAgentRunnerFilterGroups, useAgentRunnerFilterHandler } from "./AgentRunnerFacetsNav";

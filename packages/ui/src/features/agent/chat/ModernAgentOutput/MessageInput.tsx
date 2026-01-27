@@ -292,7 +292,7 @@ export default function MessageInput({
 
     return (
         <div
-            className={`relative p-3 border-t border-muted flex-shrink-0 transition-all ${isDragOver ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' : ''} ${className || ''}`}
+            className={`p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background z-10 ${isDragOver ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' : ''} ${className || ''}`}
             style={{ minHeight: "120px" }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
