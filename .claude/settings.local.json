@@ -6,7 +6,8 @@
       "Bash(find:*)",
       "Bash(pnpm exec vitest:*)",
       "Bash(pnpm test:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(gh pr list:*)"
     ],
     "deny": []
   }

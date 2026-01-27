@@ -20,6 +20,8 @@ export interface HeaderProps {
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
+    /** Show green indicator when receiving streaming chunks */
+    isReceivingChunks?: boolean;
     /** Additional className for the outer container */
     className?: string;
     /** Additional className for the title section */
@@ -42,6 +44,7 @@ export default function Header({
     onCopyRunId,
     resetWorkflow,
     onExportPdf,
+    isReceivingChunks = false,
     className,
     titleClassName,
     actionsClassName,
@@ -54,8 +57,14 @@ export default function Header({
                         <Bot className="size-5 text-muted" />
                         <span className="font-medium">{title}</span>
                     </div>
-                    <span className="text-xs text-muted ml-1">
+                    <span className="text-xs text-muted ml-1 flex items-center gap-1.5">
                         (Run ID: {run.runId.substring(0, 8)}...)
+                        {/* Streaming chunk indicator - gray when idle, purple when receiving */}
+                        <span className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                            isReceivingChunks
+                                ? "bg-purple-500 shadow-[0_0_6px_2px_rgba(168,85,247,0.6)]"
+                                : "bg-gray-400"
+                        }`} />
                     </span>
                 </div>
                 <div className={`flex justify-end items-center space-x-2 ml-auto ${actionsClassName || ""}`}>
@@ -64,8 +73,8 @@ export default function Header({
                         <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("stacked")}>
                             Details
                         </Button>
-                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("sliding")}>
-                            Most Important
+                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" className="rounded-r-md" onClick={() => onViewModeChange("sliding")}>
+                            Summary
                         </Button>
                     </div>
 

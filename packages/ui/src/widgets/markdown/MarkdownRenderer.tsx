@@ -9,6 +9,8 @@ import { MarkdownImage } from './MarkdownImage';
 import {
     CodeBlockHandlerProvider,
     createDefaultCodeBlockHandlers,
+    isExpandLanguage,
+    ExpandCodeBlockHandler,
 } from './codeBlockHandlers';
 
 // Custom URL schemes that we handle in our components
@@ -126,15 +128,21 @@ export function MarkdownRenderer({
                     const CustomComponent = codeBlockRegistry.getComponent(language);
                     if (CustomComponent) {
                         const code = String(codeChildren || '').trim();
-                        return <CustomComponent code={code} />;
+                        return <CustomComponent code={code} language={language} />;
                     }
+                }
+
+                // Check for expand:* pattern (e.g., expand:chart, expand:table)
+                if (isExpandLanguage(language)) {
+                    const code = String(codeChildren || '').trim();
+                    return <ExpandCodeBlockHandler code={code} language={language} />;
                 }
 
                 // Then check default handlers (chart, vega-lite, mermaid, proposal, askuser)
                 const DefaultHandler = defaultCodeBlockHandlers[language];
                 if (DefaultHandler) {
                     const code = String(codeChildren || '').trim();
-                    return <DefaultHandler code={code} />;
+                    return <DefaultHandler code={code} language={language} />;
                 }
             }
 

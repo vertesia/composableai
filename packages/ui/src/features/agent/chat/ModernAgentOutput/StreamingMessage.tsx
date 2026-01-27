@@ -3,11 +3,11 @@ import { Button, cn, useToast } from "@vertesia/ui/core";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { Bot, CopyIcon } from "lucide-react";
 import dayjs from "dayjs";
-import { PulsatingCircle } from "../AnimatedThinkingDots";
 
 // PERFORMANCE: Unicode cursor character - rendered inline with text
 // This avoids expensive DOM manipulation with TreeWalker on every update
-const CURSOR_CHAR = "▋";
+// Using thin pipe for softer visual appearance
+const CURSOR_CHAR = "│";
 
 export interface StreamingMessageProps {
     text: string;
@@ -91,10 +91,10 @@ function StreamingMessageComponent({
 
             const buffer = targetLengthRef.current - displayedLengthRef.current;
 
-            // Nothing to reveal - keep animation running to catch new chunks
+            // Nothing to reveal - stop animation, it will restart when new text arrives
             if (buffer <= 0) {
                 fractionalCharsRef.current = 0;
-                animationRef.current = requestAnimationFrame(step);
+                animationRef.current = null;
                 return;
             }
 
@@ -244,10 +244,10 @@ function StreamingMessageComponent({
     };
 
     return (
-        <div className={className}>
+        <div className={cn("w-full max-w-full", className)}>
             {/* Card wrapper matching MessageItem structure */}
             <div
-                className="border-l-4 overflow-hidden bg-white dark:bg-gray-900 mb-4 border-l-purple-500"
+                className="border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 w-full max-w-full overflow-hidden"
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
@@ -255,7 +255,7 @@ function StreamingMessageComponent({
                     <div className="flex items-center gap-1.5">
                         <div className="animate-fadeIn">
                             {isTyping ? (
-                                <PulsatingCircle size="sm" color="blue" />
+                                <span className="size-2 rounded-full bg-blue-500 animate-pulse inline-block" />
                             ) : (
                                 <Bot className="size-4 text-purple-600 dark:text-purple-400" />
                             )}
@@ -287,7 +287,7 @@ function StreamingMessageComponent({
                         contentClassName
                     )}
                 >
-                    <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-2 prose-headings:font-semibold prose-headings:tracking-tight prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2 max-w-none text-[15px]">
+                    <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words" style={{ overflowWrap: 'anywhere' }}>
                         <MarkdownRenderer>
                             {displayTextWithCursor}
                         </MarkdownRenderer>
@@ -297,6 +297,11 @@ function StreamingMessageComponent({
                         .streaming-content p:last-child,
                         .streaming-content li:last-child {
                             display: inline;
+                        }
+                        /* Soft fade at reveal edge */
+                        .streaming-active .vprose {
+                            mask-image: linear-gradient(to right, black 97%, transparent 100%);
+                            -webkit-mask-image: linear-gradient(to right, black 97%, transparent 100%);
                         }
                     `}</style>
                 </div>

@@ -1,7 +1,7 @@
 import React from 'react';
-import { BarChart3, GitBranch, MessageSquare, Code, Image, Link } from 'lucide-react';
+import { BarChart3, GitBranch, MessageSquare, Code, Image, Link, Download, Table, FileText } from 'lucide-react';
 
-export type CodeBlockType = 'chart' | 'mermaid' | 'proposal' | 'code' | 'image' | 'link';
+export type CodeBlockType = 'chart' | 'mermaid' | 'proposal' | 'code' | 'image' | 'link' | 'expand' | 'table' | 'markdown' | 'fusion-fragment';
 
 export interface CodeBlockPlaceholderProps {
     /** The type of content being loaded */
@@ -23,6 +23,10 @@ const TYPE_CONFIG: Record<CodeBlockType, { icon: React.ElementType; label: strin
     code: { icon: Code, label: 'code', defaultHeight: 80 },
     image: { icon: Image, label: 'image', defaultHeight: 150 },
     link: { icon: Link, label: 'link', defaultHeight: 24 },
+    expand: { icon: Download, label: 'content', defaultHeight: 100 },
+    table: { icon: Table, label: 'table', defaultHeight: 150 },
+    markdown: { icon: FileText, label: 'content', defaultHeight: 100 },
+    'fusion-fragment': { icon: Code, label: 'fragment', defaultHeight: 150 },
 };
 
 /**
