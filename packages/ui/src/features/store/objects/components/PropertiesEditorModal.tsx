@@ -214,17 +214,6 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                             beforeMount={beforeMount}
                             theme={theme === 'dark' ? 'vs-dark' : 'vs'}
                             minLines={40}
-                            options={{
-                                fontSize: 14,
-                                minimap: { enabled: false },
-                                scrollBeyondLastLine: false,
-                                wordWrap: 'on',
-                                lineNumbers: 'on',
-                                automaticLayout: true,
-                                formatOnPaste: true,
-                                formatOnType: true,
-                                tabSize: 2,
-                            }}
                         />
                     </div>
                 </ModalBody>
