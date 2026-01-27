@@ -24,9 +24,6 @@
         "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix"
     },
     "dependencies": {
-        "@codemirror/lang-json": "^6.0.1",
-        "@codemirror/state": "^6.5.2",
-        "@codemirror/view": "^6.36.8",
         "@floating-ui/dom": "^1.7.1",
         "@floating-ui/react": "^0.27.11",
         "@headlessui/react": "^2.2.2",
@@ -46,7 +43,6 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
-        "codemirror": "^6.0.1",
         "dayjs": "^1.11.13",
         "debounce": "^2.2.0",
         "fast-xml-parser": "^5.2.3",
