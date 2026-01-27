@@ -26,15 +26,7 @@ export function JSONCode({ data, className }: { data: any; className?: string })
                 maxLines={50}
                 options={{
                     readOnly: true,
-                    fontSize: 14,
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    wordWrap: 'on',
-                    lineNumbers: 'on',
-                    automaticLayout: true,
-                    tabSize: 2,
                     domReadOnly: true,
-                    renderValidationDecorations: 'on',
                 }}
             />
         </div>

@@ -91,17 +91,6 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate }: TableLayoutEdi
                     language="json"
                     editorRef={editorRef}
                     theme={theme === 'dark' ? 'vs-dark' : 'vs'}
-                    options={{
-                        fontSize: 14,
-                        minimap: { enabled: false },
-                        scrollBeyondLastLine: false,
-                        wordWrap: 'on',
-                        lineNumbers: 'on',
-                        automaticLayout: true,
-                        formatOnPaste: true,
-                        formatOnType: true,
-                        tabSize: 2,
-                    }}
                 />
             </div>
         </div>

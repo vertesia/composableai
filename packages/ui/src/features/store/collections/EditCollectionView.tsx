@@ -195,17 +195,6 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                         language="json"
                         editorRef={tableLayoutRef}
                         theme={theme === 'dark' ? 'vs-dark' : 'vs'}
-                        options={{
-                            fontSize: 14,
-                            minimap: { enabled: false },
-                            scrollBeyondLastLine: false,
-                            wordWrap: 'on',
-                            lineNumbers: 'on',
-                            automaticLayout: true,
-                            formatOnPaste: true,
-                            formatOnType: true,
-                            tabSize: 2,
-                        }}
                     />
                 </FormItem>
                 <FormItem label="Type" description="Select a content type to assign custom properties and data to the collection.">
