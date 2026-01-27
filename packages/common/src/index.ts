@@ -37,4 +37,4 @@ export * from './utils/schemas.js';
 export type * from './utils/type-helpers.js';
 export * from './versions.js';
 export * from './workflow-analytics.js';
-
+export * from './vega-lite/index.js';

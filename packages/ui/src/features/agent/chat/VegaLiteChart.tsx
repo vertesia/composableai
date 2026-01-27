@@ -9,6 +9,15 @@ import { cn } from '../../../core/components/libs/utils';
 import { useUserSession } from '@vertesia/ui/session';
 import type { VegaLiteChartSpec } from './AgentChart';
 import { getArtifactCacheKey, getFileCacheKey, useArtifactUrlCache } from './useArtifactUrlCache';
+import {
+    findArtifactReferences,
+    replaceArtifactData,
+    fixVegaLiteSelectionParams,
+    applyParameterValues,
+} from '@vertesia/common';
+
+// Re-export for backward compatibility with tests
+export { applyParameterValues };
 
 type VegaLiteChartProps = {
     spec: VegaLiteChartSpec;
@@ -142,290 +151,8 @@ const CHART_COLORS = {
     diverging: ['#ef4444', '#fca5a5', '#fef3c7', '#86efac', '#22c55e'],
 };
 
-// Helper types for artifact resolution
-type ArtifactReference = {
-    path: string[];  // Path to the data object in the spec
-    artifactPath: string;  // The artifact path (without "artifact:" prefix)
-};
-
-/**
- * Preprocess a Vega-Lite spec to fix duplicate signal names that occur
- * when params with selections are used in vconcat/hconcat layouts.
- *
- * The issue: Vega-Lite creates internal signals like `paramName_tuple` for
- * point selections. When a param is defined at the root level of a vconcat/hconcat
- * spec, Vega-Lite's compiler creates duplicate signals when propagating the
- * selection to sub-views.
- *
- * Solution: Move selection params from the root level to the first sub-view
- * (where selections typically originate). Cross-view references are preserved
- * so that clicking in one view filters other views.
- */
-function fixVegaLiteSelectionParams(spec: Record<string, any>): Record<string, any> {
-    // Deep clone the spec to avoid mutations
-    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
-
-    // Check if this is a concatenated spec with root-level selection params
-    const concatKeys = ['vconcat', 'hconcat', 'concat'];
-    const hasConcatViews = concatKeys.some(key => Array.isArray(result[key]));
-
-    if (!hasConcatViews) {
-        // Not a concatenated spec, no special handling needed
-        return result;
-    }
-
-    // Check for selection params at the root level
-    const rootSelectionParams: Array<{ name: string; param: Record<string, any> }> = [];
-    if (Array.isArray(result.params)) {
-        for (const param of result.params) {
-            if (param && typeof param === 'object' && param.name && param.select) {
-                rootSelectionParams.push({ name: param.name, param });
-            }
-        }
-    }
-
-    if (rootSelectionParams.length === 0) {
-        // No selection params at root level, no special handling needed
-        return result;
-    }
-
-    // Strategy: Move the selection param to the first sub-view that has an
-    // encoding field matching the selection. Keep cross-view references intact
-    // so filtering works across views.
-
-    for (const { name: paramName, param } of rootSelectionParams) {
-        const selectFields = param.select?.fields || [];
-        const hasLegendBinding = param.select?.bind === 'legend';
-
-        // Find the concat array
-        let concatArray: any[] | null = null;
-        for (const key of concatKeys) {
-            if (Array.isArray(result[key])) {
-                concatArray = result[key];
-                break;
-            }
-        }
-
-        if (!concatArray || concatArray.length === 0) continue;
-
-        // Find the first view that has the selection field in its encoding
-        // This is typically where users click to make selections
-        let targetViewIndex = 0;
-        for (let i = 0; i < concatArray.length; i++) {
-            const view = concatArray[i];
-            if (viewHasField(view, selectFields) || (hasLegendBinding && viewHasColorEncoding(view, selectFields))) {
-                targetViewIndex = i;
-                break;
-            }
-        }
-
-        // Move the param to the target view
-        const targetView = concatArray[targetViewIndex];
-        if (!targetView.params) {
-            targetView.params = [];
-        }
-        targetView.params.push(param);
-
-        // Remove the param from root level
-        result.params = result.params.filter((p: any) => p.name !== paramName);
-
-        // Cross-view references are kept intact - Vega-Lite handles signal
-        // propagation from the view where the selection is defined to other views
-    }
-
-    // Clean up empty params array at root
-    if (Array.isArray(result.params) && result.params.length === 0) {
-        delete result.params;
-    }
-
-    return result;
-}
-
-/**
- * Apply parameter values to a Vega-Lite spec.
- * Updates the 'value' field of named params, allowing models to set
- * initial values for interactive controls (sliders, dropdowns, etc.).
- * @exported for testing
- */
-export function applyParameterValues(
-    spec: Record<string, any>,
-    parameterValues: Record<string, any>
-): Record<string, any> {
-    if (!parameterValues || Object.keys(parameterValues).length === 0) {
-        return spec;
-    }
-
-    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
-
-    // Helper to update params in a view
-    const updateParams = (params: any[]) => {
-        for (const param of params) {
-            if (param && typeof param === 'object' && param.name && param.name in parameterValues) {
-                param.value = parameterValues[param.name];
-            }
-        }
-    };
-
-    // Update root-level params
-    if (Array.isArray(result.params)) {
-        updateParams(result.params);
-    }
-
-    // Update params in nested views (vconcat, hconcat, concat)
-    const updateNestedViews = (views: any[]) => {
-        if (!Array.isArray(views)) return;
-        for (const view of views) {
-            if (view && Array.isArray(view.params)) {
-                updateParams(view.params);
-            }
-            // Recursively handle nested concatenations
-            if (view.vconcat) updateNestedViews(view.vconcat);
-            if (view.hconcat) updateNestedViews(view.hconcat);
-            if (view.concat) updateNestedViews(view.concat);
-            // Handle layers
-            if (Array.isArray(view.layer)) {
-                for (const layer of view.layer) {
-                    if (layer && Array.isArray(layer.params)) {
-                        updateParams(layer.params);
-                    }
-                }
-            }
-        }
-    };
-
-    if (result.vconcat) updateNestedViews(result.vconcat);
-    if (result.hconcat) updateNestedViews(result.hconcat);
-    if (result.concat) updateNestedViews(result.concat);
-    if (Array.isArray(result.layer)) {
-        for (const layer of result.layer) {
-            if (layer && Array.isArray(layer.params)) {
-                updateParams(layer.params);
-            }
-        }
-    }
-
-    return result;
-}
-
-/**
- * Check if a view has encoding using any of the specified fields.
- */
-function viewHasField(view: Record<string, any>, fields: string[]): boolean {
-    if (!view || !view.encoding) return false;
-
-    for (const field of fields) {
-        for (const channel of Object.values(view.encoding)) {
-            if (channel && typeof channel === 'object' && (channel as any).field === field) {
-                return true;
-            }
-        }
-    }
-
-    // Also check nested layers
-    if (Array.isArray(view.layer)) {
-        for (const layer of view.layer) {
-            if (viewHasField(layer, fields)) return true;
-        }
-    }
-
-    return false;
-}
-
-/**
- * Check if a view has color encoding using any of the specified fields.
- */
-function viewHasColorEncoding(view: Record<string, any>, fields: string[]): boolean {
-    if (!view) return false;
-
-    const checkEncoding = (encoding: any): boolean => {
-        if (!encoding) return false;
-        const colorField = encoding.color?.field;
-        return colorField && fields.includes(colorField);
-    };
-
-    if (checkEncoding(view.encoding)) return true;
-
-    // Check nested layers
-    if (Array.isArray(view.layer)) {
-        for (const layer of view.layer) {
-            if (checkEncoding(layer.encoding)) return true;
-        }
-    }
-
-    return false;
-}
-
-/**
- * Walk the Vega-Lite spec and find all artifact: URL references in data.url fields.
- * Returns an array of references with their paths in the spec tree.
- */
-function findArtifactReferences(spec: Record<string, any>, currentPath: string[] = []): ArtifactReference[] {
-    const references: ArtifactReference[] = [];
-
-    if (!spec || typeof spec !== 'object') {
-        return references;
-    }
-
-    // Check if this object has a data.url that's an artifact reference
-    if (spec.data && typeof spec.data === 'object') {
-        const url = spec.data.url;
-        if (typeof url === 'string' && url.startsWith('artifact:')) {
-            references.push({
-                path: [...currentPath, 'data'],
-                artifactPath: url.replace(/^artifact:/, '').trim(),
-            });
-        }
-    }
-
-    // Recursively check nested objects (layer, vconcat, hconcat, concat, spec, etc.)
-    const nestedKeys = ['layer', 'vconcat', 'hconcat', 'concat', 'spec', 'repeat', 'facet'];
-    for (const key of nestedKeys) {
-        if (key in spec) {
-            const value = spec[key];
-            if (Array.isArray(value)) {
-                value.forEach((item, index) => {
-                    references.push(...findArtifactReferences(item, [...currentPath, key, String(index)]));
-                });
-            } else if (typeof value === 'object' && value !== null) {
-                references.push(...findArtifactReferences(value, [...currentPath, key]));
-            }
-        }
-    }
-
-    return references;
-}
-
-/**
- * Deep clone and update the spec by replacing artifact URLs with resolved data values.
- */
-function replaceArtifactData(
-    spec: Record<string, any>,
-    resolvedData: Map<string, any[]>
-): Record<string, any> {
-    const result = JSON.parse(JSON.stringify(spec)) as Record<string, any>;
-
-    for (const [pathKey, data] of resolvedData) {
-        const path = pathKey.split('.');
-        let current: any = result;
-
-        // Navigate to the parent of the data object
-        for (let i = 0; i < path.length - 1; i++) {
-            if (current[path[i]] === undefined) {
-                break;
-            }
-            current = current[path[i]];
-        }
-
-        // Replace data.url with data.values
-        const lastKey = path[path.length - 1];
-        if (current[lastKey] && typeof current[lastKey] === 'object') {
-            delete current[lastKey].url;
-            current[lastKey].values = data;
-        }
-    }
-
-    return result;
-}
+// Shared Vega-Lite utilities are imported from @vertesia/common:
+// findArtifactReferences, replaceArtifactData, fixVegaLiteSelectionParams, applyParameterValues
 
 // Get dark mode config for Vega with enhanced styling
 function getDarkModeConfig(isDark: boolean): Record<string, any> {
@@ -830,7 +557,7 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
             // Apply theme config
             config: {
                 ...config,
-                ...processedSpec.config,
+                ...(processedSpec.config as Record<string, unknown> | undefined),
             },
         };
     }, [processedSpec, title, isDarkMode, containerWidth, scaleSpecWidths]);

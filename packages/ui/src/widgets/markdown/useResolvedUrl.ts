@@ -5,14 +5,16 @@ import {
     getArtifactCacheKey,
     getFileCacheKey,
 } from '../../features/agent/chat/useArtifactUrlCache';
+import {
+    parseUrlScheme as parseUrlSchemeFromCommon,
+    mapSchemeToRoute as mapSchemeToRouteFromCommon,
+    type UrlScheme,
+} from '@vertesia/common';
 
-export type UrlScheme =
-    | 'artifact'
-    | 'image'
-    | 'store'
-    | 'document'
-    | 'collection'
-    | 'standard';
+// Re-export type and functions from common for backward compatibility
+export type { UrlScheme };
+export const parseUrlScheme = parseUrlSchemeFromCommon;
+export const mapSchemeToRoute = mapSchemeToRouteFromCommon;
 
 export interface ResolvedUrlState {
     /** The resolved URL, or undefined if not yet resolved */
@@ -34,44 +36,6 @@ export interface UseResolvedUrlOptions {
     artifactRunId?: string;
     /** Content disposition for artifact URLs: 'inline' for images, 'attachment' for downloads */
     disposition?: 'inline' | 'attachment';
-}
-
-/**
- * Parses a URL and returns its scheme and path
- */
-export function parseUrlScheme(rawUrl: string): { scheme: UrlScheme; path: string } {
-    if (rawUrl.startsWith('artifact:')) {
-        return { scheme: 'artifact', path: rawUrl.slice(9).trim() };
-    }
-    if (rawUrl.startsWith('image:')) {
-        return { scheme: 'image', path: rawUrl.slice(6).trim() };
-    }
-    if (rawUrl.startsWith('store:')) {
-        return { scheme: 'store', path: rawUrl.slice(6).trim() };
-    }
-    if (rawUrl.startsWith('document://')) {
-        return { scheme: 'document', path: rawUrl.slice(11).trim() };
-    }
-    if (rawUrl.startsWith('collection:')) {
-        return { scheme: 'collection', path: rawUrl.slice(11).trim() };
-    }
-    return { scheme: 'standard', path: rawUrl };
-}
-
-/**
- * Maps internal URL schemes to application routes
- */
-export function mapSchemeToRoute(scheme: UrlScheme, path: string): string | null {
-    switch (scheme) {
-        case 'store':
-            return path ? `/store/objects/${path}` : null;
-        case 'document':
-            return path ? `/store/objects/${path}` : null;
-        case 'collection':
-            return path ? `/store/collections/${path}` : null;
-        default:
-            return null;
-    }
 }
 
 /**
