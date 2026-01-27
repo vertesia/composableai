@@ -12,13 +12,15 @@ import { RegionRenderer } from './RegionRenderer.js';
 
 /**
  * Get regions for a specific slot.
+ * Matches by slot property, or falls back to id if slot is not defined.
  */
 function getRegionsForSlot(regions: PageRegionSpec[], slot: string): PageRegionSpec[] {
-    return regions.filter((r) => r.slot === slot);
+    return regions.filter((r) => r.slot === slot || (!r.slot && r.id === slot));
 }
 
 /**
  * Render a single-column layout.
+ * For single layouts, render all regions (or those with slot/id "main").
  */
 function SingleColumnLayout({
     regions,
@@ -28,12 +30,15 @@ function SingleColumnLayout({
     onUpdate,
     onNavigate,
 }: Omit<PageLayoutRendererProps, 'layout'>) {
+    // For single column, render all regions or those marked as "main"
     const mainRegions = getRegionsForSlot(regions, 'main');
+    // If no regions match "main", render all regions
+    const regionsToRender = mainRegions.length > 0 ? mainRegions : regions;
 
     return (
         <div className="fusion-layout fusion-layout-single">
             <div className="fusion-layout-main">
-                {mainRegions.map((region, index) => (
+                {regionsToRender.map((region, index) => (
                     <RegionRenderer
                         key={region.id || `region-${index}`}
                         region={region}
