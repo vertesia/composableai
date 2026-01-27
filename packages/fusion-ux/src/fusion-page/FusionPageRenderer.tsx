@@ -97,7 +97,8 @@ export function FusionPageRenderer({
     );
 
     // Use provided data or loaded data
-    const data = providedData || loadedData;
+    // Note: use hasProvidedData check instead of || since {} is truthy
+    const data = hasProvidedData ? providedData! : loadedData;
 
     // Show loading state
     if (shouldLoadData && loading) {
