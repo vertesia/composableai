@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/packages",
-    "version": "0.81.0",
+    "version": "1.0.0-dev.20260128.130000",
     "license": "Apache-2.0",
     "private": true,
     "scripts": {
