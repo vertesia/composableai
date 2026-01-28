@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button, cn, useToast } from "@vertesia/ui/core";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
-import { CopyIcon } from "lucide-react";
+import { Bot, CopyIcon } from "lucide-react";
 import dayjs from "dayjs";
 
 // PERFORMANCE: Unicode cursor character - rendered inline with text
 // This avoids expensive DOM manipulation with TreeWalker on every update
-const CURSOR_CHAR = "▋";
+// Using thin pipe for softer visual appearance
+const CURSOR_CHAR = "│";
 
 export interface StreamingMessageProps {
     text: string;
@@ -90,10 +91,10 @@ function StreamingMessageComponent({
 
             const buffer = targetLengthRef.current - displayedLengthRef.current;
 
-            // Nothing to reveal - keep animation running to catch new chunks
+            // Nothing to reveal - stop animation, it will restart when new text arrives
             if (buffer <= 0) {
                 fractionalCharsRef.current = 0;
-                animationRef.current = requestAnimationFrame(step);
+                animationRef.current = null;
                 return;
             }
 
@@ -243,76 +244,67 @@ function StreamingMessageComponent({
     };
 
     return (
-        <div
-            className={cn(
-                "flex flex-col gap-1 p-3 rounded-lg",
-                "bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30",
-                "min-h-[3rem]",
-                className
-            )}
-        >
-            {/* Header with task, timestamp and copy button */}
-            <div className={cn("flex items-center justify-between", headerClassName)}>
-                <div className="flex items-center gap-2">
-                    {workstreamId && workstreamId !== "main" && (
-                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                            Task: {workstreamId}
-                        </span>
-                    )}
-                    {isTyping && (
-                        <span className="text-xs text-muted">Streaming...</span>
-                    )}
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted">{formattedTime}</span>
-                    <Button
-                        variant="ghost"
-                        size="xs"
-                        onClick={copyToClipboard}
-                        className="text-muted opacity-50 hover:opacity-100"
-                        title="Copy message"
-                    >
-                        <CopyIcon className="size-3" />
-                    </Button>
-                </div>
-            </div>
-            {/* Content - cursor character is appended directly to text (no DOM manipulation) */}
+        <div className={cn("w-full max-w-full", className)}>
+            {/* Card wrapper matching MessageItem structure */}
             <div
-                className={cn(
-                    "text-sm break-words leading-relaxed streaming-content prose prose-sm dark:prose-invert max-w-none",
-                    isTyping && "streaming-active",
-                    contentClassName
-                )}
+                className="border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 w-full max-w-full overflow-hidden"
+                data-workstream-id={workstreamId}
             >
-                <MarkdownRenderer>
-                    {displayTextWithCursor}
-                </MarkdownRenderer>
-                <style>{`
-                    /* Ensure inline elements flow properly */
-                    .streaming-content p:last-child,
-                    .streaming-content li:last-child {
-                        display: inline;
-                    }
+                {/* Compact header */}
+                <div className={cn("flex items-center justify-between px-4 py-1.5", headerClassName)}>
+                    <div className="flex items-center gap-1.5">
+                        <div className="animate-fadeIn">
+                            {isTyping ? (
+                                <span className="size-2 rounded-full bg-blue-500 animate-pulse inline-block" />
+                            ) : (
+                                <Bot className="size-4 text-purple-600 dark:text-purple-400" />
+                            )}
+                        </div>
+                        <span className="text-xs font-medium text-muted">Agent</span>
+                        {workstreamId && workstreamId !== "main" && (
+                            <span className="text-xs text-muted">• Task {workstreamId}</span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2 text-muted">
+                        <span className="text-[11px]">{formattedTime}</span>
+                        <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={copyToClipboard}
+                            className="size-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            title="Copy message"
+                        >
+                            <CopyIcon className="size-3" />
+                        </Button>
+                    </div>
+                </div>
 
-                    /* Style the cursor character when streaming */
-                    .streaming-active {
-                        /* The cursor character (▋) inherits text color by default */
-                    }
-
-                    /* Animate cursor with CSS - applies to the character via text-shadow */
-                    @keyframes cursorPulse {
-                        0%, 100% { opacity: 1; }
-                        50% { opacity: 0.4; }
-                    }
-
-                    /* Make cursor character blink - targets last character when streaming */
-                    .streaming-active code:last-child,
-                    .streaming-active p:last-child,
-                    .streaming-active li:last-child,
-                    .streaming-active pre:last-child code {
-                        /* Cursor character inherits this animation via the container */
-                    }
-                `}</style>
+                {/* Content - cursor character is appended directly to text (no DOM manipulation) */}
+                <div
+                    className={cn(
+                        "px-4 pb-3 streaming-content",
+                        isTyping && "streaming-active",
+                        contentClassName
+                    )}
+                >
+                    <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words" style={{ overflowWrap: 'anywhere' }}>
+                        <MarkdownRenderer>
+                            {displayTextWithCursor}
+                        </MarkdownRenderer>
+                    </div>
+                    <style>{`
+                        /* Ensure inline elements flow properly */
+                        .streaming-content p:last-child,
+                        .streaming-content li:last-child {
+                            display: inline;
+                        }
+                        /* Soft fade at reveal edge */
+                        .streaming-active .vprose {
+                            mask-image: linear-gradient(to right, black 97%, transparent 100%);
+                            -webkit-mask-image: linear-gradient(to right, black 97%, transparent 100%);
+                        }
+                    `}</style>
+                </div>
             </div>
         </div>
     );

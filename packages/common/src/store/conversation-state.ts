@@ -117,6 +117,12 @@ export interface ConversationState {
     unlocked_tools?: string[];
 
     /**
+     * Activity ID from the latest LLM call (for deduplication with streamed content).
+     * Set by streamToRedis when completing async activities.
+     */
+    latest_activity_id?: string;
+
+    /**
      * Mapping of skill names to their related tools.
      * When a skill is called, its related tools are added to unlocked_tools.
      */

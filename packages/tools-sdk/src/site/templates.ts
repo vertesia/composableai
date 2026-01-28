@@ -1,4 +1,5 @@
 import type { InteractionCollection } from "../InteractionCollection.js";
+import { ToolServerConfig } from "../server/types.js";
 import type { SkillCollection } from "../SkillCollection.js";
 import type { ToolCollection } from "../ToolCollection.js";
 import type { ICollection, SkillDefinition, Tool } from "../types.js";
@@ -662,6 +663,47 @@ function getInitials(title: string): string {
     return initials || "TS";
 }
 
+function renderUILinks() {
+    const copyIconSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+
+    return /*html*/`
+<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(156, 163, 175, 0.2); display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+    <a target="_blank" href="/ui/" class="plugin-link-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: background 0.15s;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+        </svg>
+        UI Plugin Dev
+    </a>
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+        <a href="/lib/plugin.js" class="plugin-link-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #10b981; color: white; text-decoration: none; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: background 0.15s;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Plugin Bundle
+        </a>
+        <button id="copy-plugin-btn" class="copy-btn" onclick="copyPluginUrl(this)" title="Copy plugin URL" style="background: #e5e7eb; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; color: #6b7280; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+            ${copyIconSvg}
+        </button>
+    </div>
+</div>
+<script>
+function copyPluginUrl(btn) {
+    navigator.clipboard.writeText(window.location.origin + '/lib/plugin.js');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '✓';
+    btn.style.color = '#10b981';
+    setTimeout(function() {
+        btn.innerHTML = originalHtml;
+        btn.style.color = '#6b7280';
+    }, 1500);
+}
+</script>
+`;
+}
+
 /**
  * Render the main index page
  *
@@ -670,25 +712,17 @@ function getInitials(title: string): string {
  * - If an array is passed, it is treated as MCP providers and the fifth argument (if any) is the title.
  */
 export function indexPage(
-    tools: ToolCollection[],
-    skills: SkillCollection[],
-    interactions: InteractionCollection[],
-    mcpProvidersOrTitle?: MCPProviderMeta[] | string,
-    titleParam?: string
+    config: ToolServerConfig
 ): string {
-    let mcpProviders: MCPProviderMeta[] = [];
-    let title = "Tools Server";
+    const {
+        title = 'Tools Server',
+        tools = [],
+        interactions = [],
+        skills = [],
+        mcpProviders = [],
+        hideUILinks = false,
+    } = config;
 
-    if (Array.isArray(mcpProvidersOrTitle)) {
-        mcpProviders = mcpProvidersOrTitle;
-        if (typeof titleParam === "string" && titleParam.length > 0) {
-            title = titleParam;
-        }
-    } else if (typeof mcpProvidersOrTitle === "string" && mcpProvidersOrTitle.length > 0) {
-        title = mcpProvidersOrTitle;
-    } else if (typeof titleParam === "string" && titleParam.length > 0) {
-        title = titleParam;
-    }
 
     return /*html*/`
 <!DOCTYPE html>
@@ -718,6 +752,7 @@ export function indexPage(
                         ${interactions.length ? /*html*/`<span><dot></dot> ${interactions.length} interaction collection${interactions.length !== 1 ? 's' : ''}</span>` : ''}
                         ${mcpProviders.length ? /*html*/`<span><dot></dot> ${mcpProviders.length} MCP provider${mcpProviders.length !== 1 ? 's' : ''}</span>` : ''}
                     </div>
+                    ${hideUILinks ? '' : renderUILinks()}
                 </div>
             </div>
             <aside class="hero-panel">

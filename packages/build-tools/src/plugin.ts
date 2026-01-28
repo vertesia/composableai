@@ -39,7 +39,13 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
                     // Handle relative imports
                     if (source.startsWith('.') && importer) {
                         const cleanSource = source.replace(transformer.pattern, '');
-                        const resolved = path.resolve(path.dirname(importer), cleanSource);
+                        // Strip query parameters from importer to get the file path
+                        const cleanImporter = importer.indexOf('?') >= 0
+                            ? importer.substring(0, importer.indexOf('?'))
+                            : importer;
+                        // Always use dirname to get the directory containing the importer
+                        const baseDir = path.dirname(cleanImporter);
+                        const resolved = path.resolve(baseDir, cleanSource);
                         // Return with the pattern suffix to identify it in load
                         const suffix = source.match(transformer.pattern)?.[0] || '';
                         return resolved + suffix;
@@ -75,8 +81,10 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
             }
 
             try {
-                // Read file content
-                const content = readFileSync(cleanId, 'utf-8');
+                // Read file content (skip for virtual transforms)
+                const content = matchedTransformer.virtual
+                    ? ''
+                    : readFileSync(cleanId, 'utf-8');
 
                 // Transform the content
                 const result = await matchedTransformer.transform(content, cleanId);
@@ -105,12 +113,12 @@ export function vertesiaImportPlugin(config: PluginConfig): Plugin {
                 }
 
                 // Generate code
+                const imports = result.imports ? result.imports.join('\n') + '\n\n' : '';
                 if (result.code) {
-                    // Custom code provided
-                    return result.code;
+                    // Custom code provided - prepend imports
+                    return imports + result.code;
                 } else {
                     // Default: export data (escape if string, otherwise stringify as JSON)
-                    const imports = result.imports ? result.imports.join('\n') + '\n\n' : '';
                     const dataJson = JSON.stringify(result.data, null, 2);
                     return `${imports}export default ${dataJson};`;
                 }

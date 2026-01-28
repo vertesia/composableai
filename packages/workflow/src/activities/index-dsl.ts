@@ -20,6 +20,7 @@ export type { TranscriptMediaResult } from "./media/transcribeMediaWithGladia.js
 export { notifyWebhook } from "./notifyWebhook.js";
 export { checkRateLimit } from "./rateLimiter.js";
 export { copyParentArtifacts } from "./copyParentArtifacts.js";
+export { mergeChildArtifacts } from "./mergeChildArtifacts.js";
 export { generateImageRendition } from "./renditions/generateImageRendition.js";
 export { generateVideoRendition } from "./renditions/generateVideoRendition.js";
 export { setDocumentStatus } from "./setDocumentStatus.js";

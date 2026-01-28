@@ -13,6 +13,7 @@ import {
     StreamingChunkDetails,
     UserInputSignal,
 } from "@vertesia/common";
+import { FusionFragmentProvider } from "@vertesia/fusion-ux";
 import { Button, MessageBox, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
@@ -25,6 +26,7 @@ import { ThinkingMessages } from "./WaitingMessages";
 import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
+import { VegaLiteChart } from "./VegaLiteChart";
 
 export type StartWorkflowFn = (
     initialMessage?: string,
@@ -122,12 +124,24 @@ interface ModernAgentConversationProps {
     onAttachmentsSent?: () => void;
     // Whether files are currently being uploaded - disables send/start buttons
     isUploading?: boolean;
+    // Callback to get additional context metadata to include in every message
+    // Returns object with context like { fundId, fundName } to include in signal metadata
+    getMessageContext?: () => Record<string, unknown> | undefined;
 
     // Styling props for Tailwind customization - passed through to MessageInput
     /** Additional className for the MessageInput container */
     inputContainerClassName?: string;
     /** Additional className for the input field */
     inputClassName?: string;
+
+    // Fusion fragment props
+    /**
+     * Data to provide to fusion-fragment code blocks for rendering.
+     * When provided, fusion-fragments in agent responses will display
+     * this data according to their template structure.
+     * @example { fundName: "Tech Growth IV", vintage: 2024, totalCommitments: 500000000 }
+     */
+    fusionData?: Record<string, unknown>;
 }
 
 export function ModernAgentConversation(
@@ -198,7 +212,7 @@ function StartWorkflowView({
     const [isSending, setIsSending] = useState(false);
     const [run, setRun] = useState<AsyncExecutionResult>();
     const toast = useToast();
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Staged files - stored locally until workflow starts
@@ -298,9 +312,20 @@ function StartWorkflowView({
                 messageContent = [message, '', 'Attachments:', ...lines].join('\n');
             }
 
+            // If files are staged, add a note to the message so the agent knows files are coming
+            if (stagedFiles.length > 0) {
+                const fileNames = stagedFiles.map(f => f.name).join(', ');
+                messageContent = [
+                    messageContent,
+                    '',
+                    `[System: ${stagedFiles.length} file(s) are being uploaded: ${fileNames}. Please wait for the "Files Ready" notification before processing them.]`
+                ].join('\n');
+            }
+
             const newRun = await startWorkflow(messageContent);
             if (newRun) {
                 // Upload staged files to the new run's artifact space and signal workflow
+                const uploadedFiles: string[] = [];
                 if (stagedFiles.length > 0) {
                     for (const file of stagedFiles) {
                         try {
@@ -320,11 +345,33 @@ function StartWorkflowView({
                                     artifact_path: artifactPath,
                                 } as ConversationFileRef
                             );
+                            uploadedFiles.push(file.name);
                         } catch (uploadErr) {
                             console.error(`Failed to upload staged file ${file.name}:`, uploadErr);
                             // Continue with other files
                         }
                     }
+
+                    // Send a follow-up message to notify the agent that all files are ready
+                    if (uploadedFiles.length > 0) {
+                        try {
+                            await client.store.workflows.sendSignal(
+                                newRun.workflow_id,
+                                newRun.run_id,
+                                "UserInput",
+                                {
+                                    message: `[Files Ready] All ${uploadedFiles.length} file(s) have been uploaded and are now available: ${uploadedFiles.join(', ')}. You can now process them.`,
+                                    metadata: {
+                                        type: 'files_ready',
+                                        files: uploadedFiles,
+                                    },
+                                } as UserInputSignal
+                            );
+                        } catch (signalErr) {
+                            console.error('Failed to send files ready signal:', signalErr);
+                        }
+                    }
+
                     setStagedFiles([]);
                 }
 
@@ -353,12 +400,26 @@ function StartWorkflowView({
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             startWorkflowWithMessage();
         }
+        // Shift+Enter allows newline (default textarea behavior)
     };
+
+    // Auto-resize textarea as content grows
+    const adjustTextareaHeight = useCallback(() => {
+        const textarea = inputRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+        }
+    }, []);
+
+    useEffect(() => {
+        adjustTextareaHeight();
+    }, [inputValue, adjustTextareaHeight]);
 
     // If a run has been started, show the conversation
     if (run) {
@@ -493,22 +554,24 @@ function StartWorkflowView({
                     </Button>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-end gap-2">
                     <div className="flex-1">
-                        <input
+                        <textarea
                             ref={inputRef}
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={placeholder}
                             disabled={isSending}
-                            className="w-full py-2 px-3 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:ring-0 rounded-md"
+                            rows={2}
+                            className="w-full py-2.5 px-3 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden"
+                            style={{ minHeight: '60px', maxHeight: '200px' }}
                         />
                     </div>
                     <Button
                         onClick={startWorkflowWithMessage}
                         disabled={!inputValue.trim() || isSending}
-                        className="px-3 py-2 bg-gray-800 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-xs rounded-md transition-colors"
+                        className="px-3 py-2.5 bg-gray-800 dark:bg-gray-700 hover:bg-gray-700 dark:hover:bg-gray-600 text-white text-xs rounded-md transition-colors"
                     >
                         {isSending ? (
                             <Spinner size="sm" className="mr-1.5" />
@@ -521,7 +584,7 @@ function StartWorkflowView({
                 <div className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
                     {stagedFiles.length > 0
                         ? `${stagedFiles.length} file${stagedFiles.length > 1 ? 's' : ''} staged - will upload when conversation starts`
-                        : 'Type a message to start the conversation'}
+                        : 'Enter to send • Shift+Enter for new line'}
                 </div>
             </div>
         </div>
@@ -554,9 +617,13 @@ function ModernAgentConversationInner({
     onAttachmentsSent,
     // Upload state
     isUploading = false,
+    // Context callback
+    getMessageContext,
     // Styling props
     inputContainerClassName,
     inputClassName,
+    // Fusion fragment data
+    fusionData,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
     const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -586,7 +653,7 @@ function ModernAgentConversationInner({
     const [workflowStatus, setWorkflowStatus] = useState<string | null>(null);
     // Track streaming messages by streaming_id for real-time chunk aggregation
     // Include startTimestamp to preserve chronological order when converting to regular messages
-    const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
+    const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number; activityId?: string }>>(new Map());
 
     // Track files being processed by the workflow
     const [processingFiles, setProcessingFiles] = useState<Map<string, ConversationFile>>(new Map());
@@ -599,7 +666,7 @@ function ModernAgentConversationInner({
 
     // Performance optimization: Batch streaming updates using RAF
     // Instead of updating state on every chunk (100+ times/sec), batch them per animation frame
-    const pendingStreamingChunks = useRef<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number }>>(new Map());
+    const pendingStreamingChunks = useRef<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number; activityId?: string }>>(new Map());
     const streamingFlushScheduled = useRef<number | null>(null);
 
     // Debug: Track chunk arrivals and renders
@@ -692,7 +759,9 @@ function ModernAgentConversationInner({
             // PERFORMANCE: Batch updates using RAF instead of immediate state updates
             if (message.type === AgentMessageType.STREAMING_CHUNK) {
                 const details = message.details as StreamingChunkDetails;
-                if (!details?.streaming_id) return;
+                // Use activity_id as key if available (for dedup), fall back to streaming_id
+                const streamKey = details?.activity_id || details?.streaming_id;
+                if (!streamKey) return;
 
                 // Debug: Track chunk arrival with flash
                 setDebugChunkCount(c => c + 1);
@@ -701,18 +770,20 @@ function ModernAgentConversationInner({
                 debugFlashTimeout.current = setTimeout(() => setDebugChunkFlash(false), 50);
 
                 // Accumulate chunks in the ref (no state update yet)
-                const current = pendingStreamingChunks.current.get(details.streaming_id) || {
+                const current = pendingStreamingChunks.current.get(streamKey) || {
                     text: '',
                     workstreamId: message.workstream_id,
-                    startTimestamp: Date.now()
+                    startTimestamp: Date.now(),
+                    activityId: details?.activity_id,
                 };
                 const newText = current.text + (message.message || '');
 
-                pendingStreamingChunks.current.set(details.streaming_id, {
+                pendingStreamingChunks.current.set(streamKey, {
                     text: newText,
                     workstreamId: message.workstream_id,
                     isComplete: details.is_final,
                     startTimestamp: current.startTimestamp,
+                    activityId: details?.activity_id,
                 });
 
                 // Schedule a flush if not already scheduled (batches ~60 updates/sec max)
@@ -738,26 +809,28 @@ function ModernAgentConversationInner({
                 // Other SYSTEM messages fall through to normal handling
             }
 
-            // When ANSWER arrives, clear streaming messages (they contain the same content)
-            // This prevents showing the message twice: once as streaming, once as final ANSWER
-            if (message.type === AgentMessageType.ANSWER) {
-                pendingStreamingChunks.current.clear();
-                if (streamingFlushScheduled.current !== null) {
-                    cancelAnimationFrame(streamingFlushScheduled.current);
-                    streamingFlushScheduled.current = null;
-                }
-                setStreamingMessages(new Map());
+            // When THOUGHT or ANSWER arrives with activity_id, remove matching streaming message
+            // This prevents duplicate content (streamed content replaced by final message)
+            if ((message.type === AgentMessageType.THOUGHT || message.type === AgentMessageType.ANSWER) && message.details?.activity_id) {
+                const activityId = message.details.activity_id as string;
+                // Remove from pending chunks
+                pendingStreamingChunks.current.delete(activityId);
+                // Remove from streaming messages state
+                setStreamingMessages(prev => {
+                    if (prev.has(activityId)) {
+                        const next = new Map(prev);
+                        next.delete(activityId);
+                        return next;
+                    }
+                    return prev;
+                });
             }
 
-            // When COMPLETE arrives, clear any remaining streaming messages
-            // (don't convert to THOUGHT since the content is already in the ANSWER message)
-            if (message.type === AgentMessageType.COMPLETE) {
-                pendingStreamingChunks.current.clear();
-                if (streamingFlushScheduled.current !== null) {
-                    cancelAnimationFrame(streamingFlushScheduled.current);
-                    streamingFlushScheduled.current = null;
+            // On COMPLETE or IDLE, just flush any pending chunks
+            if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
+                if (pendingStreamingChunks.current.size > 0) {
+                    flushStreamingChunks();
                 }
-                setStreamingMessages(new Map());
             }
 
             if (message.message) {
@@ -991,6 +1064,9 @@ function ModernAgentConversationInner({
         // Get attached document IDs if callback provided
         const attachedDocs = getAttachedDocs?.() || [];
 
+        // Get additional context metadata if callback provided (e.g., fundId)
+        const contextMetadata = getMessageContext?.() || {};
+
         // Build message content with attachment references if present
         let messageContent = trimmed;
         if (attachedDocs.length > 0 && !/store:\S+/.test(trimmed)) {
@@ -998,10 +1074,16 @@ function ModernAgentConversationInner({
             messageContent = [trimmed, '', 'Attachments:', ...lines].join('\n');
         }
 
+        // Build metadata combining attached docs and context
+        const metadata = {
+            ...(attachedDocs.length > 0 ? { attached_docs: attachedDocs } : {}),
+            ...contextMetadata,
+        };
+
         client.store.workflows
             .sendSignal(run.workflowId, run.runId, "UserInput", {
                 message: messageContent,
-                metadata: attachedDocs.length > 0 ? { attached_docs: attachedDocs } : undefined,
+                metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
             } as UserInputSignal)
             .then(() => {
                 setIsCompleted(false);
@@ -1274,11 +1356,12 @@ function ModernAgentConversationInner({
         setIsPdfModalOpen(false);
     };
 
-    return (
+    // Main content - wrapped with FusionFragmentProvider when fusionData is provided
+    const mainContent = (
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
         <div
-            className={`flex gap-2 h-full relative overflow-hidden ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
+            className={`flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -1296,20 +1379,15 @@ function ModernAgentConversationInner({
             {/* Conversation Area - responsive width based on panel visibility */}
             <div
                 ref={conversationRef}
-                className={`flex flex-col h-full min-h-0 border-0 ${
+                className={`flex flex-col min-h-0 border-0 ${
                 showSlidingPanel
-                    ? 'lg:w-2/3 flex-1'
+                    ? 'w-full lg:w-2/3 flex-1 min-h-[50vh]'
                     : fullWidth
                         ? 'flex-1 w-full'
                         : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
             }`}
             >
-                {/* Streaming activity indicator - only visible when receiving chunks */}
-                {debugChunkFlash && (
-                    <div className="absolute top-2 right-2 z-50">
-                        <div className="w-3 h-3 rounded-full bg-green-400 shadow-[0_0_8px_2px_rgba(74,222,128,0.8)]" />
-                    </div>
-                )}
+                {/* Streaming activity indicator moved to Header */}
 
                 {/* Header - flex-shrink-0 to prevent shrinking */}
                 <div className="flex-shrink-0">
@@ -1328,6 +1406,7 @@ function ModernAgentConversationInner({
                         onCopyRunId={copyRunId}
                         resetWorkflow={resetWorkflow}
                         onExportPdf={exportConversationPdf}
+                        isReceivingChunks={debugChunkFlash}
                     />
                 </div>
 
@@ -1417,7 +1496,7 @@ function ModernAgentConversationInner({
 
             {/* Plan Panel Area - only rendered when panel should be shown */}
             {showSlidingPanel && (
-                <div className="h-full lg:w-1/3 border-l">
+                <div className="w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l">
                     <InlineSlidingPlanPanel
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
@@ -1452,6 +1531,24 @@ function ModernAgentConversationInner({
         </ImageLightboxProvider>
         </ArtifactUrlCacheProvider>
     );
+
+    // Wrap with FusionFragmentProvider when fusionData is provided
+    // This enables fusion-fragment code blocks to display data and supports
+    // agent-mode interactions where clicking editable fields sends messages
+    if (fusionData) {
+        return (
+            <FusionFragmentProvider
+                data={fusionData}
+                sendMessage={handleSendMessage}
+                ChartComponent={VegaLiteChart}
+                artifactRunId={run.runId}
+            >
+                {mainContent}
+            </FusionFragmentProvider>
+        );
+    }
+
+    return mainContent;
 }
 
 // Helper function to get conversation URL - used by other components

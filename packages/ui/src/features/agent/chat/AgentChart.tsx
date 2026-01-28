@@ -654,8 +654,8 @@ const RechartsChart = memo(function RechartsChart({ spec }: { spec: RechartsChar
     };
 
     return (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-            <div className="flex flex-col gap-2 p-3">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm my-5">
+            <div className="flex flex-col gap-2 p-4">
                 <div className="flex items-center justify-between">
                     <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                         {title || 'Chart'}

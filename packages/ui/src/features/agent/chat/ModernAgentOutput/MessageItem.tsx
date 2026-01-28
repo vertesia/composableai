@@ -5,7 +5,7 @@ import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, Layers, MessageSquare, User } from "lucide-react";
-import React, { useEffect, useState, useMemo, memo } from "react";
+import React, { useEffect, useState, useMemo, memo, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
 import { useImageLightbox } from "../ImageLightbox";
@@ -134,6 +134,11 @@ function MessageItemComponent({
     const toast = useToast();
     const urlCache = useArtifactUrlCache();
     const { openImage } = useImageLightbox();
+    // Use refs to avoid triggering effect re-runs when these stable values are accessed
+    const clientRef = useRef(client);
+    clientRef.current = client;
+    const urlCacheRef = useRef(urlCache);
+    urlCacheRef.current = urlCache;
 
     // Get styles from consolidated config
     const styles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
@@ -211,7 +216,7 @@ function MessageItemComponent({
         const runId = (message as any).workflow_run_id as string | undefined;
 
         return (
-            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-2 prose-headings:font-semibold prose-headings:tracking-tight prose-li:my-0.5 prose-ul:my-2 prose-ol:my-2 max-w-none text-[15px]">
+            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words" style={{ overflowWrap: 'anywhere' }}>
                 <MarkdownRenderer
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
@@ -274,6 +279,9 @@ function MessageItemComponent({
                 return;
             }
 
+            const currentClient = clientRef.current;
+            const currentUrlCache = urlCacheRef.current;
+
             try {
                 const entries = await Promise.all(
                     outputFiles.map(async (name: unknown) => {
@@ -296,13 +304,13 @@ function MessageItemComponent({
                             const cacheKey = getArtifactCacheKey(runId, artifactPath, disposition);
                             let url: string;
 
-                            if (urlCache) {
-                                url = await urlCache.getOrFetch(cacheKey, async () => {
-                                    const result = await client.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
+                            if (currentUrlCache) {
+                                url = await currentUrlCache.getOrFetch(cacheKey, async () => {
+                                    const result = await currentClient.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
                                     return result.url;
                                 });
                             } else {
-                                const result = await client.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
+                                const result = await currentClient.files.getArtifactDownloadUrl(runId, artifactPath, disposition);
                                 url = result.url;
                             }
 
@@ -331,7 +339,7 @@ function MessageItemComponent({
         };
 
         loadArtifacts();
-    }, [runId, outputFilesKey, client, urlCache]);
+    }, [runId, outputFilesKey]);
 
     const workstreamId = getWorkstreamId(message);
     const { Icon } = styles;
@@ -345,9 +353,9 @@ function MessageItemComponent({
     };
 
     return (
-        <div className={className}>
+        <div className={`w-full max-w-full ${className || ""}`}>
             <div
-                className={`border-l-4 overflow-hidden bg-white dark:bg-gray-900 mb-4 ${styles.borderColor} ${cardClassName || ""}`}
+                className={`border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden ${styles.borderColor} ${cardClassName || ""}`}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
@@ -379,7 +387,7 @@ function MessageItemComponent({
                 </div>
 
                 {/* Message content */}
-                <div className={`px-4 pb-3 bg-white dark:bg-gray-900 ${contentClassName || ""}`}>
+                <div className={`px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden ${contentClassName || ""}`}>
                 {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                 {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
                     (() => {
@@ -400,7 +408,7 @@ function MessageItemComponent({
                         );
                     })()
                 ) : messageContent && (
-                    <div className="message-content break-words max-w-full" style={{ overflowWrap: 'anywhere' }}>
+                    <div className="message-content break-words w-full" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                         {renderContent(processedContent || messageContent)}
                     </div>
                 )}

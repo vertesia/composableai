@@ -69,16 +69,22 @@ function FileDisplay({ files }: { files: string[] }) {
     );
 }
 
+// Helper to get files from tool details (checks both files and outputFiles)
+const getFilesFromDetails = (details: { files?: string[]; outputFiles?: string[]; [key: string]: unknown } | undefined): string[] | undefined => {
+    if (!details) return undefined;
+    const files = details.files ?? details.outputFiles;
+    return Array.isArray(files) ? files : undefined;
+};
+
 function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCallItemProps) {
-    const [showDetails, setShowDetails] = useState(false);
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const toast = useToast();
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
 
-    const details = message.details as { tool?: string; files?: string[]; [key: string]: unknown } | undefined;
+    const details = message.details as { tool?: string; files?: string[]; outputFiles?: string[]; [key: string]: unknown } | undefined;
     const toolName = details?.tool || "Tool";
-    const files = details?.files as string[] | undefined;
+    const files = getFilesFromDetails(details);
     const messageContent = typeof message.message === "string" ? message.message : "";
 
     // Resolve artifact paths to signed URLs
@@ -154,28 +160,35 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
         <div className="border-b border-gray-100 dark:border-gray-800 last:border-b-0">
             {/* Collapsed header - always visible */}
             <div
-                className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                className="flex items-start justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                 onClick={onToggle}
             >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {isExpanded ? (
-                        <ChevronDown className="size-3 text-muted flex-shrink-0" />
-                    ) : (
-                        <ChevronRight className="size-3 text-muted flex-shrink-0" />
-                    )}
-                    <span className="text-xs font-medium text-purple-600 dark:text-purple-400 flex-shrink-0">
-                        {toolName}
-                    </span>
-                    {!isExpanded && messageContent && (
-                        <span className="text-xs text-muted flex-1">
-                            {messageContent}
-                        </span>
-                    )}
+                <div className="flex items-start gap-2 flex-1 min-w-0">
+                    <div className="flex-shrink-0 pt-0.5">
+                        {isExpanded ? (
+                            <ChevronDown className="size-3 text-muted" />
+                        ) : (
+                            <ChevronRight className="size-3 text-muted" />
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        {/* Primary: Message text */}
+                        {messageContent ? (
+                            <span className="text-xs text-foreground line-clamp-2">
+                                {messageContent}
+                            </span>
+                        ) : (
+                            <span className="text-xs text-muted italic">Tool: {toolName}</span>
+                        )}
+                    </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs text-muted">
-                        {dayjs(message.timestamp).format("HH:mm:ss")}
-                    </span>
+                    {/* Tool name badge on the right */}
+                    {!isExpanded && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
+                            {toolName}
+                        </span>
+                    )}
                     <Button
                         variant="ghost"
                         size="xs"
@@ -201,6 +214,13 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
             {/* Expanded content */}
             {isExpanded && (
                 <div className="px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30">
+                    {/* Tool name badge shown when expanded */}
+                    <div className="mb-2">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
+                            {toolName}
+                        </span>
+                    </div>
+
                     {messageContent && (
                         <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
                             <MarkdownRenderer artifactRunId={artifactRunId}>{messageContent}</MarkdownRenderer>
@@ -210,36 +230,16 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
                     {/* Non-image files display */}
                     {nonImageFiles.length > 0 && <FileDisplay files={nonImageFiles} />}
 
-                    {/* Details toggle */}
-                    {details && (
-                        <div className="mt-2">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowDetails(!showDetails);
-                                }}
-                                className="text-xs text-muted flex items-center"
-                            >
-                                {showDetails ? "Hide" : "Show"} details
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className={`h-3 w-3 ml-1 transition-transform ${showDetails ? "rotate-180" : ""}`}
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-
-                            {showDetails && (
-                                <div className="mt-2 p-2 bg-muted border border-mixer-muted/40 rounded text-sm">
-                                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto">
-                                        {JSON.stringify(details, null, 2)}
-                                    </pre>
-                                </div>
-                            )}
-                        </div>
+                    {/* Technical details - collapsible */}
+                    {details && Object.keys(details).length > 1 && (
+                        <details className="mt-3 text-xs border rounded p-2 bg-muted/30" onClick={(e) => e.stopPropagation()}>
+                            <summary className="cursor-pointer text-muted">
+                                Technical Details
+                            </summary>
+                            <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto font-mono whitespace-pre-wrap">
+                                {JSON.stringify(details, null, 2)}
+                            </pre>
+                        </details>
                     )}
                 </div>
             )}
@@ -247,7 +247,8 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
     );
 }
 
-// Component for resolving and displaying files from a collapsed tool message
+// Component for resolving and displaying non-image files from a collapsed tool message
+// Note: Images are shown at the group level by GroupImageDisplay, so this only shows other files
 function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefined; artifactRunId?: string }) {
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const { client } = useUserSession();
@@ -264,26 +265,28 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
             const resolved = await Promise.all(
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
+
+                    // Skip image files - they're shown at the group level
+                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
+                    if (imageExtensions.has(ext)) return null;
+
                     if (file.startsWith("http://") || file.startsWith("https://")) {
                         return file;
                     }
                     const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
                         ? file
                         : `out/${file}`;
-                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
-                    const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
-                    const isImage = imageExtensions.has(ext);
-                    const disposition = isImage ? "inline" : "attachment";
 
                     try {
-                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, disposition);
+                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "attachment");
                         if (urlCache) {
                             return await urlCache.getOrFetch(cacheKey, async () => {
-                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
                                 return result.url;
                             });
                         } else {
-                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
                             return result.url;
                         }
                     } catch (err) {
@@ -300,22 +303,91 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
         return () => { cancelled = true; };
     }, [files, artifactRunId, client, urlCache]);
 
-    const imageFiles = resolvedFiles.filter(f => isImageUrl(f));
-    const nonImageFiles = resolvedFiles.filter(f => !isImageUrl(f));
+    // Only show non-image files (images are shown at group level)
+    if (resolvedFiles.length === 0) return null;
 
     return (
-        <>
-            {imageFiles.length > 0 && (
-                <div className="pl-5 pr-3 pb-2">
-                    <FileDisplay files={imageFiles} />
-                </div>
-            )}
-            {nonImageFiles.length > 0 && (
-                <div className="pl-5 pr-3 pb-2">
-                    <FileDisplay files={nonImageFiles} />
-                </div>
-            )}
-        </>
+        <div className="pl-5 pr-3 pb-2">
+            <FileDisplay files={resolvedFiles} />
+        </div>
+    );
+}
+
+// Component to show images from the most recent tool call prominently at the top
+function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage[]; artifactRunId?: string }) {
+    const [resolvedImages, setResolvedImages] = useState<string[]>([]);
+    const { client } = useUserSession();
+    const urlCache = useArtifactUrlCache();
+
+    // Only show files from the last (most recent) message in the group
+    useEffect(() => {
+        if (!artifactRunId || messages.length === 0) {
+            setResolvedImages([]);
+            return;
+        }
+
+        // Get files from only the last message (most recent tool output)
+        const lastMessage = messages[messages.length - 1];
+        const details = lastMessage.details as { files?: string[]; outputFiles?: string[] } | undefined;
+        const files = getFilesFromDetails(details);
+
+        if (!files || files.length === 0) {
+            setResolvedImages([]);
+            return;
+        }
+
+        let cancelled = false;
+        const resolveFiles = async () => {
+            const resolved = await Promise.all(
+                files.map(async (file) => {
+                    if (!file || typeof file !== "string") return null;
+
+                    // Check if it's an image file
+                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
+                    if (!imageExtensions.has(ext)) return null;
+
+                    // If it's already a full URL, return as-is
+                    if (file.startsWith("http://") || file.startsWith("https://")) {
+                        return file;
+                    }
+
+                    // Resolve artifact path to signed URL
+                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
+                        ? file
+                        : `out/${file}`;
+
+                    try {
+                        const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "inline");
+                        if (urlCache) {
+                            return await urlCache.getOrFetch(cacheKey, async () => {
+                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "inline");
+                                return result.url;
+                            });
+                        } else {
+                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "inline");
+                            return result.url;
+                        }
+                    } catch (err) {
+                        console.error(`Failed to resolve artifact URL for ${artifactPath}`, err);
+                        return null;
+                    }
+                })
+            );
+            if (!cancelled) {
+                setResolvedImages(resolved.filter((f): f is string => !!f));
+            }
+        };
+        resolveFiles();
+        return () => { cancelled = true; };
+    }, [messages, artifactRunId, client, urlCache]);
+
+    if (resolvedImages.length === 0) return null;
+
+    return (
+        <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+            <FileDisplay files={resolvedImages} />
+        </div>
     );
 }
 
@@ -465,16 +537,19 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                 </div>
             </div>
 
+            {/* Show all images from the group prominently at the top */}
+            <GroupImageDisplay messages={messages} artifactRunId={artifactRunId} />
+
             {/* Collapsed summary - show tool calls as single-line rows with expand option */}
             {isCollapsed && (
                 <div className="px-4 py-1 space-y-0">
                     {messages.map((m, idx) => {
-                        const details = m.details as { tool?: string; files?: string[] } | undefined;
+                        const details = m.details as { tool?: string; files?: string[]; outputFiles?: string[] } | undefined;
                         const toolName = details?.tool || "tool";
                         const fullMessage = typeof m.message === "string" ? m.message : "";
                         const isAnimating = animatingIndices.has(idx);
                         const isItemExpanded = expandedItems.has(idx);
-                        const files = details?.files as string[] | undefined;
+                        const files = getFilesFromDetails(details);
 
                         return (
                             <div
@@ -491,21 +566,31 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                             >
                                 {/* Row header - clickable to expand */}
                                 <div
-                                    className="flex items-center gap-2 py-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                    className="flex items-start gap-2 py-2 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
                                     onClick={() => toggleItem(idx)}
                                     title={fullMessage}
                                 >
-                                    {isItemExpanded ? (
-                                        <ChevronDown className="size-3 text-muted flex-shrink-0" />
-                                    ) : (
-                                        <ChevronRight className="size-3 text-muted flex-shrink-0" />
-                                    )}
-                                    <span className="font-medium text-purple-700 dark:text-purple-300 flex-shrink-0 min-w-[100px]">
-                                        {toolName}
-                                    </span>
+                                    <div className="flex-shrink-0 pt-0.5">
+                                        {isItemExpanded ? (
+                                            <ChevronDown className="size-3 text-muted" />
+                                        ) : (
+                                            <ChevronRight className="size-3 text-muted" />
+                                        )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        {/* Primary: Message text */}
+                                        {fullMessage ? (
+                                            <span className="text-foreground line-clamp-2">
+                                                {fullMessage}
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted italic">Tool: {toolName}</span>
+                                        )}
+                                    </div>
+                                    {/* Tool name badge on the right */}
                                     {!isItemExpanded && (
-                                        <span className="text-muted truncate flex-1">
-                                            {fullMessage}
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium flex-shrink-0">
+                                            {toolName}
                                         </span>
                                     )}
                                 </div>

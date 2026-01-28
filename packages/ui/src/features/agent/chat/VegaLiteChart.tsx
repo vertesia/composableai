@@ -6,7 +6,7 @@ import { VegaEmbed } from 'react-vega';
 import type { View } from 'vega';
 import type { TopLevelSpec as VisualizationSpec } from 'vega-lite';
 import { cn } from '../../../core/components/libs/utils';
-import { useUserSession } from '../../../session';
+import { useUserSession } from '@vertesia/ui/session';
 import type { VegaLiteChartSpec } from './AgentChart';
 import { getArtifactCacheKey, getFileCacheKey, useArtifactUrlCache } from './useArtifactUrlCache';
 
@@ -408,12 +408,9 @@ function replaceArtifactData(
         const path = pathKey.split('.');
         let current: any = result;
 
-        console.log(`Replacing artifact data at path: ${pathKey}, path parts:`, path);
-
         // Navigate to the parent of the data object
         for (let i = 0; i < path.length - 1; i++) {
             if (current[path[i]] === undefined) {
-                console.warn(`Path navigation failed at step ${i}, key "${path[i]}" not found in:`, Object.keys(current));
                 break;
             }
             current = current[path[i]];
@@ -422,12 +419,8 @@ function replaceArtifactData(
         // Replace data.url with data.values
         const lastKey = path[path.length - 1];
         if (current[lastKey] && typeof current[lastKey] === 'object') {
-            const oldUrl = current[lastKey].url;
             delete current[lastKey].url;
             current[lastKey].values = data;
-            console.log(`Replaced artifact URL "${oldUrl}" with ${data.length} data rows`);
-        } else {
-            console.warn(`Could not find data object at path ${pathKey}. current[${lastKey}]:`, current[lastKey]);
         }
     }
 
@@ -559,6 +552,11 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
     // Artifact resolution state
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
+    // Use refs to avoid triggering effect re-runs when these stable values are accessed
+    const clientRef = useRef(client);
+    clientRef.current = client;
+    const urlCacheRef = useRef(urlCache);
+    urlCacheRef.current = urlCache;
     const [resolvedSpec, setResolvedSpec] = useState<Record<string, any> | null>(null);
     const [isLoadingArtifacts, setIsLoadingArtifacts] = useState(false);
     const [artifactError, setArtifactError] = useState<string | null>(null);
@@ -589,6 +587,8 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
         const resolveArtifacts = async () => {
             const resolvedData = new Map<string, any[]>();
+            const currentClient = clientRef.current;
+            const currentUrlCache = urlCacheRef.current;
 
             for (const ref of references) {
                 try {
@@ -599,25 +599,25 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
                     if (artifactRunId && !ref.artifactPath.startsWith('agents/')) {
                         // Shorthand path - use artifact API
                         const cacheKey = getArtifactCacheKey(artifactRunId, ref.artifactPath, 'inline');
-                        if (urlCache) {
-                            url = await urlCache.getOrFetch(cacheKey, async () => {
-                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
+                        if (currentUrlCache) {
+                            url = await currentUrlCache.getOrFetch(cacheKey, async () => {
+                                const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
                                 return result.url;
                             });
                         } else {
-                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
+                            const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, ref.artifactPath, 'inline');
                             url = result.url;
                         }
                     } else {
                         // Full path - use files API
                         const cacheKey = getFileCacheKey(ref.artifactPath);
-                        if (urlCache) {
-                            url = await urlCache.getOrFetch(cacheKey, async () => {
-                                const result = await client.files.getDownloadUrl(ref.artifactPath);
+                        if (currentUrlCache) {
+                            url = await currentUrlCache.getOrFetch(cacheKey, async () => {
+                                const result = await currentClient.files.getDownloadUrl(ref.artifactPath);
                                 return result.url;
                             });
                         } else {
-                            const result = await client.files.getDownloadUrl(ref.artifactPath);
+                            const result = await currentClient.files.getDownloadUrl(ref.artifactPath);
                             url = result.url;
                         }
                     }
@@ -640,22 +640,11 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
                             skipEmptyLines: true,
                             dynamicTyping: true, // Auto-convert numbers and booleans
                         });
-                        if (parseResult.errors.length > 0) {
-                            console.warn(`CSV parse warnings for ${ref.artifactPath}:`, parseResult.errors);
-                        }
                         data = parseResult.data as any[];
                     } else {
                         // Parse as JSON
                         const jsonData = await response.json();
                         data = Array.isArray(jsonData) ? jsonData : [jsonData];
-                    }
-
-                    // Log for debugging
-                    console.log(`Artifact ${ref.artifactPath}: loaded ${data.length} rows`);
-
-                    // Check for empty data
-                    if (!data || data.length === 0) {
-                        console.warn(`Artifact ${ref.artifactPath}: returned empty data`);
                     }
 
                     resolvedData.set(pathKey, data);
@@ -670,8 +659,6 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
             if (!cancelled) {
                 const newSpec = replaceArtifactData(vegaSpec, resolvedData);
-                // Log the resolved spec for debugging
-                console.log('Resolved spec with artifact data:', JSON.stringify(newSpec).slice(0, 500) + '...');
                 setResolvedSpec(newSpec);
                 setIsLoadingArtifacts(false);
             }
@@ -682,13 +669,19 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         return () => {
             cancelled = true;
         };
-    }, [vegaSpec, artifactRunId, client, urlCache]);
+    }, [vegaSpec, artifactRunId]);
 
     // Detect dark mode
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const isDarkModeRef = useRef(false);
     useEffect(() => {
         const checkDarkMode = () => {
-            setIsDarkMode(document.documentElement.classList.contains('dark'));
+            const newDarkMode = document.documentElement.classList.contains('dark');
+            // Only update state if dark mode actually changed
+            if (newDarkMode !== isDarkModeRef.current) {
+                isDarkModeRef.current = newDarkMode;
+                setIsDarkMode(newDarkMode);
+            }
         };
         checkDarkMode();
         const observer = new MutationObserver(checkDarkMode);
@@ -698,17 +691,30 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
 
     // Track container width for responsive sizing
     const [containerWidth, setContainerWidth] = useState(0);
+    const containerWidthRef = useRef(0);
     useEffect(() => {
         if (!containerRef.current) return;
+        let resizeTimeout: ReturnType<typeof setTimeout>;
         const resizeObserver = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                setContainerWidth(entry.contentRect.width);
-            }
+            // Debounce resize callbacks to ~100ms to avoid excessive state updates
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const width = entries[0]?.contentRect.width;
+                if (width && width !== containerWidthRef.current) {
+                    containerWidthRef.current = width;
+                    setContainerWidth(width);
+                }
+            }, 100);
         });
         resizeObserver.observe(containerRef.current);
         // Initial width
-        setContainerWidth(containerRef.current.clientWidth);
-        return () => resizeObserver.disconnect();
+        const initialWidth = containerRef.current.clientWidth;
+        containerWidthRef.current = initialWidth;
+        setContainerWidth(initialWidth);
+        return () => {
+            clearTimeout(resizeTimeout);
+            resizeObserver.disconnect();
+        };
     }, []);
 
     // Check if there are artifact references that need resolution
@@ -994,19 +1000,13 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
         return null;
     }
 
-    // Debug: Log the final spec being rendered
-    console.log('VegaLite rendering with spec:', {
-        title,
-        hasData: !!(chartSpec as any).data?.values,
-        dataLength: (chartSpec as any).data?.values?.length,
-        spec: JSON.stringify(chartSpec).slice(0, 1000) + '...'
-    });
-
-    // Check if spec has data
-    const specData = (chartSpec as any).data;
-    const hasNoData = specData && !specData.values && !specData.url;
-    if (hasNoData) {
-        console.warn('VegaLite spec has no data:', chartSpec);
+    // Debug: Log renders to track unnecessary re-renders (enable with localStorage)
+    if (typeof window !== 'undefined' && localStorage.getItem('DEBUG_VEGA_RENDERS')) {
+        console.log('VegaLite rendering with spec:', {
+            title,
+            hasData: !!(chartSpec as any).data?.values,
+            dataLength: (chartSpec as any).data?.values?.length,
+        });
     }
 
     return (
