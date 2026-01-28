@@ -405,10 +405,44 @@ export type WorkflowTask =
 export type WorkflowHistory =
     | { type: 'events'; events: WorkflowRunEvent[] }
     | { type: 'tasks'; tasks: WorkflowTask[] }
-    | { type: 'agent'; data: any };  // Placeholder for future agent format
+    | { type: 'agent'; agentTasks: AgentTask[] };
 
 // History format query parameter type
 export type HistoryFormat = 'events' | 'tasks' | 'agent';
+
+/**
+ * Agent task information for workflow history UI representation.
+ * This is separate from the analytics AgentEvent types.
+ * Consistent with WorkflowTask naming convention.
+ *
+ * Currently represents tool calls, but designed to be extensible
+ * for other task types (LLM calls, checkpoints, etc.)
+ */
+export interface AgentTask {
+    /** Type discriminator for future task types */
+    taskType: 'tool_call';  // Can expand to 'llm_call' | 'checkpoint' | etc.
+
+    /** Tool-specific fields */
+    toolName: string;
+    toolUseId?: string;
+    toolRunId?: string;
+    toolType?: 'builtin' | 'interaction' | 'remote' | 'skill';
+    iteration?: number;
+
+    /** Execution details */
+    scheduled_at: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    status: 'running' | 'completed' | 'error' | 'warning';
+
+    /** Tool data */
+    parameters?: Record<string, unknown>;
+    result?: string;
+    error?: { type: string; message: string };
+
+    /** Workstream tracking */
+    workstreamId?: string;
+}
 
 export interface WorkflowRun {
     status?: WorkflowExecutionStatus | string;
