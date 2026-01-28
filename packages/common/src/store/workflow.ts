@@ -266,11 +266,44 @@ export interface ListWorkflowRunsPayload {
      * The page token for Temporal pagination.
      */
     next_page_token?: string;
+
+    /**
+     * Filter by whether the workflow has reported errors (TemporalReportedProblems).
+     */
+    has_reported_errors?: boolean;
+}
+
+/**
+ * Signal event properties for workflow events
+ */
+export interface SignalEventProperties {
+    direction: 'receiving' | 'sending';
+    signalName?: string;
+    input?: any;
+    sender?: {
+        workflowId?: string;
+        runId?: string;
+    };
+    recipient?: {
+        workflowId?: string;
+        runId?: string;
+    };
+    initiatedEventId?: string;
+}
+
+/**
+ * Error information from failed workflow events
+ */
+export interface EventError {
+    message?: string;
+    source?: string;
+    stacktrace?: string;
+    type?: string;
 }
 
 export interface WorkflowRunEvent {
     event_id: number;
-    event_time: number;
+    event_time: string | null;
     event_type: string;
     task_id?: string;
     attempt: number;
@@ -293,30 +326,89 @@ export interface WorkflowRunEvent {
         result?: any,
     };
 
-    signal?: {
-        direction: "receiving" | "sending";
-        signalName?: string,
-        input?: any,
-        sender?: {
-            workflowId?: string,
-            runId?: string
-        }
-        recipient?: {
-            workflowId?: string,
-            runId?: string
-        },
-        initiatedEventId?: string,
-    }
+    signal?: SignalEventProperties;
 
-    error?: {
-        message?: string;
-        source?: string;
-        stacktrace?: string;
-        type?: string;
-    };
+    error?: EventError;
 
     result?: any;
 }
+
+// Task status enum for processed history
+export enum TaskStatus {
+    SCHEDULED = 'scheduled',
+    RUNNING = 'running',
+    COMPLETED = 'completed',
+    FAILED = 'failed',
+    CANCELED = 'canceled',
+    TIMED_OUT = 'timed_out',
+    TERMINATED = 'terminated',
+    SENT = 'sent',        // for signals
+    RECEIVED = 'received', // for signals
+}
+
+// Task type enum
+export enum TaskType {
+    ACTIVITY = 'activity',
+    CHILD_WORKFLOW = 'childWorkflow',
+    SIGNAL = 'signal',
+}
+
+// Base task interface
+interface TaskBase {
+    type: TaskType;
+    activityId: string;
+    activityName?: string;
+    input?: any;
+    scheduled: string | null;
+    status: TaskStatus;
+    attempts: number;
+    started: string | null;
+    completed: string | null;
+    error: string | null;
+    result: any;
+}
+
+// Activity-specific task
+export interface ActivityTask extends TaskBase {
+    type: TaskType.ACTIVITY;
+}
+
+// Child workflow-specific task
+export interface ChildWorkflowTask extends TaskBase {
+    type: TaskType.CHILD_WORKFLOW;
+    workflowType?: string;
+    runId?: string;
+}
+
+// Signal-specific task
+export interface SignalTask extends TaskBase {
+    type: TaskType.SIGNAL;
+    signalName?: string;
+    direction?: 'sending' | 'receiving';
+    sender?: {
+        workflowId?: string;
+        runId?: string;
+    };
+    recipient?: {
+        workflowId?: string;
+        runId?: string;
+    };
+}
+
+// Union type for all processed tasks
+export type WorkflowTask =
+    | ActivityTask
+    | ChildWorkflowTask
+    | SignalTask;
+
+// History format discriminated union
+export type WorkflowHistory =
+    | { type: 'events'; events: WorkflowRunEvent[] }
+    | { type: 'tasks'; tasks: WorkflowTask[] }
+    | { type: 'agent'; data: any };  // Placeholder for future agent format
+
+// History format query parameter type
+export type HistoryFormat = 'events' | 'tasks' | 'agent';
 
 export interface WorkflowRun {
     status?: WorkflowExecutionStatus | string;
@@ -326,8 +418,8 @@ export interface WorkflowRun {
      * @see https://docs.temporal.io/workflows
      */
     type?: string;
-    started_at?: number;
-    closed_at?: number;
+    started_at: string | null;
+    closed_at: string | null;
     execution_duration?: number;
     run_id?: string;
     workflow_id?: string;
@@ -336,6 +428,7 @@ export interface WorkflowRun {
     input?: any;
     result?: any;
     error?: any,
+    has_reported_errors?: boolean;
     raw?: any;
     /**
      * The Vertesia Workflow Type of this Workflow Run.
@@ -360,19 +453,21 @@ export interface WorkflowRun {
     topic?: string;
 }
 
+export interface PendingActivity {
+    activityId?: string;
+    activityType?: string;
+    attempt: number;
+    maximumAttempts: number;
+    lastFailure?: string;
+    lastStartedTime: string | null;
+}
+
 export interface WorkflowRunWithDetails extends WorkflowRun {
-    history?: WorkflowRunEvent[];
+    history?: WorkflowHistory;
     memo?: {
         [key: string]: any;
     } | null;
-    pendingActivities?: {
-        activityId?: string;
-        activityType?: string;
-        attempt: number;
-        maximumAttempts: number;
-        lastFailure?: string;
-        lastStartedTime?: number;
-    }[];
+    pendingActivities?: PendingActivity[];
 }
 export interface ListWorkflowRunsResponse {
     runs: WorkflowRun[];
