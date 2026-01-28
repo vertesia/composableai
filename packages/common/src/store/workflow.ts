@@ -266,6 +266,11 @@ export interface ListWorkflowRunsPayload {
      * The page token for Temporal pagination.
      */
     next_page_token?: string;
+
+    /**
+     * Filter by whether the workflow has reported errors (TemporalReportedProblems).
+     */
+    has_reported_errors?: boolean;
 }
 
 /**
@@ -423,7 +428,7 @@ export interface WorkflowRun {
     input?: any;
     result?: any;
     error?: any,
-    has_reported_errors: boolean;
+    has_reported_errors?: boolean;
     raw?: any;
     /**
      * The Vertesia Workflow Type of this Workflow Run.
