@@ -49,7 +49,7 @@
         "@temporalio/testing": "^1.13.0",
         "typescript": "^5.9.2",
         "typescript-eslint": "^8.43.0",
-        "vitest": "^4.0.16",
+        "vitest": "^4.0.18",
         "vitest-fetch-mock": "^0.4.5"
     },
     "vertesia": {
