@@ -423,6 +423,7 @@ export interface WorkflowRun {
     input?: any;
     result?: any;
     error?: any,
+    has_reported_errors: boolean;
     raw?: any;
     /**
      * The Vertesia Workflow Type of this Workflow Run.
@@ -524,8 +525,7 @@ export enum WorkflowExecutionStatus {
     CANCELED = 4,
     TERMINATED = 5,
     CONTINUED_AS_NEW = 6,
-    TIMED_OUT = 7,
-    ERROR = 8,
+    TIMED_OUT = 7
 }
 
 /**
