@@ -4,6 +4,16 @@ import MessageItem from "./MessageItem";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
 import { DONE_STATES, getWorkstreamId } from "./utils";
 
+/**
+ * Configuration passed to renderMessage callback
+ */
+export interface RenderMessageConfig {
+    /** Whether this is the latest message in the list */
+    isLatest: boolean;
+    /** Whether to show the pulsating circle indicator */
+    showPulsatingCircle: boolean;
+}
+
 interface AllMessagesMixedProps {
     messages: AgentMessage[];
     bottomRef: React.RefObject<HTMLDivElement>;
@@ -17,6 +27,13 @@ interface AllMessagesMixedProps {
     activePlanIndex?: number;
     onChangePlan?: (index: number) => void;
     taskLabels?: Map<string, string>; // Maps task IDs to more descriptive labels
+    /**
+     * Optional render prop for customizing message rendering.
+     * If not provided, the default MessageItem component is used.
+     * This allows consumers to provide their own styled message wrapper
+     * while using MessageContent for the actual content rendering.
+     */
+    renderMessage?: (message: AgentMessage, config: RenderMessageConfig) => React.ReactNode;
 }
 
 function AllMessagesMixedComponent({
@@ -24,6 +41,7 @@ function AllMessagesMixedComponent({
     bottomRef,
     viewMode = 'stacked',
     isCompleted = false,
+    renderMessage,
 }: AllMessagesMixedProps) {
     const containerRef = React.useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -150,15 +168,25 @@ function AllMessagesMixedComponent({
                         // Add pulsating circle to the latest message if not completed
                         displayMessages.map((message, index) => {
                             // Find if this is the latest non-completion message
-                            const isLatestNonCompletionMessage = !isCompleted &&
-                                index === displayMessages.length - 1 &&
+                            const isLatest = index === displayMessages.length - 1;
+                            const showPulsatingCircle = !isCompleted &&
+                                isLatest &&
                                 !DONE_STATES.includes(message.type);
+
+                            // Use renderMessage if provided, otherwise use default MessageItem
+                            if (renderMessage) {
+                                return (
+                                    <React.Fragment key={`${message.timestamp}-${index}`}>
+                                        {renderMessage(message, { isLatest, showPulsatingCircle })}
+                                    </React.Fragment>
+                                );
+                            }
 
                             return (
                                 <MessageItem
                                     key={`${message.timestamp}-${index}`}
                                     message={message}
-                                    showPulsatingCircle={isLatestNonCompletionMessage}
+                                    showPulsatingCircle={showPulsatingCircle}
                                 />
                             );
                         })
@@ -205,15 +233,25 @@ function AllMessagesMixedComponent({
 
                                 // Show pulsating circle only on the latest message if not completed
                                 return allMessages.map((message, index) => {
-                                    const isLatestMessage = !isCompleted &&
-                                        index === allMessages.length - 1 &&
+                                    const isLatest = index === allMessages.length - 1;
+                                    const showPulsatingCircle = !isCompleted &&
+                                        isLatest &&
                                         !DONE_STATES.includes(message.type);
+
+                                    // Use renderMessage if provided, otherwise use default MessageItem
+                                    if (renderMessage) {
+                                        return (
+                                            <React.Fragment key={`${message.timestamp}-${index}`}>
+                                                {renderMessage(message, { isLatest, showPulsatingCircle })}
+                                            </React.Fragment>
+                                        );
+                                    }
 
                                     return (
                                         <MessageItem
                                             key={`${message.timestamp}-${index}`}
                                             message={message}
-                                            showPulsatingCircle={isLatestMessage}
+                                            showPulsatingCircle={showPulsatingCircle}
                                         />
                                     );
                                 });
