@@ -108,7 +108,10 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
                 } else if (filterName === 'has_reported_errors') {
                     // Convert string "true"/"false" to boolean
                     const stringValue = Array.isArray(filterValue) ? filterValue[0] : filterValue;
-                    search.query[filterName] = stringValue === 'true';
+                    // Only set the filter if we have a valid value
+                    if (stringValue === 'true' || stringValue === 'false') {
+                        search.query[filterName] = stringValue === 'true';
+                    }
                 } else {
                     search.query[filterName] = filterValue;
                 }
