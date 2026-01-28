@@ -17,7 +17,7 @@
     "devDependencies": {
         "@types/node": "^22.19.2",
         "ts-dual-module": "^0.6.3",
-        "vitest": "^4.0.16"
+        "vitest": "^4.0.18"
     },
     "dependencies": {
         "@vertesia/memory": "workspace:*",
