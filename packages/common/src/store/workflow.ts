@@ -303,7 +303,7 @@ export interface EventError {
 
 export interface WorkflowRunEvent {
     event_id: number;
-    event_time: number;
+    event_time: string | null;
     event_type: string;
     task_id?: string;
     attempt: number;
@@ -359,11 +359,11 @@ interface TaskBase {
     activityId: string;
     activityName?: string;
     input?: any;
-    scheduled: number | null;
+    scheduled: string | null;
     status: TaskStatus;
     attempts: number;
-    started: number | null;
-    completed: number | null;
+    started: string | null;
+    completed: string | null;
     error: string | null;
     result: any;
 }
@@ -418,8 +418,8 @@ export interface WorkflowRun {
      * @see https://docs.temporal.io/workflows
      */
     type?: string;
-    started_at?: number;
-    closed_at?: number;
+    started_at: string | null;
+    closed_at: string | null;
     execution_duration?: number;
     run_id?: string;
     workflow_id?: string;
@@ -453,19 +453,21 @@ export interface WorkflowRun {
     topic?: string;
 }
 
+export interface PendingActivity {
+    activityId?: string;
+    activityType?: string;
+    attempt: number;
+    maximumAttempts: number;
+    lastFailure?: string;
+    lastStartedTime: string | null;
+}
+
 export interface WorkflowRunWithDetails extends WorkflowRun {
     history?: WorkflowHistory;
     memo?: {
         [key: string]: any;
     } | null;
-    pendingActivities?: {
-        activityId?: string;
-        activityType?: string;
-        attempt: number;
-        maximumAttempts: number;
-        lastFailure?: string;
-        lastStartedTime?: number;
-    }[];
+    pendingActivities?: PendingActivity[];
 }
 export interface ListWorkflowRunsResponse {
     runs: WorkflowRun[];
