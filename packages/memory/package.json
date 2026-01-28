@@ -1,7 +1,7 @@
 {
     "name": "@vertesia/memory",
     "description": "Manipulate memory images for LLMs",
-    "version": "1.0.0-dev",
+    "version": "1.0.0-dev.20260128.130000",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
