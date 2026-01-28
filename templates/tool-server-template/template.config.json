@@ -21,6 +21,9 @@
       "transform": "titleCase"
     }
   },
+  "files": [
+    "src/config.ts"
+  ],
   "removeAfterInstall": [
     "template.config.json"
   ]

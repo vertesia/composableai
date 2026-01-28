@@ -25,9 +25,21 @@ export {
     ChartCodeBlockHandler,
     MermaidCodeBlockHandler,
     ProposalCodeBlockHandler,
+    ExpandCodeBlockHandler,
     CodeBlockHandlerProvider,
     useCodeBlockContext,
     createDefaultCodeBlockHandlers,
+    isExpandLanguage,
     type CodeBlockHandlerContext,
 } from './codeBlockHandlers';
 export { MermaidDiagram } from './MermaidDiagram';
+export {
+    useArtifactContent,
+    type ArtifactContentState,
+    type UseArtifactContentOptions,
+} from './useArtifactContent';
+export {
+    ArtifactContentRenderer,
+    type ArtifactContentRendererProps,
+    type ExpandRenderType,
+} from './ArtifactContentRenderer';

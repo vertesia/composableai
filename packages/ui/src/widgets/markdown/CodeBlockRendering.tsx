@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo } from "react";
 
 export interface CodeBlockRendererProps {
     code: string;
+    language?: string;
 }
 export class CodeBlockRendererRegistry {
     components: Record<string, React.FunctionComponent<any>> = {};

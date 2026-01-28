@@ -613,5 +613,21 @@ hr {
     .logo-dark {
         display: block;
     }
+
+    .plugin-link-primary:hover {
+        background: #2563eb !important;
+    }
+
+    .plugin-link-secondary:hover {
+        background: #059669 !important;
+    }
+}
+
+.plugin-link-primary:hover {
+    background: #2563eb;
+}
+
+.plugin-link-secondary:hover {
+    background: #059669;
 }
 `;

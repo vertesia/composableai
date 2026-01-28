@@ -2,8 +2,11 @@ import React, { useMemo } from 'react';
 import type { CodeBlockRendererProps } from './CodeBlockRendering';
 import { CodeBlockPlaceholder, CodeBlockErrorBoundary } from './CodeBlockPlaceholder';
 import { AgentChart, type AgentChartSpec } from '../../features/agent/chat/AgentChart';
+import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { MermaidDiagram } from './MermaidDiagram';
 import { AskUserWidget, type AskUserWidgetProps } from '../../features/agent/chat/AskUserWidget';
+import { useArtifactContent } from './useArtifactContent';
+import { ArtifactContentRenderer, type ExpandRenderType } from './ArtifactContentRenderer';
 
 /**
  * Context for passing artifact run ID and callbacks to code block handlers
@@ -31,6 +34,72 @@ export function CodeBlockHandlerProvider({
 
 export function useCodeBlockContext() {
     return React.useContext(CodeBlockContext);
+}
+
+/**
+ * Check if JSON parsing failed due to incomplete content (streaming)
+ * vs actually invalid JSON structure
+ */
+function isIncompleteJson(code: string): boolean {
+    const trimmed = code.trim();
+
+    // Empty or very short content is likely incomplete
+    if (trimmed.length < 2) return true;
+
+    // Must start with { for a valid JSON object
+    if (!trimmed.startsWith('{')) return false;
+
+    // Try to parse - if it succeeds, it's not incomplete
+    try {
+        JSON.parse(trimmed);
+        return false; // Valid JSON
+    } catch (e) {
+        const message = e instanceof Error ? e.message : '';
+
+        // Common indicators of incomplete JSON during streaming
+        const incompleteIndicators = [
+            'unexpected end',
+            'unterminated string',
+            'expected',
+            'unexpected token',
+        ];
+
+        const lowerMessage = message.toLowerCase();
+        if (incompleteIndicators.some(ind => lowerMessage.includes(ind))) {
+            // Additional check: count brackets to see if they're unbalanced
+            let braceCount = 0;
+            let bracketCount = 0;
+            let inString = false;
+            let escaped = false;
+
+            for (const char of trimmed) {
+                if (escaped) {
+                    escaped = false;
+                    continue;
+                }
+                if (char === '\\') {
+                    escaped = true;
+                    continue;
+                }
+                if (char === '"') {
+                    inString = !inString;
+                    continue;
+                }
+                if (!inString) {
+                    if (char === '{') braceCount++;
+                    else if (char === '}') braceCount--;
+                    else if (char === '[') bracketCount++;
+                    else if (char === ']') bracketCount--;
+                }
+            }
+
+            // If brackets are unbalanced or we're in an unclosed string, it's incomplete
+            return braceCount > 0 || bracketCount > 0 || inString;
+        }
+
+        // For other parse errors, consider it invalid rather than incomplete
+        return false;
+    }
 }
 
 /**
@@ -80,30 +149,94 @@ function detectChartLibrary(
 }
 
 /**
+ * Vega-Lite code block handler
+ * Always renders with VegaLiteChart directly - no routing through AgentChart
+ */
+export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
+    const { artifactRunId } = useCodeBlockContext();
+
+    // Check if JSON is incomplete (streaming in progress)
+    const incomplete = useMemo(() => isIncompleteJson(code), [code]);
+
+    const chartSpec = useMemo(() => {
+        if (incomplete) return null;
+        const spec = parseChartJson(code);
+        if (!spec) return null;
+
+        // Wrap as VegaLiteChartSpec format
+        return { library: 'vega-lite' as const, spec };
+    }, [code, incomplete]);
+
+    // Show loading placeholder for incomplete JSON (streaming)
+    if (incomplete) {
+        return (
+            <CodeBlockPlaceholder
+                type="chart"
+                message="Loading chart..."
+            />
+        );
+    }
+
+    if (!chartSpec) {
+        return (
+            <CodeBlockPlaceholder
+                type="chart"
+                error="Invalid Vega-Lite specification"
+            />
+        );
+    }
+
+    // Render VegaLiteChart directly - bypass AgentChart routing
+    return (
+        <CodeBlockErrorBoundary type="chart" fallbackCode={code}>
+            <VegaLiteChart spec={chartSpec} artifactRunId={artifactRunId} />
+        </CodeBlockErrorBoundary>
+    );
+}
+
+/**
  * Chart code block handler
  * Supports both Vega-Lite and Recharts specifications
+ * Routes directly to the appropriate chart component based on detected library
  */
 export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const { artifactRunId } = useCodeBlockContext();
 
-    const chartSpec = useMemo(() => {
+    // Check if JSON is incomplete (streaming in progress)
+    const incomplete = useMemo(() => isIncompleteJson(code), [code]);
+
+    const { chartSpec, isVegaLite } = useMemo(() => {
+        if (incomplete) return { chartSpec: null, isVegaLite: false };
+
         const spec = parseChartJson(code);
-        if (!spec) return null;
+        if (!spec) return { chartSpec: null, isVegaLite: false };
 
         const library = detectChartLibrary(spec);
-        if (!library) return null;
+        if (!library) return { chartSpec: null, isVegaLite: false };
 
-        // Wrap native Vega-Lite spec (with $schema) in expected format
-        if (
-            library === 'vega-lite' &&
-            typeof spec.$schema === 'string' &&
-            spec.library !== 'vega-lite'
-        ) {
-            return { library: 'vega-lite' as const, spec };
+        // Vega-Lite spec - wrap in expected format
+        if (library === 'vega-lite') {
+            // If already wrapped (has library: 'vega-lite' and spec property), use as-is
+            if (spec.library === 'vega-lite' && 'spec' in spec) {
+                return { chartSpec: spec, isVegaLite: true };
+            }
+            // Native Vega-Lite spec - wrap it
+            return { chartSpec: { library: 'vega-lite' as const, spec }, isVegaLite: true };
         }
 
-        return spec;
-    }, [code]);
+        // Recharts spec
+        return { chartSpec: spec, isVegaLite: false };
+    }, [code, incomplete]);
+
+    // Show loading placeholder for incomplete JSON (streaming)
+    if (incomplete) {
+        return (
+            <CodeBlockPlaceholder
+                type="chart"
+                message="Loading chart..."
+            />
+        );
+    }
 
     if (!chartSpec) {
         return (
@@ -111,6 +244,15 @@ export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
                 type="chart"
                 error="Invalid chart specification"
             />
+        );
+    }
+
+    // Route directly to the appropriate chart component
+    if (isVegaLite) {
+        return (
+            <CodeBlockErrorBoundary type="chart" fallbackCode={code}>
+                <VegaLiteChart spec={chartSpec as any} artifactRunId={artifactRunId} />
+            </CodeBlockErrorBoundary>
         );
     }
 
@@ -149,7 +291,12 @@ export function MermaidCodeBlockHandler({ code }: CodeBlockRendererProps) {
 export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const { onProposalSelect, onProposalSubmit } = useCodeBlockContext();
 
+    // Check if JSON is incomplete (streaming in progress)
+    const incomplete = useMemo(() => isIncompleteJson(code), [code]);
+
     const widgetProps = useMemo((): AskUserWidgetProps | null => {
+        if (incomplete) return null;
+
         try {
             const raw = code.trim();
             const spec = JSON.parse(raw);
@@ -182,7 +329,17 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
         } catch {
             return null;
         }
-    }, [code, onProposalSelect, onProposalSubmit]);
+    }, [code, onProposalSelect, onProposalSubmit, incomplete]);
+
+    // Show loading placeholder for incomplete JSON (streaming)
+    if (incomplete) {
+        return (
+            <CodeBlockPlaceholder
+                type="proposal"
+                message="Loading options..."
+            />
+        );
+    }
 
     if (!widgetProps) {
         return (
@@ -198,6 +355,96 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
             <AskUserWidget {...widgetProps} />
         </CodeBlockErrorBoundary>
     );
+}
+
+/**
+ * Expand code block handler - fetches artifact and renders content inline.
+ *
+ * Usage: ```expand:chart, ```expand:table, ```expand:markdown, ```expand:fusion-fragment, etc.
+ * The type after colon specifies the renderer.
+ *
+ * @example
+ * ```expand:chart
+ * direct/chart_abc123.json
+ * ```
+ */
+export function ExpandCodeBlockHandler({ code, language }: CodeBlockRendererProps) {
+    const { artifactRunId } = useCodeBlockContext();
+    const artifactPath = code.trim();
+
+    // Extract render type from language (e.g., "expand:chart" → "chart")
+    const renderType: ExpandRenderType = useMemo(() => {
+        if (!language?.includes(':')) {
+            return 'auto';
+        }
+        const type = language.split(':')[1] as ExpandRenderType;
+        // Validate known types
+        const validTypes: ExpandRenderType[] = [
+            'chart', 'vega-lite', 'table', 'markdown',
+            'fusion-fragment', 'code', 'image', 'auto'
+        ];
+        return validTypes.includes(type) ? type : 'auto';
+    }, [language]);
+
+    // Fetch artifact content from GCS
+    const { data, isLoading, error, contentType } = useArtifactContent({
+        runId: artifactRunId,
+        path: artifactPath,
+    });
+
+    if (!artifactRunId) {
+        return (
+            <CodeBlockPlaceholder
+                type="expand"
+                error="No artifact run ID available"
+            />
+        );
+    }
+
+    if (isLoading) {
+        return (
+            <CodeBlockPlaceholder
+                type="expand"
+                message={`Loading ${artifactPath}...`}
+            />
+        );
+    }
+
+    if (error) {
+        return (
+            <CodeBlockPlaceholder
+                type="expand"
+                error={`Failed to load artifact: ${error}`}
+            />
+        );
+    }
+
+    if (data === undefined) {
+        return (
+            <CodeBlockPlaceholder
+                type="expand"
+                error="No content found in artifact"
+            />
+        );
+    }
+
+    // Render with explicit type
+    return (
+        <ArtifactContentRenderer
+            content={data}
+            renderType={renderType}
+            path={artifactPath}
+            runId={artifactRunId}
+            contentType={contentType}
+        />
+    );
+}
+
+/**
+ * Check if a language string is an expand:* pattern
+ */
+export function isExpandLanguage(language: string | undefined): boolean {
+    return language?.startsWith('expand') ?? false;
 }
 
 /**
@@ -220,9 +467,11 @@ export function createDefaultCodeBlockHandlers(): Record<
     React.FunctionComponent<CodeBlockRendererProps>
 > {
     return {
-        // Chart handlers
+        // Chart handler for generic chart code blocks (auto-detects library)
         chart: ChartCodeBlockHandler,
-        'vega-lite': ChartCodeBlockHandler,
+        // Vega-Lite handlers - always treat as Vega-Lite
+        'vega-lite': VegaLiteCodeBlockHandler,
+        'vegalite': VegaLiteCodeBlockHandler,
 
         // Mermaid handler
         mermaid: MermaidCodeBlockHandler,

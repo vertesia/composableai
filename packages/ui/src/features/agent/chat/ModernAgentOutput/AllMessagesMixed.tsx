@@ -34,6 +34,8 @@ const isSystemMetadataMessage = (message: AgentMessage): boolean => {
 };
 
 // Error boundary to catch and isolate errors in individual message components
+// Note: Markdown parsing errors are handled internally by MarkdownRenderer,
+// so this mainly catches other component errors (e.g., artifact loading, charts)
 class MessageErrorBoundary extends Component<
     { children: ReactNode },
     { hasError: boolean; error?: Error }
@@ -48,10 +50,24 @@ class MessageErrorBoundary extends Component<
         return { hasError: true, error };
     }
 
+    componentDidUpdate(prevProps: { children: ReactNode }) {
+        // Auto-reset error state when children change
+        // This allows recovery from transient errors during streaming
+        if (this.state.hasError && prevProps.children !== this.props.children) {
+            this.setState({ hasError: false, error: undefined });
+        }
+    }
+
     render() {
-        // Silent fail - just don't render the broken message
         if (this.state.hasError) {
-            return null;
+            return (
+                <div className="border-l-4 border-l-destructive bg-destructive/10 px-4 py-2 my-2 rounded-r">
+                    <p className="text-sm text-destructive font-medium">Failed to render message</p>
+                    <p className="text-xs text-muted mt-1 truncate">
+                        {this.state.error?.message || 'Unknown error'}
+                    </p>
+                </div>
+            );
         }
         return this.props.children;
     }
@@ -308,9 +324,81 @@ function AllMessagesMixedComponent({
     return (
         <div
             ref={containerRef}
-            className="flex-1 min-h-0 h-full overflow-y-auto overflow-x-hidden px-4 sm:px-2 lg:px-4 flex flex-col relative"
+            tabIndex={0}
+            className="flex-1 min-h-0 h-full w-full max-w-full overflow-y-auto overflow-x-hidden px-2 sm:px-3 lg:px-4 flex flex-col relative focus:outline-none"
             data-testid="all-messages-mixed"
         >
+            {/* Global styles for vprose markdown content */}
+            <style>{`
+                /* Better vertical rhythm for markdown */
+                .vprose > * + * {
+                    margin-top: 0.875rem;
+                }
+                .vprose > h1 + *,
+                .vprose > h2 + *,
+                .vprose > h3 + * {
+                    margin-top: 0.5rem;
+                }
+                /* Tables need more separation and better styling */
+                .vprose table {
+                    margin-top: 1.25rem;
+                    margin-bottom: 1.25rem;
+                    border-collapse: collapse;
+                    width: 100%;
+                }
+                .vprose th,
+                .vprose td {
+                    padding: 0.625rem 0.875rem;
+                    border: 1px solid var(--gray-6, #e5e7eb);
+                    text-align: left;
+                }
+                .vprose thead th {
+                    background-color: var(--gray-3, #f3f4f6);
+                    font-weight: 600;
+                    color: var(--gray-11, #6b7280);
+                    font-size: 0.75rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                }
+                .vprose tbody tr:hover {
+                    background-color: var(--gray-2, #f9fafb);
+                }
+                /* Dark mode table styles */
+                .dark .vprose th,
+                .dark .vprose td {
+                    border-color: var(--gray-7, #374151);
+                }
+                .dark .vprose thead th {
+                    background-color: var(--gray-4, #1f2937);
+                    color: var(--gray-11, #9ca3af);
+                }
+                .dark .vprose tbody tr:hover {
+                    background-color: var(--gray-3, #111827);
+                }
+                /* Horizontal rules as section dividers */
+                .vprose hr {
+                    margin-top: 1.5rem;
+                    margin-bottom: 1.5rem;
+                    border-color: var(--gray-5, #d1d5db);
+                }
+                /* Better blockquote styling */
+                .vprose blockquote {
+                    margin-top: 1.25rem;
+                    margin-bottom: 1.25rem;
+                    padding-left: 1rem;
+                    border-left-width: 3px;
+                    border-left-color: var(--gray-6, #d1d5db);
+                    color: var(--gray-11, #6b7280);
+                }
+                /* Code blocks */
+                .vprose pre {
+                    margin-top: 1rem;
+                    margin-bottom: 1rem;
+                    padding: 1rem;
+                    border-radius: 0.5rem;
+                    overflow-x: auto;
+                }
+            `}</style>
 
             {/* Workstream tabs with completion indicators */}
             <div className="sticky top-0 z-10">
@@ -332,7 +420,7 @@ function AllMessagesMixedComponent({
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col justify-start pb-4 space-y-2">
+                <div className="flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full">
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
                         // Details view - show ALL messages with streaming interleaved
@@ -359,16 +447,15 @@ function AllMessagesMixedComponent({
                                         </MessageErrorBoundary>
                                     );
                                 } else if (group.type === 'streaming') {
-                                    // Render streaming message with reveal animation
+                                    // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
-                                        <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`}>
-                                            <StreamingMessage
-                                                text={group.text}
-                                                workstreamId={group.workstreamId}
-                                                isComplete={group.isComplete}
-                                                timestamp={group.startTimestamp}
-                                            />
-                                        </MessageErrorBoundary>
+                                        <StreamingMessage
+                                            key={`streaming-${group.streamingId}-${groupIndex}`}
+                                            text={group.text}
+                                            workstreamId={group.workstreamId}
+                                            isComplete={group.isComplete}
+                                            timestamp={group.startTimestamp}
+                                        />
                                     );
                                 } else {
                                     // Render single message
@@ -401,16 +488,15 @@ function AllMessagesMixedComponent({
                                     );
                                 }
                             })}
-                            {/* Incomplete streaming - uses StreamingMessage for reveal animation */}
+                            {/* Incomplete streaming - no error boundary to avoid interrupting streaming */}
                             {incompleteStreaming.map(({ id, data }) => (
-                                <MessageErrorBoundary key={`streaming-incomplete-${id}`}>
-                                    <StreamingMessage
-                                        text={data.text}
-                                        workstreamId={data.workstreamId}
-                                        isComplete={false}
-                                        timestamp={data.startTimestamp}
-                                    />
-                                </MessageErrorBoundary>
+                                <StreamingMessage
+                                    key={`streaming-incomplete-${id}`}
+                                    text={data.text}
+                                    workstreamId={data.workstreamId}
+                                    isComplete={false}
+                                    timestamp={data.startTimestamp}
+                                />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && incompleteStreaming.length === 0 && (
@@ -446,16 +532,15 @@ function AllMessagesMixedComponent({
                                         </MessageErrorBoundary>
                                     );
                                 } else if (group.type === 'streaming') {
-                                    // Render streaming message with reveal animation
+                                    // Render streaming message - no error boundary to avoid interrupting streaming
                                     return (
-                                        <MessageErrorBoundary key={`streaming-${group.streamingId}-${groupIndex}`}>
-                                            <StreamingMessage
-                                                text={group.text}
-                                                workstreamId={group.workstreamId}
-                                                isComplete={group.isComplete}
-                                                timestamp={group.startTimestamp}
-                                            />
-                                        </MessageErrorBoundary>
+                                        <StreamingMessage
+                                            key={`streaming-${group.streamingId}-${groupIndex}`}
+                                            text={group.text}
+                                            workstreamId={group.workstreamId}
+                                            isComplete={group.isComplete}
+                                            timestamp={group.startTimestamp}
+                                        />
                                     );
                                 } else {
                                     // Render single message
@@ -491,25 +576,23 @@ function AllMessagesMixedComponent({
                             })}
                             {/* Recent thinking messages - displayed with streaming reveal */}
                             {recentThinking.map((thinking, idx) => (
-                                <MessageErrorBoundary key={`thinking-${thinking.timestamp}-${idx}`}>
-                                    <StreamingMessage
-                                        text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
-                                        workstreamId={getWorkstreamId(thinking)}
-                                        isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
-                                        timestamp={thinking.timestamp}
-                                    />
-                                </MessageErrorBoundary>
+                                <StreamingMessage
+                                    key={`thinking-${thinking.timestamp}-${idx}`}
+                                    text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
+                                    workstreamId={getWorkstreamId(thinking)}
+                                    isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
+                                    timestamp={thinking.timestamp}
+                                />
                             ))}
-                            {/* Incomplete streaming - uses StreamingMessage for reveal animation */}
+                            {/* Incomplete streaming - no error boundary to avoid interrupting streaming */}
                             {incompleteStreaming.map(({ id, data }) => (
-                                <MessageErrorBoundary key={`streaming-incomplete-${id}`}>
-                                    <StreamingMessage
-                                        text={data.text}
-                                        workstreamId={data.workstreamId}
-                                        isComplete={false}
-                                        timestamp={data.startTimestamp}
-                                    />
-                                </MessageErrorBoundary>
+                                <StreamingMessage
+                                    key={`streaming-incomplete-${id}`}
+                                    text={data.text}
+                                    workstreamId={data.workstreamId}
+                                    isComplete={false}
+                                    timestamp={data.startTimestamp}
+                                />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (

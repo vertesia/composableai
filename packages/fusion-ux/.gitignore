@@ -1,0 +1,9 @@
+# Build output
+lib/
+*.tsbuildinfo
+
+# Test snapshots (generated, for visual verification only)
+test/__snapshots__/
+
+# Node
+node_modules/

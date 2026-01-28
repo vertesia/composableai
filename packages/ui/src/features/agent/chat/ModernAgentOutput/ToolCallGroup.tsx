@@ -185,7 +185,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {/* Tool name badge on the right */}
                     {!isExpanded && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
                             {toolName}
                         </span>
                     )}
@@ -216,7 +216,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
                 <div className="px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30">
                     {/* Tool name badge shown when expanded */}
                     <div className="mb-2">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium">
                             {toolName}
                         </span>
                     </div>
@@ -589,7 +589,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                                     </div>
                                     {/* Tool name badge on the right */}
                                     {!isItemExpanded && (
-                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground flex-shrink-0">
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium flex-shrink-0">
                                             {toolName}
                                         </span>
                                     )}

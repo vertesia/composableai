@@ -61,5 +61,9 @@ export interface ToolServerConfig {
      * Disable HTML pages (default: false)
      */
     disableHtml?: boolean;
+    /**
+     * Hide UI app links on the index page (default: false)
+     */
+    hideUILinks?: boolean;
 }
 
