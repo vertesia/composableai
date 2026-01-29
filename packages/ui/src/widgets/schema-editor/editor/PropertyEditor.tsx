@@ -1,7 +1,7 @@
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 
 import { AlignLeft, Settings2 } from 'lucide-react';
-import { Button, VModal, ModalBody, ModalFooter, VModalTitle, Styles, VSelectBox } from '@vertesia/ui/core';
+import { Button, VModal, VModalBody, VModalFooter, VModalTitle, Styles, VSelectBox } from '@vertesia/ui/core';
 
 import { TypeNames } from '../type-signature.js';
 import { DataEditorProps } from './Editable.js';
@@ -160,12 +160,12 @@ function EditDescriptionModalForm({ value, onSave }: EditDescriptionModalFormPro
     }, [ref.current]);
     return (
         <>
-            <ModalBody className="h-max">
+            <VModalBody className="h-max">
                 <textarea ref={ref} className="dark:bg-gray-800 w-full h-full dark:text-white" value={currentValue} onChange={(e) => setCurrentValue(e.target.value)} />
-            </ModalBody>
-            <ModalFooter>
+            </VModalBody>
+            <VModalFooter>
                 <Button onClick={() => onSave(currentValue)}>Save Changes</Button>
-            </ModalFooter>
+            </VModalFooter>
         </>
     )
 }
