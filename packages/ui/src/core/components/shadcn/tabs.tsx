@@ -1,9 +1,18 @@
 import * as React from "react";
+import { ReactNode } from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "../libs/utils";
-import { Tab, TabsContext as _TabContext } from '../tabs/TabsContext.js';
 import { VSelectBox } from "./selectBox";
+
+export interface Tab {
+    name: string;
+    current?: boolean;
+    href?: string;
+    label: ReactNode;
+    content: ReactNode;
+    disabled?: boolean;
+}
 
 const TabsContext = React.createContext<{
   size?: number;
@@ -36,7 +45,7 @@ interface TabsProps {
   updateHash?: boolean;
 }
 
-const VTabs = ({
+const Tabs = ({
   tabs,
   defaultValue,
   current,
@@ -135,7 +144,7 @@ const VTabs = ({
   );
 };
 
-const VTabsBar = ({ className }: { className?: string }) => {
+const TabsBar = ({ className }: { className?: string }) => {
   const { tabs, size, current, setTab, responsive, variant, updateHash } = React.useContext(TabsContext);
 
   const fullWidth = size !== 0;
@@ -194,7 +203,7 @@ const VTabsBar = ({ className }: { className?: string }) => {
   );
 };
 
-const VTabsPanel = ({ className }: { className?: string }) => {
+const TabsPanel = ({ className }: { className?: string }) => {
   const { tabs } = React.useContext(TabsContext);
 
   if (!tabs) return null;
@@ -293,4 +302,4 @@ const TabsContent = React.forwardRef<
 ));
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
-export { VTabs, VTabsBar, VTabsPanel, TabsList, TabsTrigger, TabsContent };
+export { Tabs, TabsBar, TabsPanel, TabsList, TabsTrigger, TabsContent };

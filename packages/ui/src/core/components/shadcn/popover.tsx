@@ -3,7 +3,7 @@ import * as PopoverPrimitive from "@radix-ui/react-popover";
 
 import { cn } from "../libs/utils"
 import { JSX } from "react";
-import { useIsInModal } from "./dialog";
+import { useIsInModal } from "./modal/dialog";
 import { usePortalContainer } from "../../hooks/PortalContainerProvider";
 
 export interface PopoverContextValue {

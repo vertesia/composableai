@@ -1,4 +1,4 @@
-import { Button, DialogDescription, Heading, Portal, useToast, VModal, VModalBody, VModalFooter, VModalTitle, VTabs, VTabsBar, VTabsPanel } from "@vertesia/ui/core";
+import { Button, DialogDescription, Heading, Portal, useToast, VModal, VModalBody, VModalFooter, VModalTitle, Tabs, TabsBar, TabsPanel } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
 import { CreateCollectionForm, SelectCollection } from "../../../collections";
@@ -129,9 +129,9 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
     ];
 
     return (
-        <VTabs defaultValue="select" tabs={tabs} fullWidth>
-            <VTabsBar />
-            <VTabsPanel />
-        </VTabs>
+        <Tabs defaultValue="select" tabs={tabs} fullWidth>
+            <TabsBar />
+            <TabsPanel />
+        </Tabs>
     )
 }

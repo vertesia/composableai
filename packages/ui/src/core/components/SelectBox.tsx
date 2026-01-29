@@ -2,7 +2,7 @@ import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headless
 import { X, Check, ChevronsUpDownIcon } from "lucide-react";
 import clsx from "clsx";
 import { ComponentType, KeyboardEvent, ReactNode, SyntheticEvent, useState, useEffect, useRef } from "react";
-import { Button } from "./Button";
+import { Button } from "./shadcn/button";
 import { Center } from "./Center";
 
 type OnChangeClearableSelectFn<T> = (option: T | undefined) => void;

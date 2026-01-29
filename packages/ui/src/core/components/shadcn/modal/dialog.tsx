@@ -1,12 +1,12 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { cn } from "../libs/utils";
+import { cn } from "../../libs/utils";
 
 import { X } from "lucide-react";
-import { Button } from "./button";
-import { VisuallyHidden } from "../libs/visuallyHidden";
+import { Button } from "../button";
+import { VisuallyHidden } from "../../libs/visuallyHidden";
 import { createContext, useContext } from "react";
-import { usePortalContainer } from "../../hooks/PortalContainerProvider";
+import { usePortalContainer } from "../../../hooks/PortalContainerProvider";
 
 interface ModalProps {
     children: React.ReactNode | React.ReactNode[];

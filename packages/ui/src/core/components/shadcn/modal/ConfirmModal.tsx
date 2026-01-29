@@ -1,7 +1,7 @@
 import { TriangleAlert } from "lucide-react"
 import React, { useRef } from "react"
-import { VModal, VModalTitle, VModalFooter } from "./shadcn"
-import { Button } from "./shadcn/button"
+import { VModal, VModalTitle, VModalFooter } from "./dialog"
+import { Button } from "../button"
 
 interface ConfirmModalProps {
     title: string
