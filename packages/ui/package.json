@@ -106,30 +106,6 @@
     "./router": {
       "types": "./lib/types/router/index.d.ts",
       "default": "./lib/esm/router/index.js"
-=======
-    "name": "@vertesia/ui",
-    "version": "0.81.1",
-    "description": "Vertesia UI components and and hooks",
-    "type": "module",
-    "main": "./lib/index.js",
-    "files": [
-        "lib",
-        "src",
-        "tsconfig.dist.json"
-    ],
-    "license": "Apache-2.0",
-    "homepage": "https://docs.vertesiahq.com",
-    "keywords": [
-        "vertesia",
-        "UI",
-        "react",
-        "components",
-        "hooks"
-    ],
-    "scripts": {
-        "build": "pnpm lint && pnpm exec rimraf ./lib && tsc -b && pnpm exec rollup -c",
-        "lint": "eslint \"src/**/*.{ts,tsx}\"",
-        "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix"
     },
     "./env": {
       "types": "./lib/types/env/index.d.ts",
