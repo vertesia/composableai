@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { VSelectBox } from '@vertesia/ui/core';
-import { ManagedObjectBase, Node } from './ManagedObject.js';
-import { PropertySchema, ArrayPropertySchema } from './schema.js';
+import { useState } from "react";
+import { VSelectBox } from "@vertesia/ui/core";
+import { ManagedObjectBase, Node } from "./ManagedObject.js";
+import { PropertySchema, ArrayPropertySchema } from "./schema.js";
 
 interface EnumInputProps {
     object: Node;

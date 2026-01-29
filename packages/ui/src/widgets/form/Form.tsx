@@ -57,7 +57,7 @@ function renderProperty(prop: Node) {
     if (prop.isList) {
         const listProp = prop as ManagedListProperty;
         // Check if this is an enum array - render as multi-select instead of list
-        if (listProp.schema.enum && Array.isArray(listProp.schema.enum)) {
+        if (listProp.schema.enum?.length) {
             return <EnumArrayField key={prop.name} object={listProp} />
         }
         return <ListField key={prop.name} object={listProp} />
