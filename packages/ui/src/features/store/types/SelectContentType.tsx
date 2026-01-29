@@ -1,5 +1,5 @@
 import { ContentObjectTypeItem } from "@vertesia/common";
-import { VSelectBox } from "@vertesia/ui/core";
+import { SelectBox } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
 
@@ -56,7 +56,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
     if (multiple) {
         return (
             <div className='flex flex-col gap-4 content-between'>
-                <VSelectBox<ContentObjectTypeItem>
+                <SelectBox<ContentObjectTypeItem>
                     options={session.typeRegistry?.types || []}
                     value={selectedTypes}
                     onChange={_onChangeMultiple}
@@ -73,7 +73,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
 
     return (
         <div className='flex flex-col gap-4 content-between'>
-            <VSelectBox<ContentObjectTypeItem>
+            <SelectBox<ContentObjectTypeItem>
                 options={session.typeRegistry?.types || []}
                 value={selectedType}
                 onChange={_onChange}
