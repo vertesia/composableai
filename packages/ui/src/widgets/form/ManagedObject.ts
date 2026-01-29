@@ -10,6 +10,10 @@ function getInputType(_name: string, schema: PropertySchema) {
     if (schema.editor) {
         return schema.editor;
     }
+    // Check for enum constraint
+    if (schema.enum && Array.isArray(schema.enum) && schema.enum.length > 0) {
+        return 'enum';
+    }
     // Check format as fallback (e.g., "document", "media", "date", etc.)
     if (schema.schema.format) {
         return schema.schema.format;

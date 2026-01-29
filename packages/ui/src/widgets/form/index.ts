@@ -1,3 +1,4 @@
+export * from "./EnumInput.js";
 export * from "./Form.js";
 export * from "./FormContext.js";
 export * from "./ManagedObject.js";

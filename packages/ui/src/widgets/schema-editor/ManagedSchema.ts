@@ -11,6 +11,7 @@ export interface NodeUpdate {
     isRequired?: boolean,
     editor?: string | null; // use null to force remove editor
     description?: string;
+    enumValues?: string[];
 }
 
 interface SchemaLoader {
@@ -133,6 +134,21 @@ export class SchemaNode {
 
     set description(value: string | undefined) {
         this.schema.description = value;
+    }
+
+    get enumValues(): string[] | undefined {
+        if (this.type.isArray && this.schema.items && !Array.isArray(this.schema.items)) {
+            return (this.schema.items as JSONSchema).enum as string[] | undefined;
+        }
+        return this.schema.enum as string[] | undefined;
+    }
+
+    set enumValues(values: string[] | undefined) {
+        if (this.type.isArray && this.schema.items && !Array.isArray(this.schema.items)) {
+            (this.schema.items as JSONSchema).enum = values;
+        } else {
+            this.schema.enum = values;
+        }
     }
 
     get isParent() {
@@ -264,7 +280,7 @@ export class SchemaNode {
         }
         const typeChanged = actualType !== this.schema.type;
         if (data.type) {
-            setPropertyType(this.schema, data.type)
+            setPropertyType(this.schema, data.type, data.enumValues)
             this.type = data.type;
             if (this.type.isObject) {
                 if (!this.children) {
@@ -273,6 +289,10 @@ export class SchemaNode {
             } else {
                 this.children = undefined;
             }
+            updated = true;
+        } else if (data.enumValues !== undefined && this.type.name === TypeNames.enum) {
+            // Update enum values without changing type
+            this.enumValues = data.enumValues;
             updated = true;
         }
         // update editor field
@@ -305,6 +325,8 @@ export class SchemaNode {
         }
         const type = parseTypeSignature(typeSig) as TypeSignature;
         let editor: string | null | undefined;
+        let enumValues: string[] | undefined;
+
         if (type.name === 'text') {
             type.name = TypeNames.string;
             editor = 'textarea'
@@ -314,10 +336,14 @@ export class SchemaNode {
         } else if (type.name === 'document') {
             type.name = TypeNames.any;
             editor = 'document'
+        } else if (type.name === 'enum') {
+            // Preserve existing enum values when type is already enum
+            enumValues = this.enumValues;
+            editor = null;
         } else {
             editor = null; // remove custom editor
         }
-        return { name, type, isRequired, editor };
+        return { name, type, isRequired, editor, enumValues };
     }
 
     updateFromNameAndTypeSignature(nameSig: string, typeSig: string) {

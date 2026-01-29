@@ -110,6 +110,11 @@ function PropertyTitleBar({ property, readonly }: PropertyTitleBarProps) {
 
             const update = property.getUpdateFromNameAndTypeSignature(value.name, value.type);
 
+            // Pass enum values if present
+            if (value.enumValues !== undefined) {
+                update.enumValues = value.enumValues;
+            }
+
             if (property.update({ ...update, description: value.description })) {
                 property.reloadTree();
             }
