@@ -1,5 +1,5 @@
 import { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
-import { Button, MessageBox, VModal, VModalBody, VModalFooter, VModalTitle, VSelectBox, Spinner, useToast, VTooltip } from "@vertesia/ui/core";
+import { Button, MessageBox, VModal, VModalBody, VModalFooter, VModalTitle, SelectBox, Spinner, useToast, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
@@ -567,7 +567,7 @@ export function DocumentUploadModal({
                         <Info className="size-3 ml-2" />
                     </VTooltip>
                 </label>
-                <VSelectBox
+                <SelectBox
                     options={types}
                     value={selectedType}
                     optionLabel={(type) => (type ? type.name : "Select a content type")}

@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "../libs/utils";
-import { VSelectBox } from "./selectBox";
+import { SelectBox } from "./selectBox";
 
 export interface Tab {
     name: string;
@@ -173,7 +173,7 @@ const TabsBar = ({ className }: { className?: string }) => {
     <>
       {responsive && (
         <div className="px-2 block lg:hidden">
-          <VSelectBox
+          <SelectBox
             label="Tab"
             className={(className)}
             options={tabs}

@@ -17,7 +17,6 @@ export * from "./Overlay.js";
 export * from "./popup/index.js";
 export * from "./Portal.js";
 export * from "./RadioGroup.js";
-export * from "./SelectBox.js";
 export * from "./SelectList.js";
 export * from "./SelectStack.js";
 export * from "./shadcn/index.js";

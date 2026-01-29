@@ -9,7 +9,7 @@ import { Input } from './input';
 import { Button } from '@vertesia/ui/core';
 import { VTooltip } from './tooltip';
 
-export interface VSelectBoxBaseProps<T> {
+export interface SelectBoxBaseProps<T> {
     options: T[] | undefined;
     optionLabel?: (option: T) => React.ReactNode;
     onBlur?: () => void;
@@ -32,21 +32,21 @@ export interface VSelectBoxBaseProps<T> {
     missingValueWarning?: string;
 }
 
-interface VSelectBoxSingleProps<T> extends VSelectBoxBaseProps<T> {
+interface SelectBoxSingleProps<T> extends SelectBoxBaseProps<T> {
     multiple?: false;
     value?: T;
     onChange: (option: T) => void;
 }
 
-interface VSelectBoxMultipleProps<T> extends VSelectBoxBaseProps<T> {
+interface SelectBoxMultipleProps<T> extends SelectBoxBaseProps<T> {
     multiple: true;
     value?: T[];
     onChange: (options: T[]) => void;
 }
 
-type VSelectBoxProps<T> = VSelectBoxSingleProps<T> | VSelectBoxMultipleProps<T>;
+type SelectBoxProps<T> = SelectBoxSingleProps<T> | SelectBoxMultipleProps<T>;
 
-export function VSelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false, warnOnMissingValue = true, missingValueWarning = "Value not in options list, may not be valid" }: Readonly<VSelectBoxProps<T>>) {
+export function SelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false, warnOnMissingValue = true, missingValueWarning = "Value not in options list, may not be valid" }: Readonly<SelectBoxProps<T>>) {
     const triggerRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [width, setWidth] = useState<number>(0);
