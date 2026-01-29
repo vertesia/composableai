@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { isEqual } from 'lodash-es';
 import { AlertTriangle, Check, ChevronsUpDown, SearchIcon, SquarePlus, X } from 'lucide-react';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, ReactNode } from 'react';
 
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
@@ -26,6 +26,8 @@ export interface SelectBoxBaseProps<T> {
     isClearable?: boolean;
     border?: boolean;
     inline?: boolean;
+    clearIcon?: ReactNode;
+    clearTitle?: string;
     /** Show warning when value is not in options list (default: true) */
     warnOnMissingValue?: boolean;
     /** Custom warning message when value is not in options */
@@ -46,7 +48,7 @@ interface SelectBoxMultipleProps<T> extends SelectBoxBaseProps<T> {
 
 type SelectBoxProps<T> = SelectBoxSingleProps<T> | SelectBoxMultipleProps<T>;
 
-export function SelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false, warnOnMissingValue = true, missingValueWarning = "Value not in options list, may not be valid" }: Readonly<SelectBoxProps<T>>) {
+export function SelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false, warnOnMissingValue = true, missingValueWarning = "Value not in options list, may not be valid", clearIcon, clearTitle }: Readonly<SelectBoxProps<T>>) {
     const triggerRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [width, setWidth] = useState<number>(0);
@@ -301,7 +303,7 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
                         {isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && (
                             <Button variant={"link"} size={"icon"}
                                 disabled={disabled}
-                                alt="Clear selection"
+                                alt={clearTitle || "Clear selection"}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (multiple) {
@@ -312,7 +314,7 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
                                 }}
                                 className="cursor-pointer hover:bg-muted/20 clear-button opacity-0 transition-opacity duration-200 rounded p-1"
                             >
-                                <X className="size-4" />
+                                {clearIcon ? <clearIcon /> : <X className="size-4" />}
                             </Button>
                         )}
                         {!disabled && (
