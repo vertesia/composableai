@@ -525,6 +525,7 @@ export default function MessageInput({
                         : "Enter to send • Shift+Enter for new line"}
             </div>
 
+<<<<<<< HEAD
             {/* Object Selection Modal (default) */}
             {!hideObjectLinking && (
                 <VModal
@@ -545,6 +546,19 @@ export default function MessageInput({
                 onClose: () => setIsDocSearchOpen(false),
                 onSelect: handleDocumentSelect,
             })}
+=======
+            {/* Object Selection Modal */}
+            <Modal
+                isOpen={isObjectModalOpen}
+                onClose={() => setIsObjectModalOpen(false)}
+                className='min-w-[60vw]'
+            >
+                <ModalTitle>Link Object</ModalTitle>
+                <ModalBody className="pb-6">
+                    <SelectDocument onChange={handleObjectSelect} />
+                </ModalBody>
+            </Modal>
+>>>>>>> origin/preview
         </div>
     );
 }

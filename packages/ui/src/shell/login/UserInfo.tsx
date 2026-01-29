@@ -1,5 +1,5 @@
 import { getTenantIdFromProject } from "@vertesia/common";
-import { VTabs, VTabsBar, VTabsPanel, VTooltip } from "@vertesia/ui/core";
+import { Tabs, TabsBar, TabsPanel, VTooltip } from "@vertesia/ui/core";
 import { Env } from "@vertesia/ui/env";
 import { useUserSession } from "@vertesia/ui/session";
 // Package version is now passed as prop from the consuming application
@@ -69,10 +69,10 @@ export default function InfoList() {
 
     return (
         <div className="w-full">
-            <VTabs defaultValue="user" tabs={tabs} fullWidth updateHash={false}>
-                <VTabsBar />
-                <VTabsPanel />
-            </VTabs>
+            <Tabs defaultValue="user" tabs={tabs} fullWidth updateHash={false}>
+                <TabsBar />
+                <TabsPanel />
+            </Tabs>
         </div>
     )
 }

@@ -1,4 +1,4 @@
-import { VTooltip } from "./shadcn/tooltip"
+import { VTooltip } from "./tooltip"
 import { Info } from "lucide-react"
 
 interface PanelProps {

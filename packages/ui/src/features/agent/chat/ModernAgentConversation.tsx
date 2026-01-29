@@ -1508,25 +1508,25 @@ function ModernAgentConversationInner({
                     />
                 </div>
             )}
-            <VModal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
-                <VModalTitle>Export conversation as PDF</VModalTitle>
-                <VModalBody>
+            <Modal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
+                <ModalTitle>Export conversation as PDF</ModalTitle>
+                <ModalBody>
                     <p className="mb-2">
                         This will open your browser&apos;s print dialog with the current conversation.
                     </p>
                     <p className="text-sm text-muted">
                         To save a PDF, choose &quot;Save as PDF&quot; or a similar option in the print dialog.
                     </p>
-                </VModalBody>
-                <VModalFooter align="right">
+                </ModalBody>
+                <ModalFooter align="right">
                     <Button variant="ghost" size="sm" onClick={() => setIsPdfModalOpen(false)}>
                         Cancel
                     </Button>
                     <Button size="sm" onClick={handleConfirmExportPdf}>
                         Open print dialog
                     </Button>
-                </VModalFooter>
-            </VModal>
+                </ModalFooter>
+            </Modal>
         </div>
         </ImageLightboxProvider>
         </ArtifactUrlCacheProvider>
