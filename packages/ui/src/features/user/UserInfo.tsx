@@ -1,12 +1,13 @@
-import { useUserSession } from "@vertesia/ui/session";
 import { ApiKey, PrincipalType, User, UserGroup } from "@vertesia/common";
-import { Avatar, Table, Popover, PopoverContent, PopoverTrigger, useFetch } from "@vertesia/ui/core";
-import { ReactNode } from "react";
+import { Avatar, Popover, PopoverContent, PopoverTrigger, Table, useFetch } from "@vertesia/ui/core";
+import { useUserSession } from "@vertesia/ui/session";
 import { Users } from "lucide-react";
+import { ReactNode } from "react";
 
 //TODO use a real cache
 const USER_CACHE: Record<string, Promise<User>> = {};
 const GROUP_CACHE: Record<string, Promise<UserGroup>> = {};
+const APIKEY_CACHE: Record<string, Promise<ApiKey>> = {};
 
 /**
  * Fetch the user information given a user reference.
@@ -45,6 +46,25 @@ export function useFetchGroupInfo(groupId: string) {
         }
         return group;
     }, [groupId]);
+}
+
+/**
+ * Fetch the API key information given a key ID.
+ * @param keyId
+ */
+export function useFetchApiKeyInfo(keyId: string) {
+    const { client } = useUserSession();
+
+    return useFetch(() => {
+        let apikey: Promise<ApiKey> | undefined = APIKEY_CACHE[keyId];
+        if (!apikey) {
+            apikey = client.apikeys.retrieve(keyId).then(apikey => {
+                return apikey;
+            });
+            APIKEY_CACHE[keyId] = apikey;
+        }
+        return apikey;
+    }, [keyId]);
 }
 
 function AvatarPlaceholder() {
@@ -87,6 +107,95 @@ function ServiceAccountAvatar({ accountId, showTitle = false, size = "md" }: Ser
     );
 }
 
+interface AgentAvatarProps extends InfoProps {
+    agentId: string;  // Format: accountId:projectId:timestamp
+    onBehalfOfType?: string;
+    onBehalfOfId?: string;
+}
+function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false, size = "md" }: AgentAvatarProps) {
+    // Fetch user info - must call hooks unconditionally per React rules
+    const shouldFetchUser = onBehalfOfType === 'user' && onBehalfOfId;
+    const shouldFetchApiKey = onBehalfOfType === 'apikey' && onBehalfOfId;
+
+    const userResult = useFetchUserInfo(onBehalfOfId || '');
+    const apiKeyResult = useFetchApiKeyInfo(onBehalfOfId || '');
+
+    // Only use the data if we should fetch it
+    const user = shouldFetchUser ? userResult.data : undefined;
+    const apiKey = shouldFetchApiKey ? apiKeyResult.data : undefined;
+
+    // Determine title and description
+    const title = user ? "Agent on behalf of" : apiKey ? "Agent on behalf of API key" : "Service Account";
+
+    const description = (
+        <div className="space-y-2">
+            {user && (
+                <>
+                    <div className="flex items-center gap-2">
+                        <Avatar src={user.picture} name={user.name} size="sm" />
+                        <div>
+                            <div className="font-medium">{user.name || user.email}</div>
+                            {user.email && user.name && <div className="text-xs text-muted-foreground">{user.email}</div>}
+                        </div>
+                    </div>
+                </>
+            )}
+            {apiKey && (
+                <>
+                    <div>
+                        <div className="font-medium">{apiKey.name}</div>
+                        <div className="text-xs text-muted-foreground">Key ID: {apiKey.id}</div>
+                    </div>
+                </>
+            )}
+            {!user && !apiKey && (
+                <>
+                    <div>This user is used by robots like workflow workers.</div>
+                    <div className="text-gray-800 dark:text-gray-500 text-sm">
+                        <span className="font-semibold">ID:</span> {agentId}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+
+    return (
+        <UserPopoverPanel title={title} description={description}>
+            <div className="flex items-center gap-2">
+                <div className="flex items-center -space-x-2">
+                    <Avatar
+                        src="/cloud.svg"
+                        color="bg-amber-500"
+                        className="px-[5px] text-white border-2 border-white dark:border-gray-800"
+                        size={size}
+                    />
+                    {user && (
+                        <Avatar
+                            src={user.picture}
+                            name={user.name}
+                            size={size}
+                            className="border-2 border-white dark:border-gray-800"
+                        />
+                    )}
+                    {apiKey && (
+                        <Avatar
+                            name="API"
+                            color="bg-gray-400"
+                            size={size}
+                            className="border-2 border-white dark:border-gray-800"
+                        />
+                    )}
+                </div>
+                {showTitle && (
+                    <div className="text-sm font-semibold truncate">
+                        {user ? `Agent (${user.name || user.email})` : apiKey ? `Agent (${apiKey.name})` : "Agent"}
+                    </div>
+                )}
+            </div>
+        </UserPopoverPanel>
+    );
+}
+
 interface ErrorInfoProps extends InfoProps {
     title?: string;
     error: Error | string;
@@ -115,20 +224,59 @@ export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoPr
         return <UnknownAvatar title="Unknown User" message="User information is not available." showTitle={showTitle} size={size} />
     }
 
-    const [type, id] = userRef ? userRef.split(':') : ["unknown"];
+    const parts = userRef.split(':');
+    const type = parts[0];
+
     switch (type) {
         case PrincipalType.User:
-            return <UserAvatar userId={id} showTitle={showTitle} size={size} />
+            return <UserAvatar userId={parts[1]} showTitle={showTitle} size={size} />
+
         case PrincipalType.Group:
-            return <GroupAvatar userId={id} showTitle={showTitle} size={size} />
+            return <GroupAvatar userId={parts[1]} showTitle={showTitle} size={size} />
+
         case "system":
             return <SystemAvatar showTitle={showTitle} size={size} />
+
         case PrincipalType.ServiceAccount:
-            return <ServiceAccountAvatar accountId={id} showTitle={showTitle} size={size} />
-        case PrincipalType.Agent:
-            return <ServiceAccountAvatar accountId={id} showTitle={showTitle} size={size} />
+            return <ServiceAccountAvatar accountId={parts.slice(1).join(':')} showTitle={showTitle} size={size} />
+
+        case PrincipalType.Agent: {
+            // Parse agent format: agent:accountId:projectId:timestamp[:on_behalf_type:on_behalf_id]
+            // Handle legacy formats:
+            // - agent:agent:accountId:projectId:timestamp (old bug)
+            // - agent:accountId:projectId:timestamp (fixed, no on_behalf_of)
+            // - agent:accountId:projectId:timestamp:user:userId (new format)
+
+            let agentId: string;
+            let onBehalfOfType: string | undefined;
+            let onBehalfOfId: string | undefined;
+
+            // Check for old buggy format with double "agent"
+            if (parts[1] === 'agent') {
+                // Old format: agent:agent:accountId:projectId:timestamp
+                agentId = parts.slice(2, 5).join(':');
+                // Check if there's on_behalf_of info (unlikely but handle it)
+                onBehalfOfType = parts[5];
+                onBehalfOfId = parts[6];
+            } else {
+                // New format: agent:accountId:projectId:timestamp[:type:id]
+                agentId = parts.slice(1, 4).join(':');
+                onBehalfOfType = parts[4];
+                onBehalfOfId = parts[5];
+            }
+
+            return <AgentAvatar
+                agentId={agentId}
+                onBehalfOfType={onBehalfOfType}
+                onBehalfOfId={onBehalfOfId}
+                showTitle={showTitle}
+                size={size}
+            />
+        }
+
         case PrincipalType.ApiKey:
-            return <ApiKeyAvatar keyId={id} size={size} showTitle={showTitle} />
+            return <ApiKeyAvatar keyId={parts[1]} size={size} showTitle={showTitle} />
+
         default:
             return <ErrorAvatar title="Unknown User" error={`Invalid user ref type: ${type}`} showTitle={showTitle} size={size} />
     }
