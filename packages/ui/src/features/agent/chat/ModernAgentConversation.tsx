@@ -14,7 +14,7 @@ import {
     UserInputSignal,
 } from "@vertesia/common";
 import { FusionFragmentProvider } from "@vertesia/fusion-ux";
-import { Button, MessageBox, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
+import { Button, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
 import { ImageLightboxProvider } from "./ImageLightbox";
