@@ -21,7 +21,7 @@ export function Sidebar({ children, logo, className }: SidebarProps) {
                     {logo}
                 </div>
             }
-            <div className="flex-1 min-h-0 overflow-hidden px-2">
+            <div className="flex-1 min-h-0 overflow-hidden px-0 lg:px-2">
                 <nav className="h-full flex flex-col">
                     <ul role="list" className="flex flex-col gap-y-2 overflow-y-auto h-full">
                         {children}
