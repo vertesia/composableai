@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { VSelectBox } from "@vertesia/ui/core";
+import { SelectBox } from "@vertesia/ui/core";
 import { ManagedObjectBase, Node } from "./ManagedObject.js";
 import { PropertySchema, ArrayPropertySchema } from "./schema.js";
 
@@ -10,7 +10,7 @@ interface EnumInputProps {
 }
 
 /**
- * Single-select enum input using VSelectBox
+ * Single-select enum input using SelectBox
  */
 export function EnumInput({ object, onChange, disabled }: EnumInputProps) {
     const schema = object.schema as PropertySchema;
@@ -24,7 +24,7 @@ export function EnumInput({ object, onChange, disabled }: EnumInputProps) {
     };
 
     return (
-        <VSelectBox<string>
+        <SelectBox<string>
             options={enumValues}
             value={currentValue || ''}
             onChange={handleChange}
@@ -37,7 +37,7 @@ export function EnumInput({ object, onChange, disabled }: EnumInputProps) {
 }
 
 /**
- * Multi-select enum input using VSelectBox with multiple mode
+ * Multi-select enum input using SelectBox with multiple mode
  * Used for enum[] types
  */
 export function EnumArrayInput({ object, onChange, disabled }: EnumInputProps) {
@@ -67,7 +67,7 @@ export function EnumArrayInput({ object, onChange, disabled }: EnumInputProps) {
     };
 
     return (
-        <VSelectBox<string>
+        <SelectBox<string>
             multiple
             options={enumValues}
             value={currentValue}

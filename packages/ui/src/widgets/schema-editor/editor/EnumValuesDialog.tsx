@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, KeyboardEvent } from 'react';
-import { Button, VModal, VModalBody, VModalFooter, VModalTitle, Styles } from '@vertesia/ui/core';
+import { Button, Modal, ModalBody, ModalFooter, ModalTitle, Styles } from '@vertesia/ui/core';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface EnumValuesDialogProps {
@@ -11,10 +11,10 @@ interface EnumValuesDialogProps {
 
 export function EnumValuesDialog({ isOpen, values, onClose, onSave }: EnumValuesDialogProps) {
     return (
-        <VModal isOpen={isOpen} onClose={onClose}>
-            <VModalTitle>Define Enum Values</VModalTitle>
+        <Modal isOpen={isOpen} onClose={onClose}>
+            <ModalTitle>Define Enum Values</ModalTitle>
             <EnumValuesForm values={values} onSave={onSave} onClose={onClose} />
-        </VModal>
+        </Modal>
     );
 }
 
@@ -69,7 +69,7 @@ function EnumValuesForm({ values, onSave, onClose }: EnumValuesFormProps) {
 
     return (
         <>
-            <VModalBody className="max-h-[60vh] overflow-y-auto">
+            <ModalBody className="max-h-[60vh] overflow-y-auto">
                 <div className="flex flex-col gap-2">
                     {currentValues.map((value, index) => (
                         <div key={index} className="flex items-center gap-2">
@@ -96,11 +96,11 @@ function EnumValuesForm({ values, onSave, onClose }: EnumValuesFormProps) {
                 <Button variant="secondary" size="sm" onClick={handleAddValue} className="mt-3">
                     <Plus className="size-4 mr-1" /> Add Value
                 </Button>
-            </VModalBody>
-            <VModalFooter>
+            </ModalBody>
+            <ModalFooter>
                 <Button onClick={handleSave}>Save</Button>
                 <Button variant="secondary" onClick={onClose}>Cancel</Button>
-            </VModalFooter>
+            </ModalFooter>
         </>
     );
 }
