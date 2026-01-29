@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
-import { SidePanel } from '../core/components/SidePanel.js'
+import { SidePanel } from '@vertesia/ui/core'
 // import { FullHeightLayout } from './FullHeightLayout.js'
 import { Navbar } from './Navbar.js'
 import { Sidebar } from './Sidebar.js'
