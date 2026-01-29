@@ -11,7 +11,6 @@ export * from "./FormItem.js";
 export * from "./InputList.js";
 export * from "./Link.js";
 export * from "./MenuList.js";
-export * from "./Modal.js";
 export * from "./NumberInput.js";
 export * from "./Overlay.js";
 export * from "./popup/index.js";

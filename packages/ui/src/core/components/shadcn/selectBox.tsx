@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useMemo, ReactNode } from 'react';
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
 import { Input } from './input';
-import { Button } from '@vertesia/ui/core';
+import { Button } from './button';
 import { VTooltip } from './tooltip';
 
 export interface SelectBoxBaseProps<T> {
@@ -304,7 +304,7 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
                             <Button variant={"link"} size={"icon"}
                                 disabled={disabled}
                                 alt={clearTitle || "Clear selection"}
-                                onClick={(e) => {
+                                onClick={(e: { stopPropagation: () => void; }) => {
                                     e.stopPropagation();
                                     if (multiple) {
                                         (onChange as (options: T[]) => void)([] as T[]);
@@ -314,7 +314,7 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
                                 }}
                                 className="cursor-pointer hover:bg-muted/20 clear-button opacity-0 transition-opacity duration-200 rounded p-1"
                             >
-                                {clearIcon ? <clearIcon /> : <X className="size-4" />}
+                                {clearIcon ? clearIcon : <X className="size-4" />}
                             </Button>
                         )}
                         {!disabled && (
