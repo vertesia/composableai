@@ -1,4 +1,4 @@
-import { Button, Input, Spinner, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core";
+import { Button, Input, Spinner, Modal, ModalBody, ModalTitle } from "@vertesia/ui/core";
 import { Activity, PaperclipIcon, SendIcon } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { SelectDocument } from "../../../store";
@@ -115,16 +115,16 @@ export default function MessageInput({
             </div>
 
             {/* Object Selection Modal */}
-            <VModal
+            <Modal
                 isOpen={isObjectModalOpen}
                 onClose={() => setIsObjectModalOpen(false)}
                 className='min-w-[60vw]'
             >
-                <VModalTitle>Link Object</VModalTitle>
-                <VModalBody className="pb-6">
+                <ModalTitle>Link Object</ModalTitle>
+                <ModalBody className="pb-6">
                     <SelectDocument onChange={handleObjectSelect} />
-                </VModalBody>
-            </VModal>
+                </ModalBody>
+            </Modal>
         </div>
     );
 }

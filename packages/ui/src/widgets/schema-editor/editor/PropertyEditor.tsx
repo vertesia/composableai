@@ -1,7 +1,7 @@
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 
 import { AlignLeft, Settings2 } from 'lucide-react';
-import { Button, VModal, VModalBody, VModalFooter, VModalTitle, Styles, VSelectBox } from '@vertesia/ui/core';
+import { Button, Modal, ModalBody, ModalFooter, ModalTitle, Styles, SelectBox } from '@vertesia/ui/core';
 
 import { TypeNames } from '../type-signature.js';
 import { DataEditorProps } from './Editable.js';
@@ -122,7 +122,7 @@ function PropertyTypeEditor({ value, onChange, onCancel, onSave }: DataEditorPro
         }
     }
     return (
-        <VSelectBox 
+        <SelectBox 
             className={Styles.INPUT_UNSTYLED}
             options={TYPE_OPTIONS}
             value={value || ''}
@@ -141,10 +141,10 @@ interface EditDescriptionModalProps {
 }
 function EditDescriptionModal({ value, isOpen, onClose }: EditDescriptionModalProps) {
     return (
-        <VModal isOpen={isOpen} onClose={onClose}>
-            <VModalTitle>Edit description</VModalTitle>
+        <Modal isOpen={isOpen} onClose={onClose}>
+            <ModalTitle>Edit description</ModalTitle>
             <EditDescriptionModalForm value={value} onSave={onClose} />
-        </VModal>
+        </Modal>
     )
 }
 
@@ -160,12 +160,12 @@ function EditDescriptionModalForm({ value, onSave }: EditDescriptionModalFormPro
     }, [ref.current]);
     return (
         <>
-            <VModalBody className="h-max">
+            <ModalBody className="h-max">
                 <textarea ref={ref} className="dark:bg-gray-800 w-full h-full dark:text-white" value={currentValue} onChange={(e) => setCurrentValue(e.target.value)} />
-            </VModalBody>
-            <VModalFooter>
+            </ModalBody>
+            <ModalFooter>
                 <Button onClick={() => onSave(currentValue)}>Save Changes</Button>
-            </VModalFooter>
+            </ModalFooter>
         </>
     )
 }

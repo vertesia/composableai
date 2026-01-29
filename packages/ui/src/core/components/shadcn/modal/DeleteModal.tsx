@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { ConfirmModal } from "./ConfirmModal.js";
-import { useToast } from "./toast/index.js";
+import { useToast } from "../../toast/index.js";
 
 interface DeleteModalProps {
     idToDelete?: string;

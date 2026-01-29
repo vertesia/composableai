@@ -1,12 +1,12 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { cn } from "../libs/utils";
+import { cn } from "../../libs/utils";
 
 import { X } from "lucide-react";
-import { Button } from "./button";
-import { VisuallyHidden } from "../libs/visuallyHidden";
+import { Button } from "../button";
+import { VisuallyHidden } from "../../libs/visuallyHidden";
 import { createContext, useContext } from "react";
-import { usePortalContainer } from "../../hooks/PortalContainerProvider";
+import { usePortalContainer } from "../../../hooks/PortalContainerProvider";
 
 interface ModalProps {
     children: React.ReactNode | React.ReactNode[];
@@ -28,7 +28,7 @@ export function ModalContextProvider({ children }: { children: React.ReactNode }
     return <ModalContext.Provider value={true}>{children}</ModalContext.Provider>
 }
 
-export function VModal({
+export function Modal({
     className,
     children,
     isOpen,
@@ -110,13 +110,14 @@ export function VModal({
     );
 }
 
-export const VModalTitle = ({
+export const ModalTitle = ({
     children,
     show = true,
     className,
     description,
+    showDivider = false,
     ...props
-}: React.HTMLAttributes<HTMLHeadingElement> & { show?: boolean; description?: string }) => {
+}: React.HTMLAttributes<HTMLHeadingElement> & { show?: boolean; description?: string, showDivider?: boolean }) => {
     if (!show) {
         return (
             <VisuallyHidden>
@@ -128,7 +129,11 @@ export const VModalTitle = ({
     return (
         <>
             <DialogTitle
-                className={cn("text-lg font-semibold leading-6 tracking-tight", { 'py-2': !description }, className)}
+                className={cn(
+                    showDivider ? "border-b-solid border-b border-b-1 pb-2 mb-4" : "",
+                    "text-lg font-semibold leading-6 tracking-tight", 
+                    { 'py-2': !description }, 
+                    className)}
                 {...props}
             >
                 {children}
@@ -142,7 +147,7 @@ export const VModalTitle = ({
     );
 };
 
-export const VModalBody = ({
+export const ModalBody = ({
     children,
     className,
     ...props
@@ -158,7 +163,7 @@ interface ModalFooterProps extends React.HTMLAttributes<HTMLDivElement> {
     align?: "left" | "right" | "center";
 }
 
-export const VModalFooter = ({
+export const ModalFooter = ({
     align = "right",
     children,
     className,
