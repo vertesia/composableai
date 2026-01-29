@@ -172,14 +172,15 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 search.query.limit = query.limit;
             }
             search.search().then(() => setIsReady(true));
-        } else if (query === undefined) {
-            // Only clear search if this is a user-initiated clear (not initialization)
-            // The VectorSearchWidget calls onChange(undefined) during initialization
-            if (isReady) {
-                delete search.query.vector;
-                delete search.query.full_text;
-                search.search().then(() => setIsReady(true));
-            }
+        } else {
+            // Clean up vector and full_text search when they're not present
+            // This handles both undefined query and query without vector/full_text
+            delete search.query.vector;
+            delete search.query.full_text;
+            delete search.query.weights;
+            delete search.query.score_aggregation;
+            delete search.query.dynamic_scaling;
+            search.search().then(() => setIsReady(true));
         }
     };
 
