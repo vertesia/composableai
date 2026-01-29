@@ -1,5 +1,6 @@
+import { AgentToolDefinition } from "@vertesia/common";
 import { HTTPException } from "hono/http-exception";
-import { Tool, ToolDefinitionWithDefault, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult } from "./types.js";
+import { Tool, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult } from "./types.js";
 
 /**
  * Options for filtering tool definitions
@@ -32,7 +33,7 @@ export class ToolRegistry {
      * @param options - Filtering options
      * @returns Filtered tool definitions
      */
-    getDefinitions(options?: ToolFilterOptions): ToolDefinitionWithDefault[] {
+    getDefinitions(options?: ToolFilterOptions): AgentToolDefinition[] {
         const { defaultOnly, unlockedTools = [] } = options || {};
         const unlockedSet = new Set(unlockedTools);
 
@@ -59,7 +60,7 @@ export class ToolRegistry {
      * @param unlockedTools - List of tool names that are unlocked
      * @returns Tool definitions for reserve tools
      */
-    getReserveTools(unlockedTools: string[] = []): ToolDefinitionWithDefault[] {
+    getReserveTools(unlockedTools: string[] = []): AgentToolDefinition[] {
         const unlockedSet = new Set(unlockedTools);
 
         return Object.values(this.registry)

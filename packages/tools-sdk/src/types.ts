@@ -1,6 +1,6 @@
 import type { ToolDefinition, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
-import { AuthTokenPayload, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
+import { AgentToolDefinition, AuthTokenPayload, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
 
 export type { ToolExecutionMetadata };
 
@@ -97,22 +97,6 @@ export interface Tool<ParamsT extends Record<string, any>> extends ToolDefinitio
     default?: boolean;
 }
 
-/**
- * Tool definition with optional activation control for agent exposure.
- */
-export interface ToolDefinitionWithDefault extends ToolDefinition {
-    /**
-     * Whether this tool is available by default.
-     * - true/undefined: Tool is always available to agents
-     * - false: Tool is only available when activated by a skill's related_tools
-     */
-    default?: boolean;
-    /**
-     * For skill tools (learn_*): list of related tool names that become available
-     * when this skill is called. Used for dynamic tool discovery.
-     */
-    related_tools?: string[];
-}
 
 /**
  * The interface that should be returned when requesting a collection endpoint using a GET
@@ -121,7 +105,7 @@ export interface ToolCollectionDefinition {
     title: string;
     description: string;
     src: string;
-    tools: ToolDefinitionWithDefault[];
+    tools: AgentToolDefinition[];
 }
 
 export type { ToolDefinition };

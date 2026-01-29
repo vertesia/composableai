@@ -11,11 +11,11 @@ import type {
     SkillDefinition,
     SkillExecutionResult,
     ToolCollectionDefinition,
-    ToolDefinitionWithDefault,
     ToolExecutionPayload,
     ToolExecutionResult,
 } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
+import { AgentToolDefinition } from "@vertesia/common";
 
 export interface SkillCollectionProperties extends CollectionProperties {
     /**
@@ -87,7 +87,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      * When called, they return rendered instructions.
      * Includes related_tools for dynamic tool discovery.
      */
-    getToolDefinitions(): ToolDefinitionWithDefault[] {
+    getToolDefinitions(): AgentToolDefinition[] {
         const defaultSchema: ToolDefinition['input_schema'] = {
             type: 'object',
             properties: {

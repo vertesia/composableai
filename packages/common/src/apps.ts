@@ -1,4 +1,6 @@
-import { JSONSchema } from "@llumiverse/common";
+import { JSONSchema, ToolDefinition } from "@llumiverse/common";
+import { CatalogInteractionRef } from "./interaction.js";
+import { InCodeTypeDefinition } from "./store/index.js";
 
 export interface AppUIConfig {
     /**
@@ -134,6 +136,25 @@ export function normalizeToolCollection(collection: ToolCollection): ToolCollect
     return collection;
 }
 
+
+/**
+ * Tool definition with optional activation control for agent exposure.
+ */
+export interface AgentToolDefinition extends ToolDefinition {
+    /**
+     * Whether this tool is available by default.
+     * - true/undefined: Tool is always available to agents
+     * - false: Tool is only available when activated by a skill's related_tools
+     */
+    default?: boolean;
+    /**
+     * For skill tools (learn_*): list of related tool names that become available
+     * when this skill is called. Used for dynamic tool discovery.
+     */
+    related_tools?: string[];
+}
+
+export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types';
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -166,12 +187,16 @@ export interface AppManifestData {
 
     status: "beta" | "stable" | "deprecated"
 
+    /**
+     * @deprecated use endpoint to provide the UI configuration instead
+     */
     ui?: AppUIConfig
 
     /**
      * A list of tool collections endpoints to be used by this app.
      * A tools collection endpoint is an URL which may end with a `?import` query string.
      * If the `?import` query string is used the tool will be imported as a javascript module and not executed through a POST on the collections endpoint.
+     * @deprecated Use endpoint to provide tools instead
      */
     tool_collections?: ToolCollection[]
 
@@ -180,14 +205,70 @@ export interface AppManifestData {
      * The URL must provide 2 endpoints:
      * 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[])
      * 2. GET URL/{interaction_name} - must return the full interaction definition for the specified interaction.
+     * @deprecated Use endpoint to provide interactions instead
      */
     interactions?: string;
+
+    /**
+     * A JSON chema for the app installation settings.
+     * @deprecated Use endpoint to provide settings_schema instead
+     */
+    settings_schema?: JSONSchema;
+
+    /** The following API is part of the second version of the manifest and deprectaes similar properties included directly in the manifest */
+
+    /**
+     * Describe the capabiltities of this app - which kind of contributions it provides.
+     */
+    capabilities?: AppCapabilities[];
+
+    /**
+     * The app endpoint URL
+     * This URL should return a JSON object describing the contributions provided by the app.
+     * The object shape must satisfies AppPackage interface.
+     * The endpoint must support GET method and a `scope` parameter to filter which resources are included in the returned AppPackage:
+     * The supported scope values are:
+     * - ui
+     * - tools
+     * - skills
+     * - default-tools
+     * - interactions
+     * - types
+     * - all (the default if no scope is provided)
+     *  You can also use comma-separated values to combine scopes (e.g. "ui,tools").
+     * 
+     * Example: 
+     * - ?scope=ui,tools - returns only the UI configuration
+     */
+    endpoint?: string;
+}
+export interface AppPackage {
+    /**
+     * The UI configuration of the app
+     */
+    ui?: AppUIConfig
+
+    /**
+     * A list of tools exposed by the app.
+     */
+    tools?: AgentToolDefinition[]
+
+    /**
+     * A list of interactions exposed by the app
+     */
+    interactions?: CatalogInteractionRef[];
+
+    /**
+     * A list of types.
+     */
+    types?: InCodeTypeDefinition[];
 
     /**
      * A JSON chema for the app installation settings.
      */
     settings_schema?: JSONSchema;
 }
+
 export interface AppManifest extends AppManifestData {
     id: string;
     account: string;
