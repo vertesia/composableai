@@ -10,6 +10,7 @@ import { createToolsRoute } from "./server/tools.js";
 import { ToolContext, ToolServerConfig } from "./server/types.js";
 import { ToolExecutionPayload } from "./types.js";
 import { createWidgetsRoute } from "./server/widgets.js";
+import { createPackageRoute } from "./server/app-package.js";
 
 // Schema for tool execution payload
 const ToolExecutionPayloadSchema = z.object({
@@ -98,6 +99,8 @@ export function createToolServer(config: ToolServerConfig): Hono {
         });
     });
 
+
+    createPackageRoute(app, `${prefix}/package`, config);
     createToolsRoute(app, `${prefix}/tools`, config);
     createSkillsRoute(app, `${prefix}/skills`, config);
     createWidgetsRoute(app, `${prefix}/widgets`, config);

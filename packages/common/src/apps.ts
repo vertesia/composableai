@@ -142,6 +142,10 @@ export function normalizeToolCollection(collection: ToolCollection): ToolCollect
  */
 export interface AgentToolDefinition extends ToolDefinition {
     /**
+     * The tool category if any - for UI purposes.
+     */
+    category?: string;
+    /**
      * Whether this tool is available by default.
      * - true/undefined: Tool is always available to agents
      * - false: Tool is only available when activated by a skill's related_tools
@@ -230,10 +234,9 @@ export interface AppManifestData {
      * The supported scope values are:
      * - ui
      * - tools
-     * - skills
-     * - default-tools
      * - interactions
      * - types
+     * - settings
      * - all (the default if no scope is provided)
      *  You can also use comma-separated values to combine scopes (e.g. "ui,tools").
      * 
@@ -242,6 +245,7 @@ export interface AppManifestData {
      */
     endpoint?: string;
 }
+export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'settings' | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
