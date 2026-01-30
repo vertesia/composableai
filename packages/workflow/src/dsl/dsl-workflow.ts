@@ -153,6 +153,10 @@ async function handleError(originalError: any, basePayload: BaseActivityPayload,
 }
 
 async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean) {
+    if (step.condition && !vars.match(step.condition)) {
+        log.info("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
+        return;
+    }
     const resolvedVars = vars.resolve();
     if (step.vars) {
         // copy user vars (from step definition) to the resolved vars, resolving any expressions
@@ -162,12 +166,13 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
     if (debug_mode) {
         log.debug(`Workflow vars before starting child workflow ${step.name}`, { vars: resolvedVars });
     }
+
     const handle = await startChild(step.name, {
         ...step.options,
         args: [{
             ...payload,
             workflow: step.spec,
-            vars: resolvedVars
+            vars: resolvedVars,
         }],
         memo: {
             InitiatedBy: payload.initiated_by,
@@ -186,6 +191,10 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
 }
 
 async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean) {
+    if (step.condition && !vars.match(step.condition)) {
+        log.info("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
+        return;
+    }
     const resolvedVars = vars.resolve();
     if (step.vars) {
         // copy user vars (from step definition) to the resolved vars, resolving any expressions
@@ -195,6 +204,7 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
     if (debug_mode) {
         log.debug(`Workflow vars before executing child workflow ${step.name}`, { vars: resolvedVars });
     }
+
     const result = await executeChild(step.name, {
         ...step.options,
         args: [{

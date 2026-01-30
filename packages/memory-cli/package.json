@@ -1,7 +1,7 @@
 {
     "name": "@vertesia/memory-cli",
     "description": "Vertesia memory builder CLI",
-    "version": "0.81.1",
+    "version": "1.0.0-dev.20260128.144200",
     "type": "module",
     "bin": {
         "memo": "./bin/memo.js"
@@ -31,12 +31,12 @@
     "dependencies": {
         "@vertesia/memory": "workspace:*",
         "@vertesia/memory-commands": "workspace:*",
-        "commander": "^12.1.0"
+        "commander": "^14.0.2"
     },
     "devDependencies": {
-        "@types/node": "^22.5.1",
-        "typescript": "^5.0.2",
-        "vitest": "^3.1.1"
+        "@types/node": "^22.19.2",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.16"
     },
     "repository": {
         "type": "git",

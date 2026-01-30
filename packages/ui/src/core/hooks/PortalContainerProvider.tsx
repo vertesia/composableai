@@ -3,8 +3,11 @@ import React from "react";
 const PortalContainerContext = React.createContext<HTMLElement | undefined>(undefined);
 
 function findOrCreatePortalContainer(root: ShadowRoot | Document, id = "plugin-portal-container") {
+    // Determine the actual parent element to search and append to
+    const parentElement = root instanceof Document ? root.body : root;
+
     // look only at direct children
-    for (const child of Array.from(root.children)) {
+    for (const child of Array.from(parentElement.children)) {
         if (child instanceof HTMLElement && child.id === id) {
             return child;
         }
@@ -12,7 +15,7 @@ function findOrCreatePortalContainer(root: ShadowRoot | Document, id = "plugin-p
     // not found → create
     const container = document.createElement("div");
     container.id = id;
-    root.appendChild(container);
+    parentElement.appendChild(container);
     return container;
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/plugin-builder",
-  "version": "0.81.1",
+  "version": "1.0.0-dev.20260128.144200",
   "description": "A vite plugin to build vertesia UI plugins",
   "type": "module",
   "types": "./lib/index.d.ts",
@@ -27,14 +27,14 @@
     "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
   },
   "devDependencies": {
-    "typescript": "^5.0.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@adobe/css-tools": "^4.4.1",
-    "@types/node": "^22.13.1"
+    "@types/node": "^22.19.2"
   },
   "peerDependencies": {
-    "vite": ">=4.2.0"
+    "vite": "^7.3.0"
   },
   "repository": {
     "type": "git",
