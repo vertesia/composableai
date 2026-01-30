@@ -48,7 +48,7 @@
     "cmdk": "^1.1.1",
     "dayjs": "^1.11.19",
     "debounce": "^2.2.0",
-    "fast-xml-parser": "^5.2.3",
+    "fast-xml-parser": "^5.3.4",
     "firebase": "^10.12.2",
     "framer-motion": "^12.23.12",
     "html-to-image": "^1.11.13",
