@@ -28,7 +28,7 @@
     "typescript-eslint": "^8.49.0"
   },
   "dependencies": {
-    "@aws-sdk/client-iam": "^3.948.0",
+    "@aws-sdk/client-iam": "^3.980.0",
     "@vertesia/client": "workspace:*",
     "commander": "^14.0.2",
     "dotenv": "^16.6.1",
