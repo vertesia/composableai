@@ -104,6 +104,42 @@ export interface ElasticsearchIndexStats {
 }
 
 /**
+ * Embedding configuration for a single type
+ */
+export interface EmbeddingTypeConfig {
+    environment?: string;
+    dimensions?: number;
+    model?: string;
+    provider?: string;
+    enabled?: boolean;
+}
+
+/**
+ * Detailed index configuration
+ */
+export interface IndexConfiguration {
+    enabled: boolean;
+    exists?: boolean;
+    indexName?: string;
+    aliasName?: string;
+    version?: number;
+    documentCount?: number;
+    sizeInBytes?: number;
+    embeddingDimensions?: {
+        text?: number;
+        image?: number;
+        properties?: number;
+    };
+    fieldMappings?: Record<string, unknown>;
+    projectEmbeddingsConfig?: {
+        text?: EmbeddingTypeConfig;
+        image?: EmbeddingTypeConfig;
+        properties?: EmbeddingTypeConfig;
+    };
+    createdAt?: Date | null;
+}
+
+/**
  * Result from fetching documents by IDs
  */
 export interface FetchDocumentsByIdsResult {
@@ -283,6 +319,18 @@ export class IndexingAdminApi extends ApiTopic {
     bulkDelete(objectIds: string[]): Promise<BulkDeleteResult> {
         return this.post("/bulk-delete", {
             payload: { objectIds },
+        });
+    }
+
+    /**
+     * Get detailed index configuration for the project
+     *
+     * Returns comprehensive information about the Elasticsearch index including
+     * status, embedding dimensions, field mappings, and project configuration.
+     */
+    getConfiguration(): Promise<IndexConfiguration> {
+        return this.post("/configuration", {
+            payload: {},
         });
     }
 }

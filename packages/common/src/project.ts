@@ -265,7 +265,6 @@ export const ProjectRefPopulate = "id name account";
 export interface EmbeddingsStatusResponse {
     status: string;
     embeddingRunsInProgress?: number;
-    totalRunsInProgress?: number;
     totalIndexableObjects?: number;
     embeddingsModels?: string[];
     objectsWithEmbeddings?: number;
