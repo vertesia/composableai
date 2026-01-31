@@ -2,6 +2,7 @@ export * from "./client.js";
 export * from "./CommandsApi.js";
 export * from "./DataApi.js";
 export * from "./EmailApi.js";
+export * from "./errors.js";
 export * from "./FilesApi.js";
 export * from "./IndexingAdminApi.js";
 export * from "./IndexingApi.js";

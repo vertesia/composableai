@@ -1,6 +1,6 @@
 import { EmbeddingsResult } from "@llumiverse/common";
 import { log } from "@temporalio/activity";
-import { VertesiaClient } from "@vertesia/client";
+import { VertesiaClient, ZenoClientNotFoundError } from "@vertesia/client";
 import {
     ContentObject,
     DSLActivityExecutionPayload,
@@ -94,10 +94,18 @@ export async function generateEmbeddings(
         );
     }
 
-    const document = await client.objects.retrieve(
-        objectId,
-        "+text +parts +embeddings +tokens +properties",
-    );
+    let document;
+    try {
+        document = await client.objects.retrieve(
+            objectId,
+            "+text +parts +embeddings +tokens +properties",
+        );
+    } catch (error) {
+        if (error instanceof ZenoClientNotFoundError) {
+            throw new DocumentNotFoundError(`Document not found: ${objectId}`, [objectId]);
+        }
+        throw error;
+    }
 
     if (!document) {
         throw new DocumentNotFoundError("Document not found", [objectId]);
