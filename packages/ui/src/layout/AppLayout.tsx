@@ -1,7 +1,6 @@
-import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react'
-import { X } from 'lucide-react'
 import clsx from 'clsx'
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { SidePanel } from '@vertesia/ui/core'
 // import { FullHeightLayout } from './FullHeightLayout.js'
 import { Navbar } from './Navbar.js'
 import { Sidebar } from './Sidebar.js'
@@ -66,47 +65,20 @@ export function AppLayout({ sidebarClassName, className, title, children, logo, 
 
                     <div className='flex h-full overflow-y-auto w-full'>
 
-                        <Transition show={sidebarOpen} as={Fragment}>
-                            <Dialog as="div" className="relative z-50 lg:hidden" onClose={setSidebarOpen}>
-                                {/* Backdrop layer for the semi-transparent */}
-                                <TransitionChild
-                                    as={Fragment}
-                                    enter="transition-opacity ease-linear duration-300"
-                                    enterFrom="opacity-0"
-                                    enterTo="opacity-100"
-                                    leave="transition-opacity ease-linear duration-300"
-                                    leaveFrom="opacity-100"
-                                    leaveTo="opacity-0"
-                                >
-                                    <div className="fixed inset-0 bg-gray-900/80" />
-                                </TransitionChild>
-
-                                <div className="fixed inset-0 flex">
-                                    <TransitionChild
-                                        as={Fragment}
-                                        enter="transition ease-in-out duration-300 transform"
-                                        enterFrom="-translate-x-full"
-                                        enterTo="translate-x-0"
-                                        leave="transition ease-in-out duration-300 transform"
-                                        leaveFrom="translate-x-0"
-                                        leaveTo="-translate-x-full"
-                                    >
-                                        <DialogPanel className="relative flex w-full max-w-xs flex-1">
-                                            {/* Sidebar component, swap this element with another sidebar if you like */}
-                                            <Sidebar logo={logo} className={sidebarClassName}>{sidebar}</Sidebar>
-
-                                            {/* close button */}
-                                            <div className="flex w-16 justify-center pt-5 items-start">
-                                                <button type="button" className="-m-2.5 p-2.5" onClick={() => setSidebarOpen(false)}>
-                                                    <span className="sr-only">Close sidebar</span>
-                                                    <X className="size-6 text-white" aria-hidden="true" />
-                                                </button>
-                                            </div>
-                                        </DialogPanel>
-                                    </TransitionChild>
-                                </div>
-                            </Dialog>
-                        </Transition>
+                        {/* Mobile sidebar */}
+                        <div className="lg:hidden">
+                            <SidePanel
+                                className='bg-sidebar'
+                                isOpen={sidebarOpen}
+                                onClose={() => setSidebarOpen(false)}
+                                side="left"
+                                panelWidth={288}
+                                resizable={false}
+                                backdrop={true}
+                            >
+                                <Sidebar logo={logo} className={sidebarClassName}>{sidebar}</Sidebar>
+                            </SidePanel>
+                        </div>
 
                         {/* Static sidebar for desktop */}
                         <div className={`hidden lg:block relative transition-all duration-300 ${desktopSidebarOpen ? 'w-72' : 'w-12'}`}>

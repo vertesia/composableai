@@ -1,5 +1,5 @@
 import { ProjectRef, RequireAtLeastOne } from "@vertesia/common";
-import { VSelectBox, useFetch } from "@vertesia/ui/core";
+import { SelectBox, useFetch } from "@vertesia/ui/core";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from "@vertesia/ui/session";
 import { useState } from "react";
 
@@ -47,7 +47,7 @@ function SelectProject({ initialValue, projects, onChange, placeholder = "Select
     }
     let actualValue = !value && initialValue ? projects.find(p => p.id === initialValue) : value;
     return (
-        <VSelectBox
+        <SelectBox
             by="id"
             value={actualValue}
             options={projects}
