@@ -30,8 +30,8 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@adobe/css-tools": "^4.4.1",
-    "@types/node": "^22.19.2"
+    "@adobe/css-tools": "^4.4.4",
+    "@types/node": "^22.19.7"
   },
   "peerDependencies": {
     "vite": "^7.3.0"

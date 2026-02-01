@@ -31,10 +31,10 @@
     "dependencies": {
         "@vertesia/memory": "workspace:*",
         "@vertesia/memory-commands": "workspace:*",
-        "commander": "^14.0.2"
+        "commander": "^14.0.3"
     },
     "devDependencies": {
-        "@types/node": "^22.19.2",
+        "@types/node": "^22.19.7",
         "typescript": "^5.9.3",
         "vitest": "^4.0.16"
     },
