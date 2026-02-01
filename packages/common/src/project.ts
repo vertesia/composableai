@@ -202,6 +202,16 @@ export interface ProjectConfiguration {
         query_enabled?: boolean;
     };
 
+    /**
+     * Primary language for full-text search analysis.
+     * ISO 639-1 code (e.g., 'en', 'fr', 'ja', 'de').
+     * Determines which Elasticsearch analyzer is used for the text field.
+     * Defaults to 'en' (English/standard analyzer).
+     *
+     * Changing this value requires a full reindex to take effect.
+     */
+    main_language?: string;
+
 }
 
 // export interface ProjectConfigurationEmbeddings {
