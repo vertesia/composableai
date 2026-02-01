@@ -18,6 +18,7 @@ import { TypesApi } from "./TypesApi.js";
 import { VERSION, VERSION_HEADER } from "./version.js";
 import { WorkersApi } from "./WorkersApi.js";
 import { WorkflowsApi } from "./WorkflowsApi.js";
+import { HiveMemoryApi } from "./HiveMemoryApi.js";
 
 export interface ZenoClientProps {
     serverUrl?: string;
@@ -98,4 +99,5 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     indexing = new IndexingApi(this);
     query = new QueryApi(this);
     indexingAdmin = new IndexingAdminApi(this);
+    hiveMemory = new HiveMemoryApi(this);
 }
