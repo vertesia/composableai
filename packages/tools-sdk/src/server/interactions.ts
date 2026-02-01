@@ -44,6 +44,24 @@ export function createInteractionsRoute(app: Hono, basePath: string, config: Too
         app.route(`${basePath}/${coll.name}`, createInteractionEndpoints(coll));
     }
 
+    // GET /api/interactions/:name - Direct access to interaction by name (searches all collections)
+    app.get(`${basePath}/:name`, async (c) => {
+        await authorize(c);
+        const name = c.req.param('name');
+
+        // Search across all collections for the interaction
+        for (const coll of interactions) {
+            const inter = coll.getInteractionByName(name);
+            if (inter) {
+                return c.json(inter);
+            }
+        }
+
+        throw new HTTPException(404, {
+            message: "No interaction found with name: " + name
+        });
+    });
+
 }
 
 

@@ -194,12 +194,6 @@ export interface ProjectConfiguration {
          * Defaults to true - indexing is always on when ES infrastructure is available.
          */
         enabled?: boolean;
-        /**
-         * Enable index-based search queries for this project.
-         * When enabled, search requests route to the index instead of Atlas Search.
-         * Defaults to false if not specified.
-         */
-        query_enabled?: boolean;
     };
 
     /**
@@ -293,7 +287,7 @@ export interface IndexingStatusResponse {
     infrastructureEnabled: boolean;
     /** Whether indexing is enabled for this project */
     indexingEnabled: boolean;
-    /** Whether index-based queries are enabled for this project */
+    /** @deprecated Now derived from indexingEnabled - queries automatically route to index when indexing is enabled */
     query_enabled: boolean;
     /** Index status */
     index: {
