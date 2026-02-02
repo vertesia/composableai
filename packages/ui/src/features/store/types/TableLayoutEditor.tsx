@@ -78,7 +78,7 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate }: TableLayoutEdi
 
 
     return (
-        <Panel title="Table Layout Editor" className="bg-background! h-[calc(100vh-197px)]" actions={
+        <Panel title="Table Layout Editor" className="bg-background! h-[calc(100vh-197px)]" action={
             <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>Save Changes</Button>
         }>
             <MonacoEditor
