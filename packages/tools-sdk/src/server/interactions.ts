@@ -18,7 +18,7 @@ export function createInteractionsRoute(app: Hono, basePath: string, config: Too
             for (const inter of coll.interactions) {
                 allInteractions.push({
                     type: "app",
-                    id: inter.name,
+                    id: coll.name + ":" + inter.name,
                     name: inter.name,
                     title: inter.title || inter.name,
                     description: inter.description,
@@ -55,7 +55,7 @@ function createInteractionEndpoints(coll: InteractionCollection): Hono {
     endpoint.get('/', (c: Context) => {
         return c.json(coll.interactions.map(inter => ({
             type: "app",
-            id: inter.name,
+            id: coll.name + ":" + inter.name,
             name: inter.name,
             title: inter.title || inter.name,
             description: inter.description,
@@ -72,7 +72,10 @@ function createInteractionEndpoints(coll: InteractionCollection): Hono {
                 message: "No interaction found with name: " + name
             });
         }
-        return c.json(inter);
+        return c.json({
+            ...inter,
+            id: coll.name + ":" + inter.name,
+        });
     });
 
     return endpoint;

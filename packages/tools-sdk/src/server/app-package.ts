@@ -25,7 +25,7 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
             for (const inter of coll.interactions) {
                 allInteractions.push({
                     type: "app",
-                    id: inter.name,
+                    id: coll.name + ":" + inter.name,
                     name: inter.name,
                     title: inter.title || inter.name,
                     description: inter.description,
