@@ -201,7 +201,7 @@ export interface AppManifestData {
      * A list of tool collections endpoints to be used by this app.
      * A tools collection endpoint is an URL which may end with a `?import` query string.
      * If the `?import` query string is used the tool will be imported as a javascript module and not executed through a POST on the collections endpoint.
-     * @deprecated Use endpoint to provide tools instead
+     * This feature is for advanced composition of tools. Prefer using endpoint. 
      */
     tool_collections?: ToolCollection[]
 
@@ -210,7 +210,7 @@ export interface AppManifestData {
      * The URL must provide 2 endpoints:
      * 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[])
      * 2. GET URL/{interaction_name} - must return the full interaction definition for the specified interaction.
-     * @deprecated Use endpoint to provide interactions instead
+     * This feature is for advanced composition of interactions. Prefer using endpoint. 
      */
     interactions?: string;
 
