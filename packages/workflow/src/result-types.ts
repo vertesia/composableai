@@ -6,9 +6,9 @@
  */
 export interface TextExtractionResult {
     objectId?: string;
-    file?: {
+    file?: {   
         source_url: string;
-        result_path?: string;
+        result_url?: string;
     }
     status: TextExtractionStatus;
     hasText: boolean;
