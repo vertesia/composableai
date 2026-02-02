@@ -1,4 +1,4 @@
-import { Button, Spinner, VModal, VModalBody, VModalTitle, VTooltip } from "@vertesia/ui/core";
+import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip } from "@vertesia/ui/core";
 import { Activity, CheckIcon, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
@@ -103,7 +103,7 @@ export default function MessageInput({
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [value, setValue] = useState("");
     const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
-    const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
+    const [, setIsDocSearchOpen] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
 
     useEffect(() => {
@@ -193,16 +193,16 @@ export default function MessageInput({
         fileInputRef.current?.click();
     }, []);
 
-    // Document search handlers
-    const handleDocumentSelect = useCallback((doc: SelectedDocument) => {
-        // Insert document reference into message
-        const markdownLink = `[📄 ${doc.name}](doc:${doc.id})`;
-        const currentValue = value || '';
-        const cursorPos = ref.current?.selectionStart || currentValue.length;
-        const newValue = currentValue.substring(0, cursorPos) + markdownLink + currentValue.substring(cursorPos);
-        setValue(newValue);
-        setIsDocSearchOpen(false);
-    }, [value]);
+    // // Document search handlers
+    // const handleDocumentSelect = useCallback((doc: SelectedDocument) => {
+    //     // Insert document reference into message
+    //     const markdownLink = `[📄 ${doc.name}](doc:${doc.id})`;
+    //     const currentValue = value || '';
+    //     const cursorPos = ref.current?.selectionStart || currentValue.length;
+    //     const newValue = currentValue.substring(0, cursorPos) + markdownLink + currentValue.substring(cursorPos);
+    //     setValue(newValue);
+    //     setIsDocSearchOpen(false);
+    // }, [value]);
 
     const handleSend = () => {
         const message = value.trim();
@@ -525,26 +525,17 @@ export default function MessageInput({
                         : "Enter to send • Shift+Enter for new line"}
             </div>
 
-            {/* Object Selection Modal (default) */}
-            {!hideObjectLinking && (
-                <VModal
-                    isOpen={isObjectModalOpen}
-                    onClose={() => setIsObjectModalOpen(false)}
-                    className='min-w-[60vw]'
-                >
-                    <VModalTitle>Link Object</VModalTitle>
-                    <VModalBody className="pb-6">
-                        <SelectDocument onChange={handleObjectSelect} />
-                    </VModalBody>
-                </VModal>
-            )}
-
-            {/* Custom Document Search (render prop) */}
-            {renderDocumentSearch && renderDocumentSearch({
-                isOpen: isDocSearchOpen,
-                onClose: () => setIsDocSearchOpen(false),
-                onSelect: handleDocumentSelect,
-            })}
+            {/* Object Selection Modal */}
+            <Modal
+                isOpen={isObjectModalOpen}
+                onClose={() => setIsObjectModalOpen(false)}
+                className='min-w-[60vw]'
+            >
+                <ModalTitle>Link Object</ModalTitle>
+                <ModalBody className="pb-6">
+                    <SelectDocument onChange={handleObjectSelect} />
+                </ModalBody>
+            </Modal>
         </div>
     );
 }

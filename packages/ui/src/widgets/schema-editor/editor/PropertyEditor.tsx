@@ -1,7 +1,7 @@
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 
 import { AlignLeft } from 'lucide-react';
-import { Button, VModal, ModalBody, ModalFooter, VModalTitle, Styles, VSelectBox } from '@vertesia/ui/core';
+import { Button, Modal, ModalBody, ModalFooter, ModalTitle, Styles, SelectBox } from '@vertesia/ui/core';
 
 import { TypeNames } from '../type-signature.js';
 import { DataEditorProps } from './Editable.js';
@@ -101,7 +101,7 @@ function PropertyTypeEditor({ value, onChange, onCancel, onSave }: DataEditorPro
         }
     }
     return (
-        <VSelectBox 
+        <SelectBox 
             className={Styles.INPUT_UNSTYLED}
             options={TYPE_OPTIONS}
             value={value || ''}
@@ -120,10 +120,10 @@ interface EditDescriptionModalProps {
 }
 function EditDescriptionModal({ value, isOpen, onClose }: EditDescriptionModalProps) {
     return (
-        <VModal isOpen={isOpen} onClose={onClose}>
-            <VModalTitle>Edit description</VModalTitle>
+        <Modal isOpen={isOpen} onClose={onClose}>
+            <ModalTitle>Edit description</ModalTitle>
             <EditDescriptionModalForm value={value} onSave={onClose} />
-        </VModal>
+        </Modal>
     )
 }
 

@@ -1,5 +1,5 @@
 import { SignupData } from "@vertesia/common";
-import { Button, Input, VSelectBox, SelectStack } from "@vertesia/ui/core";
+import { Button, Input, SelectBox, SelectStack } from "@vertesia/ui/core";
 import { User } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { getFirebaseAuth } from "@vertesia/ui/session";
@@ -130,7 +130,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
             {isCompany &&
                 <>
                     <FormItem label="Company Size">
-                        <VSelectBox className="w-full border border-accent bg-muted"
+                        <SelectBox className="w-full border border-accent bg-muted"
                             value={companySize}
                             options={companySizeOptions}
                             onChange={setCompanySize}
@@ -147,7 +147,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
                 </>
             }
             <FormItem label="Project Maturity">
-                <VSelectBox className="w-full border border-accent bg-muted"
+                <SelectBox className="w-full border border-accent bg-muted"
                     options={projectMaturityOptions}
                     value={projectMaturityOptions.find((option) => option.id === projectMaturity)}
                     optionLabel={(option) => option?.label}
