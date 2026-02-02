@@ -192,7 +192,8 @@ export interface AppManifestData {
     status: "beta" | "stable" | "deprecated"
 
     /**
-     * @deprecated use endpoint to provide the UI configuration instead
+     * The UI configuration of the app. If not specified and the app "ui" is in the app capabilities 
+     * then the ui configuration will be fetched from the endpoint property.
      */
     ui?: AppUIConfig
 
