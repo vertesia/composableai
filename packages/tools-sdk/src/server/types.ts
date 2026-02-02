@@ -3,6 +3,8 @@ import { InteractionCollection } from "../InteractionCollection.js";
 import { SkillCollection } from "../SkillCollection.js";
 import { ToolCollection } from "../ToolCollection.js";
 import { ToolExecutionPayload } from "../types.js";
+import { JSONSchema } from "@llumiverse/common";
+import { AppUIConfig } from "@vertesia/common";
 
 /**
  * Extended context with parsed payload for tool/skill execution
@@ -57,6 +59,17 @@ export interface ToolServerConfig {
      * MCP providers to expose
      */
     mcpProviders?: MCPProviderConfig[];
+
+    /**
+     * A JSON schema defining settings for the application using this server
+     */
+    settings?: JSONSchema;
+
+    /**
+     * The UI configuration for the application using this server
+     */
+    uiConfig?: AppUIConfig;
+
     /**
      * Disable HTML pages (default: false)
      */
