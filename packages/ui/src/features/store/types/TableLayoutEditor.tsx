@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { ColumnLayout, ContentObjectType } from '@vertesia/common';
-import { Button, useToast, useTheme } from '@vertesia/ui/core';
+import { Button, useToast, useTheme, Panel } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { MonacoEditor, EditorApi } from '@vertesia/ui/widgets';
 
@@ -78,22 +78,16 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate }: TableLayoutEdi
 
 
     return (
-        <div className="mx-2 my-2 rounded-2xl border border-solid shadow-xs">
-            <div className="flex items-center rounded-t-md border-b gap-x-2 py-2 pl-4 pr-2">
-                <div className="text-base font-semibold ">Table Layout Editor</div>
-                <div className="ml-auto flex gap-x-2">
-                    <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>Save Changes</Button>
-                </div>
-            </div>
-            <div className="px-4 py-2">
-                <MonacoEditor
-                    value={value}
-                    language="json"
-                    editorRef={editorRef}
-                    theme={theme === 'dark' ? 'vs-dark' : 'vs'}
-                />
-            </div>
-        </div>
+        <Panel title="Table Layout Editor" className="bg-background! h-[calc(100vh-197px)]" actions={
+            <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>Save Changes</Button>
+        }>
+            <MonacoEditor
+                value={value}
+                language="json"
+                editorRef={editorRef}
+                theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+            />
+        </Panel>
     )
 }
 
