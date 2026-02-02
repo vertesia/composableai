@@ -67,7 +67,7 @@
     "react-error-boundary": "^6.0.0",
     "react-markdown": "^10.1.0",
     "react-pdf": "^10.2.0",
-    "react-resizable-panels": "^3.0.6",
+    "react-resizable-panels": "^4.5.8",
     "react-vega": "^8.0.0",
     "recharts": "^3.5.0",
     "remark-gfm": "^4.0.1",
