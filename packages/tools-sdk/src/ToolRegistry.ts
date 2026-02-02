@@ -1,5 +1,6 @@
+import { AgentToolDefinition } from "@vertesia/common";
 import { HTTPException } from "hono/http-exception";
-import { Tool, ToolDefinitionWithDefault, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult } from "./types.js";
+import { Tool, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult } from "./types.js";
 
 /**
  * Options for filtering tool definitions
@@ -19,9 +20,12 @@ export interface ToolFilterOptions {
 
 export class ToolRegistry {
 
+    // The category name usinfg this registry
+    category: string;
     registry: Record<string, Tool<any>> = {};
 
-    constructor(tools: Tool<any>[] = []) {
+    constructor(category: string, tools: Tool<any>[] = []) {
+        this.category = category;
         for (const tool of tools) {
             this.registry[tool.name] = tool;
         }
@@ -32,7 +36,7 @@ export class ToolRegistry {
      * @param options - Filtering options
      * @returns Filtered tool definitions
      */
-    getDefinitions(options?: ToolFilterOptions): ToolDefinitionWithDefault[] {
+    getDefinitions(options?: ToolFilterOptions): AgentToolDefinition[] {
         const { defaultOnly, unlockedTools = [] } = options || {};
         const unlockedSet = new Set(unlockedTools);
 
@@ -50,6 +54,7 @@ export class ToolRegistry {
                 name: tool.name,
                 description: tool.description,
                 input_schema: tool.input_schema,
+                category: this.category,
                 default: tool.default,
             }));
     }
@@ -59,7 +64,7 @@ export class ToolRegistry {
      * @param unlockedTools - List of tool names that are unlocked
      * @returns Tool definitions for reserve tools
      */
-    getReserveTools(unlockedTools: string[] = []): ToolDefinitionWithDefault[] {
+    getReserveTools(unlockedTools: string[] = []): AgentToolDefinition[] {
         const unlockedSet = new Set(unlockedTools);
 
         return Object.values(this.registry)
@@ -68,6 +73,7 @@ export class ToolRegistry {
                 name: tool.name,
                 description: tool.description,
                 input_schema: tool.input_schema,
+                category: this.category,
                 default: tool.default,
             }));
     }

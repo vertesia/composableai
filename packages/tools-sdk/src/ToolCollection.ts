@@ -6,8 +6,9 @@ import { HTTPException } from "hono/http-exception";
 import { authorize } from "./auth.js";
 import { ToolFilterOptions, ToolRegistry } from "./ToolRegistry.js";
 import { ToolContext } from "./server/types.js";
-import type { CollectionProperties, ICollection, Tool, ToolDefinitionWithDefault, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
+import type { CollectionProperties, ICollection, Tool, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
+import { AgentToolDefinition } from "@vertesia/common";
 
 export interface ToolCollectionProperties extends CollectionProperties {
     /**
@@ -52,7 +53,8 @@ export class ToolCollection implements ICollection<Tool<any>> {
         this.title = title || kebabCaseToTitle(name);
         this.icon = icon;
         this.description = description;
-        this.tools = new ToolRegistry(tools);
+        // we add the collection name info
+        this.tools = new ToolRegistry(name, tools);
     }
 
     [Symbol.iterator](): Iterator<Tool<any>> {
@@ -126,7 +128,7 @@ export class ToolCollection implements ICollection<Tool<any>> {
      * @param options - Filtering options for default/unlocked tools
      * @returns Filtered tool definitions
      */
-    getToolDefinitions(options?: ToolFilterOptions): ToolDefinitionWithDefault[] {
+    getToolDefinitions(options?: ToolFilterOptions): AgentToolDefinition[] {
         return this.tools.getDefinitions(options);
     }
 
@@ -135,7 +137,7 @@ export class ToolCollection implements ICollection<Tool<any>> {
      * @param unlockedTools - List of tool names that are unlocked
      * @returns Tool definitions for reserve tools
      */
-    getReserveTools(unlockedTools: string[] = []): ToolDefinitionWithDefault[] {
+    getReserveTools(unlockedTools: string[] = []): AgentToolDefinition[] {
         return this.tools.getReserveTools(unlockedTools);
     }
 

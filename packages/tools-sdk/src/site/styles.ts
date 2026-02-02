@@ -396,6 +396,43 @@ hr {
     font-family: ui-monospace, monospace;
 }
 
+.endpoint-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #f3f4f6;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+}
+
+.endpoint-box code {
+    flex: 1;
+    font-family: ui-monospace, monospace;
+    font-size: 0.875rem;
+    color: #1f2937;
+}
+
+.copy-btn {
+    background: #e5e7eb;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.15s;
+}
+
+.copy-btn:hover {
+    background: #d1d5db;
+    color: #374151;
+}
+
+.copy-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
 .badge {
     display: inline-block;
     font-size: 0.75rem;
@@ -581,6 +618,24 @@ hr {
 
     .endpoint-url code {
         background: rgba(15, 23, 42, 0.95);
+    }
+
+    .endpoint-box {
+        background: rgba(31, 41, 55, 0.95);
+    }
+
+    .endpoint-box code {
+        color: #e5e7eb;
+    }
+
+    .copy-btn {
+        background: rgba(55, 65, 81, 0.95);
+        color: #e5e7eb;
+    }
+
+    .copy-btn:hover {
+        background: rgba(75, 85, 99, 0.98);
+        color: #f9fafb;
     }
 
     .badge {
