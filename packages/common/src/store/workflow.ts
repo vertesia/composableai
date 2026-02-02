@@ -200,6 +200,13 @@ export interface ExecuteWorkflowPayload {
      * Timeout for the workflow execution to complete, in seconds.
      */
     timeout?: number; //timeout in seconds
+
+    /**
+     * Schedule the workflow to run at a specific time (ISO 8601 datetime).
+     * Example: "2024-02-15T16:00:00Z"
+     * If in the past or not provided, workflow runs immediately.
+     */
+    run_at?: string;
 }
 
 export interface ListWorkflowRunsPayload {
