@@ -2,6 +2,21 @@ import { JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { CatalogInteractionRef } from "./interaction.js";
 import { InCodeTypeDefinition } from "./store/index.js";
 
+/**
+ * Navigation item for shell/sidebar UI.
+ * Icon names correspond to Lucide icon component names.
+ */
+export interface AppNavItem {
+    /** Display label */
+    label: string;
+    /** Lucide icon name (e.g., "MessageSquare", "History") */
+    icon: string;
+    /** Route path relative to app base */
+    route: string;
+    /** Optional nested children */
+    children?: AppNavItem[];
+}
+
 export interface AppUIConfig {
     /**
      * The source URL of the app. The src can be a template which contain
@@ -15,6 +30,11 @@ export interface AppUIConfig {
      * - css - use CSS processing (like prefixing or other isolation techniques). Ligther but plugins may conflict with the host
      */
     isolation?: "shadow" | "css";
+    /**
+     * Navigation items for the app's sidebar UI.
+     * Only applicable for apps with UI capability in shell contexts.
+     */
+    navigation?: AppNavItem[];
 }
 
 /**
