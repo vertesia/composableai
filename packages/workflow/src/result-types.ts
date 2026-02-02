@@ -6,7 +6,10 @@
  */
 export interface TextExtractionResult {
     objectId?: string;
-    source_url?: string;
+    file?: {
+        source_url: string;
+        result_path?: string;
+    }
     status: TextExtractionStatus;
     hasText: boolean;
     message?: string;
