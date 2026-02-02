@@ -1,11 +1,13 @@
 import { log } from "@temporalio/activity";
 import { FetchClient } from "@vertesia/api-fetch-client";
 import { AudioMetadata, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, TranscriptSegment, VideoMetadata } from "@vertesia/common";
+import { FileSource } from "../../dsl.js";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
 
 export interface SaveGladiaTranscriptionParams {
     gladiaTranscriptionId: string;
+    file_source?: FileSource;
 }
 
 export interface SaveGladiaTranscription extends DSLActivitySpec<SaveGladiaTranscriptionParams> {
@@ -34,56 +36,65 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
     const gladiaClient = new FetchClient(gladiaConfig.url ?? GLADIA_URL);
     gladiaClient.withHeaders({ "x-gladia-key": gladiaConfig.api_key });
 
-    log.info(`Fetching transcription result from Gladia`, { objectId, transcriptionId: params.gladiaTranscriptionId });
+    const fileSource = params?.file_source;
+    const storageId = objectId || fileSource?.storage_path;
+
+    log.info(`Fetching transcription result from Gladia`, { storageId, transcriptionId: params.gladiaTranscriptionId });
 
     const transcriptionResult = await gladiaClient.get(`/transcription/${params.gladiaTranscriptionId}`) as GladiaTranscriptionResult;
 
     if (transcriptionResult.status === 'error') {
-        log.error(`Gladia transcription failed`, { objectId, error: transcriptionResult });
+        log.error(`Gladia transcription failed`, { storageId, error: transcriptionResult });
         return {
             hasText: false,
-            objectId,
+            objectId: storageId,
             status: TextExtractionStatus.error,
             error: "Gladia transcription failed",
         };
     }
 
     if (transcriptionResult.status !== 'done') {
-        log.warn(`Gladia transcription not ready`, { objectId, status: transcriptionResult.status });
+        log.warn(`Gladia transcription not ready`, { storageId, status: transcriptionResult.status });
         return {
             hasText: false,
-            objectId,
+            objectId: storageId,
             status: TextExtractionStatus.error,
             error: `Gladia transcription not ready: ${transcriptionResult.status}`,
         };
     }
 
-    const object = await client.objects.retrieve(objectId, "+text");
-
     const segments = processUtterances(transcriptionResult.result.transcription.utterances);
     const fullText = transcriptionResult.result.transcription.full_transcript;
 
-    await client.objects.update(objectId, {
-        text: fullText,
-        text_etag: object.content?.etag,
-        transcript: {
-            segments,
-            etag: object.content?.etag
-        },
-        metadata: {
-            ...object.metadata,
-            duration: transcriptionResult.result.metadata.audio_duration,
-            languages: transcriptionResult.result.transcription.languages
-        } as AudioMetadata | VideoMetadata
-    });
+    if (objectId) {
+        // Object mode: save to object store
+        const object = await client.objects.retrieve(objectId, "+text");
 
-    log.info(`Saved transcription for object`, { objectId, textLength: fullText?.length, segmentCount: segments.length });
+        await client.objects.update(objectId, {
+            text: fullText,
+            text_etag: object.content?.etag,
+            transcript: {
+                segments,
+                etag: object.content?.etag
+            },
+            metadata: {
+                ...object.metadata,
+                duration: transcriptionResult.result.metadata.audio_duration,
+                languages: transcriptionResult.result.transcription.languages
+            } as AudioMetadata | VideoMetadata
+        });
+
+        log.info(`Saved transcription for object`, { objectId, textLength: fullText?.length, segmentCount: segments.length });
+    } else {
+        // URL mode: don't save to object, just log
+        log.info(`Transcription completed (URL mode, not saved to object)`, { storageId, textLength: fullText?.length, segmentCount: segments.length });
+    }
 
     return {
         hasText: (fullText?.length ?? 0) > 0,
-        objectId,
+        objectId: storageId,
         status: TextExtractionStatus.success,
-        message: `Transcription saved with ${segments.length} segments`
+        message: `Transcription ${objectId ? 'saved' : 'completed'} with ${segments.length} segments`
     };
 }
 

@@ -4,11 +4,13 @@ import { AUDIO_RENDITION_NAME, ContentNature, DSLActivityExecutionPayload, DSLAc
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../../errors.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../index.js";
+import { FileSource } from "../../input-types.js";
 
 
 export interface TranscriptMediaParams {
     environmentId?: string;
     force?: boolean;
+    file_source?: FileSource;
 }
 
 export interface TranscriptMedia extends DSLActivitySpec<TranscriptMediaParams> {
@@ -40,27 +42,48 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
         }
     }
 
-    const object = await client.objects.retrieve(objectId, "+text");
     const gladiaClient = new FetchClient(gladiaConfig.url ?? GLADIA_URL);
     gladiaClient.withHeaders({ "x-gladia-key": gladiaConfig.api_key });
 
-    if (object.text && !params.force) {
-        return { hasText: true, objectId, status: TextExtractionStatus.skipped, message: "text already present and force not enabled" }
-    }
+    const fileSource = params?.file_source;
+    let mediaSource: string;
+    let storageId: string;
 
-    if (!object.content?.source) {
-        throw new DocumentNotFoundError(`No source found for object ${objectId}`);
-    }
+    if (objectId) {
+        // Object mode: fetch from object store
+        const object = await client.objects.retrieve(objectId, "+text");
 
-    // Check for audio rendition in video metadata (preferred for videos)
-    let mediaSource: string = object.content.source;
-    if (object.metadata?.type === ContentNature.Video) {
-        const videoMetadata = object.metadata as VideoMetadata;
-        const audioRendition = videoMetadata.renditions?.find(r => r.name === AUDIO_RENDITION_NAME);
-        if (audioRendition?.content?.source) {
-            mediaSource = audioRendition.content.source;
-            log.info(`Found audio rendition for video object ${objectId}`, { mediaSource });
+        if (object.text && !params.force) {
+            return { hasText: true, objectId, status: TextExtractionStatus.skipped, message: "text already present and force not enabled" }
         }
+
+        if (!object.content?.source) {
+            throw new DocumentNotFoundError(`No source found for object ${objectId}`);
+        }
+
+        // Check for audio rendition in video metadata (preferred for videos)
+        mediaSource = object.content.source;
+        if (object.metadata?.type === ContentNature.Video) {
+            const videoMetadata = object.metadata as VideoMetadata;
+            const audioRendition = videoMetadata.renditions?.find(r => r.name === AUDIO_RENDITION_NAME);
+            if (audioRendition?.content?.source) {
+                mediaSource = audioRendition.content.source;
+                log.info(`Found audio rendition for video object ${objectId}`, { mediaSource });
+            }
+        }
+
+        storageId = objectId;
+    } else {
+        // URL mode: use file_source
+        if (!fileSource?.source_url) {
+            throw new DocumentNotFoundError("source_url is required when objectId is not provided");
+        }
+        if (!fileSource?.storage_path) {
+            throw new DocumentNotFoundError("storage_path is required when objectId is not provided");
+        }
+
+        mediaSource = fileSource.source_url;
+        storageId = fileSource.storage_path;
     }
 
     // Get download URL for the media source
@@ -70,12 +93,12 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
         throw new DocumentNotFoundError(`Error fetching media URL for ${mediaSource}`);
     }
 
-    log.info(`Using media URL for transcription`, { objectId, mediaUrl: mediaSource });
+    log.info(`Using media URL for transcription`, { storageId, mediaUrl: mediaSource });
 
     const taskToken = Buffer.from(activityInfo().taskToken).toString('base64url');
-    const callbackUrl = generateCallbackUrlForGladia(client.store.baseUrl, taskToken, objectId);
+    const callbackUrl = generateCallbackUrlForGladia(client.store.baseUrl, taskToken, storageId);
 
-    log.info(`Transcribing media ${mediaUrl} with Gladia`, { objectId, callbackUrl });
+    log.info(`Transcribing media ${mediaUrl} with Gladia`, { storageId, callbackUrl });
 
     try {
         const res = await gladiaClient.post("/transcription", {
@@ -90,17 +113,17 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
                 }
             }
         }) as GladiaTranscriptRequestResponse;
-        log.info(`Transcription request sent to Gladia`, { objectId, res });
+        log.info(`Transcription request sent to Gladia`, { storageId, res });
     } catch (error: any) {
         if (error instanceof RequestError && error.status === 422) {
             return {
                 hasText: false,
-                objectId,
+                objectId: storageId,
                 status: TextExtractionStatus.error,
                 error: `Gladia transcription error: ${error.message}`,
             }
         }
-        log.error(`Error sending transcription request to Gladia for object ${objectId}`, { error });
+        log.error(`Error sending transcription request to Gladia for storage ${storageId}`, { error });
         throw error;
     }
 

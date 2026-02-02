@@ -5,7 +5,8 @@
  * The result of a text extraction operation.
  */
 export interface TextExtractionResult {
-    objectId: string;
+    objectId?: string;
+    source_url?: string;
     status: TextExtractionStatus;
     hasText: boolean;
     message?: string;
