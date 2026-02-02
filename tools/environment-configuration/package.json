@@ -22,7 +22,7 @@
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.5.4",
-    "globals": "^16.0.0",
+    "globals": "^17.3.0",
     "prettier": "3.5.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.49.0"
@@ -30,8 +30,8 @@
   "dependencies": {
     "@aws-sdk/client-iam": "^3.948.0",
     "@vertesia/client": "workspace:*",
-    "commander": "^14.0.2",
-    "dotenv": "^16.6.1",
+    "commander": "^14.0.3",
+    "dotenv": "^17.2.3",
     "google-auth-library": "^10.5.0"
   }
 }
