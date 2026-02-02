@@ -230,43 +230,6 @@ ${baseStyles}
     white-space: pre-wrap;
 }
 
-.endpoint-box {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    background: #f3f4f6;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    margin-top: 0.5rem;
-}
-
-.endpoint-box code {
-    flex: 1;
-    font-family: ui-monospace, monospace;
-    font-size: 0.875rem;
-    color: #1f2937;
-}
-
-.copy-btn {
-    background: #e5e7eb;
-    border: none;
-    padding: 0.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    color: #6b7280;
-    transition: all 0.15s;
-}
-
-.copy-btn:hover {
-    background: #d1d5db;
-    color: #374151;
-}
-
-.copy-btn svg {
-    width: 16px;
-    height: 16px;
-}
-
 .empty-state {
     text-align: center;
     padding: 3rem;
@@ -345,24 +308,6 @@ ${baseStyles}
         background: rgba(15, 23, 42, 0.9);
         border-color: rgba(55, 65, 81, 0.9);
         color: #e5e7eb;
-    }
-
-    .endpoint-box {
-        background: rgba(31, 41, 55, 0.95);
-    }
-
-    .endpoint-box code {
-        color: #e5e7eb;
-    }
-
-    .copy-btn {
-        background: rgba(55, 65, 81, 0.95);
-        color: #e5e7eb;
-    }
-
-    .copy-btn:hover {
-        background: rgba(75, 85, 99, 0.98);
-        color: #f9fafb;
     }
 
     .empty-state {
@@ -758,6 +703,13 @@ export function indexPage(
             <aside class="hero-panel">
                 <div class="hero-panel-label">Base endpoint</div>
                 <div class="hero-panel-endpoint"><code>/api</code></div>
+                <div class="hero-panel-label" style="margin-top: 1rem;">Package endpoint</div>
+                <div class="endpoint-box" style="margin-top: 0.5rem;">
+                    <code id="package-endpoint-url">/api/package</code>
+                    <button class="copy-btn" onclick="copyPackageUrl(this)" title="Copy package endpoint URL">
+                        ${copyIcon}
+                    </button>
+                </div>
                 <p class="hero-panel-hint">
                     Use <strong>POST /api/tools/&lt;collection&gt;</strong> or
                     <strong>POST /api/skills/&lt;collection&gt;</strong> to call these from your apps or agents.
@@ -884,6 +836,18 @@ export function indexPage(
             update(input.value);
         });
     }());
+
+    function copyPackageUrl(btn) {
+        var url = window.location.origin + '/api/package';
+        navigator.clipboard.writeText(url);
+        var originalHtml = btn.innerHTML;
+        btn.innerHTML = '✓';
+        btn.style.color = '#10b981';
+        setTimeout(function() {
+            btn.innerHTML = originalHtml;
+            btn.style.color = '#6b7280';
+        }, 1500);
+    }
     </script>
 </body>
 </html>`;
