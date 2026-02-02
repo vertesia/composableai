@@ -20,9 +20,12 @@ export interface ToolFilterOptions {
 
 export class ToolRegistry {
 
+    // The category name usinfg this registry
+    category: string;
     registry: Record<string, Tool<any>> = {};
 
-    constructor(tools: Tool<any>[] = []) {
+    constructor(category: string, tools: Tool<any>[] = []) {
+        this.category = category;
         for (const tool of tools) {
             this.registry[tool.name] = tool;
         }
@@ -51,6 +54,7 @@ export class ToolRegistry {
                 name: tool.name,
                 description: tool.description,
                 input_schema: tool.input_schema,
+                category: this.category,
                 default: tool.default,
             }));
     }
@@ -69,6 +73,7 @@ export class ToolRegistry {
                 name: tool.name,
                 description: tool.description,
                 input_schema: tool.input_schema,
+                category: this.category,
                 default: tool.default,
             }));
     }

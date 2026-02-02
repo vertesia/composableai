@@ -110,6 +110,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
                 description,
                 input_schema: skill.input_schema || defaultSchema,
                 related_tools: skill.related_tools,
+                category: this.name,
             };
         });
     }

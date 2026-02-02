@@ -53,7 +53,8 @@ export class ToolCollection implements ICollection<Tool<any>> {
         this.title = title || kebabCaseToTitle(name);
         this.icon = icon;
         this.description = description;
-        this.tools = new ToolRegistry(tools);
+        // we add the collection name info
+        this.tools = new ToolRegistry(name, tools);
     }
 
     [Symbol.iterator](): Iterator<Tool<any>> {
