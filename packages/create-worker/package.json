@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/create-worker",
-    "version": "1.0.0-dev.20260128.144200",
+    "version": "1.0.0-dev.20260203.122529Z",
     "description": "Initialize workflow worker package (deprecated - use @vertesia/create-plugin instead)",
     "type": "module",
     "bin": {
