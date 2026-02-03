@@ -31,6 +31,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          ssh-key: ${{ secrets.DEPLOY_KEY }} # Use deploy key to bypass branch protection rules
+
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -50,5 +52,3 @@ jobs:
             --ref "${{ github.ref_name }}" \
             --dry-run "${{ inputs.dry_run }}" \
             --version-type "${{ inputs.version_type }}"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
