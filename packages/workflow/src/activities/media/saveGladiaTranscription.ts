@@ -1,13 +1,12 @@
 import { log } from "@temporalio/activity";
 import { FetchClient } from "@vertesia/api-fetch-client";
 import { AudioMetadata, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, TranscriptSegment, VideoMetadata } from "@vertesia/common";
-import { FileSource } from "../../dsl.js";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
 
 export interface SaveGladiaTranscriptionParams {
     gladiaTranscriptionId: string;
-    file_source?: FileSource;
+    output_storage_path?: string;
 }
 
 export interface SaveGladiaTranscription extends DSLActivitySpec<SaveGladiaTranscriptionParams> {
@@ -21,13 +20,14 @@ const GLADIA_URL = "https://api.gladia.io/v2";
  * This activity is called after transcribeMedia completes via webhook callback.
  */
 export async function saveGladiaTranscription(payload: DSLActivityExecutionPayload<SaveGladiaTranscriptionParams>): Promise<TextExtractionResult> {
-    const { params, client, objectId } = await setupActivity<SaveGladiaTranscriptionParams>(payload);
+    const context = await setupActivity<SaveGladiaTranscriptionParams>(payload);
+    const { params, client, inputType } = context;
 
     const gladiaConfig = await client.projects.integrations.retrieve(payload.project_id, SupportedIntegrations.gladia) as GladiaConfiguration | undefined;
     if (!gladiaConfig || !gladiaConfig.enabled) {
         return {
             hasText: false,
-            objectId,
+            objectId: inputType === 'objectIds' ? context.objectId : undefined,
             status: TextExtractionStatus.error,
             error: "Gladia integration not enabled",
         };
@@ -36,18 +36,21 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
     const gladiaClient = new FetchClient(gladiaConfig.url ?? GLADIA_URL);
     gladiaClient.withHeaders({ "x-gladia-key": gladiaConfig.api_key });
 
-    const fileSource = params?.file_source;
-    const storageId = objectId || fileSource?.storage_path;
-
-    log.info(`Fetching transcription result from Gladia`, { storageId, transcriptionId: params.gladiaTranscriptionId });
+    log.info(`Fetching transcription result from Gladia`, { transcriptionId: params.gladiaTranscriptionId });
 
     const transcriptionResult = await gladiaClient.get(`/transcription/${params.gladiaTranscriptionId}`) as GladiaTranscriptionResult;
 
+    // Determine storage identifier based on input type
+    const storageId = inputType === 'objectIds' ? context.objectId : params.output_storage_path;
+
     if (transcriptionResult.status === 'error') {
-        log.error(`Gladia transcription failed`, { storageId, error: transcriptionResult });
+        log.error(`Gladia transcription failed`, { error: transcriptionResult });
         return {
             hasText: false,
-            objectId: storageId,
+            objectId: inputType === 'objectIds' ? context.objectId : undefined,
+            file: inputType === 'files' ? {
+                source_url: context.file.url,
+            } : undefined,
             status: TextExtractionStatus.error,
             error: "Gladia transcription failed",
         };
@@ -66,8 +69,9 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
     const segments = processUtterances(transcriptionResult.result.transcription.utterances);
     const fullText = transcriptionResult.result.transcription.full_transcript;
 
-    if (objectId) {
+    if (inputType === 'objectIds') {
         // Object mode: save to object store
+        const objectId = context.objectId;
         const object = await client.objects.retrieve(objectId, "+text");
 
         await client.objects.update(objectId, {
@@ -86,15 +90,15 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
 
         log.info(`Saved transcription for object`, { objectId, textLength: fullText?.length, segmentCount: segments.length });
     } else {
-        // URL mode: don't save to object, just log
-        log.info(`Transcription completed (URL mode, not saved to object)`, { storageId, textLength: fullText?.length, segmentCount: segments.length });
+        // File mode: don't save to object, just log
+        log.info(`Transcription completed (file mode, not saved to object)`, { storageId, textLength: fullText?.length, segmentCount: segments.length });
     }
 
     return {
         hasText: (fullText?.length ?? 0) > 0,
         objectId: storageId,
         status: TextExtractionStatus.success,
-        message: `Transcription ${objectId ? 'saved' : 'completed'} with ${segments.length} segments`
+        message: `Transcription ${inputType === 'objectIds' ? 'saved' : 'completed'} with ${segments.length} segments`
     };
 }
 

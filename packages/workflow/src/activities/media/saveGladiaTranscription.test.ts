@@ -1,23 +1,28 @@
 import { MockActivityEnvironment } from "@temporalio/testing";
 import { ContentEventName, DSLActivityExecutionPayload } from "@vertesia/common";
+import type { VertesiaClient } from "@vertesia/client";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
+import type { ActivityContext, TextExtractionResult } from "@vertesia/workflow";
+import { TextExtractionStatus } from "../../result-types.js";
 import { saveGladiaTranscription, SaveGladiaTranscriptionParams } from "./saveGladiaTranscription.js";
 
-// Mock the FetchClient
-vi.mock("@vertesia/api-fetch-client", () => ({
-    FetchClient: vi.fn().mockImplementation(() => ({
-        withHeaders: vi.fn().mockReturnThis(),
-        get: vi.fn(),
-    })),
-    RequestError: class RequestError extends Error {
-        status: number;
-        constructor(message: string, status: number) {
-            super(message);
-            this.status = status;
-        }
-    }
-}));
+// Mock setupActivity from the relative path used by the activity
+vi.mock("../../dsl/setup/ActivityContext.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../dsl/setup/ActivityContext.js")>();
+    return {
+        ...actual,
+        setupActivity: vi.fn(),
+    };
+});
+
+// Mock FetchClient as a constructor
+vi.mock("@vertesia/api-fetch-client", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@vertesia/api-fetch-client")>();
+    return {
+        ...actual,
+        FetchClient: vi.fn(),
+    };
+});
 
 let testEnv: MockActivityEnvironment;
 
@@ -32,7 +37,8 @@ beforeEach(() => {
 // Helper function to create test payload
 const createTestPayload = (
     params: SaveGladiaTranscriptionParams,
-    objectId?: string
+    objectId?: string,
+    fileInput?: { url: string; mimetype: string }
 ): DSLActivityExecutionPayload<SaveGladiaTranscriptionParams> => {
     return {
         auth_token: process.env.VERTESIA_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature",
@@ -46,6 +52,11 @@ const createTestPayload = (
         workflow_name: "test-workflow",
         event: ContentEventName.create,
         objectIds: objectId ? [objectId] : [],
+        input: fileInput
+            ? { inputType: 'files' as const, files: [fileInput] }
+            : objectId
+            ? { inputType: 'objectIds' as const, objectIds: [objectId] }
+            : undefined,
         vars: {},
         activity: { name: "SaveGladiaTranscription", params }
     };
@@ -91,19 +102,51 @@ const mockGladiaTranscriptionResult = {
 
 describe("SaveGladiaTranscription", () => {
     it("should save transcription in object mode", async () => {
+        const { setupActivity } = await import("../../dsl/setup/ActivityContext.js");
         const { FetchClient } = await import("@vertesia/api-fetch-client");
-        const mockGladiaClient = {
+
+        // Mock FetchClient instance
+        const mockFetchClient = {
             withHeaders: vi.fn().mockReturnThis(),
             get: vi.fn().mockResolvedValue(mockGladiaTranscriptionResult),
         };
-        (FetchClient as any).mockImplementation(() => mockGladiaClient);
+        vi.mocked(FetchClient).mockImplementation(function(this: any) {
+            return mockFetchClient as any;
+        });
+
+        // Mock client
+        const mockClient = {
+            projects: {
+                integrations: {
+                    retrieve: vi.fn().mockResolvedValue({
+                        enabled: true,
+                        api_key: "test-api-key",
+                        url: "https://api.gladia.io/v2",
+                    }),
+                },
+            },
+            objects: {
+                retrieve: vi.fn().mockResolvedValue({
+                    content: { etag: "test-etag" },
+                }),
+                update: vi.fn().mockResolvedValue({}),
+            },
+        } as unknown as VertesiaClient;
 
         const params: SaveGladiaTranscriptionParams = {
             gladiaTranscriptionId: "test-transcription-id",
         };
 
+        // Mock setupActivity
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            objectId: "test-object-id",
+            inputType: 'objectIds',
+            params,
+        } as unknown as ActivityContext<SaveGladiaTranscriptionParams>);
+
         const payload = createTestPayload(params, "test-object-id");
-        const result = (await testEnv.run(saveGladiaTranscription, payload)) as TextExtractionResult;
+        const result: TextExtractionResult = await testEnv.run(saveGladiaTranscription, payload);
 
         expect(result).toMatchObject({
             hasText: true,
@@ -113,25 +156,51 @@ describe("SaveGladiaTranscription", () => {
         expect(result.message).toContain("saved with 2 segments");
     });
 
-    it("should handle transcription in URL mode", async () => {
+    it("should handle transcription in file mode", async () => {
+        const { setupActivity } = await import("../../dsl/setup/ActivityContext.js");
         const { FetchClient } = await import("@vertesia/api-fetch-client");
-        const mockGladiaClient = {
+
+        const mockFetchClient = {
             withHeaders: vi.fn().mockReturnThis(),
             get: vi.fn().mockResolvedValue(mockGladiaTranscriptionResult),
         };
-        (FetchClient as any).mockImplementation(() => mockGladiaClient);
+        vi.mocked(FetchClient).mockImplementation(function(this: any) {
+            return mockFetchClient as any;
+        });
+
+        const mockClient = {
+            projects: {
+                integrations: {
+                    retrieve: vi.fn().mockResolvedValue({
+                        enabled: true,
+                        api_key: "test-api-key",
+                        url: "https://api.gladia.io/v2",
+                    }),
+                },
+            },
+            files: {
+                uploadText: vi.fn().mockResolvedValue({}),
+            },
+        } as unknown as VertesiaClient;
 
         const params: SaveGladiaTranscriptionParams = {
             gladiaTranscriptionId: "test-transcription-id",
-            file_source: {
-                source_url: "gs://test-bucket/audio.mp3",
-                mimetype: "audio/mpeg",
-                storage_path: "test-storage-path",
-            },
+            output_storage_path: "test-storage-path",
         };
 
-        const payload = createTestPayload(params);
-        const result = (await testEnv.run(saveGladiaTranscription, payload)) as TextExtractionResult;
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            file: { url: "gs://test-bucket/audio.mp3", mimetype: "audio/mpeg" },
+            inputType: 'files',
+            params,
+        } as unknown as ActivityContext<SaveGladiaTranscriptionParams>);
+
+        const payload = createTestPayload(
+            params,
+            undefined,
+            { url: "gs://test-bucket/audio.mp3", mimetype: "audio/mpeg" }
+        );
+        const result: TextExtractionResult = await testEnv.run(saveGladiaTranscription, payload);
 
         expect(result).toMatchObject({
             hasText: true,
@@ -142,12 +211,31 @@ describe("SaveGladiaTranscription", () => {
     });
 
     it("should handle Gladia integration not enabled", async () => {
+        const { setupActivity } = await import("../../dsl/setup/ActivityContext.js");
+
+        const mockClient = {
+            projects: {
+                integrations: {
+                    retrieve: vi.fn().mockResolvedValue({
+                        enabled: false,
+                    }),
+                },
+            },
+        } as unknown as VertesiaClient;
+
         const params: SaveGladiaTranscriptionParams = {
             gladiaTranscriptionId: "test-transcription-id",
         };
 
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            objectId: "test-object-id",
+            inputType: 'objectIds',
+            params,
+        } as unknown as ActivityContext<SaveGladiaTranscriptionParams>);
+
         const payload = createTestPayload(params, "test-object-id");
-        const result = (await testEnv.run(saveGladiaTranscription, payload)) as TextExtractionResult;
+        const result: TextExtractionResult = await testEnv.run(saveGladiaTranscription, payload);
 
         expect(result).toMatchObject({
             hasText: false,
@@ -158,22 +246,45 @@ describe("SaveGladiaTranscription", () => {
     });
 
     it("should handle Gladia transcription error status", async () => {
+        const { setupActivity } = await import("../../dsl/setup/ActivityContext.js");
         const { FetchClient } = await import("@vertesia/api-fetch-client");
-        const mockGladiaClient = {
+
+        const mockFetchClient = {
             withHeaders: vi.fn().mockReturnThis(),
             get: vi.fn().mockResolvedValue({
                 id: "test-transcription-id",
                 status: "error",
             }),
         };
-        (FetchClient as any).mockImplementation(() => mockGladiaClient);
+        vi.mocked(FetchClient).mockImplementation(function(this: any) {
+            return mockFetchClient as any;
+        });
+
+        const mockClient = {
+            projects: {
+                integrations: {
+                    retrieve: vi.fn().mockResolvedValue({
+                        enabled: true,
+                        api_key: "test-api-key",
+                        url: "https://api.gladia.io/v2",
+                    }),
+                },
+            },
+        } as unknown as VertesiaClient;
 
         const params: SaveGladiaTranscriptionParams = {
             gladiaTranscriptionId: "test-transcription-id",
         };
 
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            objectId: "test-object-id",
+            inputType: 'objectIds',
+            params,
+        } as unknown as ActivityContext<SaveGladiaTranscriptionParams>);
+
         const payload = createTestPayload(params, "test-object-id");
-        const result = (await testEnv.run(saveGladiaTranscription, payload)) as TextExtractionResult;
+        const result: TextExtractionResult = await testEnv.run(saveGladiaTranscription, payload);
 
         expect(result).toMatchObject({
             hasText: false,
@@ -184,22 +295,45 @@ describe("SaveGladiaTranscription", () => {
     });
 
     it("should handle Gladia transcription not ready", async () => {
+        const { setupActivity } = await import("../../dsl/setup/ActivityContext.js");
         const { FetchClient } = await import("@vertesia/api-fetch-client");
-        const mockGladiaClient = {
+
+        const mockFetchClient = {
             withHeaders: vi.fn().mockReturnThis(),
             get: vi.fn().mockResolvedValue({
                 id: "test-transcription-id",
                 status: "processing",
             }),
         };
-        (FetchClient as any).mockImplementation(() => mockGladiaClient);
+        vi.mocked(FetchClient).mockImplementation(function(this: any) {
+            return mockFetchClient as any;
+        });
+
+        const mockClient = {
+            projects: {
+                integrations: {
+                    retrieve: vi.fn().mockResolvedValue({
+                        enabled: true,
+                        api_key: "test-api-key",
+                        url: "https://api.gladia.io/v2",
+                    }),
+                },
+            },
+        } as unknown as VertesiaClient;
 
         const params: SaveGladiaTranscriptionParams = {
             gladiaTranscriptionId: "test-transcription-id",
         };
 
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            objectId: "test-object-id",
+            inputType: 'objectIds',
+            params,
+        } as unknown as ActivityContext<SaveGladiaTranscriptionParams>);
+
         const payload = createTestPayload(params, "test-object-id");
-        const result = (await testEnv.run(saveGladiaTranscription, payload)) as TextExtractionResult;
+        const result: TextExtractionResult = await testEnv.run(saveGladiaTranscription, payload);
 
         expect(result).toMatchObject({
             hasText: false,
@@ -210,8 +344,10 @@ describe("SaveGladiaTranscription", () => {
     });
 
     it("should handle empty transcript", async () => {
+        const { setupActivity } = await import("../../dsl/setup/ActivityContext.js");
         const { FetchClient } = await import("@vertesia/api-fetch-client");
-        const mockGladiaClient = {
+
+        const mockFetchClient = {
             withHeaders: vi.fn().mockReturnThis(),
             get: vi.fn().mockResolvedValue({
                 ...mockGladiaTranscriptionResult,
@@ -225,14 +361,41 @@ describe("SaveGladiaTranscription", () => {
                 },
             }),
         };
-        (FetchClient as any).mockImplementation(() => mockGladiaClient);
+        vi.mocked(FetchClient).mockImplementation(function(this: any) {
+            return mockFetchClient as any;
+        });
+
+        const mockClient = {
+            projects: {
+                integrations: {
+                    retrieve: vi.fn().mockResolvedValue({
+                        enabled: true,
+                        api_key: "test-api-key",
+                        url: "https://api.gladia.io/v2",
+                    }),
+                },
+            },
+            objects: {
+                retrieve: vi.fn().mockResolvedValue({
+                    content: { etag: "test-etag" },
+                }),
+                update: vi.fn().mockResolvedValue({}),
+            },
+        } as unknown as VertesiaClient;
 
         const params: SaveGladiaTranscriptionParams = {
             gladiaTranscriptionId: "test-transcription-id",
         };
 
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            objectId: "test-object-id",
+            inputType: 'objectIds',
+            params,
+        } as unknown as ActivityContext<SaveGladiaTranscriptionParams>);
+
         const payload = createTestPayload(params, "test-object-id");
-        const result = (await testEnv.run(saveGladiaTranscription, payload)) as TextExtractionResult;
+        const result: TextExtractionResult = await testEnv.run(saveGladiaTranscription, payload);
 
         expect(result).toMatchObject({
             hasText: false,

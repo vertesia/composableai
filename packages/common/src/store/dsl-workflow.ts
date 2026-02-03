@@ -9,35 +9,20 @@ import { ParentClosePolicyType } from "./temporalio.js";
 export type WorkflowInputType = 'objectIds' | 'files';
 
 /**
+ * File reference with URL and mimetype
+ */
+export interface WorkflowInputFile {
+    url: string;
+    mimetype: string;
+}
+
+/**
  * Discriminated union for workflow inputs.
- * Workflows can accept either a list of object IDs (existing behavior) OR a list of GCS file URIs (new).
+ * Workflows can accept either a list of object IDs (existing behavior) OR a list of file references (new).
  */
 export type WorkflowInput =
     | { inputType: 'objectIds', objectIds: string[] }
-    | { inputType: 'files', files: string[] };
-
-/**
- * Activity capability declaration for input support.
- * Activities declare their support by setting the `inputSupport` property on the function:
- * - 'objectIds': Activity only works with object IDs (default for existing activities)
- * - 'files': Activity only works with GCS file URIs
- * - 'both': Activity can handle either input type (dual-mode)
- *
- * @example
- * export async function myActivity(payload) { ... }
- * myActivity.inputSupport = 'files';
- */
-export type ActivityInputSupport = 'objectIds' | 'files' | 'both';
-
-/**
- * Augment Function interface to support inputSupport property.
- * This allows activities to declare their input support capabilities via function metadata.
- */
-declare global {
-    interface Function {
-        inputSupport?: ActivityInputSupport;
-    }
-}
+    | { inputType: 'files', files: WorkflowInputFile[] };
 
 /**
  * The payload sent when starting a workflow from the temporal client to the workflow instance.

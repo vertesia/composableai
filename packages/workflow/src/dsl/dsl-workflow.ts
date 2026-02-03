@@ -20,7 +20,8 @@ import {
     DSLWorkflowSpec,
     getDocumentIds,
     getTenantId,
-    WorkflowExecutionPayload
+    WorkflowExecutionPayload,
+    WorkflowInputFile
 } from "@vertesia/common";
 import ms, { StringValue } from 'ms';
 import { HandleDslErrorParams } from "../activities/handleError.js";
@@ -96,7 +97,7 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
 
     // Extract objectIds and files based on input type
     let objectIds: string[] = [];
-    let files: string[] = [];
+    let files: WorkflowInputFile[] = [];
 
     if (payload.input) {
         if (payload.input.inputType === 'objectIds') {

@@ -2,21 +2,7 @@ import { log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { Readable } from "stream";
-import { DocumentNotFoundError } from "../errors.js";
 import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
-import { FileSource } from "../input-types.js";
-
-/**
- * Validates that required fields are present in file_source
- */
-export function validateFileSource(fileSource: FileSource | undefined): asserts fileSource is FileSource & { source_url: string; storage_path: string } {
-    if (!fileSource?.source_url) {
-        throw new DocumentNotFoundError("source_url is required", []);
-    }
-    if (!fileSource?.storage_path) {
-        throw new DocumentNotFoundError("storage_path is required", []);
-    }
-}
 
 /**
  * Uploads extracted text preview to cloud storage

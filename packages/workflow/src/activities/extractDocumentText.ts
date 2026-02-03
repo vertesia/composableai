@@ -4,20 +4,19 @@ import {
     CreateContentObjectPayload,
     DSLActivityExecutionPayload,
     DSLActivitySpec,
+    WorkflowInputFile,
 } from "@vertesia/common";
 import { markdownWithMarkitdown } from "../conversion/markitdown.js";
 import { mutoolPdfToText } from "../conversion/mutool.js";
 import { markdownWithPandoc } from "../conversion/pandoc.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
-import { FileSource } from "../input-types.js";
 import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
 import { fetchBlobAsBuffer, md5 } from "../utils/blobs.js";
 import {
     createFileSourceResult,
-    uploadTextPreviewToStorage,
-    validateFileSource,
-} from "../utils/textPreviewUtils.js";
+    uploadTextPreviewToStorage
+} from "../utils/text-preview-utils.js";
 import { countTokens } from "../utils/tokens.js";
 
 //@ts-ignore
@@ -26,7 +25,7 @@ const JSON: DSLActivitySpec = {
 };
 
 export interface ExtractDocumentTextParams {
-    file_source?: FileSource;
+    output_storage_path?: string;
 }
 export interface ExtractDocumentText extends DSLActivitySpec<ExtractDocumentTextParams> {
     name: "extractDocumentText";
@@ -36,17 +35,19 @@ export interface ExtractDocumentText extends DSLActivitySpec<ExtractDocumentText
 export async function extractDocumentText(
     payload: DSLActivityExecutionPayload<ExtractDocumentTextParams>,
 ): Promise<TextExtractionResult> {
-    const { client, objectId, params } = await setupActivity(payload);
+    const context = await setupActivity(payload);
+    const { client, inputType, params } = context;
+    const { output_storage_path } = params;
 
-    if (objectId) {
-        // Object mode: fetch from object store
-        return extractFromObject(client, objectId, payload.objectIds);
+    if (inputType === 'files') {
+        // File mode: extract from file source
+        if (!output_storage_path) {
+            throw new Error('output_storage_path is required when extracting text from file sources');
+        }
+        return extractFromFileSource(client, context.file, output_storage_path);
     } else {
-        // File source mode: use file_source parameter
-        const fileSource = params?.file_source;
-        validateFileSource(fileSource);
-
-        return extractFromFileSource(client, fileSource);
+        // Object mode: fetch from object store
+        return extractFromObject(client, context.objectId, context.objectIds || []);
     }
 }
 
@@ -118,26 +119,27 @@ async function extractFromObject(
 
 async function extractFromFileSource(
     client: any,
-    fileSource: FileSource & { source_url: string; storage_path: string },
+    input_file: WorkflowInputFile,
+    output_storage_path: string
 ): Promise<TextExtractionResult> {
-    log.info(`Extracting text from ${fileSource.source_url} with type ${fileSource.mimetype}`);
+    log.info(`Extracting text from ${input_file}`);
 
     let fileBuffer: Buffer;
     try {
-        fileBuffer = await fetchBlobAsBuffer(client, fileSource.source_url);
+        fileBuffer = await fetchBlobAsBuffer(client, input_file.url);
     } catch (e: any) {
         log.error(`Error reading file: ${e}`);
-        return createFileSourceResult(fileSource.source_url, fileSource.storage_path, null);
+        return createFileSourceResult(input_file.url, output_storage_path, null);
     }
 
-    const txt = await extractTextFromBuffer(fileBuffer, fileSource.mimetype);
+    const txt = await extractTextFromBuffer(fileBuffer, input_file.mimetype);
 
     // Upload extracted text to storage
-    if (txt && fileSource.storage_path) {
-        await uploadTextPreviewToStorage(client, txt, fileSource.storage_path, "Document");
+    if (txt && output_storage_path) {
+        await uploadTextPreviewToStorage(client, txt, output_storage_path, "Document");
     }
 
-    return createFileSourceResult(fileSource.source_url, fileSource.storage_path, txt);
+    return createFileSourceResult(input_file.url, output_storage_path, txt);
 }
 
 async function extractTextFromBuffer(fileBuffer: Buffer, mimeType: string): Promise<string | null> {

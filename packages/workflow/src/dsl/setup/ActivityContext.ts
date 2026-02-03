@@ -6,6 +6,7 @@ import {
     Project,
     WorkflowExecutionPayload,
     WorkflowInputType,
+    WorkflowInputFile,
 } from "@vertesia/common";
 import {
     DocumentNotFoundError,
@@ -110,19 +111,19 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     }
 
     /**
-     * Get the first file URI from the workflow input.
+     * Get the first file from the workflow input.
      * Only available when workflow input type is 'files'.
      * @throws {WorkflowExecutionError} If input type is not 'files'
      * @throws {WorkflowParamNotFoundError} If files array is empty
      */
-    get file(): string {
+    get file(): WorkflowInputFile {
         const input = this.payload.input;
         if (!input || input.inputType !== 'files') {
             throw new WorkflowExecutionError(
                 'Activity expects files but received objectIds'
             );
         }
-        // TypeScript now knows input is { inputType: 'files', files: string[] }
+        // TypeScript now knows input is { inputType: 'files', files: WorkflowInputFile[] }
         const files = input.files;
         if (!files || files.length === 0) {
             log.error("No files found in payload");
@@ -138,35 +139,37 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
     }
 
     /**
-     * Get all file URIs from the workflow input.
+     * Get all files from the workflow input.
      * Only available when workflow input type is 'files'.
      * @throws {WorkflowExecutionError} If input type is not 'files'
      */
-    get files(): string[] {
+    get files(): WorkflowInputFile[] {
         const input = this.payload.input;
         if (!input || input.inputType !== 'files') {
             throw new WorkflowExecutionError(
                 'Activity expects files but received objectIds'
             );
         }
-        // TypeScript now knows input is { inputType: 'files', files: string[] }
+        // TypeScript now knows input is { inputType: 'files', files: WorkflowInputFile[] }
         return input.files;
     }
 
     /**
-     * Generic accessor for the first input (objectId or file).
+     * Generic accessor for the first input (objectId or file URL).
      * Use this in dual-mode activities that support both input types.
+     * For files, returns the URL of the first file.
      */
     get input(): string {
-        return this.inputType === 'objectIds' ? this.objectId : this.file;
+        return this.inputType === 'objectIds' ? this.objectId : this.file.url;
     }
 
     /**
-     * Generic accessor for all inputs (objectIds or files).
+     * Generic accessor for all inputs (objectIds or file URLs).
      * Use this in dual-mode activities that support both input types.
+     * For files, returns an array of URLs.
      */
     get inputs(): string[] {
-        return this.inputType === 'objectIds' ? (this.objectIds || []) : this.files;
+        return this.inputType === 'objectIds' ? (this.objectIds || []) : this.files.map(f => f.url);
     }
 
     fetchProject() {
