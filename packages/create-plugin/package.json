@@ -26,6 +26,11 @@
   ],
   "author": "Vertesia",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vertesia/composableai.git",
+    "directory": "packages/create-plugin"
+  },
   "dependencies": {
     "chalk": "^5.3.0",
     "degit": "^2.8.4",
