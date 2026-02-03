@@ -70,13 +70,14 @@ export interface AuthTokenPayload {
     /**
      * API endpoints information to be used with this token.
      * Either a n API domain like 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api-staging.vertesia.io' | 'local'
-     * or explicit studio and store URLs.
+     * or explicit studio, store, and token URLs.
      */
     endpoints?:
         | string
         | {
               studio: string;
               store: string;
+              token?: string;
           };
 
     iss: string; //issuer
@@ -86,6 +87,24 @@ export interface AuthTokenPayload {
 
     permissions?: string[]; //permissions
     scopes?: string[]; //scopes
+
+    /**
+     * Service caller information for agent and service account tokens.
+     * Contains audit information about who/what initiated the token request.
+     * For agent tokens, includes `onBehalfOf` with the original user's token payload.
+     */
+    service_caller?: {
+        /** The principal that requested the token (e.g., service account identity) */
+        id?: string;
+        name?: string;
+        email?: string;
+        /**
+         * For agent tokens: the verified token payload of the user/apikey the agent acts on behalf of.
+         * Contains the original user's name, email, picture, user_id, etc.
+         */
+        onBehalfOf?: AuthTokenPayload;
+        [key: string]: unknown;
+    };
 }
 
 export enum PrincipalType {
