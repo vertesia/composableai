@@ -17,13 +17,11 @@ export function JSONCode({ data, className }: { data: any; className?: string })
     }, [data]);
 
     return (
-        <div className={className}>
+        <div className={`h-full ${className || ''}`}>
             <MonacoEditor
                 value={jsonString}
                 language="json"
                 theme={theme === 'dark' ? 'vs-dark' : 'vs'}
-                minLines={10}
-                maxLines={50}
                 options={{
                     readOnly: true,
                     domReadOnly: true,
