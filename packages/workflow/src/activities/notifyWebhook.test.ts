@@ -184,4 +184,49 @@ describe("Webhook should be notified", () => {
     });
   });
 
+  it("test POST with undefined detail still sends body with workflow info (old format)", async () => {
+    // Mock successful response
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      url: 'https://vertesia.test'
+    };
+    mockFetch.mockResolvedValueOnce(mockResponse as Response);
+
+    // Create payload with string webhook (old format) and undefined detail
+    const payload = createTestPayload({
+      webhook: 'https://vertesia.test',
+      detail: undefined,
+      event_name: 'workflow_completed'
+    });
+
+    const res = await testEnv.run(notifyWebhook, payload);
+
+    // Verify fetch was called
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [_url, options] = mockFetch.mock.calls[0];
+
+    // Verify the body parameter is NOT undefined
+    expect(options?.body).toBeDefined();
+
+    // Verify the body contains workflow info in old format
+    const bodyData = JSON.parse(options?.body as string);
+    expect(bodyData.workflowId).toBe('wf_id');
+    expect(bodyData.runId).toBe('wf_run_id');
+    expect(bodyData.status).toBe('completed');
+    expect(bodyData.result).toBeNull(); // null when detail is undefined
+
+    // Verify Content-Type header is set
+    const headers = options?.headers as Record<string, string>;
+    expect(headers['Content-Type']).toBe('application/json');
+
+    // Verify response
+    expect(res).toEqual({
+      status: 200,
+      message: 'OK',
+      url: 'https://vertesia.test'
+    });
+  });
+
 });
