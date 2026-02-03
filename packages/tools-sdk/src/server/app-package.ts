@@ -1,4 +1,4 @@
-import { AppPackage, AppPackageScope, CatalogInteractionRef } from "@vertesia/common";
+import { AppPackage, AppPackageScope, CatalogInteractionRef, InCodeTypeDefinition } from "@vertesia/common";
 import { Context, Hono } from "hono";
 import { ToolServerConfig } from "./types.js";
 
@@ -35,8 +35,14 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
         }
         pkg.interactions = allInteractions;
     },
-    types(_pkg: AppPackage, _config: ToolServerConfig) {
-        //console.warn("Package types is not yet supported");
+    types(pkg: AppPackage, config: ToolServerConfig) {
+        const allTypes: InCodeTypeDefinition[] = [];
+        for (const coll of config.types || []) {
+            for (const type of coll.types) {
+                allTypes.push(type);
+            }
+        }
+        pkg.types = allTypes;
     },
     ui(pkg: AppPackage, config: ToolServerConfig, c: Context) {
         if (config.uiConfig) {
