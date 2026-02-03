@@ -7,9 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       llumiverse_sha:
+        # example: "d4c748957db4ac812565cf99e00b11a7ede97bc7"
         description: "The commit SHA of vertesia/llumiverse to update"
         required: true
       branch:
+        # example: "main" or "preview"
+        #   (don't use "refs/heads/main" or "refs/heads/preview")
         description: "The branch to update the submodule in"
         required: true
         default: "main"
@@ -44,10 +47,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Fetching pull requests with labels: [branch:main] and [workflow:update-llumiverse]..."
+          echo "Fetching pull requests with labels: [branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }}] and [workflow:update-llumiverse]..."
           pr_list=$(gh pr list \
             --repo vertesia/composableai \
-            --label branch:main \
+            --label branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }} \
             --label workflow:update-llumiverse \
             --state open \
             --json number,title \
@@ -82,7 +85,6 @@ jobs:
       - name: Update Git submodule and lockfile
         id: update-submodule
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           export TARGET_LLUMIVERSE_MSG="$(git -C llumiverse log --format="%cd: %s by %an" --date=short -1 $TARGET_LLUMIVERSE_SHA)"
@@ -148,7 +150,7 @@ jobs:
               --title "chore: update llumiverse to ${TARGET_LLUMIVERSE_SHA::7}" \
               --body "${pr_body}" \
               --base ${{ env.TARGET_COMPOSABLEAI_BRANCH }} \
-              --label "branch:main" \
+              --label "branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }}" \
               --label "workflow:update-llumiverse")
           new_pr_number=$(echo "$new_pr_url" | grep -oP '(?<=pull/)\d+')
 
