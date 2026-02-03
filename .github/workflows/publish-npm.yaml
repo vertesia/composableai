@@ -48,7 +48,8 @@ jobs:
       - run: pnpm install
 
       - name: Publish all packages
-        run: ./.github/bin/publish-all-packages.sh \
-            --ref "${{ github.ref_name }}" \
-            --dry-run "${{ inputs.dry_run }}" \
-            --version-type "${{ inputs.version_type }}"
+        run: |
+          ./.github/bin/publish-all-packages.sh \
+              --ref "${{ github.ref_name }}" \
+              --dry-run "${{ inputs.dry_run }}" \
+              --version-type "${{ inputs.version_type }}"
