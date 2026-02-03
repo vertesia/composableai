@@ -1,9 +1,9 @@
 import {
   MockActivityEnvironment,
 } from "@temporalio/testing";
-import { ContentEventName, DSLActivityExecutionPayload } from "@vertesia/common";
+import { ApiVersions, ContentEventName, DSLActivityExecutionPayload, WebHookSpec } from "@vertesia/common";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { notifyWebhook, NotifyWebhookParams } from "./notifyWebhook.js";
+import { notifyWebhook, NotifyWebhookParams, WebhookNotificationPayload } from "./notifyWebhook.js";
 
 // Mock fetch globally
 vi.stubGlobal('fetch', vi.fn());
@@ -128,6 +128,59 @@ describe("Webhook should be notified", () => {
       headers: {
         'Content-Type': 'application/json',
       },
+    });
+  });
+
+  it("test POST with undefined detail still sends body with workflow info (new format)", async () => {
+    // Mock successful response
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      url: 'https://vertesia.test'
+    };
+    mockFetch.mockResolvedValueOnce(mockResponse as Response);
+
+    // Create webhook spec with version to use new format
+    const webhookSpec: WebHookSpec = {
+      url: 'https://vertesia.test',
+      version: ApiVersions.COMPLETION_RESULT_V1
+    };
+
+    // Create payload with undefined detail (like workflow_failed events)
+    const payload = createTestPayload({
+      webhook: webhookSpec,
+      detail: undefined,
+      event_name: 'workflow_failed'
+    });
+
+    const res = await testEnv.run(notifyWebhook, payload);
+
+    // Verify fetch was called
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [_url, options] = mockFetch.mock.calls[0];
+
+    // Verify the body parameter is NOT undefined
+    expect(options?.body).toBeDefined();
+
+    // Verify the body contains workflow info
+    const bodyData = JSON.parse(options?.body as string) as WebhookNotificationPayload;
+    expect(bodyData.workflow_id).toBe('wf_id');
+    expect(bodyData.workflow_name).toBe('wfFuncName');
+    expect(bodyData.workflow_run_id).toBe('wf_run_id');
+    expect(bodyData.event_name).toBe('workflow_failed');
+    // detail should not be present when undefined (JSON.stringify omits it)
+    expect(bodyData.detail).toBeUndefined();
+
+    // Verify Content-Type header is set
+    const headers = options?.headers as Record<string, string>;
+    expect(headers['Content-Type']).toBe('application/json');
+
+    // Verify response
+    expect(res).toEqual({
+      status: 200,
+      message: 'OK',
+      url: webhookSpec.url
     });
   });
 

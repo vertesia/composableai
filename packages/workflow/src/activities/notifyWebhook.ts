@@ -45,7 +45,7 @@ export async function notifyWebhook(payload: DSLActivityExecutionPayload<NotifyW
 
     if (!target_url) throw new WorkflowParamNotFoundError('target_url');
 
-    const hasBody = params.detail && method === 'POST'; //body is sent only for POST
+    const hasBody = method === 'POST'; //body is sent only for POST, always includes workflow info
 
     const headers = {
         ...defaultHeaders,
