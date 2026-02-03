@@ -1,7 +1,7 @@
 import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip } from "@vertesia/ui/core";
-import { Activity, CheckIcon, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
+import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
+import { ConversationFile } from "@vertesia/common";
 import { SelectDocument } from "../../../store";
 
 /** Represents an uploaded file attachment */
@@ -84,7 +84,6 @@ export default function MessageInput({
     // File upload props
     onFilesSelected,
     uploadedFiles = [],
-    onRemoveFile,
     acceptedFileTypes = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp",
     maxFiles = 5,
     processingFiles,
@@ -337,58 +336,6 @@ export default function MessageInput({
                                 >
                                     <HelpCircleIcon className="size-3 text-gray-400 dark:text-gray-500" />
                                 </VTooltip>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {uploadedFiles.map((file) => (
-                                    <div
-                                        key={file.id}
-                                        className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md text-sm"
-                                    >
-                                        <FileTextIcon className="size-3.5 text-gray-500" />
-                                        <span className="max-w-[120px] truncate">{file.name}</span>
-                                        {onRemoveFile && (
-                                            <button
-                                                onClick={() => onRemoveFile(file.id)}
-                                                className="ml-1 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                                            >
-                                                <XIcon className="size-3" />
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                                {/* Processing files from workflow */}
-                                {processingFiles && Array.from(processingFiles.values()).map((file) => (
-                                    <div
-                                        key={file.id}
-                                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm ${
-                                            file.status === FileProcessingStatus.ERROR
-                                                ? 'bg-destructive/10 text-destructive'
-                                                : file.status === FileProcessingStatus.READY
-                                                    ? 'bg-success/10 text-success'
-                                                    : 'bg-attention/10 text-attention'
-                                        }`}
-                                    >
-                                        {file.status === FileProcessingStatus.UPLOADING && (
-                                            <Spinner size="xs" />
-                                        )}
-                                        {file.status === FileProcessingStatus.PROCESSING && (
-                                            <Spinner size="xs" />
-                                        )}
-                                        {file.status === FileProcessingStatus.READY && (
-                                            <CheckIcon className="size-3.5" />
-                                        )}
-                                        {file.status === FileProcessingStatus.ERROR && (
-                                            <XIcon className="size-3.5" />
-                                        )}
-                                        <span className="max-w-[120px] truncate">{file.name}</span>
-                                        <span className="text-xs opacity-70">
-                                            {file.status === FileProcessingStatus.UPLOADING && 'Uploading...'}
-                                            {file.status === FileProcessingStatus.PROCESSING && 'Processing...'}
-                                            {file.status === FileProcessingStatus.READY && 'Ready'}
-                                            {file.status === FileProcessingStatus.ERROR && (file.error || 'Error')}
-                                        </span>
-                                    </div>
-                                ))}
                             </div>
                         </div>
                     )}
