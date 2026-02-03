@@ -91,7 +91,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
     const breadcrumbItems = buildBreadcrumbItems();
 
     return (
-        <div className={clsx(isCompact ? 'pb-0' : 'pb-2', 'p-4 flex flex-col', className)}>
+        <div className={clsx(isCompact ? 'pb-0' : 'pb-2', 'p-4 flex flex-col border-b', className)}>
             <div className='flex items-start gap-4'>
                 <div className="w-full flex place-content-between h-auto min-h-8 flex-col items-start">
                     <nav className="flex-1 flex justify-start text-xs">
