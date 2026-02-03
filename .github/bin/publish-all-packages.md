@@ -132,21 +132,23 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 **Steps**:
 - All version updates happen normally
 - `npm publish` commands run with `--dry-run` flag
+- Package tarballs are created and verified
 - No actual packages are published to NPM
-- No git commits are made (even for preview)
+- No git commits are made
 
 **Usage**:
+
 ```bash
 # Test main branch publishing
-./publish-all-packages.sh main true
+./publish-all-packages.sh --ref main --dry-run --version-type dev
 
-# Test preview branch publishing with minor bump
-./publish-all-packages.sh preview true minor
+# Test release publishing with minor bump
+./publish-all-packages.sh --ref preview --dry-run --version-type minor
 ```
 
 **Result**:
 - Shows what would be published
-- Validates package.json files
+- Validates package versions and dependencies
 - Safe to run multiple times
 - No side effects
 
@@ -156,16 +158,17 @@ The script is designed to be run from the `publish-npm.yaml` GitHub Actions work
 
 ```yaml
 - name: Publish all packages
-  run: ./.github/bin/publish-all-packages.sh "${{ inputs.ref }}" "${{ inputs.dry_run }}" "${{ inputs.version_type }}"
-  env:
-    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  run: ./.github/bin/publish-all-packages.sh \
+      --ref "${{ inputs.ref }}" \
+      --dry-run "${{ inputs.dry_run }}" \
+      --version-type "${{ inputs.version_type }}"
 ```
 
 ### Workflow Inputs
 
-- `ref`: Dropdown to select `main` or `preview`
-- `dry_run`: Checkbox (default: true for safety)
-- `version_type`: Dropdown for `patch`, `minor`, or `major` (only relevant for preview)
+- `ref`: Text input for git reference (default: `main`) → maps to `--ref`
+- `dry_run`: Checkbox (default: true for safety) → maps to `--dry-run true` or `--dry-run false`
+- `version_type`: Dropdown for `patch`, `minor`, or `dev` → maps to `--version-type`
 
 ## Key Features
 
@@ -174,17 +177,23 @@ The script is designed to be run from the `publish-npm.yaml` GitHub Actions work
 pnpm automatically resolves `workspace:*` dependencies during publish:
 - When a composableai package references `"@llumiverse/common": "workspace:*"`
 - pnpm reads the actual version from `llumiverse/common/package.json`
-- The published package will contain the exact version (e.g., `"@llumiverse/common": "0.22.0-dev-87f3fee"`)
+- The published package will contain the exact version
+
+### Verification (Dry Run)
+
+In dry run mode, the script:
+- Packs each package into a tarball
+- Extracts and verifies the version matches expected
+- Checks that internal dependencies point to correct versions
+- Reports any mismatches
 
 ### Safety
 
 - Dry run enabled by default in GitHub Actions
-- All version updates happen before any publishing (prevents dependency mismatches)
+- All version updates happen before any publishing
 - Portable shell syntax (works on macOS and Linux)
 
 ### Requirements
 
-- `GITHUB_SHA` environment variable (for commit hash in dev versions)
-- `NODE_AUTH_TOKEN` environment variable (for NPM authentication)
 - pnpm workspace setup
 - npm 11.5.1 or later

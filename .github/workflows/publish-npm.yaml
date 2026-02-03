@@ -16,7 +16,6 @@ on:
           - dev
           - patch
           - minor
-          - major
         default: dev
 
 permissions:
@@ -47,6 +46,9 @@ jobs:
       - run: pnpm install
 
       - name: Publish all packages
-        run: ./.github/bin/publish-all-packages.sh "${{ github.ref_name }}" "${{ inputs.dry_run }}" "${{ inputs.version_type }}"
+        run: ./.github/bin/publish-all-packages.sh \
+            --ref "${{ github.ref_name }}" \
+            --dry-run "${{ inputs.dry_run }}" \
+            --version-type "${{ inputs.version_type }}"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
