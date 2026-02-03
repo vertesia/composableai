@@ -17,7 +17,7 @@ export function JSONDisplay({ value, viewCode = false }: JSONDisplayProps) {
     }
 
     return (
-        <div className='relative w-full'>
+        <div className='relative w-full h-full'>
             {viewCode ? <JSONCode data={value} /> : <JSONView value={value} />}
         </div>
     )
