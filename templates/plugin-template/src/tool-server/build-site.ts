@@ -1,12 +1,11 @@
 import {
+    contentTypeCollectionPage,
     indexPage,
     interactionCollectionPage,
     skillCollectionPage,
     toolCollectionPage
 } from "@vertesia/tools-sdk";
-import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
-import { glob } from "node:fs/promises";
-import { basename } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { ServerConfig } from "./config.js";
 import { skills } from "./skills/index.js";
 import { tools } from "./tools/index.js";
@@ -22,17 +21,11 @@ async function build(outDir: string) {
 
     // Load interactions
     const interactions = ServerConfig.interactions;
+    const types = ServerConfig.types;
 
     // Create main index page
     console.log('Creating index page...');
     let indexHtml = indexPage(ServerConfig);
-
-    // Add link to UI dev build (if it exists)
-    const uiLink = '\n<div style="margin: 20px 0; padding: 15px; background: #f0f0f0; border-radius: 5px;">\n' +
-        '  <a href="/ui/index.html" style="color: #0066cc; text-decoration: none; font-weight: bold;">' +
-        '📱 View UI Plugin Development Build</a>\n' +
-        '</div>\n';
-    indexHtml = indexHtml.replace('</body>', uiLink + '</body>');
 
     writeFile(
         `${outDir}/index.html`,
@@ -72,46 +65,18 @@ async function build(outDir: string) {
         );
     }
 
+    // Content type collection pages
+    console.log(`Creating ${types.length} content type collection pages...`);
+    for (const coll of types) {
+        const dir = `${outDir}/types/${coll.name}`;
+        mkdirSync(dir, { recursive: true });
+        writeFile(
+            `${dir}/index.html`,
+            contentTypeCollectionPage(coll)
+        );
+    }
+
     console.log('✓ Static site build complete!');
-}
-
-/**
- * Find and copy all scripts (.js, .py) from skill directories to dist/scripts (flat)
- * Uses glob to find: src/skills/*-slash-*-slash-*.{py,js}
- */
-async function copyScriptsFromSkills(outputDir: string): Promise<number> {
-    // Ensure output directory exists
-    mkdirSync(outputDir, { recursive: true });
-
-    // Find all .py and .js files in skill directories
-    const scriptFiles = glob('src/tool-server/skills/*/*/*.{py,js}');
-
-    // Check for duplicate script names
-    const nameMap = new Map<string, string>();
-    const filesToCopy: { file: string; name: string }[] = [];
-
-    for await (const file of scriptFiles) {
-        const name = basename(file);
-        if (nameMap.has(name)) {
-            const existing = nameMap.get(name)!;
-            throw new Error(
-                `Duplicate script name "${name}" found:\n` +
-                `  - ${existing}\n` +
-                `  - ${file}\n` +
-                `Script names must be unique across all skills.`
-            );
-        }
-        nameMap.set(name, file);
-        filesToCopy.push({ file, name });
-    }
-
-    // Copy all scripts
-    for (const { file, name } of filesToCopy) {
-        const destPath = `${outputDir}/${name}`;
-        copyFileSync(file, destPath);
-    }
-
-    return filesToCopy.length;
 }
 
 function writeFile(file: string, content: string) {

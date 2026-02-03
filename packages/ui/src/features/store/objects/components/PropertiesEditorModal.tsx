@@ -213,7 +213,6 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                             onChange={(update) => handleEditorChange(update.state.doc.toString())}
                             beforeMount={beforeMount}
                             theme={theme === 'dark' ? 'vs-dark' : 'vs'}
-                            minLines={40}
                         />
                     </div>
                 </ModalBody>

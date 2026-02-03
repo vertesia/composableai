@@ -50,13 +50,13 @@ export function Modal({
             case "sm":
                 return "max-w-[20vw]";
             case "md":
-                return "max-w-[40vw]";
+                return "max-w-[60vw] lg:max-w-[40vw]";
             case "lg":
-                return "max-w-[60vw]";
+                return "max-w-[80vw] md:max-w-[60vw]";
             case "xl":
-                return "max-w-[80vw]";
+                return "max-w-[95vw] lg:max-w-[80vw]";
             default:
-                return "max-w-[40vw]";
+                return "max-w-[60vw] lg:max-w-[40vw]";
         }
     }
 

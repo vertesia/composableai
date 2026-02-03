@@ -47,8 +47,6 @@ interface MonacoEditorProps {
     beforeMount?: (monaco: typeof import('monaco-editor')) => void;
     onMount?: (editor: monaco.editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) => void;
     defaultValue?: string;
-    minLines?: number; // Minimum lines to show (default: 10)
-    maxLines?: number; // Maximum lines before scrolling (default: unlimited)
 }
 
 export function MonacoEditor({
@@ -62,8 +60,6 @@ export function MonacoEditor({
     beforeMount,
     onMount,
     defaultValue,
-    minLines = 10,
-    maxLines
 }: MonacoEditorProps) {
     const [editorValue, setEditorValue] = useState(value);
     const editorInstanceRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
@@ -168,7 +164,7 @@ export function MonacoEditor({
         wordWrap: 'on' as const,
         lineNumbers: 'on' as const,
         folding: false,
-        lineDecorationsWidth: 0,
+        lineDecorationsWidth: 10,
         lineNumbersMinChars: 3,
         automaticLayout: true,
         formatOnPaste: true,
@@ -190,19 +186,8 @@ export function MonacoEditor({
         ...options
     };
 
-    // Calculate fixed height based on minLines/maxLines
-    const lineHeight = 19; // Monaco default line height
-    const padding = 20; // top/bottom padding
-    const displayLines = maxLines || minLines;
-    const editorHeight = displayLines * lineHeight + padding;
-
     return (
-        <div
-            className={clsx(className, 'w-full')}
-            style={{
-                height: `${editorHeight}px`
-            }}
-        >
+        <div className={clsx(className, 'w-full h-full!')}>
             <Editor
                 className="h-full w-full"
                 height="100%"

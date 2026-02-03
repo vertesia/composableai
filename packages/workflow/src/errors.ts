@@ -98,4 +98,5 @@ export const WF_NON_RETRYABLE_ERRORS = [
     "WorkflowParamNotFoundError",
     "InvalidContentTypeError",
     "TokenExpiredError",
+    "ZenoClientNotFoundError",
 ];
