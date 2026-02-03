@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug Tool Server",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/lib/server-node.js",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PORT": "5174"
+            },
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/lib/**/*.js"
+            ],
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "**/node_modules/@vertesia/**",
+                "!**/node_modules/**"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        }
+    ]
+}
