@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "@vertesia/ui/core";
+import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { MessageSquare, CheckCircle, XCircle, AlertCircle, HelpCircle, Send } from "lucide-react";
 
 /** Option for user to select */
@@ -186,9 +187,9 @@ export function AskUserWidget({
                             </div>
                         )}
                         <div className="flex-1 min-w-0">
-                            <h4 className={`text-sm font-semibold text-gray-900 dark:text-gray-100 ${questionClassName || ""}`}>
-                                {question}
-                            </h4>
+                            <div className={`prose prose-sm dark:prose-invert max-w-none text-gray-900 dark:text-gray-100 ${questionClassName || ""}`}>
+                                <MarkdownRenderer>{question}</MarkdownRenderer>
+                            </div>
                             {description && (
                                 <p className={`mt-1 text-sm text-gray-600 dark:text-gray-400 ${descriptionClassName || ""}`}>
                                     {description}

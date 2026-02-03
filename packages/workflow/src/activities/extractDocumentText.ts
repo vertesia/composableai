@@ -13,12 +13,12 @@ import { DocumentNotFoundError } from "../errors.js";
 import { FileSource } from "../input-types.js";
 import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
 import { fetchBlobAsBuffer, md5 } from "../utils/blobs.js";
-import { countTokens } from "../utils/tokens.js";
 import {
     createFileSourceResult,
     uploadTextPreviewToStorage,
     validateFileSource,
 } from "../utils/textPreviewUtils.js";
+import { countTokens } from "../utils/tokens.js";
 
 //@ts-ignore
 const JSON: DSLActivitySpec = {

@@ -183,6 +183,29 @@ export interface ProjectConfiguration {
      */
     agent_streaming_enabled?: boolean;
 
+    /**
+     * Indexing configuration for this project.
+     * Controls whether indexing and querying are enabled at the project level.
+     */
+    indexing?: {
+        /**
+         * Enable indexing for content objects in this project.
+         * When enabled, content changes trigger indexing workflows.
+         * Defaults to true - indexing is always on when ES infrastructure is available.
+         */
+        enabled?: boolean;
+    };
+
+    /**
+     * Primary language for full-text search analysis.
+     * ISO 639-1 code (e.g., 'en', 'fr', 'ja', 'de').
+     * Determines which Elasticsearch analyzer is used for the text field.
+     * Defaults to 'en' (English/standard analyzer).
+     *
+     * Changing this value requires a full reindex to take effect.
+     */
+    main_language?: string;
+
 }
 
 // export interface ProjectConfigurationEmbeddings {
@@ -246,7 +269,6 @@ export const ProjectRefPopulate = "id name account";
 export interface EmbeddingsStatusResponse {
     status: string;
     embeddingRunsInProgress?: number;
-    totalRunsInProgress?: number;
     totalIndexableObjects?: number;
     embeddingsModels?: string[];
     objectsWithEmbeddings?: number;
@@ -255,6 +277,66 @@ export interface EmbeddingsStatusResponse {
         name?: string,
         type?: string
     }
+}
+
+/**
+ * Response from indexing status endpoint
+ */
+export interface IndexingStatusResponse {
+    /** Whether indexing infrastructure is available globally */
+    infrastructureEnabled: boolean;
+    /** Whether indexing is enabled for this project */
+    indexingEnabled: boolean;
+    /** @deprecated Now derived from indexingEnabled - queries automatically route to index when indexing is enabled */
+    query_enabled: boolean;
+    /** Index status */
+    index: {
+        /** Whether the index exists */
+        exists: boolean;
+        /** Alias name (used for queries) */
+        aliasName: string;
+        /** Actual index name (versioned) */
+        indexName: string;
+        /** Index version (timestamp when created) */
+        version: number;
+        /** When the current index was created */
+        createdAt: string | null;
+        /** Number of documents in the index */
+        documentCount: number;
+        /** Index size in bytes */
+        sizeBytes: number;
+    };
+    /** MongoDB document count for comparison */
+    mongoDocumentCount: number;
+    /** Whether a reindex is currently in progress */
+    reindexInProgress: boolean;
+    /** Reindex progress (if reindex is in progress) */
+    reindexProgress?: {
+        /** Total documents to reindex */
+        total: number;
+        /** Documents processed so far */
+        processed: number;
+        /** Successfully indexed documents */
+        successful: number;
+        /** Failed documents */
+        failed: number;
+        /** Current status (e.g., "indexing", "complete") */
+        status: string;
+        /** Current batch number */
+        currentBatch: number;
+        /** Total number of batches */
+        totalBatches: number;
+        /** Percentage complete (0-100) */
+        percentComplete: number;
+        /** Batches processed per second */
+        batchesPerSecond: number;
+        /** Documents processed per second */
+        docsPerSecond: number;
+        /** Elapsed time in seconds */
+        elapsedSeconds: number;
+        /** Estimated seconds remaining (null if unknown) */
+        estimatedSecondsRemaining: number | null;
+    };
 }
 
 export interface ProjectIntegrationListEntry {

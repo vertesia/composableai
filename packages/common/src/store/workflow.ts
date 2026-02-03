@@ -1,5 +1,6 @@
 import { JSONSchema4 } from "json-schema";
 import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
+import type { WorkflowInput } from "./dsl-workflow.js";
 
 export enum ContentEventName {
     create = "create",
@@ -151,9 +152,16 @@ export interface WorkflowExecutionPayload<T = Record<string, any>> extends Workf
     wf_rule_name?: string;
 
     /**
-     * The ID of the target objects processed by the workflow.
+     * The ID of the target objects processed by the workflow (legacy format).
+     * For backward compatibility. New workflows should use the `input` field.
      */
-    objectIds: string[];
+    objectIds?: string[];
+
+    /**
+     * New format: Workflow input (either objectIds or files).
+     * Takes precedence over the legacy `objectIds` field.
+     */
+    input?: WorkflowInput;
 
     /**
      * Auth Token to access Zeno and Composable from the workers
@@ -162,7 +170,12 @@ export interface WorkflowExecutionPayload<T = Record<string, any>> extends Workf
 }
 
 export function getDocumentIds(payload: WorkflowExecutionPayload): string[] {
-    if ("objectIds" in payload) {
+    // Check new input format first
+    if (payload.input?.inputType === 'objectIds') {
+        return payload.input.objectIds;
+    }
+    // Fall back to legacy objectIds field
+    if (payload.objectIds) {
         return payload.objectIds;
     }
     return [];
@@ -200,6 +213,13 @@ export interface ExecuteWorkflowPayload {
      * Timeout for the workflow execution to complete, in seconds.
      */
     timeout?: number; //timeout in seconds
+
+    /**
+     * Schedule the workflow to run at a specific time (ISO 8601 datetime).
+     * Example: "2024-02-15T16:00:00Z"
+     * If in the past or not provided, workflow runs immediately.
+     */
+    run_at?: string;
 }
 
 export interface ListWorkflowRunsPayload {

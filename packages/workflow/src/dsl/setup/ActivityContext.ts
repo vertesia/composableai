@@ -5,10 +5,12 @@ import {
     DSLWorkflowExecutionPayload,
     Project,
     WorkflowExecutionPayload,
+    WorkflowInputType,
 } from "@vertesia/common";
 import {
     DocumentNotFoundError,
     WorkflowParamNotFoundError,
+    WorkflowExecutionError,
 } from "../../errors.js";
 import { getProjectFromToken } from "../../utils/auth.js";
 import { getVertesiaClient } from "../../utils/client.js";
@@ -97,6 +99,74 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
             );
         }
         return workflowId;
+    }
+
+    /**
+     * Get the workflow input type (objectIds or files).
+     * Defaults to 'objectIds' for backward compatibility with legacy format.
+     */
+    get inputType(): WorkflowInputType {
+        return this.payload.input?.inputType || 'objectIds';
+    }
+
+    /**
+     * Get the first file URI from the workflow input.
+     * Only available when workflow input type is 'files'.
+     * @throws {WorkflowExecutionError} If input type is not 'files'
+     * @throws {WorkflowParamNotFoundError} If files array is empty
+     */
+    get file(): string {
+        const input = this.payload.input;
+        if (!input || input.inputType !== 'files') {
+            throw new WorkflowExecutionError(
+                'Activity expects files but received objectIds'
+            );
+        }
+        // TypeScript now knows input is { inputType: 'files', files: string[] }
+        const files = input.files;
+        if (!files || files.length === 0) {
+            log.error("No files found in payload");
+            throw new WorkflowParamNotFoundError(
+                "files[0]",
+                (
+                    this
+                        .payload as WorkflowExecutionPayload as DSLWorkflowExecutionPayload
+                ).workflow,
+            );
+        }
+        return files[0];
+    }
+
+    /**
+     * Get all file URIs from the workflow input.
+     * Only available when workflow input type is 'files'.
+     * @throws {WorkflowExecutionError} If input type is not 'files'
+     */
+    get files(): string[] {
+        const input = this.payload.input;
+        if (!input || input.inputType !== 'files') {
+            throw new WorkflowExecutionError(
+                'Activity expects files but received objectIds'
+            );
+        }
+        // TypeScript now knows input is { inputType: 'files', files: string[] }
+        return input.files;
+    }
+
+    /**
+     * Generic accessor for the first input (objectId or file).
+     * Use this in dual-mode activities that support both input types.
+     */
+    get input(): string {
+        return this.inputType === 'objectIds' ? this.objectId : this.file;
+    }
+
+    /**
+     * Generic accessor for all inputs (objectIds or files).
+     * Use this in dual-mode activities that support both input types.
+     */
+    get inputs(): string[] {
+        return this.inputType === 'objectIds' ? (this.objectIds || []) : this.files;
     }
 
     fetchProject() {
