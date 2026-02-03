@@ -25,9 +25,9 @@ import {
 import ms, { StringValue } from 'ms';
 import { HandleDslErrorParams } from "../activities/handleError.js";
 import * as activities from "../activities/index.js";
+import { RateLimitParams } from "../activities/rateLimiter.js";
 import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from "../errors.js";
 import { Vars } from "./vars.js";
-import { RateLimitParams } from "../activities/rateLimiter.js";
 
 
 interface BaseActivityPayload extends WorkflowExecutionPayload {
@@ -49,6 +49,23 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     if (!definition) {
         throw new WorkflowParamNotFoundError("workflow");
     }
+
+    // Normalize input: convert legacy objectIds format to new input format
+    if (!payload.input && payload.objectIds) {
+        payload.input = {
+            inputType: 'objectIds',
+            objectIds: payload.objectIds
+        };
+    }
+
+    // Validate that workflow has input
+    if (!payload.input && !payload.objectIds) {
+        throw new WorkflowParamNotFoundError(
+            "input",
+            definition
+        );
+    }
+
     // the base payload will be used to create the activities payload
     const basePayload: BaseActivityPayload = {
         ...payload,
@@ -73,12 +90,33 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     });
     const defaultProxy = proxyActivities(defaultOptions);
     log.debug("Default activity proxy is ready");
-    // merge default vars with the payload vars and add objectIds and objectId
+
+    // Merge default vars with the payload vars and add input variables
+    const inputType = payload.input?.inputType || 'objectIds';
+
+    // Extract objectIds and files based on input type
+    let objectIds: string[] = [];
+    let files: string[] = [];
+
+    if (payload.input) {
+        if (payload.input.inputType === 'objectIds') {
+            objectIds = payload.input.objectIds;
+        } else if (payload.input.inputType === 'files') {
+            files = payload.input.files;
+        }
+    }
+
     const vars = new Vars({
         ...definition.vars,
         ...payload.vars,
-        objectIds: payload.objectIds || [],
-        objectId: payload.objectIds ? payload.objectIds[0] : undefined
+        // Add input type variables
+        inputType,
+        // Add objectIds variables (for objectIds input or backward compatibility)
+        objectIds,
+        objectId: objectIds[0],
+        // Add files variables (for files input)
+        files,
+        file: files[0],
     });
 
     log.info("Executing workflow", { payload });
@@ -290,6 +328,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         log.info("Activity skipped: condition not satisfied", activity.condition);
         return;
     }
+
     const importParams = vars.createImportVars(activity.import);
     const executionPayload = dslActivityPayload(basePayload, activity, importParams);
     log.info("Executing activity: " + activity.name, { payload: executionPayload });
