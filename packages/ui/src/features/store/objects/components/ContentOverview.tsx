@@ -1,7 +1,7 @@
 import { useEffect, useState, memo, useRef, type RefObject } from "react";
 
 import { useUserSession } from "@vertesia/ui/session";
-import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, VModal, VModalBody, VModalFooter, VModalTitle } from "@vertesia/ui/core";
+import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
 import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME } from "@vertesia/common";
 import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
@@ -696,25 +696,25 @@ function TextActions({
                     )}
                 </div>
             </div>
-            <VModal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
-                <VModalTitle>Export document as PDF</VModalTitle>
-                <VModalBody>
+            <Modal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
+                <ModalTitle>Export document as PDF</ModalTitle>
+                <ModalBody>
                     <p className="mb-2">
                         This will open your browser&apos;s print dialog with the current document content.
                     </p>
                     <p className="text-sm text-muted">
                         To save a PDF, choose &quot;Save as PDF&quot; or a similar option in the print dialog.
                     </p>
-                </VModalBody>
-                <VModalFooter align="right">
+                </ModalBody>
+                <ModalFooter align="right">
                     <Button variant="ghost" size="sm" onClick={() => setIsPdfModalOpen(false)}>
                         Cancel
                     </Button>
                     <Button size="sm" onClick={handleConfirmClientPdfExport}>
                         Open print dialog
                     </Button>
-                </VModalFooter>
-            </VModal>
+                </ModalFooter>
+            </Modal>
         </>
     );
 }

@@ -1,7 +1,8 @@
 import { SignupData } from "@vertesia/common";
-import { Button, Input, VSelectBox, SelectStack } from "@vertesia/ui/core";
-import { User, getAuth } from "firebase/auth";
+import { Button, Input, SelectBox, SelectStack } from "@vertesia/ui/core";
+import { User } from "firebase/auth";
 import { useEffect, useState } from "react";
+import { getFirebaseAuth } from "@vertesia/ui/session";
 
 
 interface CompanySizeOption {
@@ -55,7 +56,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
     const isCompany = accountType === "company";
 
     useEffect(() => {
-        const user = getAuth().currentUser;
+        const user = getFirebaseAuth().currentUser;
         if (!user) {
             console.error('No user found');
             return;
@@ -96,8 +97,8 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
 
         window.localStorage.setItem("composableSignupData", JSON.stringify(signupData));
 
-        const fbToken = await getAuth().currentUser?.getIdToken();
-        console.log('Got firebase token', getAuth(), fbToken);
+        const fbToken = await getFirebaseAuth().currentUser?.getIdToken();
+        console.log('Got firebase token', getFirebaseAuth(), fbToken);
         if (!fbToken) {
             console.error('No firebase token found');
             return;
@@ -129,7 +130,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
             {isCompany &&
                 <>
                     <FormItem label="Company Size">
-                        <VSelectBox className="w-full border border-accent bg-muted"
+                        <SelectBox className="w-full border border-accent bg-muted"
                             value={companySize}
                             options={companySizeOptions}
                             onChange={setCompanySize}
@@ -146,7 +147,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
                 </>
             }
             <FormItem label="Project Maturity">
-                <VSelectBox className="w-full border border-accent bg-muted"
+                <SelectBox className="w-full border border-accent bg-muted"
                     options={projectMaturityOptions}
                     value={projectMaturityOptions.find((option) => option.id === projectMaturity)}
                     optionLabel={(option) => option?.label}

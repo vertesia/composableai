@@ -1,15 +1,11 @@
-import { json } from "@codemirror/lang-json";
 import { Collection, CreateCollectionPayload, JSONSchemaObject } from "@vertesia/common";
-import { Button, ErrorBox, FormItem, Input, Panel, Styles, Textarea, useFetch, useToast } from "@vertesia/ui/core";
+import { Button, ErrorBox, FormItem, Input, Panel, Styles, Textarea, useFetch, useToast, useTheme } from "@vertesia/ui/core";
 import { SharedPropsEditor, SyncMemberHeadsToggle, UserInfo } from "@vertesia/ui/features";
 import { useUserSession } from "@vertesia/ui/session";
-import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
-import { basicSetup } from "codemirror";
+import { MonacoEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { useMemo, useRef, useState } from "react";
 import { SelectContentType, stringifyTableLayout } from "../types";
-
-const extensions = [basicSetup, json()];
 
 interface UpdateData {
     name: string;
@@ -28,6 +24,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
     const typeId = collection.type?.id;
     const tableLayoutRef = useRef<EditorApi | undefined>(undefined);
     const toast = useToast();
+    const { theme } = useTheme();
     const { client } = useUserSession();
     const [isUpdating, setUpdating] = useState(false);
     const [metadata, setMetadata] = useState<UpdateData>({
@@ -192,8 +189,13 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                     )
                 }
                 <FormItem label="Table Layout" description="Define a custom layout for displaying the collection in tables.">
-                    <CodeMirrorEditor className="border-1 rounded-md border-border"
-                        value={tableLayoutValue} extensions={extensions} editorRef={tableLayoutRef} />
+                    <MonacoEditor
+                        className="border-1 rounded-md border-border"
+                        value={tableLayoutValue}
+                        language="json"
+                        editorRef={tableLayoutRef}
+                        theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+                    />
                 </FormItem>
                 <FormItem label="Type" description="Select a content type to assign custom properties and data to the collection.">
                     <SelectContentType
