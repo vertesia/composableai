@@ -1,0 +1,494 @@
+# @vertesia/ui Component Library for LLMs
+
+> React component library for building Vertesia UI plugins and applications.
+> This file documents component APIs and usage patterns for AI assistants.
+
+## Installation
+
+```bash
+npm install @vertesia/ui
+# or
+pnpm add @vertesia/ui
+```
+
+## Import Paths
+
+```tsx
+// Core components (buttons, cards, inputs, modals, tabs)
+import { Button, Card, Input, VModal, VTabs } from '@vertesia/ui/core';
+
+// Hooks (data fetching, toasts)
+import { useFetch, useToast } from '@vertesia/ui/core';
+
+// Router (navigation, nested routing for plugins)
+import { useNavigate, useParams, NavLink, NestedRouterProvider } from '@vertesia/ui/router';
+
+// Session (authentication, Vertesia client access)
+import { useUserSession } from '@vertesia/ui/session';
+
+// Layout components
+import { FullHeightLayout } from '@vertesia/ui/layout';
+
+// Feature components (headers, navigation)
+import { GenericPageNavHeader } from '@vertesia/ui/features';
+```
+
+---
+
+# Component API Reference
+
+## Input (Simplified API)
+
+**IMPORTANT:** Input passes the value directly to onChange, NOT an event object.
+
+```tsx
+interface InputProps {
+  value?: string;
+  onChange?: (value: string) => void;  // Value directly, not event!
+  placeholder?: string;
+  disabled?: boolean;
+  clearable?: boolean;  // Shows X button to clear (default: true)
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  variant?: 'default' | 'unstyled' | 'noPadding' | 'legacy';
+}
+
+// Usage - pass setState directly
+<Input value={name} onChange={setName} />
+
+// Or with transformation
+<Input value={name} onChange={(value) => setName(value.trim())} />
+
+// WRONG - this will NOT work:
+<Input onChange={(e) => setName(e.target.value)} />  // ❌ Error!
+```
+
+## Textarea (Standard React API)
+
+Textarea uses standard React event handling.
+
+```tsx
+// Standard React event object
+<Textarea
+  value={description}
+  onChange={(e) => setDescription(e.target.value)}
+/>
+```
+
+## Button
+
+```tsx
+interface ButtonProps {
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
+  disabled?: boolean;
+  onClick?: () => void;
+  children: React.ReactNode;
+}
+
+<Button onClick={handleClick}>Click Me</Button>
+<Button variant="outline" size="sm">Secondary</Button>
+<Button variant="destructive">Delete</Button>
+```
+
+## Card Components
+
+```tsx
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@vertesia/ui/core';
+
+<Card>
+  <CardHeader>
+    <CardTitle>Title</CardTitle>
+    <CardDescription>Optional description</CardDescription>
+  </CardHeader>
+  <CardContent>
+    Main content here
+  </CardContent>
+  <CardFooter>
+    <Button>Action</Button>
+  </CardFooter>
+</Card>
+```
+
+## VModal (Modal Dialog)
+
+```tsx
+import { VModal, VModalTitle, VModalBody, VModalFooter } from '@vertesia/ui/core';
+
+interface VModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+}
+
+<VModal isOpen={open} onClose={() => setOpen(false)} size="md">
+  <VModalTitle description="Optional subtitle">
+    Modal Title
+  </VModalTitle>
+  <VModalBody>
+    <div className="space-y-4">
+      <Input value={name} onChange={setName} />
+    </div>
+  </VModalBody>
+  <VModalFooter>
+    <Button onClick={handleSubmit}>Submit</Button>
+    <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+  </VModalFooter>
+</VModal>
+```
+
+**Note:** VModalFooter uses `flex-row-reverse`, so primary button should be first in code but appears on the right.
+
+## VTabs (Tabbed Interface)
+
+```tsx
+import { VTabs, VTabsBar, VTabsPanel } from '@vertesia/ui/core';
+
+<VTabs
+  defaultValue="tab1"
+  tabs={[
+    { name: 'tab1', label: 'First Tab', content: <Tab1Content /> },
+    { name: 'tab2', label: 'Second Tab', content: <Tab2Content /> },
+    { name: 'tab3', label: 'Third Tab', content: <Tab3Content /> },
+  ]}
+>
+  <VTabsBar />
+  <VTabsPanel />
+</VTabs>
+
+// With controlled value
+const [tab, setTab] = useState('tab1');
+<VTabs value={tab} onValueChange={setTab} tabs={[...]}>
+```
+
+## Label
+
+```tsx
+<Label htmlFor="input-id">Field Label</Label>
+<Input id="input-id" value={value} onChange={setValue} />
+```
+
+## Badge
+
+```tsx
+import { Badge } from '@vertesia/ui/core';
+
+<Badge variant="default">Default</Badge>
+<Badge variant="secondary">Secondary</Badge>
+<Badge variant="destructive">Error</Badge>
+<Badge variant="outline">Outline</Badge>
+```
+
+## Spinner & ErrorBox
+
+```tsx
+import { Spinner, ErrorBox } from '@vertesia/ui/core';
+
+// Loading state
+if (isLoading) return <Spinner />;
+
+// Error state
+if (error) return <ErrorBox>{error.message}</ErrorBox>;
+```
+
+## Table
+
+```tsx
+import { Table, TBody, THead, Th, Tr, Td } from '@vertesia/ui/core';
+
+<Table>
+  <THead>
+    <Tr>
+      <Th>Name</Th>
+      <Th>Value</Th>
+    </Tr>
+  </THead>
+  <TBody>
+    {items.map(item => (
+      <Tr key={item.id}>
+        <Td>{item.name}</Td>
+        <Td>{item.value}</Td>
+      </Tr>
+    ))}
+  </TBody>
+</Table>
+```
+
+---
+
+# Hooks
+
+## useFetch
+
+Data fetching hook with loading, error, and refetch support.
+
+```tsx
+import { useFetch } from '@vertesia/ui/core';
+
+const { data, isLoading, error, refetch } = useFetch(
+  async () => {
+    return await client.store.collections.list();
+  },
+  [dependency1, dependency2]  // Refetch when dependencies change
+);
+
+// With options
+const { data } = useFetch(
+  fetchFn,
+  [deps],
+  {
+    onSuccess: (data) => console.log('Loaded', data),
+    onError: (err) => console.error('Failed', err),
+  }
+);
+```
+
+## useToast
+
+Show toast notifications.
+
+```tsx
+import { useToast } from '@vertesia/ui/core';
+
+const toast = useToast();
+
+// Success toast
+toast({ title: 'Success', description: 'Item created' });
+
+// Error toast
+toast({ title: 'Error', description: error.message, variant: 'destructive' });
+```
+
+## useUserSession
+
+Access authenticated user and Vertesia client.
+
+```tsx
+import { useUserSession } from '@vertesia/ui/session';
+
+const { client, user, project } = useUserSession();
+
+// client is the Vertesia API client
+const collections = await client.store.collections.list();
+```
+
+---
+
+# Router
+
+## NestedRouterProvider
+
+For plugin routing (nested within host app router).
+
+```tsx
+import { NestedRouterProvider } from '@vertesia/ui/router';
+
+const routes = [
+  { path: '/', Component: HomePage },
+  { path: '/items/:id', Component: ItemPage },
+  { path: '*', Component: NotFound },
+];
+
+<NestedRouterProvider routes={routes} index="/" />
+```
+
+## Navigation Hooks
+
+```tsx
+import { useNavigate, useParams, useSearchParams } from '@vertesia/ui/router';
+
+// Navigate programmatically
+const navigate = useNavigate();
+navigate('/items/123');
+navigate(-1);  // Go back
+
+// Get route params
+const { id } = useParams();  // From /items/:id
+
+// Get/set query params
+const [searchParams, setSearchParams] = useSearchParams();
+const query = searchParams.get('q');
+```
+
+## NavLink
+
+Navigation link component.
+
+```tsx
+import { NavLink } from '@vertesia/ui/router';
+
+<NavLink href="/items">Go to Items</NavLink>
+<NavLink href={`/items/${item.id}`}>View Item</NavLink>
+```
+
+---
+
+# Layout & Features
+
+## GenericPageNavHeader
+
+Standard page header with breadcrumbs and actions.
+
+```tsx
+import { GenericPageNavHeader } from '@vertesia/ui/features';
+import { NavLink } from '@vertesia/ui/router';
+
+<GenericPageNavHeader
+  title="Page Title"
+  description="Optional page description"
+  breadcrumbs={[
+    <NavLink href="/" key="home">Home</NavLink>,
+    <NavLink href="/items" key="items">Items</NavLink>,
+    <span key="current">Current Page</span>,
+  ]}
+  actions={
+    <Button onClick={() => setShowCreate(true)}>
+      <Plus className="w-4 h-4 mr-2" />
+      Create New
+    </Button>
+  }
+/>
+```
+
+## FullHeightLayout
+
+Full height container layout.
+
+```tsx
+import { FullHeightLayout } from '@vertesia/ui/layout';
+
+<FullHeightLayout>
+  <div>Content fills available height</div>
+</FullHeightLayout>
+```
+
+---
+
+# Styling
+
+Use Tailwind CSS with semantic color classes:
+
+```tsx
+// Status colors
+<span className="text-success">Success</span>
+<span className="text-attention">Warning</span>
+<span className="text-destructive">Error</span>
+<span className="text-muted-foreground">Muted</span>
+
+// Backgrounds with opacity
+<div className="bg-success/10 text-success">Success message</div>
+<div className="bg-destructive/10 text-destructive">Error message</div>
+
+// Common layout patterns
+<div className="p-4 space-y-4">         {/* Padding + vertical spacing */}
+<div className="flex items-center gap-2"> {/* Horizontal flex */}
+<div className="grid grid-cols-3 gap-4">  {/* Grid layout */}
+```
+
+---
+
+# Common Patterns
+
+## Form with Input and Textarea
+
+```tsx
+function MyForm() {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+
+  return (
+    <form className="space-y-4">
+      <div>
+        <Label htmlFor="name">Name</Label>
+        <Input id="name" value={name} onChange={setName} />
+      </div>
+      <div>
+        <Label htmlFor="desc">Description</Label>
+        <Textarea
+          id="desc"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <Button type="submit">Submit</Button>
+    </form>
+  );
+}
+```
+
+## Data List with Loading/Error States
+
+```tsx
+function ItemList() {
+  const { client } = useUserSession();
+  const { data, isLoading, error, refetch } = useFetch(
+    () => client.store.collections.list(),
+    []
+  );
+
+  if (isLoading) return <Spinner />;
+  if (error) return <ErrorBox>{error.message}</ErrorBox>;
+
+  return (
+    <div className="space-y-2">
+      {data?.map(item => (
+        <Card key={item.id}>
+          <CardHeader>
+            <CardTitle>{item.name}</CardTitle>
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
+  );
+}
+```
+
+## Modal with Form
+
+```tsx
+function CreateModal({ open, onClose, onCreated }) {
+  const [name, setName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { client } = useUserSession();
+  const toast = useToast();
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await client.store.collections.create({ name });
+      toast({ title: 'Created successfully' });
+      onCreated();
+      onClose();
+    } catch (err) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <VModal isOpen={open} onClose={onClose} size="md">
+      <VModalTitle>Create Item</VModalTitle>
+      <VModalBody>
+        <Label>Name</Label>
+        <Input value={name} onChange={setName} disabled={isSubmitting} />
+      </VModalBody>
+      <VModalFooter>
+        <Button onClick={handleSubmit} disabled={!name || isSubmitting}>
+          {isSubmitting ? 'Creating...' : 'Create'}
+        </Button>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+      </VModalFooter>
+    </VModal>
+  );
+}
+```
+
+---
+
+# Key Differences from Standard React
+
+1. **Input onChange** passes value directly: `onChange={setValue}` not `onChange={(e) => setValue(e.target.value)}`
+2. **Textarea onChange** uses standard React events
+3. **VModalFooter** uses flex-row-reverse (primary button first in code, appears right)
+4. **NestedRouterProvider** for plugin routing (instead of BrowserRouter)
+5. **useUserSession** provides pre-authenticated Vertesia client

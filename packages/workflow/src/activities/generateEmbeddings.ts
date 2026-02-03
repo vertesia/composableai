@@ -1,6 +1,6 @@
 import { EmbeddingsResult } from "@llumiverse/common";
 import { log } from "@temporalio/activity";
-import { VertesiaClient } from "@vertesia/client";
+import { VertesiaClient, ZenoClientNotFoundError } from "@vertesia/client";
 import {
     ContentObject,
     DSLActivityExecutionPayload,
@@ -11,7 +11,7 @@ import {
 } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
-import { fetchBlobAsBase64 } from "../utils/blobs.js";
+import { fetchBlobAsBase64, md5 } from "../utils/blobs.js";
 import { DocPart } from "../utils/chunks.js";
 import { countTokens } from "../utils/tokens.js";
 
@@ -94,10 +94,18 @@ export async function generateEmbeddings(
         );
     }
 
-    const document = await client.objects.retrieve(
-        objectId,
-        "+text +parts +embeddings +tokens +properties",
-    );
+    let document;
+    try {
+        document = await client.objects.retrieve(
+            objectId,
+            "+text +parts +embeddings +tokens +properties",
+        );
+    } catch (error) {
+        if (error instanceof ZenoClientNotFoundError) {
+            throw new DocumentNotFoundError(`Document not found: ${objectId}`, [objectId]);
+        }
+        throw error;
+    }
 
     if (!document) {
         throw new DocumentNotFoundError("Document not found", [objectId]);
@@ -116,6 +124,7 @@ export async function generateEmbeddings(
                 config,
                 document,
                 type,
+                force,
             });
             break;
         case SupportedEmbeddingTypes.properties:
@@ -124,6 +133,7 @@ export async function generateEmbeddings(
                 config,
                 document,
                 type,
+                force,
             });
             break;
         case SupportedEmbeddingTypes.image:
@@ -132,6 +142,7 @@ export async function generateEmbeddings(
                 config,
                 document,
                 type,
+                force,
             });
             break;
         default:
@@ -155,7 +166,7 @@ interface ExecuteGenerateEmbeddingsParams {
 }
 
 async function generateTextEmbeddings(
-    { document, client, type, config }: ExecuteGenerateEmbeddingsParams
+    { document, client, type, config, force }: ExecuteGenerateEmbeddingsParams
 ) {
 
     if (!document) {
@@ -185,6 +196,21 @@ async function generateTextEmbeddings(
     }
 
     const { environment } = config;
+
+    // Compute text etag for comparison
+    const textEtag = document.text_etag ?? (document.text ? md5(document.text) : undefined);
+
+    // Skip if embeddings already exist with matching etag (unless force=true)
+    const existingEmbedding = document.embeddings?.[type];
+    if (!force && existingEmbedding?.etag && textEtag && existingEmbedding.etag === textEtag) {
+        log.info(`Skipping ${type} embeddings for document ${document.id} - etag unchanged`);
+        return {
+            id: document.id,
+            type,
+            status: "skipped",
+            message: "embeddings already exist with matching etag",
+        };
+    }
 
     // Count tokens if needed, do not rely on existing token count
     let tokenCount : number | undefined = undefined;
@@ -232,7 +258,7 @@ async function generateTextEmbeddings(
         await client.objects.setEmbedding(document.id, type, {
             values: res.values,
             model: res.model,
-            etag: document.text_etag,
+            etag: textEtag,
         });
 
         return {
@@ -249,6 +275,7 @@ async function generateImageEmbeddings({
     client,
     type,
     config,
+    force,
 }: ExecuteGenerateEmbeddingsParams) {
     log.info("Generating image embeddings for document " + document.id, {
         content: document.content,
@@ -264,6 +291,22 @@ async function generateImageEmbeddings({
             message: "content is not an image",
         };
     }
+
+    // Use content etag for image change detection
+    const contentEtag = document.content?.etag;
+
+    // Skip if embeddings already exist with matching etag (unless force=true)
+    const existingEmbedding = document.embeddings?.[type];
+    if (!force && existingEmbedding?.etag && contentEtag && existingEmbedding.etag === contentEtag) {
+        log.info(`Skipping ${type} embeddings for document ${document.id} - content etag unchanged`);
+        return {
+            id: document.id,
+            type,
+            status: "skipped",
+            message: "embeddings already exist with matching etag",
+        };
+    }
+
     const { environment, model } = config;
 
     const resRnd = await client.store.objects.getRendition(document.id, {
@@ -317,7 +360,7 @@ async function generateImageEmbeddings({
         {
             values: res.values,
             model: res.model,
-            etag: document.text_etag,
+            etag: contentEtag,
         },
     );
 

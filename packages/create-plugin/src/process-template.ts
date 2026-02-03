@@ -1,10 +1,10 @@
 /**
  * Template file processing - variable replacement and adjustments
  */
-import fs from 'fs';
-import path from 'path';
 import chalk from 'chalk';
 import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 import { TemplateConfig } from './template-config.js';
 
 /**
@@ -148,7 +148,7 @@ export function replaceVariables(
  * 1. Sets the package name to PROJECT_NAME
  * 2. Resolves workspace:* dependencies to actual latest versions
  */
-export function adjustPackageJson(projectName: string, answers: Record<string, any>): void {
+export function adjustPackageJson(projectName: string, answers: Record<string, any>, isDev: boolean): void {
   console.log(chalk.blue('📝 Adjusting package.json...\n'));
 
   const packageJsonPath = path.join(projectName, 'package.json');
@@ -178,14 +178,19 @@ export function adjustPackageJson(projectName: string, answers: Record<string, a
         Object.keys(packageJson[depType]).forEach(pkgName => {
           const isInternalPackage = internalScopes.some(scope => pkgName.startsWith(scope));
           if (isInternalPackage && packageJson[depType][pkgName] === 'workspace:*') {
-            const latestVersion = getLatestVersion(pkgName);
-            if (latestVersion) {
-              packageJson[depType][pkgName] = `^${latestVersion}`;
+            if (isDev) { // use latest dev tag version
+              packageJson[depType][pkgName] = 'dev';
               workspaceReplacements++;
             } else {
-              // Fallback to 'latest' if we can't fetch the version
-              packageJson[depType][pkgName] = 'latest';
-              workspaceReplacements++;
+              const latestVersion = getLatestVersion(pkgName);
+              if (latestVersion) {
+                packageJson[depType][pkgName] = `^${latestVersion}`;
+                workspaceReplacements++;
+              } else {
+                // Fallback to 'latest' if we can't fetch the version
+                packageJson[depType][pkgName] = 'latest';
+                workspaceReplacements++;
+              }
             }
           }
         });

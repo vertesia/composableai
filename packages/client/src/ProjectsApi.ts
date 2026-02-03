@@ -1,5 +1,5 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, SupportedIntegrations } from "@vertesia/common";
+import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
+import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, ProjectToolInfo, SupportedIntegrations } from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -33,6 +33,27 @@ export default class ProjectsApi extends ApiTopic {
     }
 
     integrations: IntegrationsConfigurationApi = new IntegrationsConfigurationApi(this);
+
+    /**
+     * List all tools available in the project with their app installation info.
+     * Settings are only included for agent tokens (security: may contain API keys).
+     */
+    getTools(projectId: string): Promise<ProjectToolInfo[]> {
+        return this.get(`/${projectId}/tools`);
+    }
+
+    /**
+     * Get a specific tool by name with its app installation info.
+     * Returns null if the tool is not found.
+     */
+    getToolByName(projectId: string, toolName: string): Promise<ProjectToolInfo | null> {
+        return this.get(`/${projectId}/tools/${toolName}`).catch((err: ServerError) => {
+            if (err.status === 404) {
+                return null;
+            }
+            throw err;
+        });
+    }
 
 }
 
