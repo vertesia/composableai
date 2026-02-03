@@ -37,5 +37,6 @@ export * from "./utils/memory.js";
 export * from "./utils/tokens.js";
 export * from "./utils/renditions.js";
 export * from "./utils/storage.js";
+export * from "./utils/textPreviewUtils.js";
 
 export * from "./conversion/image.js";

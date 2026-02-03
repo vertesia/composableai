@@ -10,17 +10,24 @@ import { mutoolPdfToText } from "../conversion/mutool.js";
 import { markdownWithPandoc } from "../conversion/pandoc.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
+import { FileSource } from "../input-types.js";
 import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
 import { fetchBlobAsBuffer, md5 } from "../utils/blobs.js";
 import { countTokens } from "../utils/tokens.js";
+import {
+    createFileSourceResult,
+    uploadTextPreviewToStorage,
+    validateFileSource,
+} from "../utils/textPreviewUtils.js";
 
 //@ts-ignore
 const JSON: DSLActivitySpec = {
     name: "extractDocumentText",
 };
 
-// doesn't have any own param
-export interface ExtractDocumentTextParams {}
+export interface ExtractDocumentTextParams {
+    file_source?: FileSource;
+}
 export interface ExtractDocumentText extends DSLActivitySpec<ExtractDocumentTextParams> {
     name: "extractDocumentText";
     projection?: never;
@@ -29,8 +36,25 @@ export interface ExtractDocumentText extends DSLActivitySpec<ExtractDocumentText
 export async function extractDocumentText(
     payload: DSLActivityExecutionPayload<ExtractDocumentTextParams>,
 ): Promise<TextExtractionResult> {
-    const { client, objectId } = await setupActivity(payload);
+    const { client, objectId, params } = await setupActivity(payload);
 
+    if (objectId) {
+        // Object mode: fetch from object store
+        return extractFromObject(client, objectId, payload.objectIds);
+    } else {
+        // File source mode: use file_source parameter
+        const fileSource = params?.file_source;
+        validateFileSource(fileSource);
+
+        return extractFromFileSource(client, fileSource);
+    }
+}
+
+async function extractFromObject(
+    client: any,
+    objectId: string,
+    objectIds: string[],
+): Promise<TextExtractionResult> {
     const r = await client.objects.find({
         query: { _id: objectId },
         limit: 1,
@@ -39,7 +63,7 @@ export async function extractDocumentText(
     const doc = r[0] as ContentObject;
     if (!doc) {
         log.error(`Document ${objectId} not found`);
-        throw new DocumentNotFoundError(`Document ${objectId} not found`, payload.objectIds);
+        throw new DocumentNotFoundError(`Document ${objectId} not found`, objectIds);
     }
 
     log.info(`Extracting text for object ${doc.id}`);
@@ -65,9 +89,61 @@ export async function extractDocumentText(
         return createResponse(doc, "", TextExtractionStatus.error, e.message);
     }
 
+    const txt = await extractTextFromBuffer(fileBuffer, doc.content.type);
+    if (!txt) {
+        return createResponse(
+            doc,
+            doc.text ?? "",
+            TextExtractionStatus.skipped,
+            `Unsupported mime type: ${doc.content.type}`,
+        );
+    }
+
+    const tokensData = countTokens(txt);
+    const etag = doc.content.etag ?? md5(txt);
+
+    const updateData: CreateContentObjectPayload = {
+        text: txt,
+        text_etag: etag,
+        tokens: {
+            ...tokensData,
+            etag: etag,
+        },
+    };
+
+    await client.objects.update(doc.id, updateData);
+
+    return createResponse(doc, txt, TextExtractionStatus.success);
+}
+
+async function extractFromFileSource(
+    client: any,
+    fileSource: FileSource & { source_url: string; storage_path: string },
+): Promise<TextExtractionResult> {
+    log.info(`Extracting text from ${fileSource.source_url} with type ${fileSource.mimetype}`);
+
+    let fileBuffer: Buffer;
+    try {
+        fileBuffer = await fetchBlobAsBuffer(client, fileSource.source_url);
+    } catch (e: any) {
+        log.error(`Error reading file: ${e}`);
+        return createFileSourceResult(fileSource.source_url, fileSource.storage_path, null);
+    }
+
+    const txt = await extractTextFromBuffer(fileBuffer, fileSource.mimetype);
+
+    // Upload extracted text to storage
+    if (txt && fileSource.storage_path) {
+        await uploadTextPreviewToStorage(client, txt, fileSource.storage_path, "Document");
+    }
+
+    return createFileSourceResult(fileSource.source_url, fileSource.storage_path, txt);
+}
+
+async function extractTextFromBuffer(fileBuffer: Buffer, mimeType: string): Promise<string | null> {
     let txt: string;
 
-    switch (doc.content.type) {
+    switch (mimeType) {
         case "application/pdf":
             txt = await mutoolPdfToText(fileBuffer);
             break;
@@ -131,29 +207,10 @@ export async function extractDocumentText(
                 txt = fileBuffer.toString("utf8"); //TODO: add charset detection
                 break;
             }
-            return createResponse(
-                doc,
-                doc.text ?? "",
-                TextExtractionStatus.skipped,
-                `Unsupported mime type: ${doc.content.type}`,
-            );
+            return null;
     }
 
-    const tokensData = countTokens(txt);
-    const etag = doc.content.etag ?? md5(txt);
-
-    const updateData: CreateContentObjectPayload = {
-        text: txt,
-        text_etag: etag,
-        tokens: {
-            ...tokensData,
-            etag: etag,
-        },
-    };
-
-    await client.objects.update(doc.id, updateData);
-
-    return createResponse(doc, txt, TextExtractionStatus.success);
+    return txt;
 }
 
 function createResponse(
