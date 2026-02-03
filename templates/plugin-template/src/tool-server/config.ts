@@ -3,6 +3,7 @@ import { interactions } from "./interactions/index.js";
 import { mcpProviders } from "./mcp/index.js";
 import { skills } from "./skills/index.js";
 import { tools } from "./tools/index.js";
+import { types } from "./types/index.js";
 import settingsSchema from "./settings.js";
 
 const CONFIG__SERVER_TITLE = "Tool Server Template";
@@ -12,6 +13,7 @@ export const ServerConfig = {
     prefix: '/api',
     tools,
     interactions,
+    types,
     skills,
     mcpProviders,
     uiConfig: {
