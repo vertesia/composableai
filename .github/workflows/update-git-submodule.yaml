@@ -30,6 +30,14 @@ jobs:
   update-submodule:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate branch
+        run: |
+          if [[ "${{ env.TARGET_COMPOSABLEAI_BRANCH }}" != "main" && "${{ env.TARGET_COMPOSABLEAI_BRANCH }}" != "preview" ]]; then
+            echo "::error::Invalid branch '${{ env.TARGET_COMPOSABLEAI_BRANCH }}'. Only 'main' and 'preview' branches are supported."
+            exit 1
+          fi
+          echo "Branch '${{ env.TARGET_COMPOSABLEAI_BRANCH }}' is valid."
+
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
