@@ -1,37 +1,38 @@
 import { Component, memo, useState, useRef, useCallback, type ReactNode, type ErrorInfo } from 'react';
 import { toPng } from 'html-to-image';
 import { Download, Copy, Check } from 'lucide-react';
+import { VegaLiteChart } from './VegaLiteChart';
 import {
-    ResponsiveContainer,
-    BarChart,
-    LineChart,
-    ComposedChart,
-    AreaChart,
-    PieChart,
-    ScatterChart,
-    RadarChart,
-    RadialBarChart,
-    FunnelChart,
-    Treemap,
-    Bar,
-    Line,
     Area,
-    Pie,
+    AreaChart,
+    Bar,
+    BarChart,
+    CartesianGrid,
     Cell,
-    Scatter,
-    Radar,
-    RadialBar,
+    ComposedChart,
     Funnel,
+    FunnelChart,
     LabelList,
-    PolarGrid,
+    Legend,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
     PolarAngleAxis,
+    PolarGrid,
     PolarRadiusAxis,
+    Radar,
+    RadarChart,
+    RadialBar,
+    RadialBarChart,
+    ReferenceLine,
+    ResponsiveContainer,
+    Scatter,
+    ScatterChart,
+    Tooltip,
+    Treemap,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ReferenceLine,
 } from 'recharts';
 
 // Default color palette for charts
@@ -82,7 +83,8 @@ class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, ChartErrorBo
     }
 }
 
-export type AgentChartSpec = {
+// Recharts-based chart specification (default)
+export type RechartsChartSpec = {
     version?: '1.0';
     library?: 'recharts';
     chart: 'bar' | 'line' | 'composed' | 'area' | 'pie' | 'scatter' | 'radar' | 'radialBar' | 'funnel' | 'treemap';
@@ -125,8 +127,51 @@ export type AgentChartSpec = {
     };
 };
 
+// Vega-Lite chart specification for advanced visualizations
+export type VegaLiteChartSpec = {
+    version?: '1.0';
+    library: 'vega-lite';
+    title?: string;
+    description?: string;
+    // Native Vega-Lite specification object
+    spec: Record<string, any>;
+    options?: {
+        collapsible?: boolean;
+        collapseInitially?: boolean;
+        theme?: 'default' | 'dark';
+        renderer?: 'canvas' | 'svg';
+        // Dashboard mode options
+        mode?: 'chart' | 'dashboard';
+        height?: number; // Explicit height override (default: 280 for chart, 500 for dashboard)
+        enableFullscreen?: boolean; // Show fullscreen button (default: true for dashboard, false for chart)
+        // Interactive features
+        enableTooltips?: boolean; // Enable Vega tooltips (default: true)
+        enableSignalListeners?: boolean; // Enable external signal listeners (default: false)
+        // Parameter values - set initial values for Vega-Lite params (sliders, dropdowns, etc.)
+        parameterValues?: Record<string, any>;
+    };
+};
+
+// Union type for all chart specifications
+export type AgentChartSpec = RechartsChartSpec | VegaLiteChartSpec;
+
+// Type guard to check if spec is Vega-Lite
+export function isVegaLiteSpec(spec: AgentChartSpec): spec is VegaLiteChartSpec {
+    return spec.library === 'vega-lite';
+}
+
+// Type guard to check if spec is Recharts (default)
+export function isRechartsSpec(spec: AgentChartSpec): spec is RechartsChartSpec {
+    return (spec.library === 'recharts' || spec.library === undefined) && !('spec' in spec);
+}
+
 type AgentChartProps = {
     spec: AgentChartSpec;
+    /**
+     * Optional workflow run id used to resolve artifact: URLs in Vega-Lite data references.
+     * When provided, data URLs like "artifact:out/data.json" will be resolved to the actual data.
+     */
+    artifactRunId?: string;
 };
 
 function formatNumber(n: number): string {
@@ -138,8 +183,64 @@ function formatNumber(n: number): string {
     return n.toLocaleString();
 }
 
-// Memoized chart component to prevent unnecessary re-renders
-export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
+// Router component that delegates to the appropriate chart renderer
+export const AgentChart = memo(function AgentChart({ spec, artifactRunId }: AgentChartProps) {
+    // Route to VegaLiteChart for Vega-Lite specs
+    if (isVegaLiteSpec(spec)) {
+        return <VegaLiteChart spec={spec} artifactRunId={artifactRunId} />;
+    }
+
+    // Route to RechartsChart for Recharts specs
+    return <RechartsChart spec={spec as RechartsChartSpec} />;
+}, (prevProps, nextProps) => {
+    // Deep compare the spec to prevent re-renders when data hasn't changed
+    return JSON.stringify(prevProps.spec) === JSON.stringify(nextProps.spec) &&
+        prevProps.artifactRunId === nextProps.artifactRunId;
+});
+
+// Map alternative chart type names to our standard names
+function normalizeChartType(spec: any): RechartsChartSpec['chart'] {
+    // If 'chart' is provided, use it directly
+    if (spec.chart) return spec.chart;
+    // Map 'type' field (e.g., "BarChart" -> "bar")
+    const typeMap: Record<string, RechartsChartSpec['chart']> = {
+        'BarChart': 'bar',
+        'LineChart': 'line',
+        'AreaChart': 'area',
+        'PieChart': 'pie',
+        'ScatterChart': 'scatter',
+        'RadarChart': 'radar',
+        'FunnelChart': 'funnel',
+        'Treemap': 'treemap',
+        'ComposedChart': 'composed',
+        'RadialBarChart': 'radialBar',
+    };
+    if (spec.type && typeMap[spec.type]) {
+        return typeMap[spec.type];
+    }
+    return 'bar'; // default
+}
+
+// Recharts implementation component
+const RechartsChart = memo(function RechartsChart({ spec }: { spec: RechartsChartSpec }) {
+    // Normalize spec to handle alternative formats from agents
+    const normalizedSpec = {
+        ...spec,
+        chart: normalizeChartType(spec),
+        // Handle x_axis.data_key -> xKey
+        xKey: spec.xKey || (spec as any).x_axis?.data_key || 'name',
+        // Handle bars/lines -> series
+        series: spec.series || (spec as any).bars?.map((b: any) => ({
+            key: b.data_key || b.dataKey,
+            color: b.fill || b.color,
+            label: b.name,
+        })) || (spec as any).lines?.map((l: any) => ({
+            key: l.data_key || l.dataKey,
+            color: l.stroke || l.color,
+            label: l.name,
+        })) || [],
+    };
+
     const {
         chart,
         title,
@@ -155,7 +256,7 @@ export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
         zKey: _zKey,
         axisKey,
         dataKey,
-    } = spec;
+    } = normalizedSpec;
     const [isExporting, setIsExporting] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     const chartRef = useRef<HTMLDivElement>(null);
@@ -553,8 +654,8 @@ export const AgentChart = memo(function AgentChart({ spec }: AgentChartProps) {
     };
 
     return (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
-            <div className="flex flex-col gap-2 p-3">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm my-5">
+            <div className="flex flex-col gap-2 p-4">
                 <div className="flex items-center justify-between">
                     <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                         {title || 'Chart'}

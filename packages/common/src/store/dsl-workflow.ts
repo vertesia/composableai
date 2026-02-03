@@ -191,10 +191,22 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
      */
     output?: string;
     /**
+     * A JSON expression which evaluates to true or false similar to mongo matches.
+     * The child workflow will only execute if the condition is satisfied.
+     * Example: {$eq: {wfVarName: value}}
+     */
+    condition?: Record<string, any>;
+    /**
      * In case the dslWorkflow is used as a child workflow the spec is used to define the child workflow.
      * If spec is defined then the name must be "dslWorkflow"
      */
     spec?: DSLWorkflowSpec;
+    /**
+     * If true, copy the parent's workspace artifacts (scripts/, files/, skills/, docs/, out/)
+     * to the child workflow's agent space before execution. Defaults to true.
+     * conversation.json and tools.json are never copied.
+     */
+    inherit_artifacts?: boolean;
     options?: {
         memo?: Record<string, any>;
         retry?: DSLRetryPolicy;

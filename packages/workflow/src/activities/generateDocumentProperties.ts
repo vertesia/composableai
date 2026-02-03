@@ -114,7 +114,7 @@ export async function generateDocumentProperties(
             date: new Date().toISOString(),
             model: infoRes.modelId,
         },
-    });
+    }, { suppressWorkflows: true });
 
     return { status: "completed" };
 }

@@ -12,13 +12,15 @@ export { generateOrAssignContentType } from "./generateOrAssignContentType.js";
 export { getObjectFromStore } from "./getObjectFromStore.js";
 export { handleDslError } from "./handleError.js";
 export { prepareVideo } from "./media/prepareVideo.js";
+export { prepareAudio } from "./media/prepareAudio.js";
 export { convertPdfToStructuredText } from "./media/processPdfWithTextract.js";
 export { saveGladiaTranscription } from "./media/saveGladiaTranscription.js";
 export { transcribeMedia } from "./media/transcribeMediaWithGladia.js";
 export type { TranscriptMediaResult } from "./media/transcribeMediaWithGladia.js";
 export { notifyWebhook } from "./notifyWebhook.js";
 export { checkRateLimit } from "./rateLimiter.js";
+export { copyParentArtifacts } from "./copyParentArtifacts.js";
+export { mergeChildArtifacts } from "./mergeChildArtifacts.js";
 export { generateImageRendition } from "./renditions/generateImageRendition.js";
 export { generateVideoRendition } from "./renditions/generateVideoRendition.js";
 export { setDocumentStatus } from "./setDocumentStatus.js";
-
