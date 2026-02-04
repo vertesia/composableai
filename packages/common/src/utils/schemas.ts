@@ -1,9 +1,29 @@
-import type { JSONSchema } from "@llumiverse/common";
+import type { JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { PromptRole } from "@llumiverse/common";
 import type { JSONSchema4 } from "json-schema";
 import { InCodePrompt, InteractionRefWithSchema, PopulatedInteraction } from "../interaction.js";
 import { ExecutablePromptSegmentDef, PromptSegmentDefType } from "../prompt.js";
 
+/**
+ * Sanitize a tool definition to only include fields expected by LLM APIs.
+ * Removes extra fields like 'category', 'default', 'related_tools' that are
+ * used internally but should not be sent to the LLM.
+ */
+export function sanitizeToolDefinition(tool: ToolDefinition): ToolDefinition {
+    return {
+        name: tool.name,
+        description: tool.description,
+        input_schema: tool.input_schema,
+    };
+}
+
+/**
+ * Sanitize an array of tool definitions.
+ */
+export function sanitizeToolDefinitions(tools: ToolDefinition[] | undefined): ToolDefinition[] | undefined {
+    if (!tools) return tools;
+    return tools.map(sanitizeToolDefinition);
+}
 
 // Remove custom properties from the JSON before sending further down execution pipeline
 export function removeExtraProperties<T>(schema: T): T {
