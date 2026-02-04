@@ -13,8 +13,6 @@ export interface AppNavItem {
     icon: string;
     /** Route path relative to app base */
     route: string;
-    /** Optional nested children */
-    children?: AppNavItem[];
 }
 
 export interface AppUIConfig {
