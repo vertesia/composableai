@@ -13,6 +13,8 @@ import {
     IndexConfiguration,
     FetchDocumentsByIdsResult,
     BulkDeleteResult,
+    EnsureIndexResult,
+    SwapAliasResult,
 } from "@vertesia/common";
 
 /**
@@ -119,7 +121,7 @@ export class IndexingApi extends ApiTopic {
      *
      * @param recreate If true, drops and recreates the index
      */
-    ensureIndex(recreate?: boolean): Promise<{ created: boolean; recreated?: boolean; existed?: boolean }> {
+    ensureIndex(recreate?: boolean): Promise<EnsureIndexResult> {
         return this.post("/internal/ensure-index", {
             payload: { recreate },
         });
@@ -141,7 +143,7 @@ export class IndexingApi extends ApiTopic {
      * @param newIndexName The new index to point the alias to
      * @param deleteOld If true, deletes the old index after swapping
      */
-    swapAlias(newIndexName: string, deleteOld?: boolean): Promise<{ swapped: boolean; aliasName?: string; newIndexName?: string }> {
+    swapAlias(newIndexName: string, deleteOld?: boolean): Promise<SwapAliasResult> {
         return this.post("/internal/swap-alias", {
             payload: { newIndexName, deleteOld },
         });

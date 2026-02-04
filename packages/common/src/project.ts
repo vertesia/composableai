@@ -501,6 +501,33 @@ export interface BulkDeleteResult {
     failed: number;
 }
 
+/**
+ * Result from ensure index operation
+ */
+export interface EnsureIndexResult {
+    created: boolean;
+    recreated?: boolean;
+    existed?: boolean;
+    enabled?: boolean;
+    status?: string;
+    dimensions?: {
+        text?: number;
+        image?: number;
+        properties?: number;
+    };
+    language?: string;
+}
+
+/**
+ * Result from swap alias operation
+ */
+export interface SwapAliasResult {
+    swapped: boolean;
+    aliasName?: string;
+    newIndexName?: string;
+    reason?: string;
+}
+
 export interface ProjectIntegrationListEntry {
     id: SupportedIntegrations;
     enabled: boolean;
