@@ -3,8 +3,8 @@ import { CatalogInteractionRef } from "./interaction.js";
 import { InCodeTypeDefinition } from "./store/index.js";
 
 /**
- * Navigation item for an app's UI configuration.
- * Used in AppUIConfig.navigation to define sidebar navigation entries.
+ * Additional navigation item for an app's UI configuration.
+ * Used in AppUIConfig.navigation to define sidebar navigation entries in CompositeApp shell contexts.
  * Icon names correspond to Lucide icon component names.
  */
 export interface AppUINavItem {
@@ -178,6 +178,7 @@ export interface AgentToolDefinition extends ToolDefinition {
 }
 
 export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types';
+export type AppAvailableIn = 'app_portal' | 'composite_app';
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -245,6 +246,14 @@ export interface AppManifestData {
      * Describe the capabiltities of this app - which kind of contributions it provides.
      */
     capabilities?: AppCapabilities[];
+
+    /**
+     * Where this app can be displayed.
+     * - 'app_portal': Available in the main app portal (standalone)
+     * - 'composite_app': Available within a CompositeApp shell
+     * If undefined, defaults to only showing in the app portal for legacy support.
+     */
+    available_in?: AppAvailableIn[];
 
     /**
      * The app endpoint URL
