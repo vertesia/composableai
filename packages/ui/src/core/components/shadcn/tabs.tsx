@@ -12,7 +12,7 @@ export interface Tab {
     label: ReactNode;
     content: ReactNode;
     disabled?: boolean;
-    permission?: boolean;
+    is_allowed?: boolean;
 }
 
 const TabsContext = React.createContext<{
@@ -58,9 +58,9 @@ const Tabs = ({
   variant = "tabs",
   updateHash = true
 }: TabsProps) => {
-  // Filter tabs based on permission (undefined or true means visible)
+  // Filter tabs based on is_allowed (undefined or true means visible)
   const visibleTabs = React.useMemo(() =>
-    tabs.filter(tab => tab.permission === undefined || tab.permission === true),
+    tabs.filter(tab => tab.is_allowed === undefined || tab.is_allowed === true),
     [tabs]
   );
 
