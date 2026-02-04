@@ -104,12 +104,12 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 #
 # Before publishing (package.json):
 #
-# @llumiverse/common: 1.0.0-dev.20260203.000000Z (i.e. llumiverse was already published)
+# @llumiverse/common: 1.1.0-dev.20260203.000000Z (i.e. llumiverse was already published)
 # @vertesia/client:   1.0.0
 
 # After publishing (on npm):
 #
-# @llumiverse/common: 1.0.0-dev.20260203.000000Z
+# @llumiverse/common: 1.1.0-dev.20260203.000000Z
 # @vertesia/client:   1.1.0-dev.20260203.000000Z (tag: dev)
 # └─ dependencies: @llumiverse/common@1.0.0-dev.20260203.000000Z
 
@@ -138,7 +138,7 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 
 **Steps**:
 1. Bumps root `package.json` version and all composableai package versions using semantic versioning
-   - Bump type: specified by `bump-type` parameter (patch/minor)
+   - Bump type: specified by `bump-type` parameter (patch/minor/keep)
    - Verify that the release type is "release" and is not "snapshot".
    - Version format: standard semver (e.g., `1.2.0` → `1.2.1` for patch)
 2. **Commits and pushes** version changes back to the `preview` branch (only if dry-run is false)
