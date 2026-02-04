@@ -80,9 +80,6 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 
 1. Updates all composableai package versions to dev format
    - Version format: `{base}-dev.{date}.{time}` (e.g., `1.0.0-dev.20260128.144200Z`)
-   - Version value: try to align with the package version defined in the llumiverse root package.json (`./llumiverse/package.json`).
-     - If the value is a dev version, determine whether the date corresponds to the current date. If yes, use the same date. If the llumiverse version is already used by composableai (`./package.json`), it means that another dev version had been published earlier today, so don't use it again, generate a new version instead.
-     - If the value is not a dev version, abort the script and raise an error.
 2. Commit and push changes to Git if dry-run is false (rationale: it persists the value for the next version change)
 3. Publishes all composableai packages
    - NPM tag: `dev`
