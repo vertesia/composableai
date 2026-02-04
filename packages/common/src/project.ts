@@ -206,6 +206,13 @@ export interface ProjectConfiguration {
      */
     main_language?: string;
 
+    /**
+     * When enabled, newly installed apps automatically grant access to the "members" group.
+     * This allows all organization members to access apps without manual permission assignment.
+     * Defaults to false if not specified.
+     */
+    auto_grant_apps_to_members_group?: boolean;
+
 }
 
 // export interface ProjectConfigurationEmbeddings {
