@@ -195,6 +195,12 @@ export interface ExecuteWorkflowPayload {
     objectIds?: string[];
 
     /**
+     * New format: Workflow input (either objectIds or files).
+     * Takes precedence over the deprecated `objectIds` field.
+     */
+    input?: WorkflowInput;
+
+    /**
      * Parameters to pass to the workflow
      */
     vars?: Record<string, any>;
