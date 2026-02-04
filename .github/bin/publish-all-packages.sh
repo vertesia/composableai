@@ -41,32 +41,10 @@ update_package_versions() {
 
   if [ "$RELEASE_TYPE" = "snapshot" ]; then
     # Snapshot: create dev version with date/time stamp
-    # Try to align with llumiverse version from ./llumiverse/package.json
-    llumiverse_version=$(cd llumiverse && pnpm pkg get version | tr -d '"' && cd ..)
-
-    # Check if llumiverse version is a dev version
-    if [[ "$llumiverse_version" =~ -dev\. ]]; then
-      # Extract the date part from llumiverse version (e.g., 1.0.0-dev.20260128.144200Z -> 20260128)
-      llumiverse_date=$(echo "$llumiverse_version" | sed 's/.*-dev\.\([0-9]*\)\..*/\1/')
-      current_date=$(date -u +"%Y%m%d")
-
-      if [ "$llumiverse_date" = "$current_date" ] && [ "$llumiverse_version" != "$current_version" ]; then
-        # Same date and different from current version - use llumiverse version
-        new_version="$llumiverse_version"
-        echo "Aligning with llumiverse version ${new_version}"
-      else
-        # Different date or same as current - generate new version
-        date_part=$(date -u +"%Y%m%d")
-        time_part=$(date -u +"%H%M%SZ")
-        new_version="${base_version}-dev.${date_part}.${time_part}"
-        echo "Generating new snapshot version ${new_version}"
-      fi
-    else
-      # llumiverse version is not a dev version - this is an error for main branch
-      echo "Error: llumiverse version '${llumiverse_version}' is not a dev version."
-      echo "Cannot publish snapshot versions when llumiverse is on a release version."
-      exit 1
-    fi
+    date_part=$(date -u +"%Y%m%d")
+    time_part=$(date -u +"%H%M%SZ")
+    new_version="${base_version}-dev.${date_part}.${time_part}"
+    echo "Generating new snapshot version ${new_version}"
   else
     # Release: use base version as-is
     new_version="${base_version}"
