@@ -1,10 +1,10 @@
 import { AgentMessage, AgentMessageType, AskUserMessageDetails } from "@vertesia/common";
-import { Badge, Button, useToast } from "@vertesia/ui/core";
+import { Badge, Button, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
-import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, Layers, MessageSquare, User } from "lucide-react";
+import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, MessageSquare, User } from "lucide-react";
 import React, { useEffect, useState, useMemo, memo, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
@@ -201,6 +201,48 @@ function MessageItemComponent({
         });
     };
 
+    // Export message content to PDF or DOCX
+    const [isExporting, setIsExporting] = useState(false);
+    const exportToFormat = async (format: 'pdf' | 'docx') => {
+        const content = typeof messageContent === 'string' ? messageContent : '';
+        if (!content.trim()) {
+            toast({
+                status: "error",
+                title: "No content to export",
+                duration: 2000,
+            });
+            return;
+        }
+
+        setIsExporting(true);
+        try {
+            const title = `Message ${dayjs(message.timestamp).format("YYYY-MM-DD HH-mm-ss")}`;
+            await client.store.rendering.downloadMarkdown({
+                content,
+                format,
+                title,
+                artifactRunId: runId,
+            }, `${title}.${format}`);
+            toast({
+                status: "success",
+                title: `Exported to ${format.toUpperCase()}`,
+                duration: 2000,
+            });
+        } catch (error) {
+            console.error('Export failed:', error);
+            toast({
+                status: "error",
+                title: `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                duration: 3000,
+            });
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    // Check if message has exportable content (markdown text)
+    const hasExportableContent = typeof messageContent === 'string' && messageContent.trim().length > 0;
+
     // Render content with markdown support - all messages now rendered as markdown
     const renderContent = (content: string | object) => {
         // Handle object content (JSON)
@@ -383,6 +425,27 @@ function MessageItemComponent({
                         >
                             <CopyIcon className="size-3" />
                         </Button>
+                        {hasExportableContent && (
+                            <Dropdown
+                                trigger={
+                                    <Button
+                                        variant="ghost" size="xs"
+                                        className="text-muted/50 hover:text-muted h-5 w-5 p-0"
+                                        title="Export message"
+                                        disabled={isExporting}
+                                    >
+                                        <Download className={`size-3 ${isExporting ? 'animate-pulse' : ''}`} />
+                                    </Button>
+                                }
+                            >
+                                <MenuItem onClick={() => exportToFormat('pdf')}>
+                                    Export as PDF
+                                </MenuItem>
+                                <MenuItem onClick={() => exportToFormat('docx')}>
+                                    Export as Word
+                                </MenuItem>
+                            </Dropdown>
+                        )}
                     </div>
                 </div>
 
