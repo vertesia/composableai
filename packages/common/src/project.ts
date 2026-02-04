@@ -339,6 +339,195 @@ export interface IndexingStatusResponse {
     };
 }
 
+// ============================================================================
+// Internal indexing types (used by Temporal workflows)
+// ============================================================================
+
+/**
+ * Document data structure for Elasticsearch indexing
+ */
+export interface ElasticsearchDocumentData {
+    name?: string;
+    text?: string;
+    properties?: Record<string, unknown>;
+    status?: string;
+    type?: {
+        id?: string;
+        name?: string;
+    };
+    security?: {
+        'content:read'?: string[];
+        'content:write'?: string[];
+        'content:delete'?: string[];
+    };
+    revision?: {
+        head?: boolean;
+        root?: string;
+    };
+    embeddings_text?: number[];
+    embeddings_image?: number[];
+    embeddings_properties?: number[];
+    created_at?: Date | string;
+    updated_at?: Date | string;
+}
+
+/**
+ * Result from bulk indexing
+ */
+export interface BulkIndexResult {
+    successful: number;
+    failed: number;
+}
+
+/**
+ * Result from creating a reindex target
+ */
+export interface CreateReindexTargetResult {
+    created: boolean;
+    indexName: string;
+    aliasName: string;
+    version: number;
+}
+
+/**
+ * Result from getting reindex range
+ */
+export interface ReindexRangeResult {
+    first: string | null;
+    last: string | null;
+    count: number;
+}
+
+/**
+ * Result from fetching a batch
+ */
+export interface FetchBatchResult {
+    documents: Array<{
+        id: string;
+        document: ElasticsearchDocumentData;
+    }>;
+    nextCursor: string | null;
+    done: boolean;
+}
+
+/**
+ * Result from indexing a batch
+ */
+export interface IndexBatchResult {
+    successful: number;
+    failed: number;
+    processed: number;
+    nextCursor: string | null;
+    done: boolean;
+}
+
+/**
+ * Result from triggering a reindex
+ */
+export interface TriggerReindexResult {
+    status: string;
+    workflow?: string;
+    workflowId?: string;
+    runId?: string;
+    objectCount?: number;
+    reason?: string;
+    enabled?: boolean;
+}
+
+/**
+ * Elasticsearch index statistics
+ */
+export interface ElasticsearchIndexStats {
+    enabled: boolean;
+    exists?: boolean;
+    documentCount?: number;
+    sizeInBytes?: number;
+    indexName?: string;
+    aliasName?: string;
+}
+
+/**
+ * Embedding configuration for a single type
+ */
+export interface EmbeddingTypeConfig {
+    environment?: string;
+    dimensions?: number;
+    model?: string;
+    provider?: string;
+    enabled?: boolean;
+}
+
+/**
+ * Detailed index configuration
+ */
+export interface IndexConfiguration {
+    enabled: boolean;
+    exists?: boolean;
+    indexName?: string;
+    aliasName?: string;
+    version?: number;
+    documentCount?: number;
+    sizeInBytes?: number;
+    embeddingDimensions?: {
+        text?: number;
+        image?: number;
+        properties?: number;
+    };
+    fieldMappings?: Record<string, unknown>;
+    projectEmbeddingsConfig?: {
+        text?: EmbeddingTypeConfig;
+        image?: EmbeddingTypeConfig;
+        properties?: EmbeddingTypeConfig;
+    };
+    createdAt?: Date | null;
+}
+
+/**
+ * Result from fetching documents by IDs
+ */
+export interface FetchDocumentsByIdsResult {
+    documents: Array<{
+        id: string;
+        document: ElasticsearchDocumentData;
+    }>;
+    notFound: string[];
+}
+
+/**
+ * Result from bulk delete
+ */
+export interface BulkDeleteResult {
+    successful: number;
+    failed: number;
+}
+
+/**
+ * Result from ensure index operation
+ */
+export interface EnsureIndexResult {
+    created: boolean;
+    recreated?: boolean;
+    existed?: boolean;
+    enabled?: boolean;
+    status?: string;
+    dimensions?: {
+        text?: number;
+        image?: number;
+        properties?: number;
+    };
+    language?: string;
+}
+
+/**
+ * Result from swap alias operation
+ */
+export interface SwapAliasResult {
+    swapped: boolean;
+    aliasName?: string;
+    newIndexName?: string;
+    reason?: string;
+}
+
 export interface ProjectIntegrationListEntry {
     id: SupportedIntegrations;
     enabled: boolean;
