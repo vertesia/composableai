@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import {
+    contentTypeCollectionPage,
     indexPage,
     interactionCollectionPage,
     skillCollectionPage,
@@ -12,6 +13,7 @@ export function createSiteRoute(app: Hono, basePath: string, config: ToolServerC
     const {
         tools = [],
         interactions = [],
+        types = [],
         skills = [],
     } = config;
 
@@ -38,6 +40,13 @@ export function createSiteRoute(app: Hono, basePath: string, config: ToolServerC
     for (const coll of interactions) {
         app.get(`${basePath}/interactions/${coll.name}`, (c) => {
             return c.html(interactionCollectionPage(coll));
+        });
+    }
+
+    // Content type collection pages
+    for (const coll of types) {
+        app.get(`${basePath}/types/${coll.name}`, (c) => {
+            return c.html(contentTypeCollectionPage(coll));
         });
     }
 

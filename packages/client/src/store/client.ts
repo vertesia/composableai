@@ -4,7 +4,6 @@ import { CollectionsApi } from "./CollectionsApi.js";
 import { CommandsApi } from "./CommandsApi.js";
 import { DataApi } from "./DataApi.js";
 import { EmailApi } from "./EmailApi.js";
-import { IndexingAdminApi } from "./IndexingAdminApi.js";
 import { IndexingApi } from "./IndexingApi.js";
 import { EmbeddingsApi } from "./EmbeddingsApi.js";
 import { ZenoClientNotFoundError } from "./errors.js";
@@ -98,6 +97,5 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     tools = new ToolsApi(this);
     indexing = new IndexingApi(this);
     query = new QueryApi(this);
-    indexingAdmin = new IndexingAdminApi(this);
     hiveMemory = new HiveMemoryApi(this);
 }

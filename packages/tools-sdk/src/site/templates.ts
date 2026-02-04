@@ -2,6 +2,7 @@ import type { InteractionCollection } from "../InteractionCollection.js";
 import { ToolServerConfig } from "../server/types.js";
 import type { SkillCollection } from "../SkillCollection.js";
 import type { ToolCollection } from "../ToolCollection.js";
+import type { ContentTypesCollection } from "../ContentTypesCollection.js";
 import type { ICollection, SkillDefinition, Tool } from "../types.js";
 import { join } from "../utils.js";
 import { baseStyles } from "./styles.js";
@@ -664,6 +665,7 @@ export function indexPage(
         tools = [],
         interactions = [],
         skills = [],
+        types = [],
         mcpProviders = [],
         hideUILinks = false,
     } = config;
@@ -689,12 +691,13 @@ export function indexPage(
                     <p class="hero-eyebrow">Tools Server</p>
                     <h1 class="hero-title">${title}</h1>
                     <p class="hero-tagline">
-                        Discover the tools, skills, and interactions exposed by this server.
+                        Discover the tools, skills, interactions, and content types exposed by this server.
                     </p>
                     <div class="hero-summary">
                         ${tools.length ? /*html*/`<span><dot></dot> ${tools.length} tool collection${tools.length !== 1 ? 's' : ''}</span>` : ''}
                         ${skills.length ? /*html*/`<span><dot></dot> ${skills.length} skill collection${skills.length !== 1 ? 's' : ''}</span>` : ''}
                         ${interactions.length ? /*html*/`<span><dot></dot> ${interactions.length} interaction collection${interactions.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${types.length ? /*html*/`<span><dot></dot> ${types.length} content type collection${types.length !== 1 ? 's' : ''}</span>` : ''}
                         ${mcpProviders.length ? /*html*/`<span><dot></dot> ${mcpProviders.length} MCP provider${mcpProviders.length !== 1 ? 's' : ''}</span>` : ''}
                     </div>
                     ${hideUILinks ? '' : renderUILinks()}
@@ -722,7 +725,7 @@ export function indexPage(
                 type="search"
                 id="collection-search"
                 class="search-input"
-                placeholder="Search tools, skills, interactions..."
+                placeholder="Search tools, skills, interactions, types..."
                 aria-label="Search collections"
                 autocomplete="off"
             />
@@ -771,6 +774,22 @@ export function indexPage(
             </div>
             <div class="card-grid">
                 ${interactions.map(i => collectionCard(i, 'interactions')).join('')}
+            </div>
+        </section>
+        ` : ''}
+
+        ${types.length > 0 ? /*html*/`
+        <section data-section="types">
+            <hr>
+            <div class="section-header">
+                <h2>Content Type Collections</h2>
+                <p class="section-subtitle">Schema definitions for structured content in the data store.</p>
+            </div>
+            <div class="card-grid">
+                ${types.map((t: ContentTypesCollection) => {
+        const count = t.getContentTypes().length;
+        return collectionCard(t, 'types', `${count} type${count !== 1 ? 's' : ''}`);
+    }).join('')}
             </div>
         </section>
         ` : ''}
@@ -940,6 +959,48 @@ export function skillCollectionPage(collection: SkillCollection): string {
 }
 
 /**
+ * Render a collection header with icon, title, description, and endpoint
+ */
+function collectionDetailHeader(collection: ICollection, pathPrefix: string): string {
+    return /*html*/`
+    <nav class="nav">
+        <a href="/">${backArrow} Back to all collections</a>
+    </nav>
+
+    <div class="header">
+        <div class="header-icon">${collection.icon || defaultIcon}</div>
+        <div>
+            <h1>${collection.title || collection.name}</h1>
+            <p style="color: #6b7280; margin: 0.25rem 0 0 0;">${collection.description || ''}</p>
+            <div class="endpoint-box">
+                <code>/api/${pathPrefix}/${collection.name}</code>
+                <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '/api/${pathPrefix}/${collection.name}')" title="Copy endpoint URL">
+                    ${copyIcon}
+                </button>
+            </div>
+        </div>
+    </div>`;
+}
+
+/**
+ * Render a simple item card with name, description, and tags
+ */
+function simpleItemCard(item: { name: string; description?: string; tags?: string[] }): string {
+    return /*html*/`
+    <div class="detail-card">
+        <div class="detail-header">
+            <div>
+                <h3 class="detail-title">${item.name}</h3>
+                <p class="detail-desc">${item.description || 'No description'}</p>
+            </div>
+            <div class="detail-badges">
+                ${item.tags?.map(tag => `<span class="badge">${tag}</span>`).join('') || ''}
+            </div>
+        </div>
+    </div>`;
+}
+
+/**
  * Render an interaction collection detail page
  */
 export function interactionCollectionPage(collection: InteractionCollection): string {
@@ -953,40 +1014,38 @@ export function interactionCollectionPage(collection: InteractionCollection): st
     <style>${detailStyles}</style>
 </head>
 <body>
-    <nav class="nav">
-        <a href="/">${backArrow} Back to all collections</a>
-    </nav>
-
-    <div class="header">
-        <div class="header-icon">${collection.icon || defaultIcon}</div>
-        <div>
-            <h1>${collection.title || collection.name}</h1>
-            <p style="color: #6b7280; margin: 0.25rem 0 0 0;">${collection.description || ''}</p>
-            <div class="endpoint-box">
-                <code>/api/interactions/${collection.name}</code>
-                <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '/api/interactions/${collection.name}')" title="Copy endpoint URL">
-                    ${copyIcon}
-                </button>
-            </div>
-        </div>
-    </div>
+    ${collectionDetailHeader(collection, 'interactions')}
 
     <h2>${collection.interactions.length} Interaction${collection.interactions.length !== 1 ? 's' : ''}</h2>
 
     <div class="item-list">
-        ${collection.interactions.map(inter => /*html*/`
-        <div class="detail-card">
-            <div class="detail-header">
-                <div>
-                    <h3 class="detail-title">${inter.name}</h3>
-                    <p class="detail-desc">${inter.description || 'No description'}</p>
-                </div>
-                <div class="detail-badges">
-                    ${inter.tags?.map(tag => `<span class="badge">${tag}</span>`).join('') || ''}
-                </div>
-            </div>
-        </div>
-        `).join('')}
+        ${collection.interactions.map(inter => simpleItemCard(inter)).join('')}
+    </div>
+</body>
+</html>`;
+}
+
+/**
+ * Render a content type collection detail page
+ */
+export function contentTypeCollectionPage(collection: ContentTypesCollection): string {
+    const typesArray = collection.getContentTypes();
+    return /*html*/`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${collection.title || collection.name} - Content Types</title>
+    <style>${detailStyles}</style>
+</head>
+<body>
+    ${collectionDetailHeader(collection, 'types')}
+
+    <h2>${typesArray.length} Content Type${typesArray.length !== 1 ? 's' : ''}</h2>
+
+    <div class="item-list">
+        ${typesArray.map(type => simpleItemCard(type)).join('')}
     </div>
 </body>
 </html>`;

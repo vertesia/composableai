@@ -5,7 +5,6 @@ export * from "./EmailApi.js";
 export * from "./errors.js";
 export * from "./FilesApi.js";
 export * from "./HiveMemoryApi.js";
-export * from "./IndexingAdminApi.js";
 export * from "./IndexingApi.js";
 export * from "./ObjectsApi.js";
 export * from "./PendingAsksApi.js";

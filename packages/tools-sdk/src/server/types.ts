@@ -5,6 +5,7 @@ import { ToolCollection } from "../ToolCollection.js";
 import { ToolExecutionPayload } from "../types.js";
 import { JSONSchema } from "@llumiverse/common";
 import { AppUIConfig } from "@vertesia/common";
+import { ContentTypesCollection } from "../ContentTypesCollection.js";
 
 /**
  * Extended context with parsed payload for tool/skill execution
@@ -51,6 +52,10 @@ export interface ToolServerConfig {
      * Interaction collections to expose
      */
     interactions?: InteractionCollection[];
+    /**
+     * Content type collections to expose
+     */
+    types?: ContentTypesCollection[];
     /**
      * Skill collections to expose
      */

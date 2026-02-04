@@ -188,7 +188,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                         </FormItem>
                     )
                 }
-                <FormItem label="Table Layout" description="Define a custom layout for displaying the collection in tables.">
+                <FormItem label="Table Layout" description="Define a custom layout for displaying the collection in tables." className="h-[200px]">
                     <MonacoEditor
                         className="border-1 rounded-md border-border"
                         value={tableLayoutValue}

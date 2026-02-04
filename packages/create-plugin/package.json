@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/create-plugin",
-  "version": "1.0.0-dev.20260128.144200",
+  "version": "1.0.0-dev.20260203.130115Z",
   "description": "CLI to create Vertesia plugins: UI plugins or tool servers",
   "type": "module",
   "bin": {
@@ -26,6 +26,11 @@
   ],
   "author": "Vertesia",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vertesia/composableai.git",
+    "directory": "packages/create-plugin"
+  },
   "dependencies": {
     "chalk": "^5.3.0",
     "degit": "^2.8.4",
