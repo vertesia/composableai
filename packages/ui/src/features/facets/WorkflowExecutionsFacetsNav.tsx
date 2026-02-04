@@ -58,6 +58,18 @@ export function useWorkflowExecutionsFilterGroups(facets: WorkflowExecutionsFace
     };
     customFilterGroups.push(dateBeforeFilterGroup);
 
+    const hasReportedErrorsFilterGroup = {
+        name: 'has_reported_errors',
+        placeholder: 'Has Reported Errors',
+        type: 'select' as const,
+        multiple: false,
+        options: [
+            { label: 'Yes', value: 'true' },
+            { label: 'No', value: 'false' }
+        ]
+    };
+    customFilterGroups.push(hasReportedErrorsFilterGroup);
+
     return customFilterGroups;
 }
 
@@ -93,6 +105,13 @@ export function useWorkflowExecutionsFilterHandler(search: SearchInterface) {
                 if (filterName === 'name') {
                     search.query.search_term = filterValue;
                     search.query.name = filterValue;
+                } else if (filterName === 'has_reported_errors') {
+                    // Convert string "true"/"false" to boolean
+                    const stringValue = Array.isArray(filterValue) ? filterValue[0] : filterValue;
+                    // Only set the filter if we have a valid value
+                    if (stringValue === 'true' || stringValue === 'false') {
+                        search.query[filterName] = stringValue === 'true';
+                    }
                 } else {
                     search.query[filterName] = filterValue;
                 }

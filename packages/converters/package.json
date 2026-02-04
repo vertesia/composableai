@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/converters",
-    "version": "0.81.1",
+    "version": "1.0.0-dev.20260203.130115Z",
     "description": "Image and content converters",
     "type": "module",
     "types": "./lib/types/index.d.ts",
@@ -22,12 +22,12 @@
     "devDependencies": {
         "@types/tmp": "^0.2.6",
         "ts-dual-module": "^0.6.3",
-        "typescript": "^5.0.2",
-        "vitest": "^3.0.9"
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.16"
     },
     "dependencies": {
         "sharp": "^0.33.5",
-        "tmp": "^0.2.4"
+        "tmp": "^0.2.5"
     },
     "repository": {
         "type": "git",

@@ -219,9 +219,11 @@ const TabsPanel = ({ className }: { className?: string }) => {
   );
 };
 
-const TabsList = React.forwardRef<
+type TabsListProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { size?: number; variant?: "tabs" | "pills" };
+
+const TabsList: React.ForwardRefExoticComponent<TabsListProps & React.RefAttributes<React.ElementRef<typeof TabsPrimitive.List>>> = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { size?: number; variant?: "tabs" | "pills" }
+  TabsListProps
 >(({ className, size, variant = "tabs", ...props }, ref) => (
   <TabsContext.Provider value={{ size, variant }}>
     <TabsPrimitive.List
@@ -238,12 +240,14 @@ const TabsList = React.forwardRef<
 ));
 TabsList.displayName = TabsPrimitive.List.displayName;
 
-const TabsTrigger = React.forwardRef<
+type TabsTriggerProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & {
+  href?: string;
+  variant?: "tabs" | "pills";
+};
+
+const TabsTrigger: React.ForwardRefExoticComponent<TabsTriggerProps & React.RefAttributes<React.ElementRef<typeof TabsPrimitive.Trigger>>> = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & {
-    href?: string;
-    variant?: "tabs" | "pills";
-  }
+  TabsTriggerProps
 >(({ className, href, variant = "tabs", ...props }, ref) => {
   const { size } = React.useContext(TabsContext);
 
@@ -286,9 +290,11 @@ const TabsTrigger = React.forwardRef<
 });
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
-const TabsContent = React.forwardRef<
+type TabsContentProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>;
+
+const TabsContent: React.ForwardRefExoticComponent<TabsContentProps & React.RefAttributes<React.ElementRef<typeof TabsPrimitive.Content>>> = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+  TabsContentProps
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}

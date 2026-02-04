@@ -67,7 +67,10 @@ export async function extractDocumentText(
 
     let txt: string;
 
-    switch (doc.content.type) {
+    // Normalize mime type by stripping charset and other parameters (e.g., "text/html; charset=UTF-8" -> "text/html")
+    const mimeType = doc.content.type.split(';')[0].trim();
+
+    switch (mimeType) {
         case "application/pdf":
             txt = await mutoolPdfToText(fileBuffer);
             break;
