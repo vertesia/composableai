@@ -3,10 +3,11 @@ import { CatalogInteractionRef } from "./interaction.js";
 import { InCodeTypeDefinition } from "./store/index.js";
 
 /**
- * Navigation item for shell/sidebar UI.
+ * Navigation item for an app's UI configuration.
+ * Used in AppUIConfig.navigation to define sidebar navigation entries.
  * Icon names correspond to Lucide icon component names.
  */
-export interface AppNavItem {
+export interface AppUINavItem {
     /** Display label */
     label: string;
     /** Lucide icon name (e.g., "MessageSquare", "History") */
@@ -32,7 +33,7 @@ export interface AppUIConfig {
      * Navigation items for the app's sidebar UI.
      * Only applicable for apps with UI capability in shell contexts.
      */
-    navigation?: AppNavItem[];
+    navigation?: AppUINavItem[];
 }
 
 /**
@@ -397,4 +398,94 @@ export interface OAuthMetadataResponse {
     collection_name: string;
     mcp_server_url: string;
     metadata: any;
+}
+
+// ============================================================================
+// CompositeApp Shell Configuration Types
+// These types define the configuration for a CompositeApp shell that combines
+// multiple apps into a unified experience with shared navigation and branding.
+// ============================================================================
+
+/**
+ * App navigation item display overrides.
+ * Allows customizing individual nav items for an app installation within the CompositeApp shell.
+ */
+export interface CompositeAppNavItemOverride {
+    /** Used as identifier to match the nav item to override -- does not change route path */
+    route: string;
+    /** Hide this nav item from the sidebar */
+    hidden?: boolean;
+    /** Override the displayed nav item label */
+    label?: string;
+    /** Override the displayed nav item icon (Lucide icon name) */
+    icon?: string;
+}
+
+/**
+ * Configuration entry for an individual app in the CompositeApp shell.
+ * References an app installation by name and allows customizing its appearance.
+ */
+export interface CompositeAppEntry {
+    /** App installation name (must match an installed app) */
+    appName: string;
+    /** Override the label displayed for the app */
+    labelOverride?: string;
+    /** Override the icon displayed for the app (Lucide icon name) */
+    iconOverride?: string;
+    /** Overrides for navigation items provided by the app */
+    navigationOverrides?: CompositeAppNavItemOverride[];
+}
+
+/**
+ * Logo overrides for the CompositeApp shell header.
+ * When provided, these URLs replace the default Vertesia logo.
+ */
+export interface CompositeAppLogoOverrides {
+    /** URL for light mode logo (overrides default Vertesia logo) */
+    lightModeUrl?: string;
+    /** URL for dark mode logo (overrides default Vertesia logo) */
+    darkModeUrl?: string;
+}
+
+/**
+ * Message banner style options (semantic colors).
+ */
+export type CompositeAppMessageStyle = 'foreground' | 'info' | 'success' | 'attention' | 'destructive';
+
+/**
+ * Message banner configuration for the shell header.
+ */
+export interface CompositeAppMessageConfig {
+    /** Message text to display */
+    text?: string;
+    /** Whether the message is visible (defaults to true) */
+    visible?: boolean;
+    /** Text color style */
+    style?: CompositeAppMessageStyle;
+}
+
+/**
+ * Switcher visibility configuration for the shell header.
+ */
+export interface CompositeAppSwitchersConfig {
+    /** Whether to show the organization switcher (defaults to true) */
+    showOrganization?: boolean;
+    /** Whether to show the project switcher (defaults to true) */
+    showProject?: boolean;
+}
+
+/**
+ * CompositeApp shell configuration.
+ * This is the main configuration interface for storing CompositeApp settings.
+ * Used as the MongoDB model for persisting CompositeApp configurations.
+ */
+export interface CompositeAppConfig {
+    /** Optional logo overrides (replaces default Vertesia logo) */
+    logo?: CompositeAppLogoOverrides;
+    /** Optional message banner configuration */
+    message?: CompositeAppMessageConfig;
+    /** Optional switcher visibility configuration */
+    switchers?: CompositeAppSwitchersConfig;
+    /** List of apps to include in the CompositeApp */
+    apps: CompositeAppEntry[];
 }
