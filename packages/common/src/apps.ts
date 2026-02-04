@@ -489,6 +489,14 @@ export interface CompositeAppSwitchersConfig {
  * Used as the MongoDB model for persisting CompositeApp configurations.
  */
 export interface CompositeAppConfig {
+    /** Whether to show the composite app card */
+    showCard?: boolean;
+    /** Optional card label for composite app display */
+    cardLabel?: string;
+    /** Optional card icon name (Lucide icon) for composite app display */
+    cardIcon?: string;
+    /** Optional card description for composite app display */
+    cardDescription?: string;
     /** Optional logo overrides (replaces default Vertesia logo) */
     logo?: CompositeAppLogoOverrides;
     /** Optional message banner configuration */
