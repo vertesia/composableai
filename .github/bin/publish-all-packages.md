@@ -12,45 +12,74 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 ## Usage
 
 ```bash
-./publish-all-packages.sh --ref <ref> --version-type <strategy> [--version <value>] [--dry-run <value>]
+./publish-all-packages.sh \
+    --ref <ref> \
+    --release-type <type> \
+    --bump-type <type> \
+    --dry-run <value>
 ```
 
 ### Parameters
 
-- `--ref` (required): Git reference - `main` for dev builds, `preview` for releases. Publishing releaess outside of `preview` branch is forbidden.
-- `version-type` (required): Version bump type (`patch`, `minor`, `dev`)
-   - `minor` increases the minor version in the package version
-   - `patch` increases the patch version in the package version
-   - `dev` creates a new development version in format `{base-version}-dev.{date}.{time}`, such as `1.0.0-dev.20260128.144200Z`
-- `dry-run` (optional): option to enable/disable dry run mode. The value can be `true`, `false` or no value (which means `true`). If not specified, it means that it is not a dry-run.
+- `--ref` (required): Git reference - `main` for dev builds, `preview` for releases. Publishing releases outside of `preview` branch is forbidden.
+- `--release-type` (required): The type of the version, either "release" or "snapshot". A "release" means this is a stable version. A "snapshot" means this is a development version.
+  - "release" creates a stable version respecting semantic versioning, such as `1.0.0`. Release can only be performed from the `preview` branch.
+  - "snapshot" creates a new development version in format `{base}-dev.{date}.{time}`, such as `1.0.0-dev.20260128.144200Z`. Note that the time part contains 'Z', which means that the time is in UTC; it also allows NPM to use leading zeros, as it turns the segment into alphanumeric.
+- `--bump-type` (required): The strategy for changing the version (`minor`, `patch`, `keep`)
+  - `minor` increases the minor version in the package version
+  - `patch` increases the patch version in the package version
+  - `keep` keeps using the current base version.
+- `--dry-run` (optional): Flag to enable dry run mode. The value can be `true`, `false` or no value (which means `true`). If not specified, it means that it is not a dry-run.
 
 ### Examples
 
 ```bash
 # Dry run for main branch
-./publish-all-packages.sh --ref main --dry-run --version-type dev
-./publish-all-packages.sh --ref main --dry-run true --version-type dev
+./publish-all-packages.sh \
+    --ref main \
+    --release-type snapshot \
+    --bump-type keep \
+    --dry-run true
 
-# Publish preview with patch bump
-./publish-all-packages.sh --ref preview --dry-run --version-type patch
+# Publish snapshot without bump from main
+# (ex: 1.0.0-dev.20260203.000000Z -> 1.0.0-dev.20260204.000000Z)
+./publish-all-packages.sh \
+    --ref main \
+    --release-type snapshot \
+    --bump-type keep
 
-# Publish preview with minor bump
-./publish-all-packages.sh --ref preview --version-type minor
+# Publish release with 'patch' bump from preview
+# (ex: 0.24.0-dev.20260203.164053Z -> 0.24.1)
+# (ex: 0.24.0 -> 0.24.1)
+./publish-all-packages.sh \
+    --ref preview \
+    --release-type release \
+    --bump-type patch
+
+# Publish release with minor bump from preview
+# (ex: 0.24.0-dev.20260203.164053Z -> 0.25.0)
+# (ex: 0.24.0 -> 0.25.0)
+./publish-all-packages.sh \
+    --ref preview \
+    --release-type release \
+    --bump-type minor
 ```
+
+### NPM Tags
+
+* `dev` tag is used when changing a snapshot version on main.
+* `latest` tag is used when changing a release version (minor, patch)
 
 ## Scenarios
 
 ### Scenario 1: Publishing from `main` branch
 
-**Purpose**: Publish development versions for testing
+**Purpose**: Publish snapshot versions for testing
 
 **Steps**:
 
 1. Updates all composableai package versions to dev format
-   - Version format: `{base-version}-dev.{date}.{time}` (e.g., `1.0.0-dev.20260128.144200Z`)
-   - Version value: try to align with the package version defined in the llumiverse root package.json (`./llumiverse/package.json`).
-     - If the value is a dev version, determine whether the date corresponds to the current date. If yes, use the same date. If the llumiverse version is already used by composableai (`./package.json`), it means that another dev version had been published earlier today, so don't use it again, generate a new version instead.
-     - If the value is not a dev version, abort the script and raise an error.
+   - Version format: `{base}-dev.{date}.{time}` (e.g., `1.0.0-dev.20260128.144200Z`)
 2. Commit and push changes to Git if dry-run is false (rationale: it persists the value for the next version change)
 3. Publishes all composableai packages
    - NPM tag: `dev`
@@ -60,29 +89,34 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 **Result**:
 - All `@vertesia/*` packages published with `dev` tag
 - Consumers can install with: `npm install @vertesia/{pkg}@dev` or `npm install @vertesia/{pkg}@{dev-version}`
-- Git repository remains unchanged
 
 **Example**:
 
 ```bash
+# ==========
+# Example 1: we had a release version
 # -----
-# Example 1: publish both llumiverse and composableai
-# -----
+# params: ref=main, release_type=snapshot, bump_type=minor
+# ==========
+#
 # Before publishing (package.json):
 #
-# @llumiverse/common: 1.0.0-dev.20260203.000000Z (i.e. we are in the middle of the publishing)
-# @vertesia/client:   1.0.0-dev.20260128.144200Z
+# @llumiverse/common: 1.1.0-dev.20260203.000000Z (i.e. llumiverse was already published)
+# @vertesia/client:   1.0.0
 
 # After publishing (on npm):
 #
-# @llumiverse/common: 1.0.0-dev.20260203.000000Z
-# @vertesia/client:   1.0.0-dev.20260203.000000Z (tag: dev)
+# @llumiverse/common: 1.1.0-dev.20260203.000000Z
+# @vertesia/client:   1.1.0-dev.20260203.000000Z (tag: dev)
 # └─ dependencies: @llumiverse/common@1.0.0-dev.20260203.000000Z
 
 
+# ==========
+# Example 2: we had a snapshot version
 # -----
-# Example 2: publish composableai only (llumiverse unchanged)
-# -----
+# params: ref=main, release_type=snapshot, bump_type=keep
+# ==========
+#
 # Before publishing (package.json):
 #
 # @llumiverse/common: 1.0.0-dev.20260128.144200Z
@@ -91,18 +125,18 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 # After publishing (on npm):
 #
 # @llumiverse/common: 1.0.0-dev.20260128.144200Z
-# @vertesia/client:   1.0.0-dev.20260203.000000Z (tag: dev)
+# @vertesia/client:   1.0.0-dev.20260204.000000Z (tag: dev)
 # └─ dependencies: @llumiverse/common@1.0.0-dev.20260128.144200Z
-
 ```
 
-### Scenario 2: Publishing from `preview` branch
+### Scenario 2: Publishing official releases
 
-**Purpose**: Publish official releases
+**Purpose**: Publish official releases from `preview`
 
 **Steps**:
 1. Bumps root `package.json` version and all composableai package versions using semantic versioning
-   - Bump type: specified by `version-type` parameter (patch/minor/major)
+   - Bump type: specified by `bump-type` parameter (patch/minor/keep)
+   - Verify that the release type is "release" and is not "snapshot".
    - Version format: standard semver (e.g., `1.2.0` → `1.2.1` for patch)
 2. **Commits and pushes** version changes back to the `preview` branch (only if dry-run is false)
 3. Publishes all composableai packages
@@ -114,7 +148,30 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 - Git repository updated with new versions
 
 **Example (patch bump)**:
+
 ```bash
+# ==========
+# Example 1: we had a snapshot version
+# -----
+# params: ref=preview, release_type=release, bump_type=keep
+# ==========
+
+# Before (package.json):
+# @vertesia/client: 1.2.0-dev.20260204.000000Z
+
+# After publishing (on npm):
+# @vertesia/client@1.2.0 (tag: latest)
+
+# Git commit:
+# "chore: release 1.2.0"
+
+
+# ==========
+# Example 2: we had a release version
+# -----
+# params: ref=preview, release_type=release, bump_type=patch
+# ==========
+
 # Before (package.json):
 # @vertesia/client: 1.2.0
 
@@ -122,7 +179,7 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 # @vertesia/client@1.2.1 (tag: latest)
 
 # Git commit:
-# "chore: bump package versions (patch)"
+# "chore: release 1.2.1"
 ```
 
 ### Scenario 3: Dry Run Mode
@@ -139,11 +196,13 @@ The `publish-all-packages.sh` script handles publishing packages with appropriat
 **Usage**:
 
 ```bash
-# Test main branch publishing
-./publish-all-packages.sh --ref main --dry-run --version-type dev
+# Test publishing logic on main
+./publish-all-packages.sh --ref main --dry-run --release-type snapshot --bump-type keep
 
-# Test release publishing with minor bump
-./publish-all-packages.sh --ref preview --dry-run --version-type minor
+# Test publishing logic on preview
+./publish-all-packages.sh --ref preview --dry-run --release-type release --bump-type minor
+./publish-all-packages.sh --ref preview --dry-run --release-type release --bump-type patch
+./publish-all-packages.sh --ref preview --dry-run --release-type snapshot --bump-type keep
 ```
 
 **Result**:
@@ -158,17 +217,20 @@ The script is designed to be run from the `publish-npm.yaml` GitHub Actions work
 
 ```yaml
 - name: Publish all packages
-  run: ./.github/bin/publish-all-packages.sh \
-      --ref "${{ inputs.ref }}" \
-      --dry-run "${{ inputs.dry_run }}" \
-      --version-type "${{ inputs.version_type }}"
+  run: |
+    ./.github/bin/publish-all-packages.sh \
+        --ref "${{ inputs.ref }}" \
+        --release-type "${{ inputs.release_type }}" \
+        --bump-type "${{ inputs.bump_type }}" \
+        --dry-run "${{ inputs.dry_run }}"
 ```
 
 ### Workflow Inputs
 
-- `ref`: Text input for git reference (default: `main`) → maps to `--ref`
-- `dry_run`: Checkbox (default: true for safety) → maps to `--dry-run true` or `--dry-run false`
-- `version_type`: Dropdown for `patch`, `minor`, or `dev` → maps to `--version-type`
+- `ref`: Text input for git reference (inferred from the Git event) → maps to `--ref`
+- "Release Type" (`release_type`): Dropdown for `release` and `snapshot`.
+- "Version Bump" (`bump_type`): Dropdown for `patch`, `minor`, or `keep` → maps to `--bump-type`
+- "Dry Run" (`dry_run`): Checkbox (default: true for safety) → maps to `--dry-run true` or `--dry-run false`
 
 ## Key Features
 
@@ -191,6 +253,8 @@ In dry run mode, the script:
 
 - Dry run enabled by default in GitHub Actions
 - All version updates happen before any publishing
+- Changes push to GitHub before publishing to prevent Git conflicts
+- Restrict publishing from the `preview` branch
 - Portable shell syntax (works on macOS and Linux)
 
 ### Requirements

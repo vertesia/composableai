@@ -3,20 +3,28 @@ name: publish-npm-packages
 on:
   workflow_dispatch:
     inputs:
+      release_type:
+        description: Release Type
+        required: true
+        type: choice
+        options:
+          - snapshot
+          - release
+        default: snapshot
+      bump_type:
+        description: Version Bump
+        required: true
+        type: choice
+        options:
+          - keep
+          - patch
+          - minor
+        default: keep
       dry_run:
         description: Dry Run
         required: true
         type: boolean
         default: true
-      version_type:
-        description: Version Change Strategy
-        required: true
-        type: choice
-        options:
-          - minor
-          - patch
-          - dev
-        default: dev
 
 permissions:
   id-token: write  # Required for OIDC between GitHub and NPM
@@ -51,5 +59,6 @@ jobs:
         run: |
           ./.github/bin/publish-all-packages.sh \
               --ref "${{ github.ref_name }}" \
-              --dry-run "${{ inputs.dry_run }}" \
-              --version-type "${{ inputs.version_type }}"
+              --release-type "${{ inputs.release_type }}" \
+              --bump-type "${{ inputs.bump_type }}" \
+              --dry-run "${{ inputs.dry_run }}"
