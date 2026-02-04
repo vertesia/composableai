@@ -63,10 +63,15 @@ describe("Webhook should be notified", () => {
     const payload = createTestPayload();
     const res = await testEnv.run(notifyWebhook, payload);
 
-    // Verify fetch was called with correct parameters
+    // Verify fetch was called with correct parameters (old format wraps detail in result)
     expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
       method: 'POST',
-      body: JSON.stringify({ message: 'Hello World' }),
+      body: JSON.stringify({
+        workflowId: 'wf_id',
+        runId: 'wf_run_id',
+        status: 'completed',
+        result: { message: 'Hello World' }
+      }),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -98,10 +103,15 @@ describe("Webhook should be notified", () => {
       `Webhook Notification to ${defaultParams.webhook} failed with status: 500 Internal Server Error - Response: {"error": "Database connection failed", "code": "DB_ERROR"}`
     );
 
-    // Verify fetch was called with correct parameters
+    // Verify fetch was called with correct parameters (old format wraps detail in result)
     expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
       method: 'POST',
-      body: JSON.stringify({ message: 'Hello World' }),
+      body: JSON.stringify({
+        workflowId: 'wf_id',
+        runId: 'wf_run_id',
+        status: 'completed',
+        result: { message: 'Hello World' }
+      }),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -121,10 +131,15 @@ describe("Webhook should be notified", () => {
     // Expect the function to throw the network error
     await expect(testEnv.run(notifyWebhook, payload)).rejects.toThrow('Network request failed');
 
-    // Verify fetch was called with correct parameters
+    // Verify fetch was called with correct parameters (old format wraps detail in result)
     expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
       method: 'POST',
-      body: JSON.stringify({ message: 'Hello World' }),
+      body: JSON.stringify({
+        workflowId: 'wf_id',
+        runId: 'wf_run_id',
+        status: 'completed',
+        result: { message: 'Hello World' }
+      }),
       headers: {
         'Content-Type': 'application/json',
       },
