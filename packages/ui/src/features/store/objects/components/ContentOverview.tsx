@@ -3,7 +3,7 @@ import { useEffect, useState, memo, useRef, type RefObject } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, VideoMetadata, AudioMetadata, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME } from "@vertesia/common";
+import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, VideoMetadata, AudioMetadata, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME, MarkdownRenditionFormat } from "@vertesia/common";
 import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
 import { isPreviewableAsPdf, printElementToPdf, getWorkflowStatusColor, getWorkflowStatusName } from "../../../utils/index.js";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
@@ -560,71 +560,33 @@ function TextActions({
         toast({
             status: "info",
             title: `Preparing ${format.toUpperCase()}`,
-            description: "Fetching your document...",
+            description: "Rendering your document...",
             duration: 2000,
         });
 
         try {
-            // Request document rendition from the server
-            const response = await client.objects.getRendition(object.id, {
-                format: format as any, // We're extending the format type
-                generate_if_missing: true,
-                sign_url: true,
+            // Use the new rendering API for markdown documents
+            const renditionFormat = format === "pdf" ? MarkdownRenditionFormat.pdf : MarkdownRenditionFormat.docx;
+            const filename = `${object.name || "document"}.${format}`;
+
+            await client.store.rendering.downloadMarkdown({
+                format: renditionFormat,
+                objectId: object.id,
+                title: object.name || "document",
+            }, filename);
+
+            toast({
+                status: "success",
+                title: "Document exported",
+                description: `Successfully exported to ${format.toUpperCase()} format`,
+                duration: 2000,
             });
-
-            if (response.status === "generating") {
-                toast({
-                    status: "info",
-                    title: "Generating document",
-                    description: `Please wait while we prepare your ${format.toUpperCase()} file...`,
-                    duration: 5000,
-                });
-
-                // Poll for completion
-                setTimeout(() => handleExportDocument(format), 3000);
-                return;
-            }
-
-            if (response.status === "failed") {
-                throw new Error("Document generation failed");
-            }
-
-            // Download the generated file or open in new window
-            if (response.renditions && response.renditions.length > 0) {
-                const downloadUrl = response.renditions[0];
-
-                if (format === 'pdf') {
-                    // Open PDF in new window
-                    window.open(downloadUrl, '_blank');
-                    toast({
-                        status: "success",
-                        title: "PDF opened",
-                        description: "PDF document opened in a new window",
-                        duration: 2000,
-                    });
-                } else {
-                    // Download DOCX file
-                    const link = document.createElement("a");
-                    link.href = downloadUrl;
-                    link.download = `${object.name || "document"}.${format}`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    toast({
-                        status: "success",
-                        title: "Document exported",
-                        description: `Successfully exported to ${format.toUpperCase()} format`,
-                        duration: 2000,
-                    });
-                }
-            }
         } catch (err) {
             console.error(`Failed to export document as ${format}:`, err);
             toast({
                 status: "error",
                 title: "Export failed",
-                description: `Failed to export document to ${format.toUpperCase()} format`,
+                description: err instanceof Error ? err.message : `Failed to export document to ${format.toUpperCase()} format`,
                 duration: 5000,
             });
         } finally {

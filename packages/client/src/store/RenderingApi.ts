@@ -61,21 +61,43 @@ export class RenderingApi extends ApiTopic {
         const name = filename
             ?? (payload.title ? `${payload.title.replace(/[^a-zA-Z0-9-_]/g, "_")}.${ext}` : `export.${ext}`);
 
-        // Fetch the file and trigger download
-        const response = await fetch(result.downloadUrl);
-        if (!response.ok) {
-            throw new Error(`Failed to download: ${response.status}`);
-        }
-        const blob = await response.blob();
+        // Try to fetch and create blob for proper filename control
+        // If CORS blocks the fetch, fall back to direct link
+        try {
+            const response = await fetch(result.downloadUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const blob = await response.blob();
 
-        // Trigger download
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+            // Trigger download with custom filename
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = name;
+            a.style.display = "none";
+            document.body.appendChild(a);
+            a.click();
+            // Clean up after a short delay to ensure download starts
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        } catch (fetchError) {
+            // CORS or fetch failed - fall back to direct link download
+            // This won't have the custom filename but will still download
+            console.warn("Fetch failed, falling back to direct download:", fetchError);
+            const a = document.createElement("a");
+            a.href = result.downloadUrl;
+            a.download = name;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.style.display = "none";
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+            }, 100);
+        }
     }
 }
