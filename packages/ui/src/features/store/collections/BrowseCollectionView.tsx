@@ -2,7 +2,6 @@ import { useUserSession, TypeRegistry } from "@vertesia/ui/session";
 import { Collection } from "@vertesia/common";
 import { DocumentSearchResultsWithDropZone, DocumentSearchResults } from "../objects/DocumentSearchResults";
 import { useToast } from "@vertesia/ui/core";
-import { useDocumentSearch } from "../objects/search/DocumentSearchContext";
 
 
 interface BrowseCollectionViewProps {
@@ -11,8 +10,6 @@ interface BrowseCollectionViewProps {
 export function BrowseCollectionView({ collection }: BrowseCollectionViewProps) {
     const toast = useToast();
     const { client, typeRegistry } = useUserSession();
-    const search = useDocumentSearch();
-    search.query.all_revisions = true;
     
     const onUploadDone = async (objectIds: string[]) => {
         if (objectIds.length > 0) {

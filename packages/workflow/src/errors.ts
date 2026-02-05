@@ -91,6 +91,19 @@ export class TokenExpiredError extends ApplicationFailure {
     }
 }
 
+export class WorkflowExecutionError extends ApplicationFailure {
+    constructor(
+        message: string,
+        public workflow?: DSLWorkflowSpec,
+    ) {
+        super(
+            message,
+            "WorkflowExecutionError",
+            true, // non-retryable
+        );
+    }
+}
+
 export const WF_NON_RETRYABLE_ERRORS = [
     "DocumentNotFoundError",
     "ActivityParamInvalidError",
@@ -99,4 +112,5 @@ export const WF_NON_RETRYABLE_ERRORS = [
     "InvalidContentTypeError",
     "TokenExpiredError",
     "ZenoClientNotFoundError",
+    "WorkflowExecutionError",
 ];
