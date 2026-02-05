@@ -1,11 +1,11 @@
 import { useState, ReactNode } from "react";
 import {
     Button,
-    VModal,
-    VModalBody,
-    VModalFooter,
-    VModalTitle,
-    VSelectBox,
+    Modal,
+    ModalBody,
+    ModalFooter,
+    ModalTitle,
+    SelectBox,
     VTooltip,
 } from "@vertesia/ui/core";
 import { ContentObjectTypeItem } from "@vertesia/common";
@@ -67,13 +67,13 @@ export function SelectContentTypeModal({
     };
 
     return (
-        <VModal
+        <Modal
             isOpen={isOpen}
             onClose={handleClose}
             className="w-full max-w-xl mx-auto"
         >
-            <VModalTitle>{title}</VModalTitle>
-            <VModalBody>
+            <ModalTitle>{title}</ModalTitle>
+            <ModalBody>
                 {children}
 
                 {/* Type selection */}
@@ -82,7 +82,7 @@ export function SelectContentTypeModal({
                         Content Type {allowNone && <span className="text-gray-500 font-normal">(Optional)</span>}
                     </label>
                     {allowNone ? (
-                        <VSelectBox
+                        <SelectBox
                             options={types}
                             value={selectedType}
                             optionLabel={(type) => type ? type.name : 'Select a content type'}
@@ -92,7 +92,7 @@ export function SelectContentTypeModal({
                             isClearable={true}
                         />
                     ) : (
-                        <VSelectBox
+                        <SelectBox
                             options={types}
                             value={selectedType}
                             optionLabel={(type) => type ? type.name : 'Select a content type'}
@@ -115,15 +115,15 @@ export function SelectContentTypeModal({
                         </VTooltip>
                     </div>
                 )}
-            </VModalBody>
-            <VModalFooter>
+            </ModalBody>
+            <ModalFooter>
                 <Button variant="ghost" onClick={handleClose} alt="Cancel">
                     Cancel
                 </Button>
                 <Button onClick={handleConfirm} alt="Confirm selection">
                     Confirm
                 </Button>
-            </VModalFooter>
-        </VModal>
+            </ModalFooter>
+        </Modal>
     );
 }
