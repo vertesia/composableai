@@ -5,7 +5,7 @@ import { InCodeTypeDefinition } from "./store/index.js";
 /**
  * Additional navigation item for an app's UI configuration.
  * Used in AppUIConfig.navigation to define sidebar navigation entries in CompositeApp shell contexts.
- * Icon names correspond to Lucide icon component names.
+ * Icon names correspond to Lucide icon component names. 
  */
 export interface AppUINavItem {
     /** Display label */
@@ -31,7 +31,7 @@ export interface AppUIConfig {
     isolation?: "shadow" | "css";
     /**
      * Navigation items for the app's sidebar UI.
-     * Only applicable for apps with UI capability in shell contexts.
+     * Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell).
      */
     navigation?: AppUINavItem[];
 }
@@ -428,6 +428,7 @@ export interface CompositeAppNavItemOverride {
     label?: string;
     /** Override the displayed nav item icon (Lucide icon name) */
     icon?: string;
+    //TODO: Set permissions for routes
 }
 
 /**
@@ -456,25 +457,22 @@ export interface CompositeAppLogoOverrides {
     darkModeUrl?: string;
 }
 
-/**
- * Message banner style options (semantic colors).
- */
-export type CompositeAppMessageStyle = 'foreground' | 'info' | 'success' | 'attention' | 'destructive';
 
 /**
  * Message banner configuration for the shell header.
- */
+*/
+export type CompositeAppMessageStyle = 'foreground' | 'info' | 'success' | 'attention' | 'destructive';
 export interface CompositeAppMessageConfig {
     /** Message text to display */
     text?: string;
     /** Whether the message is visible (defaults to true) */
     visible?: boolean;
-    /** Text color style */
+    /** Text color style. Uses semantic colors */
     style?: CompositeAppMessageStyle;
 }
 
 /**
- * Switcher visibility configuration for the shell header.
+ * Switcher visibility configuration for the CompositeApp header.
  */
 export interface CompositeAppSwitchersConfig {
     /** Whether to show the organization switcher (defaults to true) */
@@ -484,9 +482,10 @@ export interface CompositeAppSwitchersConfig {
 }
 
 /**
- * Card display overrides for the composite app in the App Portal.
- * These fields override the default CompositeAppPlugin manifest values
- * when the card is displayed in app listings.
+ * Card display overrides for the CompositeApp in the App Portal.
+ * Similar to AppManifest display properties, but specific to the CompositeApp card.
+ * Allows customers to customize the app portal card (not otherwise possible if using a
+ * shared, Vertesia-managed manifest across accounts).
  */
 export interface CompositeAppCardOverrides {
     /** Override the card label (default: "Composite App") */
@@ -505,7 +504,7 @@ export interface CompositeAppCardOverrides {
  * Used as the MongoDB model for persisting CompositeApp configurations.
  */
 export interface CompositeAppConfig {
-    /** Whether to show the composite app card in App Portal (default: true) */
+    /** Whether to show the CompositeApp card in App Portal (default: true) */
     showCard?: boolean;
     /** Card display overrides */
     card?: CompositeAppCardOverrides;
