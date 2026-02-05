@@ -506,6 +506,13 @@ export interface CompositeAppCardOverrides {
  * Used as the MongoDB model for persisting CompositeApp configurations.
  */
 export interface CompositeAppConfig {
+    /**
+     * The unique identifier for this CompositeApp configuration 
+     * Undefined if the configuration doesn't exists yet.
+    */
+    id?: string;
+    /** The project this CompositeApp belongs to */
+    project: string;
     /** Card display overrides (includes visibility) */
     card?: CompositeAppCardOverrides;
     /** Optional logo overrides (replaces default Vertesia logo) */
@@ -517,3 +524,5 @@ export interface CompositeAppConfig {
     /** List of apps to include in the CompositeApp */
     apps: CompositeAppEntry[];
 }
+
+export type CompositeAppConfigPayload = Partial<Omit<CompositeAppConfig, 'id' | 'project'>>;
