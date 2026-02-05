@@ -12,6 +12,7 @@ import { useImageLightbox } from "../ImageLightbox";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
+import { useDownloadFile } from "@vertesia/ui/features/store";
 
 // PERFORMANCE: Move pure function outside component to avoid recreation on every render
 // Process content to enhance markdown detection for lists and thinking messages
@@ -139,6 +140,7 @@ function MessageItemComponent({
     clientRef.current = client;
     const urlCacheRef = useRef(urlCache);
     urlCacheRef.current = urlCache;
+    const { renderContent: exportContent, isDownloading: isExportingFile } = useDownloadFile({ client, toast });
 
     // Get styles from consolidated config
     const styles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
@@ -202,9 +204,9 @@ function MessageItemComponent({
     };
 
     // Export message content to PDF or DOCX
-    const [isExporting, setIsExporting] = useState(false);
     const exportToFormat = async (format: MarkdownRenditionFormat) => {
         const content = typeof messageContent === 'string' ? messageContent : '';
+
         if (!content.trim()) {
             toast({
                 status: "error",
@@ -214,30 +216,12 @@ function MessageItemComponent({
             return;
         }
 
-        setIsExporting(true);
-        try {
-            const title = `Message ${dayjs(message.timestamp).format("YYYY-MM-DD HH-mm-ss")}`;
-            await client.store.rendering.downloadMarkdown({
-                content,
-                format,
-                title,
-                artifactRunId: runId,
-            }, `${title}.${format}`);
-            toast({
-                status: "success",
-                title: `Exported to ${format.toUpperCase()}`,
-                duration: 2000,
-            });
-        } catch (error) {
-            console.error('Export failed:', error);
-            toast({
-                status: "error",
-                title: `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                duration: 3000,
-            });
-        } finally {
-            setIsExporting(false);
-        }
+        const title = `Message ${dayjs(message.timestamp).format("YYYY-MM-DD HH-mm-ss")}`;
+        await exportContent(content, {
+            format,
+            title,
+            artifactRunId: runId,
+        });
     };
 
     // Check if message has exportable content (markdown text)
@@ -432,9 +416,9 @@ function MessageItemComponent({
                                         variant="ghost" size="xs"
                                         className="text-muted/50 hover:text-muted h-5 w-5 p-0"
                                         title="Export message"
-                                        disabled={isExporting}
+                                        disabled={isExportingFile}
                                     >
-                                        <Download className={`size-3 ${isExporting ? 'animate-pulse' : ''}`} />
+                                        <Download className={`size-3 ${isExportingFile ? 'animate-pulse' : ''}`} />
                                     </Button>
                                 }
                             >
