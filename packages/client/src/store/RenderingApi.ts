@@ -1,8 +1,12 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { RenderMarkdownPayload } from "@vertesia/common";
+import {
+    RenderMarkdownPayload,
+    RenderMarkdownResponse,
+} from "@vertesia/common";
 
 /**
- * API for rendering content to various formats (PDF, DOCX)
+ * API for rendering markdown documents to PDF or DOCX.
+ * Rendering is performed on workflow workers (not on the API server).
  */
 export class RenderingApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -10,78 +14,63 @@ export class RenderingApi extends ApiTopic {
     }
 
     /**
-     * Render markdown content to PDF or DOCX
+     * Render markdown content to PDF or DOCX.
      *
-     * @param payload - Rendering configuration
-     * @returns Blob containing the rendered document
+     * @param payload - Rendering options including format and either objectId or inline content
+     * @returns Rendering result with download URL
      *
      * @example
-     * // Render inline markdown to PDF
-     * const blob = await client.store.rendering.markdown({
-     *     content: "# Hello\n\nThis is a test.",
-     *     format: "pdf",
-     *     title: "My Document"
+     * // Render an existing markdown document
+     * const result = await client.rendering.render({
+     *     format: MarkdownRenditionFormat.pdf,
+     *     objectId: "doc-123"
      * });
+     * // Download from result.downloadUrl
      *
      * @example
-     * // Render an object's content to DOCX
-     * const blob = await client.store.rendering.markdown({
-     *     objectId: "doc-123",
-     *     format: "docx"
-     * });
-     *
-     * @example
-     * // Render with a custom template
-     * const blob = await client.store.rendering.markdown({
-     *     content: markdownContent,
-     *     format: "docx",
-     *     templateUrl: "https://example.com/templates/report.docx",
-     *     pandocOptions: ["--toc", "--number-sections"]
+     * // Render inline markdown content
+     * const result = await client.rendering.render({
+     *     format: MarkdownRenditionFormat.docx,
+     *     content: "# My Report\n\nContent here...",
+     *     title: "My Report"
      * });
      */
-    async markdown(payload: RenderMarkdownPayload): Promise<Blob> {
-        // Validate payload
-        if (!payload.content && !payload.objectId) {
-            throw new Error('Either content or objectId is required');
-        }
-        if (payload.content && payload.objectId) {
-            throw new Error('Provide either content or objectId, not both');
-        }
-        if (!payload.format || !['pdf', 'docx'].includes(payload.format)) {
-            throw new Error('format must be "pdf" or "docx"');
-        }
-
-        // Make the request - need raw response for binary data
-        const response = await this.post('/markdown', {
-            payload,
-            reader: (res: Response) => res,
-        }) as Response;
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Rendering failed: ${response.status} ${errorText}`);
-        }
-
-        return response.blob();
+    render(payload: RenderMarkdownPayload): Promise<RenderMarkdownResponse> {
+        return this.post("/markdown", { payload });
     }
 
     /**
-     * Render markdown content and trigger download in browser
+     * Render markdown content and trigger download in browser.
      *
      * @param payload - Rendering configuration
      * @param filename - Optional filename override (defaults to title or "export")
      */
     async downloadMarkdown(payload: RenderMarkdownPayload, filename?: string): Promise<void> {
-        const blob = await this.markdown(payload);
+        const result = await this.render(payload);
+
+        if (result.status === "error") {
+            throw new Error(result.error || "Rendering failed");
+        }
+
+        if (!result.downloadUrl) {
+            throw new Error("No download URL returned");
+        }
 
         // Determine filename
-        const ext = payload.format === 'pdf' ? 'pdf' : 'docx';
+        const ext = payload.format === "pdf" ? "pdf" : "docx";
         const name = filename
-            ?? (payload.title ? `${payload.title.replace(/[^a-zA-Z0-9-_]/g, '_')}.${ext}` : `export.${ext}`);
+            ?? (payload.title ? `${payload.title.replace(/[^a-zA-Z0-9-_]/g, "_")}.${ext}` : `export.${ext}`);
+
+        // Fetch the file and trigger download
+        const response = await fetch(result.downloadUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to download: ${response.status}`);
+        }
+        const blob = await response.blob();
 
         // Trigger download
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
         a.download = name;
         document.body.appendChild(a);
