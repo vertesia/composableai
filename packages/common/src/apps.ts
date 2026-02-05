@@ -484,19 +484,31 @@ export interface CompositeAppSwitchersConfig {
 }
 
 /**
+ * Card display overrides for the composite app in the App Portal.
+ * These fields override the default CompositeAppPlugin manifest values
+ * when the card is displayed in app listings.
+ */
+export interface CompositeAppCardOverrides {
+    /** Override the card label (default: "Composite App") */
+    label?: string;
+    /** Override the card description */
+    description?: string;
+    /** Override the card icon (Lucide icon name, e.g., "Rocket") */
+    icon?: string;
+    /** Override the card color (e.g., "blue", "red", "purple") */
+    color?: string;
+}
+
+/**
  * CompositeApp shell configuration.
  * This is the main configuration interface for storing CompositeApp settings.
  * Used as the MongoDB model for persisting CompositeApp configurations.
  */
 export interface CompositeAppConfig {
-    /** Whether to show the composite app card */
+    /** Whether to show the composite app card in App Portal (default: true) */
     showCard?: boolean;
-    /** Optional card label for composite app display */
-    cardLabel?: string;
-    /** Optional card icon name (Lucide icon) for composite app display */
-    cardIcon?: string;
-    /** Optional card description for composite app display */
-    cardDescription?: string;
+    /** Card display overrides */
+    card?: CompositeAppCardOverrides;
     /** Optional logo overrides (replaces default Vertesia logo) */
     logo?: CompositeAppLogoOverrides;
     /** Optional message banner configuration */
