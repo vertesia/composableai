@@ -3,6 +3,26 @@ import { BaseObject } from "./common.js";
 import { WorkflowExecutionPayload } from "./index.js";
 import { ParentClosePolicyType } from "./temporalio.js";
 
+/**
+ * Discriminator for workflow input type - either object IDs or GCS file URIs
+ */
+export type WorkflowInputType = 'objectIds' | 'files';
+
+/**
+ * File reference with URL and mimetype
+ */
+export interface WorkflowInputFile {
+    url: string;
+    mimetype: string;
+}
+
+/**
+ * Discriminated union for workflow inputs.
+ * Workflows can accept either a list of object IDs (existing behavior) OR a list of file references (new).
+ */
+export type WorkflowInput =
+    | { inputType: 'objectIds', objectIds: string[] }
+    | { inputType: 'files', files: WorkflowInputFile[] };
 
 /**
  * The payload sent when starting a workflow from the temporal client to the workflow instance.
