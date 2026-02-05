@@ -1,1 +1,0 @@
-{"version":3,"file":"all.js","sources":["../../../src/tool-server/skills/examples/all?skills"],"sourcesContent":["import Skill_user_select from './user-select/SKILL.md';\n\nexport default [Skill_user_select];"],"names":[],"mappings":";;AAEA,aAAe,CAAC,iBAAiB,CAAC;;;;"}
