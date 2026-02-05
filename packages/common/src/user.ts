@@ -38,21 +38,24 @@ export enum BillingMethod {
     invoice = 'invoice'
 }
 
+export enum AccountType {
+    vertesia = 'vertesia',
+    partner = 'partner',
+    free = 'free',
+    customer = 'customer',
+    unknown = 'unknown'
+}
 
-interface AccountBilling {
+export interface AccountBilling {
     method: BillingMethod;
     stripe_customer_id?: string;
 }
+
 export interface Account {
     id: string;
     name: string;
 
     email_domains: string[];
-    members: {
-        role: ProjectRoles;
-        user: UserRef;
-        disabled: boolean;
-    }[];
 
     onboarding: {
         completed: boolean,
@@ -60,6 +63,8 @@ export interface Account {
     };
 
     datacenter: string;
+
+    account_type: AccountType;
 
     billing: AccountBilling;
 

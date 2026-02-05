@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/client",
-    "version": "0.79.0",
+    "version": "0.81.2-dev.20260204.135023Z",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -47,6 +47,20 @@
             "require": "./lib/cjs/nodejs/index.js"
         }
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/client"
+    },
+    "keywords": [
+        "vertesia",
+        "client",
+        "api",
+        "sdk",
+        "llm",
+        "ai",
+        "typescript"
+    ],
     "typesVersions": {
         "*": {
             "node": [

@@ -16,19 +16,24 @@ import { useUserSession } from "@vertesia/ui/session";
  * @returns A dropdown to select a collection.
 **/
 interface SelectCollectionProps {
-    value?: string; // Collection ID
-    onChange: (collectionId: string | undefined, collection?: CollectionItem) => void;
+    value?: string | string[];
+    onChange: (collectionId: string | string[] | undefined, collection?: CollectionItem | CollectionItem[]) => void;
     disabled?: boolean;
     placeholder?: string;
     searchPlaceholder?: string;
+    filterOut?: string[]; // collection IDs to filter out from the list
+    allowDynamic?: boolean;
+    multiple?: boolean;
 }
-export function SelectCollection({ onChange, value, disabled = false, placeholder = "Select a collection", searchPlaceholder = "Search collections" }: SelectCollectionProps) {
+
+export function SelectCollection({ onChange, value, disabled = false, placeholder = "Select a collection", searchPlaceholder = "Search collections", filterOut, allowDynamic = true, multiple = false }: SelectCollectionProps) {
     const { client } = useUserSession();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [useServerSearch, setUseServerSearch] = useState(false);
 
-    // Debounce the search query to avoid excessive API calls
+    // Debounce the search query to avoid excessive API calls (only used for server-side search)
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
     // Memoize the search function to prevent unnecessary re-renders
@@ -37,29 +42,63 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
         const trimmedQuery = query.trim();
 
         const collections = await client.store.collections.search({
-            dynamic: false,
-            name: trimmedQuery || undefined
+            dynamic: allowDynamic ? undefined : false,
+            name: useServerSearch ? (trimmedQuery || undefined) : undefined
         });
 
         setIsSearching(false);
-        return collections;
-    }, [client]);
 
-    // Fetch collections based on debounced search query
+        // Check if we hit the maximum limit (1000 collections) - if so, enable server-side search
+        if (!useServerSearch && collections.length >= 1000) {
+            setUseServerSearch(true);
+        }
+
+        // Filter out collections if filterOut is provided
+        if (filterOut && filterOut.length > 0) {
+            return collections.filter(col => !filterOut.includes(col.id));
+        }
+        return collections;
+    }, [client, allowDynamic, filterOut, useServerSearch]);
+
+    // Fetch collections based on search mode
     const { data: collections, error } = useFetch(
-        () => searchCollections(debouncedSearchQuery),
-        [debouncedSearchQuery, searchCollections]
+        () => searchCollections(useServerSearch ? debouncedSearchQuery : ''),
+        [useServerSearch ? debouncedSearchQuery : '', searchCollections]
     );
 
-    // Memoize the selected collection to avoid recalculation on every render
+    // Memoize the selected collection(s)
     const selectedCollection = useMemo(() => {
-        return collections?.find((collection: CollectionItem) => collection.id === value);
-    }, [collections, value]);
+        if (!collections) return multiple ? [] : undefined;
+
+        if (multiple && Array.isArray(value)) {
+            return collections.filter((collection: CollectionItem) => value.includes(collection.id));
+        } else if (!multiple && typeof value === 'string') {
+            return collections.find((collection: CollectionItem) => collection.id === value);
+        }
+        return multiple ? [] : undefined;
+    }, [collections, value, multiple]);
 
     // Handle collection selection
     const handleSelect = useCallback((collection: CollectionItem) => {
-        onChange(collection.id, collection);
-    }, [onChange]);
+        if (multiple) {
+            const currentValues = Array.isArray(value) ? value : [];
+            const isSelected = currentValues.includes(collection.id);
+
+            if (isSelected) {
+                // Remove from selection
+                const newValues = currentValues.filter(id => id !== collection.id);
+                const newCollections = collections?.filter(c => newValues.includes(c.id)) || [];
+                onChange(newValues, newCollections);
+            } else {
+                // Add to selection
+                const newValues = [...currentValues, collection.id];
+                const newCollections = collections?.filter(c => newValues.includes(c.id)) || [];
+                onChange(newValues, newCollections);
+            }
+        } else {
+            onChange(collection.id, collection);
+        }
+    }, [onChange, value, collections, multiple]);
 
     // Handle clear selection
     const handleClear = useCallback(() => {
@@ -71,6 +110,24 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
         setSearchQuery(query);
     }, []);
 
+    const hasSearchQuery = searchQuery.trim().length > 0;
+
+    // Client-side filtering when not using server search
+    const filteredCollections = useMemo(() => {
+        if (!collections) return [];
+
+        // If using server search, collections are already filtered by the server
+        if (useServerSearch) return collections;
+
+        // Otherwise, do client-side filtering
+        if (!hasSearchQuery) return collections;
+
+        const queryLower = searchQuery.toLowerCase();
+        return collections.filter(col => col.name.toLowerCase().includes(queryLower));
+    }, [collections, useServerSearch, hasSearchQuery, searchQuery]);
+
+    const showClearOption = selectedCollection && hasSearchQuery;
+
     // Show error state
     if (error) {
         return (
@@ -80,8 +137,18 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
         );
     }
 
-    const hasSearchQuery = searchQuery.trim().length > 0;
-    const showClearOption = selectedCollection && hasSearchQuery;
+    // Get display text for the button
+    const getDisplayText = () => {
+        if (multiple && Array.isArray(selectedCollection) && selectedCollection.length > 0) {
+            if (selectedCollection.length === 1) {
+                return selectedCollection[0].name;
+            }
+            return `${selectedCollection.length} collections selected`;
+        } else if (!multiple && selectedCollection && !Array.isArray(selectedCollection)) {
+            return selectedCollection.name;
+        }
+        return placeholder;
+    };
 
     return (
         <Popover>
@@ -94,7 +161,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                     disabled={disabled}
                 >
                     <span className="truncate flex-1 text-left min-w-0">
-                        {selectedCollection ? selectedCollection.name : placeholder}
+                        {getDisplayText()}
                     </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -125,7 +192,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                     </CommandEmpty>
                     <CommandGroup className="max-h-[300px] overflow-auto">
                         {
-                            showClearOption && (
+                            showClearOption && !multiple && (
                                 <CommandItem
                                     value="__clear__"
                                     onSelect={handleClear}
@@ -136,36 +203,25 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                             )
                         }
                         {
-                            collections?.map((collection: CollectionItem) => (
-                                <CommandItem
-                                    key={collection.id}
-                                    value={collection.id}
-                                    onSelect={() => handleSelect(collection)}
-                                    className={cn(
-                                        "flex items-center justify-between",
-                                        value === collection.id ? "bg-muted/20" : ""
-                                    )}
-                                >
-                                    <div className="flex flex-col flex-1 min-w-0">
-                                        <span className="truncate font-medium">
-                                            {collection.name}
-                                        </span>
-                                        {
-                                            collection.description && (
-                                                <span className="text-sm text-muted-foreground truncate">
-                                                    {collection.description}
-                                                </span>
-                                            )
-                                        }
-                                    </div>
-                                    <Check
-                                        className={cn(
-                                            "ml-2 h-4 w-4 shrink-0",
-                                            value === collection.id ? "opacity-100" : "opacity-0"
+                            filteredCollections.map((collection: CollectionItem) => {
+                                const isSelected = multiple && Array.isArray(value)
+                                    ? value.includes(collection.id)
+                                    : value === collection.id;
+
+                                return (
+                                    <CommandItem
+                                        key={collection.id}
+                                        value={collection.id}
+                                        onSelect={() => handleSelect(collection)}
+                                        className="flex items-center justify-between"
+                                    >
+                                        <span className="truncate">{collection.name}</span>
+                                        {isSelected && (
+                                            <Check className="ml-2 h-4 w-4 shrink-0" />
                                         )}
-                                    />
-                                </CommandItem>
-                            ))
+                                    </CommandItem>
+                                );
+                            })
                         }
                     </CommandGroup>
                 </Command>

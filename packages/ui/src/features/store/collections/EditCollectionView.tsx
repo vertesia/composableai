@@ -1,13 +1,11 @@
-import { json } from "@codemirror/lang-json";
-import { Collection, CreateCollectionPayload } from "@vertesia/common";
-import { Button, ErrorBox, FormItem, Input, Styles, useFetch, useToast } from "@vertesia/ui/core";
+import { Collection, CreateCollectionPayload, JSONSchemaObject } from "@vertesia/common";
+import { Button, ErrorBox, FormItem, Input, Panel, Styles, Textarea, useFetch, useToast, useTheme } from "@vertesia/ui/core";
+import { SharedPropsEditor, SyncMemberHeadsToggle, UserInfo } from "@vertesia/ui/features";
 import { useUserSession } from "@vertesia/ui/session";
-import { CodeMirrorEditor, EditorApi, GeneratedForm, ManagedObject } from "@vertesia/ui/widgets";
-import { basicSetup } from "codemirror";
+import { MonacoEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
+import dayjs from "dayjs";
 import { useMemo, useRef, useState } from "react";
 import { SelectContentType, stringifyTableLayout } from "../types";
-
-const extensions = [basicSetup, json()];
 
 interface UpdateData {
     name: string;
@@ -26,6 +24,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
     const typeId = collection.type?.id;
     const tableLayoutRef = useRef<EditorApi | undefined>(undefined);
     const toast = useToast();
+    const { theme } = useTheme();
     const { client } = useUserSession();
     const [isUpdating, setUpdating] = useState(false);
     const [metadata, setMetadata] = useState<UpdateData>({
@@ -54,7 +53,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             });
             return;
         }
-        
+
         const payload: Partial<CreateCollectionPayload> = {
             name: metadata.name,
             description: metadata.description,
@@ -131,64 +130,99 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
 
     return (
         <div className="flex flex-col gap-4 py-2">
-            <FormItem label="Name" required>
-                <Input value={metadata.name} onChange={(v) => setField("name", v)} />
-            </FormItem>
-            <FormItem label="Description">
-                <textarea
-                    className={Styles.INPUT}
-                    value={metadata.description}
-                    onChange={(e) => setField("description", e.target.value)}
-                />
-            </FormItem>
-            {
-                !collection.dynamic &&
-                <FormItem label="Allowed Content Types" description="Select which content types can be added to the collection. If not set, then all content types are allowed.">
+            <Panel title="Configuration"
+                action={
+                    <Button size="lg" isDisabled={isUpdating} onClick={onSubmit}>
+                        Save
+                    </Button>
+                }>
+                <div className="flex justify-between mb-2">
+                    <div className="w-1/2 gap-2 flex flex-col">
+                        <div className="text-sm font-medium mb-1">Created By</div>
+                        <div className="gap-2 flex items-center">
+                            <UserInfo userRef={collection.created_by} showTitle />
+                            <span>at {dayjs(collection.created_at).format("YYYY-MM-DD HH:mm:ss")}</span>
+                        </div>
+                    </div>
+                    <div className="w-1/2 gap-2 flex flex-col">
+                        <div className="text-sm font-medium mb-1">Updated By</div>
+                        <div className="gap-2 flex items-center">
+                            <UserInfo userRef={collection.updated_by} showTitle />
+                            <span>at {dayjs(collection.updated_at).format("YYYY-MM-DD HH:mm:ss")}</span>
+                        </div>
+                    </div>
+                </div>
+                <FormItem label="Name" required>
+                    <Input value={metadata.name} onChange={(v) => setField("name", v)} />
+                </FormItem>
+                <FormItem label="Description">
+                    <Textarea
+                        value={metadata.description}
+                        onChange={(e) => setField("description", e.target.value)}
+                    />
+                </FormItem>
+                {
+                    !collection.dynamic &&
+                    <FormItem label="Allowed Content Types" description="Select which content types can be added to the collection. If not set, then all content types are allowed.">
+                        <SelectContentType
+                            defaultValue={metadata.allowed_types || null}
+                            onChange={(v) => {
+                                if (Array.isArray(v)) {
+                                    setField("allowed_types", v.map(type => type.id));
+                                } else {
+                                    setField("allowed_types", v ? [v.id] : []);
+                                }
+                            }}
+                            isClearable multiple
+                        />
+                    </FormItem>
+                }
+                {
+                    collection.dynamic && (
+                        <FormItem label="Query" description="Define the query to dynamically fetch content for the collection.">
+                            <Textarea
+                                className={Styles.INPUT}
+                                value={metadata.query}
+                                onChange={(e) => setField("query", e.target.value)}
+                            />
+                        </FormItem>
+                    )
+                }
+                <FormItem label="Table Layout" description="Define a custom layout for displaying the collection in tables." className="h-[200px]">
+                    <MonacoEditor
+                        className="border-1 rounded-md border-border"
+                        value={tableLayoutValue}
+                        language="json"
+                        editorRef={tableLayoutRef}
+                        theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+                    />
+                </FormItem>
+                <FormItem label="Type" description="Select a content type to assign custom properties and data to the collection.">
                     <SelectContentType
-                        defaultValue={metadata.allowed_types || null}
+                        defaultValue={metadata.type || null}
                         onChange={(v) => {
                             if (Array.isArray(v)) {
-                                setField("allowed_types", v.map(type => type.id));
+                                setField("type", v.length > 0 ? v[0].id : null);
                             } else {
-                                setField("allowed_types", v ? [v.id] : []);
+                                setField("type", v?.id || null);
                             }
                         }}
-                        isClearable multiple
+                        isClearable
                     />
                 </FormItem>
-            }
-            {collection.dynamic && (
-                <FormItem label="Query" description="Define the query to dynamically fetch content for the collection.">
-                    <textarea
-                        className={Styles.INPUT}
-                        value={metadata.query}
-                        onChange={(e) => setField("query", e.target.value)}
-                    />
-                </FormItem>
-            )}
-            <FormItem label="Table Layout" description="Define a custom layout for displaying the collection in tables.">
-                <CodeMirrorEditor className="border-1 rounded-md border-border"
-                    value={tableLayoutValue} extensions={extensions} editorRef={tableLayoutRef} />
-            </FormItem>
-            <FormItem label="Type" description="Select a content type to assign custom properties and data to the collection.">
-                <SelectContentType
-                    defaultValue={metadata.type || null}
-                    onChange={(v) => {
-                        if (Array.isArray(v)) {
-                            setField("type", v.length > 0 ? v[0].id : null);
-                        } else {
-                            setField("type", v?.id || null);
-                        }
-                    }}
-                    isClearable
-                />
-            </FormItem>
-            <Button size="lg" className="w-min my-4" isDisabled={isUpdating} onClick={onSubmit}>
-                Save Metadata
-            </Button>
+            </Panel>
 
             {typeId && <PropertiesEditor typeId={typeId} collection={collection} />}
-        </div>
+            {
+                !collection.dynamic && (
+                    <>
+                        <SyncMemberHeadsToggle collection={collection} />
+                        <SharedPropsEditor collection={collection} />
+                    </>
+                )
+            }
+
+        </div >
     );
 }
 
@@ -197,30 +231,28 @@ interface PropertiesEditorProps {
     collection: Collection;
 }
 function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
+    const [formData, setFormData] = useState<JSONSchemaObject>({});
+    const toast = useToast();
     const { client } = useUserSession();
+    const [isUpdating, setIsUpdating] = useState(false);
+
     const { data: type, error } = useFetch(() => client.store.types.retrieve(typeId), [typeId]);
+    const schema = type?.object_schema || {};
+    const object = useMemo(() => new ManagedObject(schema, collection.properties || {}), [schema, collection.properties]);
+
     if (error) {
         return <ErrorBox title="Failed to load type">{error.message}</ErrorBox>;
     }
 
-    return (
-        <Section title="Properties">
-            {type && <PropertiesForm collection={collection} schema={type.object_schema} />}
-        </Section>
-    );
-}
+    if (!type) {
+        return null;
+    }
 
-interface PropertiesFormProps {
-    schema: any;
-    collection: Collection;
-}
-function PropertiesForm({ schema = {}, collection }: PropertiesFormProps) {
-    const { client } = useUserSession();
-    const toast = useToast();
-    const object = useMemo(() => new ManagedObject(schema, collection.properties || {}), [schema, collection]);
-    const [isUpdating, setIsUpdating] = useState(false);
 
-    const _onSave = (data: any) => {
+    const _onSave = (data: JSONSchemaObject) => {
+        if (!data || !Object.keys(data).length) {
+            return;
+        }
         const payload = { properties: data || {} };
         setIsUpdating(true);
         client.store.collections
@@ -246,24 +278,19 @@ function PropertiesForm({ schema = {}, collection }: PropertiesFormProps) {
             });
     };
 
-    return (
-        <GeneratedForm object={object} onSubmit={_onSave}>
-            <Button size="lg" isLoading={isUpdating} className="my-4" variant="primary" type="submit">
-                Save Properties
-            </Button>
-        </GeneratedForm>
-    );
-}
+    const onDataChanged = (data: Node) => {
+        if (data instanceof ManagedObject) {
+            setFormData(data.value);
+        }
+    }
 
-interface SectionProps {
-    children: React.ReactNode;
-    title: string;
-}
-function Section({ children, title }: SectionProps) {
     return (
-        <div className="my-4">
-            <div className="text-lg text-gray-700 font-semibold border-b border-b-gray-300 py-2 mb-4">{title}</div>
-            {children}
-        </div>
+        <Panel title="Properties" action={
+            <Button size="lg" isLoading={isUpdating} type="submit" onClick={() => _onSave(formData)}>
+                Save
+            </Button>}
+        >
+            <GeneratedForm object={object} onChange={onDataChanged} />
+        </Panel>
     );
 }

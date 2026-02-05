@@ -1,3 +1,5 @@
 packages:
     - llumiverse/common
     - packages/*
+    - templates/*
+    - "!templates/worker-template"

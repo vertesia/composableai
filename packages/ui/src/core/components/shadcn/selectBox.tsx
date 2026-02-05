@@ -1,13 +1,15 @@
 import clsx from 'clsx';
 import { isEqual } from 'lodash-es';
-import { Check, ChevronsUpDown, SearchIcon, SquarePlus, X } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { AlertTriangle, Check, ChevronsUpDown, SearchIcon, SquarePlus, X } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo, ReactNode } from 'react';
 
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
 import { Input } from './input';
+import { Button } from './button';
+import { VTooltip } from './tooltip';
 
-interface VSelectBoxBaseProps<T> {
+export interface SelectBoxBaseProps<T> {
     options: T[] | undefined;
     optionLabel?: (option: T) => React.ReactNode;
     onBlur?: () => void;
@@ -23,27 +25,49 @@ interface VSelectBoxBaseProps<T> {
     popupClass?: string;
     isClearable?: boolean;
     border?: boolean;
+    inline?: boolean;
+    clearIcon?: ReactNode;
+    clearTitle?: string;
+    /** Show warning when value is not in options list (default: true) */
+    warnOnMissingValue?: boolean;
+    /** Custom warning message when value is not in options */
+    missingValueWarning?: string;
 }
 
-interface VSelectBoxSingleProps<T> extends VSelectBoxBaseProps<T> {
+interface SelectBoxSingleProps<T> extends SelectBoxBaseProps<T> {
     multiple?: false;
     value?: T;
     onChange: (option: T) => void;
 }
 
-interface VSelectBoxMultipleProps<T> extends VSelectBoxBaseProps<T> {
+interface SelectBoxMultipleProps<T> extends SelectBoxBaseProps<T> {
     multiple: true;
     value?: T[];
     onChange: (options: T[]) => void;
 }
 
-type VSelectBoxProps<T> = VSelectBoxSingleProps<T> | VSelectBoxMultipleProps<T>;
+type SelectBoxProps<T> = SelectBoxSingleProps<T> | SelectBoxMultipleProps<T>;
 
-export function VSelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by }: Readonly<VSelectBoxProps<T>>) {
+export function SelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false, warnOnMissingValue = true, missingValueWarning = "Value not in options list, may not be valid", clearIcon, clearTitle }: Readonly<SelectBoxProps<T>>) {
     const triggerRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [width, setWidth] = useState<number>(0);
     const [filterValue, setFilterValue] = useState('');
+
+    // Check if value is in options list (for single select only)
+    const isMissingValue = useMemo(() => {
+        if (!warnOnMissingValue || multiple || value == null || !options) return false;
+        // Use the isOptionsEqual helper which respects the 'by' comparator
+        return !options.some(opt => {
+            if (typeof by === 'string') {
+                return (opt as any)[by] === (value as any)[by];
+            } else if (typeof by === 'function') {
+                return by(opt, value as T);
+            } else {
+                return isEqual(opt, value);
+            }
+        });
+    }, [warnOnMissingValue, multiple, value, options, by]);
 
     useEffect(() => {
         const element = triggerRef.current;
@@ -169,6 +193,82 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
         );
     };
 
+    // Render the options list content
+    const renderOptionsContent = () => (
+        <>
+            {filterBy && (
+                <div className='flex justify-start items-center mb-1'>
+                    <div className='mx-2'>
+                        <SearchIcon className="size-4" />
+                    </div>
+                    <Input variant='unstyled' value={filterValue} onChange={setFilterValue} className="w-full p-1 rounded-md" placeholder="Search..." />
+                </div>
+            )}
+            <Command className="overflow-hidden">
+                <CommandList className={inline ? "max-h-full overflow-y-auto" : "max-h-[200px] overflow-y-auto"}>
+                    <CommandEmpty>No result found.</CommandEmpty>
+                    <CommandGroup>
+                        {filteredOptions?.map((opt, index) => {
+                            const isSelected = multiple
+                                ? isOptionSelected(opt, Array.isArray(value) ? value : [])
+                                : value != null ? isOptionsEqual(value as T, opt) : false;
+
+                            return (
+                                <CommandItem
+                                    key={index}
+                                    onSelect={() => _onClick(opt)}
+                                    className="w-full"
+                                >
+                                    {multiple || inline ? (
+                                        <div className='w-full flex justify-between items-center cursor-pointer'>
+                                            <div className='w-full truncate text-left'>
+                                                {optionLabel ? optionLabel(opt) : opt as String}
+                                            </div>
+                                            {isSelected && <Check className="size-4" />}
+                                        </div>
+                                    ) : (
+                                        <PopoverClose className='w-full flex justify-between items-center'>
+                                            <div className='w-full truncate text-left'>
+                                                {optionLabel ? optionLabel(opt) : opt as String}
+                                            </div>
+                                            {isSelected && <Check className="size-4" />}
+                                        </PopoverClose>
+                                    )}
+                                </CommandItem>
+                            );
+                        })}
+                    </CommandGroup>
+                </CommandList>
+            </Command>
+            {addNew && (
+                <div className='p-1'>
+                    <a
+                        onClick={addNew}
+                        className={clsx(
+                            'gap-x-2 px-2 py-1.5 truncate group flex rounded-md items-center text-sm cursor-pointer hover:bg-accent',
+                        )}
+                    >
+                        <SquarePlus size={16} strokeWidth={1.25} absoluteStrokeWidth />
+                        {addNewLabel}
+                    </a>
+                </div>
+            )}
+        </>
+    );
+
+    if (inline) {
+        return (
+            <div className={clsx(
+                className,
+                border && 'border border-border rounded-md',
+                "bg-popover p-1",
+                popupClass
+            )}>
+                {renderOptionsContent()}
+            </div>
+        );
+    }
+
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -177,27 +277,34 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                     onClick={handleTriggerClick}
                     className={clsx(
                         className,
-                        border && 'border border-border',
-                        'flex flex-row gap-2 items-center justify-between p-2 rounded-md group relative',
+                        border && (isMissingValue ? 'border border-destructive' : 'border border-border'),
+                        'flex flex-row gap-2 items-center justify-between p-2 rounded-md group relative [&:hover_.clear-button]:opacity-100',
                         !disabled ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed text-muted",
                     )}
                 >
                     <div
                         className={clsx(
-                            "flex flex-col w-full rounded-md text-sm items-center justify-center truncate",
+                            "flex flex-col w-full rounded-md text-sm min-h-6 items-center justify-center truncate",
                             !disabled && "",
                             isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && "pr-6"
                         )}
                     >
                         {label && <div className='w-full text-left text-xs font-semibold'>{label}</div>}
-                        <div className={clsx('w-full text-left', !disabled && '')}>
+                        <div className={clsx('w-full text-left ', !disabled && '', isMissingValue && 'text-destructive')}>
+                            {isMissingValue && (
+                                <VTooltip description={missingValueWarning} placement="top" asChild>
+                                    <AlertTriangle className="inline-block size-4 mr-1 -mt-0.5 cursor-help" />
+                                </VTooltip>
+                            )}
                             {multiple ? renderMultipleValue() : renderSingleValue()}
                         </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 group">
                         {isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && (
-                            <div
-                                onClick={(e) => {
+                            <Button variant={"link"} size={"icon"}
+                                disabled={disabled}
+                                alt={clearTitle || "Clear selection"}
+                                onClick={(e: { stopPropagation: () => void; }) => {
                                     e.stopPropagation();
                                     if (multiple) {
                                         (onChange as (options: T[]) => void)([] as T[]);
@@ -205,10 +312,10 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                                         (onChange as (option: T) => void)(undefined as any);
                                     }
                                 }}
-                                className="cursor-pointer hover:bg-muted/20 rounded p-1"
+                                className="cursor-pointer hover:bg-muted/20 clear-button opacity-0 transition-opacity duration-200 rounded p-1"
                             >
-                                <X className="size-4" />
-                            </div>
+                                {clearIcon ? clearIcon : <X className="size-4" />}
+                            </Button>
                         )}
                         {!disabled && (
                             <ChevronsUpDown className="size-4 opacity-50" />
@@ -225,66 +332,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                     popupClass
                 )}
             >
-                {filterBy && (
-
-                    <div className='flex justify-start items-center mb-1'>
-                        <div className='mx-2'>
-                            <SearchIcon className="size-4" />
-                        </div>
-                        <Input variant='unstyled' value={filterValue} onChange={setFilterValue} className="w-full p-1 rounded-md" placeholder="Search..." />
-                    </div>
-                )}
-                <Command className="overflow-hidden">
-                    <CommandList className="max-h-[200px] overflow-y-auto">
-                        <CommandEmpty>No result found.</CommandEmpty>
-                        <CommandGroup className="overflow-visible">
-                            {filteredOptions?.map((opt, index) => {
-                                const isSelected = multiple
-                                    ? isOptionSelected(opt, Array.isArray(value) ? value : [])
-                                    : value != null ? isOptionsEqual(value as T, opt) : false;
-
-                                return (
-                                    <CommandItem
-                                        key={index}
-                                        onSelect={() => _onClick(opt)}
-                                        className="w-full"
-                                    >
-                                        {multiple ? (
-                                            <div className='w-full flex justify-between items-center cursor-pointer'>
-                                                <div className='w-full truncate text-left'>
-                                                    {optionLabel ? optionLabel(opt) : opt as String}
-                                                </div>
-                                                {isSelected && <Check className="size-4" />}
-                                            </div>
-                                        ) : (
-                                            <PopoverClose className='w-full flex justify-between items-center'>
-                                                <div className='w-full truncate text-left'>
-                                                    {optionLabel ? optionLabel(opt) : opt as String}
-                                                </div>
-                                                {isSelected && <Check className="size-4" />}
-                                            </PopoverClose>
-                                        )}
-                                    </CommandItem>
-                                );
-                            })}
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-                {
-                    addNew && (
-                        <div className='p-1'>
-                            <a
-                                onClick={addNew}
-                                className={clsx(
-                                    'gap-x-2 px-2 py-1.5 truncate group flex rounded-md items-center text-sm cursor-pointer hover:bg-accent',
-                                )}
-                            >
-                                <SquarePlus size={16} strokeWidth={1.25} absoluteStrokeWidth />
-                                {addNewLabel}
-                            </a>
-                        </div>
-                    )
-                }
+                {renderOptionsContent()}
             </PopoverContent>
         </Popover>
     );

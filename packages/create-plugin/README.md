@@ -1,100 +1,162 @@
-# @vertesia/create-agent
+# @vertesia/plugin
 
-This package is scaffolding a vertesia agent project.
-Vertesia agents are used to deploy custom workflows to Vertesia cloud.
+CLI tool to create Vertesia plugins:
+- UI Plugins
+- Tool Server Plugins.
 
-Visit https://vertesiahq.com for more information about Vertesia.
+## Usage
 
-## Requirements:
-1. docker (with buildx support) installed locally.
-2. vertesia CLI application. The CLI will be automatically installed when initializing the agent project if you didn't installed it previously.
+```bash
+# Using pnpm create (recommended)
+pnpm create @vertesia/plugin my-project
 
-## Initialize a Vertesia agent project
+# Using npm create
+npm create @vertesia/plugin my-project
 
-Run the command line command:
+# Using pnpm dlx (runs without installing)
+pnpm dlx @vertesia/plugin my-project
 
-```
-npm init @vertesia/agent
-```
+# Using npx
+npx @vertesia/plugin my-project
 
-Follow the instructions on screen. You need to define an organization and a name for your agent. The organization must be unique inside Vertesia and is usually the name of your Vertesia organization account. The agent name is identifying the project in your organization.
-
-The generated project is a typescript project and is using [Temporal](https://temporal.io/) as the workflow system.
-
-You can implement your own workflows and activities anywhere in the src/ directory or even in a dependency project. The only requirement is that you need to export the workflows and the activities from the `src/workflow.ts` and `src/activities.ts` files.
-These generated files are containing a "Hello world!" workflow and activity as an example that you should remove and export your own definitions.
-
-
-## Developing your agent workflows / activities.
-
-Export your temporal workflows `from src/workflows.ts` and your activities from `src/activities.ts`
-
-## Test locally the workflows.
-
-There are two ways to test the agent worker:
-
-1. Using `npm start`. This will start the worker in your terminal.
-2. Using `vertesia agent run` from your project root. This will run the agent worker in side the docker image you previously built. See the [Build](build-the-agent-docker-image) section.
-
-**Important Note:** All `vertesia agent` commands must be executed in the agent project root.
-
-## Debugging locally the workflows.
-
-You can debug the workflows by replaying them locally using the temporal replayer that you can found in  `src/debug-replayer.ts`.
-
-See https://docs.temporal.io/develop/typescript/debugging for more information
-
-## Packaging and publishing your Vertesia agent
-
-When the workflows are working you will want to publish the agent to Vertesia.
-The agent should be packaged as a docker image and then published to the Vertesia cloud.
-
-### Build the agent docker image
-
-When you are ready to test the agent image you can built it using `vertesia agent build` from you project root.
-
-This will build a docker image tagged as `your-organization/your-agent-name:latest`.
-This image is only useable to test locally. You cannot push it to Vertesia.
-
-### Releasing the agent docker image
-
-When you already to push your agent to Vertesia you must first create a version using the following command:
-
-```
-vertesia agent release <version>
+# Or install globally
+pnpm install -g @vertesia/plugin
+create-tool-server my-project
 ```
 
-The version must be in the `major.minor.patch[-modifier]` format. \
-Examples: `1.0.0`, `1.0.0-rc1`.
+**Note:** When using `pnpm create` or `npm create`, drop the `create-` prefix from the package name.
 
-This command is creating a new docker tag `your-organization/your-agent-name:version` from the `latest` image tag.
+## Features
 
-### Publishing the agent docker image to Vertesia
+- 📦 **Downloads template from GitHub** - Always get the latest template
+- ⚙️ **Template-driven configuration** - Template defines its own prompts via `template.config.json`
+- 🎨 **Interactive prompts** - User-friendly CLI with validation
+- 🔄 **Variable replacement** - Automatically replaces `{{VARIABLES}}` in files
+- 🧹 **Smart cleanup** - Removes meta files after installation
+- 📚 **Package manager agnostic** - Works with npm, pnpm, or yarn
 
-Versioned images (using the `release` command) can be published to Vertesia. This can be done using the following command:
+## How It Works
 
+1. **Downloads** the template repository from GitHub using `degit`
+2. **Reads** `template.config.json` from the template to determine configuration
+3. **Prompts** the user for values (project name, description, etc.)
+4. **Replaces** variables in specified files (e.g., `{{PROJECT_NAME}}` → `my-project`)
+5. **Cleans up** meta files (`.git`, `template.config.json`, etc.)
+6. **Installs** dependencies using the configured package manager
+
+## Configuration
+
+All configuration is centralized in `src/configuration.ts`:
+
+```typescript
+export const config = {
+  templateRepo: 'vertesiahq/plugin-template',
+  templateConfigFile: 'template.config.json',
+  packageManager: 'pnpm',
+  // ... more options
+}
 ```
-vertesia agent publish <version>
+
+### Key Configuration Options
+
+- **`templateRepo`** - GitHub repository for the template (format: `owner/repo`)
+- **`templateConfigFile`** - Name of the config file in the template
+- **`packageManager`** - Which package manager to use (`npm`, `pnpm`, or `yarn`)
+- **`useCache`** - Whether to cache downloaded templates
+
+## Template Structure
+
+The template repository should include a `template.config.json` file:
+
+```json
+{
+  "version": "1.0",
+  "prompts": [
+    {
+      "type": "text",
+      "name": "PROJECT_NAME",
+      "message": "Project name",
+      "initial": "my-tool-server"
+    },
+    {
+      "type": "text",
+      "name": "DESCRIPTION",
+      "message": "Project description",
+      "initial": "A tool server for LLM integrations"
+    }
+  ],
+  "files": [
+    "package.json",
+    "README.md",
+    "src/server.ts"
+  ],
+  "removeAfterInstall": [
+    ".git",
+    "template.config.json"
+  ]
+}
 ```
 
-where the version is the version of the image tag you want to publish.
+### Template Config Schema
 
-You can also only push the image to vertesia without deploying the agent by using the `--push-only` flag:
+- **`prompts`** - Array of prompts using the [prompts](https://www.npmjs.com/package/prompts) library format
+- **`files`** - List of files where variable replacement should occur
+- **`removeAfterInstall`** - Files/directories to remove after installation
+- **`conditionalRemove`** - Conditional file removal based on user answers
 
+## Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build
+pnpm build
+
+# Test locally
+pnpm test
+
+# Watch mode
+pnpm dev
 ```
-vertesia agent publish <version> --push-only
+
+## Publishing
+
+```bash
+# Build and publish
+npm publish
 ```
 
-The you can deploy an agent that you previously uploaded to Vertesia by using the command:
+After publishing, users can create projects with:
 
-```
-vertesia agent publish <version> --deploy-only
+```bash
+pnpm create @vertesia/plugin my-project
 ```
 
-## Managing agent versions
+## Template Development
 
-You can see the docker image versions you created using the following command:
+To develop a template:
 
+1. Create a GitHub repository with your template files
+2. Add a `template.config.json` file with prompts and configuration
+3. Use `{{VARIABLES}}` in files where you want replacements
+4. Update `src/configuration.ts` to point to your template repo
+5. Test with `pnpm test` or run the built CLI directly
+
+## Examples
+
+### Create a project with default settings
+
+```bash
+pnpm create @vertesia/plugin my-project
 ```
-vertesia agent versions
+
+### View help
+
+```bash
+pnpm dlx @vertesia/plugin --help
 ```
+
+## License
+
+MIT

@@ -1,9 +1,9 @@
 import {
   MockActivityEnvironment,
 } from "@temporalio/testing";
-import { ContentEventName, DSLActivityExecutionPayload } from "@vertesia/common";
+import { ApiVersions, ContentEventName, DSLActivityExecutionPayload, WebHookSpec } from "@vertesia/common";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { notifyWebhook, NotifyWebhookParams } from "./notifyWebhook.js";
+import { notifyWebhook, NotifyWebhookParams, WebhookNotificationPayload } from "./notifyWebhook.js";
 
 // Mock fetch globally
 vi.stubGlobal('fetch', vi.fn());
@@ -33,7 +33,7 @@ const defaultParams = {
 const createTestPayload = (params: Partial<NotifyWebhookParams> = {}): DSLActivityExecutionPayload<NotifyWebhookParams> => {
   const mergedParams = { ...defaultParams, ...params };
   return {
-    auth_token: "unset",
+    auth_token: process.env.VERTESIA_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature",
     account_id: "unset",
     project_id: "unset",
     params: mergedParams,
@@ -63,10 +63,15 @@ describe("Webhook should be notified", () => {
     const payload = createTestPayload();
     const res = await testEnv.run(notifyWebhook, payload);
 
-    // Verify fetch was called with correct parameters
+    // Verify fetch was called with correct parameters (old format wraps detail in result)
     expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
       method: 'POST',
-      body: JSON.stringify({ message: 'Hello World' }),
+      body: JSON.stringify({
+        workflowId: 'wf_id',
+        runId: 'wf_run_id',
+        status: 'completed',
+        result: { message: 'Hello World' }
+      }),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -98,10 +103,15 @@ describe("Webhook should be notified", () => {
       `Webhook Notification to ${defaultParams.webhook} failed with status: 500 Internal Server Error - Response: {"error": "Database connection failed", "code": "DB_ERROR"}`
     );
 
-    // Verify fetch was called with correct parameters
+    // Verify fetch was called with correct parameters (old format wraps detail in result)
     expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
       method: 'POST',
-      body: JSON.stringify({ message: 'Hello World' }),
+      body: JSON.stringify({
+        workflowId: 'wf_id',
+        runId: 'wf_run_id',
+        status: 'completed',
+        result: { message: 'Hello World' }
+      }),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -121,13 +131,116 @@ describe("Webhook should be notified", () => {
     // Expect the function to throw the network error
     await expect(testEnv.run(notifyWebhook, payload)).rejects.toThrow('Network request failed');
 
-    // Verify fetch was called with correct parameters
+    // Verify fetch was called with correct parameters (old format wraps detail in result)
     expect(mockFetch).toHaveBeenCalledWith(defaultParams.webhook, {
       method: 'POST',
-      body: JSON.stringify({ message: 'Hello World' }),
+      body: JSON.stringify({
+        workflowId: 'wf_id',
+        runId: 'wf_run_id',
+        status: 'completed',
+        result: { message: 'Hello World' }
+      }),
       headers: {
         'Content-Type': 'application/json',
       },
+    });
+  });
+
+  it("test POST with undefined detail still sends body with workflow info (new format)", async () => {
+    // Mock successful response
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      url: 'https://vertesia.test'
+    };
+    mockFetch.mockResolvedValueOnce(mockResponse as Response);
+
+    // Create webhook spec with version to use new format
+    const webhookSpec: WebHookSpec = {
+      url: 'https://vertesia.test',
+      version: ApiVersions.COMPLETION_RESULT_V1
+    };
+
+    // Create payload with undefined detail (like workflow_failed events)
+    const payload = createTestPayload({
+      webhook: webhookSpec,
+      detail: undefined,
+      event_name: 'workflow_failed'
+    });
+
+    const res = await testEnv.run(notifyWebhook, payload);
+
+    // Verify fetch was called
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [_url, options] = mockFetch.mock.calls[0];
+
+    // Verify the body parameter is NOT undefined
+    expect(options?.body).toBeDefined();
+
+    // Verify the body contains workflow info
+    const bodyData = JSON.parse(options?.body as string) as WebhookNotificationPayload;
+    expect(bodyData.workflow_id).toBe('wf_id');
+    expect(bodyData.workflow_name).toBe('wfFuncName');
+    expect(bodyData.workflow_run_id).toBe('wf_run_id');
+    expect(bodyData.event_name).toBe('workflow_failed');
+    // detail should not be present when undefined (JSON.stringify omits it)
+    expect(bodyData.detail).toBeUndefined();
+
+    // Verify Content-Type header is set
+    const headers = options?.headers as Record<string, string>;
+    expect(headers['Content-Type']).toBe('application/json');
+
+    // Verify response
+    expect(res).toEqual({
+      status: 200,
+      message: 'OK',
+      url: webhookSpec.url
+    });
+  });
+
+  it("test POST with undefined detail still sends body with workflow info (old format)", async () => {
+    // Mock successful response
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      url: 'https://vertesia.test'
+    };
+    mockFetch.mockResolvedValueOnce(mockResponse as Response);
+
+    // Create payload with string webhook (old format) and undefined detail
+    const payload = createTestPayload({
+      webhook: 'https://vertesia.test',
+      detail: undefined,
+      event_name: 'workflow_completed'
+    });
+
+    const res = await testEnv.run(notifyWebhook, payload);
+
+    // Verify fetch was called
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [_url, options] = mockFetch.mock.calls[0];
+
+    // Verify the body parameter is NOT undefined
+    expect(options?.body).toBeDefined();
+
+    // Verify the body contains workflow info in old format
+    const bodyData = JSON.parse(options?.body as string);
+    expect(bodyData.workflowId).toBe('wf_id');
+    expect(bodyData.runId).toBe('wf_run_id');
+    expect(bodyData.status).toBe('completed');
+    expect(bodyData.result).toBeNull(); // null when detail is undefined
+
+    // Verify Content-Type header is set
+    const headers = options?.headers as Record<string, string>;
+    expect(headers['Content-Type']).toBe('application/json');
+
+    // Verify response
+    expect(res).toEqual({
+      status: 200,
+      message: 'OK',
+      url: 'https://vertesia.test'
     });
   });
 

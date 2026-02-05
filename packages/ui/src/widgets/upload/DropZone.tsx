@@ -51,7 +51,6 @@ export function DropZone({
     className = ""
 }: DropZoneProps) {
     const [isDragging, setIsDragging] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
     const dropZoneRef = useRef<HTMLDivElement>(null);
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -214,10 +213,27 @@ export function DropZone({
         }
     };
 
-    const openFileSelector = () => {
-        if (inputRef.current) {
-            inputRef.current.click();
-        }
+    const selectFile = () => {
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.multiple = true;
+        fileInput.accept = "*";
+        fileInput?.click();
+        fileInput.onchange = (event) => {
+            handleChange(event as unknown as React.ChangeEvent<HTMLInputElement>);
+        };
+    };
+
+    const selectFolder = () => {
+        const folderInput = document.createElement("input");
+        folderInput.type = "file";
+        folderInput.multiple = true;
+        folderInput.accept = "*";
+        (folderInput as any).webkitdirectory = true; // webkitdirectory is not standard but widely supported
+        folderInput?.click();
+        folderInput.onchange = (event) => {
+            handleChange(event as unknown as React.ChangeEvent<HTMLInputElement>);
+        };
     };
 
     return (
@@ -231,27 +247,13 @@ export function DropZone({
             <UploadIcon
                 className={`h-12 w-12 mb-3 transition-colors ${isDragging ? "text-primary" : "text-muted/50"}`}
             />
-            <p className="text-color-muted-foreground">{message}</p>
+            <p className="text-muted">{message}</p>
 
-            <div className="mt-4 text-center">
-                <div className="text-sm text-muted mb-2">Drag and drop files{allowFolders ? " or folders" : ""} here, or</div>
-                <Button onClick={openFileSelector}>
-                    <UploadIcon className="h-4 w-4 mr-2" />
-                    {buttonLabel}
-                </Button>
-
-                {/* Hidden file input that accepts both files and folders */}
-                <input
-                    type="file"
-                    ref={inputRef}
-                    onChange={handleChange}
-                    multiple
-                    // @ts-expect-error: webkitdirectory is a non-standard attribute
-                    webkitdirectory={allowFolders ? "" : undefined}
-                    directory={allowFolders ? "" : undefined}
-                    className="hidden"
-                />
+            <div className="flex gap-2 justify-center mt-2">
+                <Button onClick={selectFile}>{buttonLabel}</Button>
+                {allowFolders && (<Button onClick={selectFolder}>Select Folder</Button>)}
             </div>
+
         </div>
     );
 }

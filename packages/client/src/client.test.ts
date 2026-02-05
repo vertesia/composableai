@@ -6,6 +6,7 @@ describe('Test Vertesia Client', () => {
         const client = new VertesiaClient({
             serverUrl: 'https://api.vertesia.io',
             storeUrl: 'https://api.vertesia.io',
+            tokenServerUrl: 'https://sts.vertesia.io',
             apikey: '1234',
         });
         expect(client).toBeDefined();
@@ -47,6 +48,7 @@ describe('Test Vertesia Client', () => {
         expect(client).toBeDefined();
         expect(client.baseUrl).toBe('https://api.vertesia.io');
         expect(client.storeUrl).toBe('https://api.vertesia.io');
+        expect(client.tokenServerUrl).toBe('https://sts.vertesia.io');
     });
 
     test('Initialization with site api-preview.vertesia.io', () => {
@@ -57,6 +59,7 @@ describe('Test Vertesia Client', () => {
         expect(client).toBeDefined();
         expect(client.baseUrl).toBe('https://api-preview.vertesia.io');
         expect(client.storeUrl).toBe('https://api-preview.vertesia.io');
+        expect(client.tokenServerUrl).toBe('https://sts.vertesia.io');
     });
 
     test('Initialization with site api-staging.vertesia.io', () => {
@@ -67,12 +70,14 @@ describe('Test Vertesia Client', () => {
         expect(client).toBeDefined();
         expect(client.baseUrl).toBe('https://api-staging.vertesia.io');
         expect(client.storeUrl).toBe('https://api-staging.vertesia.io');
+        expect(client.tokenServerUrl).toBe('https://sts-staging.vertesia.io');
     });
 
     test('Initialization with site localhost', () => {
         const client = new VertesiaClient({
             serverUrl: 'http://localhost:8091',
             storeUrl: 'http://localhost:8092',
+            tokenServerUrl: 'http://localhost:8093',
         });
 
         expect(client).toBeDefined();

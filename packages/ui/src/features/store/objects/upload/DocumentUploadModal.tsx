@@ -1,5 +1,5 @@
 import { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
-import { Button, MessageBox, VModal, VModalBody, VModalFooter, VModalTitle, VSelectBox, Spinner, useToast, VTooltip } from "@vertesia/ui/core";
+import { Button, MessageBox, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, useToast, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
@@ -45,6 +45,7 @@ interface DocumentUploadModalProps {
     hideFileSelection?: boolean;
     /** Show only the type selection, used for type change operations */
     showTypeSelectionOnly?: boolean;
+    allowFolders?: boolean;
 }
 
 /**
@@ -66,6 +67,7 @@ export function DocumentUploadModal({
     onUploadComplete,
     hideFileSelection = false,
     showTypeSelectionOnly = false,
+    allowFolders = true,
 }: DocumentUploadModalProps) {
     const { client, typeRegistry } = useUserSession();
     const toast = useToast();
@@ -314,6 +316,7 @@ export function DocumentUploadModal({
 
         // Process files in batches of 50
         const BATCH_SIZE = 50;
+        const PROGRESS_UPDATE_INTERVAL = 5; // Update progress every 5 files
 
         // Helper function to process a batch of files
         const processBatch = async (files: FileWithMetadata[], action: "create" | "update") => {
@@ -337,7 +340,8 @@ export function DocumentUploadModal({
                     });
                 }
 
-                // Process the batch
+                // Process the batch with progress tracking
+                let filesProcessedInBatch = 0;
                 await Promise.all(
                     batch.map(async (fileInfo) => {
                         try {
@@ -446,16 +450,23 @@ export function DocumentUploadModal({
                             // Mark the overall success as false if any file fails
                             result.success = false;
                         }
+                        
+                        // Update progress every PROGRESS_UPDATE_INTERVAL files
+                        filesProcessedInBatch++;
+                        if (filesProcessedInBatch % PROGRESS_UPDATE_INTERVAL === 0 || filesProcessedInBatch === batch.length) {
+                            setFileStatuses((currentStatuses) => {
+                                const completedFiles = currentStatuses.filter(
+                                    (f) => f.status === "success" || f.status === "error",
+                                ).length;
+                                const totalFiles = currentStatuses.length;
+                                const progress = totalFiles > 0 ? Math.round((completedFiles / totalFiles) * 100) : 0;
+                                setOverallProgress(progress);
+                                return currentStatuses;
+                            });
+                        }
                     }),
                 );
 
-                // Calculate overall progress after each batch completion
-                const completedFiles = fileStatuses.filter(
-                    (f) => f.status === "success" || f.status === "error",
-                ).length;
-                const totalFiles = fileStatuses.length;
-                const progress = Math.round((completedFiles / totalFiles) * 100);
-                setOverallProgress(progress);
             }
         };
 
@@ -556,7 +567,7 @@ export function DocumentUploadModal({
                         <Info className="size-3 ml-2" />
                     </VTooltip>
                 </label>
-                <VSelectBox
+                <SelectBox
                     options={types}
                     value={selectedType}
                     optionLabel={(type) => (type ? type.name : "Select a content type")}
@@ -590,7 +601,7 @@ export function DocumentUploadModal({
         // When showing only type selection, skip directly to the type selection UI
         if (showTypeSelectionOnly) {
             return (
-                <VModalBody>
+                <ModalBody>
                     {children}
 
                     {/* Collection and folder information if available */}
@@ -598,14 +609,14 @@ export function DocumentUploadModal({
 
                     {/* Type selection */}
                     {typeSelection()}
-                </VModalBody>
+                </ModalBody>
             );
         }
 
         // Step 1: File selection #todo: update styles
         if (files.length === 0 && !hideFileSelection) {
             return (
-                <VModalBody className="flex flex-col items-center justify-center p-8">
+                <ModalBody className="flex flex-col items-center justify-center p-8">
                     {/* Collection and folder information if available */}
                     {renderLocationInfo()}
 
@@ -614,16 +625,17 @@ export function DocumentUploadModal({
                         message="Drag and drop files here or click to select"
                         buttonLabel="Select Files"
                         className="w-full h-64"
+                        allowFolders={allowFolders}
                     />
                     {children}
-                </VModalBody>
+                </ModalBody>
             );
         }
 
         // Step 2: File processing and type selection
         if (!isUploading && !uploadComplete) {
             return (
-                <VModalBody>
+                <ModalBody>
                     {!processingDone ? (
                         // File processing in progress
                         <div className="flex flex-col items-center justify-center py-4">
@@ -695,14 +707,14 @@ export function DocumentUploadModal({
 
                         </>
                     )}
-                </VModalBody>
+                </ModalBody>
             );
         }
 
         // Step 3: Upload in progress #todo: update styles
         if (isUploading) {
             return (
-                <VModalBody>
+                <ModalBody>
                     {/* Collection and folder information if available */}
                     {renderLocationInfo()}
 
@@ -750,13 +762,13 @@ export function DocumentUploadModal({
                             </div>
                         ))}
                     </div>
-                </VModalBody>
+                </ModalBody>
             );
         }
 
         // Step 4: Upload complete, show results
         return (
-            <VModalBody>
+            <ModalBody>
                 <div className="mb-4">
                     {/* Collection and folder information if available */}
                     {renderLocationInfo()}
@@ -788,7 +800,7 @@ export function DocumentUploadModal({
                         collection={collectionData?.name}
                     />
                 </div>
-            </VModalBody>
+            </ModalBody>
         );
     };
 
@@ -796,7 +808,7 @@ export function DocumentUploadModal({
         // Type-selection-only mode
         if (showTypeSelectionOnly) {
             return (
-                <VModalFooter>
+                <ModalFooter>
                     <Button variant="ghost" onClick={handleClose}>
                         Cancel
                     </Button>
@@ -825,18 +837,18 @@ export function DocumentUploadModal({
                     >
                         {selectedType ? `Use ${selectedType.name}` : "Use Automatic Type Detection"}
                     </Button>
-                </VModalFooter>
+                </ModalFooter>
             );
         }
 
         // File selection step - only show cancel
         if (files.length === 0 && !hideFileSelection) {
             return (
-                <VModalFooter>
+                <ModalFooter>
                     <Button variant="ghost" onClick={handleClose}>
                         Cancel
                     </Button>
-                </VModalFooter>
+                </ModalFooter>
             );
         }
 
@@ -846,7 +858,7 @@ export function DocumentUploadModal({
             const canUpload = processingDone;
 
             return (
-                <VModalFooter>
+                <ModalFooter>
                     <Button variant="ghost" onClick={handleClose}>
                         Cancel
                     </Button>
@@ -858,24 +870,24 @@ export function DocumentUploadModal({
                             ? "Upload"
                             : "Continue"}
                     </Button>
-                </VModalFooter>
+                </ModalFooter>
             );
         }
 
         // Upload in progress - can't cancel
         if (isUploading) {
             return (
-                <VModalFooter>
+                <ModalFooter>
                     <Button variant="ghost" disabled>
                         Uploading...
                     </Button>
-                </VModalFooter>
+                </ModalFooter>
             );
         }
 
         // Upload complete - close or upload more
         return (
-            <VModalFooter>
+            <ModalFooter>
                 <Button
                     variant="ghost"
                     onClick={() => {
@@ -901,15 +913,15 @@ export function DocumentUploadModal({
                 }}>
                     Close
                 </Button>
-            </VModalFooter>
+            </ModalFooter>
         );
     };
 
     return (
-        <VModal key={modalKey} isOpen={isOpen} onClose={handleClose} className="mx-auto">
-            <VModalTitle description={_description}>{_title}</VModalTitle>
+        <Modal key={modalKey} isOpen={isOpen} onClose={handleClose} className="mx-auto" disableCloseOnClickOutside>
+            <ModalTitle description={_description}>{_title}</ModalTitle>
             {renderModalContent()}
             {renderModalFooter()}
-        </VModal>
+        </Modal>
     );
 }

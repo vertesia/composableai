@@ -1,0 +1,1 @@
+{"version":3,"file":"prompt_schema.js","sources":["../../../../src/src/tool-server/interactions/examples/what_color/prompt_schema.ts"],"sourcesContent":[null],"names":[],"mappings":"AAEA,qBAAe;AACX,IAAA,IAAI,EAAE,QAAQ;AACd,IAAA,UAAU,EAAE;AACR,QAAA,MAAM,EAAE;AACJ,YAAA,IAAI,EAAE,QAAQ;AACd,YAAA,WAAW,EAAE;AAChB,SAAA;AACJ,KAAA;IACD,QAAQ,EAAE,CAAC,QAAQ;CACD;;;;"}

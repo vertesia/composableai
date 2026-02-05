@@ -1,15 +1,7 @@
 import { AsyncExecutionResult } from "@vertesia/client";
 import { Button, Command, CommandGroup, CommandItem, CommandList, Popover, PopoverContent, PopoverTrigger, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import {
-    Bot,
-    ClipboardList,
-    CopyIcon,
-    DownloadCloudIcon,
-    ExternalLink,
-    MoreVertical,
-    XIcon,
-} from "lucide-react";
+import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, MoreVertical, XIcon } from "lucide-react";
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
 import { getConversationUrl } from "./utils";
 
@@ -27,6 +19,7 @@ interface HeaderProps {
     onDownload?: () => void;
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
+    onExportPdf?: () => void;
 }
 
 export default function Header({
@@ -41,11 +34,12 @@ export default function Header({
     onTogglePlanPanel,
     onDownload,
     onCopyRunId,
-    resetWorkflow
+    resetWorkflow,
+    onExportPdf,
 }: HeaderProps) {
     return (
         <PayloadBuilderProvider>
-            <div className="flex items-center justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0">
+            <div className="flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0">
                 <div className="flex flex-wrap items-center space-x-2">
                     <div className="flex items-center space-x-1">
                         <Bot className="size-5 text-muted" />
@@ -55,9 +49,9 @@ export default function Header({
                         (Run ID: {run.runId.substring(0, 8)}...)
                     </span>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex justify-end items-center space-x-2 ml-auto">
                     {/* View Mode Toggle */}
-                    <div className="flex items-center space-x-1 bg-muted rounded p-0.5">
+                    <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
                         <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("stacked")}>
                             Details
                         </Button>
@@ -92,6 +86,7 @@ export default function Header({
                         onDownload={onDownload}
                         onCopyRunId={onCopyRunId}
                         resetWorkflow={resetWorkflow}
+                        onExportPdf={onExportPdf}
                     />
                     {onClose && !isModal && (
                         <Button size="xs" variant="ghost" onClick={onClose}>
@@ -110,7 +105,8 @@ function MoreDropdown({
     onClose,
     onDownload,
     onCopyRunId,
-    resetWorkflow
+    resetWorkflow,
+    onExportPdf,
 }: {
     run: AsyncExecutionResult;
     isModal: boolean;
@@ -118,6 +114,7 @@ function MoreDropdown({
     onDownload?: () => void;
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
+    onExportPdf?: () => void;
 }) {
     const toast = useToast();
     const { client } = useUserSession();
@@ -199,6 +196,11 @@ function MoreDropdown({
                                         <DownloadCloudIcon className="size-3.5 mr-2 text-muted" /> Download
                                         Conversation
                                     </CommandItem>
+                                    {onExportPdf && (
+                                        <CommandItem className="text-xs" onSelect={onExportPdf}>
+                                            <DownloadCloudIcon className="size-3.5 mr-2 text-muted" /> Export as PDF
+                                        </CommandItem>
+                                    )}
                                     {onClose && isModal && (
                                         <CommandItem className="text-xs" onSelect={onClose}>
                                             <XIcon className="size-3.5 mr-2 text-muted" /> Close

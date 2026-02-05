@@ -1,5 +1,5 @@
 import { onAuthStateChanged } from "firebase/auth";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { UserNotFoundError, getComposableToken } from "./auth/composable";
 import { getFirebaseAuth } from "./auth/firebase";
 import { useAuthState } from "./auth/useAuthState";
@@ -27,9 +27,10 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
     const state = hashParams.get("state");
     const [session, setSession] = useState<UserSession>(new UserSession());
     const { generateState, verifyState, clearState } = useAuthState();
+    const hasInitiatedAuthRef = useRef(false);
 
     const redirectToCentralAuth = (projectId?: string, accountId?: string) => {
-        const url = new URL(CENTRAL_AUTH_REDIRECT);
+        const url = new URL(`${CENTRAL_AUTH_REDIRECT}?sts=${Env.endpoints.sts ?? "https://sts.vertesia.io"}`);
         const currentUrl = new URL(window.location.href);
         currentUrl.hash = "";
         if (projectId) currentUrl.searchParams.set("p", projectId);
@@ -40,6 +41,13 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
     };
 
     useEffect(() => {
+        // Make this effect idempotent - only run auth flow once
+        if (hasInitiatedAuthRef.current) {
+            console.log("Auth: skipping duplicate auth flow initiation");
+            return;
+        }
+        hasInitiatedAuthRef.current = true;
+
         console.log("Auth: starting auth flow");
         Env.logger.info("Starting auth flow");
         const currentUrl = new URL(window.location.href);
@@ -80,6 +88,15 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                     });
                 })
                 .catch((err) => {
+                    // Don't redirect to central auth for UserNotFoundError - let signup flow handle it
+                    if (err instanceof UserNotFoundError) {
+                        console.log("User not found - will trigger signup flow", err);
+                        session.isLoading = false;
+                        session.authError = err;
+                        setSession(session.clone());
+                        return;
+                    }
+
                     console.error("Failed to fetch user token from studio, redirecting to central auth", err);
                     Env.logger.error("Failed to fetch user token from studio, redirecting to central auth", {
                         vertesia: {

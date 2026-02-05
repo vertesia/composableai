@@ -2,7 +2,6 @@ import { log } from "@temporalio/activity";
 import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError, DocumentNotFoundError } from "../../errors.js";
-import { parseCompletionResultsToJson, completionResultToString } from "@llumiverse/common";
 
 interface CreateOrUpdateObjectFromInteractionRunParams {
     /**
@@ -69,16 +68,23 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
 
 
     const result = run.result;
-    const jsonResult = parseCompletionResultsToJson(run.result);
     const inputData = run.parameters;
 
-    const name = jsonResult['name'] || jsonResult["title"] || inputData['name'] || params.fallback_name || 'Untitled';
+    // Try to parse result as JSON, fallback to text if not valid JSON
+    let jsonResult: any = null;
+    try {
+        jsonResult = result.object();
+    } catch (e) {
+        log.info("Result is not valid JSON, will use text content instead", { error: e instanceof Error ? e.message : String(e) });
+    }
+
+    const name = jsonResult?.['name'] || jsonResult?.["title"] || inputData['name'] || params.fallback_name || undefined;
 
     const docPayload = {
         name,
         parent: params.parent ?? undefined,
         properties: jsonResult ? jsonResult : {},
-        text: !jsonResult ? result.map(completionResultToString).join('\n') : undefined,
+        text: !jsonResult ? result.text() : undefined,
         type: type?.id,
         status: ContentObjectStatus.completed,
         generation_run_info: {

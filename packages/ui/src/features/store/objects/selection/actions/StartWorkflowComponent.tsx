@@ -1,5 +1,5 @@
 import { useUserSession } from "@vertesia/ui/session";
-import { Button, VModal, VModalBody, VModalFooter, VModalTitle, SelectList, useToast } from "@vertesia/ui/core";
+import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectList, useToast } from "@vertesia/ui/core";
 import { useCallback, useState } from "react";
 import { useObjectsActionCallback, useObjectsActionContext } from "../ObjectsActionContext";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
@@ -60,10 +60,10 @@ interface StartWorkflowModalProps {
 }
 function StartWorkflowModal({ isOpen, onClose }: StartWorkflowModalProps) {
     return (
-        <VModal onClose={() => onClose(undefined)} isOpen={isOpen} className="">
-            <VModalTitle>Start a Workflow by Rule</VModalTitle>
+        <Modal onClose={() => onClose(undefined)} isOpen={isOpen} className="">
+            <ModalTitle>Start a Workflow by Rule</ModalTitle>
             <StartWorkflowBody onClose={onClose} />
-        </VModal>
+        </Modal>
     );
 }
 
@@ -98,7 +98,7 @@ function StartWorkflowBody({ onClose }: StartWorkflowBodyProps) {
 
     return (
         <div>
-            <VModalBody>
+            <ModalBody>
                 <div className="pb-2">Choose a workflow rule to start:</div>
                 <div className="max-h-[420px] overflow-y-scroll border-border border rounded-md">
                     <SelectList
@@ -108,15 +108,15 @@ function StartWorkflowBody({ onClose }: StartWorkflowBodyProps) {
                         value={selected}
                     />
                 </div>
-            </VModalBody>
-            <VModalFooter>
+            </ModalBody>
+            <ModalFooter>
                 <Button variant="secondary" onClick={() => onClose()}>
                     Cancel
                 </Button>
                 <Button onClick={onStart} isDisabled={!selected}>
                     Start
                 </Button>
-            </VModalFooter>
+            </ModalFooter>
         </div>
     );
 }

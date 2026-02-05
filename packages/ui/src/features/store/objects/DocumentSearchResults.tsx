@@ -1,26 +1,30 @@
-import { useRef, useState, useEffect } from "react";
-import { ColumnLayout, ContentObject, ContentObjectItem, ComplexSearchQuery } from '@vertesia/common';
+import { ColumnLayout, ComplexSearchQuery, ContentObject, ContentObjectItem } from '@vertesia/common';
 import {
-    Button, Divider, ErrorBox, SidePanel, Spinner, useIntersectionObserver, useToast,
-    FilterProvider, FilterBtn, FilterBar, FilterClear, Filter as BaseFilter
+    Filter as BaseFilter,
+    Button, Divider, ErrorBox,
+    FilterBar,
+    FilterBtn,
+    FilterClear,
+    FilterProvider,
+    SidePanel, Spinner, useIntersectionObserver, useToast
 } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
-import { Download, RefreshCw, Eye } from 'lucide-react';
+import { Download, ExternalLink, RefreshCw } from 'lucide-react';
+import { useEffect, useRef, useState } from "react";
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
-import { VectorSearchWidget } from './components/VectorSearchWidget';
 import { ContentDispositionButton } from './components/ContentDispositionButton';
+import { ContentOverview } from './components/ContentOverview';
+import { useDownloadDocument } from './components/useDownloadObject';
+import { VectorSearchWidget } from './components/VectorSearchWidget';
 import { DocumentTable } from './DocumentTable';
 import { ExtendedColumnLayout } from './layout/DocumentTableColumn';
 import { useDocumentSearch, useWatchDocumentSearchFacets, useWatchDocumentSearchResult } from './search/DocumentSearchContext';
 import { useDocumentUploadHandler } from './upload/useUploadHandler';
-import { ContentOverview } from './components/ContentOverview';
-import { useDownloadDocument } from './components/useDownloadObject';
-import { SelectionActions } from "./selection";
 
 const defaultLayout: ColumnLayout[] = [
-    { name: "ID", field: "id", type: "string?slice=-7" },
-    { name: "Name", field: ".", type: "objectLink" },
+    { name: "ID", field: "id", type: "objectId?slice=-7" },
+    { name: "Name", field: ".", type: "objectName" },
     { name: "Type", field: "type.name", type: "string" },
     { name: "Status", field: "status", type: "string" },
     { name: "Updated At", field: "updated_at", type: "date" },
@@ -28,7 +32,8 @@ const defaultLayout: ColumnLayout[] = [
 
 function getTableLayout(registry: TypeRegistry, type: string | undefined): ColumnLayout[] {
     const layout = type ? registry.getTypeLayout(type) : defaultLayout;
-    return layout ?? defaultLayout;
+    const result = layout ?? defaultLayout;
+    return result;
 }
 
 interface DocumentSearchResultsWithDropZoneProps {
@@ -91,10 +96,11 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const [isReady, setIsReady] = useState(false);
     const [selectedObject, setSelectedObject] = useState<ContentObjectItem | null>(null);
     const { typeRegistry } = useUserSession();
-    const { search, isLoading, error, objects } = useWatchDocumentSearchResult();
+    const { search, isLoading, error, objects, hasMore } = useWatchDocumentSearchResult();
     const [actualLayout, setActualLayout] = useState<ColumnLayout[]>(
         typeRegistry ? layout || getTableLayout(typeRegistry, search.query.type) : defaultLayout,
     );
+
     //TODO _setRefreshTrigger state not used
     const [refreshTrigger, _setRefreshTrigger] = useState(0);
     const [loaded, setLoaded] = useState(0);
@@ -106,6 +112,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     // Trigger initial search when component mounts
     useEffect(() => {
         if (!isReady && objects.length === 0) {
+            setLoaded(0);
             // Manually set loading state to show spinner during initial load
             search._updateRunningState(true);
             search.search().then(() => {
@@ -116,6 +123,12 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             });
         }
     }, []);
+
+    useEffect(() => {
+        if (objects.length < loaded) {
+            setLoaded(objects.length);
+        }
+    }, [objects.length, loaded]);
 
     useIntersectionObserver(loadMoreRef, () => {
         if (isReady && objects.length > 0 && objects.length != loaded) {
@@ -136,6 +149,10 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             search.query.weights = query.weights;
             search.query.score_aggregation = query.score_aggregation;
             search.query.dynamic_scaling = query.dynamic_scaling;
+            if (query.limit !== undefined) {
+                search.limit = query.limit;
+                search.query.limit = query.limit;
+            }
             if (!actualLayout.find((c) => c.name === "Search Score")) {
                 const layout = [
                     ...actualLayout,
@@ -150,6 +167,10 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             search.search().then(() => setIsReady(true));
         } else if (query && query.full_text) {
             search.query.full_text = query.full_text;
+            if (query.limit !== undefined) {
+                search.limit = query.limit;
+                search.query.limit = query.limit;
+            }
             search.search().then(() => setIsReady(true));
         } else if (query === undefined) {
             // Only clear search if this is a user-initiated clear (not initialization)
@@ -198,11 +219,21 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 } else {
                     url.searchParams.delete('filters');
                 }
-                window.history.replaceState({}, '', url.toString());
+                window.history.replaceState(window.history.state || {}, '', url.toString());
             }
         } catch (error) {
             console.error("Failed to clean start/end filters from URL:", error);
         }
+    }
+
+    const navigate = useNavigate();
+    const onRowClick = (object: ContentObjectItem) => {
+        navigate(`/objects/${object.id}`);
+    }
+
+    const previewObject = (objectId: string) => {
+        const obj = objects.find(o => o.id === objectId) || null;
+        setSelectedObject(obj);
     }
 
     return (
@@ -211,56 +242,107 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
             {
                 error && <ErrorBox title="Error">{error.message}</ErrorBox>
             }
-            <div className="sticky top-0 z-10 bg-background pb-2 flex items-center justify-between">
-                {
-                    allowFilter ? (
-                        <FilterProvider
-                            filterGroups={filterGroups}
-                            filters={filters}
-                            setFilters={handleFilterChange}
-                        >
-                            <div className="flex flex-row gap-4 items-center justify-between">
-                                <div className="flex gap-2 items-center max-w-2/3">
-                                    {
-                                        allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
-                                    }
-                                    <FilterBtn />
-                                </div>
-                            </div>
-                            <div className="flex gap-2 items-center">
-                                <FilterBar />
-                                <FilterClear />
-                            </div>
-                        </FilterProvider>
-                    ) : (
-                        <div className="flex flex-row gap-4 items-center justify-between">
-                            <div className="flex gap-2 items-center max-w-2/3">
-                                {
-                                    allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} />
-                                }
-                            </div>
-                        </div>
-                    )
-                }
-                <div className="flex gap-2 items-center">
-                    <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
-                    <ContentDispositionButton onUpdate={setIsGridView} />
-                    <SelectionActions />
-                </div>
-            </div>
+            <Toolsbar
+                isLoading={isLoading}
+                refreshTrigger={refreshTrigger}
+                allowFilter={allowFilter}
+                allowSearch={allowSearch}
+                filterGroups={filterGroups}
+                filters={filters}
+                handleFilterChange={handleFilterChange}
+                handleVectorSearch={handleVectorSearch}
+                handleRefetch={handleRefetch}
+                setIsGridView={setIsGridView}
+            />
             <DocumentTable
                 objects={objects}
                 isLoading={!objects.length && isLoading}
                 layout={actualLayout}
-                onRowClick={setSelectedObject}
+                onRowClick={onRowClick}
+                previewObject={previewObject}
+                selectedObject={selectedObject}
                 onUpload={onUpload}
                 isGridView={isGridView}
                 collectionId={searchContext.collectionId} // Pass the collection ID from context
             />
+            {hasMore ? (
+                <div ref={loadMoreRef} className="w-full flex justify-center" >
+                    <Spinner size='xl' />
+                </div>
+            ) : (
+                <div className="text-muted text-center text-sm py-1">
+                    {`All ${objects.length} objects loaded.`}
+                </div>
+            )}
+        </div>
+    );
+}
+
+interface ToolsbarProps {
+    isLoading: boolean;
+    refreshTrigger: number;
+    allowFilter: boolean;
+    allowSearch: boolean;
+    filterGroups: ReturnType<typeof useDocumentFilterGroups>;
+    filters: BaseFilter[];
+    handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>>;
+    handleVectorSearch: (query?: ComplexSearchQuery) => void;
+    handleRefetch: () => void;
+    setIsGridView: React.Dispatch<React.SetStateAction<boolean>>;
+}
+function Toolsbar(props: ToolsbarProps) {
+    const {
+        isLoading,
+        refreshTrigger,
+        allowFilter,
+        allowSearch,
+        filterGroups,
+        filters,
+        handleFilterChange,
+        handleVectorSearch,
+        handleRefetch,
+        setIsGridView
+    } = props;
+
+    return (
+        <div className="sticky top-0 z-10 bg-background py-2">
             {
-                isLoading && <div className='flex justify-center'><Spinner size='xl' /></div>
+                allowFilter && (
+                    <FilterProvider
+                        filterGroups={filterGroups}
+                        filters={filters}
+                        setFilters={handleFilterChange}
+                    >
+                        <div className="flex flex-row gap-4 items-center justify-between w-full">
+                            <div className="flex gap-2 items-center w-2/3">
+                                {
+                                    allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
+                                }
+                                <FilterBtn />
+                            </div>
+                        </div>
+                        <div className="flex gap-2 items-center pt-2">
+                            <FilterBar />
+                            <FilterClear />
+                        </div>
+                    </FilterProvider>
+                )
             }
-            <div ref={loadMoreRef} />
+            {
+                !allowFilter && (
+                    <div className="flex flex-row gap-4 items-center justify-between w-full">
+                        <div className="flex gap-2 items-center w-2/3">
+                            {
+                                allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} />
+                            }
+                        </div>
+                        <div className="flex gap-1 items-center">
+                            <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                            <ContentDispositionButton onUpdate={setIsGridView} />
+                        </div>
+                    </div>
+                )
+            }
         </div>
     );
 }
@@ -273,13 +355,13 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
     const { store } = useUserSession();
     const toast = useToast();
     const navigate = useNavigate();
-    const onDownload = useDownloadDocument(store, toast, object?.content?.source);
+    const onDownload = useDownloadDocument(store, toast, object?.content?.source, object?.name || object?.content?.name);
 
     return object ? (
         <SidePanel title={object.properties?.title || object.name} isOpen={true} onClose={onClose}>
             <div className="flex items-center gap-x-2">
                 <Button variant="ghost" size="sm" title="Open Object" onClick={() => navigate(`/objects/${object.id}`)}>
-                    <Eye className="size-4" />
+                    <ExternalLink className="size-4" />
                 </Button>
                 {object.content?.source && (
                     <Button variant="ghost" size="sm" title="Download" onClick={onDownload}>
@@ -289,7 +371,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
             </div>
             <Divider className="my-2" />
             <div className="pt-2">
-                <ContentOverview object={object as unknown as ContentObject} loadText />
+                <ContentOverview key={object.id} object={object as ContentObject} loadText />
             </div>
         </SidePanel>
     ) : null;

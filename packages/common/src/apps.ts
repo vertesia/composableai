@@ -23,10 +23,12 @@ export interface AppManifestData {
     name: string;
 
     /**
-     * Whether the app is private to the owner account.
-     * If true the account property must be defined.
+     * Visibility level of the app:
+     * - "public": visible to all accounts
+     * - "private": visible only to the owning account
+     * - "vertesia": visible only to Vertesia team members (any project)
      */
-    private: boolean;
+    visibility: "public" | "private" | "vertesia";
 
     title: string;
     description: string;
@@ -53,6 +55,14 @@ export interface AppManifestData {
      * If the `?import` query string is used the tool will be imported as a javascript module and not executed through a POST on the collections endpoint.
      */
     tool_collections?: string[]
+
+    /**
+     * An URL providing interactions definitions in JSON format.
+     * The URL must provide 2 endpoints:
+     * 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[])
+     * 2. GET URL/{interaction_name} - must return the full interaction definition for the specified interaction.
+     */
+    interactions?: string;
 
     /**
      * A JSON chema for the app installation settings.

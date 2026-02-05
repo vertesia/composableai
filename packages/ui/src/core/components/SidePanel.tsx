@@ -10,8 +10,11 @@ interface SidePanelProps {
     title?: string;
     panelWidth?: number;
     backdrop?: boolean;
+    side?: 'left' | 'right';
+    resizable?: boolean;
+    className?: string;
 }
-export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, backdrop = false }: SidePanelProps) {
+export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, backdrop = false, side = 'right', resizable = true, className }: SidePanelProps) {
     const [_panelWidth, setPanelWidth] = useState(panelWidth);
 
     const handleDragStart = (e: React.MouseEvent) => {
@@ -39,6 +42,13 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
         document.addEventListener('mouseup', handleMouseUp);
     };
 
+    const isLeft = side === 'left';
+    const positionClass = isLeft ? 'left-0' : 'right-0';
+    const paddingClass = isLeft ? 'pr-10 sm:pr-16' : 'pl-10 sm:pl-16';
+    const borderClass = isLeft ? 'border-r' : 'border-l';
+    const dragHandleClass = isLeft ? '-right-1' : '-left-1';
+    const initialX = isLeft ? "-100%" : "100%";
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -54,26 +64,28 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
                         />
                     )}
 
-                    <div className="fixed inset-y-0 right-0 overflow-hidden">
+                    <div className={`fixed inset-y-0 ${positionClass} overflow-hidden`}>
                         <div className="absolute inset-0 overflow-hidden">
-                            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16">
+                            <div className={`pointer-events-none fixed inset-y-0 ${positionClass} flex max-w-full ${paddingClass}`}>
                                 <motion.div
-                                    className="pointer-events-auto border-l"
+                                    className={`pointer-events-auto ${borderClass}`}
                                     style={{ width: `${_panelWidth}px` }}
-                                    initial={{ x: "100%" }}
+                                    initial={{ x: initialX }}
                                     animate={{ x: 0 }}
-                                    exit={{ x: "100%" }}
+                                    exit={{ x: initialX }}
                                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                 >
                                     <div className="relative flex h-full">
                                         {/* Drag Handle */}
-                                        <div
-                                            className="absolute -left-1 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-indigo-500 transition-colors flex items-center justify-center"
-                                            onMouseDown={handleDragStart}
-                                        >
-                                            <Minus className="rotate-90 font-semibold" strokeWidth={4} />
-                                        </div>
-                                        <div className="flex-1 flex flex-col overflow-y-scroll gap-4 bg-background py-2 shadow-xl">
+                                        {resizable && (
+                                            <div
+                                                className={`absolute ${dragHandleClass} top-0 bottom-0 w-3 cursor-ew-resize hover:bg-indigo-500 transition-colors flex items-center justify-center`}
+                                                onMouseDown={handleDragStart}
+                                            >
+                                                <Minus className="rotate-90 font-semibold" strokeWidth={4} />
+                                            </div>
+                                        )}
+                                        <div className={`flex-1 flex flex-col overflow-y-scroll gap-4 bg-background py-2 shadow-xl ${className}`}>
                                             {title && (
                                                 <div className="px-2 sm:px-4">
                                                     <div className="flex items-start justify-between">

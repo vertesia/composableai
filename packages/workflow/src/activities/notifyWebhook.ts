@@ -45,7 +45,7 @@ export async function notifyWebhook(payload: DSLActivityExecutionPayload<NotifyW
 
     if (!target_url) throw new WorkflowParamNotFoundError('target_url');
 
-    const hasBody = params.detail && method === 'POST'; //body is sent only for POST
+    const hasBody = method === 'POST'; //body is sent only for POST, always includes workflow info
 
     const headers = {
         ...defaultHeaders,
@@ -180,7 +180,8 @@ async function createOldRequestBody(payload: WorkflowExecutionBaseParams, params
     let data = params.detail;
     if (data && data.run_id && params.event_name === "workflow_completed" && params.workflow_type === 'ExecuteInteractionWorkflow') {
         const client = getVersionedVertesiaClient(payload, null); //ensure client is using no specific version
-        const run = await client.runs.retrieve(data.run_id);
+        // Important Note: we cannot use client.runs.retrieve since it will transform the run result to the new format because of InteractionOutput
+        const run = await client.runs.get(data.run_id);
         // since we use an unversioned client the run will be in old format so we don't need to tranform the result
         const result = run.result;
         data = {
@@ -193,6 +194,14 @@ async function createOldRequestBody(payload: WorkflowExecutionBaseParams, params
                 result: result || null
             }
         };
+    } else {
+        // Always include workflow metadata in old format, even when detail is undefined
+        data = {
+            workflowId: params.workflow_id,
+            runId: params.workflow_run_id,
+            status: params.event_name === 'workflow_completed' ? 'completed' : params.event_name,
+            result: data || null
+        };
     }
-    return JSON.stringify(data || {});
+    return JSON.stringify(data);
 }

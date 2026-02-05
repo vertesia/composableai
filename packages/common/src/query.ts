@@ -69,6 +69,8 @@ export interface InteractionSearchQuery extends SimpleSearchQuery {
     prompt?: string;
     tags?: string[];
     version?: string;
+    model?: string;
+    environment?: string;
 }
 
 export interface RunSearchQuery extends SimpleSearchQuery {

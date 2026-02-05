@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/cli",
-    "version": "0.79.0",
+    "version": "0.81.2-dev.20260204.135023Z",
     "description": "The Vertesia command-line interface (CLI) provides a set of commands to manage and interact with the Vertesia Platform.",
     "type": "module",
     "bin": {
@@ -14,7 +14,7 @@
         "lib",
         "bin"
     ],
-    "license": "MIT",
+    "license": "Apache-2.0",
     "homepage": "https://docs.vertesiahq.com/cli",
     "keywords": [
         "llm",
@@ -23,7 +23,8 @@
         "interaction",
         "vertesia",
         "prompt",
-        "ai"
+        "ai",
+        "cli"
     ],
     "scripts": {
         "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
@@ -46,7 +47,7 @@
         "commander": "^12.1.0",
         "enquirer": "^2.4.1",
         "figures": "^6.1.0",
-        "glob": "^11.0.0",
+        "glob": "^11.1.0",
         "gradient-string": "^3.0.0",
         "json-schema": "^0.4.0",
         "json-schema-to-typescript": "^13.1.1",
@@ -63,5 +64,10 @@
     },
     "devDependencies": {
         "@types/jsonwebtoken": "^9.0.6"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/cli"
     }
 }

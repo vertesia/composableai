@@ -1,0 +1,1 @@
+{"version":3,"file":"frontmatter.d.ts","sourceRoot":"","sources":["../../../src/parsers/frontmatter.ts"],"names":[],"mappings":"AAAA;;GAEG;AAIH,MAAM,WAAW,iBAAiB;IAC9B,8BAA8B;IAC9B,WAAW,EAAE,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC;IAEjC,kCAAkC;IAClC,OAAO,EAAE,MAAM,CAAC;IAEhB,4BAA4B;IAC5B,QAAQ,EAAE,MAAM,CAAC;CACpB;AAED;;;;;GAKG;AACH,wBAAgB,gBAAgB,CAAC,OAAO,EAAE,MAAM,GAAG,iBAAiB,CAQnE"}

@@ -21,3 +21,6 @@ npm install @composableai/common @composableai/client
 
 See https://docs.composableprompts.com/sdk-js
 
+## License
+
+Apache-2.0

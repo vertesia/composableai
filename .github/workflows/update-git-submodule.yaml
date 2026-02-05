@@ -1,0 +1,168 @@
+name: update-git-submodule
+
+on:
+  repository_dispatch:
+    types:
+      - update-git-submodule-request
+  workflow_dispatch:
+    inputs:
+      llumiverse_sha:
+        # example: "d4c748957db4ac812565cf99e00b11a7ede97bc7"
+        description: "The commit SHA of vertesia/llumiverse to update"
+        required: true
+      branch:
+        # example: "main" or "preview"
+        #   (don't use "refs/heads/main" or "refs/heads/preview")
+        description: "The branch to update the submodule in"
+        required: true
+        default: "main"
+
+env:
+  TARGET_LLUMIVERSE_SHA: ${{ inputs.llumiverse_sha || github.event.client_payload.llumiverse_sha }}
+  TARGET_LLUMIVERSE_URL: https://github.com/vertesia/llumiverse/commit/${{ inputs.llumiverse_sha || github.event.client_payload.llumiverse_sha }}
+  TARGET_COMPOSABLEAI_BRANCH: ${{ inputs.branch || github.event.client_payload.branch }}
+
+permissions:
+  contents: write # required for pushing changes to the repository, deleting old branches
+  pull-requests: write # required for creating new pull requests and closing old ones
+
+jobs:
+  update-submodule:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch
+        run: |
+          if [[ "${{ env.TARGET_COMPOSABLEAI_BRANCH }}" != "main" && "${{ env.TARGET_COMPOSABLEAI_BRANCH }}" != "preview" ]]; then
+            echo "::error::Invalid branch '${{ env.TARGET_COMPOSABLEAI_BRANCH }}'. Only 'main' and 'preview' branches are supported."
+            exit 1
+          fi
+          echo "Branch '${{ env.TARGET_COMPOSABLEAI_BRANCH }}' is valid."
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0 # Fetch all history to ensure we can access the specified commit
+          ref: ${{ env.TARGET_COMPOSABLEAI_BRANCH }}
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Clean up existing PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fetching pull requests with labels: [branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }}] and [workflow:update-llumiverse]..."
+          pr_list=$(gh pr list \
+            --repo vertesia/composableai \
+            --label branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }} \
+            --label workflow:update-llumiverse \
+            --state open \
+            --json number,title \
+            --jq '.[] | "\(.number) \(.title)"')
+
+          if [ -z "$pr_list" ]; then
+            echo "No matching pull requests found."
+            exit 0
+          fi
+
+          # Show PRs to be closed
+          echo "Found PRs:"
+          echo "$pr_list"
+          echo ""
+
+          # Close each PR
+          echo "Closing PRs..."
+          while read -r pr_line; do
+            pr_number=$(echo "$pr_line" | cut -d' ' -f1)
+            pr_title=$(echo "$pr_line" | cut -d' ' -f2-)
+            echo "Closing PR #${pr_number} ${pr_title}..."
+
+            gh pr comment "$pr_number" \
+                --repo vertesia/composableai \
+                --body "Closing this pull request automatically as a new commit ${TARGET_LLUMIVERSE_URL} appeared."
+
+            gh pr close "$pr_number" --repo vertesia/composableai --delete-branch
+          done <<< "$pr_list"
+
+          echo "Done."
+
+      - name: Update Git submodule and lockfile
+        id: update-submodule
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          export TARGET_LLUMIVERSE_MSG="$(git -C llumiverse log --format="%cd: %s by %an" --date=short -1 $TARGET_LLUMIVERSE_SHA)"
+          export TARGET_LLUMIVERSE_EMAIL="$(git -C llumiverse log --format="%ae" -1 $TARGET_LLUMIVERSE_SHA)"
+
+          # Extract the pull request number if it exists, such as:
+          #   - "Fix important bug in workflow (#123)" => "123"
+          #   - "Update dependencies" => ""
+          export MAYBE_LLUMIVERSE_PR="$(echo $TARGET_LLUMIVERSE_MSG | grep -oP '(?<=#)\d+')"
+          export TEMP_BRANCH="sync-llumiverse-${TARGET_LLUMIVERSE_SHA::7}"
+
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          Type   | Item              | Value
+          :----- | :---------------- | :---------------
+          Target | llumiverse commit | ([\`${TARGET_LLUMIVERSE_SHA}\`](${TARGET_LLUMIVERSE_URL})): ${TARGET_LLUMIVERSE_MSG}
+          Target | llumiverse PR     | ${MAYBE_LLUMIVERSE_PR:-"N/A"}
+          Other  | Temporary branch  | \`${TEMP_BRANCH}\`
+          EOF
+
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+          git checkout -b $TEMP_BRANCH
+
+          echo "Updating submodule [llumiverse] to ${TARGET_LLUMIVERSE_SHA::7}..." >&2
+          cd llumiverse
+          git checkout $TARGET_LLUMIVERSE_SHA
+
+          echo "Committing changes in [composableai]..." >&2
+          cd ..
+          git add llumiverse
+          git commit -m "Update llumiverse submodule to ${TARGET_LLUMIVERSE_SHA::7}"
+
+          pnpm install --lockfile-only
+          pnpm dedupe
+          # Check for changes in the lockfile
+          if git diff --quiet; then
+            echo "No changes to lockfile: skipping commit" >&2
+          else
+            git add pnpm-lock.yaml
+            git commit --amend --no-edit
+            echo "Lockfile updated" >&2
+          fi
+
+          git push origin $TEMP_BRANCH
+
+          pr_body=$(cat <<EOF
+          This PR updates the llumiverse submodule to ${TARGET_LLUMIVERSE_URL}. It was generated by [GitHub Actions](https://github.com/vertesia/composableai/actions/runs/${GITHUB_RUN_ID:-0}).
+          EOF)
+
+          if [ -n "$MAYBE_LLUMIVERSE_PR" ]; then
+            pr_body+="
+
+            This update corresponds to the following PR:
+            - https://github.com/vertesia/llumiverse/pull/${MAYBE_LLUMIVERSE_PR}."
+          else
+            pr_body+="
+
+            This update does not correspond to any specific PR in llumiverse."
+          fi
+
+          new_pr_url=$(gh pr create \
+              --title "chore: update llumiverse to ${TARGET_LLUMIVERSE_SHA::7}" \
+              --body "${pr_body}" \
+              --base ${{ env.TARGET_COMPOSABLEAI_BRANCH }} \
+              --label "branch:${{ env.TARGET_COMPOSABLEAI_BRANCH }}" \
+              --label "workflow:update-llumiverse")
+          new_pr_number=$(echo "$new_pr_url" | grep -oP '(?<=pull/)\d+')
+
+          echo "new_pr_url=${new_pr_url}" >> $GITHUB_OUTPUT
+          echo "new_pr_number=${new_pr_number}" >> $GITHUB_OUTPUT
+
+          echo "PR created: ${new_pr_url}"

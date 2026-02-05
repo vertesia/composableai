@@ -1,0 +1,64 @@
+name: publish-npm-packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Release Type
+        required: true
+        type: choice
+        options:
+          - snapshot
+          - release
+        default: snapshot
+      bump_type:
+        description: Version Bump
+        required: true
+        type: choice
+        options:
+          - keep
+          - patch
+          - minor
+        default: keep
+      dry_run:
+        description: Dry Run
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  id-token: write  # Required for OIDC between GitHub and NPM
+  contents: write  # Required to push version changes for preview
+
+jobs:
+  publish:
+    name: Publish all packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.DEPLOY_KEY }} # Use deploy key to bypass branch protection rules
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+          cache: "pnpm"
+
+      # Ensure npm 11.5.1 or later is installed
+      - name: Update npm
+        run: npm install -g npm@latest
+      - run: npm --version
+
+      - run: pnpm install
+
+      - name: Publish all packages
+        run: |
+          ./.github/bin/publish-all-packages.sh \
+              --ref "${{ github.ref_name }}" \
+              --release-type "${{ inputs.release_type }}" \
+              --bump-type "${{ inputs.bump_type }}" \
+              --dry-run "${{ inputs.dry_run }}"

@@ -1,9 +1,18 @@
 import * as React from "react";
+import { ReactNode } from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "../libs/utils";
-import { Tab, TabsContext as _TabContext } from '../tabs/TabsContext.js';
-import { VSelectBox } from "./selectBox";
+import { SelectBox } from "./selectBox";
+
+export interface Tab {
+    name: string;
+    current?: boolean;
+    href?: string;
+    label: ReactNode;
+    content: ReactNode;
+    disabled?: boolean;
+}
 
 const TabsContext = React.createContext<{
   size?: number;
@@ -36,7 +45,7 @@ interface TabsProps {
   updateHash?: boolean;
 }
 
-const VTabs = ({
+const Tabs = ({
   tabs,
   defaultValue,
   current,
@@ -106,7 +115,10 @@ const VTabs = ({
     
     // Update the URL hash when tab changes (only if updateHash is true and not controlled by parent)
     if (updateHash && !current) {
-      window.location.hash = newValue;
+      // Preserve existing history state when changing hash
+      const currentState = window.history.state;
+      const newUrl = window.location.pathname + window.location.search + '#' + newValue;
+      window.history.pushState(currentState, '', newUrl);
     }
     
     if (onTabChange) {
@@ -132,7 +144,7 @@ const VTabs = ({
   );
 };
 
-const VTabsBar = ({ className }: { className?: string }) => {
+const TabsBar = ({ className }: { className?: string }) => {
   const { tabs, size, current, setTab, responsive, variant, updateHash } = React.useContext(TabsContext);
 
   const fullWidth = size !== 0;
@@ -143,7 +155,9 @@ const VTabsBar = ({ className }: { className?: string }) => {
     const tab = tabs.find(t => t.name === tabName);
 
     if (tab?.href && updateHash) {
-      window.history.pushState(null, '', tab.href);
+      // Preserve existing history state when changing tabs
+      const currentState = window.history.state;
+      window.history.pushState(currentState, '', tab.href);
     }
 
     setTab(tabName);
@@ -159,7 +173,7 @@ const VTabsBar = ({ className }: { className?: string }) => {
     <>
       {responsive && (
         <div className="px-2 block lg:hidden">
-          <VSelectBox
+          <SelectBox
             label="Tab"
             className={(className)}
             options={tabs}
@@ -189,7 +203,7 @@ const VTabsBar = ({ className }: { className?: string }) => {
   );
 };
 
-const VTabsPanel = () => {
+const TabsPanel = ({ className }: { className?: string }) => {
   const { tabs } = React.useContext(TabsContext);
 
   if (!tabs) return null;
@@ -197,7 +211,7 @@ const VTabsPanel = () => {
   return (
     <>
       {tabs.map((tab) => (
-        <TabsContent key={tab.name} value={tab.name}>
+        <TabsContent key={tab.name} value={tab.name} className={className}>
           {tab.content}
         </TabsContent>
       ))}
@@ -236,7 +250,9 @@ const TabsTrigger = React.forwardRef<
   const handleClick = React.useCallback((event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     if (href) {
       event.preventDefault();
-      window.history.pushState(null, '', href);
+      // Preserve existing history state when changing tabs
+      const currentState = window.history.state;
+      window.history.pushState(currentState, '', href);
     }
     if (props.onClick) {
       (props.onClick as React.MouseEventHandler<HTMLButtonElement>)(event);
@@ -278,6 +294,7 @@ const TabsContent = React.forwardRef<
     ref={ref}
     className={cn(
       "focus-visible:outline-none",
+      "flex-1 overflow-y-auto min-h-0 pt-2",
       className
     )}
     {...props}
@@ -285,4 +302,4 @@ const TabsContent = React.forwardRef<
 ));
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
-export { VTabs, VTabsBar, VTabsPanel, TabsList, TabsTrigger, TabsContent };
+export { Tabs, TabsBar, TabsPanel, TabsList, TabsTrigger, TabsContent };

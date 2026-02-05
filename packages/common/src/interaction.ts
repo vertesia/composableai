@@ -4,6 +4,7 @@ import type {
     JSONSchema,
     Modalities,
     ModelOptions,
+    PromptRole,
     StatelessExecutionOptions,
     ToolDefinition,
     ToolUse,
@@ -15,10 +16,12 @@ import { ExecutionTokenUsage } from "@llumiverse/common";
 import { ExecutionEnvironmentRef } from "./environment.js";
 import { ProjectRef } from "./project.js";
 import {
+    ExecutablePromptSegmentDef,
     PopulatedPromptSegmentDef,
     PromptSegmentDef,
     PromptTemplateRef,
     PromptTemplateRefWithSchema,
+    TemplateType,
 } from "./prompt.js";
 import { ExecutionRunDocRef } from "./runs.js";
 import { AccountRef } from "./user.js";
@@ -28,6 +31,193 @@ export interface InteractionExecutionError {
     message: string;
     data?: any;
 }
+
+
+// ------------------ in code interactions -----------------
+/**
+ * Reference to an interaction in the catalog.
+ * Used in catalog listing. The id is composed of the namespace and the interaction name.
+ * Stored interactions can use `oid:` prefix.
+ * If no prefix is used it fallback on `oid:`.
+ */
+export interface CatalogInteractionRef {
+    /**
+     * The type of interaction
+     */
+    type: "sys" | "app" | "stored" | "draft";
+
+    /**
+     * the interaction id that can be used to execute the interaction.
+     */
+    id: string;
+
+    /**
+     * The interaction name which identify the interaction in the provider interaction list.
+     * For the stored interactions this is the same as the endpoint property.
+     * For other types of interactions this is the local name of the interaction.
+     */
+    name: string;
+
+    /**
+     * Only applies for stored interactions. The version of the interaction.
+     * Undefined for non stored interactions
+     */
+    version?: number;
+
+    /**
+     * Only applies for stored interactions. Whether the interaction is published or not.
+     */
+    published?: boolean;
+
+    /**
+     * The tags associated with the interaction.
+     */
+    tags: string[];
+
+    /**
+     * Agent Runner configuration options.
+     */
+    agent_runner_options?: AgentRunnerOptions;
+
+    /**
+     * The name of the interaction. For display purposes only.
+     */
+    title: string;
+
+    /**
+     * Optional description of the interaction.
+     */
+    description?: string;
+}
+
+export interface InCodePrompt {
+    role: PromptRole,
+    content: string,
+    content_type: TemplateType;
+    schema?: JSONSchema;
+    /**
+     * optional name of the prompt segment. Use kebab case for prompt names
+     */
+    name?: string;
+    /**
+     * optional reference to an external resource if any.
+     * Used internally by the system to synchronize stored prompts with in-code prompts.
+     */
+    externalId?: string;
+}
+export interface InCodeInteraction {
+    /**
+     * The interaction type.
+     */
+    type: "sys" | "app" | "stored" | "draft";
+
+    /**
+     * The id of the interaction. Required.
+     * The id is a unique identifier for the interaction.
+     * It is recommended to use a URL safe string and not include spaces. 
+     * The id composaed  by some namespace or prefix and the interaction name.
+     * Example: sys:generic_question, app:review_contract, tmp:my_temp_interaction
+     */
+    id: string;
+
+    /**
+     * The interaction code name. Required. 
+     * Should be a URL safe string and not include spaces. It is recommended to use kebab-case or camel-case.
+     * The endpoints must satisfy the following regexp: /^[a-zA-Z0-9-_]+$/. No whitespaces or special characters are allowed.
+     */
+    name: string;
+
+    /**
+     * Only applies for stored interactions. The version of the interaction.
+     * Undefined for non stored interactions
+     */
+    version?: number;
+
+    /**
+     * Only applies for stored interactions. Whether the interaction is published or not.
+     */
+    published?: boolean;
+
+    /**
+     * A title for the interaction. If not provided, the endpoint will be used.
+     */
+    title?: string;
+
+    /**
+     * An optional description of the interaction.
+     */
+    description?: string;
+
+    /**
+     * The JSON schema to be used for the result if any.
+     */
+    result_schema?: JSONSchema | SchemaRef;
+
+    /**
+     * The modality of the interaction output. 
+     * If not specified Modalities.Text is assumed.
+     */
+    output_modality?: Modalities,
+
+    /**
+     * How to store the run data for executions of this interaction.
+     * Defaults to STANDARD.
+     */
+    storage?: RunDataStorageLevel;
+
+    /**
+     * Optional tags for the interaction.
+     */
+    tags?: string[];
+
+    /**
+     * Agent Runner configuration options.
+     */
+    agent_runner_options?: AgentRunnerOptions;
+
+    /**
+     * Default options for the model to be used when executing this interaction.
+     * (like temperature etc)
+     */
+    model_options?: ModelOptions;
+
+    /**
+     * The prompts composing the interaction. Required.
+     */
+    prompts: InCodePrompt[]
+
+    /**
+     * Optional reference to an external resource if any.
+     * Used internally by the system to synchronize stored interactions with in-code interactions. 
+     */
+    externalId?: string;
+
+    /**
+     * Runtime configuration (system use only)
+     *
+     * This field is populated by the system when converting stored interactions
+     * and contains runtime-specific defaults like target model/environment IDs.
+     *
+     * DO NOT set this field manually when writing interaction definitions.
+     * These values are environment-specific and not portable.
+     *
+     * @internal
+     */
+    runtime?: {
+        /**
+         * Default target environment for the interaction execution         
+         */
+        environment?: string;
+
+        /**
+         * Default (recommended) target model for the interaction execution
+         */
+        model?: string;
+    }
+}
+export interface InteractionSpec extends Omit<InCodeInteraction, 'id' | 'runtime' | 'type' | 'published' | 'version'> {
+}
+// ---------------------------------------------------------
 
 /**
  * The payload to query the interaction endpoints
@@ -78,9 +268,19 @@ export interface InteractionEndpoint {
     visibility?: InteractionVisibility;
     version: number;
     tags: string[];
+    agent_runner_options?: AgentRunnerOptions;
+    /**
+     * @deprecated This is deprecated. Use CompletionResult.type information instead.
+     */
     output_modality?: Modalities;
     result_schema?: JSONSchema;
     params_schema?: JSONSchema;
+}
+
+export interface InteractionTags {
+    tag: string;
+    count: number;
+    interactions: InteractionRef[];
 }
 
 export interface InteractionRef {
@@ -88,16 +288,18 @@ export interface InteractionRef {
     name: string;
     endpoint: string;
     parent?: string;
+    model?: string;
     description?: string;
     status: InteractionStatus;
     visibility?: InteractionVisibility;
     version: number;
     tags: string[];
+    agent_runner_options?: AgentRunnerOptions;
     prompts?: PromptSegmentDef<PromptTemplateRef>[];
     updated_at: Date;
 }
 export const InteractionRefPopulate =
-    "id name endpoint parent description status version visibility tags updated_at prompts";
+    "id name endpoint parent description status version visibility tags agent_runner_options updated_at prompts";
 
 export const InteractionRefWithSchemaPopulate =
     `${InteractionRefPopulate} result_schema`;
@@ -167,28 +369,35 @@ export interface CachePolicy {
     ttl: number;
 }
 export type InteractionVisibility = "public" | "private";
-export interface Interaction {
+
+export interface InteractionData {
     readonly id: string;
     name: string;
     endpoint: string;
     description?: string;
+    project: string | ProjectRef;
+    tags: string[];
+    agent_runner_options?: AgentRunnerOptions;
+    result_schema?: JSONSchema4 | SchemaRef;
+    environment?: string | ExecutionEnvironmentRef;
+    model?: string;
+    model_options?: ModelOptions;
+    restriction?: RunDataStorageLevel;
+    /**
+     * @deprecated This is deprecated. Use CompletionResult.type information instead.
+     */
+    output_modality?: Modalities;
+}
+export interface Interaction extends InteractionData {
     status: InteractionStatus;
     parent?: string;
     // only used for versions (status === "published")
     visibility: InteractionVisibility;
     version: number;
-    tags: string[];
     test_data?: JSONObject;
     interaction_schema?: JSONSchema4 | SchemaRef;
-    result_schema?: JSONSchema4 | SchemaRef;
     cache_policy?: CachePolicy;
-    model: string;
-    model_options?: ModelOptions;
     prompts: PromptSegmentDef[];
-    output_modality?: Modalities;
-    environment: string | ExecutionEnvironmentRef;
-    restriction?: RunDataStorageLevel;
-    project: string | ProjectRef;
     // only for drafts - when it was last published
     last_published_at?: Date;
     created_by: string;
@@ -199,6 +408,14 @@ export interface Interaction {
 
 export interface PopulatedInteraction extends Omit<Interaction, "prompts"> {
     prompts: PopulatedPromptSegmentDef[];
+}
+
+/**
+ * Used to describe an interaction that can be executed. Contains only the interaction data useful
+ * to execute the interaction plus the prompt templates
+ */
+export interface ExecutableInteraction extends InteractionData {
+    prompts: ExecutablePromptSegmentDef[];
 }
 
 export interface InteractionCreatePayload
@@ -218,6 +435,7 @@ export interface InteractionCreatePayload
         | "endpoint"
     > {
     visibility?: InteractionVisibility;
+    tags?: string[];
 }
 
 export interface InteractionUpdatePayload
@@ -248,7 +466,8 @@ export interface InteractionExecutionPayload {
      */
     data?: Record<string, any> | `memory:${string}`;
     config?: InteractionExecutionConfiguration;
-    result_schema?: JSONSchema4;
+    //Use null to explicitly state no schema, will not fallback to interaction schema
+    result_schema?: JSONSchema4 | null;
     stream?: boolean;
     do_validate?: boolean;
     tags?: string | string[]; // tags to be added to the execution run
@@ -271,6 +490,12 @@ export interface InteractionExecutionPayload {
      * The workflow related to this Interaction Run.
      */
     workflow?: ExecutionRunWorkflow;
+
+    /**
+     * Only used by ad-hoc interactions which defines the prompt in the execution payload itself
+     * These are temporary interactions using "tmp:" suffix.
+     */
+    prompts?: InCodePrompt[];
 }
 
 export interface NamedInteractionExecutionPayload extends InteractionExecutionPayload {
@@ -298,11 +523,97 @@ interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayloa
 
 export type ConversationVisibility = 'private' | 'project';
 
+/**
+ * Defines the scope for agent search operations.
+ */
+export enum AgentSearchScope {
+    /**
+     * Search is scoped to a specific collection.
+     */
+    Collection = 'collection'
+}
+
+/**
+ * Context triggers for auto-injection of skills.
+ * When these conditions match, the skill is automatically injected into the agent context.
+ */
+export interface SkillContextTriggers {
+    /**
+     * Keywords in user input that should trigger this skill
+     */
+    keywords?: string[];
+
+    /**
+     * If these tools are being used, suggest this skill
+     */
+    tool_names?: string[];
+
+    /**
+     * Regex patterns to match against input data
+     */
+    data_patterns?: string[];
+}
+
+/**
+ * Configuration options for Agent Runner functionality.
+ * These options control how interactions are exposed and executed in the Agent Runner.
+ */
+export interface AgentRunnerOptions {
+    /**
+     * Whether this interaction is an agent (executable in Agent Runner).
+     */
+    is_agent?: boolean;
+
+    /**
+     * Whether this interaction is available as a tool (sub-agent).
+     */
+    is_tool?: boolean;
+
+    /**
+     * Whether this interaction is a skill (provides instructions without execution).
+     * Skills are injected into the agent's context based on context_triggers.
+     */
+    is_skill?: boolean;
+
+    /**
+     * Context triggers for auto-injection of this skill.
+     * Only used when is_skill is true.
+     */
+    context_triggers?: SkillContextTriggers;
+
+    /**
+     * Injection priority for skills (higher = more likely to be selected when multiple match).
+     * Only used when is_skill is true.
+     */
+    skill_priority?: number;
+
+    /**
+     * Array of default tool names available to this agent.
+     * For interactions: defines default tools.
+     * For execution payloads: you can use + and - to add or remove from default,
+     * if no sign, then list replaces default.
+     */
+    tool_names?: string[];
+
+    /**
+     * On which scope should the search be applied by the search_tool.
+     * Only supports 'collection' scope or undefined for now.
+     */
+    search_scope?: AgentSearchScope;
+
+    /**
+     * The ID of the collection to restrict agent operations to.
+     * When specified, the agent's search and retrieval operations are limited to documents
+     * within this collection'.
+     */
+    collection_id?: string;
+}
+
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
     type: "conversation";
 
-    /** 
-    * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project 
+    /**
+    * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project
     * If not specified, the default is project
     **/
     visibility?: ConversationVisibility;
@@ -332,7 +643,7 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * On which scope should the searched by applied, by the search_tool.
      * Only supports collection scope or null for now.
      */
-    search_scope?: string;
+    search_scope?: AgentSearchScope.Collection;
 
     /**
      * The collection in which this workflow is executing
@@ -424,7 +735,7 @@ export interface RunSource {
     client_ip: string;
 }
 
-export interface ExecutionRun<P = any> {
+export interface BaseExecutionRun<P = any> {
     readonly id: string;
     /**
      * Only used by runs that were created by a virtual run to point toward the virtual run parent
@@ -443,8 +754,12 @@ export interface ExecutionRun<P = any> {
      */
     parameters: P; //params used to create the interaction, only in varies on?
     tags?: string[];
-    //TODO a string is returned when executing not the interaction object
-    interaction: Interaction;
+    // only set when the target interaction is a stored interaction
+    //TODO check the code where Interaction type is used (should be in run details)
+    // TODO when execution string is passed as the type of interaction
+    interaction?: string | Interaction;
+    // only set when the target interaction is an in-code interaction
+    interaction_code?: string; // Interaction code name in case of in-code interaction (not stored in the DB as an Interaction document)
     //TODO a string is returned when execution not the env object
     environment: ExecutionEnvironmentRef;
     modelId: string;
@@ -463,7 +778,11 @@ export interface ExecutionRun<P = any> {
     config: InteractionExecutionConfiguration;
     error?: InteractionExecutionError;
     source: RunSource;
-    output_modality: Modalities;
+
+    /**
+     * @deprecated This is deprecated. Use CompletionResult.type information instead.
+     */
+    output_modality?: Modalities;
     created_by: string;
     updated_by: string;
 
@@ -475,6 +794,14 @@ export interface ExecutionRun<P = any> {
      * @since 0.60.0
      */
     workflow?: ExecutionRunWorkflow;
+}
+
+export interface ExecutionRun<P = any> extends BaseExecutionRun<P> {
+    interaction?: Interaction;
+}
+
+export interface PopulatedExecutionRun<P = any> extends BaseExecutionRun<P> {
+    interaction?: Interaction;
 }
 
 export interface ExecutionRunWorkflow {
@@ -503,6 +830,11 @@ export interface ExecutionRunWorkflow {
     activity_type?: string;
 }
 
+export interface PromptModalities {
+    hasVideo: boolean;
+    hasImage: boolean;
+}
+
 export interface InteractionExecutionResult<P = any> extends ExecutionRun<P> {
     tool_use?: ToolUse[];
     conversation?: unknown;
@@ -510,7 +842,8 @@ export interface InteractionExecutionResult<P = any> extends ExecutionRun<P> {
 }
 
 export interface ExecutionRunRef extends Omit<ExecutionRun, "result" | "parameters" | "interaction"> {
-    interaction: InteractionRef;
+    interaction?: InteractionRef;
+    interaction_code?: string;
 }
 
 export const ExecutionRunRefSelect = "-result -parameters -result_schema -prompt";
@@ -553,15 +886,23 @@ export interface GenerateTestDataPayload {
     config: InteractionExecutionConfiguration;
 }
 
-export interface ImprovePromptPayload {
+export interface ImprovePromptPayloadConfig {
     config: InteractionExecutionConfiguration;
+}
+
+export interface ImprovePromptPayload extends ImprovePromptPayloadConfig {
+    interaction_name: string; // name of the interaction to improve
+    context?: string,
+    prompt: { name: string, content: string }[]; // prompt array
+    result_schema?: JSONSchema, // optional interactionr result schema
 }
 
 export interface RateLimitRequestPayload {
     interaction: string,
     environment_id?: string,
     model_id?: string,
-    workflow_run_id?: string
+    workflow_run_id?: string,
+    modalities?: PromptModalities;
 }
 
 export interface RateLimitRequestResponse {

@@ -1,4 +1,4 @@
-import { AuthTokenPayload } from "@vertesia/common";
+import { AuthTokenPayload, Permission } from "@vertesia/common";
 import { Avatar, Button, MenuList, ModeToggle, Spinner } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Popover } from "@vertesia/ui/widgets";
@@ -6,6 +6,8 @@ import clsx from "clsx";
 import { useState } from "react";
 import SignInModal from "./SignInModal";
 import InfoList from "./UserInfo";
+import { useNavigate } from "@vertesia/ui/router";
+import { useUserPermissions } from "@vertesia/ui/features";
 interface UserSessionMenuProps {
     name?: string
     picture?: string;
@@ -38,8 +40,12 @@ interface UserSessionPopupProps {
 }
 function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopupProps) {
     const session = useUserSession();
+    const navigate = useNavigate();
+    const perms = useUserPermissions();
     const { user } = session;
     if (!session || !user) return null;
+
+    const isProjectManager = perms.hasPermission(Permission.project_admin);
 
     return (
         <Popover strategy='fixed' placement='bottom-start' zIndex={100}>
@@ -68,6 +74,11 @@ function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopup
                         </div>
                         <div className='py-2'>
                             <MenuList>
+                                {isProjectManager && (
+                                    <MenuList.Item className='px-2' onClick={() => navigate('/settings', { replace: true })}>
+                                        Settings
+                                    </MenuList.Item>
+                                )}
                                 <MenuList.Item className='px-2' onClick={() => session.logout()}>
                                     Sign out
                                 </MenuList.Item>

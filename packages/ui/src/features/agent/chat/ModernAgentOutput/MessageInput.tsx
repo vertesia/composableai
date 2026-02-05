@@ -1,12 +1,10 @@
-import { Button, Input, Spinner, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core";
+import { Button, Input, Spinner, Modal, ModalBody, ModalTitle } from "@vertesia/ui/core";
 import { Activity, PaperclipIcon, SendIcon } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { SelectDocument } from "../../../store";
 
 interface MessageInputProps {
-    value: string;
-    onChange: (v: string) => void;
-    onSend: () => void;
+    onSend: (message: string) => void;
     disabled?: boolean;
     isSending?: boolean;
     isCompleted?: boolean;
@@ -15,8 +13,6 @@ interface MessageInputProps {
 }
 
 export default function MessageInput({
-    value,
-    onChange,
     onSend,
     disabled = false,
     isSending = false,
@@ -25,16 +21,25 @@ export default function MessageInput({
     placeholder = "Type your message..."
 }: MessageInputProps) {
     const ref = useRef<HTMLInputElement | null>(null);
+    const [value, setValue] = useState("");
     const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
 
     useEffect(() => {
         if (!disabled && isCompleted) ref.current?.focus();
     }, [disabled, isCompleted]);
 
+    const handleSend = () => {
+        const message = value.trim();
+        if (!message || disabled || isSending) return;
+
+        onSend(message);
+        setValue("");
+    };
+
     const keyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            onSend();
+            handleSend();
         }
     };
 
@@ -50,7 +55,7 @@ export default function MessageInput({
         const newValue = currentValue.substring(0, cursorPos) + markdownLink + currentValue.substring(cursorPos);
 
         // Update the input value
-        onChange(newValue);
+        setValue(newValue);
 
         // Close the modal
         setIsObjectModalOpen(false);
@@ -67,14 +72,14 @@ export default function MessageInput({
     };
 
     return (
-        <div className="p-3 border-t border-muted flex-shrink-0" style={{ minHeight: "90px" }}>
+        <div className="p-3 border-t border-muted flex-shrink-0 fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background z-10" style={{ minHeight: "90px" }}>
             <div className="flex items-center space-x-2">
                 <div className="flex flex-1 space-x-1" >
                     <Input
                         ref={ref}
                         value={value}
                         onKeyDown={keyDown}
-                        onChange={onChange}
+                        onChange={setValue}
                         disabled={disabled || isSending}
                         placeholder={placeholder}
                         className="pr-12 py-2.5"
@@ -90,7 +95,7 @@ export default function MessageInput({
                     </Button>
                 </div>
                 <Button
-                    onClick={onSend}
+                    onClick={handleSend}
                     disabled={disabled || isSending || !value.trim()}
                     className="px-4 py-2.5"
                 >
@@ -110,16 +115,16 @@ export default function MessageInput({
             </div>
 
             {/* Object Selection Modal */}
-            <VModal
+            <Modal
                 isOpen={isObjectModalOpen}
                 onClose={() => setIsObjectModalOpen(false)}
                 className='min-w-[60vw]'
             >
-                <VModalTitle>Link Object</VModalTitle>
-                <VModalBody className="pb-6">
+                <ModalTitle>Link Object</ModalTitle>
+                <ModalBody className="pb-6">
                     <SelectDocument onChange={handleObjectSelect} />
-                </VModalBody>
-            </VModal>
+                </ModalBody>
+            </Modal>
         </div>
     );
 }

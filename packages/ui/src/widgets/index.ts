@@ -1,4 +1,4 @@
-export * from "./codemirror/index.js";
+export * from "./monacoEditor/index.js";
 export * from "./form/index.js";
 export * from "./json-view/index.js";
 export * from "./markdown/index.js";

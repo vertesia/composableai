@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/react",
-    "version": "0.79.0",
+    "version": "0.81.2-dev.20260204.135023Z",
     "description": "React helpers for Composable AI",
     "type": "module",
     "types": "./lib/index.d.ts",
@@ -9,7 +9,7 @@
         "lib",
         "src"
     ],
-    "license": "MIT",
+    "license": "Apache-2.0",
     "homepage": "https://docs.vertesiahq.com",
     "keywords": [
         "llm",
@@ -26,7 +26,7 @@
     },
     "devDependencies": {
         "@types/json-schema": "^7.0.15",
-        "@types/react": "^19.1.0",
+        "@types/react": "^19.2.3",
         "typescript": "^5.0.2"
     },
     "peerDependencies": {
@@ -36,5 +36,10 @@
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "json-schema": "^0.4.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/react"
     }
 }

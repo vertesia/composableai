@@ -17,6 +17,7 @@ const Input = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProp
     }
 
     const _onChange = (ev: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        if (props.disabled) return;
         setValue(ev.target.value);
         if (object.schema.isBoolean) {
             object.value = (ev.target as HTMLInputElement).checked;

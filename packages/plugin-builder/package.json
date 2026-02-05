@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/plugin-builder",
-  "version": "0.79.0",
+  "version": "0.81.2-dev.20260204.135023Z",
   "description": "A vite plugin to build vertesia UI plugins",
   "type": "module",
   "types": "./lib/index.d.ts",
@@ -9,15 +9,17 @@
     "lib",
     "src"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "homepage": "https://docs.vertesiahq.com",
   "keywords": [
-    "llm",
-    "streaming",
-    "composable",
-    "prompt",
-    "ai",
-    "react"
+    "vertesia",
+    "plugin",
+    "vite",
+    "vite-plugin",
+    "ui",
+    "react",
+    "css",
+    "tailwind"
   ],
   "scripts": {
     "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
@@ -33,5 +35,10 @@
   },
   "peerDependencies": {
     "vite": ">=4.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vertesia/composableai.git",
+    "directory": "packages/plugin-builder"
   }
 }

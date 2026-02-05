@@ -1,29 +1,33 @@
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { ExecutionEnvironmentRef, Interaction, mergePromptsSchema, PopulatedInteraction, supportsToolUse } from "@vertesia/common";
+import { AgentSearchScope, ExecutionEnvironmentRef, InCodeInteraction, mergeInCodePromptSchemas, supportsToolUse, WorkflowInteractionVars } from "@vertesia/common";
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
 import type { JSONSchema4 } from "json-schema";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export interface ConversationWorkflowPayload {
-    interaction?: Interaction | undefined;
-    config: {
-        environment?: ExecutionEnvironmentRef | undefined;
-        model?: string;
-    }
-    data?: JSONObject | undefined,
-    tool_names: string[],
-}
 
-export class PayloadBuilder implements ConversationWorkflowPayload {
+// export interface ConversationWorkflowPayload {
+//     config: {
+//         environment?: ExecutionEnvironmentRef | undefined;
+//         model?: string;
+//     }
+//     data?: JSONObject | undefined,
+//     tool_names: string[],
+// }
+
+export class PayloadBuilder {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
     _collection: string | undefined;
     _start: boolean = false;
     _preserveRunValues: boolean = false;
+    _interaction: InCodeInteraction | undefined;
+    _environment: ExecutionEnvironmentRef | undefined;
+    _model: string = '';
+    _tool_names: string[] = [];
+    _data: JSONObject | undefined;
 
-    payload: ConversationWorkflowPayload;
     private _interactionParamsSchema?: JSONSchema4 | null;
     private _inputValidator?: {
         validate: ValidateFunction;
@@ -31,12 +35,6 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     };
 
     constructor(public vertesia: VertesiaClient, public updateState: (data: PayloadBuilder) => void) {
-        this.payload = {
-            config: {
-                model: '',
-            },
-            tool_names: [],
-        }
     }
 
     onStateChanged() {
@@ -47,7 +45,11 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     clone() {
         const builder = new PayloadBuilder(this.vertesia, this.updateState);
         builder._interactionParamsSchema = this._interactionParamsSchema;
-        builder.payload = this.payload;
+        builder._interaction = this._interaction;
+        builder._data = this._data;
+        builder._environment = this._environment;
+        builder._model = this._model;
+        builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
         builder._inputValidator = this._inputValidator;
@@ -91,31 +93,64 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     }
 
     get search_scope() {
-        return this._collection ? "collection" : undefined;
+        return this._collection ? AgentSearchScope.Collection : undefined;
+    }
+
+    async restoreConversation(context: WorkflowInteractionVars) {
+        
+        // Handle version-specific interaction resolution
+        let interactionRef = context.interaction;
+        if (context.version) {
+            const objectIdRegex = /^[a-fA-F0-9]{24}$/;
+            if (!objectIdRegex.test(interactionRef)) {
+                // regex to check if interactionRef is an object id (24 hex characters), only append version if not an object id
+                interactionRef = `${interactionRef}@${context.version}`;
+            }
+        }
+        
+        const inter = await this.vertesia.interactions.catalog.resolve(interactionRef);
+        const envId = inter.runtime?.environment || context.config?.environment;
+        const model = context.config?.model;
+        const env = await (envId ?
+            this.vertesia.environments.retrieve(context.config?.environment)
+            :
+            Promise.resolve(undefined)
+        );
+
+
+        this.interactionParamsSchema = context.interactionParamsSchema ?? null;
+        // trigger the setter to update the corresponding interactionParamsSchema
+        this.interaction = inter;
+
+        this._tool_names = context.tool_names || [];
+        this._data = context.data;
+        this._interactive = context.interactive;
+        this._debug_mode = context.debug_mode ?? false;
+        this.collection = context.collection_id ?? undefined;
+
+        // we need to trigger the setter to deal with default models
+        this.environment = env;
+        if (model) {
+            this._model = model;
+        }
+
+        this.onStateChanged();
     }
 
     get interaction() {
-        return this.payload.interaction;
+        return this._interaction;
     }
-    set interaction(interaction: Interaction | undefined) {
-        if (interaction?.id !== this.payload.interaction?.id) {
-            this.payload.interaction = interaction;
-            this._interactionParamsSchema = mergePromptsSchema(this.interaction as PopulatedInteraction) as JSONSchema4;
+    set interaction(interaction: InCodeInteraction | undefined) {
+        if (interaction?.id !== this._interaction?.id) {
+            this._interaction = interaction;
+            // trigger the setter to update the onChange state
+            this.interactionParamsSchema = interaction ? mergeInCodePromptSchemas(interaction.prompts) as JSONSchema4 : undefined;
             // Reset the validator when schema changes
             this._inputValidator = undefined;
             if (interaction && !this._preserveRunValues) {
-                if (interaction.environment) {
-                    if (typeof interaction.environment === 'string') {
-                        this.vertesia.environments.retrieve(interaction.environment).then((environment) => this.environment = environment);
-                    } else {
-                        this.payload.config.environment = interaction.environment;
-                    }
-                }
-                if (interaction.model) {
-                    this.payload.config.model = interaction.model;
-                } else {
-                    this.payload.config.model = this.environment?.default_model && supportsToolUse(this.environment.default_model, this.environment.provider)
-                        ? this.environment.default_model : undefined;
+                if (interaction.runtime?.environment) {
+                    const envId = interaction.runtime.environment;
+                    this.vertesia.environments.retrieve(envId).then((environment) => this.environment = environment);
                 }
             }
             this.onStateChanged();
@@ -123,19 +158,19 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     }
 
     get environment() {
-        return this.payload.config.environment;
+        return this._environment;
     }
     set environment(environment: ExecutionEnvironmentRef | undefined) {
-        if (environment?.id !== this.payload.config.environment?.id) {
-            this.payload.config.environment = environment;
+        if (environment?.id !== this._environment?.id) {
+            this._environment = environment;
             if (!this._preserveRunValues) {
                 // First try to use the interaction model, then the environment default model
-                const interactionModel = this.payload.interaction?.model;
+                const interactionModel = this.interaction?.runtime?.model;
                 if (interactionModel && environment && supportsToolUse(interactionModel, environment.provider)) {
-                    this.payload.config.model = interactionModel;
+                    this._model = interactionModel;
                 } else {
-                    this.payload.config.model = environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
-                        ? environment.default_model : undefined;
+                    this._model = environment?.default_model && supportsToolUse(environment.default_model, environment.provider)
+                        ? environment.default_model : '';
                 }
             }
 
@@ -144,33 +179,29 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     }
 
     get model() {
-        return this.payload.config.model;
+        return this._model;
     }
     set model(model: string | undefined) {
-        if (model !== this.payload.config.model) {
-            this.payload.config.model = model;
+        if (model !== this._model) {
+            this._model = model || '';
             this.onStateChanged();
         }
     }
 
     get tool_names() {
-        return this.payload.tool_names;
+        return this._tool_names;
     }
     set tool_names(tools: string[]) {
-        this.payload.tool_names = tools;
+        this._tool_names = tools;
         this.onStateChanged();
     }
 
     get data(): JSONObject | undefined {
-        return this.payload.data;
+        return this._data;
     }
     set data(prompt_data: JSONObject) {
-        this.payload.data = prompt_data;
+        this._data = prompt_data;
         this.onStateChanged();
-    }
-
-    get config() {
-        return this.payload.config;
     }
 
     set run(run: AsyncExecutionResult | { workflow_id: string; run_id: string }) {
@@ -204,8 +235,36 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
     set interactionParamsSchema(schema: JSONSchema4 | null | undefined) {
         if (this._interactionParamsSchema !== schema) {
             this._interactionParamsSchema = schema;
+            // Booleans must be true or false, never undefined
+            if (schema) {
+                this._data = this.initializeBooleanDefaults(this._data || {}, schema);
+            }
             this.onStateChanged();
         }
+    }
+
+    private initializeBooleanDefaults(data: JSONObject, schema: JSONSchema4): JSONObject {
+        if (!schema.properties) {
+            return data;
+        }
+
+        const result = { ...data };
+
+        for (const [name, propSchema] of Object.entries(schema.properties)) {
+            const prop = propSchema as JSONSchema4;
+            // Initialize boolean fields to false if not already set
+            if (prop.type === "boolean" && result[name] === undefined) {
+                result[name] = false;
+            } else if (prop.type === "object" && prop.properties) {
+                // Recursively initialize nested object booleans
+                result[name] = this.initializeBooleanDefaults(
+                    (result[name] as JSONObject) || {},
+                    prop
+                );
+            }
+        }
+
+        return result;
     }
 
     reset() {
@@ -214,15 +273,11 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
         this._debug_mode = false;
         this._collection = undefined;
         this._preserveRunValues = false;
-        this.payload = {
-            config: {
-                environment: undefined,
-                model: '',
-            },
-            tool_names: [],
-            interaction: undefined,
-            data: undefined
-        };
+        this._model = '';
+        this._environment = undefined;
+        this._tool_names = [];
+        this._interaction = undefined;
+        this._data = undefined;
         this._interactionParamsSchema = null;
         this._inputValidator = undefined;
         this.model = undefined;
@@ -250,7 +305,7 @@ export class PayloadBuilder implements ConversationWorkflowPayload {
             };
         }
 
-        const prompt_data = this.payload.data || {};
+        const prompt_data = this._data || {};
         const isValid = this._inputValidator.validate(prompt_data);
 
         if (!isValid) {

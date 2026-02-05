@@ -2,7 +2,7 @@ import { motion } from "framer-motion"
 import { X } from "lucide-react"
 import { useState, ReactNode } from "react"
 
-import { Button } from "./Button"
+import { Button } from "./shadcn/button"
 
 interface OverlayProps {
     children: ReactNode

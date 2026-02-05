@@ -13,6 +13,7 @@ export enum ContentObjectApiHeaders {
 export enum ContentObjectStatus {
     created = "created",
     processing = "processing", // the was created and still processing
+    ready = "ready", // the object is rendered and ready to be used
     completed = "completed",
     failed = "failed",
     archived = "archived",
@@ -24,6 +25,15 @@ export interface Embedding {
     etag?: string; // the etag of the text used for the embedding
 }
 
+/**
+ * Metadata about a single inherited property.
+ */
+export interface InheritedPropertyMetadata {
+    /** The property name that was inherited */
+    name: string;
+    /** The collection ID that provided this property */
+    collection: string;
+}
 export interface ContentObject<T = any> extends ContentObjectItem<T> {
     text?: string; // the text representation of the object
     text_etag?: string;
@@ -32,15 +42,22 @@ export interface ContentObject<T = any> extends ContentObjectItem<T> {
     parts_etag?: string; // the etag of the text used for the parts list
     transcript?: Transcript;
     security?: Record<string, string[]>; // Security field for granular permissions
+
+    /**
+     * Inherited properties metadata - tracks which properties were inherited from parent collections.
+     * Used to display readonly inherited properties in the UI and enable incremental sync optimization.
+     */
+    inherited_properties?: InheritedPropertyMetadata[];
 }
 
-export type ContentNature =
-    | "video"
-    | "image"
-    | "audio"
-    | "document"
-    | "code"
-    | "other";
+export enum ContentNature {
+    Video = "video",
+    Image = "image",
+    Audio = "audio",
+    Document = "document",
+    Code = "code",
+    Other = "other"
+}
 
 export interface Dimensions {
     width: number;
@@ -59,6 +76,27 @@ export interface GenerationRunMetadata {
     target?: string;
 }
 
+// Base rendition interface for document and audio
+export interface Rendition {
+    name: string;
+    content: ContentSource;
+}
+
+// Rendition with dimensions for video and image
+export interface RenditionWithDimensions extends Rendition {
+    dimensions: Dimensions;
+}
+
+/**
+ * @deprecated Use RenditionWithDimensions instead
+ */
+export type VideoRendition = RenditionWithDimensions;
+
+export const POSTER_RENDITION_NAME = "Poster";
+export const AUDIO_RENDITION_NAME = "Audio";
+export const WEB_VIDEO_RENDITION_NAME = "Web";
+export const PDF_RENDITION_NAME = "PDF";
+
 export interface ContentMetadata {
     // Common fields for all media types
     type?: ContentNature;
@@ -67,36 +105,40 @@ export interface ContentMetadata {
     location?: Location;
     generation_runs: GenerationRunMetadata[];
     etag?: string;
+    renditions?: Rendition[];
 }
 
-// Example of type-specific metadata interfaces (optional, for better type safety)
+// Type-specific metadata interfaces
 export interface TemporalMediaMetadata extends ContentMetadata {
     duration?: number; // in seconds
     transcript?: Transcript;
 }
 
 export interface ImageMetadata extends ContentMetadata {
-    type: "image";
+    type: ContentNature.Image;
     dimensions?: Dimensions;
+    renditions?: RenditionWithDimensions[];
 }
 
 export interface AudioMetadata extends TemporalMediaMetadata {
-    type: "audio";
+    type: ContentNature.Audio;
 }
 
 export interface VideoMetadata extends TemporalMediaMetadata {
-    type: "video";
+    type: ContentNature.Video;
     dimensions?: Dimensions;
+    renditions?: RenditionWithDimensions[];
+    hasAudio?: boolean;
 }
 
 export interface TextSection {
     description: string; // the description of the section
     first_line_index: number;
-    last_line_index: number; 
+    last_line_index: number;
 }
 
 export interface DocumentMetadata extends ContentMetadata {
-    type: "document";
+    type: ContentNature.Document;
     page_count?: number;
     content_processor?: {
         type?: string;
@@ -338,6 +380,11 @@ export interface WorkflowRule extends WorkflowRuleItem {
      * When set to true the rule will not be updated by the system
      */
     customer_override?: boolean;
+
+    /**
+     * Optional task queue name to use when starting workflows for this rule
+     */
+    task_queue?: string;
 }
 
 export interface CreateWorkflowRulePayload extends UploadWorkflowRulePayload {
@@ -365,6 +412,7 @@ export interface GetRenditionParams {
     max_hw?: number;
     generate_if_missing?: boolean;
     sign_url?: boolean;
+    block_on_generation?: boolean;
 }
 
 export interface GetRenditionResponse {
@@ -382,6 +430,10 @@ export interface GetUploadUrlPayload {
 
 export interface GetFileUrlPayload {
     file: string;
+    // Optional filename to use in Content-Disposition for downloads
+    name?: string;
+    // Optional disposition for downloads (default: attachment)
+    disposition?: "inline" | "attachment";
 }
 
 export interface GetFileUrlResponse {
@@ -389,6 +441,13 @@ export interface GetFileUrlResponse {
     id: string;
     mime_type: string;
     path: string;
+}
+
+export interface SetFileMetadataPayload {
+    /** The file path (relative to bucket) or full URI */
+    file: string;
+    /** Custom metadata key-value pairs to set on the file */
+    metadata: Record<string, string>;
 }
 
 export enum ContentObjectProcessingPriority {

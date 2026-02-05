@@ -34,7 +34,6 @@ export async function saveAgentArtifact(
 
     //create the file path and append extension if needed
     const filePath = agentStoragePath(runId) + "/" + name + (ext && !name.endsWith(ext) ? "." + ext : "");
-    log.info(`Storing agent artifact ${filePath} for run ${runId}`);
 
     try {
         const source = new NodeStreamSource(fileContent, `${runId}-${basename(filePath)}`, mimeType, filePath);

@@ -91,6 +91,30 @@ export class CollectionsApi extends ApiTopic {
         });
     }
 
+    addChildren(collectionId: string, children: string[]): Promise<{ count: number }> {
+        return this.post(`/${collectionId}/children`, {
+            payload: {
+                action: 'add',
+                children
+            }
+        });
+    }
+
+    deleteChildren(collectionId: string, children: string[]): Promise<{ count: number }> {
+        return this.post(`/${collectionId}/children`, {
+            payload: {
+                action: 'delete',
+                children
+            }
+        });
+    }
+
+    searchChildren(collectionId: string, query: ComplexCollectionSearchQuery = {}): Promise<CollectionItem[]> {
+        return this.post(`/${collectionId}/children/search`, {
+            payload: query
+        });
+    }
+
     delete(id: string) {
         return this.del(`/${id}`);
     }
@@ -104,7 +128,6 @@ export class CollectionsApi extends ApiTopic {
     updatePermissions(collectionId: string, permissions: Record<string, string[]>): Promise<{
         id: string;
         security: Record<string, string[]>;
-        objectsUpdated: number;
     }> {
         return this.put(`/${collectionId}/permissions`, {
             payload: permissions
@@ -121,9 +144,23 @@ export class CollectionsApi extends ApiTopic {
         id: string;
         message: string;
         security?: Record<string, string[]>;
-        objectsUpdated: number;
     }> {
         return this.post(`/${collectionId}/propagate-permissions`);
     }
+
+    /**
+     * Manually trigger shared properties propagation from collection to member objects
+     * Useful for debugging and fixing shared properties issues
+     * @param collectionId - The collection ID
+     * @returns Object with collection id, message, and number of objects updated
+     */
+    propagateSharedProperties(collectionId: string): Promise<{
+        id: string;
+        message: string;
+        shared_properties: string[]
+    }> {
+        return this.post(`/${collectionId}/propagate-shared-props`);
+    }
+
 
 }

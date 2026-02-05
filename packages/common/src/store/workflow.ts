@@ -1,5 +1,5 @@
 import { JSONSchema4 } from "json-schema";
-import { InteractionRef } from "../interaction.js";
+import { ConversationVisibility, InteractionRef } from "../interaction.js";
 
 export enum ContentEventName {
     create = "create",
@@ -94,6 +94,33 @@ export interface WebHookSpec {
      * the API version to use if any
      */
     version?: number;
+    /**
+     * Custom headers to include in the webhook request
+     */
+    headers?: Record<string, string>;
+    /**
+     * Additional custom data to include in the webhook body.
+     * When custom data is provided, the workflow result will always be nested
+     * to prevent field collisions. Use result_path to control where it's nested.
+     */
+    data?: Record<string, any>;
+    /**
+     * Path where the workflow result should be nested in the webhook body.
+     * Defaults to "result" when custom data is provided.
+     *
+     * Example: With result_path="workflow_result" and data={customer_id: "123"}:
+     * {
+     *   "workflow_result": { ...workflow result... },
+     *   "customer_id": "123"
+     * }
+     *
+     * Example: With data={customer_id: "123"} but no result_path (uses default):
+     * {
+     *   "result": { ...workflow result... },
+     *   "customer_id": "123"
+     * }
+     */
+    result_path?: string;
 }
 
 export interface WorkflowExecutionPayload<T = Record<string, any>> extends WorkflowExecutionBaseParams<T> {
@@ -203,6 +230,11 @@ export interface ListWorkflowRunsPayload {
     initiated_by?: string;
 
     /**
+     * The interaction name used to filter conversations.
+     */
+    interaction?: string;
+
+    /**
      * Lucene query string to search for the workflow runs.
      * This is a full text search on the workflow run history.
      */
@@ -301,6 +333,16 @@ export interface WorkflowRun {
      * An interaction is used to start the agent, the data is stored on temporal "vars"
      */
     interactions?: InteractionRef[];
+    /**
+     * The visibility of the workflow run.
+     * - 'private': Only visible to the user who initiated the workflow
+     * - 'project': Visible to all users in the project
+     */
+    visibility?: ConversationVisibility;
+    /**
+     * A brief summary of the conversation workflow.
+     */
+    topic?: string;
 }
 
 export interface WorkflowRunWithDetails extends WorkflowRun {
@@ -326,20 +368,27 @@ export interface ListWorkflowRunsResponse {
 export interface ListWorkflowInteractionsResponse {
     workflow_id: string,
     run_id: string,
-    interaction: WorkflowInteraction
+    interaction: WorkflowInteractionVars
 }
 
-export interface WorkflowInteraction {
+export interface WorkflowInteractionVars {
     type: string,
-    model: string,
-    tools: [],
     interaction: string,
-    environment: string,
-    prompt_data: JSONSchema4,
     interactive: boolean,
+    debug_mode?: boolean,
+    data?: Record<string, any>,
+    tool_names: string[],
+    config: {
+        environment: string,
+        model: string
+    },
     interactionParamsSchema?: JSONSchema4
-    debug_mode?: boolean;
     collection_id?: string;
+    /**
+     * Optional version of the interaction to use when restoring conversations.
+     * If not specified, the latest version will be used.
+     */
+    version?: number;
 }
 
 export interface MultiDocumentsInteractionParams extends Omit<WorkflowExecutionPayload, "config"> {
@@ -421,3 +470,52 @@ export interface Plan {
 }
 
 export const LOW_PRIORITY_TASK_QUEUE = "low_priority";
+
+/**
+ * WebSocket message types for bidirectional communication
+ */
+export interface WebSocketSignalMessage {
+    type: 'signal';
+    signalName: string;
+    data: any;
+    requestId?: string | number;
+}
+
+export interface WebSocketPingMessage {
+    type: 'ping';
+}
+
+export interface WebSocketPongMessage {
+    type: 'pong';
+}
+
+export interface WebSocketAckMessage {
+    type: 'ack';
+    requestId: string | number;
+}
+
+export interface WebSocketErrorMessage {
+    type: 'error';
+    requestId?: string | number;
+    error: string;
+}
+
+export type WebSocketClientMessage =
+    | WebSocketSignalMessage
+    | WebSocketPingMessage;
+
+export type WebSocketServerMessage =
+    | WebSocketPongMessage
+    | WebSocketAckMessage
+    | WebSocketErrorMessage
+    | AgentMessage;
+
+/**
+ * Payload for applying actions to a workflow run (e.g., cancel, terminate).
+ */
+export interface WorkflowActionPayload {
+    /**
+     * Optional reason for the action.
+     */
+    reason?: string;
+}

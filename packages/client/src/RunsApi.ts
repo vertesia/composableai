@@ -1,3 +1,4 @@
+import type { ExecutionResponse } from "@llumiverse/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     CheckpointConversationPayload,
@@ -5,6 +6,7 @@ import {
     ExecutionRun,
     ExecutionRunRef,
     FindPayload,
+    PopulatedExecutionRun,
     RunCreatePayload,
     RunListingFilters,
     RunListingQueryOptions,
@@ -13,7 +15,7 @@ import {
     UserMessagePayload,
 } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
-import type { ExecutionResponse } from "@llumiverse/common";
+import { EnhancedExecutionRun, enhanceExecutionRun } from "./InteractionOutput.js";
 
 export interface FilterOption {
     id: string;
@@ -63,8 +65,15 @@ export class RunsApi extends ApiTopic {
      * @param id
      * @returns InteractionResult
      **/
-    retrieve<P = any>(id: string): Promise<ExecutionRun<P>> {
-        return this.get("/" + id);
+    async retrieve<ResultT = any, ParamsT = any>(id: string): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
+        const r = await this.get("/" + id);
+        return enhanceExecutionRun<ResultT, ParamsT>(r);
+    }
+
+    retrievePopulated<P = any>(id: string): Promise<PopulatedExecutionRun<P>> {
+        return this.get("/" + id, {
+            query: { populate: "true" },
+        });
     }
 
     /**
@@ -78,7 +87,7 @@ export class RunsApi extends ApiTopic {
         return this.get(`/filter-options/${field}`, { query });
     }
 
-    create(payload: RunCreatePayload): Promise<ExecutionRun> {
+    async create<ResultT = any, ParamsT = any>(payload: RunCreatePayload): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
         const sessionTags = (this.client as VertesiaClient).sessionTags;
         if (sessionTags) {
             let tags = Array.isArray(sessionTags) ? sessionTags : [sessionTags];
@@ -89,9 +98,10 @@ export class RunsApi extends ApiTopic {
             }
             payload = { ...payload, tags };
         }
-        return this.post("/", {
+        const r = await this.post("/", {
             payload,
         });
+        return enhanceExecutionRun<ResultT, ParamsT>(r);
     }
 
     /**

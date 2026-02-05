@@ -1,0 +1,1 @@
+{"version":3,"file":"frontmatter.js","sourceRoot":"","sources":["../../../src/parsers/frontmatter.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,OAAO,MAAM,MAAM,aAAa,CAAC;AAajC;;;;;GAKG;AACH,MAAM,UAAU,gBAAgB,CAAC,OAAe;IAC5C,MAAM,MAAM,GAAG,MAAM,CAAC,OAAO,CAAC,CAAC;IAE/B,OAAO;QACH,WAAW,EAAE,MAAM,CAAC,IAAI;QACxB,OAAO,EAAE,MAAM,CAAC,OAAO;QACvB,QAAQ,EAAE,OAAO;KACpB,CAAC;AACN,CAAC"}

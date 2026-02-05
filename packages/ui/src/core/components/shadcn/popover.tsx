@@ -3,15 +3,16 @@ import * as PopoverPrimitive from "@radix-ui/react-popover";
 
 import { cn } from "../libs/utils"
 import { JSX } from "react";
-import { useIsInModal } from "./dialog";
+import { useIsInModal } from "./modal/dialog";
+import { usePortalContainer } from "../../hooks/PortalContainerProvider";
 
-interface PopoverContextValue {
+export interface PopoverContextValue {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   hover: boolean;
   click: boolean;
 }
-const PopoverContext = React.createContext<PopoverContextValue | null>(null);
+export const PopoverContext = React.createContext<PopoverContextValue | null>(null);
 
 interface PopoverProps {
   _open?: boolean;
@@ -87,9 +88,10 @@ const PopoverContent = React.forwardRef<
   }
 
   const { setOpen, hover } = context;
+  const container = usePortalContainer();
 
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Portal container={container}>
       <PopoverPrimitive.Content
         ref={ref}
         align={align}

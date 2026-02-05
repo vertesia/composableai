@@ -1,0 +1,1 @@
+{"version":3,"file":"widget-compiler.d.ts","sourceRoot":"","sources":["../../../src/utils/widget-compiler.ts"],"names":[],"mappings":"AAAA;;GAEG;AAIH,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,aAAa,CAAC;AAChD,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,sBAAsB,CAAC;AAa3D;;;;;;;GAOG;AACH,wBAAsB,cAAc,CAChC,OAAO,EAAE,cAAc,EAAE,EACzB,SAAS,EAAE,MAAM,EACjB,MAAM,GAAE,YAAiB,GAC1B,OAAO,CAAC,MAAM,CAAC,CAiEjB"}

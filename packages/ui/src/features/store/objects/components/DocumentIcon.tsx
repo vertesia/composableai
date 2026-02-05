@@ -4,7 +4,6 @@ import { retrieveRendition } from '../../../utils'
 
 import { ContentObjectItem } from '@vertesia/common'
 import { Button, Card, CardContent, Separator, VTooltip } from "@vertesia/ui/core"
-import { NavLink } from "@vertesia/ui/router"
 import { useUserSession } from "@vertesia/ui/session"
 import { DocumentSelection } from '../DocumentSelectionProvider'
 import { Eye } from 'lucide-react'
@@ -14,6 +13,8 @@ interface DocumentIconProps {
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
     selection: DocumentSelection;
     onRowClick?: (object: ContentObjectItem) => void;
+    previewObject?: (objectId: string) => void;
+    selectedObject?: ContentObjectItem | null;
 }
 
 export function DocumentIconSkeleton({ isLoading = false, counts = 6 }: { isLoading?: boolean, counts?: number }) {
@@ -45,7 +46,7 @@ export function DocumentIconSkeleton({ isLoading = false, counts = 6 }: { isLoad
     )
 }
 
-export function DocumentIcon({ selection, document, onSelectionChange, onRowClick }: Readonly<DocumentIconProps>) {
+export function DocumentIcon({ selection, document, onSelectionChange, onRowClick, previewObject, selectedObject }: Readonly<DocumentIconProps>) {
     const { client } = useUserSession()
 
     const [renditionUrl, setRenditionUrl] = useState<string | undefined>(undefined)
@@ -67,7 +68,7 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
     }, [document])
 
     return (
-        <Card className="relative flex flex-col border h-fit" onClick={() => (onRowClick && onRowClick(document))}>
+        <Card className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''}`} onClick={() => (onRowClick && onRowClick(document))}>
             {
                 selection && (
                     <div
@@ -85,16 +86,14 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
             <div
                 className="absolute top-1 right-1 z-10 flex flex-col items-center"
             >
-                <NavLink
-                    topLevelNav
-                    href={`/store/objects/${document.id}`}
+                <Button
+                    variant="ghost" size="sm" title="Preivew Object" onClick={(e) => {
+                        e.stopPropagation();
+                        previewObject?.(document.id);
+                    }}
                 >
-                    <Button
-                        variant="ghost" size="sm" title="Open Object"
-                    >
-                        <Eye className={`size-4 ${renditionStatus === 'ready' ? 'text-muted' : 'text-white'}`} />
-                    </Button>
-                </NavLink>
+                    <Eye className={`size-4 ${renditionStatus === 'ready' ? 'text-muted' : 'text-white'}`} />
+                </Button>
             </div>
 
             {

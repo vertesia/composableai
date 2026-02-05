@@ -30,8 +30,9 @@ Complete list of supported types:
 1. **string** - Text display
 2. **number** - Numeric display
 3. **date** - Date/time display
-4. **objectLink** - Clickable object reference
-5. **typeLink** - Type reference display
+4. **objectId** - object id with preview button
+5. **objectName** - object name display
+6. **objectLink** - *(deprecated)* alias for objectId, kept for backward compatibility
 
 ### Column Types and Renderers
 Built-in renderers with parameters:
@@ -48,13 +49,13 @@ Built-in renderers with parameters:
    - `currency`: Format as currency (e.g., USD)
    - `decimals`: Number of decimal places (default: 2)
 
-3. **objectLink**
-   - `title`: Property to use as title (default: "title")
-   - `underline`: Link underline style (default: "hover")
-
-4. **date**
+3. **date**
    - `localized`: Use localized format (e.g., "LLL")
    - `relative`: Use relative time ("fromNow"/"toNow")
+
+4. **objectId**
+   - `slice`: Take substring from index
+
 
 ### Parameter Syntax
 Parameters are added using URL query string syntax:
@@ -92,12 +93,12 @@ Parameters are added using URL query string syntax:
     {
       "name": "ID",
       "field": "id",
-      "type": "string?slice=-7"
+      "type": "objectId?slice=-7"
     },
     {
       "name": "Name",
       "field": ".",
-      "type": "objectLink?title=name&underline=always"
+      "type": "objectName"
     },
     {
       "name": "Price",
@@ -126,7 +127,7 @@ Parameters are added using URL query string syntax:
     {
       "name": "Document",
       "field": ".",
-      "type": "objectLink"
+      "type": "objectName"
     },
     {
       "name": "Score",

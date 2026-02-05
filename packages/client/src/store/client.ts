@@ -1,6 +1,5 @@
 import { AbstractFetchClient, RequestError } from "@vertesia/api-fetch-client";
 import { BulkOperationPayload, BulkOperationResult } from "@vertesia/common";
-import { AgentsApi } from "./AgentsApi.js";
 import { CollectionsApi } from "./CollectionsApi.js";
 import { CommandsApi } from "./CommandsApi.js";
 import { EmbeddingsApi } from "./EmbeddingsApi.js";
@@ -9,10 +8,12 @@ import { FilesApi } from "./FilesApi.js";
 import { ObjectsApi } from "./ObjectsApi.js";
 import { TypesApi } from "./TypesApi.js";
 import { VERSION, VERSION_HEADER } from "./version.js";
+import { WorkersApi } from "./WorkersApi.js";
 import { WorkflowsApi } from "./WorkflowsApi.js";
 
 export interface ZenoClientProps {
     serverUrl?: string;
+    tokenServerUrl?: string;
     apikey?: string;
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
@@ -78,7 +79,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     workflows = new WorkflowsApi(this);
     files = new FilesApi(this);
     commands = new CommandsApi(this);
-    agents = new AgentsApi(this);
+    workers = new WorkersApi(this);
     collections = new CollectionsApi(this);
     embeddings = new EmbeddingsApi(this);
 }

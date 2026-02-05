@@ -1,4 +1,4 @@
-import { Button, DialogDescription, Heading, Portal, useToast, VModal, VModalBody, VModalFooter, VModalTitle, VTabs, VTabsBar, VTabsPanel } from "@vertesia/ui/core";
+import { Button, DialogDescription, Heading, Portal, useToast, Modal, ModalBody, ModalFooter, ModalTitle, Tabs, TabsBar, TabsPanel } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
 import { CreateCollectionForm, SelectCollection } from "../../../collections";
@@ -41,17 +41,17 @@ interface SelectCollectionModalProps {
 }
 function SelectCollectionModal({ isOpen, onClose, objectIds }: SelectCollectionModalProps) {
     return (
-        <VModal isOpen={isOpen} onClose={onClose} className="max-w-lg w-full min-w-0 overflow-hidden">
-            <VModalTitle className="flex flex-col min-w-0 overflow-hidden">
+        <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg w-full min-w-0 overflow-hidden">
+            <ModalTitle className="flex flex-col min-w-0 overflow-hidden">
                 Add to a Collection
-            </VModalTitle>
+            </ModalTitle>
             <DialogDescription className="min-w-0 overflow-hidden">
                 Add the selected objects to an existing collection or create a new one.
             </DialogDescription>
             <div className="min-w-0 max-w-full overflow-hidden">
                 <AddToCollectionForm onClose={onClose} objectIds={objectIds} />
             </div>
-        </VModal>
+        </Modal>
     )
 }
 
@@ -85,8 +85,14 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
         });
     }
 
-    const onCollectionChange = (collectionId: string | undefined) => {
-        setSelectedCollectionId(collectionId);
+    const onCollectionChange = (collectionId: string | string[] | undefined, _collection?: any) => {
+        if (typeof collectionId === "string" || typeof collectionId === "undefined") {
+            setSelectedCollectionId(collectionId);
+        } else if (Array.isArray(collectionId) && collectionId.length > 0) {
+            setSelectedCollectionId(collectionId[0]);
+        } else {
+            setSelectedCollectionId(undefined);
+        }
     };
 
     const tabs = [
@@ -96,19 +102,19 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
             content: (
                 <div className="p-4 min-w-0 max-w-full overflow-hidden">
                     <Heading level={5}>Choose from existing collections</Heading>
-                    <VModalBody className="min-w-0 max-w-full overflow-hidden">
+                    <ModalBody className="min-w-0 max-w-full overflow-hidden">
                         <div className="mb-4 min-w-0 max-w-full overflow-hidden">
                             <SelectCollection onChange={onCollectionChange} value={selectedCollectionId} />
                         </div>
-                    </VModalBody>
-                    <VModalFooter>
+                    </ModalBody>
+                    <ModalFooter>
                         <Button
                             isDisabled={!selectedCollectionId}
                             onClick={() => selectedCollectionId && onAddToCollection({ collectionId: selectedCollectionId })}
                         >
                             Add to Collection
                         </Button>
-                    </VModalFooter>
+                    </ModalFooter>
                 </div>
             )
         },
@@ -123,9 +129,9 @@ function AddToCollectionForm({ onClose, objectIds }: AddToCollectionFormProps) {
     ];
 
     return (
-        <VTabs defaultValue="select" tabs={tabs} fullWidth>
-            <VTabsBar />
-            <VTabsPanel />
-        </VTabs>
+        <Tabs defaultValue="select" tabs={tabs} fullWidth>
+            <TabsBar />
+            <TabsPanel />
+        </Tabs>
     )
 }

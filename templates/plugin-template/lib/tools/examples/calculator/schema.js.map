@@ -1,0 +1,1 @@
+{"version":3,"file":"schema.js","sources":["../../../../src/src/tool-server/tools/examples/calculator/schema.ts"],"sourcesContent":[null],"names":[],"mappings":"AAMO,MAAM,MAAM,GAAG;AAClB,IAAA,IAAI,EAAE,QAAQ;AACd,IAAA,UAAU,EAAE;AACR,QAAA,UAAU,EAAE;AACR,YAAA,IAAI,EAAE,QAAQ;AACd,YAAA,WAAW,EAAE;AAChB;AACJ,KAAA;IACD,QAAQ,EAAE,CAAC,YAAY;;;;;"}

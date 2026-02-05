@@ -71,8 +71,8 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
         params.delete('filters');
       }
 
-      const newUrl = `${window.location.pathname}?${params.toString()}`;
-      window.history.replaceState({}, '', newUrl);
+      const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+      window.history.replaceState(window.history.state || {}, '', newUrl);
     } catch (error) {
       console.error("Failed to update URL with filters:", error);
     }
@@ -330,6 +330,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
             )
           }
           <CommandList>
+            <CommandEmpty>No matching filters</CommandEmpty>
             <CommandGroup>
               {!selectedView ? getAvailableFilterGroups() : renderFilterOptions()}
             </CommandGroup>
@@ -350,7 +351,7 @@ const FilterBar = ({ className }: { className?: string }) => {
   );
 };
 
-const FilterClear = ({ className }: { className?: string }) => {
+const FilterClear = ({ className }: { className?: string}) => {
   const { filters, setFilters } = React.useContext(FilterContext);
 
   const hasActiveFilters = filters.filter((filter) => filter.value?.length > 0).length > 0;
