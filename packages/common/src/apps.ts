@@ -459,10 +459,10 @@ export interface CompositeAppLogoOverrides {
 
 
 /**
- * Message banner configuration for the shell header.
+ * Message banner overrides for the shell header.
 */
 export type CompositeAppMessageStyle = 'foreground' | 'info' | 'success' | 'attention' | 'destructive';
-export interface CompositeAppMessageConfig {
+export interface CompositeAppMessageOverrides {
     /** Message text to display */
     text?: string;
     /** Whether the message is visible (defaults to true) */
@@ -472,9 +472,9 @@ export interface CompositeAppMessageConfig {
 }
 
 /**
- * Switcher visibility configuration for the CompositeApp header.
+ * Switcher visibility overrides for the CompositeApp header.
  */
-export interface CompositeAppSwitchersConfig {
+export interface CompositeAppSwitchersOverrides {
     /** Whether to show the organization switcher (defaults to true) */
     showOrganization?: boolean;
     /** Whether to show the project switcher (defaults to true) */
@@ -510,10 +510,10 @@ export interface CompositeAppConfig {
     card?: CompositeAppCardOverrides;
     /** Optional logo overrides (replaces default Vertesia logo) */
     logo?: CompositeAppLogoOverrides;
-    /** Optional message banner configuration */
-    message?: CompositeAppMessageConfig;
-    /** Optional switcher visibility configuration */
-    switchers?: CompositeAppSwitchersConfig;
+    /** Optional message banner overrides */
+    message?: CompositeAppMessageOverrides;
+    /** Optional switcher visibility overrides */
+    switchers?: CompositeAppSwitchersOverrides;
     /** List of apps to include in the CompositeApp */
     apps: CompositeAppEntry[];
 }
