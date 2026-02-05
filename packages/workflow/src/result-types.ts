@@ -5,7 +5,11 @@
  * The result of a text extraction operation.
  */
 export interface TextExtractionResult {
-    objectId: string;
+    objectId?: string;
+    file?: {   
+        source_url: string;
+        result_url?: string;
+    }
     status: TextExtractionStatus;
     hasText: boolean;
     message?: string;
