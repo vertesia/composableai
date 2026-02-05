@@ -488,6 +488,8 @@ export interface CompositeAppSwitchersConfig {
  * shared, Vertesia-managed manifest across accounts).
  */
 export interface CompositeAppCardOverrides {
+    /** Whether to show the CompositeApp card in App Portal (default: true) */
+    visible?: boolean;
     /** Override the card label (default: "Composite App") */
     label?: string;
     /** Override the card description */
@@ -504,9 +506,7 @@ export interface CompositeAppCardOverrides {
  * Used as the MongoDB model for persisting CompositeApp configurations.
  */
 export interface CompositeAppConfig {
-    /** Whether to show the CompositeApp card in App Portal (default: true) */
-    showCard?: boolean;
-    /** Card display overrides */
+    /** Card display overrides (includes visibility) */
     card?: CompositeAppCardOverrides;
     /** Optional logo overrides (replaces default Vertesia logo) */
     logo?: CompositeAppLogoOverrides;
