@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/tools-sdk",
-    "version": "0.81.0",
+    "version": "1.0.0-dev.20260203.130115Z",
     "description": "Tools SDK - utilities for building remote tools",
     "type": "module",
     "types": "./lib/types/index.d.ts",
@@ -32,7 +32,7 @@
         "outDir": "lib"
     },
     "peerDependencies": {
-        "hono": "^4.11.4"
+        "hono": "^4.11.7"
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",

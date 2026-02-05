@@ -1,9 +1,19 @@
-import * as React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
+import * as React from "react";
+import { ReactNode } from "react";
 
 import { cn } from "../libs/utils";
-import { Tab, TabsContext as _TabContext } from '../tabs/TabsContext.js';
-import { VSelectBox } from "./selectBox";
+import { SelectBox } from "./selectBox";
+
+export interface Tab {
+    name: string;
+    current?: boolean;
+    href?: string;
+    label: ReactNode;
+    content: ReactNode;
+    disabled?: boolean;
+    is_allowed?: boolean;
+}
 
 const TabsContext = React.createContext<{
   size?: number;
@@ -39,7 +49,7 @@ interface TabsProps {
   keepMounted?: boolean;
 }
 
-const VTabs = ({
+const Tabs = ({
   tabs,
   defaultValue,
   current,
@@ -52,6 +62,12 @@ const VTabs = ({
   updateHash = true,
   keepMounted = false
 }: TabsProps) => {
+  // Filter tabs based on is_allowed (undefined or true means visible)
+  const visibleTabs = React.useMemo(() =>
+    tabs.filter(tab => tab.is_allowed === undefined || tab.is_allowed === true),
+    [tabs]
+  );
+
   // Initialize value
   const [value, setValue] = React.useState(() => {
     // First check if current is provided
@@ -63,14 +79,14 @@ const VTabs = ({
     // Then check hash
     const hash = window.location.hash;
     const currentTab = hash ? hash.substring(1) : undefined;
-    
-    // Check if the tab from hash exists in tabs
-    if (currentTab && tabs.some(tab => tab.name === currentTab)) {
+
+    // Check if the tab from hash exists in visible tabs
+    if (currentTab && visibleTabs.some(tab => tab.name === currentTab)) {
       return currentTab;
     }
-    
-    // Fall back to default or first tab
-    return defaultValue || tabs[0]?.name;
+
+    // Fall back to default or first visible tab
+    return defaultValue || visibleTabs[0]?.name;
   });
 
   // Update when current prop changes (but don't create a loop)
@@ -88,9 +104,9 @@ const VTabs = ({
     const handleHashChange = () => {
       const hash = window.location.hash;
       const currentTab = hash ? hash.substring(1) : undefined;
-      
-      // Only update if the tab exists in tabs
-      if (currentTab && tabs.some(tab => tab.name === currentTab)) {
+
+      // Only update if the tab exists in visible tabs
+      if (currentTab && visibleTabs.some(tab => tab.name === currentTab)) {
         setValue(currentTab);
       } else if (!hash && defaultValue) {
         // If no hash, fall back to default
@@ -103,7 +119,7 @@ const VTabs = ({
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [current, tabs, defaultValue]);
+  }, [current, visibleTabs, defaultValue]);
 
   const handleValueChange = (newValue: string) => {
     setValue(newValue);
@@ -126,9 +142,9 @@ const VTabs = ({
   }, [handleValueChange]);
 
   return (
-    <TabsContext.Provider value={{ tabs, size: fullWidth ? tabs.length : 0, current: value, setTab, responsive: responsive, variant, updateHash, keepMounted }}>
+    <TabsContext.Provider value={{ tabs: visibleTabs, size: fullWidth ? visibleTabs.length : 0, current: value, setTab, responsive: responsive, variant, updateHash, keepMounted }}>
       <TabsPrimitive.Root
-        defaultValue={value || tabs[0]?.name}
+        defaultValue={value || visibleTabs[0]?.name}
         value={value}
         onValueChange={handleValueChange}
         className={className}
@@ -139,7 +155,7 @@ const VTabs = ({
   );
 };
 
-const VTabsBar = ({ className }: { className?: string }) => {
+const TabsBar = ({ className }: { className?: string }) => {
   const { tabs, size, current, setTab, responsive, variant, updateHash } = React.useContext(TabsContext);
 
   const fullWidth = size !== 0;
@@ -168,7 +184,7 @@ const VTabsBar = ({ className }: { className?: string }) => {
     <>
       {responsive && (
         <div className="px-2 block lg:hidden">
-          <VSelectBox
+          <SelectBox
             label="Tab"
             className={(className)}
             options={tabs}
@@ -182,6 +198,7 @@ const VTabsBar = ({ className }: { className?: string }) => {
       )}
       <TabsList size={size} variant={variant} className={cn((fullWidth ? "w-full" : ""), className, (responsive ? "hidden lg:flex" : ""))}>
         {tabs.map((tab) => (
+          
           <TabsTrigger
             key={tab.name}
             value={tab.name}
@@ -198,7 +215,7 @@ const VTabsBar = ({ className }: { className?: string }) => {
   );
 };
 
-const VTabsPanel = ({ className }: { className?: string }) => {
+const TabsPanel = ({ className }: { className?: string }) => {
   const { tabs, keepMounted, current } = React.useContext(TabsContext);
 
   if (!tabs) return null;
@@ -309,4 +326,4 @@ const TabsContent: React.ForwardRefExoticComponent<TabsContentProps & React.RefA
 ));
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
-export { VTabs, VTabsBar, VTabsPanel, TabsList, TabsTrigger, TabsContent };
+export { Tabs, TabsBar, TabsContent, TabsList, TabsPanel, TabsTrigger };

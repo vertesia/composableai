@@ -1,194 +1,101 @@
 #!/bin/bash
 set -e
 
-# Script to publish all packages to NPM
-# Usage: publish-all-packages.sh <ref> [dry-run] [version-type]
-#   ref: Git reference (main or preview)
-#   dry-run: Optional boolean (true/false) for dry run mode
-#   version-type: Optional version bump type (patch, minor, major) - only used for preview
+# Script to publish all composableai packages to NPM
+# Usage: publish-all-packages.sh --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]
+#   --ref: Git reference (main for dev builds, preview for releases)
+#   --release-type: Release type (release, snapshot). Release creates stable versions, snapshot creates dev versions.
+#   --bump-type: Bump type (minor, patch, keep). How to change the version.
+#   --dry-run: Optional flag for dry run mode (value can be true, false, or omitted which means true)
 
-REF=$1
-DRY_RUN=${2:-false}
-VERSION_TYPE=${3:-patch}
+# =============================================================================
+# Functions
+# =============================================================================
 
-if [ -z "$REF" ]; then
-  echo "Error: Missing required argument: ref"
-  echo "Usage: $0 <ref> [dry-run] [version-type]"
-  exit 1
-fi
+update_package_versions() {
+  echo "=== Updating composableai package versions ==="
 
-# Validate version type
-if [[ ! "$VERSION_TYPE" =~ ^(patch|minor|major)$ ]]; then
-  echo "Error: Invalid version type '$VERSION_TYPE'. Must be patch, minor, or major."
-  exit 1
-fi
-
-# Check if dry run mode is enabled
-if [ "$DRY_RUN" = "true" ]; then
-  echo "=== DRY RUN MODE ENABLED ==="
-  DRY_RUN_FLAG="--dry-run"
-else
-  DRY_RUN_FLAG=""
-fi
-
-# Step 1: Publish llumiverse packages (only for main branch)
-if [ "$REF" = "main" ]; then
-  echo "=== Publishing llumiverse packages ==="
-
-  # Get llumiverse base version (all packages should have same version)
-  # Use date/time format without leading zeros to avoid npm stripping them
-  llumiverse_base_version=$(cd llumiverse && pnpm pkg get version | tr -d '"' && cd ..)
-  date_part=$(date -u +"%Y%m%d")
-  time_part=$(date -u +"%H%M%S" | sed 's/^0*//')  # Remove leading zeros
-  llumiverse_dev_version="${llumiverse_base_version}-dev.${date_part}.${time_part}"
-
-  echo "Updating llumiverse to dev version ${llumiverse_dev_version}"
-
-  # Update llumiverse root package.json
-  cd llumiverse
-  npm version ${llumiverse_dev_version} --no-git-tag-version --workspaces=false
-
-  # Update all llumiverse workspace packages
-  pnpm -r --filter "./*" exec npm version ${llumiverse_dev_version} --no-git-tag-version
-
-  # Publish all llumiverse packages
-  pnpm -r --filter "./*" exec pnpm publish --access public --tag dev --no-git-checks ${DRY_RUN_FLAG}
-
-  cd ..
-
-  # Update workspace links after llumiverse version changes
-  echo "=== Updating workspace links ==="
-  pnpm install --frozen-lockfile --force
-fi
-
-# Step 2: Update all composableai package versions first (before publishing)
-echo "=== Updating composableai package versions ==="
-
-if [ "$REF" = "main" ]; then
-  # Main: create dev version with date/time stamp
-  # Use format without leading zeros to avoid npm stripping them
-  pkg_version=$(pnpm pkg get version | tr -d '"')
-  date_part=$(date -u +"%Y%m%d")
-  time_part=$(date -u +"%H%M%S" | sed 's/^0*//')  # Remove leading zeros
-  dev_version="${pkg_version}-dev.${date_part}.${time_part}"
-  echo "Updating to dev version ${dev_version}"
-
-  # Update root package.json
-  npm version ${dev_version} --no-git-tag-version --workspaces=false
-
-  # Update all workspace packages
-  pnpm -r --filter "./packages/**" exec npm version ${dev_version} --no-git-tag-version
-elif [ "$REF" = "preview" ]; then
-  # Preview: bump version
-  echo "Bumping ${VERSION_TYPE} version"
-
-  # Update root package.json
-  npm version ${VERSION_TYPE} --no-git-tag-version --workspaces=false
-
-  # Get the new version from root
-  new_version=$(pnpm pkg get version | tr -d '"')
-  echo "Setting all packages to version ${new_version}"
-
-  # Set all workspace packages to the same version as root
-  pnpm -r --filter "./packages/**" exec npm version ${new_version} --no-git-tag-version
-fi
-
-# Step 3: Publish composableai packages (after all versions are updated)
-echo "=== Publishing composableai packages ==="
-
-if [ "$REF" = "main" ]; then
-  npm_tag="dev"
-elif [ "$REF" = "preview" ]; then
-  npm_tag="latest"
-fi
-
-for pkg_dir in packages/*; do
-  if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
-    pkg_name=$(basename "$pkg_dir")
-    cd "$pkg_dir"
-
-    pkg_version=$(pnpm pkg get version | tr -d '"')
-    echo "Publishing ${pkg_name}@${pkg_version} with tag ${npm_tag}"
-
-    # Publish
-    if [ -n "$DRY_RUN_FLAG" ]; then
-      pnpm publish --access public --tag ${npm_tag} --no-git-checks ${DRY_RUN_FLAG}
-    else
-      pnpm publish --access public --tag ${npm_tag} --no-git-checks
-    fi
-
-    cd ../..
+  # Determine npm tag based on release type
+  if [ "$RELEASE_TYPE" = "snapshot" ]; then
+    npm_tag="dev"
+  else
+    npm_tag="latest"
   fi
-done
 
-# Step 4: Verify published packages (only dry-run mode)
-if [ "$DRY_RUN" = "true" ]; then
+  # Get current version and strip any existing -dev* suffix to get base version
+  current_version=$(pnpm pkg get version | tr -d '"')
+  base_version=$(echo "$current_version" | sed 's/-dev.*//')
+
+  # Apply bump if needed (for both snapshot and release)
+  if [ "$BUMP_TYPE" = "minor" ]; then
+    # Bump minor version: X.Y.Z -> X.(Y+1).0
+    IFS='.' read -r major minor patch <<< "$base_version"
+    base_version="${major}.$((minor + 1)).0"
+    echo "Bumped minor version to ${base_version}"
+  elif [ "$BUMP_TYPE" = "patch" ]; then
+    # Bump patch version: X.Y.Z -> X.Y.(Z+1)
+    IFS='.' read -r major minor patch <<< "$base_version"
+    base_version="${major}.${minor}.$((patch + 1))"
+    echo "Bumped patch version to ${base_version}"
+  fi
+
+  if [ "$RELEASE_TYPE" = "snapshot" ]; then
+    # Snapshot: create dev version with date/time stamp
+    date_part=$(date -u +"%Y%m%d")
+    time_part=$(date -u +"%H%M%SZ")
+    new_version="${base_version}-dev.${date_part}.${time_part}"
+    echo "Generating new snapshot version ${new_version}"
+  else
+    # Release: use base version as-is
+    new_version="${base_version}"
+    echo "Updating to release version ${new_version}"
+  fi
+
+  # Update root package.json
+  npm version "${new_version}" --no-git-tag-version --workspaces=false
+
+  # Update all workspace packages (excluding llumiverse)
+  pnpm -r --filter "./packages/**" exec npm version "${new_version}" --no-git-tag-version
+}
+
+publish_packages() {
+  echo "=== Publishing composableai packages ==="
+
+  for pkg_dir in packages/*; do
+    if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
+      pkg_name=$(basename "$pkg_dir")
+      cd "$pkg_dir"
+
+      pkg_version=$(pnpm pkg get version | tr -d '"')
+
+      # Fail if npm_tag is not set (safety check to prevent publishing without explicit tag)
+      if [ -z "$npm_tag" ]; then
+        echo "Error: npm_tag is not set. This indicates an invalid ref/version-type combination."
+        exit 1
+      fi
+
+      echo "Publishing @vertesia/${pkg_name}@${pkg_version} with tag ${npm_tag}"
+
+      # Publish
+      if [ -n "$DRY_RUN_FLAG" ]; then
+        pnpm publish --access public --tag "${npm_tag}" --no-git-checks ${DRY_RUN_FLAG}
+      else
+        pnpm publish --access public --tag "${npm_tag}" --no-git-checks
+      fi
+
+      cd ../..
+    fi
+  done
+}
+
+verify_published_packages() {
   echo "=== Verifying package tarballs ==="
 
   # Array to track failed packages
   failed_packages=()
 
-  # Verify llumiverse packages (only for main branch)
-  if [ "$REF" = "main" ]; then
-    echo ""
-    echo "=== Verifying llumiverse packages ==="
-    cd llumiverse
-    for pkg in common core drivers; do
-      if [ -d "$pkg" ]; then
-        cd "$pkg"
-        pkg_name="llumiverse-${pkg}"
-
-        echo "Packing ${pkg_name}..."
-        pnpm pack --pack-destination . > /dev/null 2>&1
-        tarball=$(ls -t *.tgz 2>/dev/null | head -1)
-
-        if [ -n "$tarball" ] && [ -f "$tarball" ]; then
-          echo "Checking ${pkg_name}:"
-          packed_json=$(tar -xzOf "$tarball" package/package.json)
-
-          # Check version
-          packed_version=$(echo "$packed_json" | grep '"version":' | head -1 | sed 's/.*: "\(.*\)".*/\1/')
-          has_issues=false
-
-          if [ "$packed_version" = "${llumiverse_dev_version}" ]; then
-            echo "  ✓ Version: ${packed_version}"
-          else
-            echo "  ✗ WARNING: Version mismatch (expected: ${llumiverse_dev_version}, got: ${packed_version})"
-            has_issues=true
-          fi
-
-          # Extract dependencies section
-          deps_section=$(echo "$packed_json" | sed -n '/"dependencies":/,/^  [}]/p')
-
-          # Check for @llumiverse dependencies
-          llumiverse_deps=$(echo "$deps_section" | grep '"@llumiverse/' || true)
-          if [ -n "$llumiverse_deps" ]; then
-            echo "$llumiverse_deps"
-            if echo "$llumiverse_deps" | grep -q "${llumiverse_dev_version}"; then
-              echo "  ✓ llumiverse dependencies: ${llumiverse_dev_version}"
-            else
-              echo "  ✗ WARNING: llumiverse dependencies version mismatch"
-              has_issues=true
-            fi
-          fi
-
-          # Add to failed packages if there were issues
-          if [ "$has_issues" = true ]; then
-            failed_packages+=("${pkg_name}")
-          fi
-
-          # Clean up tarball
-          rm -f "$tarball"
-        fi
-
-        cd ..
-      fi
-    done
-    cd ..
-    echo ""
-  fi
-
-  echo "=== Verifying composableai packages ==="
+  # Get the expected version from root package.json
+  expected_version=$(pnpm pkg get version | tr -d '"')
 
   for pkg_dir in packages/*; do
     if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
@@ -202,8 +109,19 @@ if [ "$DRY_RUN" = "true" ]; then
 
       if [ -n "$tarball" ] && [ -f "$tarball" ]; then
         # Extract package.json from tarball
-        echo "Checking dependencies in ${pkg_name}:"
+        echo "Checking @vertesia/${pkg_name}:"
         packed_json=$(tar -xzOf "$tarball" package/package.json)
+
+        # Check version
+        packed_version=$(echo "$packed_json" | grep '"version":' | head -1 | sed 's/.*: "\(.*\)".*/\1/')
+        has_issues=false
+
+        if [ "$packed_version" = "${expected_version}" ]; then
+          echo "  ✓ Version: ${packed_version}"
+        else
+          echo "  ✗ WARNING: Version mismatch (expected: ${expected_version}, got: ${packed_version})"
+          has_issues=true
+        fi
 
         # Extract dependencies section
         deps_section=$(echo "$packed_json" | sed -n '/"dependencies":/,/^  [}]/p')
@@ -211,30 +129,9 @@ if [ "$DRY_RUN" = "true" ]; then
         # Show all @llumiverse and @vertesia dependencies
         echo "$deps_section" | grep -E '"@(llumiverse|vertesia)/' | head -20 || echo "  (no llumiverse or vertesia dependencies)"
 
-        # Track if this package has issues
-        has_issues=false
-
-        # Verify llumiverse dependencies (only for main branch)
-        llumiverse_deps=$(echo "$deps_section" | grep '"@llumiverse/' || true)
-        if [ "$REF" = "main" ] && [ -n "$llumiverse_deps" ]; then
-          if echo "$llumiverse_deps" | grep -q "${llumiverse_dev_version}"; then
-            echo "  ✓ llumiverse dependencies: ${llumiverse_dev_version}"
-          else
-            echo "  ✗ WARNING: llumiverse dependencies version mismatch"
-            has_issues=true
-          fi
-        fi
-
         # Verify vertesia dependencies
         vertesia_deps=$(echo "$deps_section" | grep '"@vertesia/' || true)
         if [ -n "$vertesia_deps" ]; then
-          if [ "$REF" = "main" ]; then
-            expected_version="${dev_version}"
-          else
-            # For preview, get the actual version from package.json
-            expected_version=$(pnpm pkg get version | tr -d '"')
-          fi
-
           if echo "$vertesia_deps" | grep -q "${expected_version}"; then
             echo "  ✓ vertesia dependencies: ${expected_version}"
           else
@@ -267,19 +164,186 @@ if [ "$DRY_RUN" = "true" ]; then
       echo "  - ${pkg}"
     done
   fi
-fi
+}
 
-# Step 5: Commit version changes (only for preview + not dry-run)
-if [ "$REF" = "preview" ] && [ "$DRY_RUN" = "false" ]; then
+commit_and_push() {
   echo "=== Committing version changes ==="
+
+  # Get the version from root package.json
+  version=$(pnpm pkg get version | tr -d '"')
 
   git config user.email "github-actions[bot]@users.noreply.github.com"
   git config user.name "github-actions[bot]"
   git add .
-  git commit -m "chore: bump package versions (${VERSION_TYPE})"
-  git push origin ${REF}
+
+  if [ "$RELEASE_TYPE" = "release" ]; then
+    git commit -m "chore: release ${version}"
+  else
+    git commit -m "chore: snapshot ${version}"
+  fi
+
+  git push origin "$REF"
 
   echo "Version changes pushed to ${REF}"
+}
+
+write_github_summary() {
+  # Skip if not running in GitHub Actions
+  if [ -z "$GITHUB_STEP_SUMMARY" ]; then
+    echo "Skipping GitHub summary (not running in GitHub Actions)"
+    return
+  fi
+
+  echo "=== Writing GitHub Summary ==="
+
+  # Get the version from root package.json
+  version=$(pnpm pkg get version | tr -d '"')
+
+  # Determine title based on dry run mode
+  if [ "$DRY_RUN" = "true" ]; then
+    title="## 🧪 Dry Run Summary"
+  else
+    title="## 📦 Published Packages"
+  fi
+
+  # Write summary table
+  cat >> "$GITHUB_STEP_SUMMARY" << EOF
+${title}
+
+| Package | Version |
+| ------- | ------- |
+EOF
+
+  for pkg_dir in packages/*; do
+    if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
+      pkg_name=$(basename "$pkg_dir")
+      pkg_url="https://www.npmjs.com/package/@vertesia/${pkg_name}?activeTab=versions"
+      echo "| \`@vertesia/${pkg_name}\` | [${version}](${pkg_url}) |" >> "$GITHUB_STEP_SUMMARY"
+    fi
+  done
+
+  # Add metadata
+  cat >> "$GITHUB_STEP_SUMMARY" << EOF
+
+**NPM Tag:** \`${npm_tag}\`
+**Branch:** \`${REF}\`
+**Dry Run:** \`${DRY_RUN}\`
+EOF
+}
+
+# =============================================================================
+# Argument parsing and validation
+# =============================================================================
+
+# Default values
+REF=""
+DRY_RUN=false
+RELEASE_TYPE=""
+BUMP_TYPE=""
+
+# Parse named arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --ref)
+      REF="$2"
+      shift 2
+      ;;
+    --dry-run)
+      # Check if next argument is a value (true/false) or another flag/end of args
+      if [[ -n "$2" && "$2" != --* ]]; then
+        if [[ "$2" = "true" ]]; then
+          DRY_RUN=true
+        elif [[ "$2" = "false" ]]; then
+          DRY_RUN=false
+        else
+          echo "Error: Invalid value for --dry-run '$2'. Must be 'true' or 'false'."
+          exit 1
+        fi
+        shift 2
+      else
+        # No value provided, default to true
+        DRY_RUN=true
+        shift
+      fi
+      ;;
+    --release-type)
+      RELEASE_TYPE="$2"
+      shift 2
+      ;;
+    --bump-type)
+      BUMP_TYPE="$2"
+      shift 2
+      ;;
+    *)
+      echo "Error: Unknown argument '$1'"
+      echo "Usage: $0 --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]"
+      exit 1
+      ;;
+  esac
+done
+
+# Validate required arguments
+if [ -z "$REF" ]; then
+  echo "Error: Missing required argument: --ref"
+  echo "Usage: $0 --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]"
+  exit 1
 fi
+
+if [ -z "$RELEASE_TYPE" ]; then
+  echo "Error: Missing required argument: --release-type"
+  echo "Usage: $0 --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]"
+  exit 1
+fi
+
+if [ -z "$BUMP_TYPE" ]; then
+  echo "Error: Missing required argument: --bump-type"
+  echo "Usage: $0 --ref <ref> --release-type <type> --bump-type <type> [--dry-run [true|false]]"
+  exit 1
+fi
+
+# Validate release type
+if [[ ! "$RELEASE_TYPE" =~ ^(release|snapshot)$ ]]; then
+  echo "Error: Invalid release type '$RELEASE_TYPE'. Must be 'release' or 'snapshot'."
+  exit 1
+fi
+
+# Validate bump type
+if [[ ! "$BUMP_TYPE" =~ ^(minor|patch|keep)$ ]]; then
+  echo "Error: Invalid bump type '$BUMP_TYPE'. Must be 'minor', 'patch', or 'keep'."
+  exit 1
+fi
+
+# Validate that releases can only be published from 'preview' branch
+if [ "$RELEASE_TYPE" = "release" ] && [ "$REF" != "preview" ]; then
+  echo "Error: Release versions can only be published from the 'preview' branch."
+  echo "Current branch: $REF"
+  exit 1
+fi
+
+# Set dry run flag
+if [ "$DRY_RUN" = "true" ]; then
+  echo "=== DRY RUN MODE ENABLED ==="
+  DRY_RUN_FLAG="--dry-run"
+else
+  DRY_RUN_FLAG=""
+fi
+
+# =============================================================================
+# Main flow
+# =============================================================================
+
+update_package_versions
+
+if [ "$DRY_RUN" = "false" ]; then
+  commit_and_push
+fi
+
+publish_packages
+
+if [ "$DRY_RUN" = "true" ]; then
+  verify_published_packages
+fi
+
+write_github_summary
 
 echo "=== Done ==="

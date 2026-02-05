@@ -353,6 +353,7 @@ export interface ContentObjectTypeItem extends BaseObject {
      */
     strict_mode?: boolean;
 }
+export type InCodeTypeDefinition = Pick<ContentObjectTypeItem, 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'>;
 
 export interface CreateContentObjectTypePayload
     extends Omit<

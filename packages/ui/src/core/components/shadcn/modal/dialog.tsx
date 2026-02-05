@@ -1,11 +1,12 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { cn } from "../libs/utils";
+import { cn } from "../../libs/utils";
 
 import { X } from "lucide-react";
-import { Button } from "./button";
-import { VisuallyHidden } from "../libs/visuallyHidden";
+import { Button } from "../button";
+import { VisuallyHidden } from "../../libs/visuallyHidden";
 import { createContext, useContext } from "react";
+import { usePortalContainer } from "../../../hooks/PortalContainerProvider";
 
 interface ModalProps {
     children: React.ReactNode | React.ReactNode[];
@@ -27,7 +28,7 @@ export function ModalContextProvider({ children }: { children: React.ReactNode }
     return <ModalContext.Provider value={true}>{children}</ModalContext.Provider>
 }
 
-export function VModal({
+export function Modal({
     className,
     children,
     isOpen,
@@ -49,13 +50,13 @@ export function VModal({
             case "sm":
                 return "max-w-[20vw]";
             case "md":
-                return "max-w-[40vw]";
+                return "max-w-[60vw] lg:max-w-[40vw]";
             case "lg":
-                return "max-w-[60vw]";
+                return "max-w-[80vw] md:max-w-[60vw]";
             case "xl":
-                return "max-w-[80vw]";
+                return "max-w-[95vw] lg:max-w-[80vw]";
             default:
-                return "max-w-[40vw]";
+                return "max-w-[60vw] lg:max-w-[40vw]";
         }
     }
 
@@ -109,13 +110,14 @@ export function VModal({
     );
 }
 
-export const VModalTitle = ({
+export const ModalTitle = ({
     children,
     show = true,
     className,
     description,
+    showDivider = false,
     ...props
-}: React.HTMLAttributes<HTMLHeadingElement> & { show?: boolean; description?: string }) => {
+}: React.HTMLAttributes<HTMLHeadingElement> & { show?: boolean; description?: string, showDivider?: boolean }) => {
     if (!show) {
         return (
             <VisuallyHidden>
@@ -127,7 +129,11 @@ export const VModalTitle = ({
     return (
         <>
             <DialogTitle
-                className={cn("text-lg font-semibold leading-6 tracking-tight", { 'py-2': !description }, className)}
+                className={cn(
+                    showDivider ? "border-b-solid border-b border-b-1 pb-2 mb-4" : "",
+                    "text-lg font-semibold leading-6 tracking-tight", 
+                    { 'py-2': !description }, 
+                    className)}
                 {...props}
             >
                 {children}
@@ -141,7 +147,7 @@ export const VModalTitle = ({
     );
 };
 
-export const VModalBody = ({
+export const ModalBody = ({
     children,
     className,
     ...props
@@ -155,9 +161,11 @@ export const VModalBody = ({
 
 interface ModalFooterProps extends React.HTMLAttributes<HTMLDivElement> {
     align?: "left" | "right" | "center";
+    children: React.ReactNode | React.ReactNode[];
+    className?: string;
 }
 
-export const VModalFooter = ({
+export const ModalFooter = ({
     align = "right",
     children,
     className,
@@ -205,25 +213,28 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const DialogContent = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Content>,
     React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-    <DialogPortal>
-        <DialogOverlay />
-        <DialogPrimitive.Content
-            ref={ref}
-            autoFocus={false}
-            onOpenAutoFocus={(event) => {
-                event.preventDefault();
-            }}
-            className={cn(
-                "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
-                className
-            )}
-            {...props}
-        >
-            {children}
-        </DialogPrimitive.Content>
-    </DialogPortal>
-));
+>(({ className, children, ...props }, ref) => {
+    const container = usePortalContainer();
+    return (
+        <DialogPortal container={container}>
+            <DialogOverlay />
+            <DialogPrimitive.Content
+                ref={ref}
+                autoFocus={false}
+                onOpenAutoFocus={(event) => {
+                    event.preventDefault();
+                }}
+                className={cn(
+                    "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+                    className
+                )}
+                {...props}
+            >
+                {children}
+            </DialogPrimitive.Content>
+        </DialogPortal>
+    );
+});
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogDescription = React.forwardRef<

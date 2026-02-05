@@ -4,7 +4,7 @@ import { Command as CommandPrimitive } from "cmdk"
 import { Search } from "lucide-react"
 
 import { cn } from "../libs/utils"
-import { Dialog, DialogContent } from "./dialog"
+import { Dialog, DialogContent } from "./modal/dialog"
 
 const Command: React.ForwardRefExoticComponent<
   React.RefAttributes<HTMLDivElement> &

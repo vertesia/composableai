@@ -3,6 +3,26 @@ import { BaseObject } from "./common.js";
 import { WorkflowExecutionPayload } from "./index.js";
 import { ParentClosePolicyType } from "./temporalio.js";
 
+/**
+ * Discriminator for workflow input type - either object IDs or GCS file URIs
+ */
+export type WorkflowInputType = 'objectIds' | 'files';
+
+/**
+ * File reference with URL and mimetype
+ */
+export interface WorkflowInputFile {
+    url: string;
+    mimetype: string;
+}
+
+/**
+ * Discriminated union for workflow inputs.
+ * Workflows can accept either a list of object IDs (existing behavior) OR a list of file references (new).
+ */
+export type WorkflowInput =
+    | { inputType: 'objectIds', objectIds: string[] }
+    | { inputType: 'files', files: WorkflowInputFile[] };
 
 /**
  * The payload sent when starting a workflow from the temporal client to the workflow instance.
@@ -190,6 +210,12 @@ export interface DSLChildWorkflowStep extends DSLWorkflowStepBase {
      * since it may contain references to workflow execution vars.
      */
     output?: string;
+    /**
+     * A JSON expression which evaluates to true or false similar to mongo matches.
+     * The child workflow will only execute if the condition is satisfied.
+     * Example: {$eq: {wfVarName: value}}
+     */
+    condition?: Record<string, any>;
     /**
      * In case the dslWorkflow is used as a child workflow the spec is used to define the child workflow.
      * If spec is defined then the name must be "dslWorkflow"

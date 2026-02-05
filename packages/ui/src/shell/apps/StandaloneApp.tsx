@@ -1,5 +1,5 @@
 import { AppInstallationWithManifest, ProjectRef } from "@vertesia/common";
-import { Center, useFetch, VSelectBox } from "@vertesia/ui/core";
+import { Center, useFetch, SelectBox } from "@vertesia/ui/core";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from "@vertesia/ui/session";
 import { LockIcon } from "lucide-react";
 import { ComponentType, ReactNode, useEffect, useMemo, useState } from "react";
@@ -131,7 +131,7 @@ function AccessDeniedMessage({ name }: AccessDeniedMessageProps) {
                     {orgOptions.length > 1 && (
                         <div>
                             <div className="text-sm text-gray-500 mb-2">Organization</div>
-                            <VSelectBox
+                            <SelectBox
                                 by="id"
                                 value={selectedOrg}
                                 options={orgOptions}
@@ -143,7 +143,7 @@ function AccessDeniedMessage({ name }: AccessDeniedMessageProps) {
                     )}
                     <div>
                         {orgOptions.length > 1 && <div className="text-sm text-gray-500 mb-2">Project</div>}
-                        <VSelectBox
+                        <SelectBox
                             by="id"
                             value={undefined}
                             options={filteredProjects}
