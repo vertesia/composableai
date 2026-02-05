@@ -1,4 +1,4 @@
-import { AgentMessage, AgentMessageType, AskUserMessageDetails } from "@vertesia/common";
+import { AgentMessage, AgentMessageType, AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
 import { Badge, Button, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
@@ -203,7 +203,7 @@ function MessageItemComponent({
 
     // Export message content to PDF or DOCX
     const [isExporting, setIsExporting] = useState(false);
-    const exportToFormat = async (format: 'pdf' | 'docx') => {
+    const exportToFormat = async (format: MarkdownRenditionFormat) => {
         const content = typeof messageContent === 'string' ? messageContent : '';
         if (!content.trim()) {
             toast({
@@ -438,10 +438,10 @@ function MessageItemComponent({
                                     </Button>
                                 }
                             >
-                                <MenuItem onClick={() => exportToFormat('pdf')}>
+                                <MenuItem onClick={() => exportToFormat(MarkdownRenditionFormat.pdf)}>
                                     Export as PDF
                                 </MenuItem>
-                                <MenuItem onClick={() => exportToFormat('docx')}>
+                                <MenuItem onClick={() => exportToFormat(MarkdownRenditionFormat.docx)}>
                                     Export as Word
                                 </MenuItem>
                             </Dropdown>

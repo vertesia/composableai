@@ -51,8 +51,6 @@ export interface MarkdownRenditionVars extends BaseRenditionVars {
     pandocOptions?: string[];
     /** Run ID for resolving artifact: URLs in markdown */
     artifactRunId?: string;
-    /** Whether to preprocess charts/diagrams (default: true) */
-    preprocessRichContent?: boolean;
     /** Document metadata for PDF footer/header */
     metadata?: PdfRenderingMetadata;
 }
