@@ -354,6 +354,12 @@ export interface WorkflowRunEvent {
 
     signal?: SignalEventProperties;
 
+    timer?: {
+        timerId?: string;
+        duration?: string;
+        summary?: string;
+    };
+
     error?: EventError;
 
     result?: any;
@@ -377,6 +383,7 @@ export enum TaskType {
     ACTIVITY = 'activity',
     CHILD_WORKFLOW = 'childWorkflow',
     SIGNAL = 'signal',
+    TIMER = 'timer',
 }
 
 // Base task interface
@@ -421,11 +428,19 @@ export interface SignalTask extends TaskBase {
     };
 }
 
+// Timer-specific task
+export interface TimerTask extends TaskBase {
+    type: TaskType.TIMER;
+    timerId?: string;
+    duration?: string;
+}
+
 // Union type for all processed tasks
 export type WorkflowTask =
     | ActivityTask
     | ChildWorkflowTask
-    | SignalTask;
+    | SignalTask
+    | TimerTask;
 
 // History format discriminated union
 export type WorkflowHistory =
@@ -446,7 +461,7 @@ export type HistoryFormat = 'events' | 'tasks' | 'agent';
  */
 export interface AgentTask {
     /** Type discriminator for future task types */
-    taskType: 'tool_call';  // Can expand to 'llm_call' | 'checkpoint' | etc.
+    taskType: 'tool_call' | 'llm_call' | 'user_input' | 'timer' | 'subagent';
 
     /** Tool-specific fields */
     toolName: string;
