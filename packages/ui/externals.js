@@ -59,6 +59,7 @@ export const EXTERNALS = [
     "react-calendar",
     "framer-motion",
     "react-resizable-panels",
+
     "recharts",
     "react-vega",
     "vega",
