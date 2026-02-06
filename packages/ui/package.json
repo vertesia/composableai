@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/ui",
-    "version": "0.82.0",
+    "version": "0.82.1",
     "description": "Vertesia UI components and and hooks",
     "type": "module",
     "main": "./lib/index.js",
