@@ -1,6 +1,6 @@
-import dayjs from "dayjs";
-import { AgentMessage, AgentMessageType } from "@vertesia/common";
 import { VertesiaClient } from "@vertesia/client";
+import { AgentMessage, AgentMessageType } from "@vertesia/common";
+import dayjs from "dayjs";
 
 export function insertMessageInTimeline(arr: AgentMessage[], m: AgentMessage) {
     const t = typeof m.timestamp === "number" ? m.timestamp : new Date(m.timestamp).getTime();
