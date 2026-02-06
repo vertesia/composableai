@@ -5,10 +5,8 @@ export * from "./AnimatedThinkingDots";
 export {
     AgentChart,
     type AgentChartSpec,
-    type RechartsChartSpec,
     type VegaLiteChartSpec,
     isVegaLiteSpec,
-    isRechartsSpec,
 } from "./AgentChart";
 export { VegaLiteChart } from "./VegaLiteChart";
 // MessageInput types for external use

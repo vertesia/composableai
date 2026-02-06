@@ -6,7 +6,7 @@
 
 import { useMemo, type ReactElement } from 'react';
 import { CodeBlockPlaceholder, CodeBlockErrorBoundary } from './CodeBlockPlaceholder';
-import { AgentChart, type AgentChartSpec, type VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
+import { type VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { FusionFragmentHandler, FusionFragmentProvider } from '@vertesia/fusion-ux';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -74,11 +74,6 @@ function autoDetectRenderType(
             return 'vega-lite';
         }
 
-        // Check for Recharts format
-        if (('chart' in obj || 'type' in obj) && 'data' in obj && Array.isArray(obj.data)) {
-            return 'chart';
-        }
-
         // Check for fusion fragment template with data
         if ('template' in obj && 'data' in obj) {
             return 'fusion-fragment';
@@ -92,6 +87,24 @@ function autoDetectRenderType(
 
     // Default to code
     return 'code';
+}
+
+function toVegaLiteSpec(content: unknown): VegaLiteChartSpec | null {
+    if (typeof content !== 'object' || content === null) {
+        return null;
+    }
+
+    const obj = content as Record<string, unknown>;
+
+    if (obj.library === 'vega-lite' && 'spec' in obj && typeof obj.spec === 'object' && obj.spec !== null) {
+        return obj as unknown as VegaLiteChartSpec;
+    }
+
+    if (typeof obj.$schema === 'string' && obj.$schema.includes('vega')) {
+        return { library: 'vega-lite', spec: obj };
+    }
+
+    return null;
 }
 
 /**
@@ -215,19 +228,32 @@ export function ArtifactContentRenderer({
     // Render based on type
     switch (actualType) {
         case 'chart': {
+            const spec = toVegaLiteSpec(content);
+            if (!spec) {
+                return (
+                    <CodeBlockPlaceholder
+                        type="chart"
+                        error="Only Vega-Lite charts are supported. Recharts rendering has been retired."
+                    />
+                );
+            }
             return (
                 <CodeBlockErrorBoundary type="chart" fallbackCode={JSON.stringify(content, null, 2)}>
-                    <AgentChart spec={content as AgentChartSpec} artifactRunId={runId} />
+                    <VegaLiteChart spec={spec} artifactRunId={runId} />
                 </CodeBlockErrorBoundary>
             );
         }
 
         case 'vega-lite': {
-            const spec: VegaLiteChartSpec = typeof content === 'object' && content !== null
-                ? ('library' in (content as Record<string, unknown>)
-                    ? content as VegaLiteChartSpec
-                    : { library: 'vega-lite', spec: content as Record<string, unknown> })
-                : { library: 'vega-lite', spec: content as Record<string, unknown> };
+            const spec = toVegaLiteSpec(content);
+            if (!spec) {
+                return (
+                    <CodeBlockPlaceholder
+                        type="chart"
+                        error="Invalid Vega-Lite specification"
+                    />
+                );
+            }
             return (
                 <CodeBlockErrorBoundary type="chart" fallbackCode={JSON.stringify(content, null, 2)}>
                     <VegaLiteChart spec={spec} artifactRunId={runId} />
