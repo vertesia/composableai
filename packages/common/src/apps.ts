@@ -34,6 +34,13 @@ export interface AppUIConfig {
      * Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell).
      */
     navigation?: AppUINavItem[];
+    /**
+     * Where this app's UI can be displayed.
+     * - 'app_portal': Available in the main app portal (standalone)
+     * - 'composite_app': Available within a CompositeApp shell
+     * Defaults to ['app_portal', 'composite_app'] for new apps.
+     */
+    available_in?: AppAvailableIn[];
 }
 
 /**
@@ -246,14 +253,6 @@ export interface AppManifestData {
      * Describe the capabiltities of this app - which kind of contributions it provides.
      */
     capabilities?: AppCapabilities[];
-
-    /**
-     * Where this app can be displayed.
-     * - 'app_portal': Available in the main app portal (standalone)
-     * - 'composite_app': Available within a CompositeApp shell
-     * If undefined, defaults to only showing in the app portal for legacy support.
-     */
-    available_in?: AppAvailableIn[];
 
     /**
      * The app endpoint URL
