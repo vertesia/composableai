@@ -34,6 +34,8 @@ export interface PdfRenderingMetadata {
     subtitle?: string;
     /** Document author(s) */
     author?: string | string[];
+    /** Document date (displayed in header and title page; defaults to today if omitted) */
+    date?: string;
 }
 
 /** Workflow vars for markdown renditions (pdf, docx) */
