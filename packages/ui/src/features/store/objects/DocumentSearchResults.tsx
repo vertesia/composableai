@@ -359,7 +359,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
     const { store } = useUserSession();
     const toast = useToast();
     const navigate = useNavigate();
-    const onDownload = useDownloadDocument(store, toast, object?.content?.source, object?.name || object?.content?.name);
+    const { downloadFromContentSource } = useDownloadFile({ client: store, toast });
 
     return object ? (
         <SidePanel title={object.properties?.title || object.name} isOpen={true} onClose={onClose}>
@@ -368,7 +368,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
                     <ExternalLink className="size-4" />
                 </Button>
                 {object.content?.source && (
-                    <Button variant="ghost" size="sm" title="Download" onClick={onDownload}>
+                    <Button variant="ghost" size="sm" title="Download" onClick={() => downloadFromContentSource(object.content!.source!, object.name || object.content?.name)}>
                         <Download className="size-4" />
                     </Button>
                 )}
