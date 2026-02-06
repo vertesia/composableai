@@ -61,7 +61,7 @@ export const AgentChart = memo(function AgentChart({ spec, artifactRunId }: Agen
 
   return (
     <div className="my-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
-      Recharts chart rendering has been retired. Use a Vega-Lite chart spec (`library: "vega-lite"` with `spec`).
+      Recharts chart rendering has been retired. Use a Vega-Lite chart spec (<code>library: &quot;vega-lite&quot;</code> with <code>spec</code>).
     </div>
   );
 }, (prevProps, nextProps) => {
