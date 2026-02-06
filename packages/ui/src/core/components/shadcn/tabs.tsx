@@ -1,6 +1,6 @@
-import * as TabsPrimitive from "@radix-ui/react-tabs";
 import * as React from "react";
 import { ReactNode } from "react";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "../libs/utils";
 import { SelectBox } from "./selectBox";
@@ -23,7 +23,6 @@ const TabsContext = React.createContext<{
   responsive?: boolean;
   variant?: "tabs" | "pills";
   updateHash?: boolean;
-  keepMounted?: boolean;
 }>({
   size: undefined,
   tabs: undefined,
@@ -31,8 +30,7 @@ const TabsContext = React.createContext<{
   setTab: undefined,
   responsive: false,
   variant: "tabs",
-  updateHash: true,
-  keepMounted: false
+  updateHash: true
 });
 
 interface TabsProps {
@@ -46,7 +44,6 @@ interface TabsProps {
   responsive?: boolean;
   variant?: "tabs" | "pills";
   updateHash?: boolean;
-  keepMounted?: boolean;
 }
 
 const Tabs = ({
@@ -59,8 +56,7 @@ const Tabs = ({
   onTabChange,
   responsive = false,
   variant = "tabs",
-  updateHash = true,
-  keepMounted = false
+  updateHash = true
 }: TabsProps) => {
   // Filter tabs based on is_allowed (undefined or true means visible)
   const visibleTabs = React.useMemo(() =>
@@ -142,7 +138,7 @@ const Tabs = ({
   }, [handleValueChange]);
 
   return (
-    <TabsContext.Provider value={{ tabs: visibleTabs, size: fullWidth ? visibleTabs.length : 0, current: value, setTab, responsive: responsive, variant, updateHash, keepMounted }}>
+    <TabsContext.Provider value={{ tabs: visibleTabs, size: fullWidth ? visibleTabs.length : 0, current: value, setTab, responsive: responsive, variant, updateHash }}>
       <TabsPrimitive.Root
         defaultValue={value || visibleTabs[0]?.name}
         value={value}
@@ -216,20 +212,14 @@ const TabsBar = ({ className }: { className?: string }) => {
 };
 
 const TabsPanel = ({ className }: { className?: string }) => {
-  const { tabs, keepMounted, current } = React.useContext(TabsContext);
+  const { tabs } = React.useContext(TabsContext);
 
   if (!tabs) return null;
 
   return (
     <>
       {tabs.map((tab) => (
-        <TabsContent
-          key={tab.name}
-          value={tab.name}
-          className={className}
-          forceMount={keepMounted ? true : undefined}
-          style={keepMounted && current !== tab.name ? { display: 'none' } : undefined}
-        >
+        <TabsContent key={tab.name} value={tab.name} className={className}>
           {tab.content}
         </TabsContent>
       ))}
@@ -326,4 +316,4 @@ const TabsContent: React.ForwardRefExoticComponent<TabsContentProps & React.RefA
 ));
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
-export { Tabs, TabsBar, TabsContent, TabsList, TabsPanel, TabsTrigger };
+export { Tabs, TabsBar, TabsPanel, TabsList, TabsTrigger, TabsContent };
