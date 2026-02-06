@@ -461,7 +461,7 @@ export type HistoryFormat = 'events' | 'tasks' | 'agent';
  */
 export interface AgentTask {
     /** Type discriminator for future task types */
-    taskType: 'tool_call' | 'llm_call' | 'user_input' | 'timer' | 'subagent' | 'stop';
+    taskType: 'tool_call' | 'llm_call' | 'input' | 'timer' | 'subagent' | 'processing';
 
     /** Tool-specific fields */
     toolName: string;
