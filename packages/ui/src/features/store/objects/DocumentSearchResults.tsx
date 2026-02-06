@@ -320,10 +320,6 @@ function Toolsbar(props: ToolsbarProps) {
                                 }
                                 <FilterBtn />
                             </div>
-                            <div className="flex gap-1 items-center">
-                                <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
-                                <ContentDispositionButton onUpdate={setIsGridView} />
-                            </div>
                         </div>
                         <div className="flex gap-2 items-center pt-2">
                             <FilterBar />
