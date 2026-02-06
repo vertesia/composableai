@@ -86,21 +86,17 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
 
         const rendition = await storeClient.rendering.render(payload);
 
-        if (rendition.status === "success") {
-            // Use downloadUrl if available (direct signed URL), otherwise fall back to fileUri
-            if (rendition.downloadUrl) {
-                triggerDownload(rendition.downloadUrl, filename);
-            } else if (rendition.fileUri) {
-                const result = await client.files.getDownloadUrlWithOptions({
-                    file: rendition.fileUri,
-                    name: filename
-                });
-                triggerDownload(result.url, filename);
-            } else {
-                throw new Error("No download URL or file URI in response");
-            }
+        // Use downloadUrl if available (direct signed URL), otherwise fall back to fileUri
+        if (rendition.downloadUrl) {
+            triggerDownload(rendition.downloadUrl, filename);
+        } else if (rendition.fileUri) {
+            const result = await client.files.getDownloadUrlWithOptions({
+                file: rendition.fileUri,
+                name: filename
+            });
+            triggerDownload(result.url, filename);
         } else {
-            throw new Error(rendition.error || "Rendering failed");
+            throw new Error("No download URL or file URI in response");
         }
     }, [client]);
 

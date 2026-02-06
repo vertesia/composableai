@@ -97,17 +97,26 @@ export interface RenderMarkdownPayload {
 }
 
 /**
+ * Result from the GenerateRenditions workflow.
+ * Shared between zeno-server (consumer) and workflows (producer).
+ */
+export interface GenerateRenditionsResult {
+    uploads: string[];
+    format: string;
+    status: string;
+    fileUri?: string;
+}
+
+/**
  * Response from the rendering API.
  */
 export interface RenderMarkdownResponse {
     /** Rendering status */
-    status: "success" | "error";
+    status: "success";
     /** Output format */
     format: MarkdownRenditionFormat;
     /** Download URL for the rendered document */
     downloadUrl?: string;
     /** File URI in storage */
     fileUri?: string;
-    /** Error message if status is "error" */
-    error?: string;
 }
