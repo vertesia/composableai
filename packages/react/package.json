@@ -26,11 +26,11 @@
     },
     "devDependencies": {
         "@types/json-schema": "^7.0.15",
-        "@types/react": "^19.2.3",
+        "@types/react": "^19.2.10",
         "typescript": "^5.9.3"
     },
     "peerDependencies": {
-        "react": ">=16.8.0"
+        "react": ">=16.14.0"
     },
     "dependencies": {
         "@vertesia/client": "workspace:*",

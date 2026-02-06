@@ -17,29 +17,29 @@
     "preview": "vite preview"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/vite": "^4.1.18",
     "@types/node": "^22.19.2",
-    "@types/react": "^19.1.6",
-    "@types/react-dom": "^19.1.5",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
     "@vertesia/plugin-builder": "^0.79.4",
-    "@vitejs/plugin-basic-ssl": "^2.1.0",
+    "@vitejs/plugin-basic-ssl": "^2.1.4",
     "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
-    "react": "^19.1.2",
-    "react-dom": "^19.1.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.3",
-    "vite": "^7.3.0",
+    "vite": "^7.3.1",
     "vite-plugin-serve-static": "^1.2.0"
   },
   "dependencies": {
