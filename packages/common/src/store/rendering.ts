@@ -5,6 +5,7 @@
  */
 
 import { ImageRenditionFormat, MarkdownRenditionFormat } from "./store.js";
+import { WorkflowExecutionStatus, WorkflowRunStatus } from "./workflow.js";
 
 // ============================================================================
 // Workflow Vars Types (Discriminated Union)
@@ -97,6 +98,39 @@ export interface RenderMarkdownPayload {
 }
 
 /**
+ * Initial response when starting a markdown rendering workflow.
+ * Clients should poll status using workflow_id/workflow_run_id.
+ */
+export interface RenderMarkdownStartResponse extends WorkflowRunStatus {
+    /** Requested output format */
+    format: MarkdownRenditionFormat;
+}
+
+/**
+ * Polled status response for markdown rendering workflow.
+ */
+export interface RenderMarkdownStatusResponse extends WorkflowRunStatus {
+    /** Requested output format (if known) */
+    format?: MarkdownRenditionFormat;
+    /** Download URL for completed output */
+    downloadUrl?: string;
+    /** File URI in storage for completed output */
+    fileUri?: string;
+    /** Error details for failed/terminated runs */
+    error?: string;
+}
+
+/**
+ * Client-side polling options for markdown rendering.
+ */
+export interface RenderMarkdownPollOptions {
+    /** Maximum time to wait in milliseconds (default: 10 minutes) */
+    timeoutMs?: number;
+    /** Polling interval in milliseconds (default: 1500ms) */
+    pollIntervalMs?: number;
+}
+
+/**
  * Result from the GenerateRenditions workflow.
  * Shared between zeno-server (consumer) and workflows (producer).
  */
@@ -119,4 +153,12 @@ export interface RenderMarkdownResponse {
     downloadUrl?: string;
     /** File URI in storage */
     fileUri?: string;
+}
+
+export function isWorkflowTerminalStatus(status: WorkflowExecutionStatus): boolean {
+    return status === WorkflowExecutionStatus.COMPLETED
+        || status === WorkflowExecutionStatus.FAILED
+        || status === WorkflowExecutionStatus.CANCELED
+        || status === WorkflowExecutionStatus.TERMINATED
+        || status === WorkflowExecutionStatus.TIMED_OUT;
 }
