@@ -46,8 +46,12 @@ export interface InheritedPropertyMetadata {
     collection: string;
 }
 export interface ContentObject<T = any> extends ContentObjectItem<T> {
-    text?: string; // the text representation of the object
+    /** @deprecated Use text_ref instead. Will be removed in a future version. */
+    text?: string;
+    /** @deprecated Use text_ref instead. Will be removed in a future version. */
     text_etag?: string;
+    /** Reference to the extracted text content stored in GCS */
+    text_ref?: ContentSource;
     embeddings: Partial<Record<SupportedEmbeddingTypes, Embedding>>;
     parts?: string[]; // the list of objectId of the parts of the object
     parts_etag?: string; // the etag of the text used for the parts list
