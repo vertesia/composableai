@@ -8,7 +8,7 @@ import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpe
 export function ExportPropertiesComponent({ action, objectIds }: ActionComponentTypeProps) {
     const { store } = useUserSession();
     const toast = useToast();
-    const [isOpen, setOpen] = useState(false);
+    const [isOpen, setOpen] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
     const callback = useCallback(() => {
         setOpen(true);
@@ -102,9 +102,7 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
     }
 
     return (
-        <div>
-            <ExportPropertiesModal isExporting={isExporting} isOpen={isOpen} onClose={onExportType} />
-        </div>
+        <ExportPropertiesModal isExporting={isExporting} isOpen={isOpen} onClose={onExportType} />
     )
 }
 
