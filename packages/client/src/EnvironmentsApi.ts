@@ -1,6 +1,15 @@
 import type { AIModel, EmbeddingsOptions, EmbeddingsResult, ModelSearchPayload } from "@llumiverse/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { ExecutionEnvironment, ExecutionEnvironmentCreatePayload, ExecutionEnvironmentRef, ExecutionEnvironmentUpdatePayload, LoadBalancingEnvConfig, MediatorEnvConfig } from "@vertesia/common";
+import {
+    ExecutionEnvironment,
+    ExecutionEnvironmentCreatePayload,
+    ExecutionEnvironmentRef,
+    ExecutionEnvironmentUpdatePayload,
+    LoadBalancingEnvConfig,
+    MediatorEnvConfig,
+    MigrateInteractionsPayload,
+    MigrateInteractionsResult
+} from "@vertesia/common";
 
 export default class EnvironmentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -63,6 +72,21 @@ export default class EnvironmentsApi extends ApiTopic {
 
     embeddings(id: string, payload?: EmbeddingsOptions): Promise<EmbeddingsResult> {
         return this.post('/' + id + '/embeddings', {
+            payload
+        });
+    }
+
+    /**
+     * Batch update the LLM Environment for multiple Interactions, including the model used and the
+     * Environment that they belong to.
+     *
+     * It only updates Interactions that are in draft status.
+     *
+     * @param payload - The migration payload containing modelId and interactionIds
+     * @returns The count of matched and modified interactions
+     */
+    migrateInteractions(payload: MigrateInteractionsPayload): Promise<MigrateInteractionsResult> {
+        return this.post(`/migrate-interactions`, {
             payload
         });
     }

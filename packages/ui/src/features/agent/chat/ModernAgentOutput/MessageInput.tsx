@@ -1,4 +1,4 @@
-import { Button, Input, Spinner, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core";
+import { Button, Input, Spinner, Modal, ModalBody, ModalTitle } from "@vertesia/ui/core";
 import { Activity, PaperclipIcon, SendIcon } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { SelectDocument } from "../../../store";
@@ -72,7 +72,7 @@ export default function MessageInput({
     };
 
     return (
-        <div className="p-3 border-t border-muted flex-shrink-0" style={{ minHeight: "90px" }}>
+        <div className="p-3 border-t border-muted flex-shrink-0 fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background z-10" style={{ minHeight: "90px" }}>
             <div className="flex items-center space-x-2">
                 <div className="flex flex-1 space-x-1" >
                     <Input
@@ -115,16 +115,16 @@ export default function MessageInput({
             </div>
 
             {/* Object Selection Modal */}
-            <VModal
+            <Modal
                 isOpen={isObjectModalOpen}
                 onClose={() => setIsObjectModalOpen(false)}
                 className='min-w-[60vw]'
             >
-                <VModalTitle>Link Object</VModalTitle>
-                <VModalBody className="pb-6">
+                <ModalTitle>Link Object</ModalTitle>
+                <ModalBody className="pb-6">
                     <SelectDocument onChange={handleObjectSelect} />
-                </VModalBody>
-            </VModal>
+                </ModalBody>
+            </Modal>
         </div>
     );
 }

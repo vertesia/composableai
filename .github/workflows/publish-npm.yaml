@@ -3,44 +3,44 @@ name: publish-npm-packages
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: 'The Git reference to checkout'
+      release_type:
+        description: Release Type
         required: true
-        default: 'main'
+        type: choice
+        options:
+          - snapshot
+          - release
+        default: snapshot
+      bump_type:
+        description: Version Bump
+        required: true
+        type: choice
+        options:
+          - keep
+          - patch
+          - minor
+        default: keep
+      dry_run:
+        description: Dry Run
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   id-token: write  # Required for OIDC between GitHub and NPM
-  contents: read
+  contents: write  # Required to push version changes for preview
 
 jobs:
   publish:
-    name: publish-${{ matrix.package }}
+    name: Publish all packages
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        package:
-          - api-fetch-client
-          - cli
-          - client
-          - common
-          - converters
-          - create-agent
-          - create-plugin
-          - json
-          - memory
-          - memory-cli
-          - memory-commands
-          - plugin-builder
-          - react
-          - tools-sdk
-          - ui
-          - workflow
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: true
-          ref: ${{ inputs.ref }}
+          submodules: recursive
+          ssh-key: ${{ secrets.DEPLOY_KEY }} # Use deploy key to bypass branch protection rules
+
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -54,17 +54,11 @@ jobs:
       - run: npm --version
 
       - run: pnpm install
-      - name: Publish packages to NPM
+
+      - name: Publish all packages
         run: |
-          set +x
-          current_version=$(pnpm pkg get version | tr -d '"')
-          dev_version="${current_version}-dev-${GITHUB_SHA::7}"
-          echo "Changing version from [${current_version}] to [${dev_version}]"
-
-          npm version ${dev_version} --no-git-tag-version
-          pnpm -r --filter "./packages/**" exec npm version ${dev_version} --no-git-tag-version
-
-          cd "packages/${{ matrix.package }}"
-          # --no-git-checks: don't check whenther the working directory is clean because we update
-          #     the version directly in the CI
-          npm publish --access public --tag dev --no-git-checks
+          ./.github/bin/publish-all-packages.sh \
+              --ref "${{ github.ref_name }}" \
+              --release-type "${{ inputs.release_type }}" \
+              --bump-type "${{ inputs.bump_type }}" \
+              --dry-run "${{ inputs.dry_run }}"

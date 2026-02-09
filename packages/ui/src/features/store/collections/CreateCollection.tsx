@@ -1,5 +1,5 @@
 import { CreateCollectionPayload } from "@vertesia/common";
-import { useToast, VModalBody, FormItem, VModalFooter, Input, Switch, Button, VModal, VModalTitle, Textarea } from "@vertesia/ui/core";
+import { useToast, ModalBody, FormItem, ModalFooter, Input, Switch, Button, Modal, ModalTitle, Textarea } from "@vertesia/ui/core";
 import { SelectContentType } from "../types/SelectContentType";
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
@@ -75,14 +75,14 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
 
     return (
         <form onSubmit={(e) => e.preventDefault()}>
-            <VModalBody>
+            <ModalBody>
                 <FormItem label="Name" required>
                     <Input type="text" value={payload.name || ""} onChange={(value) => setPayloadProp("name", value)} />
                 </FormItem>
                 <FormItem label="Description" className="mt-2">
                     <Textarea
                         value={payload.description || ""}
-                        onChange={(ev) => setPayloadProp("description", ev)}
+                        onChange={(ev) => setPayloadProp("description", ev.target.value)}
                     />
                 </FormItem>
                 <FormItem label="Dynamic Collection" className="mt-2" direction="row" description="Dynamically fetch content for the collection based on a query. If not enabled, then content must be added by users or agents.">
@@ -116,12 +116,12 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                         isClearable
                     />
                 </FormItem>
-            </VModalBody>
-            <VModalFooter>
+            </ModalBody>
+            <ModalFooter>
                 <Button isDisabled={isProcessing} onClick={onCreate}>
                     Create Collection
                 </Button>
-            </VModalFooter>
+            </ModalFooter>
         </form >
     );
 }
@@ -132,9 +132,9 @@ interface CreateCollectionModalProps {
 }
 export function CreateCollectionModal({ isOpen, onClose }: CreateCollectionModalProps) {
     return (
-        <VModal onClose={onClose} isOpen={isOpen}>
-            <VModalTitle>Create a Collection</VModalTitle>
+        <Modal onClose={onClose} isOpen={isOpen}>
+            <ModalTitle>Create a Collection</ModalTitle>
             <CreateCollectionForm onClose={onClose} />
-        </VModal>
+        </Modal>
     );
 }
