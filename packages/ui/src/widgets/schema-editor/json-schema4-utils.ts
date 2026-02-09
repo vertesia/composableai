@@ -152,7 +152,7 @@ export function getTypeSignature(schema: JSONSchema): TypeSignature {
     }
 
     // Check for enum at top level (non-array)
-    if (schema.enum?.length) {
+    if (schema.enum) {
         return {
             isNullable,
             isArray,
