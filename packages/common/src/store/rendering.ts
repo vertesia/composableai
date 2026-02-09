@@ -14,6 +14,8 @@ import { WorkflowExecutionStatus, WorkflowRunStatus } from "./workflow.js";
 /** Base vars shared by all rendition types */
 interface BaseRenditionVars {
     mime_type?: string;
+    /** Custom upload path — overrides the default renditions/{etag}/{name} path */
+    outputPath?: string;
 }
 
 /** Workflow vars for image renditions (jpeg, png, webp) */
@@ -44,6 +46,8 @@ export interface MarkdownRenditionVars extends BaseRenditionVars {
     format: MarkdownRenditionFormat;
     /** Inline markdown content (mutually exclusive with objectId) */
     content?: string;
+    /** Blob store path to fetch markdown from (mutually exclusive with content/objectId) */
+    artifactPath?: string;
     /** Document title for inline content */
     title?: string;
     /** URL to template file (LaTeX for PDF, reference doc for DOCX) */
@@ -95,6 +99,8 @@ export interface RenderMarkdownPayload {
     artifactRunId?: string;
     /** Document metadata for PDF footer/header */
     metadata?: PdfRenderingMetadata;
+    /** Custom upload path for the rendered output */
+    outputPath?: string;
 }
 
 /**
