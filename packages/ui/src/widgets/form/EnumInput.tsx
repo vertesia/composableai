@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { SelectBox } from "@vertesia/ui/core";
-import { ManagedObjectBase, Node } from "./ManagedObject.js";
+import { Node } from "./ManagedObject.js";
 import { PropertySchema, ArrayPropertySchema } from "./schema.js";
 
 interface EnumInputProps {
     object: Node;
+    type?: string;
     onChange?: (event: any) => void;
     disabled?: boolean;
 }
@@ -52,17 +53,8 @@ export function EnumArrayInput({ object, onChange, disabled }: EnumInputProps) {
 
     const handleChange = (selected: string[]) => {
         if (disabled) return;
-
-        // Update local state for re-render
         setCurrentValue(selected);
-
-        // Update parent's value directly (ManagedListProperty doesn't have a setter)
-        const parent = object.parent as ManagedObjectBase;
-        parent.setPropertyValue(object.name, selected);
-
-        // Trigger change notification via public observer
-        object.root.observer?.(object);
-
+        object.value = selected;
         onChange?.({ target: { value: selected } });
     };
 
