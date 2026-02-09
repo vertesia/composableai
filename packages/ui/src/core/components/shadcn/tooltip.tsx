@@ -4,13 +4,17 @@ import { cn } from "../libs/utils"
 import { ReactNode } from "react"
 import { usePortalContainer } from "../../hooks/PortalContainerProvider"
 
-const TooltipProvider = TooltipPrimitive.Provider
+const TooltipProvider: typeof TooltipPrimitive.Provider = TooltipPrimitive.Provider
 
-const Tooltip = TooltipPrimitive.Root
+const Tooltip: typeof TooltipPrimitive.Root = TooltipPrimitive.Root
 
-const TooltipTrigger = TooltipPrimitive.Trigger
+const TooltipTrigger: typeof TooltipPrimitive.Trigger = TooltipPrimitive.Trigger
 
-const TooltipContent = React.forwardRef<
+type TooltipContentProps = React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> & {
+  side?: "top" | "right" | "bottom" | "left"
+};
+
+const TooltipContent: React.ForwardRefExoticComponent<TooltipContentProps & React.RefAttributes<React.ElementRef<typeof TooltipPrimitive.Content>>> = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> & {
     side?: "top" | "right" | "bottom" | "left"

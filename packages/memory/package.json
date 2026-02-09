@@ -1,7 +1,7 @@
 {
     "name": "@vertesia/memory",
     "description": "Manipulate memory images for LLMs",
-    "version": "0.82.1",
+    "version": "1.0.0-dev.20260203.130115Z",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -17,10 +17,10 @@
     },
     "devDependencies": {
         "@types/micromatch": "^4.0.9",
-        "@types/node": "^22.5.1",
+        "@types/node": "^22.19.2",
         "@types/tar-stream": "^3.1.3",
         "ts-dual-module": "^0.6.3",
-        "vitest": "^3.1.1"
+        "vitest": "^4.0.16"
     },
     "dependencies": {
         "@vertesia/converters": "workspace:*",

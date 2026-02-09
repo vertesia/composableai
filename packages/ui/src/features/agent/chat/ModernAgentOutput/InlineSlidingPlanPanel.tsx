@@ -83,13 +83,13 @@ function InlineSlidingPlanPanelComponent({
 
               return (
                 <>
-                  <div className="w-full bg-muted rounded-full h-2">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                     <div
-                      className="bg-background h-2 rounded-full"
+                      className="bg-info h-2.5 rounded-full transition-all duration-300"
                       style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
-                  <span className="text-xs text-muted">
+                  <span className="text-xs text-foreground font-medium whitespace-nowrap">
                     {totalTasks > 0 ? `${completedTasks}/${totalTasks}` : "0/0"}
                   </span>
                 </>

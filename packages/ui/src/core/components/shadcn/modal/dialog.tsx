@@ -161,6 +161,8 @@ export const ModalBody = ({
 
 interface ModalFooterProps extends React.HTMLAttributes<HTMLDivElement> {
     align?: "left" | "right" | "center";
+    children: React.ReactNode | React.ReactNode[];
+    className?: string;
 }
 
 export const ModalFooter = ({

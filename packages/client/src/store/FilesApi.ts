@@ -169,6 +169,19 @@ export class FilesApi extends ApiTopic {
         return res.body;
     }
 
+    /**
+     * Copy a file to a new destination within the same bucket.
+     * @param source - Source file path (relative to project bucket)
+     * @param dest - Destination file path (relative to project bucket)
+     * @returns The destination file URI
+     */
+    async copyFile(source: string, dest: string): Promise<string> {
+        const response = await this.post("/copy", {
+            payload: { source, dest },
+        }) as { success: boolean; source: string; dest: string };
+        return response.dest;
+    }
+
     async uploadMemoryPack(source: StreamSource | File): Promise<string> {
         const fileId = getMemoryFilePath(source.name);
         const nameWithExt = source.name.endsWith(".tar.gz")
