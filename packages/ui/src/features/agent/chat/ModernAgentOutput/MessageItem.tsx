@@ -227,6 +227,40 @@ function MessageItemComponent({
     // Check if message has exportable content (markdown text)
     const hasExportableContent = typeof messageContent === 'string' && messageContent.trim().length > 0;
 
+    // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
+    const markdownComponents = useMemo(() => ({
+        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
+            const href = props.href || "";
+            if (href.includes("/store/objects")) {
+                return (
+                    <NavLink
+                        href={href}
+                        topLevelNav
+                    >
+                        {props.children}
+                    </NavLink>
+                );
+            }
+            return (
+                <a
+                    {...props}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                />
+            );
+        },
+        img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
+            return (
+                <img
+                    {...props}
+                    className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
+                    loading="lazy"
+                    onClick={() => props.src && openImage(props.src, props.alt)}
+                />
+            );
+        },
+    }), [openImage]);
+
     // Render content with markdown support - all messages now rendered as markdown
     const renderContent = (content: string | object) => {
         // Handle object content (JSON)
@@ -247,38 +281,7 @@ function MessageItemComponent({
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
                     onProposalSubmit={(text) => onSendMessage?.(text)}
-                    components={{
-                        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
-                            const href = props.href || "";
-                            if (href.includes("/store/objects")) {
-                                return (
-                                    <NavLink
-                                        href={href}
-                                        topLevelNav
-                                    >
-                                        {props.children}
-                                    </NavLink>
-                                );
-                            }
-                            return (
-                                <a
-                                    {...props}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                />
-                            );
-                        },
-                        img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
-                            return (
-                                <img
-                                    {...props}
-                                    className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
-                                    loading="lazy"
-                                    onClick={() => props.src && openImage(props.src, props.alt)}
-                                />
-                            );
-                        },
-                    }}
+                    components={markdownComponents}
                 >
                     {content as string}
                 </MarkdownRenderer>
