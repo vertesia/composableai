@@ -26,6 +26,7 @@ overrides:
   lodash@>= 4.0.0 <4.17.23: ^4.17.23
   lodash-es@>= 4.0.0 <4.17.23: ^4.17.23
   '@isaacs/brace-expansion@>=5.0.0 <6.0.0': ^5.0.1
+  fast-xml-parser@>= 4.3.6 <5.3.4: ^5.3.4
   diff@>=4.0.0 <5.0.0: ^4.0.4
   diff@>=5.0.0 <5.2.2: ^5.2.2
   diff@>=6.0.0 <8.0.3: ^8.0.3
@@ -53,7 +54,7 @@ importers:
   llumiverse/common:
     devDependencies:
       '@types/node':
-        specifier: ^22.19.1
+        specifier: ^22.19.7
         version: 22.19.10
       rimraf:
         specifier: ^6.1.2
@@ -65,7 +66,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
       vitest:
-        specifier: ^4.0.16
+        specifier: ^4.0.18
         version: 4.0.18(@types/node@22.19.10)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(yaml@2.8.2)
 
   packages/api-fetch-client:
@@ -691,7 +692,7 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0
       fast-xml-parser:
-        specifier: ^5.2.3
+        specifier: ^5.3.4
         version: 5.3.4
       firebase:
         specifier: ^10.12.2
@@ -4896,10 +4897,6 @@ packages:
   fast-uri@3.1.0:
     resolution: {integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==}
 
-  fast-xml-parser@5.2.5:
-    resolution: {integrity: sha512-pfX9uG9Ki0yekDHx2SiuRIyFdyAr1kMIMitPvb0YBo8SUfKvia7w7FIyd/l6av85pFYRhZscS75MwMnbvY+hcQ==}
-    hasBin: true
-
   fast-xml-parser@5.3.4:
     resolution: {integrity: sha512-EFd6afGmXlCx8H8WTZHhAoDaWaGyuIBoZJ2mknrNxug+aZKjkp0a0dlars9Izl+jF+7Gu1/5f/2h68cQpe0IiA==}
     hasBin: true
@@ -8007,7 +8004,7 @@ snapshots:
   '@aws-sdk/xml-builder@3.957.0':
     dependencies:
       '@smithy/types': 4.11.0
-      fast-xml-parser: 5.2.5
+      fast-xml-parser: 5.3.4
       tslib: 2.8.1
 
   '@aws/lambda-invoke-store@0.2.2': {}
@@ -11868,10 +11865,6 @@ snapshots:
   fast-levenshtein@2.0.6: {}
 
   fast-uri@3.1.0: {}
-
-  fast-xml-parser@5.2.5:
-    dependencies:
-      strnum: 2.1.2
 
   fast-xml-parser@5.3.4:
     dependencies:
