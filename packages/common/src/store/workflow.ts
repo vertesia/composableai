@@ -354,6 +354,12 @@ export interface WorkflowRunEvent {
 
     signal?: SignalEventProperties;
 
+    timer?: {
+        timerId?: string;
+        duration?: string;
+        summary?: string;
+    };
+
     error?: EventError;
 
     result?: any;
@@ -377,6 +383,7 @@ export enum TaskType {
     ACTIVITY = 'activity',
     CHILD_WORKFLOW = 'childWorkflow',
     SIGNAL = 'signal',
+    TIMER = 'timer',
 }
 
 // Base task interface
@@ -421,20 +428,71 @@ export interface SignalTask extends TaskBase {
     };
 }
 
+// Timer-specific task
+export interface TimerTask extends TaskBase {
+    type: TaskType.TIMER;
+    timerId?: string;
+    duration?: string;
+}
+
 // Union type for all processed tasks
 export type WorkflowTask =
     | ActivityTask
     | ChildWorkflowTask
-    | SignalTask;
+    | SignalTask
+    | TimerTask;
 
 // History format discriminated union
 export type WorkflowHistory =
     | { type: 'events'; events: WorkflowRunEvent[] }
     | { type: 'tasks'; tasks: WorkflowTask[] }
-    | { type: 'agent'; data: any };  // Placeholder for future agent format
+    | { type: 'agent'; agentTasks: AgentTask[] };
 
 // History format query parameter type
 export type HistoryFormat = 'events' | 'tasks' | 'agent';
+
+/**
+ * Agent task information for workflow history UI representation.
+ * This is separate from the analytics AgentEvent types.
+ * Consistent with WorkflowTask naming convention.
+ *
+ * Currently represents tool calls, but designed to be extensible
+ * for other task types (LLM calls, checkpoints, etc.)
+ */
+export interface AgentTask {
+    /** Type discriminator for future task types */
+    taskType: 'tool_call' | 'llm_call' | 'input' | 'timer' | 'subagent' | 'processing';
+
+    /** Tool-specific fields */
+    toolName: string;
+    toolUseId?: string;
+    toolRunId?: string;
+    toolType?: 'builtin' | 'interaction' | 'remote' | 'skill';
+    iteration?: number;
+
+    /** Execution details */
+    scheduled_at: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    status: 'running' | 'completed' | 'error' | 'warning';
+
+    /** Tool data */
+    parameters?: Record<string, unknown>;
+    result?: string;
+    error?: { type: string; message: string };
+
+    /** Number of activity retries */
+    retries?: number;
+
+    /** Active tools for this LLM call */
+    activeTools?: string[];
+
+    /** Available skills for this LLM call */
+    availableSkills?: string[];
+
+    /** Workstream tracking */
+    workstreamId?: string;
+}
 
 export interface WorkflowRun {
     status?: WorkflowExecutionStatus | string;
