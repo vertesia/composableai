@@ -6,7 +6,7 @@ import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { MermaidDiagram } from './MermaidDiagram';
 import { AskUserWidget, type AskUserWidgetProps } from '../../features/agent/chat/AskUserWidget';
 import { useArtifactContent } from './useArtifactContent';
-import { ArtifactContentRenderer, type ExpandRenderType } from './ArtifactContentRenderer';
+import { ArtifactContentRenderer, type ExpandRenderType, sanitizeSvg, makeSvgResponsive } from './ArtifactContentRenderer';
 
 /**
  * Context for passing artifact run ID and callbacks to code block handlers
@@ -333,6 +333,32 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
 }
 
 /**
+ * Mockup code block handler — renders inline SVG after sanitization.
+ */
+export function MockupCodeBlockHandler({ code }: CodeBlockRendererProps) {
+    const processedSvg = useMemo(() => {
+        const trimmed = code.trim();
+        if (!trimmed) return null;
+        return makeSvgResponsive(sanitizeSvg(trimmed));
+    }, [code]);
+
+    if (!processedSvg) {
+        return (
+            <CodeBlockPlaceholder type="code" error="Empty mockup" />
+        );
+    }
+
+    return (
+        <CodeBlockErrorBoundary type="code" fallbackCode={code}>
+            <div
+                style={{ margin: '16px 0', width: '100%', overflowX: 'auto' }}
+                dangerouslySetInnerHTML={{ __html: processedSvg }}
+            />
+        </CodeBlockErrorBoundary>
+    );
+}
+
+/**
  * Expand code block handler - fetches artifact and renders content inline.
  *
  * Usage: ```expand:chart, ```expand:table, ```expand:markdown, ```expand:fusion-fragment, etc.
@@ -450,6 +476,9 @@ export function createDefaultCodeBlockHandlers(): Record<
 
         // Mermaid handler
         mermaid: MermaidCodeBlockHandler,
+
+        // Mockup handler (inline SVG)
+        mockup: MockupCodeBlockHandler,
 
         // Proposal handlers
         proposal: ProposalCodeBlockHandler,

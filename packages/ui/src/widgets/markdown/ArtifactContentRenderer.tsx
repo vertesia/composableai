@@ -197,7 +197,7 @@ function CodeRenderer({ content, path }: { content: unknown; path: string }): Re
 /**
  * Sanitize SVG markup — strip <script>, <foreignObject>, and on* event handlers.
  */
-function sanitizeSvg(svg: string): string {
+export function sanitizeSvg(svg: string): string {
     let s = svg;
     s = s.replace(/<script[\s\S]*?<\/script>/gi, '');
     s = s.replace(/<script[^>]*\/>/gi, '');
@@ -209,7 +209,7 @@ function sanitizeSvg(svg: string): string {
 /**
  * Make SVG responsive — remove fixed dimensions, ensure viewBox.
  */
-function makeSvgResponsive(svg: string): string {
+export function makeSvgResponsive(svg: string): string {
     return svg.replace(/<svg([^>]*)>/i, (_full: string, attrs: string) => {
         let a = attrs;
         if (!/viewBox/i.test(a)) {
