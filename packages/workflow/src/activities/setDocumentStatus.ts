@@ -1,3 +1,4 @@
+import { log } from "@temporalio/activity";
 import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 
@@ -18,8 +19,15 @@ export interface SetDocumentStatus extends DSLActivitySpec<SetDocumentStatusPara
 export async function setDocumentStatus(payload: DSLActivityExecutionPayload<SetDocumentStatusParams>) {
     const { client, params, objectId } = await setupActivity<SetDocumentStatusParams>(payload);
 
-    const res = await client.objects.update(objectId, { status: params.status });
-
-    return res.status;
-
+    try {
+        const res = await client.objects.update(objectId, { status: params.status });
+        return res.status;
+    } catch (err: any) {
+        // If document was deleted, nothing to update - log warning and continue
+        if (err.status === 404 || err.name === 'ZenoClientNotFoundError') {
+            log.warn(`Document ${objectId} not found - may have been deleted. Skipping status update to '${params.status}'`);
+            return undefined; // Signal that document wasn't found
+        }
+        throw err;
+    }
 }

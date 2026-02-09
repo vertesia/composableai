@@ -22,8 +22,11 @@ export interface RunAnalyticsQuery {
     /** The end date of the query in EPOCH format */
     to?: number;
 
-    /** The time resolution of the analytics query */
+    /** The time resolution unit of the analytics query */
     resolution?: TimeResolution;
+
+    /** The step size for the resolution (e.g., 4 with resolution='hour' means 4-hour intervals). Defaults to 1. */
+    resolutionStep?: number;
 
     /** The field to sort by */
     virtual?: boolean;
@@ -33,7 +36,7 @@ export interface RunAnalyticsQuery {
 
 export type RunAnalyticsGroupBy = "interaction" | "modelId" | "project" | "status" | "tags" | "environment";
 
-export type TimeResolution = "hour" | "day" | "week" | "month" | "year";
+export type TimeResolution = "minute" | "hour" | "day" | "week" | "month" | "year";
 
 
 export interface RunAnalyticsResult {

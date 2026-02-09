@@ -27,7 +27,7 @@ import { runPreInstallHooks, runPostInstallHooks } from './post-install.js';
 /**
  * Parse command line arguments
  */
-function parseArgs(args: string[]): { projectName: string; branch?: string } {
+function parseArgs(args: string[]): { projectName: string; branch?: string, dev: boolean } {
   let projectName: string | undefined;
   let branch: string | undefined;
 
@@ -46,7 +46,7 @@ function parseArgs(args: string[]): { projectName: string; branch?: string } {
     throw new Error('Project name is required');
   }
 
-  return { projectName, branch };
+  return { projectName, branch, dev: args.includes('--dev') };
 }
 
 /**
@@ -65,11 +65,13 @@ async function main() {
   // Parse arguments
   let projectName: string;
   let branch: string | undefined;
+  let dev: boolean = false;
 
   try {
     const parsed = parseArgs(args);
     projectName = parsed.projectName;
     branch = parsed.branch;
+    dev = parsed.dev;
   } catch (error) {
     console.log(chalk.red('❌ Please specify a project name:\n'));
     console.log(chalk.white('Usage:'));
@@ -123,7 +125,7 @@ async function main() {
     replaceVariables(projectName, templateConfig, answers);
 
     // Step 6: Adjust package.json (name and workspace dependencies)
-    adjustPackageJson(projectName, answers);
+    adjustPackageJson(projectName, answers, dev);
 
     // Step 7: Handle conditional removes
     if (templateConfig.conditionalRemove) {
