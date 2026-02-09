@@ -7,6 +7,7 @@ import { ComponentType, ReactNode, SyntheticEvent, useState } from "react";
 import { FormContext, FormContextProvider, InputComponentProps, useForm } from "./FormContext.js";
 import { ManagedListProperty, ManagedObject, ManagedObjectBase, ManagedProperty, Node } from "./ManagedObject.js";
 import { Input } from "./inputs.js";
+import { EnumInput, EnumArrayInput } from "./EnumInput.js";
 
 interface FormProps {
     object: ManagedObject;
@@ -54,7 +55,12 @@ export function GeneratedForm({ children, ...props }: FormProps) {
 
 function renderProperty(prop: Node) {
     if (prop.isList) {
-        return <ListField key={prop.name} object={prop as ManagedListProperty} />
+        const listProp = prop as ManagedListProperty;
+        // Check if this is an enum array - render as multi-select instead of list
+        if (listProp.schema.enum?.length) {
+            return <EnumArrayField key={prop.name} object={listProp} />
+        }
+        return <ListField key={prop.name} object={listProp} />
     } else if (prop.isObject) {
         return <CompositeField key={prop.name} object={prop as ManagedObjectBase} />
     } else {
@@ -82,8 +88,16 @@ export function ScalarField({ object, editor, inline = false }: ScalarFieldProps
         editor = object.schema.editor;
     }
     const { components, disabled } = useForm();
-    const Component = (editor && components[editor]) || Input;
     const inputType = object.getInputType();
+
+    // Use EnumInput for enum types
+    let Component;
+    if (inputType === 'enum') {
+        Component = EnumInput;
+    } else {
+        Component = (editor && components[editor]) || Input;
+    }
+
     if (inputType === 'checkbox') {
         inline = true;
     }
@@ -108,6 +122,24 @@ export function ScalarField({ object, editor, inline = false }: ScalarFieldProps
         <FormItem label={object.title} required={object.schema.isRequired} description={object.schema.description}
             className={clsx('flex', inline ? 'flex-row items-center' : 'flex-col')}>
             <Component object={object} type={inputType} onChange={handleOnChange} disabled={disabled} />
+        </FormItem>
+    )
+}
+
+interface EnumArrayFieldProps {
+    object: ManagedListProperty;
+}
+function EnumArrayField({ object }: EnumArrayFieldProps) {
+    const { disabled } = useForm();
+
+    const handleOnChange = (_event: any) => {
+        // Value is already set by EnumArrayInput
+    }
+
+    return (
+        <FormItem label={object.title} required={object.schema.isRequired} description={object.schema.description}
+            className="flex flex-col">
+            <EnumArrayInput object={object} onChange={handleOnChange} disabled={disabled} />
         </FormItem>
     )
 }

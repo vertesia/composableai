@@ -1,11 +1,12 @@
 import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 
-import { AlignLeft } from 'lucide-react';
+import { AlignLeft, Settings2 } from 'lucide-react';
 import { Button, Modal, ModalBody, ModalFooter, ModalTitle, Styles, SelectBox } from '@vertesia/ui/core';
 
 import { TypeNames } from '../type-signature.js';
 import { DataEditorProps } from './Editable.js';
 import { EditableSchemaProperty } from './EditableSchemaProperty.js';
+import { EnumValuesDialog } from './EnumValuesDialog.js';
 
 function makeTypeOptions() {
     const types: string[] = Object.values(TypeNames)
@@ -21,6 +22,7 @@ const TYPE_OPTIONS = makeTypeOptions();
 
 export function PropertyEditor({ value, onChange, onCancel, onSave }: DataEditorProps<EditableSchemaProperty>) {
     const [isModalOpen, setModalOpen] = useState(false);
+    const [isEnumModalOpen, setEnumModalOpen] = useState(false);
 
     if (!value) return null;
 
@@ -39,6 +41,12 @@ export function PropertyEditor({ value, onChange, onCancel, onSave }: DataEditor
         setModalOpen(false);
     }
 
+    const onEnumValuesChange = (values: string[]) => {
+        onChange({ ...value, enumValues: values }, true);
+    }
+
+    const isEnumType = value.type === 'enum' || value.type === 'enum[]';
+
     return (
         <div className="flex items-center">
             <div className="flex-1">
@@ -48,6 +56,19 @@ export function PropertyEditor({ value, onChange, onCancel, onSave }: DataEditor
             <div className="flex-1">
                 <PropertyTypeEditor value={value.type} onChange={onTypeChange} onCancel={onCancel} onSave={onSave} />
             </div>
+            {isEnumType && (
+                <div>
+                    <Button variant="ghost" size="xs" onClick={() => setEnumModalOpen(true)} title="Edit enum values">
+                        <Settings2 className="size-4" />
+                    </Button>
+                    <EnumValuesDialog
+                        isOpen={isEnumModalOpen}
+                        values={value.enumValues || []}
+                        onClose={() => setEnumModalOpen(false)}
+                        onSave={onEnumValuesChange}
+                    />
+                </div>
+            )}
             <div>
                 <Button variant={"ghost"} size={"xs"} onClick={() => setModalOpen(true)}  title="Edit description">
                     <AlignLeft className="size-4" />
