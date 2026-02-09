@@ -102,9 +102,7 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
     }
 
     return (
-        <div>
-            <ExportPropertiesModal isExporting={isExporting} isOpen={isOpen} onClose={onExportType} />
-        </div>
+        <ExportPropertiesModal isExporting={isExporting} isOpen={isOpen} onClose={onExportType} />
     )
 }
 
