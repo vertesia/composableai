@@ -60,8 +60,8 @@ export function EnumArrayInput({ object, onChange, disabled }: EnumInputProps) {
         const parent = object.parent as ManagedObjectBase;
         parent.setPropertyValue(object.name, selected);
 
-        // Trigger change notification
-        (object as any).onChange(object);
+        // Trigger change notification via public observer
+        object.root.observer?.(object);
 
         onChange?.({ target: { value: selected } });
     };
