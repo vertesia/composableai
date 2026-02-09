@@ -17,7 +17,17 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
             collection.getToolDefinitions()
         );
 
-        pkg.tools = allSkills.concat(allTools);
+        // Deduplicate by tool name (skills listed first take priority)
+        const seen = new Set<string>();
+        const combined = allSkills.concat(allTools);
+        pkg.tools = combined.filter(tool => {
+            if (seen.has(tool.name)) {
+                console.warn(`[app-package] Duplicate tool name "${tool.name}", skipping`);
+                return false;
+            }
+            seen.add(tool.name);
+            return true;
+        });
     },
     interactions(pkg: AppPackage, config: ToolServerConfig) {
         const allInteractions: CatalogInteractionRef[] = [];

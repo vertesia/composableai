@@ -18,6 +18,7 @@ export type ExpandRenderType =
     | 'table'
     | 'markdown'
     | 'fusion-fragment'
+    | 'mockup'
     | 'code'
     | 'image'
     | 'auto';
@@ -45,8 +46,13 @@ function autoDetectRenderType(
 ): ExpandRenderType {
     const ext = path.split('.').pop()?.toLowerCase();
 
-    // Image extensions
-    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext || '')) {
+    // SVG files → mockup renderer (inline SVG from text content)
+    if (ext === 'svg') {
+        return 'mockup';
+    }
+
+    // Image extensions (binary → rendered via URL)
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext || '')) {
         return 'image';
     }
 
@@ -189,6 +195,67 @@ function CodeRenderer({ content, path }: { content: unknown; path: string }): Re
 }
 
 /**
+ * Sanitize SVG markup — strip <script>, <foreignObject>, and on* event handlers.
+ */
+function sanitizeSvg(svg: string): string {
+    let s = svg;
+    s = s.replace(/<script[\s\S]*?<\/script>/gi, '');
+    s = s.replace(/<script[^>]*\/>/gi, '');
+    s = s.replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, '');
+    s = s.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+    return s;
+}
+
+/**
+ * Make SVG responsive — remove fixed dimensions, ensure viewBox.
+ */
+function makeSvgResponsive(svg: string): string {
+    return svg.replace(/<svg([^>]*)>/i, (_full: string, attrs: string) => {
+        let a = attrs;
+        if (!/viewBox/i.test(a)) {
+            const w = /\swidth\s*=\s*["']?(\d+(?:\.\d+)?)/i.exec(a);
+            const h = /\sheight\s*=\s*["']?(\d+(?:\.\d+)?)/i.exec(a);
+            if (w && h) a += ` viewBox="0 0 ${w[1]} ${h[1]}"`;
+        }
+        a = a
+            .replace(/\swidth\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i, '')
+            .replace(/\sheight\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i, '');
+        if (/style="/i.test(a)) {
+            a = a.replace(/style="([^"]*)"/i, (_: string, v: string) =>
+                `style="${v};width:100%;height:auto;display:block;max-width:100%;"`);
+        } else {
+            a += ' style="width:100%;height:auto;display:block;max-width:100%;"';
+        }
+        if (!/preserveAspectRatio=/i.test(a)) {
+            a += ' preserveAspectRatio="xMidYMid meet"';
+        }
+        return `<svg${a}>`;
+    });
+}
+
+/**
+ * Mockup renderer — renders raw SVG content inline after sanitization.
+ */
+function MockupRenderer({ content }: { content: unknown }): ReactElement {
+    const processedSvg = useMemo(() => {
+        const raw = typeof content === 'string' ? content.trim() : '';
+        if (!raw) return null;
+        return makeSvgResponsive(sanitizeSvg(raw));
+    }, [content]);
+
+    if (!processedSvg) {
+        return <CodeBlockPlaceholder type="expand" error="Empty mockup" />;
+    }
+
+    return (
+        <div
+            style={{ margin: '16px 0', width: '100%', overflowX: 'auto' }}
+            dangerouslySetInnerHTML={{ __html: processedSvg }}
+        />
+    );
+}
+
+/**
  * Image renderer
  */
 function ImageRenderer({ content, path }: { content: unknown; path: string }): ReactElement {
@@ -312,6 +379,13 @@ export function ArtifactContentRenderer({
                 </CodeBlockErrorBoundary>
             );
         }
+
+        case 'mockup':
+            return (
+                <CodeBlockErrorBoundary type="expand" fallbackCode={typeof content === 'string' ? content : path}>
+                    <MockupRenderer content={content} />
+                </CodeBlockErrorBoundary>
+            );
 
         case 'image':
             return (

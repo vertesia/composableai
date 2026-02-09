@@ -356,7 +356,7 @@ export function ExpandCodeBlockHandler({ code, language }: CodeBlockRendererProp
         // Validate known types
         const validTypes: ExpandRenderType[] = [
             'chart', 'vega-lite', 'table', 'markdown',
-            'fusion-fragment', 'code', 'image', 'auto'
+            'fusion-fragment', 'mockup', 'code', 'image', 'auto'
         ];
         return validTypes.includes(type) ? type : 'auto';
     }, [language]);
