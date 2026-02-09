@@ -51,6 +51,7 @@ export class ToolRegistry {
                 return isDefault || isUnlocked;
             })
             .map(tool => ({
+                url: `tools/${this.category}`,
                 name: tool.name,
                 description: tool.description,
                 input_schema: tool.input_schema,
@@ -70,6 +71,7 @@ export class ToolRegistry {
         return Object.values(this.registry)
             .filter(tool => tool.default === false && !unlockedSet.has(tool.name))
             .map(tool => ({
+                url: `tools/${this.category}`,
                 name: tool.name,
                 description: tool.description,
                 input_schema: tool.input_schema,
