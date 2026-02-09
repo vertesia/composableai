@@ -135,6 +135,7 @@ jobs:
               "event_type": "update-git-submodule-request",
               "client_payload": {
                 "composableai_sha": "${{ github.sha }}",
-                "branch": "main"
+                "branch": "main",
+                "sender": "${{ github.actor }}"
               }
             }'
