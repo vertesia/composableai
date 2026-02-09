@@ -7,7 +7,7 @@ import { capitalize } from 'lodash-es';
 import { useNavigate } from '@vertesia/ui/router';
 
 interface GenericPageNavHeaderProps {
-    title: string | JSX.Element;
+    title?: string | JSX.Element;
     description?: string | JSX.Element;
     actions?: ReactNode | ReactNode[];
     breadcrumbs?: JSX.Element[]
@@ -51,8 +51,8 @@ export function GenericPageNavHeader({ className, children, title, description, 
     }
 
     // Build breadcrumb items from history chain and current breadcrumbs
-    const buildBreadcrumbItems = (): Array<{ label: string, href?: string, onClick?: () => void }> => {
-        const items: Array<{ label: string, href?: string, onClick?: () => void, clearHistory?: boolean }> = [];
+    const buildBreadcrumbItems = (): Array<{ label: string | ReactNode, href?: string, onClick?: () => void }> => {
+        const items: Array<{ label: string | ReactNode, href?: string, onClick?: () => void, clearHistory?: boolean }> = [];
 
         // Add items from history chain
         if (useDynamicBreadcrumbs && typeof window !== 'undefined' && window.history.state?.historyChain) {
@@ -70,10 +70,8 @@ export function GenericPageNavHeader({ className, children, title, description, 
         // Add current page breadcrumbs
         if (breadcrumbs && breadcrumbs.length > 0) {
             breadcrumbs.forEach((breadcrumb: any) => {
-                // Extract text content from React element
-                const label = typeof breadcrumb?.props?.children === 'string'
-                    ? breadcrumb.props.children
-                    : 'Page';
+                // Preserve the entire React element as label
+                const label = breadcrumb.props?.children || breadcrumb;
 
                 items.push(( breadcrumb?.props?.href ) ? {
                     href: breadcrumb?.props?.href,
@@ -91,20 +89,20 @@ export function GenericPageNavHeader({ className, children, title, description, 
     const breadcrumbItems = buildBreadcrumbItems();
 
     return (
-        <div className={clsx(isCompact ? 'pb-0' : 'pb-2', 'p-4 flex flex-col', className)}>
+        <div className={clsx(isCompact ? 'pb-0' : 'pb-2', 'px-4 py-2 flex flex-col', className)}>
             <div className='flex items-start gap-4'>
                 <div className="w-full flex place-content-between h-auto min-h-8 flex-col items-start">
-                    <nav className="flex-1 flex justify-start text-xs">
+                    <nav className="flex-1 flex justify-start text-sm">
                         {breadcrumbItems.length > 0 && (
                             <Breadcrumbs
                                 path={breadcrumbItems}
-                                separator={<ChevronRight className="w-3.5 h-3.5" />}
+                                separator={<ChevronRight className="size-3.5" />}
                                 maxItems={4}
                             />
                         )}
                     </nav>
                     <div className='flex gap-2 items-center'>
-                        <h1 className="text-xl font-semibold break-all">{title}</h1>
+                        {title && <h1 className="text-xl font-semibold break-all">{title}</h1>}
                         {
                             description &&
                             <VTooltip
