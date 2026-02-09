@@ -481,6 +481,15 @@ export interface AgentTask {
     result?: string;
     error?: { type: string; message: string };
 
+    /** Number of activity retries */
+    retries?: number;
+
+    /** Active tools for this LLM call */
+    activeTools?: string[];
+
+    /** Available skills for this LLM call */
+    availableSkills?: string[];
+
     /** Workstream tracking */
     workstreamId?: string;
 }

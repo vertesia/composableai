@@ -6,6 +6,15 @@ import Ajv, { ValidateFunction } from "ajv";
 import type { JSONSchema4 } from "json-schema";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
+export type WorkflowMode = 'start' | 'schedule';
+
+export interface ScheduledWorkflowConfig {
+    name: string;
+    description?: string;
+    cron_expression: string;
+    timezone: string;
+}
+
 export class PayloadBuilder {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
@@ -18,6 +27,8 @@ export class PayloadBuilder {
     _model: string = '';
     _tool_names: string[] = [];
     _data: JSONObject | undefined;
+    _mode: WorkflowMode = 'start';
+    _scheduledWorkflowConfig: ScheduledWorkflowConfig | undefined;
 
     private _interactionParamsSchema?: JSONSchema4 | null;
     private _inputValidator?: {
@@ -48,7 +59,29 @@ export class PayloadBuilder {
         builder._start = this._start;
         builder._collection = this._collection;
         builder._preserveRunValues = this._preserveRunValues;
+        builder._mode = this._mode;
+        builder._scheduledWorkflowConfig = this._scheduledWorkflowConfig;
         return builder;
+    }
+
+    set mode(mode: 'start' | 'schedule') {
+        if (mode !== this._mode) {
+            this._mode = mode;
+            this.onStateChanged();
+        }
+    }
+
+    get mode() {
+        return this._mode;
+    }
+
+    set scheduledWorkflowConfig(config: ScheduledWorkflowConfig | undefined) {
+        this._scheduledWorkflowConfig = config;
+        this.onStateChanged();
+    }
+
+    get scheduledWorkflowConfig() {
+        return this._scheduledWorkflowConfig;
     }
 
     get interactive() {
