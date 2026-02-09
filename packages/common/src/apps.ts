@@ -142,6 +142,12 @@ export function normalizeToolCollection(collection: ToolCollection): ToolCollect
  */
 export interface AgentToolDefinition extends ToolDefinition {
     /**
+     * The tool execution URL. It can be an absolute URL or a path in which case the URL is obtained 
+     * using the base URL of the tool server API. Ex: http://tool-server.com/api/
+     * Example of relative URLs: "tools/my-tool-collection" or "/api/tools/my-tool-collection"
+     */
+    url?: string;
+    /**
      * The tool category if any - for UI purposes.
      */
     category?: string;
