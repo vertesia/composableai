@@ -5,12 +5,12 @@ import { InCodeTypeDefinition } from "./store/index.js";
 /**
  * Additional navigation item for an app's UI configuration.
  * Used in AppUIConfig.navigation to define sidebar navigation entries in CompositeApp shell contexts.
- * Icon names correspond to Lucide icon component names. 
+ * Icon values are Lucide icon component names or SVG content strings.
  */
 export interface AppUINavItem {
     /** Display label */
     label: string;
-    /** Lucide icon name (e.g., "MessageSquare", "History") */
+    /** Lucide icon name or SVG content string */
     icon: string;
     /** Route path relative to app base */
     route: string;
@@ -442,7 +442,7 @@ export interface CompositeAppNavItemOverride {
     hidden?: boolean;
     /** Override the displayed nav item label */
     label?: string;
-    /** Override the displayed nav item icon (Lucide icon name) */
+    /** Override the displayed nav item icon (Lucide icon name or SVG content string) */
     icon?: string;
     //TODO: Set permissions for routes
 }
@@ -456,7 +456,7 @@ export interface CompositeAppEntry {
     appName: string;
     /** Override the label displayed for the app */
     labelOverride?: string;
-    /** Override the icon displayed for the app (Lucide icon name) */
+    /** Override the icon displayed for the app (Lucide icon name or SVG content string) */
     iconOverride?: string;
     /** Overrides for navigation items provided by the app */
     navigationOverrides?: CompositeAppNavItemOverride[];
@@ -510,7 +510,7 @@ export interface CompositeAppCardOverrides {
     label?: string;
     /** Override the card description */
     description?: string;
-    /** Override the card icon (Lucide icon name, e.g., "Rocket") */
+    /** Override the card icon (Lucide icon name or SVG content string) */
     icon?: string;
     /** Override the card color (e.g., "blue", "red", "purple") */
     color?: string;
