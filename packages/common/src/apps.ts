@@ -279,7 +279,7 @@ export interface AppManifestData {
      */
     endpoint?: string;
 }
-export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'settings' | 'all';
+export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'settings' | 'widgets' | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
@@ -302,9 +302,20 @@ export interface AppPackage {
     types?: InCodeTypeDefinition[];
 
     /**
+     * Widgets provided by the app. 
+     */
+    widgets?: Record<string, AppWidgetInfo>;
+
+    /**
      * A JSON chema for the app installation settings.
      */
     settings_schema?: JSONSchema;
+}
+
+export interface AppWidgetInfo {
+    collection: string;
+    skill: string;
+    url: string;
 }
 
 export interface AppManifest extends AppManifestData {

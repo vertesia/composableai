@@ -83,16 +83,21 @@ async function fetchSkillWidgets(client: VertesiaClient): Promise<Record<string,
     const installedApps = await client.apps.getInstalledApps("tools");
     const urls = new Set<string>();
     for (const app of installedApps) {
-        for (const item of app.manifest.tool_collections || []) {
-            const collection = normalizeToolCollection(item);
-            const collUrl = collection.url;
-            if (collUrl.startsWith("http://") || collUrl.startsWith("https://")) {
-                const i = collUrl.indexOf("/api/");
-                if (i > 0) {
-                    const url = collUrl.substring(0, i);
-                    urls.add(url + '/api/widgets');
+        if (app.manifest.tool_collections && app.manifest.tool_collections.length > 0) {
+            for (const item of app.manifest.tool_collections || []) {
+                const collection = normalizeToolCollection(item);
+                const collUrl = collection.url;
+                if (collUrl.startsWith("http://") || collUrl.startsWith("https://")) {
+                    const i = collUrl.indexOf("/api/");
+                    if (i > 0) {
+                        const url = collUrl.substring(0, i);
+                        urls.add(url + '/api/widgets');
+                    }
                 }
             }
+        }
+        if (app.manifest.endpoint && app.manifest.capabilities?.includes("tools")) {
+            urls.add(new URL('/api/widgets', app.manifest.endpoint).toString());
         }
     }
 
