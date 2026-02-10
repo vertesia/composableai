@@ -1,4 +1,4 @@
-import { AppPackage, AppPackageScope, CatalogInteractionRef, InCodeTypeDefinition } from "@vertesia/common";
+import { AppPackage, AppPackageScope, AppWidgetInfo, CatalogInteractionRef, InCodeTypeDefinition } from "@vertesia/common";
 import { Context, Hono } from "hono";
 import { ToolServerConfig } from "./types.js";
 
@@ -44,6 +44,22 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
         }
         pkg.types = allTypes;
     },
+    widgets(pkg: AppPackage, config: ToolServerConfig) {
+        const { skills: skillCollections = [] } = config;
+        const widgets: Record<string, AppWidgetInfo> = {};
+        for (const coll of skillCollections) {
+            for (const skill of coll.getSkillDefinitions()) {
+                if (skill.widgets && skill.widgets.length > 0) {
+                    widgets[skill.name] = {
+                        skill: skill.name,
+                        collection: coll.name,
+                        url: `/widgets/${skill.widgets[0]}.js`
+                    } satisfies AppWidgetInfo;
+                }
+            }
+        }
+        pkg.widgets = widgets;
+    },
     ui(pkg: AppPackage, config: ToolServerConfig, c: Context) {
         if (config.uiConfig) {
             pkg.ui = { ...config.uiConfig };
@@ -76,6 +92,7 @@ export function createPackageRoute(app: Hono, basePath: string, config: ToolServ
             builders.tools(pkg, config, c);
             builders.interactions(pkg, config, c);
             builders.types(pkg, config, c);
+            builders.widgets(pkg, config, c);
             builders.ui(pkg, config, c);
             builders.settings(pkg, config, c);
         } else {
@@ -87,6 +104,9 @@ export function createPackageRoute(app: Hono, basePath: string, config: ToolServ
             }
             if (scopes.has('types')) {
                 builders.types(pkg, config, c);
+            }
+            if (scopes.has('widgets')) {
+                builders.widgets(pkg, config, c);
             }
             if (scopes.has('ui')) {
                 builders.ui(pkg, config, c);

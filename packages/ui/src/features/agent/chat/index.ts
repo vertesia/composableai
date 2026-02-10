@@ -27,4 +27,5 @@ export type { HeaderProps } from "./ModernAgentOutput/Header";
 // StreamingMessage widget and types for external use
 export { default as StreamingMessage } from "./ModernAgentOutput/StreamingMessage";
 export type { StreamingMessageProps } from "./ModernAgentOutput/StreamingMessage";
+export * from "./SkillWidgetProvider";
 
