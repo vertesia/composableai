@@ -243,11 +243,19 @@ function AllMessagesMixedComponent({
         return { importantMessages: important, recentThinking: thinkingMessages };
     }, [displayMessages, isCompleted, streamingMessages.size]);
 
-    // Split streaming messages: complete ones get interleaved, incomplete ones render at end
-    // This prevents re-grouping all messages when incomplete streaming updates
+    // Split streaming messages:
+    // - complete (or stale incomplete) ones are interleaved chronologically
+    // - actively incomplete ones render at the end
+    // This keeps live streaming performant while preventing old incomplete streams
+    // from being pinned forever at the bottom.
     const { completeStreaming, incompleteStreaming } = React.useMemo(() => {
         const complete = new Map<string, StreamingData>();
         const incomplete: Array<{ id: string; data: StreamingData }> = [];
+        const newestMessageTimestamp = displayMessages.length > 0
+            ? Math.max(...displayMessages.map(msg =>
+                typeof msg.timestamp === "number" ? msg.timestamp : new Date(msg.timestamp).getTime()
+            ))
+            : -Infinity;
 
         streamingMessages.forEach((data, id) => {
             // Filter by workstream if specified
@@ -256,7 +264,10 @@ function AllMessagesMixedComponent({
                 if (activeWorkstream !== streamWorkstream) return;
             }
 
-            if (data.isComplete) {
+            // If a newer persisted message exists, this stream is stale and should be
+            // treated as complete for ordering purposes.
+            const isStale = data.startTimestamp <= newestMessageTimestamp;
+            if (data.isComplete || isStale) {
                 complete.set(id, data);
             } else if (data.text) {
                 incomplete.push({ id, data });
@@ -264,7 +275,7 @@ function AllMessagesMixedComponent({
         });
 
         return { completeStreaming: complete, incompleteStreaming: incomplete };
-    }, [streamingMessages, activeWorkstream]);
+    }, [streamingMessages, activeWorkstream, displayMessages]);
 
     // Group messages with ONLY complete streaming interleaved for stacked view
     // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk)

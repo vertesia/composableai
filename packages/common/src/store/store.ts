@@ -563,7 +563,7 @@ export interface GetFileUrlPayload {
 export interface GetFileUrlResponse {
     url: string;
     id: string;
-    mime_type: string;
+    mime_type?: string;
     path: string;
 }
 
