@@ -106,6 +106,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             }
 
             return {
+                url: `skills/${this.name}`,
                 name: `learn_${skill.name}`,
                 description,
                 input_schema: skill.input_schema || defaultSchema,

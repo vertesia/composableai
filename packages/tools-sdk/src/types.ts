@@ -127,6 +127,11 @@ export interface MCPConnectionDetails {
      * If an empty string no authentication will be done
      */
     token: string;
+    /**
+     * Optional additional HTTP headers to include with requests to the MCP server.
+     * Merged with the Authorization header derived from the token.
+     */
+    headers?: Record<string, string>;
 }
 
 // ================== Skill Types ==================
