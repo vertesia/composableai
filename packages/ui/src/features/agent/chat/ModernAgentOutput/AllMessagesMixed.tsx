@@ -408,8 +408,14 @@ function AllMessagesMixedComponent({
                     padding: 1rem;
                     border-radius: 0.5rem;
                     overflow-x: auto;
-                    background-color: var(--gray-2, #f3f4f6);
-                    color: var(--gray-12, #1f2937);
+                    background-color: var(--color-muted-background, #f3f4f6);
+                    color: var(--color-foreground, #1f2937);
+                }
+                .vprose pre code {
+                    color: inherit;
+                }
+                .dark .vprose pre {
+                    color: var(--color-foreground, #f9fafb);
                 }
             `}</style>
 
