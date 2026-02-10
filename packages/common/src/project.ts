@@ -247,7 +247,7 @@ export interface Project {
     description?: string;
     account: string;
     configuration: ProjectConfiguration;
-    integrations: Map<string, any>;
+    integrations: Record<string, any>;
     plugins: string[];
     created_by: string,
     updated_by: string,
