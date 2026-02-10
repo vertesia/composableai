@@ -397,6 +397,8 @@ function AllMessagesMixedComponent({
                     padding: 1rem;
                     border-radius: 0.5rem;
                     overflow-x: auto;
+                    background-color: var(--gray-2, #f3f4f6);
+                    color: var(--gray-12, #1f2937);
                 }
             `}</style>
 

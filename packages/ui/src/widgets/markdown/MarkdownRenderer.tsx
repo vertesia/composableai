@@ -165,7 +165,7 @@ export function MarkdownRenderer({
 
             // Default code rendering
             const baseInlineClass = 'px-1.5 py-0.5 rounded';
-            const baseCodeClass = 'text-muted';
+            const baseCodeClass = '';
 
             return (
                 <code
