@@ -52,6 +52,8 @@ export interface MarkdownRenditionVars extends BaseRenditionVars {
     title?: string;
     /** URL to template file (LaTeX for PDF, reference doc for DOCX) */
     templateUrl?: string;
+    /** Optional logo URL for template variable `logo-path` (studio-hosted URL) */
+    templateLogoUrl?: string;
     /** Use Vertesia default template if no templateUrl provided (default: true for pdf) */
     useDefaultTemplate?: boolean;
     /** Additional pandoc command-line options */
@@ -91,6 +93,8 @@ export interface RenderMarkdownPayload {
     title?: string;
     /** URL to a template file for pandoc (DOCX reference doc or LaTeX template) */
     templateUrl?: string;
+    /** Optional logo URL for template variable `logo-path` (studio-hosted URL) */
+    templateLogoUrl?: string;
     /** Use Vertesia default template if no templateUrl provided (default: true for pdf) */
     useDefaultTemplate?: boolean;
     /** Additional pandoc command-line options */
