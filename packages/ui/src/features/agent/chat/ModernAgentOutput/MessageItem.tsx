@@ -1,10 +1,10 @@
-import { AgentMessage, AgentMessageType, AskUserMessageDetails } from "@vertesia/common";
-import { Badge, Button, useToast } from "@vertesia/ui/core";
+import { AgentMessage, AgentMessageType, AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
+import { Badge, Button, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
-import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Info, Layers, MessageSquare, User } from "lucide-react";
+import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, MessageSquare, User } from "lucide-react";
 import React, { useEffect, useState, useMemo, memo, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
@@ -12,6 +12,7 @@ import { useImageLightbox } from "../ImageLightbox";
 import { ThinkingMessages } from "../WaitingMessages";
 import { getWorkstreamId } from "./utils";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
+import { useDownloadFile } from "../../../store/index.js";
 
 // PERFORMANCE: Move pure function outside component to avoid recreation on every render
 // Process content to enhance markdown detection for lists and thinking messages
@@ -139,6 +140,7 @@ function MessageItemComponent({
     clientRef.current = client;
     const urlCacheRef = useRef(urlCache);
     urlCacheRef.current = urlCache;
+    const { renderContent: exportContent, isDownloading: isExportingFile } = useDownloadFile({ client, toast });
 
     // Get styles from consolidated config
     const styles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
@@ -201,6 +203,64 @@ function MessageItemComponent({
         });
     };
 
+    // Export message content to PDF or DOCX
+    const exportToFormat = async (format: MarkdownRenditionFormat) => {
+        const content = typeof messageContent === 'string' ? messageContent : '';
+
+        if (!content.trim()) {
+            toast({
+                status: "error",
+                title: "No content to export",
+                duration: 2000,
+            });
+            return;
+        }
+
+        const title = `Message ${dayjs(message.timestamp).format("YYYY-MM-DD HH-mm-ss")}`;
+        await exportContent(content, {
+            format,
+            title,
+            artifactRunId: runId,
+        });
+    };
+
+    // Check if message has exportable content (markdown text)
+    const hasExportableContent = typeof messageContent === 'string' && messageContent.trim().length > 0;
+
+    // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
+    const markdownComponents = useMemo(() => ({
+        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
+            const href = props.href || "";
+            if (href.includes("/store/objects")) {
+                return (
+                    <NavLink
+                        href={href}
+                        topLevelNav
+                    >
+                        {props.children}
+                    </NavLink>
+                );
+            }
+            return (
+                <a
+                    {...props}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                />
+            );
+        },
+        img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
+            return (
+                <img
+                    {...props}
+                    className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
+                    loading="lazy"
+                    onClick={() => props.src && openImage(props.src, props.alt)}
+                />
+            );
+        },
+    }), [openImage]);
+
     // Render content with markdown support - all messages now rendered as markdown
     const renderContent = (content: string | object) => {
         // Handle object content (JSON)
@@ -221,38 +281,7 @@ function MessageItemComponent({
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
                     onProposalSubmit={(text) => onSendMessage?.(text)}
-                    components={{
-                        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
-                            const href = props.href || "";
-                            if (href.includes("/store/objects")) {
-                                return (
-                                    <NavLink
-                                        href={href}
-                                        topLevelNav
-                                    >
-                                        {props.children}
-                                    </NavLink>
-                                );
-                            }
-                            return (
-                                <a
-                                    {...props}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                />
-                            );
-                        },
-                        img: ({ node, ref, ...props }: { node?: any; ref?: any; src?: string; alt?: string }) => {
-                            return (
-                                <img
-                                    {...props}
-                                    className="max-w-full h-auto rounded-lg shadow-md my-3 cursor-pointer hover:shadow-lg transition-shadow"
-                                    loading="lazy"
-                                    onClick={() => props.src && openImage(props.src, props.alt)}
-                                />
-                            );
-                        },
-                    }}
+                    components={markdownComponents}
                 >
                     {content as string}
                 </MarkdownRenderer>
@@ -383,6 +412,27 @@ function MessageItemComponent({
                         >
                             <CopyIcon className="size-3" />
                         </Button>
+                        {hasExportableContent && (
+                            <Dropdown
+                                trigger={
+                                    <Button
+                                        variant="ghost" size="xs"
+                                        className="text-muted/50 hover:text-muted h-5 w-5 p-0"
+                                        title="Export message"
+                                        disabled={isExportingFile}
+                                    >
+                                        <Download className={`size-3 ${isExportingFile ? 'animate-pulse' : ''}`} />
+                                    </Button>
+                                }
+                            >
+                                <MenuItem onClick={() => exportToFormat(MarkdownRenditionFormat.pdf)}>
+                                    Export as PDF
+                                </MenuItem>
+                                <MenuItem onClick={() => exportToFormat(MarkdownRenditionFormat.docx)}>
+                                    Export as Word
+                                </MenuItem>
+                            </Dropdown>
+                        )}
                     </div>
                 </div>
 

@@ -188,10 +188,11 @@ export class IndexingApi extends ApiTopic {
      * @param cursor Cursor from previous batch (null for first batch)
      * @param limit Maximum documents to process (default: 500)
      * @param targetIndex Optional explicit index name for zero-downtime reindexing
+     * @param since Only index docs with updated_at >= this ISO timestamp (for catch-up after reindex)
      */
-    indexBatch(cursor?: string | null, limit?: number, targetIndex?: string): Promise<IndexBatchResult> {
+    indexBatch(cursor?: string | null, limit?: number, targetIndex?: string, since?: string): Promise<IndexBatchResult> {
         return this.post("/internal/index-batch", {
-            payload: { cursor, limit, targetIndex },
+            payload: { cursor, limit, targetIndex, since },
         });
     }
 

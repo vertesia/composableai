@@ -8,16 +8,17 @@ import { IndexingApi } from "./IndexingApi.js";
 import { EmbeddingsApi } from "./EmbeddingsApi.js";
 import { ZenoClientNotFoundError } from "./errors.js";
 import { FilesApi } from "./FilesApi.js";
+import { HiveMemoryApi } from "./HiveMemoryApi.js";
 import { ObjectsApi } from "./ObjectsApi.js";
 import { PendingAsksApi } from "./PendingAsksApi.js";
 import { QueryApi } from "./QueryApi.js";
+import { RenderingApi } from "./RenderingApi.js";
 import { SchedulesApi } from "./SchedulesApi.js";
 import { ToolsApi } from "./ToolsApi.js";
 import { TypesApi } from "./TypesApi.js";
 import { VERSION, VERSION_HEADER } from "./version.js";
 import { WorkersApi } from "./WorkersApi.js";
 import { WorkflowsApi } from "./WorkflowsApi.js";
-import { HiveMemoryApi } from "./HiveMemoryApi.js";
 
 export interface ZenoClientProps {
     serverUrl?: string;
@@ -98,4 +99,5 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     indexing = new IndexingApi(this);
     query = new QueryApi(this);
     hiveMemory = new HiveMemoryApi(this);
+    rendering = new RenderingApi(this);
 }

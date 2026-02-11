@@ -1,3 +1,4 @@
 export enum ApiVersions {
     COMPLETION_RESULT_V1 = 20250925,
+    DOWNLOAD_URL_NO_MIME_TYPE_V1 = 20260210,
 }

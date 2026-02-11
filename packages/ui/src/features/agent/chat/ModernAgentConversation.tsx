@@ -664,21 +664,28 @@ function ModernAgentConversationInner({
             f => f.status === FileProcessingStatus.UPLOADING || f.status === FileProcessingStatus.PROCESSING
         ), [processingFiles]);
 
+    // PERFORMANCE: Refs for values used inside useCallback to avoid re-creating the callback
+    const isSendingRef = useRef(isSending);
+    isSendingRef.current = isSending;
+    const hasProcessingFilesRef = useRef(hasProcessingFiles);
+    hasProcessingFilesRef.current = hasProcessingFiles;
+
     // Performance optimization: Batch streaming updates using RAF
     // Instead of updating state on every chunk (100+ times/sec), batch them per animation frame
     const pendingStreamingChunks = useRef<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number; activityId?: string }>>(new Map());
     const streamingFlushScheduled = useRef<number | null>(null);
 
-    // Debug: Track chunk arrivals and renders
-    const [_debugChunkCount, setDebugChunkCount] = useState(0);
-    const [_debugRenderCount, setDebugRenderCount] = useState(0);
+    // Debug: Visual flash indicator for incoming chunks
     const [debugChunkFlash, setDebugChunkFlash] = useState(false);
     const debugFlashTimeout = useRef<NodeJS.Timeout | null>(null);
 
     const flushStreamingChunks = useCallback(() => {
         if (pendingStreamingChunks.current.size > 0) {
             setStreamingMessages(new Map(pendingStreamingChunks.current));
-            setDebugRenderCount(c => c + 1);
+            // Flash indicator fires at most once per animation frame instead of per chunk
+            setDebugChunkFlash(true);
+            if (debugFlashTimeout.current) clearTimeout(debugFlashTimeout.current);
+            debugFlashTimeout.current = setTimeout(() => setDebugChunkFlash(false), 50);
         }
         streamingFlushScheduled.current = null;
     }, []);
@@ -762,12 +769,6 @@ function ModernAgentConversationInner({
                 // Use activity_id as key if available (for dedup), fall back to streaming_id
                 const streamKey = details?.activity_id || details?.streaming_id;
                 if (!streamKey) return;
-
-                // Debug: Track chunk arrival with flash
-                setDebugChunkCount(c => c + 1);
-                setDebugChunkFlash(true);
-                if (debugFlashTimeout.current) clearTimeout(debugFlashTimeout.current);
-                debugFlashTimeout.current = setTimeout(() => setDebugChunkFlash(false), 50);
 
                 // Accumulate chunks in the ref (no state update yet)
                 const current = pendingStreamingChunks.current.get(streamKey) || {
@@ -1019,12 +1020,12 @@ function ModernAgentConversationInner({
     }, [messages, plans, activePlanIndex]);
 
     // Send a message to the agent
-    const handleSendMessage = (message: string) => {
+    const handleSendMessage = useCallback((message: string) => {
         const trimmed = message.trim();
-        if (!trimmed || isSending) return;
+        if (!trimmed || isSendingRef.current) return;
 
         // Block if files are still processing
-        if (hasProcessingFiles) {
+        if (hasProcessingFilesRef.current) {
             toast({
                 status: "warning",
                 title: "Files Still Processing",
@@ -1103,7 +1104,7 @@ function ModernAgentConversationInner({
             .finally(() => {
                 setIsSending(false);
             });
-    };
+    }, [run.runId, run.workflowId, client, toast, getAttachedDocs, getMessageContext, onAttachmentsSent]);
 
     // Handle file uploads - upload to artifact storage and signal workflow
     const handleFileUpload = useCallback(async (files: File[]) => {
@@ -1356,6 +1357,14 @@ function ModernAgentConversationInner({
         setIsPdfModalOpen(false);
     };
 
+    // PERFORMANCE: Memoize taskLabels to prevent AllMessagesMixed re-renders
+    const taskLabels = useMemo(() =>
+        getActivePlan.plan.plan?.reduce((acc, task) => {
+            if (task.id && task.goal) acc.set(task.id.toString(), task.goal);
+            return acc;
+        }, new Map<string, string>()),
+    [getActivePlan.plan]);
+
     // Main content - wrapped with FusionFragmentProvider when fusionData is provided
     const mainContent = (
         <ArtifactUrlCacheProvider>
@@ -1437,12 +1446,7 @@ function ModernAgentConversationInner({
                         plans={plans}
                         activePlanIndex={activePlanIndex}
                         onChangePlan={handleChangePlan}
-                        taskLabels={getActivePlan.plan.plan?.reduce((acc, task) => {
-                            if (task.id && task.goal) {
-                                acc.set(task.id.toString(), task.goal);
-                            }
-                            return acc;
-                        }, new Map<string, string>())}
+                        taskLabels={taskLabels}
                         streamingMessages={streamingMessages}
                         onSendMessage={handleSendMessage}
                         thinkingMessageIndex={thinkingMessageIndex}
