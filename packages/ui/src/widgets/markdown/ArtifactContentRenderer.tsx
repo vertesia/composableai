@@ -204,11 +204,15 @@ export function sanitizeSvg(svg: string): string {
     let prev: string;
     do {
         prev = s;
-        s = s.replace(/<script[\s\S]*?<\/script>/gi, '');
-        s = s.replace(/<script[^>]*\/>/gi, '');
-        s = s.replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, '');
+        // Match closing tags with optional whitespace/attrs: </script > is valid HTML
+        s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
+        s = s.replace(/<script\b[^>]*\/>/gi, '');
+        s = s.replace(/<foreignObject\b[^>]*>[\s\S]*?<\/foreignObject\s*>/gi, '');
+        s = s.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
     } while (s !== prev);
-    s = s.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+    // Final hardening: strip any remaining tag openers that survived above
+    s = s.replace(/<\/?\s*script\b/gi, '');
+    s = s.replace(/<\/?\s*foreignObject\b/gi, '');
     return s;
 }
 
