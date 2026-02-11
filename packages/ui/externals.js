@@ -69,6 +69,7 @@ export const EXTERNALS = [
     /^vega\/.*/,
     /^vega-lite\/.*/,
     /^framer-motion\/.*/,
+    "dompurify",
     "mermaid",
     "react-pdf",
     /^react-pdf\/.*/,

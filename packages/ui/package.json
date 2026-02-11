@@ -48,6 +48,7 @@
     "cmdk": "^1.1.1",
     "dayjs": "^1.11.19",
     "debounce": "^2.2.0",
+    "dompurify": "^3.3.1",
     "fast-xml-parser": "^5.3.4",
     "firebase": "^10.12.2",
     "framer-motion": "^12.23.12",
@@ -68,7 +69,6 @@
     "react-markdown": "^10.1.0",
     "react-pdf": "^10.2.0",
     "react-resizable-panels": "^3.0.6",
-
     "react-vega": "^8.0.0",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
@@ -92,7 +92,6 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",
-
     "eslint": "^9.27.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",

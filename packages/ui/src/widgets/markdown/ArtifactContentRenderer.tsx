@@ -5,6 +5,7 @@
  */
 
 import { useMemo, type ReactElement } from 'react';
+import DOMPurify from 'dompurify';
 import { CodeBlockPlaceholder, CodeBlockErrorBoundary } from './CodeBlockPlaceholder';
 import { type VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
@@ -195,25 +196,15 @@ function CodeRenderer({ content, path }: { content: unknown; path: string }): Re
 }
 
 /**
- * Sanitize SVG markup — strip <script>, <foreignObject>, and on* event handlers.
+ * Sanitize SVG markup using DOMPurify.
+ * Allows only safe SVG elements; strips scripts, event handlers, and foreignObject.
  */
 export function sanitizeSvg(svg: string): string {
-    let s = svg;
-    // Loop until stable to prevent crafted nested tags from reassembling
-    // e.g. "<scr<script>ipt>..." → "<script>..." after one pass
-    let prev: string;
-    do {
-        prev = s;
-        // Match closing tags with optional whitespace/attrs: </script > is valid HTML
-        s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
-        s = s.replace(/<script\b[^>]*\/>/gi, '');
-        s = s.replace(/<foreignObject\b[^>]*>[\s\S]*?<\/foreignObject\s*>/gi, '');
-        s = s.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-    } while (s !== prev);
-    // Final hardening: strip any remaining tag openers that survived above
-    s = s.replace(/<\/?\s*script\b/gi, '');
-    s = s.replace(/<\/?\s*foreignObject\b/gi, '');
-    return s;
+    return DOMPurify.sanitize(svg, {
+        USE_PROFILES: { svg: true, svgFilters: true },
+        ADD_TAGS: ['use'],
+        FORBID_TAGS: ['foreignObject'],
+    });
 }
 
 /**
