@@ -1,9 +1,10 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
-    ContentObjectApiHeaders,
+    canGenerateRendition,
     ComplexSearchPayload,
     ComputeObjectFacetPayload,
     ContentObject,
+    ContentObjectApiHeaders,
     ContentObjectItem,
     ContentObjectProcessingPriority,
     ContentSource,
@@ -16,12 +17,17 @@ import {
     GetFileUrlResponse,
     GetRenditionParams,
     GetRenditionResponse,
+    getSupportedRenditionFormats,
     GetUploadUrlPayload,
     ListWorkflowRunsResponse,
     ObjectSearchPayload,
     ObjectSearchQuery,
     SupportedEmbeddingTypes,
+    supportsVisualRendition
 } from "@vertesia/common";
+
+// Re-export rendition utilities for consumers
+export { canGenerateRendition, getSupportedRenditionFormats, supportsVisualRendition };
 
 import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
@@ -145,6 +151,7 @@ export class ObjectsApi extends ApiTopic {
             name: source.name,
             mime_type: source.type,
         });
+        const sourceMimeType = source.type || mime_type;
 
         // upload the file content to the signed URL
         /*const res = await this.fetch(url, {
@@ -169,9 +176,7 @@ export class ObjectsApi extends ApiTopic {
             body: isStream ? source.stream : source,
             //@ts-ignore: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
             duplex: isStream ? "half" : undefined,
-            headers: {
-                "Content-Type": mime_type || "application/octet-stream",
-            },
+            headers: sourceMimeType ? { "Content-Type": sourceMimeType } : undefined,
         })
             .then((res: Response) => {
                 if (res.ok) {
@@ -195,7 +200,7 @@ export class ObjectsApi extends ApiTopic {
         return {
             source: id,
             name: source.name,
-            type: mime_type,
+            type: sourceMimeType,
             etag,
         };
     }
@@ -220,7 +225,7 @@ export class ObjectsApi extends ApiTopic {
         const headers: Record<string, string> = {};
         if (options?.processing_priority) {
             headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
-        } 
+        }
         if (options?.collection_id) {
             headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
         }
@@ -264,7 +269,7 @@ export class ObjectsApi extends ApiTopic {
         const headers: Record<string, string> = {};
         if (options?.processing_priority) {
             headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
-        } 
+        }
         if (options?.collection_id) {
             headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
         }
@@ -284,6 +289,7 @@ export class ObjectsApi extends ApiTopic {
      * @param options Additional options
      * @param options.createRevision Whether to create a new revision instead of updating in place
      * @param options.revisionLabel Optional label for the revision (e.g., "v1.2")
+     * @param options.suppressWorkflows When true, prevents this update from triggering workflow rules
      * @returns The updated object or newly created revision
      */
     async update(
@@ -293,6 +299,7 @@ export class ObjectsApi extends ApiTopic {
             createRevision?: boolean;
             revisionLabel?: string;
             processing_priority?: ContentObjectProcessingPriority;
+            suppressWorkflows?: boolean;
         },
     ): Promise<ContentObject> {
         const updatePayload: Partial<CreateContentObjectPayload> = {
@@ -316,6 +323,9 @@ export class ObjectsApi extends ApiTopic {
             if (options.revisionLabel) {
                 headers[ContentObjectApiHeaders.REVISION_LABEL] = options.revisionLabel;
             }
+        }
+        if (options?.suppressWorkflows) {
+            headers[ContentObjectApiHeaders.SUPPRESS_WORKFLOWS] = "true";
         }
 
         return this.put(`/${id}`, {
@@ -370,6 +380,35 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${documentId}/renditions/${options.format}`, {
             query,
         });
+    }
+
+    /**
+     * Get rendition with pre-validation of content type compatibility.
+     * Returns null instead of throwing if the format is not supported for the content type.
+     *
+     * @param documentId - The document ID
+     * @param contentType - The content type of the document (e.g., 'image/png', 'text/markdown')
+     * @param options - Rendition options including format
+     * @returns The rendition response, or null if format is not supported for the content type
+     *
+     * @example
+     * const rendition = await client.objects.getRenditionSafe(docId, doc.content?.type, {
+     *     format: ImageRenditionFormat.jpeg,
+     *     generate_if_missing: true
+     * });
+     * if (!rendition) {
+     *     console.log('Document does not support JPEG renditions');
+     * }
+     */
+    getRenditionSafe(
+        documentId: string,
+        contentType: string | undefined,
+        options: GetRenditionParams,
+    ): Promise<GetRenditionResponse | null> {
+        if (!canGenerateRendition(contentType, options.format)) {
+            return Promise.resolve(null);
+        }
+        return this.getRendition(documentId, options);
     }
 
     exportProperties(

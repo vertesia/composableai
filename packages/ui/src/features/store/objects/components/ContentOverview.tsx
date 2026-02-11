@@ -1,22 +1,34 @@
-import { useEffect, useState, memo, useRef, type RefObject } from "react";
+import { memo, useEffect, useRef, useState, type RefObject } from "react";
 
-import { useUserSession } from "@vertesia/ui/session";
-import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
-import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, VideoMetadata, POSTER_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME } from "@vertesia/common";
-import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
-import { isPreviewableAsPdf, printElementToPdf, getWorkflowStatusColor, getWorkflowStatusName } from "../../../utils/index.js";
-import { PropertiesEditorModal } from "./PropertiesEditorModal";
+import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, MarkdownRenditionFormat, PDF_RENDITION_NAME, POSTER_RENDITION_NAME, VideoMetadata, WorkflowExecutionStatus } from "@vertesia/common";
+import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
+import { useUserSession } from "@vertesia/ui/session";
+import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
+import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from "lucide-react";
 import { MagicPdfView } from "../../../magic-pdf";
 import { SimplePdfViewer } from "../../../pdf-viewer";
-import { useObjectText, usePdfProcessingStatus, useOfficePdfConversion } from "./useContentPanelHooks.js";
+import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from "../../../utils/index.js";
+import { PropertiesEditorModal } from "./PropertiesEditorModal";
+import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from "./useContentPanelHooks.js";
+import { useDownloadFile } from "./useDownloadFile.js";
 
 // Web-supported image formats for browser display
 const WEB_SUPPORTED_IMAGE_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
 
 // Web-supported video formats for browser display
 const WEB_SUPPORTED_VIDEO_FORMATS = ['video/mp4', 'video/webm'];
+
+// Web-supported audio formats for browser display
+const WEB_SUPPORTED_AUDIO_FORMATS = [
+    'audio/mp4',    // M4A/AAC (official MIME type)
+    'audio/m4a',    // M4A (alternative MIME type)
+    'audio/x-m4a',  // M4A (legacy MIME type)
+    'audio/mpeg',   // MP3
+    'audio/ogg',    // Ogg Vorbis
+    'audio/wav',    // WAV
+    'audio/webm',   // WebM audio
+];
 
 // Panel height constants for consistent layout
 const PANEL_HEIGHTS = {
@@ -146,11 +158,21 @@ function looksLikeMarkdown(text: string | undefined): boolean {
     );
 }
 
+/**
+ * Helper function to get panel visibility className.
+ * Returns empty string if visible, 'hidden' if not visible.
+ */
+function getPanelVisibility(isVisible: boolean): string {
+    return isVisible ? '' : 'hidden';
+}
+
 enum PanelView {
     Text = "text",
     Image = "image",
     Video = "video",
-    Pdf = "pdf"
+    Audio = "audio",
+    Pdf = "pdf",
+    Transcript = "transcript"
 }
 
 interface ContentOverviewProps {
@@ -299,9 +321,11 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, refetch?: () => Promise<unknown> }) {
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
+    const isAudio = object?.metadata?.type === ContentNature.Audio;
     const isPdf = object?.content?.type === 'application/pdf';
     const isPreviewableAsPdfDoc = object?.content?.type ? isPreviewableAsPdf(object.content.type) : false;
     const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
+    const hasTranscript = !!(object.transcript && (isVideo || isAudio));
 
     // Check if PDF rendition exists for Office documents
     const metadata = object.metadata as DocumentMetadata;
@@ -310,6 +334,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     // Determine initial panel view
     const getInitialView = (): PanelView => {
         if (isVideo) return PanelView.Video;
+        if (isAudio) return PanelView.Audio;
         if (isImage) return PanelView.Image;
         return PanelView.Text;
     };
@@ -378,6 +403,26 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                                 Video
                             </Button>
                         }
+                        {isAudio &&
+                            <Button
+                                variant={currentPanel === PanelView.Audio ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View Audio"
+                                onClick={() => setCurrentPanel(PanelView.Audio)}
+                            >
+                                Audio
+                            </Button>
+                        }
+                        {hasTranscript &&
+                            <Button
+                                variant={currentPanel === PanelView.Transcript ? "primary" : "ghost"}
+                                size="sm"
+                                alt="View Transcript"
+                                onClick={() => setCurrentPanel(PanelView.Transcript)}
+                            >
+                                Transcript
+                            </Button>
+                        }
                         <Button
                             variant={currentPanel === PanelView.Text ? "primary" : "ghost"}
                             size="sm"
@@ -432,40 +477,54 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     />
                 )}
             </div>
-            {currentPanel === PanelView.Image && (
+            <div className={getPanelVisibility(currentPanel === PanelView.Image)}>
                 <ImagePanel object={object} />
-            )}
-            {currentPanel === PanelView.Video && (
+            </div>
+            <div className={getPanelVisibility(currentPanel === PanelView.Video)}>
                 <VideoPanel object={object} />
+            </div>
+            <div className={getPanelVisibility(currentPanel === PanelView.Audio)}>
+                <AudioPanel object={object} />
+            </div>
+            {hasTranscript && (
+                <div className={getPanelVisibility(currentPanel === PanelView.Transcript)}>
+                    <TranscriptPanel object={object} handleCopyContent={handleCopyContent} />
+                </div>
             )}
-            {currentPanel === PanelView.Pdf && isPdf && (
-                <PdfPreviewPanel object={object} />
+            {isPdf && (
+                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
+                    <PdfPreviewPanel object={object} />
+                </div>
             )}
-            {currentPanel === PanelView.Pdf && isPreviewableAsPdfDoc && (
-                <OfficePdfPreviewPanel
-                    pdfRendition={pdfRendition}
-                    officePdfUrl={officePdfUrl}
-                    officePdfConverting={officePdfConverting}
-                    officePdfError={officePdfError}
-                    onConvert={triggerOfficePdfConversion}
-                />
+            {isPreviewableAsPdfDoc && (
+                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
+                    <OfficePdfPreviewPanel
+                        pdfRendition={pdfRendition}
+                        officePdfUrl={officePdfUrl}
+                        officePdfConverting={officePdfConverting}
+                        officePdfError={officePdfError}
+                        onConvert={triggerOfficePdfConversion}
+                    />
+                </div>
             )}
-            {currentPanel === PanelView.Text && showProcessingPanel && (
-                <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
+            {showProcessingPanel && (
+                <div className={getPanelVisibility(currentPanel === PanelView.Text)}>
+                    <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
+                </div>
             )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText && (
+            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText)}>
                 <div className="flex justify-center items-center flex-1">
                     <Spinner size="lg" />
                 </div>
-            )}
-            {currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText && (
+            </div>
+            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText)}>
                 <TextPanel
                     object={object}
                     text={displayText}
                     isTextCropped={isTextCropped}
                     textContainerRef={textContainerRef}
                 />
-            )}
+            </div>
         </div>
     );
 }
@@ -475,14 +534,11 @@ function TextActions({
     text,
     fullText,
     handleCopyContent,
-    textContainerRef,
 }: TextActionsProps) {
     const { client } = useUserSession();
     const toast = useToast();
-    const [loadingFormat, setLoadingFormat] = useState<"docx" | "pdf" | null>(null);
-    const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
-
     const content = object.content;
+    const { renderDocument, isDownloading } = useDownloadFile({ client, toast });
 
     const isMarkdown =
         content &&
@@ -492,136 +548,26 @@ function TextActions({
     // Get content processor type for file extension detection
     const contentProcessorType = getContentProcessorType(object);
 
-    const handleExportDocument = async (format: "docx" | "pdf") => {
+    const handleExportDocument = async (format: MarkdownRenditionFormat) => {
         // Prevent multiple concurrent exports
-        if (loadingFormat) return;
-
-        setLoadingFormat(format);
+        if (isDownloading) return;
 
         // Show immediate feedback
         toast({
             status: "info",
             title: `Preparing ${format.toUpperCase()}`,
-            description: "Fetching your document...",
+            description: "Rendering your document...",
             duration: 2000,
         });
 
-        try {
-            // Request document rendition from the server
-            const response = await client.objects.getRendition(object.id, {
-                format: format as any, // We're extending the format type
-                generate_if_missing: true,
-                sign_url: true,
-            });
-
-            if (response.status === "generating") {
-                toast({
-                    status: "info",
-                    title: "Generating document",
-                    description: `Please wait while we prepare your ${format.toUpperCase()} file...`,
-                    duration: 5000,
-                });
-
-                // Poll for completion
-                setTimeout(() => handleExportDocument(format), 3000);
-                return;
-            }
-
-            if (response.status === "failed") {
-                throw new Error("Document generation failed");
-            }
-
-            // Download the generated file or open in new window
-            if (response.renditions && response.renditions.length > 0) {
-                const downloadUrl = response.renditions[0];
-
-                if (format === 'pdf') {
-                    // Open PDF in new window
-                    window.open(downloadUrl, '_blank');
-                    toast({
-                        status: "success",
-                        title: "PDF opened",
-                        description: "PDF document opened in a new window",
-                        duration: 2000,
-                    });
-                } else {
-                    // Download DOCX file
-                    const link = document.createElement("a");
-                    link.href = downloadUrl;
-                    link.download = `${object.name || "document"}.${format}`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    toast({
-                        status: "success",
-                        title: "Document exported",
-                        description: `Successfully exported to ${format.toUpperCase()} format`,
-                        duration: 2000,
-                    });
-                }
-            }
-        } catch (err) {
-            console.error(`Failed to export document as ${format}:`, err);
-            toast({
-                status: "error",
-                title: "Export failed",
-                description: `Failed to export document to ${format.toUpperCase()} format`,
-                duration: 5000,
-            });
-        } finally {
-            setLoadingFormat(null);
-        }
-    };
-
-    const handleExportDocx = () => handleExportDocument("docx");
-
-    const handleClientPdfExport = () => {
-        if (!textContainerRef.current) {
-            toast({
-                status: "error",
-                title: "PDF export failed",
-                description: "No content available to export",
-                duration: 3000,
-            });
-            return;
-        }
-        setIsPdfModalOpen(true);
-    };
-
-    const handleConfirmClientPdfExport = () => {
-        if (!textContainerRef.current) {
-            toast({
-                status: "error",
-                title: "PDF export failed",
-                description: "No content available to export",
-                duration: 3000,
-            });
-            return;
-        }
-
-        const baseName = object.name || object.id;
-        const pdfTitle = `${baseName || "document"} - content`;
-        const success = printElementToPdf(textContainerRef.current, pdfTitle);
-
-        if (!success) {
-            toast({
-                status: "error",
-                title: "PDF export failed",
-                description: "Unable to open print preview",
-                duration: 4000,
-            });
-            return;
-        }
-
-        toast({
-            status: "success",
-            title: "PDF export ready",
-            description: "Use your browser's Print dialog to save as PDF",
-            duration: 4000,
+        await renderDocument(object.id, {
+            format,
+            title: object.name || "document",
         });
-        setIsPdfModalOpen(false);
     };
+
+    const handleExportDocx = () => handleExportDocument(MarkdownRenditionFormat.docx);
+    const handleExportPdf = () => handleExportDocument(MarkdownRenditionFormat.pdf);
 
     const handleDownloadText = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -673,10 +619,10 @@ function TextActions({
                                 variant="ghost"
                                 size="sm"
                                 onClick={handleExportDocx}
-                                disabled={loadingFormat !== null}
+                                disabled={isDownloading}
                                 className="flex items-center gap-2"
                             >
-                                {loadingFormat === "docx" ? (
+                                {isDownloading ? (
                                     <Spinner size="sm" />
                                 ) : (
                                     <Download className="size-4" />
@@ -686,35 +632,21 @@ function TextActions({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={handleClientPdfExport}
+                                onClick={handleExportPdf}
+                                disabled={isDownloading}
                                 className="flex items-center gap-2"
                             >
-                                <Download className="size-4" />
+                                {isDownloading ? (
+                                    <Spinner size="sm" />
+                                ) : (
+                                    <Download className="size-4" />
+                                )}
                                 PDF
                             </Button>
                         </>
                     )}
                 </div>
             </div>
-            <Modal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
-                <ModalTitle>Export document as PDF</ModalTitle>
-                <ModalBody>
-                    <p className="mb-2">
-                        This will open your browser&apos;s print dialog with the current document content.
-                    </p>
-                    <p className="text-sm text-muted">
-                        To save a PDF, choose &quot;Save as PDF&quot; or a similar option in the print dialog.
-                    </p>
-                </ModalBody>
-                <ModalFooter align="right">
-                    <Button variant="ghost" size="sm" onClick={() => setIsPdfModalOpen(false)}>
-                        Cancel
-                    </Button>
-                    <Button size="sm" onClick={handleConfirmClientPdfExport}>
-                        Open print dialog
-                    </Button>
-                </ModalFooter>
-            </Modal>
         </>
     );
 }
@@ -789,6 +721,9 @@ function ImagePanel({ object }: { object: ContentObject }) {
 
     useEffect(() => {
         if (isImage) {
+            // Reset image URL when object changes
+            setImageUrl(undefined);
+
             const loadImage = async () => {
                 const isOriginalWebSupported = content?.type && WEB_SUPPORTED_IMAGE_FORMATS.includes(content.type);
 
@@ -818,7 +753,7 @@ function ImagePanel({ object }: { object: ContentObject }) {
 
             loadImage();
         }
-    }, []);
+    }, [object.id, isImage, content?.type, content?.source, client]);
 
     return (
         <div className="mb-4 px-2">
@@ -850,13 +785,20 @@ function VideoPanel({ object }: { object: ContentObject }) {
 
     // Find mp4 or webm rendition by mime type, preferring mp4
     const webRendition = renditions.find(r => r.content.type === 'video/mp4') ||
-                         renditions.find(r => r.content.type === 'video/webm');
+        renditions.find(r => r.content.type === 'video/webm');
 
     // Check if original file is web-compatible
     const isOriginalWebSupported = content?.type && WEB_SUPPORTED_VIDEO_FORMATS.includes(content.type);
 
     // Get poster
     const poster = renditions.find(r => r.name === POSTER_RENDITION_NAME);
+
+    // Reset state when object changes
+    useEffect(() => {
+        setVideoUrl(undefined);
+        setPosterUrl(undefined);
+        setIsLoading(true);
+    }, [object.id]);
 
     useEffect(() => {
         const loadPoster = async () => {
@@ -926,6 +868,163 @@ function VideoPanel({ object }: { object: ContentObject }) {
                     Failed to load video
                 </div>
             )}
+        </div>
+    );
+}
+
+function AudioPanel({ object }: { object: ContentObject }) {
+    const { client } = useUserSession();
+    const [audioUrl, setAudioUrl] = useState<string>();
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    const content = object.content;
+    const isAudio = object.metadata?.type === ContentNature.Audio;
+
+    // Check if there are audio renditions available in metadata
+    const metadata = object.metadata as AudioMetadata;
+    const renditions = metadata?.renditions || [];
+
+    // Find audio rendition by name (AUDIO_RENDITION_NAME = "Audio")
+    const audioRendition = renditions.find(r => r.name === AUDIO_RENDITION_NAME);
+
+    // Check if original file is web-compatible
+    const isOriginalWebSupported = content?.type && WEB_SUPPORTED_AUDIO_FORMATS.includes(content.type);
+
+    // Reset state when object changes
+    useEffect(() => {
+        setAudioUrl(undefined);
+        setIsLoading(true);
+    }, [object.id]);
+
+    useEffect(() => {
+        if (isAudio && (audioRendition?.content?.source || isOriginalWebSupported)) {
+            const loadAudioUrl = async () => {
+                try {
+                    let downloadUrl;
+                    if (audioRendition?.content?.source) {
+                        // Use rendition if available
+                        downloadUrl = await client.files.getDownloadUrl(audioRendition.content.source);
+                    } else if (isOriginalWebSupported && content?.source) {
+                        // Fall back to original file if web-supported
+                        downloadUrl = await client.files.getDownloadUrl(content.source);
+                    }
+                    if (downloadUrl) {
+                        setAudioUrl(downloadUrl.url);
+                    }
+                } catch (error) {
+                    console.error("Failed to get audio URL", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            loadAudioUrl();
+        } else {
+            setIsLoading(false);
+        }
+    }, [isAudio, audioRendition, isOriginalWebSupported, content?.source, client]);
+
+    return (
+        <div className="mb-4 px-2">
+            {!audioRendition && !isOriginalWebSupported ? (
+                <div className="flex justify-center items-center h-[200px] text-muted">
+                    <div className="text-center">
+                        <p>No web-compatible audio rendition available</p>
+                        <p className="text-sm mt-2">MP3, M4A, OGG, WAV, or WebM format required</p>
+                    </div>
+                </div>
+            ) : isLoading ? (
+                <div className="flex justify-center items-center h-[200px]">
+                    <Spinner size="md" />
+                </div>
+            ) : audioUrl ? (
+                <div className="flex flex-col items-center gap-4">
+                    <audio
+                        src={audioUrl}
+                        controls
+                        className="w-full max-w-2xl"
+                    >
+                        Your browser does not support the audio tag.
+                    </audio>
+                    {metadata?.duration && (
+                        <div className="text-sm text-muted">
+                            Duration: {formatDuration(metadata.duration)}
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="flex justify-center items-center h-[200px] text-muted">
+                    Failed to load audio
+                </div>
+            )}
+        </div>
+    );
+}
+
+function formatDuration(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
+    const transcript = object.transcript;
+    const transcriptText = transcript?.text;
+    const segments = transcript?.segments;
+
+    // Build full text from segments if text is not available
+    const fullText = transcriptText || (segments ? segments.map(s => s.text).join(' ') : '');
+
+    const formatTimestamp = (seconds: number): string => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <div className="flex flex-col h-full">
+            <div className="flex justify-end items-center px-2 mb-2">
+                {fullText && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Copy transcript"
+                        onClick={() => handleCopyContent(fullText, "text")}
+                    >
+                        <Copy className="size-4" />
+                    </Button>
+                )}
+            </div>
+            <div className={`${PANEL_HEIGHTS.content} overflow-auto px-2`}>
+                {segments && segments.length > 0 ? (
+                    <div className="space-y-2">
+                        {segments.map((segment, idx) => (
+                            <div key={idx} className="flex gap-3 text-sm">
+                                <span className="text-muted font-mono text-xs shrink-0 pt-0.5">
+                                    {formatTimestamp(segment.start)}
+                                    {segment.end && ` - ${formatTimestamp(segment.end)}`}
+                                </span>
+                                <span className="flex-1">{segment.text}</span>
+                            </div>
+                        ))}
+                    </div>
+                ) : transcriptText ? (
+                    <pre className="text-wrap bg-muted text-muted p-2 whitespace-pre-wrap">
+                        {transcriptText}
+                    </pre>
+                ) : (
+                    <div className="text-muted">No transcript available</div>
+                )}
+            </div>
         </div>
     );
 }

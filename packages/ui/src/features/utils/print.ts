@@ -105,7 +105,6 @@ const PRINT_STYLES = `
   .vprose blockquote,
   .vprose figure,
   .vprose img,
-  .recharts-wrapper,
   [class*="chart"],
   [class*="Chart"] {
     break-inside: avoid;

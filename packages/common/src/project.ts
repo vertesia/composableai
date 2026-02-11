@@ -176,6 +176,36 @@ export interface ProjectConfiguration {
     datacenter?: string;
     storage_bucket?: string;
 
+    /**
+     * Enable real-time streaming of agent LLM responses to clients.
+     * When enabled, LLM responses are streamed chunk-by-chunk via Redis pub/sub.
+     * Defaults to true if not specified.
+     */
+    agent_streaming_enabled?: boolean;
+
+    /**
+     * Indexing configuration for this project.
+     * Controls whether indexing and querying are enabled at the project level.
+     */
+    indexing?: {
+        /**
+         * Enable indexing for content objects in this project.
+         * When enabled, content changes trigger indexing workflows.
+         * Defaults to true - indexing is always on when ES infrastructure is available.
+         */
+        enabled?: boolean;
+    };
+
+    /**
+     * Primary language for full-text search analysis.
+     * ISO 639-1 code (e.g., 'en', 'fr', 'ja', 'de').
+     * Determines which Elasticsearch analyzer is used for the text field.
+     * Defaults to 'en' (English/standard analyzer).
+     *
+     * Changing this value requires a full reindex to take effect.
+     */
+    main_language?: string;
+
 }
 
 // export interface ProjectConfigurationEmbeddings {
@@ -239,7 +269,6 @@ export const ProjectRefPopulate = "id name account";
 export interface EmbeddingsStatusResponse {
     status: string;
     embeddingRunsInProgress?: number;
-    totalRunsInProgress?: number;
     totalIndexableObjects?: number;
     embeddingsModels?: string[];
     objectsWithEmbeddings?: number;
@@ -248,6 +277,294 @@ export interface EmbeddingsStatusResponse {
         name?: string,
         type?: string
     }
+}
+
+/**
+ * Response from indexing status endpoint
+ */
+export interface IndexingStatusResponse {
+    /** Whether indexing infrastructure is available globally */
+    infrastructureEnabled: boolean;
+    /** Whether indexing is enabled for this project */
+    indexingEnabled: boolean;
+    /** @deprecated Now derived from indexingEnabled - queries automatically route to index when indexing is enabled */
+    query_enabled: boolean;
+    /** Index status */
+    index: {
+        /** Whether the index exists */
+        exists: boolean;
+        /** Alias name (used for queries) */
+        aliasName: string;
+        /** Actual index name (versioned) */
+        indexName: string;
+        /** Index version (timestamp when created) */
+        version: number;
+        /** When the current index was created */
+        createdAt: string | null;
+        /** Number of documents in the index */
+        documentCount: number;
+        /** Index size in bytes */
+        sizeBytes: number;
+    };
+    /** MongoDB document count for comparison */
+    mongoDocumentCount: number;
+    /** Whether a reindex is currently in progress */
+    reindexInProgress: boolean;
+    /** Reindex progress (if reindex is in progress) */
+    reindexProgress?: {
+        /** Total documents to reindex */
+        total: number;
+        /** Documents processed so far */
+        processed: number;
+        /** Successfully indexed documents */
+        successful: number;
+        /** Failed documents */
+        failed: number;
+        /** Current status (e.g., "indexing", "complete") */
+        status: string;
+        /** Current batch number */
+        currentBatch: number;
+        /** Total number of batches */
+        totalBatches: number;
+        /** Percentage complete (0-100) */
+        percentComplete: number;
+        /** Batches processed per second */
+        batchesPerSecond: number;
+        /** Documents processed per second */
+        docsPerSecond: number;
+        /** Elapsed time in seconds */
+        elapsedSeconds: number;
+        /** Estimated seconds remaining (null if unknown) */
+        estimatedSecondsRemaining: number | null;
+    };
+}
+
+// ============================================================================
+// Internal indexing types (used by Temporal workflows)
+// ============================================================================
+
+/**
+ * Document data structure for Elasticsearch indexing
+ */
+export interface ElasticsearchDocumentData {
+    name?: string;
+    text?: string;
+    properties?: Record<string, unknown>;
+    status?: string;
+    type?: {
+        id?: string;
+        name?: string;
+    };
+    security?: {
+        'content:read'?: string[];
+        'content:write'?: string[];
+        'content:delete'?: string[];
+    };
+    revision?: {
+        head?: boolean;
+        root?: string;
+    };
+    embeddings_text?: number[];
+    embeddings_image?: number[];
+    embeddings_properties?: number[];
+    created_at?: Date | string;
+    updated_at?: Date | string;
+}
+
+/**
+ * Result from bulk indexing
+ */
+export interface BulkIndexResult {
+    successful: number;
+    failed: number;
+}
+
+/**
+ * Result from creating a reindex target
+ */
+export interface CreateReindexTargetResult {
+    created: boolean;
+    indexName: string;
+    aliasName: string;
+    version: number;
+}
+
+/**
+ * Result from getting reindex range
+ */
+export interface ReindexRangeResult {
+    first: string | null;
+    last: string | null;
+    count: number;
+}
+
+/**
+ * Result from fetching a batch
+ */
+export interface FetchBatchResult {
+    documents: Array<{
+        id: string;
+        document: ElasticsearchDocumentData;
+    }>;
+    nextCursor: string | null;
+    done: boolean;
+}
+
+/**
+ * Result from indexing a batch
+ */
+export interface IndexBatchResult {
+    successful: number;
+    failed: number;
+    processed: number;
+    nextCursor: string | null;
+    done: boolean;
+}
+
+/**
+ * Result from triggering a reindex
+ */
+export interface TriggerReindexResult {
+    status: string;
+    workflow?: string;
+    workflowId?: string;
+    runId?: string;
+    objectCount?: number;
+    reason?: string;
+    enabled?: boolean;
+}
+
+/**
+ * Elasticsearch index statistics
+ */
+export interface ElasticsearchIndexStats {
+    enabled: boolean;
+    exists?: boolean;
+    documentCount?: number;
+    sizeInBytes?: number;
+    indexName?: string;
+    aliasName?: string;
+}
+
+/**
+ * Embedding configuration for a single type
+ */
+export interface EmbeddingTypeConfig {
+    environment?: string;
+    dimensions?: number;
+    model?: string;
+    provider?: string;
+    enabled?: boolean;
+}
+
+/**
+ * Detailed index configuration
+ */
+export interface IndexConfiguration {
+    enabled: boolean;
+    exists?: boolean;
+    indexName?: string;
+    aliasName?: string;
+    version?: number;
+    documentCount?: number;
+    sizeInBytes?: number;
+    embeddingDimensions?: {
+        text?: number;
+        image?: number;
+        properties?: number;
+    };
+    /** ISO 639-1 language code for text analysis */
+    language?: string;
+    fieldMappings?: Record<string, unknown>;
+    projectEmbeddingsConfig?: {
+        text?: EmbeddingTypeConfig;
+        image?: EmbeddingTypeConfig;
+        properties?: EmbeddingTypeConfig;
+    };
+    createdAt?: Date | null;
+}
+
+/**
+ * Supported languages for full-text search with their display names.
+ * Maps ISO 639-1 codes to human-readable language names.
+ */
+export const SUPPORTED_SEARCH_LANGUAGES: Record<string, string> = {
+    en: 'English',
+    zh: 'Chinese',
+    es: 'Spanish',
+    hi: 'Hindi',
+    ar: 'Arabic',
+    pt: 'Portuguese',
+    bn: 'Bengali',
+    ru: 'Russian',
+    ja: 'Japanese',
+    de: 'German',
+    fr: 'French',
+    ko: 'Korean',
+    it: 'Italian',
+    tr: 'Turkish',
+    vi: 'Vietnamese',
+    pl: 'Polish',
+    uk: 'Ukrainian',
+    nl: 'Dutch',
+    th: 'Thai',
+    el: 'Greek',
+    cs: 'Czech',
+    sv: 'Swedish',
+    ro: 'Romanian',
+    hu: 'Hungarian',
+    da: 'Danish',
+    fi: 'Finnish',
+    no: 'Norwegian',
+    he: 'Hebrew',
+    id: 'Indonesian',
+    fa: 'Persian',
+};
+
+/**
+ * Result from fetching documents by IDs
+ */
+export interface FetchDocumentsByIdsResult {
+    documents: Array<{
+        id: string;
+        document: ElasticsearchDocumentData;
+    }>;
+    notFound: string[];
+}
+
+/**
+ * Result from bulk delete
+ */
+export interface BulkDeleteResult {
+    successful: number;
+    failed: number;
+}
+
+/**
+ * Result from ensure index operation
+ */
+export interface EnsureIndexResult {
+    created: boolean;
+    recreated?: boolean;
+    existed?: boolean;
+    enabled?: boolean;
+    status?: string;
+    dimensions?: {
+        text?: number;
+        image?: number;
+        properties?: number;
+    };
+    language?: string;
+}
+
+/**
+ * Result from swap alias operation
+ */
+export interface SwapAliasResult {
+    swapped: boolean;
+    aliasName?: string;
+    newIndexName?: string;
+    reason?: string;
 }
 
 export interface ProjectIntegrationListEntry {

@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/json",
-    "version": "0.82.2",
+    "version": "1.0.0-dev.20260203.130115Z",
     "description": "JSON utlities",
     "type": "module",
     "types": "./lib/types/index.d.ts",
@@ -26,8 +26,8 @@
         "rollup": "^4.40.2",
         "rollup-plugin-terser": "^7.0.2",
         "ts-dual-module": "^0.6.3",
-        "typescript": "^5.0.2",
-        "vitest": "^3.0.9"
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.16"
     },
     "ts_dual_module": {
         "outDir": "lib"
