@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, ProjectToolInfo, SupportedIntegrations } from "@vertesia/common";
+import { AwsConfiguration, CompositeAppConfig, CompositeAppConfigPayload, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, ProjectToolInfo, SupportedIntegrations } from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -52,6 +52,16 @@ export default class ProjectsApi extends ApiTopic {
                 return null;
             }
             throw err;
+        });
+    }
+
+    getCompositeAppConfiguration(projectId: string): Promise<CompositeAppConfig> {
+        return this.get(`/${projectId}/composite-app`);
+    }
+
+    updateCompositeAppConfiguration(projectId: string, payload: CompositeAppConfigPayload): Promise<CompositeAppConfig> {
+        return this.put(`/${projectId}/composite-app`, {
+            payload
         });
     }
 

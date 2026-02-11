@@ -2,6 +2,20 @@ import { JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { CatalogInteractionRef } from "./interaction.js";
 import { InCodeTypeDefinition } from "./store/index.js";
 
+/**
+ * Additional navigation item for an app's UI configuration.
+ * Used in AppUIConfig.navigation to define sidebar navigation entries in CompositeApp shell contexts.
+ * Icon values are Lucide icon component names or SVG content strings.
+ */
+export interface AppUINavItem {
+    /** Display label */
+    label: string;
+    /** Lucide icon name or SVG content string */
+    icon: string;
+    /** Route path relative to app base */
+    route: string;
+}
+
 export interface AppUIConfig {
     /**
      * The source URL of the app. The src can be a template which contain
@@ -15,6 +29,18 @@ export interface AppUIConfig {
      * - css - use CSS processing (like prefixing or other isolation techniques). Ligther but plugins may conflict with the host
      */
     isolation?: "shadow" | "css";
+    /**
+     * Navigation items for the app's sidebar UI.
+     * Only applicable for apps with UI capability in shell contexts (ie. CompositeApp shell).
+     */
+    navigation?: AppUINavItem[];
+    /**
+     * Where this app's UI can be displayed.
+     * - 'app_portal': Available in the main app portal (standalone)
+     * - 'composite_app': Available within a CompositeApp shell
+     * Defaults to ['app_portal', 'composite_app'] for new apps.
+     */
+    available_in?: AppAvailableIn[];
 }
 
 /**
@@ -165,6 +191,7 @@ export interface AgentToolDefinition extends ToolDefinition {
 }
 
 export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types';
+export type AppAvailableIn = 'app_portal' | 'composite_app';
 export interface AppManifestData {
     /**
      * The name of the app, used as the id in the system.
@@ -252,7 +279,7 @@ export interface AppManifestData {
      */
     endpoint?: string;
 }
-export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'settings' | 'all';
+export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'settings' | 'widgets' | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
@@ -275,9 +302,20 @@ export interface AppPackage {
     types?: InCodeTypeDefinition[];
 
     /**
+     * Widgets provided by the app. 
+     */
+    widgets?: Record<string, AppWidgetInfo>;
+
+    /**
      * A JSON chema for the app installation settings.
      */
     settings_schema?: JSONSchema;
+}
+
+export interface AppWidgetInfo {
+    collection: string;
+    skill: string;
+    url: string;
 }
 
 export interface AppManifest extends AppManifestData {
@@ -386,3 +424,121 @@ export interface OAuthMetadataResponse {
     mcp_server_url: string;
     metadata: any;
 }
+
+// ============================================================================
+// CompositeApp Shell Configuration Types
+// These types define the configuration for a CompositeApp shell that combines
+// multiple apps into a unified experience with shared navigation and branding.
+// ============================================================================
+
+/**
+ * App navigation item display overrides.
+ * Allows customizing individual nav items for an app installation within the CompositeApp shell.
+ */
+export interface CompositeAppNavItemOverride {
+    /** Used as identifier to match the nav item to override -- does not change route path */
+    route: string;
+    /** Hide this nav item from the sidebar */
+    hidden?: boolean;
+    /** Override the displayed nav item label */
+    label?: string;
+    /** Override the displayed nav item icon (Lucide icon name or SVG content string) */
+    icon?: string;
+    //TODO: Set permissions for routes
+}
+
+/**
+ * Configuration entry for an individual app in the CompositeApp shell.
+ * References an app installation by name and allows customizing its appearance.
+ */
+export interface CompositeAppEntry {
+    /** App installation name (must match an installed app) */
+    appName: string;
+    /** Override the label displayed for the app */
+    labelOverride?: string;
+    /** Override the icon displayed for the app (Lucide icon name or SVG content string) */
+    iconOverride?: string;
+    /** Overrides for navigation items provided by the app */
+    navigationOverrides?: CompositeAppNavItemOverride[];
+}
+
+/**
+ * Logo overrides for the CompositeApp shell header.
+ * When provided, these URLs replace the default Vertesia logo.
+ */
+export interface CompositeAppLogoOverrides {
+    /** URL for light mode logo (overrides default Vertesia logo) */
+    lightModeUrl?: string;
+    /** URL for dark mode logo (overrides default Vertesia logo) */
+    darkModeUrl?: string;
+}
+
+
+/**
+ * Message banner overrides for the shell header.
+*/
+export type CompositeAppMessageStyle = 'foreground' | 'info' | 'success' | 'attention' | 'destructive';
+export interface CompositeAppMessageOverrides {
+    /** Message text to display */
+    text?: string;
+    /** Whether the message is visible (defaults to true) */
+    visible?: boolean;
+    /** Text color style. Uses semantic colors */
+    style?: CompositeAppMessageStyle;
+}
+
+/**
+ * Switcher visibility overrides for the CompositeApp header.
+ */
+export interface CompositeAppSwitchersOverrides {
+    /** Whether to show the organization switcher (defaults to true) */
+    showOrganization?: boolean;
+    /** Whether to show the project switcher (defaults to true) */
+    showProject?: boolean;
+}
+
+/**
+ * Card display overrides for the CompositeApp in the App Portal.
+ * Similar to AppManifest display properties, but specific to the CompositeApp card.
+ * Allows customers to customize the app portal card (not otherwise possible if using a
+ * shared, Vertesia-managed manifest across accounts).
+ */
+export interface CompositeAppCardOverrides {
+    /** Whether to show the CompositeApp card in App Portal (default: false) */
+    visible?: boolean;
+    /** Override the card label (default: "Composite App") */
+    label?: string;
+    /** Override the card description */
+    description?: string;
+    /** Override the card icon (Lucide icon name or SVG content string) */
+    icon?: string;
+    /** Override the card color (e.g., "blue", "red", "purple") */
+    color?: string;
+}
+
+/**
+ * CompositeApp shell configuration.
+ * This is the main configuration interface for storing CompositeApp settings.
+ * Used as the MongoDB model for persisting CompositeApp configurations.
+ */
+export interface CompositeAppConfig {
+    /**
+     * The unique identifier for this CompositeApp configuration 
+     * Undefined if the configuration doesn't exists yet.
+    */
+    id?: string;
+    /** The project this CompositeApp belongs to */
+    project: string;
+    /** Card display overrides (includes visibility) */
+    card?: CompositeAppCardOverrides;
+    /** Optional logo overrides (replaces default Vertesia logo) */
+    logo?: CompositeAppLogoOverrides;
+    /** Optional message banner overrides */
+    message?: CompositeAppMessageOverrides;
+    /** Optional switcher visibility overrides */
+    switchers?: CompositeAppSwitchersOverrides;
+    /** List of apps to include in the CompositeApp */
+    apps: CompositeAppEntry[];
+}
+
+export type CompositeAppConfigPayload = Partial<Omit<CompositeAppConfig, 'id' | 'project'>>;
