@@ -16,7 +16,7 @@ export default class UsersApi extends ApiTopic {
         return this.put('/' + userId, { payload });
     }
 
-    deleteUser(userId: string): Promise<{ id: string }> {
+    delete(userId: string): Promise<{ id: string }> {
         return this.del('/' + userId);
     }
 }
