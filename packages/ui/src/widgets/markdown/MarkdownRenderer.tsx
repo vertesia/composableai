@@ -4,11 +4,16 @@ import React from 'react';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+import remarkDirective from 'remark-directive';
+import remarkAlert from 'remark-github-blockquote-alert';
+import { remarkDefinitionList, defListHastHandlers } from 'remark-definition-list';
+import remarkSupersub from 'remark-supersub';
 import rehypeKatex from 'rehype-katex';
 import { SKIP, visit } from 'unist-util-visit';
 import { MarkdownLink } from './MarkdownLink';
 import { MarkdownImage } from './MarkdownImage';
 import { MarkdownFigure } from './MarkdownFigure';
+import { remarkDirectiveHandler } from './remarkDirectiveHandler';
 import {
     CodeBlockHandlerProvider,
     createDefaultCodeBlockHandlers,
@@ -98,8 +103,19 @@ export function MarkdownRenderer({
     const codeBlockRegistry = useCodeBlockRendererRegistry();
 
     // Remark plugins (markdown parsing)
+    // Order matters: GFM first, then directive (must precede handler),
+    // then definition-list/supersub, then math, then user plugins.
     const remarkPluginsArray = React.useMemo(() => {
-        const result = [remarkGfm, remarkMath, ...remarkPlugins];
+        const result: any[] = [
+            remarkGfm,
+            remarkDirective,
+            remarkDirectiveHandler,
+            remarkAlert,
+            remarkDefinitionList,
+            remarkSupersub,
+            remarkMath,
+            ...remarkPlugins,
+        ];
         if (removeComments) {
             result.push(remarkRemoveComments);
         }
@@ -108,6 +124,13 @@ export function MarkdownRenderer({
 
     // Rehype plugins (HTML processing, including KaTeX for math)
     const rehypePluginsArray = React.useMemo(() => [rehypeKatex], []);
+
+    // Remark-rehype bridge options (custom AST handlers for definition lists)
+    const remarkRehypeOptions = React.useMemo(() => ({
+        handlers: {
+            ...defListHastHandlers,
+        },
+    }), []);
 
     const componentsWithOverrides = React.useMemo(() => {
         const baseComponents = components || {};
@@ -255,6 +278,7 @@ export function MarkdownRenderer({
             <Markdown
                 remarkPlugins={remarkPluginsArray}
                 rehypePlugins={rehypePluginsArray}
+                remarkRehypeOptions={remarkRehypeOptions}
                 components={componentsWithOverrides}
                 urlTransform={customUrlTransform}
             >
@@ -264,8 +288,8 @@ export function MarkdownRenderer({
     );
 
     if (className) {
-        return <div className={className}>{markdownContent}</div>;
+        return <div className={`md-content ${className}`}>{markdownContent}</div>;
     }
 
-    return markdownContent;
+    return <div className="md-content">{markdownContent}</div>;
 }
