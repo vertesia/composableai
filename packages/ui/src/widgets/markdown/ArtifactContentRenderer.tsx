@@ -199,9 +199,15 @@ function CodeRenderer({ content, path }: { content: unknown; path: string }): Re
  */
 export function sanitizeSvg(svg: string): string {
     let s = svg;
-    s = s.replace(/<script[\s\S]*?<\/script>/gi, '');
-    s = s.replace(/<script[^>]*\/>/gi, '');
-    s = s.replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, '');
+    // Loop until stable to prevent crafted nested tags from reassembling
+    // e.g. "<scr<script>ipt>..." → "<script>..." after one pass
+    let prev: string;
+    do {
+        prev = s;
+        s = s.replace(/<script[\s\S]*?<\/script>/gi, '');
+        s = s.replace(/<script[^>]*\/>/gi, '');
+        s = s.replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, '');
+    } while (s !== prev);
     s = s.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
     return s;
 }
