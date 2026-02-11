@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/react",
-    "version": "0.82.2",
+    "version": "1.0.0-dev.20260203.130115Z",
     "description": "React helpers for Composable AI",
     "type": "module",
     "types": "./lib/index.d.ts",
@@ -27,7 +27,7 @@
     "devDependencies": {
         "@types/json-schema": "^7.0.15",
         "@types/react": "^19.2.3",
-        "typescript": "^5.0.2"
+        "typescript": "^5.9.3"
     },
     "peerDependencies": {
         "react": ">=16.8.0"

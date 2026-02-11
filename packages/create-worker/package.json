@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/create-worker",
-    "version": "0.82.2",
+    "version": "1.0.0-dev.20260203.130115Z",
     "description": "Initialize workflow worker package (deprecated - use @vertesia/create-plugin instead)",
     "type": "module",
     "bin": {
@@ -29,8 +29,8 @@
     },
     "dependencies": {},
     "devDependencies": {
-        "@types/node": "^22.5.0",
-        "typescript": "^5.7.2"
+        "@types/node": "^22.19.2",
+        "typescript": "^5.9.3"
     },
     "repository": {
         "type": "git",

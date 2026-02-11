@@ -12,6 +12,7 @@ export interface Tab {
     label: ReactNode;
     content: ReactNode;
     disabled?: boolean;
+    is_allowed?: boolean;
 }
 
 const TabsContext = React.createContext<{
@@ -57,6 +58,12 @@ const Tabs = ({
   variant = "tabs",
   updateHash = true
 }: TabsProps) => {
+  // Filter tabs based on is_allowed (undefined or true means visible)
+  const visibleTabs = React.useMemo(() =>
+    tabs.filter(tab => tab.is_allowed === undefined || tab.is_allowed === true),
+    [tabs]
+  );
+
   // Initialize value
   const [value, setValue] = React.useState(() => {
     // First check if current is provided
@@ -68,14 +75,14 @@ const Tabs = ({
     // Then check hash
     const hash = window.location.hash;
     const currentTab = hash ? hash.substring(1) : undefined;
-    
-    // Check if the tab from hash exists in tabs
-    if (currentTab && tabs.some(tab => tab.name === currentTab)) {
+
+    // Check if the tab from hash exists in visible tabs
+    if (currentTab && visibleTabs.some(tab => tab.name === currentTab)) {
       return currentTab;
     }
-    
-    // Fall back to default or first tab
-    return defaultValue || tabs[0]?.name;
+
+    // Fall back to default or first visible tab
+    return defaultValue || visibleTabs[0]?.name;
   });
 
   // Update when current prop changes (but don't create a loop)
@@ -93,9 +100,9 @@ const Tabs = ({
     const handleHashChange = () => {
       const hash = window.location.hash;
       const currentTab = hash ? hash.substring(1) : undefined;
-      
-      // Only update if the tab exists in tabs
-      if (currentTab && tabs.some(tab => tab.name === currentTab)) {
+
+      // Only update if the tab exists in visible tabs
+      if (currentTab && visibleTabs.some(tab => tab.name === currentTab)) {
         setValue(currentTab);
       } else if (!hash && defaultValue) {
         // If no hash, fall back to default
@@ -108,7 +115,7 @@ const Tabs = ({
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [current, tabs, defaultValue]);
+  }, [current, visibleTabs, defaultValue]);
 
   const handleValueChange = (newValue: string) => {
     setValue(newValue);
@@ -131,9 +138,9 @@ const Tabs = ({
   }, [handleValueChange]);
 
   return (
-    <TabsContext.Provider value={{ tabs, size: fullWidth ? tabs.length : 0, current: value, setTab, responsive: responsive, variant, updateHash }}>
+    <TabsContext.Provider value={{ tabs: visibleTabs, size: fullWidth ? visibleTabs.length : 0, current: value, setTab, responsive: responsive, variant, updateHash }}>
       <TabsPrimitive.Root
-        defaultValue={value || tabs[0]?.name}
+        defaultValue={value || visibleTabs[0]?.name}
         value={value}
         onValueChange={handleValueChange}
         className={className}
@@ -187,6 +194,7 @@ const TabsBar = ({ className }: { className?: string }) => {
       )}
       <TabsList size={size} variant={variant} className={cn((fullWidth ? "w-full" : ""), className, (responsive ? "hidden lg:flex" : ""))}>
         {tabs.map((tab) => (
+          
           <TabsTrigger
             key={tab.name}
             value={tab.name}
@@ -219,9 +227,11 @@ const TabsPanel = ({ className }: { className?: string }) => {
   );
 };
 
-const TabsList = React.forwardRef<
+type TabsListProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { size?: number; variant?: "tabs" | "pills" };
+
+const TabsList: React.ForwardRefExoticComponent<TabsListProps & React.RefAttributes<React.ElementRef<typeof TabsPrimitive.List>>> = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { size?: number; variant?: "tabs" | "pills" }
+  TabsListProps
 >(({ className, size, variant = "tabs", ...props }, ref) => (
   <TabsContext.Provider value={{ size, variant }}>
     <TabsPrimitive.List
@@ -238,12 +248,14 @@ const TabsList = React.forwardRef<
 ));
 TabsList.displayName = TabsPrimitive.List.displayName;
 
-const TabsTrigger = React.forwardRef<
+type TabsTriggerProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & {
+  href?: string;
+  variant?: "tabs" | "pills";
+};
+
+const TabsTrigger: React.ForwardRefExoticComponent<TabsTriggerProps & React.RefAttributes<React.ElementRef<typeof TabsPrimitive.Trigger>>> = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & {
-    href?: string;
-    variant?: "tabs" | "pills";
-  }
+  TabsTriggerProps
 >(({ className, href, variant = "tabs", ...props }, ref) => {
   const { size } = React.useContext(TabsContext);
 
@@ -286,9 +298,11 @@ const TabsTrigger = React.forwardRef<
 });
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
-const TabsContent = React.forwardRef<
+type TabsContentProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>;
+
+const TabsContent: React.ForwardRefExoticComponent<TabsContentProps & React.RefAttributes<React.ElementRef<typeof TabsPrimitive.Content>>> = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+  TabsContentProps
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}

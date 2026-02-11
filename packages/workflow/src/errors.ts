@@ -78,10 +78,39 @@ export class InvalidContentTypeError extends ApplicationFailure {
     }
 }
 
+export class TokenExpiredError extends ApplicationFailure {
+    constructor(
+        public statusCode: number,
+        message?: string,
+    ) {
+        super(
+            message || "Token expired: Authentication required",
+            "TokenExpiredError",
+            true, // non-retryable
+        );
+    }
+}
+
+export class WorkflowExecutionError extends ApplicationFailure {
+    constructor(
+        message: string,
+        public workflow?: DSLWorkflowSpec,
+    ) {
+        super(
+            message,
+            "WorkflowExecutionError",
+            true, // non-retryable
+        );
+    }
+}
+
 export const WF_NON_RETRYABLE_ERRORS = [
     "DocumentNotFoundError",
     "ActivityParamInvalidError",
     "ActivityParamNotFoundError",
     "WorkflowParamNotFoundError",
     "InvalidContentTypeError",
+    "TokenExpiredError",
+    "ZenoClientNotFoundError",
+    "WorkflowExecutionError",
 ];
