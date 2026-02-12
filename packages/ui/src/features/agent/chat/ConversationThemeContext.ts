@@ -239,6 +239,34 @@ export type ResolvedAllMessagesMixedSlots = { [K in keyof AllMessagesMixedSlots]
 /** AllMessagesMixed theme — no byType. */
 export type AllMessagesMixedTheme = AllMessagesMixedSlots;
 
+/** Class overrides for WorkstreamTabs. */
+export interface WorkstreamTabsSlots {
+    /** Root container: "flex overflow-x-auto space-x-1 mb-2 bg-muted ..." */
+    root?: SlotValue;
+    /** Tab button base (all tabs): "px-2 py-1 text-xs font-medium whitespace-nowrap ..." */
+    tab?: SlotValue;
+    /** Active tab override: "bg-info text-info border-b-2 border-info" */
+    tabActive?: SlotValue;
+    /** Inactive tab override: "text-muted hover:bg-muted border-b-2 border-transparent" */
+    tabInactive?: SlotValue;
+    /** Badge group wrapper (badge + completion icon): "flex items-center space-x-1" */
+    badgeGroup?: SlotValue;
+    /** Count badge base (all badges): "inline-flex items-center justify-center p-1 text-xs rounded-full" */
+    badge?: SlotValue;
+    /** Active badge override: "bg-info text-info" */
+    badgeActive?: SlotValue;
+    /** Inactive badge override: "bg-muted text-muted" */
+    badgeInactive?: SlotValue;
+    /** Empty state (no workstreams): "py-1" */
+    empty?: SlotValue;
+}
+
+/** Resolved slots — always flat strings after cascade resolution. */
+export type ResolvedWorkstreamTabsSlots = { [K in keyof WorkstreamTabsSlots]?: string };
+
+/** WorkstreamTabs theme — no byType. */
+export type WorkstreamTabsTheme = WorkstreamTabsSlots;
+
 // ---------------------------------------------------------------------------
 // Top-level conversation theme
 // ---------------------------------------------------------------------------
@@ -249,6 +277,7 @@ export interface ConversationTheme {
     toolCallGroup?: ToolCallGroupTheme;
     batchProgressPanel?: BatchProgressPanelTheme;
     allMessagesMixed?: AllMessagesMixedTheme;
+    workstreamTabs?: WorkstreamTabsTheme;
 }
 
 // ---------------------------------------------------------------------------

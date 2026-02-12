@@ -38,10 +38,12 @@ export type {
     ResolvedMessageItemSlots, ResolvedStreamingMessageSlots, ResolvedToolCallGroupSlots,
     SlotValue, StreamingMessageSlots, StreamingMessageTheme,
     ToolCallGroupSlots, ToolCallGroupTheme,
+    WorkstreamTabsSlots, WorkstreamTabsTheme, ResolvedWorkstreamTabsSlots,
 } from "./ConversationThemeContext";
 export { resolveAllMessagesMixedTheme } from "./resolveAllMessagesMixedTheme";
 export { resolveBatchProgressPanelTheme } from "./resolveBatchProgressPanelTheme";
 export { resolveMessageItemTheme } from "./resolveMessageItemTheme";
 export { resolveStreamingMessageTheme } from "./resolveStreamingMessageTheme";
 export { resolveToolCallGroupTheme } from "./resolveToolCallGroupTheme";
+export { resolveWorkstreamTabsTheme } from "./resolveWorkstreamTabsTheme";
 
