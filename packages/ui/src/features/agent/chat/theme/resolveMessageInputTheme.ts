@@ -89,10 +89,14 @@ export interface MessageInputThemeClasses {
     sendButton?: ThemeClassValue;
     /** SendIcon inside send button: "size-4 mr-2" */
     sendButtonIcon?: ThemeClassValue;
+    /** Send button text label: bare text wrapped in span */
+    sendButtonText?: ThemeClassValue;
     /** Stop button: "px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white" */
     stopButton?: ThemeClassValue;
     /** StopCircleIcon inside stop button: "size-4 mr-2" */
     stopButtonIcon?: ThemeClassValue;
+    /** Stop button text label: bare text wrapped in span */
+    stopButtonText?: ThemeClassValue;
 
     // -- Status --
     /** Status text: "text-xs text-muted mt-2 text-center" */
@@ -166,9 +170,11 @@ const MESSAGE_INPUT_TREE: ClassTree = {
             },
             sendButton: {
                 sendButtonIcon: {},
+                sendButtonText: {},
             },
             stopButton: {
                 stopButtonIcon: {},
+                stopButtonText: {},
             },
         },
         statusText: {

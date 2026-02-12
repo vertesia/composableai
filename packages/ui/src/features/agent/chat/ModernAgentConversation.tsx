@@ -1441,6 +1441,8 @@ function ModernAgentConversationInner({
                         resetWorkflow={resetWorkflow}
                         onExportPdf={exportConversationPdf}
                         isReceivingChunks={debugChunkFlash}
+                        titleClassName={theme.headerTitle}
+                        actionsClassName={theme.headerActions}
                     />
                 </div>
 

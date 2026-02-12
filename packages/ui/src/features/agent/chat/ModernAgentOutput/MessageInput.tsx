@@ -502,7 +502,7 @@ export default function MessageInput({
                         className={cn("px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white", theme.stopButton)}
                         title="Stop the agent"
                     >
-                        {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className={cn("size-4 mr-2", theme.stopButtonIcon)} />} Stop
+                        {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className={cn("size-4 mr-2", theme.stopButtonIcon)} />} <span className={theme.stopButtonText}>Stop</span>
                     </Button>
                 ) : (
                     <Button
@@ -512,7 +512,7 @@ export default function MessageInput({
                         title={hasProcessingFiles ? "Wait for files to finish processing" : undefined}
                     >
                         {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className={cn("size-4 mr-2", theme.sendButtonIcon)} />}
-                        {hasProcessingFiles ? "Processing..." : "Send"}
+                        <span className={theme.sendButtonText}>{hasProcessingFiles ? "Processing..." : "Send"}</span>
                     </Button>
                 )}
             </div>
