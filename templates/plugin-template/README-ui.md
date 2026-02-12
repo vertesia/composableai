@@ -14,13 +14,17 @@ This project serves as a template for building Vertesia plugins that can be inte
 ## Project Structure
 
 ```txt
-src/ui/
+src/
 ├── app.tsx          # Main app component with router
 ├── plugin.tsx       # Plugin entry point for Vertesia integration
 ├── routes.tsx       # Application route definitions
 ├── pages.tsx        # Page components
 └── main.tsx         # Dev mode entry point
 ```
+
+## Prerequisites
+
+- An application manifest [created and installed](/apps/overview) in your Vertesia project
 
 ## Getting Started
 
@@ -29,6 +33,8 @@ src/ui/
 ```bash
 pnpm install
 ```
+
+Next, set the app Id in the `VITE_APP_NAME` variable in the `.env.local` file.
 
 ### Development
 

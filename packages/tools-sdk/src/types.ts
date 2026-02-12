@@ -1,6 +1,6 @@
 import type { ToolDefinition, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
-import { AgentToolDefinition, AuthTokenPayload, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
+import { AgentToolDefinition, AuthTokenPayload, ProjectConfiguration, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
 
 export type { ToolExecutionMetadata };
 
@@ -87,6 +87,15 @@ export interface ToolExecutionPayload<ParamsT extends Record<string, any>> {
 
 export type ToolFn<ParamsT extends Record<string, any>> = (payload: ToolExecutionPayload<ParamsT>, context: ToolExecutionContext) => Promise<ToolExecutionResult>;
 
+export interface ToolUseContext {
+    project_id?: string,
+    account_id?: string,
+    project_name?: string,
+    project_ns?: string,
+    configuration?: ProjectConfiguration;
+    vars?: Record<string, any>;
+}
+
 export interface Tool<ParamsT extends Record<string, any>> extends ToolDefinition {
     run: ToolFn<ParamsT>;
     /**
@@ -95,6 +104,15 @@ export interface Tool<ParamsT extends Record<string, any>> extends ToolDefinitio
      * - false: Tool is only available when activated by a skill's related_tools
      */
     default?: boolean;
+
+    /**
+     * Optional filter to check if the tool is enabled for the given project configuration.
+     * This can be used to dynamically enable/disable tools based on project settings, environment variables, or any other logic.
+     * If no filter is provided, the tool will be enabled by default.
+     * @param payload 
+     * @returns 
+     */
+    isEnabled?: (payload: ToolUseContext) => boolean;
 }
 
 
@@ -239,6 +257,16 @@ export interface SkillDefinition {
      * The widget file must be located in the skill directory under the name {{widget-name}}.tsx.
      */
     widgets?: string[];
+
+    /**
+     * Optional filter to check if the tool is enabled for the given project configuration.
+     * This can be used to dynamically enable/disable tools based on project settings, environment variables, or any other logic.
+     * If no filter is provided, the tool will be enabled by default.
+     * @param payload 
+     * @returns 
+     */
+    isEnabled?: (payload: ToolUseContext) => boolean;
+
 }
 
 /**
