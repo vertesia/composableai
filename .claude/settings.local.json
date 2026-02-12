@@ -9,7 +9,9 @@
       "Bash(pnpm build:*)",
       "Bash(gh pr list:*)",
       "Bash(git worktree:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(turbo build:*)",
+      "Bash(git show:*)"
     ],
     "deny": []
   }
