@@ -35,6 +35,7 @@ export type {
     BatchProgressPanelSlots, BatchProgressPanelTheme,
     ConversationTheme, MessageItemSlots, MessageItemTheme,
     ModernAgentConversationSlots, ModernAgentConversationTheme,
+    PlanPanelSlots, PlanPanelTheme, ResolvedPlanPanelSlots,
     ResolvedAllMessagesMixedSlots, ResolvedBatchProgressPanelSlots,
     ResolvedMessageItemSlots, ResolvedModernAgentConversationSlots,
     ResolvedStreamingMessageSlots, ResolvedToolCallGroupSlots,
@@ -46,6 +47,7 @@ export { resolveAllMessagesMixedTheme } from "./resolveAllMessagesMixedTheme";
 export { resolveBatchProgressPanelTheme } from "./resolveBatchProgressPanelTheme";
 export { resolveMessageItemTheme } from "./resolveMessageItemTheme";
 export { resolveModernAgentConversationTheme } from "./resolveModernAgentConversationTheme";
+export { resolvePlanPanelTheme } from "./resolvePlanPanelTheme";
 export { resolveStreamingMessageTheme } from "./resolveStreamingMessageTheme";
 export { resolveToolCallGroupTheme } from "./resolveToolCallGroupTheme";
 export { resolveWorkstreamTabsTheme } from "./resolveWorkstreamTabsTheme";

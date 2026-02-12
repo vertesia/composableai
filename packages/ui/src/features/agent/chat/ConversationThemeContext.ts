@@ -291,12 +291,57 @@ export type ResolvedModernAgentConversationSlots = { [K in keyof ModernAgentConv
 /** ModernAgentConversation theme. */
 export type ModernAgentConversationTheme = ModernAgentConversationSlots;
 
+/** Class overrides for InlineSlidingPlanPanel. */
+export interface PlanPanelSlots {
+    /** Root: "h-full shadow-xl border border-muted/20 overflow-hidden" */
+    root?: SlotValue;
+    /** Header: "flex items-center justify-between p-3 border-b border-muted/20" */
+    header?: SlotValue;
+    /** Title: "font-bold text-base" */
+    title?: SlotValue;
+    /** Scrollable content area: "p-3 overflow-y-auto" */
+    scrollContent?: SlotValue;
+    /** Task progress section: "mb-3 p-2 bg-info rounded-md border border-info" */
+    taskProgress?: SlotValue;
+    /** Progress title: "text-xs font-medium text-info mb-1" */
+    progressTitle?: SlotValue;
+    /** Progress bar track: "w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5" */
+    progressTrack?: SlotValue;
+    /** Progress count: "text-xs text-foreground font-medium whitespace-nowrap" */
+    progressCount?: SlotValue;
+    /** Plan selector: "mb-3 flex items-center justify-between" */
+    planSelector?: SlotValue;
+    /** Steps container: "rounded-md border border-muted/30" */
+    stepsContainer?: SlotValue;
+    /** Steps header: "p-2 border-b border-muted/30 bg-muted" */
+    stepsHeader?: SlotValue;
+    /** Steps list: "divide-y divide-muted/20 max-h-[calc(100vh-350px)] overflow-y-auto" */
+    stepsList?: SlotValue;
+    /** Individual step item: "flex p-3 my-1" */
+    stepItem?: SlotValue;
+    /** Empty state (no plan): "p-3 text-center text-muted italic" */
+    stepsEmpty?: SlotValue;
+    /** Workstreams section: "mt-3 rounded-md border border-gray-200 dark:border-gray-800" */
+    workstreams?: SlotValue;
+    /** Workstreams header: "p-2 border-b ... bg-gray-50 dark:bg-gray-900/50" */
+    workstreamsHeader?: SlotValue;
+    /** Individual workstream item: "flex items-center p-1.5 rounded" + dynamic statusBg */
+    workstreamItem?: SlotValue;
+}
+
+/** Resolved slots. */
+export type ResolvedPlanPanelSlots = { [K in keyof PlanPanelSlots]?: string };
+
+/** PlanPanel theme. */
+export type PlanPanelTheme = PlanPanelSlots;
+
 // ---------------------------------------------------------------------------
 // Top-level conversation theme
 // ---------------------------------------------------------------------------
 
 export interface ConversationTheme {
     conversation?: ModernAgentConversationTheme;
+    planPanel?: PlanPanelTheme;
     messageItem?: MessageItemTheme;
     streamingMessage?: StreamingMessageTheme;
     toolCallGroup?: ToolCallGroupTheme;
