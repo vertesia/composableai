@@ -5,6 +5,7 @@ import {
     getArtifactCacheKey,
     getFileCacheKey,
 } from '../../features/agent/chat/useArtifactUrlCache';
+import { useSchemeRouteOverrides, type SchemeRouteOverrides } from './SchemeRouteContext';
 
 export type UrlScheme =
     | 'artifact'
@@ -59,14 +60,15 @@ export function parseUrlScheme(rawUrl: string): { scheme: UrlScheme; path: strin
 }
 
 /**
- * Maps internal URL schemes to application routes
+ * Maps internal URL schemes to application routes.
+ * When overrides are provided, custom resolvers take precedence over the defaults.
  */
-export function mapSchemeToRoute(scheme: UrlScheme, path: string): string | null {
+export function mapSchemeToRoute(scheme: UrlScheme, path: string, overrides?: SchemeRouteOverrides): string | null {
     switch (scheme) {
         case 'store':
-            return path ? `/store/objects/${path}` : null;
         case 'document':
-            return path ? `/store/objects/${path}` : null;
+            if (!path) return null;
+            return overrides?.resolveStoreUrl?.(path) ?? `/store/objects/${path}`;
         case 'collection':
             return path ? `/store/collections/${path}` : null;
         default:
@@ -91,9 +93,10 @@ export function useResolvedUrl({
     const urlCacheRef = useRef(urlCache);
     urlCacheRef.current = urlCache;
     const { scheme, path } = parseUrlScheme(rawUrl);
+    const schemeOverrides = useSchemeRouteOverrides();
 
     // For schemes that map to routes, resolve immediately
-    const mappedRoute = mapSchemeToRoute(scheme, path);
+    const mappedRoute = mapSchemeToRoute(scheme, path, schemeOverrides);
 
     const [state, setState] = useState<{
         url: string | undefined;

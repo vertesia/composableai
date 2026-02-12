@@ -235,9 +235,9 @@ function MessageItemComponent({
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(() => ({
-        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
+        a: ({ node, ref, "data-scheme": scheme, ...props }: { node?: any; ref?: any; "data-scheme"?: string; href?: string; children?: React.ReactNode }) => {
             const href = props.href || "";
-            if (href.includes("/store/objects")) {
+            if (scheme === "store" || scheme === "document" || href.includes("/store/objects")) {
                 return (
                     <NavLink
                         href={href}

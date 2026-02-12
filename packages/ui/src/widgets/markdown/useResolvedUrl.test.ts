@@ -91,4 +91,44 @@ describe('mapSchemeToRoute', () => {
         const result = mapSchemeToRoute('store', '');
         expect(result).toBeNull();
     });
+
+    describe('with overrides', () => {
+        const overrides = { resolveStoreUrl: (id: string) => `/custom/docs/${id}` };
+
+        it('should use resolveStoreUrl override for store: scheme', () => {
+            const result = mapSchemeToRoute('store', 'abc123', overrides);
+            expect(result).toBe('/custom/docs/abc123');
+        });
+
+        it('should use resolveStoreUrl override for document: scheme', () => {
+            const result = mapSchemeToRoute('document', 'doc-id', overrides);
+            expect(result).toBe('/custom/docs/doc-id');
+        });
+
+        it('should not affect collection: scheme', () => {
+            const result = mapSchemeToRoute('collection', 'my-collection', overrides);
+            expect(result).toBe('/store/collections/my-collection');
+        });
+
+        it('should not affect other schemes', () => {
+            expect(mapSchemeToRoute('artifact', 'path', overrides)).toBeNull();
+            expect(mapSchemeToRoute('image', 'path', overrides)).toBeNull();
+            expect(mapSchemeToRoute('standard', 'https://example.com', overrides)).toBeNull();
+        });
+
+        it('should return null for empty path even with overrides', () => {
+            const result = mapSchemeToRoute('store', '', overrides);
+            expect(result).toBeNull();
+        });
+
+        it('should fall back to default when overrides is undefined', () => {
+            const result = mapSchemeToRoute('store', 'abc123', undefined);
+            expect(result).toBe('/store/objects/abc123');
+        });
+
+        it('should fall back to default when resolveStoreUrl is undefined', () => {
+            const result = mapSchemeToRoute('store', 'abc123', {});
+            expect(result).toBe('/store/objects/abc123');
+        });
+    });
 });

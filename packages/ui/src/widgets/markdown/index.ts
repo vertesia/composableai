@@ -17,6 +17,12 @@ export {
     type UseResolvedUrlOptions,
 } from './useResolvedUrl';
 export {
+    SchemeRouteProvider,
+    useSchemeRouteOverrides,
+    type SchemeRouteOverrides,
+    type SchemeRouteProviderProps,
+} from './SchemeRouteContext';
+export {
     CodeBlockPlaceholder,
     CodeBlockErrorBoundary,
     type CodeBlockPlaceholderProps,

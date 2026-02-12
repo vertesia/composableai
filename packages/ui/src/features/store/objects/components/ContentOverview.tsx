@@ -86,9 +86,9 @@ interface MarkdownComponentProps {
  * Handles internal links to store objects and provides consistent styling.
  */
 const createMarkdownComponents = () => ({
-    a: ({ node, ...props }: MarkdownComponentProps & { href?: string }) => {
+    a: ({ node, "data-scheme": scheme, ...props }: MarkdownComponentProps & { "data-scheme"?: string; href?: string }) => {
         const href = props.href || "";
-        if (href.includes("/store/objects/")) {
+        if (scheme === "store" || scheme === "document" || href.includes("/store/objects/")) {
             return (
                 <NavLink topLevelNav href={href} className="text-info">
                     {props.children}

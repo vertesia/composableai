@@ -28,6 +28,7 @@ import { ThinkingMessages } from "./WaitingMessages";
 import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
+import { SchemeRouteProvider } from "../../../widgets/markdown/SchemeRouteContext";
 import { VegaLiteChart } from "./VegaLiteChart";
 
 export type StartWorkflowFn = (
@@ -119,6 +120,9 @@ interface ModernAgentConversationProps {
     // Hide the default object linking (for apps that don't use it)
     hideObjectLinking?: boolean;
 
+    /** Override the route for store: and document:// object links. Receives the object ID, returns the href. */
+    resolveStoreUrl?: (objectId: string) => string;
+
     // Callback to get attached document IDs when sending messages
     // Returns array of document IDs to include in message metadata
     getAttachedDocs?: () => string[];
@@ -152,7 +156,7 @@ interface ModernAgentConversationProps {
 export function ModernAgentConversation(
     props: ModernAgentConversationProps,
 ) {
-    const { run, startWorkflow, theme } = props;
+    const { run, startWorkflow, theme, resolveStoreUrl } = props;
 
     if (run) {
         // If we have a run, convert it to AsyncExecutionResult format if needed
@@ -163,11 +167,14 @@ export function ModernAgentConversation(
                     runId: run.run_id,
                     workflowId: run.workflow_id,
                 };
-        const content = (
+        let content = (
             <SkillWidgetProvider>
                 <ModernAgentConversationInner {...props} run={execRun} />
             </SkillWidgetProvider>
         );
+        if (resolveStoreUrl) {
+            content = <SchemeRouteProvider overrides={{ resolveStoreUrl }}>{content}</SchemeRouteProvider>;
+        }
         return theme
             ? <ConversationThemeProvider theme={theme}>{content}</ConversationThemeProvider>
             : content;

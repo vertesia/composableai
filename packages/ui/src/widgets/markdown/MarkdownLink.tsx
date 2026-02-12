@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Element } from 'hast';
 import { useResolvedUrl, parseUrlScheme, mapSchemeToRoute } from './useResolvedUrl';
+import { useSchemeRouteOverrides } from './SchemeRouteContext';
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder';
 
 export interface MarkdownLinkProps {
@@ -28,13 +29,14 @@ export function MarkdownLink({
 }: MarkdownLinkProps) {
     const rawHref = href || '';
     const { scheme, path } = parseUrlScheme(rawHref);
+    const schemeOverrides = useSchemeRouteOverrides();
 
     // For schemes that map directly to routes (store:, document://, collection:)
-    const mappedRoute = mapSchemeToRoute(scheme, path);
+    const mappedRoute = mapSchemeToRoute(scheme, path, schemeOverrides);
     if (mappedRoute) {
         if (typeof ExistingLink === 'function') {
             return (
-                <ExistingLink node={node} href={mappedRoute} {...rest}>
+                <ExistingLink node={node} href={mappedRoute} data-scheme={scheme} {...rest}>
                     {children}
                 </ExistingLink>
             );
