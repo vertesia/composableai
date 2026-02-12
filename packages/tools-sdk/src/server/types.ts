@@ -4,7 +4,7 @@ import { SkillCollection } from "../SkillCollection.js";
 import { ToolCollection } from "../ToolCollection.js";
 import { ToolExecutionPayload } from "../types.js";
 import { JSONSchema } from "@llumiverse/common";
-import { AppUIConfig } from "@vertesia/common";
+import { AppUIConfig, ProjectConfiguration } from "@vertesia/common";
 import { ContentTypesCollection } from "../ContentTypesCollection.js";
 
 /**
@@ -83,5 +83,13 @@ export interface ToolServerConfig {
      * Hide UI app links on the index page (default: false)
      */
     hideUILinks?: boolean;
+
+    /**
+     * If a filter is provided, it will be called with the project configuration when requesting tool definitions, and can be used to filter which tools are returned based on the project configuration. 
+     * This allows for dynamic enabling/disabling of tools based on project settings.
+     * @param projectConfig 
+     * @returns 
+     */
+    toolFilter?: (projectConfig: ProjectConfiguration) => boolean;
 }
 
