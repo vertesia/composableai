@@ -17,6 +17,7 @@ interface ToolCallGroupProps {
     showPulsatingCircle?: boolean;
     toolRunId?: string;
     toolStatus?: ToolExecutionStatus;
+    viewMode?: "stacked" | "sliding";
 }
 
 interface ToolCallItemProps {
@@ -413,7 +414,7 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
     );
 }
 
-function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRunId: _toolRunId, toolStatus }: ToolCallGroupProps) {
+function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRunId: _toolRunId, toolStatus, viewMode }: ToolCallGroupProps) {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
     const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(new Set());
@@ -422,7 +423,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
 
     // Theme context: resolve cascade into flat slots (highest priority)
     const conversationTheme = useConversationTheme();
-    const theme = resolveToolCallGroupTheme(conversationTheme?.toolCallGroup);
+    const theme = resolveToolCallGroupTheme(conversationTheme?.toolCallGroup, viewMode);
 
     // Extract workflow_run_id from messages (any message in the group should have it)
     const artifactRunId = messages.find(m => (m as any).workflow_run_id)?.workflow_run_id as string | undefined

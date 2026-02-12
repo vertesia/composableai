@@ -19,15 +19,16 @@ interface BatchProgressPanelProps {
     message: AgentMessage;
     batchData: BatchProgressDetails;
     isRunning?: boolean;
+    viewMode?: "stacked" | "sliding";
 }
 
-function BatchProgressPanelComponent({ message, batchData, isRunning = false }: BatchProgressPanelProps) {
+function BatchProgressPanelComponent({ message, batchData, isRunning = false, viewMode }: BatchProgressPanelProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const toast = useToast();
 
     // Theme context: resolve cascade into flat slots (highest priority)
     const conversationTheme = useConversationTheme();
-    const theme = resolveBatchProgressPanelTheme(conversationTheme?.batchProgressPanel);
+    const theme = resolveBatchProgressPanelTheme(conversationTheme?.batchProgressPanel, viewMode);
 
     const { tool_name, total, completed, succeeded, failed, items, started_at, completed_at } = batchData;
 

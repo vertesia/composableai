@@ -469,6 +469,7 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatest}
                                                 toolRunId={group.toolRunId}
                                                 toolStatus={group.toolStatus}
+                                                viewMode={viewMode}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -481,6 +482,7 @@ function AllMessagesMixedComponent({
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
+                                            viewMode={viewMode}
                                         />
                                     );
                                 } else {
@@ -498,6 +500,7 @@ function AllMessagesMixedComponent({
                                                     message={message}
                                                     batchData={message.details}
                                                     isRunning={!message.details.completed_at}
+                                                    viewMode={viewMode}
                                                 />
                                             </MessageErrorBoundary>
                                         );
@@ -509,6 +512,7 @@ function AllMessagesMixedComponent({
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
+                                                viewMode={viewMode}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -522,6 +526,7 @@ function AllMessagesMixedComponent({
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
+                                    viewMode={viewMode}
                                 />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
@@ -554,6 +559,7 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatest}
                                                 toolRunId={group.toolRunId}
                                                 toolStatus={group.toolStatus}
+                                                viewMode={viewMode}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -566,6 +572,7 @@ function AllMessagesMixedComponent({
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
+                                            viewMode={viewMode}
                                         />
                                     );
                                 } else {
@@ -584,6 +591,7 @@ function AllMessagesMixedComponent({
                                                     message={message}
                                                     batchData={message.details}
                                                     isRunning={!message.details.completed_at}
+                                                    viewMode={viewMode}
                                                 />
                                             </MessageErrorBoundary>
                                         );
@@ -595,6 +603,7 @@ function AllMessagesMixedComponent({
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
+                                                viewMode={viewMode}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -608,6 +617,7 @@ function AllMessagesMixedComponent({
                                     workstreamId={getWorkstreamId(thinking)}
                                     isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
                                     timestamp={thinking.timestamp}
+                                    viewMode={viewMode}
                                 />
                             ))}
                             {/* Incomplete streaming - no error boundary to avoid interrupting streaming */}
@@ -618,6 +628,7 @@ function AllMessagesMixedComponent({
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
+                                    viewMode={viewMode}
                                 />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}

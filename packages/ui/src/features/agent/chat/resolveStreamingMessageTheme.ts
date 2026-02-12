@@ -2,8 +2,9 @@ import {
     type ResolvedStreamingMessageSlots,
     type StreamingMessageSlots,
     type StreamingMessageTheme,
+    type ViewMode,
 } from "./ConversationThemeContext";
-import { type SlotTree, buildSlotChains, resolveSlots } from "./themeUtils";
+import { type SlotTree, buildSlotChains, mergeResolvedLayer, resolveSlots } from "./themeUtils";
 
 // ---------------------------------------------------------------------------
 // Cascade tree — StreamingMessage DOM hierarchy
@@ -31,11 +32,19 @@ const EMPTY: ResolvedStreamingMessageSlots = {};
 
 /**
  * Resolve a StreamingMessageTheme into a flat set of class strings.
- * No byType — StreamingMessage has no message type variants.
  */
 export function resolveStreamingMessageTheme(
     theme: StreamingMessageTheme | undefined,
+    viewMode?: ViewMode,
 ): ResolvedStreamingMessageSlots {
     if (!theme) return EMPTY;
-    return resolveSlots<SlotKey>(theme, SLOT_CHAINS, SLOT_KEYS);
+
+    let resolved = resolveSlots<SlotKey>(theme, SLOT_CHAINS, SLOT_KEYS);
+
+    if (viewMode && theme.byViewMode?.[viewMode]) {
+        const vmResolved = resolveSlots<SlotKey>(theme.byViewMode[viewMode], SLOT_CHAINS, SLOT_KEYS);
+        resolved = mergeResolvedLayer(resolved, vmResolved);
+    }
+
+    return resolved;
 }

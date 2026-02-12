@@ -70,3 +70,20 @@ export function resolveSlots<K extends string>(
 
     return resolved;
 }
+
+/**
+ * Merge an overlay layer on top of a base resolved slots object.
+ * Overlay values are appended via cn() so they override conflicting base classes.
+ */
+export function mergeResolvedLayer<K extends string>(
+    base: Partial<Record<K, string>>,
+    overlay: Partial<Record<K, string>>,
+): Partial<Record<K, string>> {
+    const result = { ...base };
+    for (const key in overlay) {
+        if (overlay[key]) {
+            result[key] = cn(result[key], overlay[key]);
+        }
+    }
+    return result;
+}

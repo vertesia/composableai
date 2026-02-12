@@ -2,6 +2,12 @@ import { type AgentMessageType } from "@vertesia/common";
 import { createContext, createElement, useContext, type ReactNode } from "react";
 
 // ---------------------------------------------------------------------------
+// ViewMode — stacked (detail) vs sliding (important-only)
+// ---------------------------------------------------------------------------
+
+export type ViewMode = "stacked" | "sliding";
+
+// ---------------------------------------------------------------------------
 // SlotValue — controls cascade vs self-only styling
 // ---------------------------------------------------------------------------
 
@@ -93,6 +99,8 @@ export interface MessageItemTheme extends MessageItemSlots {
      * These cascade identically to base slots but at higher priority.
      */
     byType?: Partial<Record<AgentMessageType, MessageItemSlots>>;
+    /** Per-view-mode overrides. Highest priority — layers on top of base + byType. */
+    byViewMode?: Partial<Record<ViewMode, MessageItemSlots>>;
 }
 
 // ---------------------------------------------------------------------------
@@ -130,8 +138,10 @@ export interface StreamingMessageSlots {
 /** Resolved slots — always flat strings after cascade resolution. */
 export type ResolvedStreamingMessageSlots = { [K in keyof StreamingMessageSlots]?: string };
 
-/** StreamingMessage theme — no byType (always one visual variant). */
-export type StreamingMessageTheme = StreamingMessageSlots;
+/** StreamingMessage theme — no byType, but supports byViewMode. */
+export interface StreamingMessageTheme extends StreamingMessageSlots {
+    byViewMode?: Partial<Record<ViewMode, StreamingMessageSlots>>;
+}
 
 /** Class overrides for individual ToolCallGroup DOM elements. */
 export interface ToolCallGroupSlots {
@@ -174,8 +184,10 @@ export interface ToolCallGroupSlots {
 /** Resolved slots — always flat strings after cascade resolution. */
 export type ResolvedToolCallGroupSlots = { [K in keyof ToolCallGroupSlots]?: string };
 
-/** ToolCallGroup theme — no byType (status-based styling stays hardcoded). */
-export type ToolCallGroupTheme = ToolCallGroupSlots;
+/** ToolCallGroup theme — no byType, but supports byViewMode. */
+export interface ToolCallGroupTheme extends ToolCallGroupSlots {
+    byViewMode?: Partial<Record<ViewMode, ToolCallGroupSlots>>;
+}
 
 /** Class overrides for individual BatchProgressPanel DOM elements. */
 export interface BatchProgressPanelSlots {
@@ -216,8 +228,10 @@ export interface BatchProgressPanelSlots {
 /** Resolved slots — always flat strings after cascade resolution. */
 export type ResolvedBatchProgressPanelSlots = { [K in keyof BatchProgressPanelSlots]?: string };
 
-/** BatchProgressPanel theme — no byType. */
-export type BatchProgressPanelTheme = BatchProgressPanelSlots;
+/** BatchProgressPanel theme — no byType, but supports byViewMode. */
+export interface BatchProgressPanelTheme extends BatchProgressPanelSlots {
+    byViewMode?: Partial<Record<ViewMode, BatchProgressPanelSlots>>;
+}
 
 /** Class overrides for AllMessagesMixed layout container. */
 export interface AllMessagesMixedSlots {

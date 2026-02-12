@@ -2,8 +2,9 @@ import {
     type BatchProgressPanelSlots,
     type BatchProgressPanelTheme,
     type ResolvedBatchProgressPanelSlots,
+    type ViewMode,
 } from "./ConversationThemeContext";
-import { type SlotTree, buildSlotChains, resolveSlots } from "./themeUtils";
+import { type SlotTree, buildSlotChains, mergeResolvedLayer, resolveSlots } from "./themeUtils";
 
 // ---------------------------------------------------------------------------
 // Cascade tree — BatchProgressPanel DOM hierarchy
@@ -34,7 +35,16 @@ const EMPTY: ResolvedBatchProgressPanelSlots = {};
  */
 export function resolveBatchProgressPanelTheme(
     theme: BatchProgressPanelTheme | undefined,
+    viewMode?: ViewMode,
 ): ResolvedBatchProgressPanelSlots {
     if (!theme) return EMPTY;
-    return resolveSlots<SlotKey>(theme, SLOT_CHAINS, SLOT_KEYS);
+
+    let resolved = resolveSlots<SlotKey>(theme, SLOT_CHAINS, SLOT_KEYS);
+
+    if (viewMode && theme.byViewMode?.[viewMode]) {
+        const vmResolved = resolveSlots<SlotKey>(theme.byViewMode[viewMode], SLOT_CHAINS, SLOT_KEYS);
+        resolved = mergeResolvedLayer(resolved, vmResolved);
+    }
+
+    return resolved;
 }

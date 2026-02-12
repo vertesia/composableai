@@ -41,7 +41,7 @@ export type {
     ResolvedStreamingMessageSlots, ResolvedToolCallGroupSlots,
     SlotValue, StreamingMessageSlots, StreamingMessageTheme,
     ToolCallGroupSlots, ToolCallGroupTheme,
-    WorkstreamTabsSlots, WorkstreamTabsTheme, ResolvedWorkstreamTabsSlots,
+    ViewMode, WorkstreamTabsSlots, WorkstreamTabsTheme, ResolvedWorkstreamTabsSlots,
 } from "./ConversationThemeContext";
 export { resolveAllMessagesMixedTheme } from "./resolveAllMessagesMixedTheme";
 export { resolveBatchProgressPanelTheme } from "./resolveBatchProgressPanelTheme";

@@ -2,8 +2,9 @@ import {
     type ResolvedToolCallGroupSlots,
     type ToolCallGroupSlots,
     type ToolCallGroupTheme,
+    type ViewMode,
 } from "./ConversationThemeContext";
-import { type SlotTree, buildSlotChains, resolveSlots } from "./themeUtils";
+import { type SlotTree, buildSlotChains, mergeResolvedLayer, resolveSlots } from "./themeUtils";
 
 // ---------------------------------------------------------------------------
 // Cascade tree — ToolCallGroup DOM hierarchy
@@ -38,7 +39,16 @@ const EMPTY: ResolvedToolCallGroupSlots = {};
  */
 export function resolveToolCallGroupTheme(
     theme: ToolCallGroupTheme | undefined,
+    viewMode?: ViewMode,
 ): ResolvedToolCallGroupSlots {
     if (!theme) return EMPTY;
-    return resolveSlots<SlotKey>(theme, SLOT_CHAINS, SLOT_KEYS);
+
+    let resolved = resolveSlots<SlotKey>(theme, SLOT_CHAINS, SLOT_KEYS);
+
+    if (viewMode && theme.byViewMode?.[viewMode]) {
+        const vmResolved = resolveSlots<SlotKey>(theme.byViewMode[viewMode], SLOT_CHAINS, SLOT_KEYS);
+        resolved = mergeResolvedLayer(resolved, vmResolved);
+    }
+
+    return resolved;
 }

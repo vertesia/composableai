@@ -4,8 +4,9 @@ import {
     type MessageItemSlots,
     type MessageItemTheme,
     type ResolvedMessageItemSlots,
+    type ViewMode,
 } from "./ConversationThemeContext";
-import { type SlotTree, buildSlotChains, getCascade, getSelf } from "./themeUtils";
+import { type SlotTree, buildSlotChains, getCascade, getSelf, mergeResolvedLayer, resolveSlots } from "./themeUtils";
 
 // ---------------------------------------------------------------------------
 // Cascade tree — defines the DOM hierarchy. Chains are derived automatically.
@@ -51,11 +52,12 @@ const EMPTY: ResolvedMessageItemSlots = {};
 export function resolveMessageItemTheme(
     theme: MessageItemTheme | undefined,
     messageType: AgentMessageType,
+    viewMode?: ViewMode,
 ): ResolvedMessageItemSlots {
     if (!theme) return EMPTY;
 
     const typeOverrides = theme.byType?.[messageType];
-    const resolved: ResolvedMessageItemSlots = {};
+    let resolved: ResolvedMessageItemSlots = {};
 
     for (const slot of SLOT_KEYS) {
         const chain = SLOT_CHAINS[slot];
@@ -83,6 +85,12 @@ export function resolveMessageItemTheme(
         if (merged) {
             resolved[slot] = merged;
         }
+    }
+
+    // ViewMode-specific cascade (highest priority)
+    if (viewMode && theme.byViewMode?.[viewMode]) {
+        const vmResolved = resolveSlots<SlotKey>(theme.byViewMode[viewMode], SLOT_CHAINS, SLOT_KEYS);
+        resolved = mergeResolvedLayer(resolved, vmResolved);
     }
 
     return resolved;

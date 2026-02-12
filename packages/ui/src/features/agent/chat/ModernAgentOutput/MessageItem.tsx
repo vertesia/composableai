@@ -71,6 +71,8 @@ function processContentForMarkdown(content: string | object, messageType: AgentM
 export interface MessageItemProps {
     message: AgentMessage;
     showPulsatingCircle?: boolean;
+    /** Current view mode for byViewMode theme overrides */
+    viewMode?: "stacked" | "sliding";
     /** Callback when user sends a message (e.g., from proposal selection) */
     onSendMessage?: (message: string) => void;
     /** Additional className for the outer container */
@@ -121,6 +123,7 @@ const MESSAGE_STYLES: Record<AgentMessageType | 'default', {
 function MessageItemComponent({
     message,
     showPulsatingCircle = false,
+    viewMode,
     onSendMessage,
     className,
     cardClassName,
@@ -149,7 +152,7 @@ function MessageItemComponent({
 
     // Theme context: resolve cascade + byType into flat slots (highest priority)
     const conversationTheme = useConversationTheme();
-    const theme = resolveMessageItemTheme(conversationTheme?.messageItem, message.type);
+    const theme = resolveMessageItemTheme(conversationTheme?.messageItem, message.type, viewMode);
 
     // PERFORMANCE: Memoize message content extraction - only recalculates when message changes
     const messageContent = useMemo(() => {
@@ -560,6 +563,7 @@ const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
     return (
         prevProps.message.timestamp === nextProps.message.timestamp &&
         prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
+        prevProps.viewMode === nextProps.viewMode &&
         prevProps.onSendMessage === nextProps.onSendMessage &&
         prevProps.className === nextProps.className &&
         prevProps.cardClassName === nextProps.cardClassName &&
