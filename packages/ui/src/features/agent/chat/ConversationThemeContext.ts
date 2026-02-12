@@ -133,11 +133,49 @@ export type ResolvedStreamingMessageSlots = { [K in keyof StreamingMessageSlots]
 /** StreamingMessage theme — no byType (always one visual variant). */
 export type StreamingMessageTheme = StreamingMessageSlots;
 
-export interface ToolCallGroupTheme {
-    root?: string;
-    card?: string;
-    header?: string;
+/** Class overrides for individual ToolCallGroup DOM elements. */
+export interface ToolCallGroupSlots {
+    /** Root container: "border-l-4 bg-white dark:bg-gray-900 mb-4 overflow-hidden" + dynamic border */
+    root?: SlotValue;
+    /** Header row: "flex items-center justify-between px-4 py-1.5 cursor-pointer ..." */
+    header?: SlotValue;
+    /** Header left group: "flex items-center gap-1.5" */
+    headerLeft?: SlotValue;
+    /** Status icon wrapper */
+    statusIcon?: SlotValue;
+    /** Sender label: "text-xs font-medium text-muted" */
+    sender?: SlotValue;
+    /** Tool summary badge: "text-xs text-purple-600 dark:text-purple-400 font-medium" */
+    toolSummary?: SlotValue;
+    /** Header right group: "flex items-center gap-1.5" */
+    headerRight?: SlotValue;
+    /** Timestamp: "text-[11px] text-muted/70" */
+    timestamp?: SlotValue;
+    /** Copy button: "text-muted/50 hover:text-muted h-5 w-5 p-0" */
+    copyButton?: SlotValue;
+    /** Items container: "px-4 py-1 space-y-0" (collapsed) or "group" (expanded) */
+    itemList?: SlotValue;
+    /** Individual item wrapper: "border-b border-gray-100 dark:border-gray-800 last:border-b-0" */
+    item?: SlotValue;
+    /** Item header row: "flex items-start gap-2 py-2 text-xs cursor-pointer ..." */
+    itemHeader?: SlotValue;
+    /** Tool name badge: "text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 ..." */
+    toolBadge?: SlotValue;
+    /** Expanded item content: "px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30" */
+    itemContent?: SlotValue;
+    /** Prose wrapper: "vprose prose prose-slate ... text-sm" */
+    prose?: SlotValue;
+    /** Technical details: "mt-3 text-xs border rounded p-2 bg-muted/30" */
+    itemDetails?: SlotValue;
+    /** File display container: "mt-2 flex flex-wrap gap-2" */
+    fileDisplay?: SlotValue;
 }
+
+/** Resolved slots — always flat strings after cascade resolution. */
+export type ResolvedToolCallGroupSlots = { [K in keyof ToolCallGroupSlots]?: string };
+
+/** ToolCallGroup theme — no byType (status-based styling stays hardcoded). */
+export type ToolCallGroupTheme = ToolCallGroupSlots;
 
 export interface BatchProgressPanelTheme {
     root?: string;
