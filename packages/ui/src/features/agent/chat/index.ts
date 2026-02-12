@@ -31,11 +31,16 @@ export * from "./SkillWidgetProvider";
 // Conversation theming context
 export { ConversationThemeProvider, useConversationTheme } from "./ConversationThemeContext";
 export type {
+    AllMessagesMixedSlots, AllMessagesMixedTheme,
+    BatchProgressPanelSlots, BatchProgressPanelTheme,
     ConversationTheme, MessageItemSlots, MessageItemTheme,
+    ResolvedAllMessagesMixedSlots, ResolvedBatchProgressPanelSlots,
     ResolvedMessageItemSlots, ResolvedStreamingMessageSlots, ResolvedToolCallGroupSlots,
     SlotValue, StreamingMessageSlots, StreamingMessageTheme,
     ToolCallGroupSlots, ToolCallGroupTheme,
 } from "./ConversationThemeContext";
+export { resolveAllMessagesMixedTheme } from "./resolveAllMessagesMixedTheme";
+export { resolveBatchProgressPanelTheme } from "./resolveBatchProgressPanelTheme";
 export { resolveMessageItemTheme } from "./resolveMessageItemTheme";
 export { resolveStreamingMessageTheme } from "./resolveStreamingMessageTheme";
 export { resolveToolCallGroupTheme } from "./resolveToolCallGroupTheme";

@@ -177,11 +177,67 @@ export type ResolvedToolCallGroupSlots = { [K in keyof ToolCallGroupSlots]?: str
 /** ToolCallGroup theme — no byType (status-based styling stays hardcoded). */
 export type ToolCallGroupTheme = ToolCallGroupSlots;
 
-export interface BatchProgressPanelTheme {
-    root?: string;
-    header?: string;
-    progressBar?: string;
+/** Class overrides for individual BatchProgressPanel DOM elements. */
+export interface BatchProgressPanelSlots {
+    /** Root container: "border-l-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5" */
+    root?: SlotValue;
+    /** Header row: "flex items-center justify-between px-4 py-2 ... bg-blue-50/50 ..." */
+    header?: SlotValue;
+    /** Header left group: "flex items-center gap-2" */
+    headerLeft?: SlotValue;
+    /** Status icon wrapper */
+    statusIcon?: SlotValue;
+    /** Sender label: "text-xs font-medium text-muted" */
+    sender?: SlotValue;
+    /** Tool name: "text-xs text-blue-600 dark:text-blue-400 font-medium" */
+    toolName?: SlotValue;
+    /** Progress count: "text-xs text-muted" */
+    progressCount?: SlotValue;
+    /** Header right group: "flex items-center gap-2" */
+    headerRight?: SlotValue;
+    /** Timestamp/duration: "text-xs text-muted" */
+    timestamp?: SlotValue;
+    /** Copy button: "text-muted" */
+    copyButton?: SlotValue;
+    /** Progress bar section: "px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30" */
+    progressBar?: SlotValue;
+    /** Progress bar track: "flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden" */
+    track?: SlotValue;
+    /** Status counters: "flex items-center gap-2 text-xs" */
+    counters?: SlotValue;
+    /** Item list container: "max-h-64 overflow-y-auto" */
+    itemList?: SlotValue;
+    /** Individual item row: "flex items-center gap-2 px-4 py-1.5 text-xs border-b ..." */
+    item?: SlotValue;
+    /** Summary message: "px-4 py-2 text-xs text-muted" */
+    summary?: SlotValue;
 }
+
+/** Resolved slots — always flat strings after cascade resolution. */
+export type ResolvedBatchProgressPanelSlots = { [K in keyof BatchProgressPanelSlots]?: string };
+
+/** BatchProgressPanel theme — no byType. */
+export type BatchProgressPanelTheme = BatchProgressPanelSlots;
+
+/** Class overrides for AllMessagesMixed layout container. */
+export interface AllMessagesMixedSlots {
+    /** Root scroll container: "flex-1 min-h-0 h-full w-full ... overflow-y-auto ... flex flex-col ..." */
+    root?: SlotValue;
+    /** Workstream tabs wrapper: "sticky top-0 z-10" */
+    tabsWrapper?: SlotValue;
+    /** Empty state: "flex items-center justify-center h-full text-center py-8" */
+    emptyState?: SlotValue;
+    /** Message list container: "flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full" */
+    messageList?: SlotValue;
+    /** Working indicator: "flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500" */
+    workingIndicator?: SlotValue;
+}
+
+/** Resolved slots — always flat strings after cascade resolution. */
+export type ResolvedAllMessagesMixedSlots = { [K in keyof AllMessagesMixedSlots]?: string };
+
+/** AllMessagesMixed theme — no byType. */
+export type AllMessagesMixedTheme = AllMessagesMixedSlots;
 
 // ---------------------------------------------------------------------------
 // Top-level conversation theme
@@ -192,6 +248,7 @@ export interface ConversationTheme {
     streamingMessage?: StreamingMessageTheme;
     toolCallGroup?: ToolCallGroupTheme;
     batchProgressPanel?: BatchProgressPanelTheme;
+    allMessagesMixed?: AllMessagesMixedTheme;
 }
 
 // ---------------------------------------------------------------------------
