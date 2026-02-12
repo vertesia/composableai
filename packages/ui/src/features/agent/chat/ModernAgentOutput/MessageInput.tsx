@@ -24,7 +24,7 @@ export interface SelectedDocument {
     name: string;
 }
 
-export interface MessageInputProps {
+interface MessageInputProps {
     onSend: (message: string) => void;
     onStop?: () => void;
     disabled?: boolean;

@@ -9,7 +9,7 @@ export { ModernAgentConversation } from "./ModernAgentConversation";
 export { VegaLiteChart } from "./VegaLiteChart";
 export * from "./WaitingMessages";
 // MessageInput types for external use
-export type { MessageInputProps, SelectedDocument, UploadedFile } from "./ModernAgentOutput/MessageInput";
+export type { SelectedDocument, UploadedFile } from "./ModernAgentOutput/MessageInput";
 // AskUser widget for displaying agent prompts/questions
 export {
     AskUserWidget,

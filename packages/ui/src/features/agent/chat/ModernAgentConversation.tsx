@@ -22,7 +22,7 @@ import { resolveModernAgentConversationTheme } from "./theme/resolveModernAgentC
 import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
-import MessageInput, { type MessageInputProps, UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
+import MessageInput, { UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
 import { getWorkstreamId, insertMessageInTimeline, isInProgress } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
@@ -139,9 +139,6 @@ interface ModernAgentConversationProps {
     inputContainerClassName?: string;
     /** Additional className for the input field */
     inputClassName?: string;
-
-    /** Render a custom input component instead of the default MessageInput. Receives the same props. */
-    renderInput?: (props: MessageInputProps) => React.ReactNode;
 
     /** Conversation theme — cascading overrides for all child components */
     theme?: ConversationTheme;
@@ -640,8 +637,6 @@ function ModernAgentConversationInner({
     // Styling props
     inputContainerClassName,
     inputClassName,
-    // Custom input renderer
-    renderInput,
     // Fusion fragment data
     fusionData,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
@@ -1493,33 +1488,37 @@ function ModernAgentConversationInner({
                         >
                             This Workflow is {workflowStatus}
                         </MessageBox>
-                    ) : showInput && (() => {
-                        const inputProps: MessageInputProps = {
-                            onSend: handleSendMessage,
-                            onStop: handleStopWorkflow,
-                            disabled: isUploading,
-                            isSending: isSending || isUploading,
-                            isStopping: isStopping,
-                            isStreaming: !isCompleted,
-                            isCompleted,
-                            activeTaskCount: getActiveTaskCount(),
-                            placeholder,
-                            onFilesSelected: handleFileUpload,
-                            uploadedFiles,
-                            onRemoveFile,
-                            acceptedFileTypes,
-                            maxFiles,
-                            processingFiles,
-                            hasProcessingFiles,
-                            renderDocumentSearch,
-                            selectedDocuments,
-                            onRemoveDocument,
-                            hideObjectLinking,
-                            className: inputContainerClassName,
-                            inputClassName,
-                        };
-                        return renderInput ? renderInput(inputProps) : <MessageInput {...inputProps} />;
-                    })()}
+                    ) : showInput && (
+                        <MessageInput
+                            onSend={handleSendMessage}
+                            onStop={handleStopWorkflow}
+                            disabled={isUploading}
+                            isSending={isSending || isUploading}
+                            isStopping={isStopping}
+                            isStreaming={!isCompleted}
+                            isCompleted={isCompleted}
+                            activeTaskCount={getActiveTaskCount()}
+                            placeholder={placeholder}
+                            // File upload props - use internal handler that signals workflow
+                            onFilesSelected={handleFileUpload}
+                            uploadedFiles={uploadedFiles}
+                            onRemoveFile={onRemoveFile}
+                            acceptedFileTypes={acceptedFileTypes}
+                            maxFiles={maxFiles}
+                            // File processing state
+                            processingFiles={processingFiles}
+                            hasProcessingFiles={hasProcessingFiles}
+                            // Document search props
+                            renderDocumentSearch={renderDocumentSearch}
+                            selectedDocuments={selectedDocuments}
+                            onRemoveDocument={onRemoveDocument}
+                            // Object linking
+                            hideObjectLinking={hideObjectLinking}
+                            // Styling props
+                            className={inputContainerClassName}
+                            inputClassName={inputClassName}
+                        />
+                    )}
                 </div>
             </div>
 
