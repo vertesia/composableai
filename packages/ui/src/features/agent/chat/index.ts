@@ -28,4 +28,11 @@ export type { HeaderProps } from "./ModernAgentOutput/Header";
 export { default as StreamingMessage } from "./ModernAgentOutput/StreamingMessage";
 export type { StreamingMessageProps } from "./ModernAgentOutput/StreamingMessage";
 export * from "./SkillWidgetProvider";
+// Conversation theming context
+export { ConversationThemeProvider, useConversationTheme } from "./ConversationThemeContext";
+export type {
+    ConversationTheme, MessageItemSlots, MessageItemTheme,
+    ResolvedMessageItemSlots, SlotValue,
+} from "./ConversationThemeContext";
+export { resolveMessageItemTheme } from "./resolveMessageItemTheme";
 

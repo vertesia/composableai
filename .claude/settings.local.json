@@ -8,7 +8,8 @@
       "Bash(pnpm test:*)",
       "Bash(pnpm build:*)",
       "Bash(gh pr list:*)",
-      "Bash(git worktree:*)"
+      "Bash(git worktree:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

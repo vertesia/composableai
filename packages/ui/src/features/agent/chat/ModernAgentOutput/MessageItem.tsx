@@ -1,5 +1,5 @@
 import { AgentMessage, AgentMessageType, AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
-import { Badge, Button, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
+import { Badge, Button, cn, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
@@ -7,6 +7,8 @@ import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, MessageSquare, User } from "lucide-react";
 import React, { useEffect, useState, useMemo, memo, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
+import { useConversationTheme } from "../ConversationThemeContext";
+import { resolveMessageItemTheme } from "../resolveMessageItemTheme";
 import { AskUserWidget } from "../AskUserWidget";
 import { useImageLightbox } from "../ImageLightbox";
 import { ThinkingMessages } from "../WaitingMessages";
@@ -145,6 +147,10 @@ function MessageItemComponent({
     // Get styles from consolidated config
     const styles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
 
+    // Theme context: resolve cascade + byType into flat slots (highest priority)
+    const conversationTheme = useConversationTheme();
+    const theme = resolveMessageItemTheme(conversationTheme?.messageItem, message.type);
+
     // PERFORMANCE: Memoize message content extraction - only recalculates when message changes
     const messageContent = useMemo(() => {
         let content = "";
@@ -266,7 +272,7 @@ function MessageItemComponent({
         // Handle object content (JSON)
         if (typeof content === "object") {
             return (
-                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700 ">
+                <pre className={cn("text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700", theme.jsonPre)}>
                     {JSON.stringify(content, null, 2)}
                 </pre>
             );
@@ -276,7 +282,7 @@ function MessageItemComponent({
         const runId = (message as any).workflow_run_id as string | undefined;
 
         return (
-            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words" style={{ overflowWrap: 'anywhere' }}>
+            <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", theme.prose)} style={{ overflowWrap: 'anywhere' }}>
                 <MarkdownRenderer
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
@@ -382,32 +388,32 @@ function MessageItemComponent({
     };
 
     return (
-        <div className={`w-full max-w-full ${className || ""}`}>
+        <div className={cn("w-full max-w-full", className, theme.root)}>
             <div
-                className={`border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden ${styles.borderColor} ${cardClassName || ""}`}
+                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden", styles.borderColor, cardClassName, theme.card)}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
-                <div className={`flex items-center justify-between px-4 py-1.5 ${headerClassName || ""}`}>
-                    <div className="flex items-center gap-1.5">
-                        <div className={`${showPulsatingCircle ? "animate-fadeIn" : ""} ${iconClassName || ""}`}>
+                <div className={cn("flex items-center justify-between px-4 py-1.5", headerClassName, theme.header)}>
+                    <div className={cn("flex items-center gap-1.5", theme.headerLeft)}>
+                        <div className={cn(showPulsatingCircle ? "animate-fadeIn" : "", iconClassName, theme.icon)}>
                             {renderIcon()}
                         </div>
-                        <span className={`text-xs font-medium text-muted ${senderClassName || ""}`}>{styles.sender}</span>
+                        <span className={cn("text-xs font-medium text-muted", senderClassName, theme.sender)}>{styles.sender}</span>
                         {workstreamId !== "main" && workstreamId !== "all" && (
-                            <Badge variant="default" className="text-xs text-muted ml-1">
+                            <Badge variant="default" className={cn("text-xs text-muted ml-1", theme.badge)}>
                                 {workstreamId}
                             </Badge>
                         )}
                     </div>
-                    <div className="flex items-center gap-1.5 print:hidden">
-                        <span className={`text-[11px] text-muted/70 ${timestampClassName || ""}`}>
+                    <div className={cn("flex items-center gap-1.5 print:hidden", theme.headerRight)}>
+                        <span className={cn("text-[11px] text-muted/70", timestampClassName, theme.timestamp)}>
                             {dayjs(message.timestamp).format("HH:mm:ss")}
                         </span>
                         <Button
                             variant="ghost" size="xs"
                             onClick={copyToClipboard}
-                            className="text-muted/50 hover:text-muted h-5 w-5 p-0"
+                            className={cn("text-muted/50 hover:text-muted h-5 w-5 p-0", theme.copyButton)}
                             title="Copy message"
                         >
                             <CopyIcon className="size-3" />
@@ -417,7 +423,7 @@ function MessageItemComponent({
                                 trigger={
                                     <Button
                                         variant="ghost" size="xs"
-                                        className="text-muted/50 hover:text-muted h-5 w-5 p-0"
+                                        className={cn("text-muted/50 hover:text-muted h-5 w-5 p-0", theme.exportButton)}
                                         title="Export message"
                                         disabled={isExportingFile}
                                     >
@@ -437,7 +443,7 @@ function MessageItemComponent({
                 </div>
 
                 {/* Message content */}
-                <div className={`px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden ${contentClassName || ""}`}>
+                <div className={cn("px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden", contentClassName, theme.content)}>
                 {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                 {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
                     (() => {
@@ -458,19 +464,19 @@ function MessageItemComponent({
                         );
                     })()
                 ) : messageContent && (
-                    <div className="message-content break-words w-full" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                    <div className={cn("message-content break-words w-full", theme.body)} style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                         {renderContent(processedContent || messageContent)}
                     </div>
                 )}
 
                 {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                 {artifactLinks.length > 0 && (
-                    <div className={`mt-3 text-xs ${artifactsClassName || ""}`}>
-                        <div className="font-medium text-muted mb-1">Artifacts</div>
+                    <div className={cn("mt-3 text-xs", artifactsClassName, theme.artifacts)}>
+                        <div className={cn("font-medium text-muted mb-1", theme.artifactsLabel)}>Artifacts</div>
 
                         {/* Inline previews for image artifacts */}
                         {artifactLinks.some(a => a.isImage) && (
-                            <div className="mb-2 flex flex-wrap gap-3">
+                            <div className={cn("mb-2 flex flex-wrap gap-3", theme.artifactImages)}>
                                 {artifactLinks
                                     .filter(a => a.isImage)
                                     .map(({ displayName, artifactPath, url }) => (
@@ -493,7 +499,7 @@ function MessageItemComponent({
                         )}
 
                         {/* Buttons for all artifacts (files and images) */}
-                        <div className="flex flex-wrap gap-2 print:hidden">
+                        <div className={cn("flex flex-wrap gap-2 print:hidden", theme.artifactButtons)}>
                             {artifactLinks.map(({ displayName, artifactPath, url }) => (
                                 <Button
                                     key={artifactPath + url}
@@ -512,10 +518,10 @@ function MessageItemComponent({
 
                 {/* Optional details section */}
                 {message.details && (
-                    <div className={`mt-2 print:hidden ${detailsClassName || ""}`}>
+                    <div className={cn("mt-2 print:hidden", detailsClassName, theme.details)}>
                         <button
                             onClick={() => setShowDetails(!showDetails)}
-                            className="text-xs text-muted flex items-center"
+                            className={cn("text-xs text-muted flex items-center", theme.detailsToggle)}
                         >
                             {showDetails ? "Hide" : "Show"} details
                             <svg
@@ -530,11 +536,11 @@ function MessageItemComponent({
                         </button>
 
                         {showDetails && (
-                            <div className="mt-2 p-2 bg-muted border border-mixer-muted/40 rounded text-sm">
+                            <div className={cn("mt-2 p-2 bg-muted border border-mixer-muted/40 rounded text-sm", theme.detailsContent)}>
                                 {typeof message.details === "string" ? (
                                     renderContent(message.details)
                                 ) : (
-                                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted ">
+                                    <pre className={cn("text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted", theme.jsonPre)}>
                                         {JSON.stringify(message.details, null, 2)}
                                     </pre>
                                 )}
