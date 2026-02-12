@@ -635,9 +635,9 @@ function ModernAgentConversationInner({
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
-    // Theme context: resolve cascade into flat slots
-    const conversationTheme = useConversationTheme();
-    const theme = resolveModernAgentConversationTheme(conversationTheme?.conversation);
+    // Theme context: resolve cascade into flat classes
+    const outerTheme = useConversationTheme();
+    const theme = resolveModernAgentConversationTheme(outerTheme?.conversation);
 
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const conversationRef = useRef<HTMLDivElement | null>(null);
@@ -645,6 +645,8 @@ function ModernAgentConversationInner({
     const [isCompleted, setIsCompleted] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const [viewMode, setViewMode] = useState<"stacked" | "sliding">("sliding");
+    // Re-provide theme context with runtime viewMode so children read it from context
+    const themeWithViewMode = useMemo(() => ({ ...outerTheme, viewMode }), [outerTheme, viewMode]);
     const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(!isModal);
     const [isStopping, setIsStopping] = useState(false);
     // Keep track of multiple plans and their timestamps
@@ -1380,6 +1382,7 @@ function ModernAgentConversationInner({
 
     // Main content - wrapped with FusionFragmentProvider when fusionData is provided
     const mainContent = (
+        <ConversationThemeProvider theme={themeWithViewMode}>
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
         <div
@@ -1452,7 +1455,6 @@ function ModernAgentConversationInner({
                     <AllMessagesMixed
                         messages={messages}
                         bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
-                        viewMode={viewMode}
                         isCompleted={isCompleted}
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
@@ -1549,6 +1551,7 @@ function ModernAgentConversationInner({
         </div>
         </ImageLightboxProvider>
         </ArtifactUrlCacheProvider>
+        </ConversationThemeProvider>
     );
 
     // Wrap with FusionFragmentProvider when fusionData is provided

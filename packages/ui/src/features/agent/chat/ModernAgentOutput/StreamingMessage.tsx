@@ -26,8 +26,6 @@ export interface StreamingMessageProps {
     headerClassName?: string;
     /** Additional className for the content section */
     contentClassName?: string;
-    /** Current view mode for byViewMode theme overrides */
-    viewMode?: "stacked" | "sliding";
 }
 
 /**
@@ -44,7 +42,6 @@ function StreamingMessageComponent({
     className,
     headerClassName,
     contentClassName,
-    viewMode,
 }: StreamingMessageProps) {
     const [displayedLength, setDisplayedLength] = useState(0);
     const [throttledText, setThrottledText] = useState("");
@@ -231,7 +228,7 @@ function StreamingMessageComponent({
 
     // Theme context: resolve cascade into flat slots (highest priority)
     const conversationTheme = useConversationTheme();
-    const theme = resolveStreamingMessageTheme(conversationTheme?.streamingMessage, viewMode);
+    const theme = resolveStreamingMessageTheme(conversationTheme?.streamingMessage, conversationTheme?.viewMode);
 
     // PERFORMANCE: Append cursor character directly to text instead of DOM manipulation
     // This eliminates expensive TreeWalker traversal on every update
