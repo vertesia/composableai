@@ -267,11 +267,36 @@ export type ResolvedWorkstreamTabsSlots = { [K in keyof WorkstreamTabsSlots]?: s
 /** WorkstreamTabs theme — no byType. */
 export type WorkstreamTabsTheme = WorkstreamTabsSlots;
 
+/** Class overrides for ModernAgentConversation layout. */
+export interface ModernAgentConversationSlots {
+    /** Root layout: "flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden" */
+    root?: SlotValue;
+    /** Conversation area: "flex flex-col min-h-0 border-0" + responsive width */
+    conversationArea?: SlotValue;
+    /** Header wrapper: "flex-shrink-0" */
+    headerWrapper?: SlotValue;
+    /** Empty state (no messages): "flex-1 flex flex-col items-center justify-center ..." */
+    emptyState?: SlotValue;
+    /** Input wrapper: "flex-shrink-0" */
+    inputWrapper?: SlotValue;
+    /** Plan panel: "w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t ..." */
+    planPanel?: SlotValue;
+    /** Drag overlay: "absolute inset-0 ..." */
+    dragOverlay?: SlotValue;
+}
+
+/** Resolved slots — always flat strings after cascade resolution. */
+export type ResolvedModernAgentConversationSlots = { [K in keyof ModernAgentConversationSlots]?: string };
+
+/** ModernAgentConversation theme. */
+export type ModernAgentConversationTheme = ModernAgentConversationSlots;
+
 // ---------------------------------------------------------------------------
 // Top-level conversation theme
 // ---------------------------------------------------------------------------
 
 export interface ConversationTheme {
+    conversation?: ModernAgentConversationTheme;
     messageItem?: MessageItemTheme;
     streamingMessage?: StreamingMessageTheme;
     toolCallGroup?: ToolCallGroupTheme;

@@ -14,9 +14,11 @@ import {
     UserInputSignal,
 } from "@vertesia/common";
 import { FusionFragmentProvider } from "@vertesia/fusion-ux";
-import { Button, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
+import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
+import { ConversationThemeProvider, useConversationTheme, type ConversationTheme } from "./ConversationThemeContext";
+import { resolveModernAgentConversationTheme } from "./resolveModernAgentConversationTheme";
 import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
@@ -134,6 +136,9 @@ interface ModernAgentConversationProps {
     /** Additional className for the input field */
     inputClassName?: string;
 
+    /** Conversation theme — cascading overrides for all child components */
+    theme?: ConversationTheme;
+
     // Fusion fragment props
     /**
      * Data to provide to fusion-fragment code blocks for rendering.
@@ -147,7 +152,7 @@ interface ModernAgentConversationProps {
 export function ModernAgentConversation(
     props: ModernAgentConversationProps,
 ) {
-    const { run, startWorkflow } = props;
+    const { run, startWorkflow, theme } = props;
 
     if (run) {
         // If we have a run, convert it to AsyncExecutionResult format if needed
@@ -158,11 +163,14 @@ export function ModernAgentConversation(
                     runId: run.run_id,
                     workflowId: run.workflow_id,
                 };
-        return (
+        const content = (
             <SkillWidgetProvider>
                 <ModernAgentConversationInner {...props} run={execRun} />
             </SkillWidgetProvider>
-        )
+        );
+        return theme
+            ? <ConversationThemeProvider theme={theme}>{content}</ConversationThemeProvider>
+            : content;
     } else if (startWorkflow) {
         // If we have startWorkflow capability but no run yet
         return <StartWorkflowView {...props} />;
@@ -626,6 +634,11 @@ function ModernAgentConversationInner({
     fusionData,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
+
+    // Theme context: resolve cascade into flat slots
+    const conversationTheme = useConversationTheme();
+    const theme = resolveModernAgentConversationTheme(conversationTheme?.conversation);
+
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const conversationRef = useRef<HTMLDivElement | null>(null);
     const [messages, setMessages] = useState<AgentMessage[]>([]);
@@ -1370,7 +1383,7 @@ function ModernAgentConversationInner({
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
         <div
-            className={`flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
+            className={cn("flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden", isDragOver && "ring-2 ring-blue-400 ring-inset", theme.root)}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -1378,7 +1391,7 @@ function ModernAgentConversationInner({
         >
             {/* Drag overlay for full-panel file drop */}
             {isDragOver && (
-                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
+                <div className={cn("absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg", theme.dragOverlay)}>
                     <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
                         <UploadIcon className="size-6" />
                         Drop files to upload
@@ -1388,18 +1401,20 @@ function ModernAgentConversationInner({
             {/* Conversation Area - responsive width based on panel visibility */}
             <div
                 ref={conversationRef}
-                className={`flex flex-col min-h-0 border-0 ${
-                showSlidingPanel
-                    ? 'w-full lg:w-2/3 flex-1 min-h-[50vh]'
-                    : fullWidth
-                        ? 'flex-1 w-full'
-                        : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
-            }`}
+                className={cn(
+                    "flex flex-col min-h-0 border-0",
+                    showSlidingPanel
+                        ? "w-full lg:w-2/3 flex-1 min-h-[50vh]"
+                        : fullWidth
+                            ? "flex-1 w-full"
+                            : `flex-1 mx-auto ${!isModal ? "max-w-4xl" : ""}`,
+                    theme.conversationArea
+                )}
             >
                 {/* Streaming activity indicator moved to Header */}
 
                 {/* Header - flex-shrink-0 to prevent shrinking */}
-                <div className="flex-shrink-0">
+                <div className={cn("flex-shrink-0", theme.headerWrapper)}>
                     <Header
                         title={actualTitle}
                         isCompleted={isCompleted}
@@ -1420,7 +1435,7 @@ function ModernAgentConversationInner({
                 </div>
 
                 {messages.length === 0 && !isCompleted ? (
-                    <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-6">
+                    <div className={cn("flex-1 flex flex-col items-center justify-center h-full text-center py-6", theme.emptyState)}>
                         <div className="p-5 max-w-md border border-info rounded-lg shadow-sm">
                             <div className="flex items-center space-x-3 mb-3">
                                 <PulsatingCircle size="sm" color="blue" />
@@ -1455,7 +1470,7 @@ function ModernAgentConversationInner({
 
                 {/* Show workflow status message when not running, or show input when running/unknown */}
                 {/* Input area - flex-shrink-0 to stay pinned at bottom, with iOS safe area support */}
-                <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                <div className={cn("flex-shrink-0", theme.inputWrapper)} style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
                     {workflowStatus && workflowStatus !== "RUNNING" ? (
                         <MessageBox
                             status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
@@ -1500,7 +1515,7 @@ function ModernAgentConversationInner({
 
             {/* Plan Panel Area - only rendered when panel should be shown */}
             {showSlidingPanel && (
-                <div className="w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l">
+                <div className={cn("w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l", theme.planPanel)}>
                     <InlineSlidingPlanPanel
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}

@@ -34,8 +34,10 @@ export type {
     AllMessagesMixedSlots, AllMessagesMixedTheme,
     BatchProgressPanelSlots, BatchProgressPanelTheme,
     ConversationTheme, MessageItemSlots, MessageItemTheme,
+    ModernAgentConversationSlots, ModernAgentConversationTheme,
     ResolvedAllMessagesMixedSlots, ResolvedBatchProgressPanelSlots,
-    ResolvedMessageItemSlots, ResolvedStreamingMessageSlots, ResolvedToolCallGroupSlots,
+    ResolvedMessageItemSlots, ResolvedModernAgentConversationSlots,
+    ResolvedStreamingMessageSlots, ResolvedToolCallGroupSlots,
     SlotValue, StreamingMessageSlots, StreamingMessageTheme,
     ToolCallGroupSlots, ToolCallGroupTheme,
     WorkstreamTabsSlots, WorkstreamTabsTheme, ResolvedWorkstreamTabsSlots,
@@ -43,6 +45,7 @@ export type {
 export { resolveAllMessagesMixedTheme } from "./resolveAllMessagesMixedTheme";
 export { resolveBatchProgressPanelTheme } from "./resolveBatchProgressPanelTheme";
 export { resolveMessageItemTheme } from "./resolveMessageItemTheme";
+export { resolveModernAgentConversationTheme } from "./resolveModernAgentConversationTheme";
 export { resolveStreamingMessageTheme } from "./resolveStreamingMessageTheme";
 export { resolveToolCallGroupTheme } from "./resolveToolCallGroupTheme";
 export { resolveWorkstreamTabsTheme } from "./resolveWorkstreamTabsTheme";
