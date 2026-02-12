@@ -425,6 +425,7 @@ function AllMessagesMixedComponent({
                     color: var(--color-foreground, #f9fafb);
                 }
             `}</style>
+            {conversationTheme?.markdownStyles && <style>{conversationTheme.markdownStyles}</style>}
 
             {/* Workstream tabs with completion indicators */}
             <div className={cn("sticky top-0 z-10", theme.tabsWrapper)}>

@@ -362,6 +362,8 @@ export interface ConversationTheme {
     batchProgressPanel?: BatchProgressPanelTheme;
     allMessagesMixed?: AllMessagesMixedTheme;
     workstreamTabs?: WorkstreamTabsTheme;
+    /** Raw CSS string injected after the default .vprose styles. Overrides markdown rendering. */
+    markdownStyles?: string;
 }
 
 // ---------------------------------------------------------------------------
