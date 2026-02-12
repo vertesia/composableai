@@ -10,6 +10,7 @@ import {
   ActivityContext,
   setupActivity,
 } from "../dsl/setup/ActivityContext.js";
+import { hasText, resolveText } from "../utils/text-ref-utils.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import {
   InteractionExecutionParams,
@@ -70,7 +71,7 @@ export async function generateOrAssignContentType(
 
   if (
     !object ||
-    (!object.text &&
+    (!hasText(object) &&
       !object.content?.type?.startsWith("image/") &&
       !object.content?.type?.startsWith("application/pdf"))
   ) {
@@ -80,6 +81,9 @@ export async function generateOrAssignContentType(
     return { status: "failed", error: "no-text" };
   }
 
+  // Resolve text from text_ref (GCS) or legacy inline field
+  const objectText = await resolveText(client, object);
+
   const types = await client.types.list(undefined, {
     schema: true,
   });
@@ -88,15 +92,15 @@ export async function generateOrAssignContentType(
   const existing_types = types.filter(
     (t) => !["DocumentPart", "Rendition"].includes(t.name),
   );
-  const content = object.text
-    ? truncByMaxTokens(object.text, params.truncate || 30000)
+  const content = objectText
+    ? truncByMaxTokens(objectText, params.truncate || 30000)
     : undefined;
 
   const getImage = async () => {
     if (
       object.content?.type?.includes("pdf") &&
-      object.text?.length &&
-      object.text?.length < 100
+      objectText?.length &&
+      objectText?.length < 100
     ) {
       return "store:" + objectId;
     }

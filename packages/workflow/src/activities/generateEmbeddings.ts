@@ -12,6 +12,7 @@ import {
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
 import { fetchBlobAsBase64, md5 } from "../utils/blobs.js";
+import { getTextEtag, hasText, resolveText } from "../utils/text-ref-utils.js";
 import { DocPart } from "../utils/chunks.js";
 import { countTokens } from "../utils/tokens.js";
 
@@ -115,6 +116,11 @@ export async function generateEmbeddings(
         throw new DocumentNotFoundError("Document content not found", [objectId]);
     }
 
+    // Resolve text from text_ref (GCS) or legacy inline field
+    if (!document.text && hasText(document)) {
+        document.text = await resolveText(client, document);
+    }
+
     let res;
 
     switch (type) {
@@ -198,7 +204,7 @@ async function generateTextEmbeddings(
     const { environment } = config;
 
     // Compute text etag for comparison
-    const textEtag = document.text_etag ?? (document.text ? md5(document.text) : undefined);
+    const textEtag = getTextEtag(document) ?? (document.text ? md5(document.text) : undefined);
 
     // Skip if embeddings already exist with matching etag (unless force=true)
     const existingEmbedding = document.embeddings?.[type];

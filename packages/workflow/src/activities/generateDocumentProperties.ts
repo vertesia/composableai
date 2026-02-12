@@ -1,6 +1,7 @@
 import { log } from "@temporalio/activity";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
+import { getTextEtag, hasText, resolveText, uploadTextAsRef } from "../utils/text-ref-utils.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
 
@@ -32,7 +33,7 @@ export async function generateDocumentProperties(
     const doc = await client.objects.retrieve(objectId, "+text");
     const type = doc.type ? await client.types.retrieve(doc.type.id) : undefined;
 
-    if (!doc?.text && !params.use_vision && !doc?.content?.type?.startsWith("image/")) {
+    if (!hasText(doc) && !params.use_vision && !doc?.content?.type?.startsWith("image/")) {
         log.warn(`Object ${objectId} not found or text is empty`);
         return { status: "failed", error: "no-text" };
     }
@@ -55,8 +56,9 @@ export async function generateDocumentProperties(
         return undefined;
     };
 
-    const content = doc.text
-        ? truncByMaxTokens(doc.text, params.truncate || 30000)
+    const docText = await resolveText(client, doc);
+    const content = docText
+        ? truncByMaxTokens(docText, params.truncate || 30000)
         : undefined;
 
     const promptData = {
@@ -83,8 +85,9 @@ export async function generateDocumentProperties(
         payload.debug_mode ?? false,
     );
 
-    const getText = () => {
-        if (doc.text) {
+    // If no text exists, generate text from the interaction result and upload to GCS
+    const getTextRef = async () => {
+        if (hasText(doc)) {
             return undefined;
         }
         let text = "";
@@ -96,19 +99,18 @@ export async function generateDocumentProperties(
             text += jsonResult.description;
         }
         if (text) {
-            return text;
-        } else {
-            return undefined;
+            return uploadTextAsRef(client, doc.id, text, doc.content?.etag ?? '');
         }
+        return undefined;
     };
 
     log.info(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
     await client.objects.update(doc.id, {
         properties: {
             ...infoRes.result.object(),
-            etag: doc.text_etag,
+            etag: getTextEtag(doc),
         },
-        text: getText(),
+        text_ref: await getTextRef(),
         generation_run_info: {
             id: infoRes.id,
             date: new Date().toISOString(),

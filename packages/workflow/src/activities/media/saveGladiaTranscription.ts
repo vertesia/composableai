@@ -3,6 +3,7 @@ import { FetchClient } from "@vertesia/api-fetch-client";
 import { AudioMetadata, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, TranscriptSegment, VideoMetadata } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
+import { uploadTextAsRef } from "../../utils/text-ref-utils.js";
 
 export interface SaveGladiaTranscriptionParams {
     gladiaTranscriptionId: string;
@@ -74,9 +75,11 @@ export async function saveGladiaTranscription(payload: DSLActivityExecutionPaylo
         const objectId = context.objectId;
         const object = await client.objects.retrieve(objectId, "+text");
 
+        const etag = object.content?.etag ?? '';
+        const textRef = await uploadTextAsRef(client, objectId, fullText, etag);
+
         await client.objects.update(objectId, {
-            text: fullText,
-            text_etag: object.content?.etag,
+            text_ref: textRef,
             transcript: {
                 segments,
                 etag: object.content?.etag

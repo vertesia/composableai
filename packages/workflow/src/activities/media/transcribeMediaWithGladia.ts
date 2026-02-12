@@ -4,6 +4,7 @@ import { AUDIO_RENDITION_NAME, ContentNature, DSLActivityExecutionPayload, DSLAc
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../../errors.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../index.js";
+import { hasText } from "../../utils/text-ref-utils.js";
 
 
 export interface TranscriptMediaParams {
@@ -53,7 +54,7 @@ export async function transcribeMedia(payload: DSLActivityExecutionPayload<Trans
         const objectId = context.objectId;
         const object = await client.objects.retrieve(objectId, "+text");
 
-        if (object.text && !params.force) {
+        if (hasText(object) && !params.force) {
             return { hasText: true, objectId, status: TextExtractionStatus.skipped, message: "text already present and force not enabled" }
         }
 

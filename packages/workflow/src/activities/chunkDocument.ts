@@ -2,6 +2,7 @@ import { log } from "@temporalio/activity";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocPart } from "../utils/chunks.js";
+import { getTextEtag, hasText, resolveText } from "../utils/text-ref-utils.js";
 import { InteractionExecutionParams, executeInteractionFromActivity } from "./executeInteraction.js";
 
 const INT_CHUNK_DOCUMENT = "sys:ChunkDocument"
@@ -63,18 +64,26 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
     }
 
     //check if text is present
-    if (!document.text) {
+    if (!hasText(document)) {
         log.warn('No text found for object ID: ' + objectId);
         return { id: objectId, status: "failed", message: "no text found" }
     }
 
-    if (!force && document.parts && document.parts.length > 0 && document.parts_etag === document.text_etag) {
+    const textEtag = getTextEtag(document);
+    if (!force && document.parts && document.parts.length > 0 && document.parts_etag === textEtag) {
         log.info('Document already chunked for object ID: ' + objectId);
         return { id: objectId, status: "skipped", message: "document already chunked with correct etag" }
     }
 
+    // Resolve text from text_ref (GCS) or legacy inline field
+    const docText = await resolveText(client, document);
+    if (!docText) {
+        log.warn('Failed to resolve text for object ID: ' + objectId);
+        return { id: objectId, status: "failed", message: "failed to resolve text" }
+    }
+
     //instrument the text with line numbers
-    const lines = document.text.split('\n')
+    const lines = docText.split('\n')
     const instrumented = lines.map((l, i) => `{%${i}%}${l}`).join('\n')
 
     const res = await executeInteractionFromActivity(client, interactionName, params, {
@@ -116,7 +125,7 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
                 location: location(),
                 properties: {
                     part_number: i + 1,
-                    etag: document.text_etag,
+                    etag: textEtag,
                     source_line_start: part.line_number_start,
                     source_line_end: part.line_number_end,
                     title: part.name
@@ -135,7 +144,7 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
 
         await client.objects.update(objectId, {
             parts: partDocs.map(p => p.id),
-            parts_etag: document.text_etag
+            parts_etag: textEtag
         });
     }
 

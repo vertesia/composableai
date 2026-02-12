@@ -19,6 +19,7 @@ import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../../errors.js";
 import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
 import { fetchBlobAsBuffer, md5 } from "../../utils/blobs.js";
+import { hasText, uploadTextAsRef } from "../../utils/text-ref-utils.js";
 import { countTokens } from "../../utils/tokens.js";
 
 
@@ -44,7 +45,7 @@ export async function convertPdfToStructuredText(payload: DSLActivityExecutionPa
 
     const object = await client.objects.retrieve(objectId, "+text");
 
-    if (object.text && !params.force) {
+    if (hasText(object) && !params.force) {
         return { hasText: true, objectId, status: TextExtractionStatus.skipped, message: "text already present and force not enabled" }
     }
 
@@ -94,12 +95,12 @@ export async function convertPdfToStructuredText(payload: DSLActivityExecutionPa
             const fText = await processor.processResults(jobId);
             const tokensData = countTokens(fText);
             const etag = object.content.etag ?? md5(fText);
+            const textRef = await uploadTextAsRef(client, objectId, fText, etag);
             const updateData: CreateContentObjectPayload = {
-                text: fText,
-                text_etag: etag,
+                text_ref: textRef,
                 tokens: {
                     ...tokensData,
-                    etag: etag,
+                    etag,
                 }
             }
 

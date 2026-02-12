@@ -1,7 +1,8 @@
 import { log } from "@temporalio/activity";
-import { ContentObjectStatus, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
+import { ContentObjectStatus, ContentSource, DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { ActivityParamNotFoundError, DocumentNotFoundError } from "../../errors.js";
+import { uploadTextAsRef } from "../../utils/text-ref-utils.js";
 
 interface CreateOrUpdateObjectFromInteractionRunParams {
     /**
@@ -80,11 +81,20 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
 
     const name = jsonResult?.['name'] || jsonResult?.["title"] || inputData['name'] || params.fallback_name || undefined;
 
+    // Determine text content and upload to GCS if present
+    let textRef: ContentSource | undefined;
+    const rawText = !jsonResult ? result.text() : undefined;
+    const textFromProperty = params.update_text_from_property
+        ? jsonResult?.[params.update_text_from_property]
+        : undefined;
+    const textToUpload = textFromProperty || rawText;
+
+    // We need a temporary ID for new objects — upload text after creation
     const docPayload = {
         name,
         parent: params.parent ?? undefined,
         properties: jsonResult ? jsonResult : {},
-        text: !jsonResult ? result.text() : undefined,
+        text_ref: textRef,
         type: type?.id,
         status: ContentObjectStatus.completed,
         generation_run_info: {
@@ -95,22 +105,23 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
         }
     };
 
-    if (params.update_text_from_property) {
-        const text = docPayload.properties[params.update_text_from_property];
-        if (text) {
-            docPayload.text = text;
-        }
-    }
-
     //create or update the document
     let newDoc: boolean = false;
     let doc = undefined;
     if (params.update_existing_id) {
+        if (textToUpload) {
+            docPayload.text_ref = await uploadTextAsRef(client, params.update_existing_id, textToUpload, '');
+        }
         log.info(`Updating existing document ${params.update_existing_id}`);
         doc = await client.objects.update(params.update_existing_id, docPayload, { suppressWorkflows: true });
     } else {
         log.info(`Creating new document of type ${objectTypeName}`);
         doc = await client.objects.create(docPayload);
+        // Upload text after creation since we now have the object ID
+        if (textToUpload) {
+            const ref = await uploadTextAsRef(client, doc.id, textToUpload, '');
+            await client.objects.update(doc.id, { text_ref: ref }, { suppressWorkflows: true });
+        }
         newDoc = true;
     }
 

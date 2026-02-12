@@ -17,6 +17,7 @@ import {
     createFileSourceResult,
     uploadTextPreviewToStorage
 } from "../utils/text-preview-utils.js";
+import { getTextEtag, hasText, uploadTextAsRef } from "../utils/text-ref-utils.js";
 import { countTokens } from "../utils/tokens.js";
 
 //@ts-ignore
@@ -70,16 +71,16 @@ async function extractFromObject(
     log.info(`Extracting text for object ${doc.id}`);
 
     if (!doc.content?.type || !doc.content?.source) {
-        if (doc.text) {
-            return createResponse(doc, doc.text, TextExtractionStatus.skipped, "Text present and no source or type");
+        if (hasText(doc)) {
+            return createSkipResponse(doc, TextExtractionStatus.skipped, "Text present and no source or type");
         } else {
-            return createResponse(doc, "", TextExtractionStatus.error, "No source or type found");
+            return createSkipResponse(doc, TextExtractionStatus.error, "No source or type found");
         }
     }
 
     //skip if text already extracted and proper etag
-    if (doc.text && doc.text.length > 0 && doc.text_etag === doc.content.etag) {
-        return createResponse(doc, doc.text, TextExtractionStatus.skipped, "Text already extracted");
+    if (hasText(doc) && getTextEtag(doc) === doc.content.etag) {
+        return createSkipResponse(doc, TextExtractionStatus.skipped, "Text already extracted");
     }
 
     let fileBuffer: Buffer;
@@ -103,12 +104,13 @@ async function extractFromObject(
     const tokensData = countTokens(txt);
     const etag = doc.content.etag ?? md5(txt);
 
+    const textRef = await uploadTextAsRef(client, doc.id, txt, etag);
+
     const updateData: CreateContentObjectPayload = {
-        text: txt,
-        text_etag: etag,
+        text_ref: textRef,
         tokens: {
             ...tokensData,
-            etag: etag,
+            etag,
         },
     };
 
@@ -228,6 +230,25 @@ function createResponse(
         len: text.length,
         objectId: doc.id,
         hasText: !!text,
+    };
+}
+
+/**
+ * Create a response for skip/error paths without requiring the full text content.
+ * Uses hasText(doc) which checks both text_ref and legacy text fields,
+ * avoiding a GCS fetch just to compute a length.
+ */
+function createSkipResponse(
+    doc: ContentObject,
+    status: TextExtractionStatus,
+    message: string,
+): TextExtractionResult {
+    return {
+        status,
+        message,
+        tokens: doc.tokens,
+        objectId: doc.id,
+        hasText: hasText(doc),
     };
 }
 

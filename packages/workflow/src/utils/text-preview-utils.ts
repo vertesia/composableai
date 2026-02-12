@@ -3,6 +3,7 @@ import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { Readable } from "stream";
 import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
+import { uploadTextAsRef } from "./text-ref-utils.js";
 
 /**
  * Uploads extracted text preview to cloud storage
@@ -46,7 +47,7 @@ export function createFileSourceResult(
 }
 
 /**
- * Saves extracted text to an object in the object store
+ * Saves extracted text to GCS and updates the object with a text_ref.
  */
 export async function saveTextToObject(
     vertesia: VertesiaClient,
@@ -54,9 +55,8 @@ export async function saveTextToObject(
     text: string
 ): Promise<void> {
     const object = await vertesia.objects.retrieve(objectId);
-    await vertesia.objects.update(objectId, {
-        text: text,
-        text_etag: object.content?.etag,
-    });
-    log.info(`Saved text to object ${objectId}`);
+    const etag = object.content?.etag ?? '';
+    const textRef = await uploadTextAsRef(vertesia, objectId, text, etag);
+    await vertesia.objects.update(objectId, { text_ref: textRef });
+    log.info(`Saved text ref to object ${objectId}`);
 }
