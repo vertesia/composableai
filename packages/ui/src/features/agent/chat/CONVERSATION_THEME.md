@@ -1,6 +1,6 @@
 # Conversation Theme System
 
-A cascading theme system for `ModernAgentConversation` and all its child components. Provides 102 theme slots across 8 components with per-message-type, per-view-mode, and cascade/self-only controls.
+A cascading theme system for `ModernAgentConversation` and all its child components. Provides 102 theme classes across 8 components with per-message-type, per-view-mode, and cascade/self-only controls.
 
 ## Quick Start
 
@@ -36,7 +36,7 @@ import { AgentMessageType } from "@vertesia/common";
 ```
 1. Hardcoded defaults     — built into each component
 2. Component props        — className, cardClassName, etc. passed by parent components
-3. Base theme slots       — theme.messageItem.card (applies to all messages)
+3. Base theme classes     — theme.messageItem.card (applies to all messages)
 4. byType overrides       — theme.messageItem.byType[ERROR].card (per message type)
 5. byViewMode overrides   — theme.messageItem.byViewMode.sliding.card (per view mode)
 ```
@@ -45,7 +45,7 @@ Each level overrides the previous via `tailwind-merge` (conflicting classes reso
 
 ### Cascade
 
-Slots cascade down the DOM tree. Setting a class on a parent slot propagates to all descendants:
+Theme classes cascade down the DOM tree. Setting a class on a parent propagates to all descendants:
 
 ```tsx
 messageItem: {
@@ -102,26 +102,26 @@ messageItem: {
 
 ```tsx
 interface ConversationTheme {
-  conversation?: ModernAgentConversationTheme;  // 7 slots
-  planPanel?: PlanPanelTheme;                   // 17 slots
-  messageItem?: MessageItemTheme;               // 22 slots + byType + byViewMode
-  streamingMessage?: StreamingMessageTheme;     // 12 slots + byViewMode
-  toolCallGroup?: ToolCallGroupTheme;           // 16 slots + byViewMode
-  batchProgressPanel?: BatchProgressPanelTheme; // 14 slots + byViewMode
-  allMessagesMixed?: AllMessagesMixedTheme;     // 5 slots
-  workstreamTabs?: WorkstreamTabsTheme;         // 9 slots
+  conversation?: ModernAgentConversationTheme;  // 7 classes
+  planPanel?: PlanPanelTheme;                   // 17 classes
+  messageItem?: MessageItemTheme;               // 22 classes + byType + byViewMode
+  streamingMessage?: StreamingMessageTheme;     // 12 classes + byViewMode
+  toolCallGroup?: ToolCallGroupTheme;           // 16 classes + byViewMode
+  batchProgressPanel?: BatchProgressPanelTheme; // 14 classes + byViewMode
+  allMessagesMixed?: AllMessagesMixedTheme;     // 5 classes
+  workstreamTabs?: WorkstreamTabsTheme;         // 9 classes
   markdownStyles?: string;                      // raw CSS for .vprose overrides
 }
 ```
 
-## Component Slot Reference
+## Component Theme Class Reference
 
-### ModernAgentConversation (7 slots)
+### ModernAgentConversation (7 classes)
 
 Top-level layout container.
 
-| Slot | Default Classes | Description |
-|------|----------------|-------------|
+| Class Key | Default Classes | Description |
+|-----------|----------------|-------------|
 | `root` | `flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden` | Main layout |
 | `conversationArea` | `flex flex-col min-h-0 border-0` + responsive width | Chat area |
 | `headerWrapper` | `flex-shrink-0` | Header container |
@@ -130,12 +130,12 @@ Top-level layout container.
 | `planPanel` | `w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t ...` | Plan sidebar |
 | `dragOverlay` | `absolute inset-0 ... bg-blue-100/80 ...` | File drop zone |
 
-### MessageItem (22 slots + byType + byViewMode)
+### MessageItem (22 classes + byType + byViewMode)
 
 Individual agent messages. The most feature-rich themed component.
 
-| Slot | Default Classes |
-|------|----------------|
+| Class Key | Default Classes |
+|-----------|----------------|
 | `root` | `w-full max-w-full` |
 | `card` | `border-l-4 bg-white dark:bg-gray-900 mb-4 ...` + dynamic border |
 | `header` | `flex items-center justify-between px-4 py-1.5` |
@@ -159,7 +159,7 @@ Individual agent messages. The most feature-rich themed component.
 | `detailsToggle` | `text-xs text-muted flex items-center` |
 | `detailsContent` | `mt-2 p-2 bg-muted border border-mixer-muted/40 rounded text-sm` |
 
-**byType** — override slots per `AgentMessageType`:
+**byType** — override classes per `AgentMessageType`:
 
 ```tsx
 messageItem: {
@@ -171,7 +171,7 @@ messageItem: {
 }
 ```
 
-**byViewMode** — override slots per view mode:
+**byViewMode** — override classes per view mode:
 
 ```tsx
 messageItem: {
@@ -182,12 +182,12 @@ messageItem: {
 }
 ```
 
-### StreamingMessage (12 slots + byViewMode)
+### StreamingMessage (12 classes + byViewMode)
 
 Real-time streaming text with reveal animation.
 
-| Slot | Default Classes |
-|------|----------------|
+| Class Key | Default Classes |
+|-----------|----------------|
 | `root` | `w-full max-w-full` |
 | `card` | `border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 ...` |
 | `header` | `flex items-center justify-between px-4 py-1.5` |
@@ -201,12 +201,12 @@ Real-time streaming text with reveal animation.
 | `content` | `px-4 pb-3 streaming-content` |
 | `prose` | `vprose prose prose-slate dark:prose-invert ... text-[15px]` |
 
-### ToolCallGroup (16 slots + byViewMode)
+### ToolCallGroup (16 classes + byViewMode)
 
 Grouped tool execution messages with expand/collapse.
 
-| Slot | Default Classes |
-|------|----------------|
+| Class Key | Default Classes |
+|-----------|----------------|
 | `root` | `border-l-4 bg-white dark:bg-gray-900 mb-4 overflow-hidden` + dynamic border |
 | `header` | `flex items-center justify-between px-4 py-1.5 cursor-pointer ...` |
 | `headerLeft` | `flex items-center gap-1.5` |
@@ -225,12 +225,12 @@ Grouped tool execution messages with expand/collapse.
 | `itemDetails` | `mt-3 text-xs border rounded p-2 bg-muted/30` |
 | `fileDisplay` | `mt-2 flex flex-wrap gap-2` |
 
-### BatchProgressPanel (14 slots + byViewMode)
+### BatchProgressPanel (14 classes + byViewMode)
 
 Batch operation progress display.
 
-| Slot | Default Classes |
-|------|----------------|
+| Class Key | Default Classes |
+|-----------|----------------|
 | `root` | `border-l-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5` + dynamic border |
 | `header` | `flex items-center justify-between px-4 py-2 ... bg-blue-50/50 ...` |
 | `headerLeft` | `flex items-center gap-2` |
@@ -248,24 +248,24 @@ Batch operation progress display.
 | `item` | `flex items-center gap-2 px-4 py-1.5 text-xs border-b ...` |
 | `summary` | `px-4 py-2 text-xs text-muted` |
 
-### AllMessagesMixed (5 slots)
+### AllMessagesMixed (5 classes)
 
 Layout container for the message list.
 
-| Slot | Default Classes |
-|------|----------------|
+| Class Key | Default Classes |
+|-----------|----------------|
 | `root` | `flex-1 min-h-0 h-full w-full max-w-full overflow-y-auto ... flex flex-col ...` |
 | `tabsWrapper` | `sticky top-0 z-10` |
 | `emptyState` | `flex items-center justify-center h-full text-center py-8` |
 | `messageList` | `flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full` |
 | `workingIndicator` | `flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500` |
 
-### WorkstreamTabs (9 slots)
+### WorkstreamTabs (9 classes)
 
 Tab navigation for workstreams with active/inactive state targeting.
 
-| Slot | Default Classes |
-|------|----------------|
+| Class Key | Default Classes |
+|-----------|----------------|
 | `root` | `flex overflow-x-auto space-x-1 mb-2 bg-muted border-b-2 ...` |
 | `tab` | `px-2 py-1 text-xs font-medium whitespace-nowrap ...` (base for all) |
 | `tabActive` | `bg-info text-info border-b-2 border-info` (active tab override) |
@@ -276,12 +276,12 @@ Tab navigation for workstreams with active/inactive state targeting.
 | `badgeInactive` | `bg-muted text-muted` (inactive badge override) |
 | `empty` | `py-1` (when no workstreams to show) |
 
-### InlineSlidingPlanPanel (17 slots)
+### InlineSlidingPlanPanel (17 classes)
 
 Plan visualization sidebar.
 
-| Slot | Default Classes |
-|------|----------------|
+| Class Key | Default Classes |
+|-----------|----------------|
 | `root` | `h-full shadow-xl border border-muted/20 overflow-hidden` |
 | `header` | `flex items-center justify-between p-3 border-b border-muted/20` |
 | `title` | `font-bold text-base` |
@@ -337,31 +337,33 @@ import { ConversationThemeProvider, MessageItem } from "@vertesia/ui/features";
 
 | File | Purpose |
 |------|---------|
-| `ConversationThemeContext.ts` | All types, context, provider, hook |
-| `themeUtils.ts` | Shared `buildSlotChains`, `resolveSlots`, `mergeResolvedLayer`, `getCascade`, `getSelf` |
-| `resolveMessageItemTheme.ts` | MessageItem tree + resolver (handles byType + byViewMode) |
-| `resolveStreamingMessageTheme.ts` | StreamingMessage tree + resolver |
-| `resolveToolCallGroupTheme.ts` | ToolCallGroup tree + resolver |
-| `resolveBatchProgressPanelTheme.ts` | BatchProgressPanel tree + resolver |
-| `resolveAllMessagesMixedTheme.ts` | AllMessagesMixed tree + resolver |
-| `resolveWorkstreamTabsTheme.ts` | WorkstreamTabs tree + resolver |
-| `resolveModernAgentConversationTheme.ts` | ModernAgentConversation tree + resolver |
-| `resolvePlanPanelTheme.ts` | PlanPanel tree + resolver |
+| `ConversationThemeContext.ts` | `ConversationTheme` interface, context, provider, hook. Re-exports `ThemeClassValue` and `ViewMode` from themeUtils. |
+| `themeUtils.ts` | Shared primitives (`ThemeClassValue`, `ViewMode`) and utilities (`buildClassChains`, `resolveClasses`, `mergeResolvedLayer`, `getCascade`, `getSelf`) |
+| `resolveMessageItemTheme.ts` | `MessageItemThemeClasses` + `MessageItemTheme` types, cascade tree, resolver (handles byType + byViewMode) |
+| `resolveStreamingMessageTheme.ts` | `StreamingMessageThemeClasses` + `StreamingMessageTheme` types, cascade tree, resolver |
+| `resolveToolCallGroupTheme.ts` | `ToolCallGroupThemeClasses` + `ToolCallGroupTheme` types, cascade tree, resolver |
+| `resolveBatchProgressPanelTheme.ts` | `BatchProgressPanelThemeClasses` + `BatchProgressPanelTheme` types, cascade tree, resolver |
+| `resolveAllMessagesMixedTheme.ts` | `AllMessagesMixedThemeClasses` + `AllMessagesMixedTheme` types, cascade tree, resolver |
+| `resolveWorkstreamTabsTheme.ts` | `WorkstreamTabsThemeClasses` + `WorkstreamTabsTheme` types, cascade tree, resolver |
+| `resolveModernAgentConversationTheme.ts` | `ModernAgentConversationThemeClasses` + `ModernAgentConversationTheme` types, cascade tree, resolver |
+| `resolvePlanPanelTheme.ts` | `PlanPanelThemeClasses` + `PlanPanelTheme` types, cascade tree, resolver |
+
+Each resolver file is the **single source of truth** for its component: the `ThemeClasses` interface, cascade tree, and resolve function all live together. Adding a new class key only requires editing that one file.
 
 ### How Resolution Works
 
 Each resolver:
-1. Defines a **slot tree** mirroring the component's DOM hierarchy
-2. Derives **cascade chains** from the tree at module load (one-time cost)
-3. For each slot, walks the cascade chain collecting ancestor values
+1. Defines a **cascade tree** mirroring the component's DOM hierarchy
+2. Derives **class chains** from the tree at module load (one-time cost)
+3. For each class key, walks the cascade chain collecting ancestor values
 4. Layers `byType` (MessageItem only) then `byViewMode` on top
-5. Returns a flat `Record<slot, string>` consumed by the component
+5. Returns a flat `Record<key, string>` consumed by the component
 
-Components call their resolver once per render and use the flat result in `cn(hardcoded, prop, resolved.slot)`.
+Components call their resolver once per render and use the flat result in `cn(hardcoded, prop, resolved.key)`.
 
-### Adding a New Slot
+### Adding a New Theme Class
 
-1. Add the field to the component's `Slots` interface in `ConversationThemeContext.ts`
-2. Add the key to the component's tree in its resolver file
-3. Wire `cn(hardcoded, resolved.newSlot)` on the DOM element in the component
+1. Add the field to the component's `ThemeClasses` interface in its resolver file (e.g. `resolveMessageItemTheme.ts`)
+2. Add the key to the cascade tree in the same file
+3. Wire `cn(hardcoded, resolved.newKey)` on the DOM element in the component
 4. Build to verify
