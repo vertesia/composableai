@@ -99,12 +99,39 @@ export interface MessageItemTheme extends MessageItemSlots {
 // Stub interfaces for Phase 2+ components
 // ---------------------------------------------------------------------------
 
-export interface StreamingMessageTheme {
-    root?: string;
-    card?: string;
-    header?: string;
-    content?: string;
+/** Class overrides for individual StreamingMessage DOM elements. */
+export interface StreamingMessageSlots {
+    /** Root container: "w-full max-w-full" */
+    root?: SlotValue;
+    /** Card wrapper: "border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 ..." */
+    card?: SlotValue;
+    /** Header row: "flex items-center justify-between px-4 py-1.5" */
+    header?: SlotValue;
+    /** Header left group: "flex items-center gap-1.5" */
+    headerLeft?: SlotValue;
+    /** Icon wrapper: "animate-fadeIn" */
+    icon?: SlotValue;
+    /** Sender label: "text-xs font-medium text-muted" */
+    sender?: SlotValue;
+    /** Workstream badge: "text-xs text-muted" */
+    badge?: SlotValue;
+    /** Header right group: "flex items-center gap-2 text-muted" */
+    headerRight?: SlotValue;
+    /** Timestamp: "text-[11px]" */
+    timestamp?: SlotValue;
+    /** Copy button: "size-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-800" */
+    copyButton?: SlotValue;
+    /** Content section: "px-4 pb-3 streaming-content" */
+    content?: SlotValue;
+    /** Prose wrapper for markdown: "vprose prose prose-slate ... text-[15px]" */
+    prose?: SlotValue;
 }
+
+/** Resolved slots — always flat strings after cascade resolution. */
+export type ResolvedStreamingMessageSlots = { [K in keyof StreamingMessageSlots]?: string };
+
+/** StreamingMessage theme — no byType (always one visual variant). */
+export type StreamingMessageTheme = StreamingMessageSlots;
 
 export interface ToolCallGroupTheme {
     root?: string;

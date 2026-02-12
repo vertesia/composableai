@@ -3,6 +3,8 @@ import { Button, cn, useToast } from "@vertesia/ui/core";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { Bot, CopyIcon } from "lucide-react";
 import dayjs from "dayjs";
+import { useConversationTheme } from "../ConversationThemeContext";
+import { resolveStreamingMessageTheme } from "../resolveStreamingMessageTheme";
 
 // PERFORMANCE: Unicode cursor character - rendered inline with text
 // This avoids expensive DOM manipulation with TreeWalker on every update
@@ -224,6 +226,10 @@ function StreamingMessageComponent({
 
     const isTyping = displayedLength < text.length;
 
+    // Theme context: resolve cascade into flat slots (highest priority)
+    const conversationTheme = useConversationTheme();
+    const theme = resolveStreamingMessageTheme(conversationTheme?.streamingMessage);
+
     // PERFORMANCE: Append cursor character directly to text instead of DOM manipulation
     // This eliminates expensive TreeWalker traversal on every update
     const displayTextWithCursor = useMemo(() => {
@@ -244,34 +250,34 @@ function StreamingMessageComponent({
     };
 
     return (
-        <div className={cn("w-full max-w-full", className)}>
+        <div className={cn("w-full max-w-full", className, theme.root)}>
             {/* Card wrapper matching MessageItem structure */}
             <div
-                className="border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 w-full max-w-full overflow-hidden"
+                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 w-full max-w-full overflow-hidden", theme.card)}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
-                <div className={cn("flex items-center justify-between px-4 py-1.5", headerClassName)}>
-                    <div className="flex items-center gap-1.5">
-                        <div className="animate-fadeIn">
+                <div className={cn("flex items-center justify-between px-4 py-1.5", headerClassName, theme.header)}>
+                    <div className={cn("flex items-center gap-1.5", theme.headerLeft)}>
+                        <div className={cn("animate-fadeIn", theme.icon)}>
                             {isTyping ? (
                                 <span className="size-2 rounded-full bg-blue-500 animate-pulse inline-block" />
                             ) : (
                                 <Bot className="size-4 text-purple-600 dark:text-purple-400" />
                             )}
                         </div>
-                        <span className="text-xs font-medium text-muted">Agent</span>
+                        <span className={cn("text-xs font-medium text-muted", theme.sender)}>Agent</span>
                         {workstreamId && workstreamId !== "main" && (
-                            <span className="text-xs text-muted">• Task {workstreamId}</span>
+                            <span className={cn("text-xs text-muted", theme.badge)}>• Task {workstreamId}</span>
                         )}
                     </div>
-                    <div className="flex items-center gap-2 text-muted">
-                        <span className="text-[11px]">{formattedTime}</span>
+                    <div className={cn("flex items-center gap-2 text-muted", theme.headerRight)}>
+                        <span className={cn("text-[11px]", theme.timestamp)}>{formattedTime}</span>
                         <Button
                             variant="ghost"
                             size="xs"
                             onClick={copyToClipboard}
-                            className="size-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            className={cn("size-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-800", theme.copyButton)}
                             title="Copy message"
                         >
                             <CopyIcon className="size-3" />
@@ -284,10 +290,11 @@ function StreamingMessageComponent({
                     className={cn(
                         "px-4 pb-3 streaming-content",
                         isTyping && "streaming-active",
-                        contentClassName
+                        contentClassName,
+                        theme.content
                     )}
                 >
-                    <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words" style={{ overflowWrap: 'anywhere' }}>
+                    <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", theme.prose)} style={{ overflowWrap: 'anywhere' }}>
                         <MarkdownRenderer>
                             {displayTextWithCursor}
                         </MarkdownRenderer>

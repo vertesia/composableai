@@ -32,7 +32,9 @@ export * from "./SkillWidgetProvider";
 export { ConversationThemeProvider, useConversationTheme } from "./ConversationThemeContext";
 export type {
     ConversationTheme, MessageItemSlots, MessageItemTheme,
-    ResolvedMessageItemSlots, SlotValue,
+    ResolvedMessageItemSlots, ResolvedStreamingMessageSlots,
+    SlotValue, StreamingMessageSlots, StreamingMessageTheme,
 } from "./ConversationThemeContext";
 export { resolveMessageItemTheme } from "./resolveMessageItemTheme";
+export { resolveStreamingMessageTheme } from "./resolveStreamingMessageTheme";
 

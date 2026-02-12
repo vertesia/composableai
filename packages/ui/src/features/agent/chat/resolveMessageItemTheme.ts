@@ -4,16 +4,14 @@ import {
     type MessageItemSlots,
     type MessageItemTheme,
     type ResolvedMessageItemSlots,
-    type SlotValue,
 } from "./ConversationThemeContext";
+import { type SlotTree, buildSlotChains, getCascade, getSelf } from "./themeUtils";
 
 // ---------------------------------------------------------------------------
 // Cascade tree — defines the DOM hierarchy. Chains are derived automatically.
-// Parent classes cascade into children, mimicking CSS inheritance.
 // ---------------------------------------------------------------------------
 
 type SlotKey = keyof MessageItemSlots;
-type SlotTree = { [key: string]: SlotTree };
 
 /** MessageItem DOM hierarchy — single source of truth for cascade relationships. */
 const MESSAGE_ITEM_TREE: SlotTree = {
@@ -30,40 +28,11 @@ const MESSAGE_ITEM_TREE: SlotTree = {
     },
 };
 
-/** Recursively walk a SlotTree and build ancestor chains for each slot. */
-function buildSlotChains<K extends string>(tree: SlotTree, path: K[] = []): Record<K, readonly K[]> {
-    const chains = {} as Record<K, readonly K[]>;
-    for (const [key, children] of Object.entries(tree)) {
-        const chain = [...path, key as K];
-        chains[key as K] = chain;
-        Object.assign(chains, buildSlotChains<K>(children, chain));
-    }
-    return chains;
-}
-
-/** For each slot, the ordered list of ancestors (root-first) INCLUDING self. Derived once at module load. */
+/** Derived once at module load. */
 const SLOT_CHAINS = buildSlotChains<SlotKey>(MESSAGE_ITEM_TREE);
 const SLOT_KEYS = Object.keys(SLOT_CHAINS) as SlotKey[];
 
 const EMPTY: ResolvedMessageItemSlots = {};
-
-// ---------------------------------------------------------------------------
-// SlotValue helpers — extract cascade vs self-only parts
-// ---------------------------------------------------------------------------
-
-/** Extract the cascade part (propagates to descendants). Strings = cascade. */
-function getCascade(value: SlotValue | undefined): string | undefined {
-    if (!value) return undefined;
-    if (typeof value === "string") return value;
-    return value.cascade;
-}
-
-/** Extract the self-only part (does NOT propagate). Strings have no self. */
-function getSelf(value: SlotValue | undefined): string | undefined {
-    if (!value) return undefined;
-    if (typeof value === "string") return undefined;
-    return value.self;
-}
 
 // ---------------------------------------------------------------------------
 // Resolver
