@@ -136,7 +136,46 @@ This is the skill content in markdown.
   related_tools?: string[];        // Optional: Related tool names
   scripts?: string[];              // Optional: Script files in skill dir
   widgets?: string[];              // Optional: Widget names in skill dir
+  isEnabled?: (context: any) => Promise<boolean>;  // Optional: Runtime filter function
 }
+```
+
+### Runtime Properties (`properties.ts`)
+
+For properties that cannot be defined in YAML frontmatter (like functions), create a `properties.ts` file in your skill directory:
+
+```typescript
+// my-skill/properties.ts
+import type { ToolUseContext } from '@vertesia/tools-sdk';
+
+export default {
+  // Function to check if skill is enabled
+  isEnabled: async (context: ToolUseContext): Promise<boolean> => {
+    return context.project?.settings?.myFeature === true;
+  },
+
+  // You can override any frontmatter property
+  description: 'Dynamically set description',
+
+  // Add any other SkillDefinition properties
+};
+```
+
+**How it works:**
+1. The `properties.ts` file must export a default object of type `Partial<SkillDefinition>`
+2. Properties from `properties.ts` **override** those from frontmatter
+3. During build, the SKILL.md transformer generates code that imports `./properties.js`
+4. Rollup automatically transpiles `properties.ts` to `properties.js` (via TypeScript plugin)
+5. Runtime validation ensures `isEnabled` (if present) is a function
+6. Build fails with clear errors if validation fails
+
+**Directory structure:**
+```
+my-skill/
+  ├── SKILL.md         # Declarative properties (frontmatter + markdown)
+  ├── properties.ts    # Runtime properties (functions, overrides)
+  ├── helper.js        # Script files (auto-discovered)
+  └── chart.tsx        # Widget files (auto-discovered)
 ```
 
 ### Raw Transformer

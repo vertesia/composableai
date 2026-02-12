@@ -39,6 +39,7 @@ export {
     skillCollectionTransformer,
     promptTransformer,
     SkillDefinitionSchema,
+    SkillPropertiesSchema,
     PromptDefinitionSchema,
     type SkillDefinition,
     type SkillContentType,

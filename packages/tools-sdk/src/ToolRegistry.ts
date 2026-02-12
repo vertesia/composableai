@@ -1,22 +1,7 @@
 import { AgentToolDefinition } from "@vertesia/common";
 import { HTTPException } from "hono/http-exception";
-import { Tool, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult } from "./types.js";
+import { Tool, ToolExecutionContext, ToolExecutionPayload, ToolExecutionResult, ToolUseContext } from "./types.js";
 
-/**
- * Options for filtering tool definitions
- */
-export interface ToolFilterOptions {
-    /**
-     * If true, only return tools that are available by default (default !== false).
-     * If false or undefined, return all tools.
-     */
-    defaultOnly?: boolean;
-    /**
-     * List of tool names that are unlocked (available even if default: false).
-     * These tools will be included even when defaultOnly is true.
-     */
-    unlockedTools?: string[];
-}
 
 export class ToolRegistry {
 
@@ -36,48 +21,22 @@ export class ToolRegistry {
      * @param options - Filtering options
      * @returns Filtered tool definitions
      */
-    getDefinitions(options?: ToolFilterOptions): AgentToolDefinition[] {
-        const { defaultOnly, unlockedTools = [] } = options || {};
-        const unlockedSet = new Set(unlockedTools);
-
-        return Object.values(this.registry)
-            .filter(tool => {
-                // If not filtering by default, include all tools
-                if (!defaultOnly) return true;
-
-                // Include if tool is default (default !== false) or is in unlocked list
-                const isDefault = tool.default !== false;
-                const isUnlocked = unlockedSet.has(tool.name);
-                return isDefault || isUnlocked;
-            })
-            .map(tool => ({
-                url: `tools/${this.category}`,
-                name: tool.name,
-                description: tool.description,
-                input_schema: tool.input_schema,
-                category: this.category,
-                default: tool.default,
-            }));
-    }
-
-    /**
-     * Get tools that are in reserve (default: false and not unlocked).
-     * @param unlockedTools - List of tool names that are unlocked
-     * @returns Tool definitions for reserve tools
-     */
-    getReserveTools(unlockedTools: string[] = []): AgentToolDefinition[] {
-        const unlockedSet = new Set(unlockedTools);
-
-        return Object.values(this.registry)
-            .filter(tool => tool.default === false && !unlockedSet.has(tool.name))
-            .map(tool => ({
-                url: `tools/${this.category}`,
-                name: tool.name,
-                description: tool.description,
-                input_schema: tool.input_schema,
-                category: this.category,
-                default: tool.default,
-            }));
+    getDefinitions(context?: ToolUseContext): AgentToolDefinition[] {
+        const mapTool = (tool: Tool<any>): AgentToolDefinition => ({
+            url: `tools/${this.category}`,
+            name: tool.name,
+            description: tool.description,
+            input_schema: tool.input_schema,
+            category: this.category,
+            default: tool.default,
+        });
+        let tools = Object.values(this.registry);
+        if (context) {
+            tools = tools.filter(tool => {
+                return tool.isEnabled ? tool.isEnabled(context) : true;
+            });
+        }
+        return tools.map(mapTool);
     }
 
     getTool<ParamsT extends Record<string, any>>(name: string): Tool<ParamsT> {
