@@ -22,20 +22,11 @@ export function createToolsRoute(app: Hono, basePath: string, config: ToolServer
 
     app.get(basePath, (c) => {
         const url = new URL(c.req.url);
-        const defaultOnly = c.req.query('defaultOnly') === 'true';
-        const unlockedParam = c.req.query('unlocked');
-        const unlockedTools = unlockedParam ? unlockedParam.split(',').map(t => t.trim()).filter(Boolean) : [];
-
-        const filterOptions = defaultOnly ? { defaultOnly, unlockedTools } : undefined;
 
         const allTools: ToolDefinition[] = [];
-        let reserveToolCount = 0;
 
         for (const coll of tools) {
-            allTools.push(...coll.getToolDefinitions(filterOptions));
-            if (defaultOnly) {
-                reserveToolCount += coll.getReserveTools(unlockedTools).length;
-            }
+            allTools.push(...coll.getToolDefinitions());
         }
 
         return c.json({
@@ -43,7 +34,6 @@ export function createToolsRoute(app: Hono, basePath: string, config: ToolServer
             title: 'All Tools',
             description: 'All available tools across all collections',
             tools: allTools,
-            reserveToolCount: defaultOnly ? reserveToolCount : undefined,
             collections: tools.map(t => ({
                 name: t.name,
                 title: t.title,
@@ -97,26 +87,17 @@ function createToolEndpoints(coll: ToolCollection): Hono {
     //   - unlocked=tool1,tool2: Comma-separated list of unlocked tool names
     endpoint.get('/', (c) => {
         const importSourceUrl = c.req.query('import') != null;
-        const defaultOnly = c.req.query('defaultOnly') === 'true';
-        const unlockedParam = c.req.query('unlocked');
-        const unlockedTools = unlockedParam ? unlockedParam.split(',').map(t => t.trim()).filter(Boolean) : [];
 
-        const filterOptions = defaultOnly ? { defaultOnly, unlockedTools } : undefined;
         const url = new URL(c.req.url);
 
-        const response: ToolCollectionDefinition & { reserveToolCount?: number } = {
+        const response: ToolCollectionDefinition = {
             src: importSourceUrl
                 ? `${url.origin}/libs/vertesia-tools-${coll.name}.js`
                 : `${url.origin}${url.pathname}`,
             title: coll.title || coll.name,
             description: coll.description || '',
-            tools: coll.getToolDefinitions(filterOptions)
+            tools: coll.getToolDefinitions()
         };
-
-        // Include reserve count when filtering
-        if (defaultOnly) {
-            response.reserveToolCount = coll.getReserveTools(unlockedTools).length;
-        }
 
         return c.json(response);
     });
