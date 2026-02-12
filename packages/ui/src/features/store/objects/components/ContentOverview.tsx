@@ -1,16 +1,17 @@
-import { useEffect, useState, memo, useRef, type RefObject } from "react";
+import { memo, useEffect, useRef, useState, type RefObject } from "react";
 
-import { useUserSession } from "@vertesia/ui/session";
-import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
-import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
-import { ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, VideoMetadata, AudioMetadata, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WorkflowExecutionStatus, PDF_RENDITION_NAME } from "@vertesia/common";
-import { Copy, Download, SquarePen, AlertTriangle, FileSearch } from "lucide-react";
-import { isPreviewableAsPdf, printElementToPdf, getWorkflowStatusColor, getWorkflowStatusName } from "../../../utils/index.js";
-import { PropertiesEditorModal } from "./PropertiesEditorModal";
+import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, MarkdownRenditionFormat, PDF_RENDITION_NAME, POSTER_RENDITION_NAME, VideoMetadata, WorkflowExecutionStatus } from "@vertesia/common";
+import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
+import { useUserSession } from "@vertesia/ui/session";
+import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
+import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from "lucide-react";
 import { MagicPdfView } from "../../../magic-pdf";
 import { SimplePdfViewer } from "../../../pdf-viewer";
-import { useObjectText, usePdfProcessingStatus, useOfficePdfConversion } from "./useContentPanelHooks.js";
+import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from "../../../utils/index.js";
+import { PropertiesEditorModal } from "./PropertiesEditorModal";
+import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from "./useContentPanelHooks.js";
+import { useDownloadFile } from "./useDownloadFile.js";
 
 // Web-supported image formats for browser display
 const WEB_SUPPORTED_IMAGE_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
@@ -533,14 +534,11 @@ function TextActions({
     text,
     fullText,
     handleCopyContent,
-    textContainerRef,
 }: TextActionsProps) {
     const { client } = useUserSession();
     const toast = useToast();
-    const [loadingFormat, setLoadingFormat] = useState<"docx" | "pdf" | null>(null);
-    const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
-
     const content = object.content;
+    const { renderDocument, isDownloading } = useDownloadFile({ client, toast });
 
     const isMarkdown =
         content &&
@@ -550,136 +548,26 @@ function TextActions({
     // Get content processor type for file extension detection
     const contentProcessorType = getContentProcessorType(object);
 
-    const handleExportDocument = async (format: "docx" | "pdf") => {
+    const handleExportDocument = async (format: MarkdownRenditionFormat) => {
         // Prevent multiple concurrent exports
-        if (loadingFormat) return;
-
-        setLoadingFormat(format);
+        if (isDownloading) return;
 
         // Show immediate feedback
         toast({
             status: "info",
             title: `Preparing ${format.toUpperCase()}`,
-            description: "Fetching your document...",
+            description: "Rendering your document...",
             duration: 2000,
         });
 
-        try {
-            // Request document rendition from the server
-            const response = await client.objects.getRendition(object.id, {
-                format: format as any, // We're extending the format type
-                generate_if_missing: true,
-                sign_url: true,
-            });
-
-            if (response.status === "generating") {
-                toast({
-                    status: "info",
-                    title: "Generating document",
-                    description: `Please wait while we prepare your ${format.toUpperCase()} file...`,
-                    duration: 5000,
-                });
-
-                // Poll for completion
-                setTimeout(() => handleExportDocument(format), 3000);
-                return;
-            }
-
-            if (response.status === "failed") {
-                throw new Error("Document generation failed");
-            }
-
-            // Download the generated file or open in new window
-            if (response.renditions && response.renditions.length > 0) {
-                const downloadUrl = response.renditions[0];
-
-                if (format === 'pdf') {
-                    // Open PDF in new window
-                    window.open(downloadUrl, '_blank');
-                    toast({
-                        status: "success",
-                        title: "PDF opened",
-                        description: "PDF document opened in a new window",
-                        duration: 2000,
-                    });
-                } else {
-                    // Download DOCX file
-                    const link = document.createElement("a");
-                    link.href = downloadUrl;
-                    link.download = `${object.name || "document"}.${format}`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    toast({
-                        status: "success",
-                        title: "Document exported",
-                        description: `Successfully exported to ${format.toUpperCase()} format`,
-                        duration: 2000,
-                    });
-                }
-            }
-        } catch (err) {
-            console.error(`Failed to export document as ${format}:`, err);
-            toast({
-                status: "error",
-                title: "Export failed",
-                description: `Failed to export document to ${format.toUpperCase()} format`,
-                duration: 5000,
-            });
-        } finally {
-            setLoadingFormat(null);
-        }
-    };
-
-    const handleExportDocx = () => handleExportDocument("docx");
-
-    const handleClientPdfExport = () => {
-        if (!textContainerRef.current) {
-            toast({
-                status: "error",
-                title: "PDF export failed",
-                description: "No content available to export",
-                duration: 3000,
-            });
-            return;
-        }
-        setIsPdfModalOpen(true);
-    };
-
-    const handleConfirmClientPdfExport = () => {
-        if (!textContainerRef.current) {
-            toast({
-                status: "error",
-                title: "PDF export failed",
-                description: "No content available to export",
-                duration: 3000,
-            });
-            return;
-        }
-
-        const baseName = object.name || object.id;
-        const pdfTitle = `${baseName || "document"} - content`;
-        const success = printElementToPdf(textContainerRef.current, pdfTitle);
-
-        if (!success) {
-            toast({
-                status: "error",
-                title: "PDF export failed",
-                description: "Unable to open print preview",
-                duration: 4000,
-            });
-            return;
-        }
-
-        toast({
-            status: "success",
-            title: "PDF export ready",
-            description: "Use your browser's Print dialog to save as PDF",
-            duration: 4000,
+        await renderDocument(object.id, {
+            format,
+            title: object.name || "document",
         });
-        setIsPdfModalOpen(false);
     };
+
+    const handleExportDocx = () => handleExportDocument(MarkdownRenditionFormat.docx);
+    const handleExportPdf = () => handleExportDocument(MarkdownRenditionFormat.pdf);
 
     const handleDownloadText = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -731,10 +619,10 @@ function TextActions({
                                 variant="ghost"
                                 size="sm"
                                 onClick={handleExportDocx}
-                                disabled={loadingFormat !== null}
+                                disabled={isDownloading}
                                 className="flex items-center gap-2"
                             >
-                                {loadingFormat === "docx" ? (
+                                {isDownloading ? (
                                     <Spinner size="sm" />
                                 ) : (
                                     <Download className="size-4" />
@@ -744,35 +632,21 @@ function TextActions({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={handleClientPdfExport}
+                                onClick={handleExportPdf}
+                                disabled={isDownloading}
                                 className="flex items-center gap-2"
                             >
-                                <Download className="size-4" />
+                                {isDownloading ? (
+                                    <Spinner size="sm" />
+                                ) : (
+                                    <Download className="size-4" />
+                                )}
                                 PDF
                             </Button>
                         </>
                     )}
                 </div>
             </div>
-            <Modal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
-                <ModalTitle>Export document as PDF</ModalTitle>
-                <ModalBody>
-                    <p className="mb-2">
-                        This will open your browser&apos;s print dialog with the current document content.
-                    </p>
-                    <p className="text-sm text-muted">
-                        To save a PDF, choose &quot;Save as PDF&quot; or a similar option in the print dialog.
-                    </p>
-                </ModalBody>
-                <ModalFooter align="right">
-                    <Button variant="ghost" size="sm" onClick={() => setIsPdfModalOpen(false)}>
-                        Cancel
-                    </Button>
-                    <Button size="sm" onClick={handleConfirmClientPdfExport}>
-                        Open print dialog
-                    </Button>
-                </ModalFooter>
-            </Modal>
         </>
     );
 }
@@ -911,7 +785,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
 
     // Find mp4 or webm rendition by mime type, preferring mp4
     const webRendition = renditions.find(r => r.content.type === 'video/mp4') ||
-                         renditions.find(r => r.content.type === 'video/webm');
+        renditions.find(r => r.content.type === 'video/webm');
 
     // Check if original file is web-compatible
     const isOriginalWebSupported = content?.type && WEB_SUPPORTED_VIDEO_FORMATS.includes(content.type);

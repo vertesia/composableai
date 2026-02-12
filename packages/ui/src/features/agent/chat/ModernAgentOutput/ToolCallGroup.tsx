@@ -81,6 +81,11 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
     const toast = useToast();
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
+    // PERFORMANCE: Use refs to avoid triggering effect re-runs when these stable values change identity
+    const clientRef = useRef(client);
+    clientRef.current = client;
+    const urlCacheRef = useRef(urlCache);
+    urlCacheRef.current = urlCache;
 
     const details = message.details as { tool?: string; files?: string[]; outputFiles?: string[]; [key: string]: unknown } | undefined;
     const toolName = details?.tool || "Tool";
@@ -96,6 +101,8 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
 
         let cancelled = false;
         const resolveFiles = async () => {
+            const currentClient = clientRef.current;
+            const currentUrlCache = urlCacheRef.current;
             const resolved = await Promise.all(
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
@@ -114,13 +121,13 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, disposition);
-                        if (urlCache) {
-                            return await urlCache.getOrFetch(cacheKey, async () => {
-                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                        if (currentUrlCache) {
+                            return await currentUrlCache.getOrFetch(cacheKey, async () => {
+                                const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
                                 return result.url;
                             });
                         } else {
-                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
+                            const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, disposition);
                             return result.url;
                         }
                     } catch (err) {
@@ -135,7 +142,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
         };
         resolveFiles();
         return () => { cancelled = true; };
-    }, [files, artifactRunId, client, urlCache]);
+    }, [files, artifactRunId]);
 
     // Separate image files from other files for inline preview
     const imageFiles = resolvedFiles.filter(f => isImageUrl(f));
@@ -253,6 +260,10 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
+    const clientRef = useRef(client);
+    clientRef.current = client;
+    const urlCacheRef = useRef(urlCache);
+    urlCacheRef.current = urlCache;
 
     useEffect(() => {
         if (!files || files.length === 0 || !artifactRunId) {
@@ -262,6 +273,8 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
 
         let cancelled = false;
         const resolveFiles = async () => {
+            const currentClient = clientRef.current;
+            const currentUrlCache = urlCacheRef.current;
             const resolved = await Promise.all(
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
@@ -280,13 +293,13 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "attachment");
-                        if (urlCache) {
-                            return await urlCache.getOrFetch(cacheKey, async () => {
-                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
+                        if (currentUrlCache) {
+                            return await currentUrlCache.getOrFetch(cacheKey, async () => {
+                                const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
                                 return result.url;
                             });
                         } else {
-                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
+                            const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "attachment");
                             return result.url;
                         }
                     } catch (err) {
@@ -301,7 +314,7 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
         };
         resolveFiles();
         return () => { cancelled = true; };
-    }, [files, artifactRunId, client, urlCache]);
+    }, [files, artifactRunId]);
 
     // Only show non-image files (images are shown at group level)
     if (resolvedFiles.length === 0) return null;
@@ -318,6 +331,10 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
     const [resolvedImages, setResolvedImages] = useState<string[]>([]);
     const { client } = useUserSession();
     const urlCache = useArtifactUrlCache();
+    const clientRef = useRef(client);
+    clientRef.current = client;
+    const urlCacheRef = useRef(urlCache);
+    urlCacheRef.current = urlCache;
 
     // Only show files from the last (most recent) message in the group
     useEffect(() => {
@@ -338,6 +355,8 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
 
         let cancelled = false;
         const resolveFiles = async () => {
+            const currentClient = clientRef.current;
+            const currentUrlCache = urlCacheRef.current;
             const resolved = await Promise.all(
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
@@ -359,13 +378,13 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "inline");
-                        if (urlCache) {
-                            return await urlCache.getOrFetch(cacheKey, async () => {
-                                const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "inline");
+                        if (currentUrlCache) {
+                            return await currentUrlCache.getOrFetch(cacheKey, async () => {
+                                const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "inline");
                                 return result.url;
                             });
                         } else {
-                            const result = await client.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "inline");
+                            const result = await currentClient.files.getArtifactDownloadUrl(artifactRunId, artifactPath, "inline");
                             return result.url;
                         }
                     } catch (err) {
@@ -380,7 +399,7 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
         };
         resolveFiles();
         return () => { cancelled = true; };
-    }, [messages, artifactRunId, client, urlCache]);
+    }, [messages, artifactRunId]);
 
     if (resolvedImages.length === 0) return null;
 

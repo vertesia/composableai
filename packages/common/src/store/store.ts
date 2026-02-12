@@ -460,8 +460,8 @@ const RENDITION_COMPATIBILITY: Record<string, RenditionFormat[]> = {
     'application/pdf': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png, ImageRenditionFormat.webp],
     // Markdown can generate: pdf, docx (NOT jpeg/png)
     'text/markdown': [MarkdownRenditionFormat.pdf, MarkdownRenditionFormat.docx],
-    // Plain text can generate: docx
-    'text/plain': [MarkdownRenditionFormat.docx],
+    // Any text/* can generate: docx (editable export)
+    'text/*': [MarkdownRenditionFormat.docx],
     // Office documents can generate: pdf
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [MarkdownRenditionFormat.pdf],
     'application/msword': [MarkdownRenditionFormat.pdf],
@@ -567,7 +567,7 @@ export interface GetFileUrlPayload {
 export interface GetFileUrlResponse {
     url: string;
     id: string;
-    mime_type: string;
+    mime_type?: string;
     path: string;
 }
 

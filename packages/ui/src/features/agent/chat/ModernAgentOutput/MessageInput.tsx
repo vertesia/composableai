@@ -1,7 +1,7 @@
 import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip } from "@vertesia/ui/core";
 import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ConversationFile } from "@vertesia/common";
+import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
 import { SelectDocument } from "../../../store";
 
 /** Represents an uploaded file attachment */
@@ -84,6 +84,7 @@ export default function MessageInput({
     // File upload props
     onFilesSelected,
     uploadedFiles = [],
+    onRemoveFile,
     acceptedFileTypes = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp",
     maxFiles = 5,
     processingFiles,
@@ -102,7 +103,7 @@ export default function MessageInput({
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [value, setValue] = useState("");
     const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
-    const [, setIsDocSearchOpen] = useState(false);
+    const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
 
     useEffect(() => {
@@ -202,6 +203,9 @@ export default function MessageInput({
     //     setValue(newValue);
     //     setIsDocSearchOpen(false);
     // }, [value]);
+
+    const handleDocSearchClose = useCallback(() => setIsDocSearchOpen(false), []);
+    const handleDocSearchSelect = useCallback((_doc: SelectedDocument) => setIsDocSearchOpen(false), []);
 
     const handleSend = () => {
         const message = value.trim();
@@ -336,6 +340,51 @@ export default function MessageInput({
                                 >
                                     <HelpCircleIcon className="size-3 text-gray-400 dark:text-gray-500" />
                                 </VTooltip>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {/* Processing files (uploading/processing/error) */}
+                                {processingFiles && Array.from(processingFiles.values()).map((file) => (
+                                    <div
+                                        key={file.id}
+                                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm ${
+                                            file.status === FileProcessingStatus.ERROR
+                                                ? 'bg-destructive/10 text-destructive'
+                                                : file.status === FileProcessingStatus.READY
+                                                    ? 'bg-success/10 text-success'
+                                                    : 'bg-attention/10 text-attention'
+                                        }`}
+                                    >
+                                        <FileTextIcon className={`size-3.5 ${
+                                            file.status === FileProcessingStatus.UPLOADING || file.status === FileProcessingStatus.PROCESSING
+                                                ? 'animate-pulse' : ''
+                                        }`} />
+                                        <span className="max-w-[120px] truncate">{file.name}</span>
+                                        <span className="text-xs opacity-70">
+                                            {file.status === FileProcessingStatus.UPLOADING ? 'Uploading...'
+                                                : file.status === FileProcessingStatus.PROCESSING ? 'Processing...'
+                                                : file.status === FileProcessingStatus.ERROR ? 'Error'
+                                                : file.status === FileProcessingStatus.READY ? 'Ready' : file.status}
+                                        </span>
+                                    </div>
+                                ))}
+                                {/* Uploaded files (with remove button) */}
+                                {uploadedFiles.map((file) => (
+                                    <div
+                                        key={file.id}
+                                        className="flex items-center gap-1.5 px-2 py-1 bg-success/10 text-success rounded-md text-sm"
+                                    >
+                                        <FileTextIcon className="size-3.5" />
+                                        <span className="max-w-[120px] truncate">{file.name}</span>
+                                        {onRemoveFile && (
+                                            <button
+                                                onClick={() => onRemoveFile(file.id)}
+                                                className="ml-1 p-0.5 hover:bg-success/20 rounded"
+                                            >
+                                                <XIcon className="size-3" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
@@ -483,6 +532,9 @@ export default function MessageInput({
                     <SelectDocument onChange={handleObjectSelect} />
                 </ModalBody>
             </Modal>
+
+            {/* Document Search Modal (render prop) */}
+            {renderDocumentSearch?.({ isOpen: isDocSearchOpen, onClose: handleDocSearchClose, onSelect: handleDocSearchSelect })}
         </div>
     );
 }

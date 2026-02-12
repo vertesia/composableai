@@ -473,6 +473,8 @@ export interface IndexConfiguration {
         image?: number;
         properties?: number;
     };
+    /** ISO 639-1 language code for text analysis */
+    language?: string;
     fieldMappings?: Record<string, unknown>;
     projectEmbeddingsConfig?: {
         text?: EmbeddingTypeConfig;
@@ -481,6 +483,43 @@ export interface IndexConfiguration {
     };
     createdAt?: Date | null;
 }
+
+/**
+ * Supported languages for full-text search with their display names.
+ * Maps ISO 639-1 codes to human-readable language names.
+ */
+export const SUPPORTED_SEARCH_LANGUAGES: Record<string, string> = {
+    en: 'English',
+    zh: 'Chinese',
+    es: 'Spanish',
+    hi: 'Hindi',
+    ar: 'Arabic',
+    pt: 'Portuguese',
+    bn: 'Bengali',
+    ru: 'Russian',
+    ja: 'Japanese',
+    de: 'German',
+    fr: 'French',
+    ko: 'Korean',
+    it: 'Italian',
+    tr: 'Turkish',
+    vi: 'Vietnamese',
+    pl: 'Polish',
+    uk: 'Ukrainian',
+    nl: 'Dutch',
+    th: 'Thai',
+    el: 'Greek',
+    cs: 'Czech',
+    sv: 'Swedish',
+    ro: 'Romanian',
+    hu: 'Hungarian',
+    da: 'Danish',
+    fi: 'Finnish',
+    no: 'Norwegian',
+    he: 'Hebrew',
+    id: 'Indonesian',
+    fa: 'Persian',
+};
 
 /**
  * Result from fetching documents by IDs
