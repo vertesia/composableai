@@ -198,8 +198,8 @@ export interface RenderSlidesDeckOptions {
 
 /** Result of rendering a slide deck to PDF */
 export interface RenderSlidesDeckResult {
-    /** PDF file buffer */
-    buffer: Buffer;
+    /** PDF file as a Uint8Array (use Buffer.from() in Node.js) */
+    buffer: Uint8Array;
     /** Number of slides rendered */
     slideCount: number;
     /** PDF page width in points (720 = 10") */
