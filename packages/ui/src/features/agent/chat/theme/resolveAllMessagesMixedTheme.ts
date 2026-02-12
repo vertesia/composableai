@@ -14,8 +14,12 @@ export interface AllMessagesMixedThemeClasses {
     emptyState?: ThemeClassValue;
     /** Message list container: "flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full" */
     messageList?: ThemeClassValue;
-    /** Working indicator: "flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500" */
+    /** Working indicator container: "flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500" */
     workingIndicator?: ThemeClassValue;
+    /** Working indicator pulsating circle wrapper */
+    workingIndicatorIcon?: ThemeClassValue;
+    /** Working indicator text: "text-sm text-muted" */
+    workingIndicatorText?: ThemeClassValue;
 }
 
 /** Resolved theme classes — always flat strings after cascade resolution. */
@@ -35,7 +39,10 @@ const ALL_MESSAGES_MIXED_TREE: ClassTree = {
         tabsWrapper: {},
         emptyState: {},
         messageList: {},
-        workingIndicator: {},
+        workingIndicator: {
+            workingIndicatorIcon: {},
+            workingIndicatorText: {},
+        },
     },
 };
 

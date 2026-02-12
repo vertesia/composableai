@@ -532,8 +532,8 @@ function AllMessagesMixedComponent({
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && incompleteStreaming.length === 0 && (
                                 <div className={cn("flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500", theme.workingIndicator)}>
-                                    <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-sm text-muted">Working...</span>
+                                    <PulsatingCircle size="sm" color="blue" className={theme.workingIndicatorIcon} />
+                                    <span className={cn("text-sm text-muted", theme.workingIndicatorText)}>Working...</span>
                                 </div>
                             )}
                         </>
@@ -634,8 +634,8 @@ function AllMessagesMixedComponent({
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
                                 <div className={cn("flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500", theme.workingIndicator)}>
-                                    <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-sm text-muted">Working...</span>
+                                    <PulsatingCircle size="sm" color="blue" className={theme.workingIndicatorIcon} />
+                                    <span className={cn("text-sm text-muted", theme.workingIndicatorText)}>Working...</span>
                                 </div>
                             )}
                         </>
