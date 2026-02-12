@@ -13,7 +13,12 @@ export interface SchemeRouteProviderProps {
 }
 
 export function SchemeRouteProvider({ overrides, children }: SchemeRouteProviderProps) {
-    const value = useMemo(() => overrides, [overrides]);
+    // Memoize on the individual callback to stay stable even if the caller
+    // passes a new wrapper object on every render (e.g. inline {{ resolveStoreUrl }}).
+    const value = useMemo<SchemeRouteOverrides>(
+        () => ({ resolveStoreUrl: overrides.resolveStoreUrl }),
+        [overrides.resolveStoreUrl],
+    );
     return createElement(SchemeRouteContext.Provider, { value }, children);
 }
 
