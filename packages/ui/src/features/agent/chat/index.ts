@@ -41,6 +41,10 @@ export {
     type BatchProgressPanelThemeClasses, type BatchProgressPanelTheme, type ResolvedBatchProgressPanelThemeClasses,
 } from "./theme/resolveBatchProgressPanelTheme";
 export {
+    resolveHeaderTheme,
+    type HeaderThemeClasses, type HeaderTheme, type ResolvedHeaderThemeClasses,
+} from "./theme/resolveHeaderTheme";
+export {
     resolveMessageInputTheme,
     type MessageInputThemeClasses, type MessageInputTheme, type ResolvedMessageInputThemeClasses,
 } from "./theme/resolveMessageInputTheme";

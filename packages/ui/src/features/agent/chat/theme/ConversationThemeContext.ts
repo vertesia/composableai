@@ -1,6 +1,7 @@
 import { createContext, createElement, useContext, type ReactNode } from "react";
 import { type AllMessagesMixedTheme } from "./resolveAllMessagesMixedTheme";
 import { type BatchProgressPanelTheme } from "./resolveBatchProgressPanelTheme";
+import { type HeaderTheme } from "./resolveHeaderTheme";
 import { type MessageInputTheme } from "./resolveMessageInputTheme";
 import { type MessageItemTheme } from "./resolveMessageItemTheme";
 import { type ModernAgentConversationTheme } from "./resolveModernAgentConversationTheme";
@@ -30,6 +31,7 @@ export interface ConversationTheme {
     allMessagesMixed?: AllMessagesMixedTheme;
     workstreamTabs?: WorkstreamTabsTheme;
     messageInput?: MessageInputTheme;
+    header?: HeaderTheme;
     /** Raw CSS string injected after the default .vprose styles. Overrides markdown rendering. */
     markdownStyles?: string;
 }

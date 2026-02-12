@@ -12,10 +12,6 @@ export interface ModernAgentConversationThemeClasses {
     conversationArea?: ThemeClassValue;
     /** Header wrapper: "flex-shrink-0" */
     headerWrapper?: ThemeClassValue;
-    /** Header title section (bot icon + title + run ID): "flex flex-wrap items-center space-x-2" */
-    headerTitle?: ThemeClassValue;
-    /** Header actions section (view toggle, plan button, more menu): "flex justify-end items-center space-x-2 ml-auto" */
-    headerActions?: ThemeClassValue;
     /** Empty state (no messages): "flex-1 flex flex-col items-center justify-center ..." */
     emptyState?: ThemeClassValue;
     /** Input wrapper: "flex-shrink-0" */
@@ -41,10 +37,7 @@ type ClassKey = keyof ModernAgentConversationThemeClasses;
 const MODERN_AGENT_CONVERSATION_TREE: ClassTree = {
     root: {
         conversationArea: {
-            headerWrapper: {
-                headerTitle: {},
-                headerActions: {},
-            },
+            headerWrapper: {},
             emptyState: {},
             inputWrapper: {},
         },
