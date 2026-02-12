@@ -247,12 +247,12 @@ function StreamingMessageComponent({
         <div className={cn("w-full max-w-full", className)}>
             {/* Card wrapper matching MessageItem structure */}
             <div
-                className="border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 w-full max-w-full overflow-hidden"
+                className="border-l-4 bg-white dark:bg-gray-900 mb-2 border-l-purple-500 w-full max-w-full overflow-hidden"
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
-                <div className={cn("flex items-center justify-between px-4 py-1.5", headerClassName)}>
-                    <div className="flex items-center gap-1.5">
+                <div className={cn("flex items-center justify-between px-3 py-1", headerClassName)}>
+                    <div className="flex items-center gap-1">
                         <div className="animate-fadeIn">
                             {isTyping ? (
                                 <span className="size-2 rounded-full bg-blue-500 animate-pulse inline-block" />
@@ -282,12 +282,12 @@ function StreamingMessageComponent({
                 {/* Content - cursor character is appended directly to text (no DOM manipulation) */}
                 <div
                     className={cn(
-                        "px-4 pb-3 streaming-content",
+                        "px-3 pb-2 streaming-content",
                         isTyping && "streaming-active",
                         contentClassName
                     )}
                 >
-                    <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words" style={{ overflowWrap: 'anywhere' }}>
+                    <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-2 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-4 prose-headings:mb-2 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-2 prose-ol:my-2 prose-table:my-3 prose-pre:my-3 prose-hr:my-4 max-w-none text-sm break-words" style={{ overflowWrap: 'anywhere' }}>
                         <MarkdownRenderer>
                             {displayTextWithCursor}
                         </MarkdownRenderer>

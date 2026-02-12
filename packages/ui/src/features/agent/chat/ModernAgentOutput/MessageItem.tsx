@@ -276,7 +276,7 @@ function MessageItemComponent({
         const runId = (message as any).workflow_run_id as string | undefined;
 
         return (
-            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words" style={{ overflowWrap: 'anywhere' }}>
+            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-2 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-4 prose-headings:mb-2 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-2 prose-ol:my-2 prose-table:my-3 prose-pre:my-3 prose-hr:my-4 max-w-none text-sm break-words" style={{ overflowWrap: 'anywhere' }}>
                 <MarkdownRenderer
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
@@ -384,12 +384,12 @@ function MessageItemComponent({
     return (
         <div className={`w-full max-w-full ${className || ""}`}>
             <div
-                className={`border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden ${styles.borderColor} ${cardClassName || ""}`}
+                className={`border-l-4 bg-white dark:bg-gray-900 mb-2 w-full max-w-full overflow-hidden ${styles.borderColor} ${cardClassName || ""}`}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
-                <div className={`flex items-center justify-between px-4 py-1.5 ${headerClassName || ""}`}>
-                    <div className="flex items-center gap-1.5">
+                <div className={`flex items-center justify-between px-3 py-1 ${headerClassName || ""}`}>
+                    <div className="flex items-center gap-1">
                         <div className={`${showPulsatingCircle ? "animate-fadeIn" : ""} ${iconClassName || ""}`}>
                             {renderIcon()}
                         </div>
@@ -437,7 +437,7 @@ function MessageItemComponent({
                 </div>
 
                 {/* Message content */}
-                <div className={`px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden ${contentClassName || ""}`}>
+                <div className={`px-3 pb-2 bg-white dark:bg-gray-900 overflow-hidden ${contentClassName || ""}`}>
                 {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                 {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
                     (() => {
@@ -465,7 +465,7 @@ function MessageItemComponent({
 
                 {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                 {artifactLinks.length > 0 && (
-                    <div className={`mt-3 text-xs ${artifactsClassName || ""}`}>
+                    <div className={`mt-2 text-xs ${artifactsClassName || ""}`}>
                         <div className="font-medium text-muted mb-1">Artifacts</div>
 
                         {/* Inline previews for image artifacts */}
@@ -512,10 +512,10 @@ function MessageItemComponent({
 
                 {/* Optional details section */}
                 {message.details && (
-                    <div className={`mt-2 print:hidden ${detailsClassName || ""}`}>
+                    <div className={`mt-1 print:hidden ${detailsClassName || ""}`}>
                         <button
                             onClick={() => setShowDetails(!showDetails)}
-                            className="text-xs text-muted flex items-center"
+                            className="text-[11px] text-muted flex items-center"
                         >
                             {showDetails ? "Hide" : "Show"} details
                             <svg
@@ -530,7 +530,7 @@ function MessageItemComponent({
                         </button>
 
                         {showDetails && (
-                            <div className="mt-2 p-2 bg-muted border border-mixer-muted/40 rounded text-sm">
+                            <div className="mt-1 p-1.5 bg-muted border border-mixer-muted/40 rounded text-sm">
                                 {typeof message.details === "string" ? (
                                     renderContent(message.details)
                                 ) : (
