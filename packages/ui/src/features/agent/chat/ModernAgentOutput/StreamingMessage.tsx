@@ -3,8 +3,8 @@ import { Button, cn, useToast } from "@vertesia/ui/core";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { Bot, CopyIcon } from "lucide-react";
 import dayjs from "dayjs";
-import { useConversationTheme } from "../ConversationThemeContext";
-import { resolveStreamingMessageTheme } from "../resolveStreamingMessageTheme";
+import { useConversationTheme } from "../theme/ConversationThemeContext";
+import { resolveStreamingMessageTheme } from "../theme/resolveStreamingMessageTheme";
 
 // PERFORMANCE: Unicode cursor character - rendered inline with text
 // This avoids expensive DOM manipulation with TreeWalker on every update

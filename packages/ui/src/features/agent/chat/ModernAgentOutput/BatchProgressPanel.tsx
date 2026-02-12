@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { useState, memo } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { useConversationTheme } from "../ConversationThemeContext";
-import { resolveBatchProgressPanelTheme } from "../resolveBatchProgressPanelTheme";
+import { useConversationTheme } from "../theme/ConversationThemeContext";
+import { resolveBatchProgressPanelTheme } from "../theme/resolveBatchProgressPanelTheme";
 
 interface BatchProgressPanelProps {
     message: AgentMessage;

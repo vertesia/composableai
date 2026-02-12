@@ -1,8 +1,8 @@
 import { AgentMessage } from "@vertesia/common";
 import { cn } from "@vertesia/ui/core";
 import { CheckCircle, Clock } from "lucide-react";
-import { useConversationTheme } from "../ConversationThemeContext";
-import { resolveWorkstreamTabsTheme } from "../resolveWorkstreamTabsTheme";
+import { useConversationTheme } from "../theme/ConversationThemeContext";
+import { resolveWorkstreamTabsTheme } from "../theme/resolveWorkstreamTabsTheme";
 import { getWorkstreamId } from "./utils";
 
 interface WorkstreamTabsProps {

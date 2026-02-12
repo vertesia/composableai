@@ -1,6 +1,6 @@
 # Conversation Theme System
 
-A cascading theme system for `ModernAgentConversation` and all its child components. Provides 102 theme classes across 8 components with per-message-type, per-view-mode, and cascade/self-only controls.
+A cascading theme system for `ModernAgentConversation` and all its child components. Provides theme classes across components with per-message-type, per-view-mode, and cascade/self-only controls.
 
 ## Quick Start
 

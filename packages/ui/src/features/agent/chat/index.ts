@@ -29,39 +29,39 @@ export { default as StreamingMessage } from "./ModernAgentOutput/StreamingMessag
 export type { StreamingMessageProps } from "./ModernAgentOutput/StreamingMessage";
 export * from "./SkillWidgetProvider";
 // Conversation theming — shared primitives & context
-export { ConversationThemeProvider, useConversationTheme } from "./ConversationThemeContext";
-export type { ConversationTheme, ThemeClassValue, ViewMode } from "./ConversationThemeContext";
+export { ConversationThemeProvider, useConversationTheme } from "./theme/ConversationThemeContext";
+export type { ConversationTheme, ThemeClassValue, ViewMode } from "./theme/ConversationThemeContext";
 // Conversation theming — per-component types & resolvers
 export {
     resolveAllMessagesMixedTheme,
     type AllMessagesMixedThemeClasses, type AllMessagesMixedTheme, type ResolvedAllMessagesMixedThemeClasses,
-} from "./resolveAllMessagesMixedTheme";
+} from "./theme/resolveAllMessagesMixedTheme";
 export {
     resolveBatchProgressPanelTheme,
     type BatchProgressPanelThemeClasses, type BatchProgressPanelTheme, type ResolvedBatchProgressPanelThemeClasses,
-} from "./resolveBatchProgressPanelTheme";
+} from "./theme/resolveBatchProgressPanelTheme";
 export {
     resolveMessageItemTheme,
     type MessageItemThemeClasses, type MessageItemTheme, type ResolvedMessageItemThemeClasses,
-} from "./resolveMessageItemTheme";
+} from "./theme/resolveMessageItemTheme";
 export {
     resolveModernAgentConversationTheme,
     type ModernAgentConversationThemeClasses, type ModernAgentConversationTheme, type ResolvedModernAgentConversationThemeClasses,
-} from "./resolveModernAgentConversationTheme";
+} from "./theme/resolveModernAgentConversationTheme";
 export {
     resolvePlanPanelTheme,
     type PlanPanelThemeClasses, type PlanPanelTheme, type ResolvedPlanPanelThemeClasses,
-} from "./resolvePlanPanelTheme";
+} from "./theme/resolvePlanPanelTheme";
 export {
     resolveStreamingMessageTheme,
     type StreamingMessageThemeClasses, type StreamingMessageTheme, type ResolvedStreamingMessageThemeClasses,
-} from "./resolveStreamingMessageTheme";
+} from "./theme/resolveStreamingMessageTheme";
 export {
     resolveToolCallGroupTheme,
     type ToolCallGroupThemeClasses, type ToolCallGroupTheme, type ResolvedToolCallGroupThemeClasses,
-} from "./resolveToolCallGroupTheme";
+} from "./theme/resolveToolCallGroupTheme";
 export {
     resolveWorkstreamTabsTheme,
     type WorkstreamTabsThemeClasses, type WorkstreamTabsTheme, type ResolvedWorkstreamTabsThemeClasses,
-} from "./resolveWorkstreamTabsTheme";
+} from "./theme/resolveWorkstreamTabsTheme";
 

@@ -17,8 +17,8 @@ import { FusionFragmentProvider } from "@vertesia/fusion-ux";
 import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
-import { ConversationThemeProvider, useConversationTheme, type ConversationTheme } from "./ConversationThemeContext";
-import { resolveModernAgentConversationTheme } from "./resolveModernAgentConversationTheme";
+import { ConversationThemeProvider, useConversationTheme, type ConversationTheme } from "./theme/ConversationThemeContext";
+import { resolveModernAgentConversationTheme } from "./theme/resolveModernAgentConversationTheme";
 import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";

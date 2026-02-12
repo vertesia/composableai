@@ -2,8 +2,8 @@ import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@ver
 import { cn } from "@vertesia/ui/core";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { useConversationTheme } from "../ConversationThemeContext";
-import { resolveAllMessagesMixedTheme } from "../resolveAllMessagesMixedTheme";
+import { useConversationTheme } from "../theme/ConversationThemeContext";
+import { resolveAllMessagesMixedTheme } from "../theme/resolveAllMessagesMixedTheme";
 import BatchProgressPanel from "./BatchProgressPanel";
 import MessageItem from "./MessageItem";
 import StreamingMessage from "./StreamingMessage";

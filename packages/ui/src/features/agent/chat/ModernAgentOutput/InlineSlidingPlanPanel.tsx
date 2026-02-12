@@ -2,8 +2,8 @@ import { Plan } from "@vertesia/common";
 import { Badge, Button, cn } from "@vertesia/ui/core";
 import { AlertCircle, CheckCircle, Circle, Clock, X } from "lucide-react";
 import React from "react";
-import { useConversationTheme } from "../ConversationThemeContext";
-import { resolvePlanPanelTheme } from "../resolvePlanPanelTheme";
+import { useConversationTheme } from "../theme/ConversationThemeContext";
+import { resolvePlanPanelTheme } from "../theme/resolvePlanPanelTheme";
 
 interface InlinePlanPanelProps {
   plan: Plan;
