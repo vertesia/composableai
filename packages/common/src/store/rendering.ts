@@ -165,6 +165,49 @@ export interface RenderMarkdownResponse {
     fileUri?: string;
 }
 
+// ============================================================================
+// Slide Deck Types
+// ============================================================================
+
+/** A slide rendered from a named SVG template with structured content */
+export interface TemplateSlide {
+    type: 'template';
+    /** Template name: 'title' | 'section' | 'bullets' | 'two-column' | 'image-text' */
+    template: string;
+    /** Key-value content for the template (values can be strings or string arrays) */
+    content: Record<string, string | string[]>;
+}
+
+/** A slide with raw SVG markup */
+export interface RawSvgSlide {
+    type: 'svg';
+    /** Complete SVG markup (should use 1920x1080 viewBox) */
+    svg: string;
+}
+
+/** A single slide specification — either template-based or raw SVG */
+export type SlideSpec = TemplateSlide | RawSvgSlide;
+
+/** Options for rendering a slide deck to PDF */
+export interface RenderSlidesDeckOptions {
+    /** Canvas scale factor for higher resolution (default: 2) */
+    scale?: number;
+    /** Background color for each slide (default: '#ffffff') */
+    backgroundColor?: string;
+}
+
+/** Result of rendering a slide deck to PDF */
+export interface RenderSlidesDeckResult {
+    /** PDF file buffer */
+    buffer: Buffer;
+    /** Number of slides rendered */
+    slideCount: number;
+    /** PDF page width in points (720 = 10") */
+    pageWidth: number;
+    /** PDF page height in points (540 = 7.5") */
+    pageHeight: number;
+}
+
 export function isWorkflowTerminalStatus(status: WorkflowExecutionStatus): boolean {
     return status === WorkflowExecutionStatus.COMPLETED
         || status === WorkflowExecutionStatus.FAILED
