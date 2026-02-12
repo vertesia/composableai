@@ -1,6 +1,9 @@
 import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
+import { cn } from "@vertesia/ui/core";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
+import { useConversationTheme } from "../ConversationThemeContext";
+import { resolveAllMessagesMixedTheme } from "../resolveAllMessagesMixedTheme";
 import BatchProgressPanel from "./BatchProgressPanel";
 import MessageItem from "./MessageItem";
 import StreamingMessage from "./StreamingMessage";
@@ -107,6 +110,10 @@ function AllMessagesMixedComponent({
 }: AllMessagesMixedProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
+
+    // Theme context: resolve cascade into flat slots (highest priority)
+    const conversationTheme = useConversationTheme();
+    const theme = resolveAllMessagesMixedTheme(conversationTheme?.allMessagesMixed);
 
     // PERFORMANCE: Throttle auto-scroll to prevent layout thrashing
     // During streaming, scrollIntoView was being called 30+ times/sec
@@ -336,7 +343,7 @@ function AllMessagesMixedComponent({
         <div
             ref={containerRef}
             tabIndex={0}
-            className="flex-1 min-h-0 h-full w-full max-w-full overflow-y-auto overflow-x-hidden px-2 sm:px-3 lg:px-4 flex flex-col relative focus:outline-none"
+            className={cn("flex-1 min-h-0 h-full w-full max-w-full overflow-y-auto overflow-x-hidden px-2 sm:px-3 lg:px-4 flex flex-col relative focus:outline-none", theme.root)}
             data-testid="all-messages-mixed"
         >
             {/* Global styles for vprose markdown content */}
@@ -420,7 +427,7 @@ function AllMessagesMixedComponent({
             `}</style>
 
             {/* Workstream tabs with completion indicators */}
-            <div className="sticky top-0 z-10">
+            <div className={cn("sticky top-0 z-10", theme.tabsWrapper)}>
                 <WorkstreamTabs
                     workstreams={workstreams}
                     activeWorkstream={activeWorkstream}
@@ -431,7 +438,7 @@ function AllMessagesMixedComponent({
             </div>
 
             {displayMessages.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-center py-8">
+                <div className={cn("flex items-center justify-center h-full text-center py-8", theme.emptyState)}>
                     <div className="flex items-center px-4 py-3 text-muted">
                         {activeWorkstream === "all"
                             ? "Waiting for agent response..."
@@ -439,7 +446,7 @@ function AllMessagesMixedComponent({
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full">
+                <div className={cn("flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full", theme.messageList)}>
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
                         // Details view - show ALL messages with streaming interleaved
@@ -519,7 +526,7 @@ function AllMessagesMixedComponent({
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && incompleteStreaming.length === 0 && (
-                                <div className="flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500">
+                                <div className={cn("flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500", theme.workingIndicator)}>
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-sm text-muted">Working...</span>
                                 </div>
@@ -615,7 +622,7 @@ function AllMessagesMixedComponent({
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
-                                <div className="flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500">
+                                <div className={cn("flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500", theme.workingIndicator)}>
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-sm text-muted">Working...</span>
                                 </div>
