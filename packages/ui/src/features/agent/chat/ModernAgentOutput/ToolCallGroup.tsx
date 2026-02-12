@@ -6,8 +6,8 @@ import dayjs from "dayjs";
 import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import { useState, memo, useEffect, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { useConversationTheme, type ResolvedToolCallGroupSlots } from "../ConversationThemeContext";
-import { resolveToolCallGroupTheme } from "../resolveToolCallGroupTheme";
+import { useConversationTheme } from "../ConversationThemeContext";
+import { resolveToolCallGroupTheme, type ResolvedToolCallGroupThemeClasses } from "../resolveToolCallGroupTheme";
 import { useImageLightbox } from "../ImageLightbox";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
 import { ToolExecutionStatus } from "./utils";
@@ -25,7 +25,7 @@ interface ToolCallItemProps {
     isExpanded: boolean;
     onToggle: () => void;
     artifactRunId?: string;
-    themeSlots?: ResolvedToolCallGroupSlots;
+    themeClasses?: ResolvedToolCallGroupThemeClasses;
 }
 
 // Helper to check if URL is an image
@@ -80,7 +80,7 @@ const getFilesFromDetails = (details: { files?: string[]; outputFiles?: string[]
     return Array.isArray(files) ? files : undefined;
 };
 
-function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, themeSlots: theme = {} }: ToolCallItemProps) {
+function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, themeClasses: theme = {} }: ToolCallItemProps) {
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const toast = useToast();
     const { client } = useUserSession();
@@ -670,7 +670,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                             isExpanded={expandedItems.has(index)}
                             onToggle={() => toggleItem(index)}
                             artifactRunId={artifactRunId}
-                            themeSlots={theme}
+                            themeClasses={theme}
                         />
                     ))}
                 </div>

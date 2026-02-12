@@ -28,27 +28,40 @@ export type { HeaderProps } from "./ModernAgentOutput/Header";
 export { default as StreamingMessage } from "./ModernAgentOutput/StreamingMessage";
 export type { StreamingMessageProps } from "./ModernAgentOutput/StreamingMessage";
 export * from "./SkillWidgetProvider";
-// Conversation theming context
+// Conversation theming — shared primitives & context
 export { ConversationThemeProvider, useConversationTheme } from "./ConversationThemeContext";
-export type {
-    AllMessagesMixedSlots, AllMessagesMixedTheme,
-    BatchProgressPanelSlots, BatchProgressPanelTheme,
-    ConversationTheme, MessageItemSlots, MessageItemTheme,
-    ModernAgentConversationSlots, ModernAgentConversationTheme,
-    PlanPanelSlots, PlanPanelTheme, ResolvedPlanPanelSlots,
-    ResolvedAllMessagesMixedSlots, ResolvedBatchProgressPanelSlots,
-    ResolvedMessageItemSlots, ResolvedModernAgentConversationSlots,
-    ResolvedStreamingMessageSlots, ResolvedToolCallGroupSlots,
-    SlotValue, StreamingMessageSlots, StreamingMessageTheme,
-    ToolCallGroupSlots, ToolCallGroupTheme,
-    ViewMode, WorkstreamTabsSlots, WorkstreamTabsTheme, ResolvedWorkstreamTabsSlots,
-} from "./ConversationThemeContext";
-export { resolveAllMessagesMixedTheme } from "./resolveAllMessagesMixedTheme";
-export { resolveBatchProgressPanelTheme } from "./resolveBatchProgressPanelTheme";
-export { resolveMessageItemTheme } from "./resolveMessageItemTheme";
-export { resolveModernAgentConversationTheme } from "./resolveModernAgentConversationTheme";
-export { resolvePlanPanelTheme } from "./resolvePlanPanelTheme";
-export { resolveStreamingMessageTheme } from "./resolveStreamingMessageTheme";
-export { resolveToolCallGroupTheme } from "./resolveToolCallGroupTheme";
-export { resolveWorkstreamTabsTheme } from "./resolveWorkstreamTabsTheme";
+export type { ConversationTheme, ThemeClassValue, ViewMode } from "./ConversationThemeContext";
+// Conversation theming — per-component types & resolvers
+export {
+    resolveAllMessagesMixedTheme,
+    type AllMessagesMixedThemeClasses, type AllMessagesMixedTheme, type ResolvedAllMessagesMixedThemeClasses,
+} from "./resolveAllMessagesMixedTheme";
+export {
+    resolveBatchProgressPanelTheme,
+    type BatchProgressPanelThemeClasses, type BatchProgressPanelTheme, type ResolvedBatchProgressPanelThemeClasses,
+} from "./resolveBatchProgressPanelTheme";
+export {
+    resolveMessageItemTheme,
+    type MessageItemThemeClasses, type MessageItemTheme, type ResolvedMessageItemThemeClasses,
+} from "./resolveMessageItemTheme";
+export {
+    resolveModernAgentConversationTheme,
+    type ModernAgentConversationThemeClasses, type ModernAgentConversationTheme, type ResolvedModernAgentConversationThemeClasses,
+} from "./resolveModernAgentConversationTheme";
+export {
+    resolvePlanPanelTheme,
+    type PlanPanelThemeClasses, type PlanPanelTheme, type ResolvedPlanPanelThemeClasses,
+} from "./resolvePlanPanelTheme";
+export {
+    resolveStreamingMessageTheme,
+    type StreamingMessageThemeClasses, type StreamingMessageTheme, type ResolvedStreamingMessageThemeClasses,
+} from "./resolveStreamingMessageTheme";
+export {
+    resolveToolCallGroupTheme,
+    type ToolCallGroupThemeClasses, type ToolCallGroupTheme, type ResolvedToolCallGroupThemeClasses,
+} from "./resolveToolCallGroupTheme";
+export {
+    resolveWorkstreamTabsTheme,
+    type WorkstreamTabsThemeClasses, type WorkstreamTabsTheme, type ResolvedWorkstreamTabsThemeClasses,
+} from "./resolveWorkstreamTabsTheme";
 

@@ -1,13 +1,40 @@
-import {
-    type ModernAgentConversationSlots,
-    type ModernAgentConversationTheme,
-    type ResolvedModernAgentConversationSlots,
-} from "./ConversationThemeContext";
-import { type SlotTree, buildSlotChains, resolveSlots } from "./themeUtils";
+import { type ClassTree, type ThemeClassValue, buildClassChains, resolveClasses } from "./themeUtils";
 
-type SlotKey = keyof ModernAgentConversationSlots;
+// ---------------------------------------------------------------------------
+// ModernAgentConversation theme classes (7 total)
+// ---------------------------------------------------------------------------
 
-const MODERN_AGENT_CONVERSATION_TREE: SlotTree = {
+/** Class overrides for ModernAgentConversation layout. */
+export interface ModernAgentConversationThemeClasses {
+    /** Root layout: "flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden" */
+    root?: ThemeClassValue;
+    /** Conversation area: "flex flex-col min-h-0 border-0" + responsive width */
+    conversationArea?: ThemeClassValue;
+    /** Header wrapper: "flex-shrink-0" */
+    headerWrapper?: ThemeClassValue;
+    /** Empty state (no messages): "flex-1 flex flex-col items-center justify-center ..." */
+    emptyState?: ThemeClassValue;
+    /** Input wrapper: "flex-shrink-0" */
+    inputWrapper?: ThemeClassValue;
+    /** Plan panel: "w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t ..." */
+    planPanel?: ThemeClassValue;
+    /** Drag overlay: "absolute inset-0 ..." */
+    dragOverlay?: ThemeClassValue;
+}
+
+/** Resolved theme classes — always flat strings after cascade resolution. */
+export type ResolvedModernAgentConversationThemeClasses = { [K in keyof ModernAgentConversationThemeClasses]?: string };
+
+/** ModernAgentConversation theme. */
+export type ModernAgentConversationTheme = ModernAgentConversationThemeClasses;
+
+// ---------------------------------------------------------------------------
+// Cascade tree — ModernAgentConversation DOM hierarchy
+// ---------------------------------------------------------------------------
+
+type ClassKey = keyof ModernAgentConversationThemeClasses;
+
+const MODERN_AGENT_CONVERSATION_TREE: ClassTree = {
     root: {
         conversationArea: {
             headerWrapper: {},
@@ -19,14 +46,14 @@ const MODERN_AGENT_CONVERSATION_TREE: SlotTree = {
     },
 };
 
-const SLOT_CHAINS = buildSlotChains<SlotKey>(MODERN_AGENT_CONVERSATION_TREE);
-const SLOT_KEYS = Object.keys(SLOT_CHAINS) as SlotKey[];
+const CLASS_CHAINS = buildClassChains<ClassKey>(MODERN_AGENT_CONVERSATION_TREE);
+const CLASS_KEYS = Object.keys(CLASS_CHAINS) as ClassKey[];
 
-const EMPTY: ResolvedModernAgentConversationSlots = {};
+const EMPTY: ResolvedModernAgentConversationThemeClasses = {};
 
 export function resolveModernAgentConversationTheme(
     theme: ModernAgentConversationTheme | undefined,
-): ResolvedModernAgentConversationSlots {
+): ResolvedModernAgentConversationThemeClasses {
     if (!theme) return EMPTY;
-    return resolveSlots<SlotKey>(theme, SLOT_CHAINS, SLOT_KEYS);
+    return resolveClasses<ClassKey>(theme, CLASS_CHAINS, CLASS_KEYS);
 }
