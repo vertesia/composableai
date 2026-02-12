@@ -27,6 +27,8 @@ export interface MessageInputThemeClasses {
     fileLabel?: ThemeClassValue;
     /** File section HelpCircleIcon: "size-3 text-gray-400 dark:text-gray-500" */
     fileHelpIcon?: ThemeClassValue;
+    /** File section VTooltip content */
+    fileTooltip?: ThemeClassValue;
     /** File badges container: "flex flex-wrap gap-2" */
     fileList?: ThemeClassValue;
     /** File badge (processing & uploaded): "flex items-center gap-1.5 px-2 py-1 rounded-md text-sm" + status colors */
@@ -49,6 +51,8 @@ export interface MessageInputThemeClasses {
     documentLabel?: ThemeClassValue;
     /** Document section HelpCircleIcon: "size-3 text-blue-400 dark:text-blue-500" */
     documentHelpIcon?: ThemeClassValue;
+    /** Document section VTooltip content */
+    documentTooltip?: ThemeClassValue;
     /** Document badges container: "flex flex-wrap gap-2" */
     documentList?: ThemeClassValue;
     /** Document badge: "flex items-center gap-1.5 px-2 py-1 bg-blue-100 ... text-blue-700 ..." */
@@ -128,6 +132,7 @@ const MESSAGE_INPUT_TREE: ClassTree = {
             fileSectionHeader: {
                 fileLabel: {},
                 fileHelpIcon: {},
+                fileTooltip: {},
             },
             fileList: {
                 fileBadge: {
@@ -142,6 +147,7 @@ const MESSAGE_INPUT_TREE: ClassTree = {
             documentSectionHeader: {
                 documentLabel: {},
                 documentHelpIcon: {},
+                documentTooltip: {},
             },
             documentList: {
                 documentBadge: {

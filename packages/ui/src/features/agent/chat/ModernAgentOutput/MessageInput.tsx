@@ -343,6 +343,7 @@ export default function MessageInput({
                                     description="Files uploaded to this conversation remain available throughout. The agent can access them anytime."
                                     placement="top"
                                     size="md"
+                                    className={theme.fileTooltip}
                                 >
                                     <HelpCircleIcon className={cn("size-3 text-gray-400 dark:text-gray-500", theme.fileHelpIcon)} />
                                 </VTooltip>
@@ -408,6 +409,7 @@ export default function MessageInput({
                                     description="Documents from the store attached to this message. The agent can re-fetch them by ID anytime, or re-attach to include content directly."
                                     placement="top"
                                     size="md"
+                                    className={theme.documentTooltip}
                                 >
                                     <HelpCircleIcon className={cn("size-3 text-blue-400 dark:text-blue-500", theme.documentHelpIcon)} />
                                 </VTooltip>
