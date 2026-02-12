@@ -22,46 +22,6 @@ const isBatchProgressMessage = (message: AgentMessage): message is AgentMessage 
     return message.type === AgentMessageType.BATCH_PROGRESS && !!message.details?.batch_id;
 };
 
-// Check if message is a system metadata message that should be hidden from users
-const isSystemMetadataMessage = (message: AgentMessage): boolean => {
-    if (
-        message.type === AgentMessageType.SYSTEM &&
-        (message.details as { system_type?: string } | undefined)?.system_type === "toolkit_ready"
-    ) {
-        return true;
-    }
-    if (message.type !== AgentMessageType.UPDATE) return false;
-    const text = message.message?.toString() || "";
-    // Hide internal startup metadata
-    if (text.startsWith("Tools enabled:")) return true;
-    if (text.startsWith("Starting work with interaction")) return true;
-    return false;
-};
-
-const GENERIC_COMPLETION_MESSAGES = new Set([
-    "Command completed successfully",
-    "Successfully retrieved document",
-]);
-
-const isThinkingPlaceholderMessage = (message: AgentMessage): boolean =>
-    message.type === AgentMessageType.UPDATE &&
-    typeof message.message === "string" &&
-    message.message.includes("%thinking_message%");
-
-const isLowSignalToolLifecycleMessage = (message: AgentMessage): boolean => {
-    if (message.type !== AgentMessageType.THOUGHT || typeof message.message !== "string") return false;
-    if (!GENERIC_COMPLETION_MESSAGES.has(message.message.trim())) return false;
-
-    const details = message.details as { tool?: string; tool_status?: string } | undefined;
-    return !!details?.tool && details.tool_status === "completed";
-};
-
-const isNarrativeToolPrefaceMessage = (message: AgentMessage): boolean => {
-    if (message.type !== AgentMessageType.THOUGHT) return false;
-    const details = message.details as { tool?: string; tools?: string[]; streamed?: boolean } | undefined;
-    return !details?.tool && !!details?.streamed && Array.isArray(details?.tools) && details.tools.length > 0;
-};
-
 const shouldDedupeAdjacentMessage = (previous: AgentMessage, current: AgentMessage): boolean => {
     if (previous.type !== current.type) return false;
     if (previous.message !== current.message) return false;
@@ -200,22 +160,18 @@ function AllMessagesMixedComponent({
         };
     }, [messages.length, streamingMessages.size, streamingContentBucket, performScroll]);
 
-    // Sort all messages chronologically and filter out low-signal metadata
+    // Sort all messages chronologically and dedupe adjacent identical messages
+    // Low-signal messages are suppressed at the source (server-side) via shouldSuppressLowSignalMessage
     const sortedMessages = React.useMemo(
         () => {
-            const filtered = [...messages]
-                .filter((msg) => !isSystemMetadataMessage(msg))
-                .filter((msg) => !isThinkingPlaceholderMessage(msg))
-                .filter((msg) => !isLowSignalToolLifecycleMessage(msg))
-                .filter((msg) => !isNarrativeToolPrefaceMessage(msg))
-                .sort((a, b) => {
-                    const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
-                    const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
-                    return timeA - timeB;
-                });
+            const sorted = [...messages].sort((a, b) => {
+                const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
+                const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
+                return timeA - timeB;
+            });
 
             const deduped: AgentMessage[] = [];
-            for (const msg of filtered) {
+            for (const msg of sorted) {
                 const previous = deduped[deduped.length - 1];
                 if (previous && shouldDedupeAdjacentMessage(previous, msg)) {
                     continue;
