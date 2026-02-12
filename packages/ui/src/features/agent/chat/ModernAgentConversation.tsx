@@ -105,6 +105,11 @@ interface ModernAgentConversationProps {
     /** Max number of files allowed */
     maxFiles?: number;
 
+    /** Ref populated with the internal file upload handler for external triggering */
+    fileUploadRef?: React.MutableRefObject<((files: File[]) => void) | null>;
+    /** Called when processingFiles state changes (for external progress display) */
+    onProcessingFilesChange?: (files: Map<string, ConversationFile>) => void;
+
     // Document search props (render prop for custom search UI)
     /** Render custom document search UI - if provided, shows search button */
     renderDocumentSearch?: (props: {
@@ -639,6 +644,9 @@ function ModernAgentConversationInner({
     inputClassName,
     // Fusion fragment data
     fusionData,
+    // External file upload API
+    fileUploadRef,
+    onProcessingFilesChange,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -1198,6 +1206,17 @@ function ModernAgentConversationInner({
             }
         }
     }, [client, run, toast]);
+
+    // Expose handleFileUpload to external callers via ref
+    useEffect(() => {
+        if (fileUploadRef) fileUploadRef.current = handleFileUpload;
+        return () => { if (fileUploadRef) fileUploadRef.current = null; };
+    }, [fileUploadRef, handleFileUpload]);
+
+    // Notify parent when processingFiles changes
+    useEffect(() => {
+        onProcessingFilesChange?.(processingFiles);
+    }, [processingFiles, onProcessingFilesChange]);
 
     // Drag and drop handlers for full-panel file upload
     const handleDragEnter = useCallback((e: React.DragEvent) => {
