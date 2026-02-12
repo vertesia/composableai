@@ -136,7 +136,8 @@ class UserSession {
             this.client.withAuthCallback(undefined);
 
             const logoutUrl = new URL(CENTRAL_AUTH_REDIRECT);
-            const currentUrl = new URL(window.location.host);
+            const currentUrl = new URL(window.location.href);
+            currentUrl.hash = "";
             logoutUrl.pathname = "/logout";
             logoutUrl.searchParams.set("redirect_uri", currentUrl.toString());
             location.replace(logoutUrl.toString());
