@@ -252,11 +252,11 @@ function MessageItemComponent({
 
     // PERFORMANCE: Memoize markdown components to prevent MarkdownRenderer remounts
     const markdownComponents = useMemo(() => ({
-        a: ({ node, ref, "data-scheme": scheme, ...props }: { node?: any; ref?: any; "data-scheme"?: string; href?: string; children?: React.ReactNode }) => {
+        a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
             const href = props.href || "";
-            if (scheme === "store" || scheme === "document" || href.includes("/store/objects")) {
+            if (href.includes("/store/objects")) {
                 if (StoreLinkComponent) {
-                    const documentId = href.split("/store/objects/")[1] || href.replace(/^(store:|document:\/\/)/, "");
+                    const documentId = href.split("/store/objects/")[1] || "";
                     return <StoreLinkComponent href={href} documentId={documentId}>{props.children}</StoreLinkComponent>;
                 }
                 return (
