@@ -33,6 +33,11 @@ export interface ToolCallGroupProps {
     itemContentClassName?: string;
 }
 
+/** className overrides for ToolCallGroup — subset of ToolCallGroupProps containing only className props. */
+export type ToolCallGroupClassNames = Partial<Pick<ToolCallGroupProps,
+    'rootClassName' | 'headerClassName' | 'senderClassName' | 'toolSummaryClassName' |
+    'toolBadgeClassName' | 'itemClassName' | 'itemHeaderClassName' | 'itemContentClassName'>>;
+
 interface ToolCallItemClassNames {
     toolBadgeClassName?: string;
     itemClassName?: string;

@@ -17,7 +17,7 @@ export {
 } from "./AskUserWidget";
 // MessageItem widget and types for external use
 export { default as MessageItem, MESSAGE_STYLES } from "./ModernAgentOutput/MessageItem";
-export type { MessageItemProps, MessageStyleConfig } from "./ModernAgentOutput/MessageItem";
+export type { MessageItemProps, MessageItemClassNames, MessageStyleConfig } from "./ModernAgentOutput/MessageItem";
 // MessagesContainer widget and types for external use
 export { default as MessagesContainer } from "./ModernAgentOutput/MessagesContainer";
 export type { MessagesContainerProps } from "./ModernAgentOutput/MessagesContainer";
@@ -26,7 +26,11 @@ export { default as Header } from "./ModernAgentOutput/Header";
 export type { HeaderProps } from "./ModernAgentOutput/Header";
 // StreamingMessage widget and types for external use
 export { default as StreamingMessage } from "./ModernAgentOutput/StreamingMessage";
-export type { StreamingMessageProps } from "./ModernAgentOutput/StreamingMessage";
+export type { StreamingMessageProps, StreamingMessageClassNames } from "./ModernAgentOutput/StreamingMessage";
+// ToolCallGroup types for external use
+export type { ToolCallGroupClassNames } from "./ModernAgentOutput/ToolCallGroup";
+// BatchProgressPanel types for external use
+export type { BatchProgressPanelClassNames } from "./ModernAgentOutput/BatchProgressPanel";
 export * from "./SkillWidgetProvider";
-// ViewMode type for external use
-export type { ViewMode } from "./ModernAgentOutput/AllMessagesMixed";
+// AgentConversationViewMode type for external use
+export type { AgentConversationViewMode } from "./ModernAgentOutput/AllMessagesMixed";

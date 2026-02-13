@@ -17,7 +17,11 @@ import { FusionFragmentProvider } from "@vertesia/fusion-ux";
 import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
-import { type ViewMode } from "./ModernAgentOutput/AllMessagesMixed";
+import { type AgentConversationViewMode } from "./ModernAgentOutput/AllMessagesMixed";
+import { type BatchProgressPanelClassNames } from "./ModernAgentOutput/BatchProgressPanel";
+import { type MessageItemClassNames } from "./ModernAgentOutput/MessageItem";
+import { type StreamingMessageClassNames } from "./ModernAgentOutput/StreamingMessage";
+import { type ToolCallGroupClassNames } from "./ModernAgentOutput/ToolCallGroup";
 import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
@@ -114,9 +118,9 @@ interface ModernAgentConversationProps {
     onWorkstreamStatusChange?: (statusMap: Map<number, Map<string, "pending" | "in_progress" | "completed" | "skipped">>) => void;
 
     /** Controlled view mode — when provided, overrides internal state */
-    viewMode?: ViewMode;
+    viewMode?: AgentConversationViewMode;
     /** Called when view mode changes (for external control) */
-    onViewModeChange?: (mode: ViewMode) => void;
+    onViewModeChange?: (mode: AgentConversationViewMode) => void;
     /** Called when follow-up input availability is determined (after messages load) */
     onShowInputChange?: (canSendFollowUp: boolean) => void;
     /** Ref populated with the stop handler — call to interrupt the active agent. null when stop unavailable. */
@@ -172,30 +176,14 @@ interface ModernAgentConversationProps {
 
     /** Raw CSS string injected after the default .vprose styles. Overrides markdown rendering. */
     markdownStyles?: string;
-    /** className overrides passed to every MessageItem */
-    messageItemClassNames?: Partial<Pick<import("./ModernAgentOutput/MessageItem").MessageItemProps,
-        'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
-        'timestampClassName' | 'senderClassName' | 'iconClassName' |
-        'detailsClassName' | 'artifactsClassName' | 'proseClassName'>>;
+    messageItemClassNames?: MessageItemClassNames;
     /** Sparse MESSAGE_STYLES overrides passed to every MessageItem */
     messageStyleOverrides?: import("./ModernAgentOutput/MessageItem").MessageItemProps['messageStyleOverrides'];
-
-    /** className overrides passed to every ToolCallGroup */
-    toolCallGroupClassNames?: Partial<Pick<import("./ModernAgentOutput/ToolCallGroup").ToolCallGroupProps,
-        'rootClassName' | 'headerClassName' | 'senderClassName' | 'toolSummaryClassName' |
-        'toolBadgeClassName' | 'itemClassName' | 'itemHeaderClassName' | 'itemContentClassName'>>;
+    toolCallGroupClassNames?: ToolCallGroupClassNames;
     /** Hide ToolCallGroup in this view mode */
-    hideToolCallsInViewMode?: ViewMode[];
-
-    /** className overrides passed to every StreamingMessage */
-    streamingMessageClassNames?: Partial<Pick<import("./ModernAgentOutput/StreamingMessage").StreamingMessageProps,
-        'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
-        'proseClassName' | 'senderClassName' | 'iconClassName'>>;
-
-    /** className overrides passed to every BatchProgressPanel */
-    batchProgressPanelClassNames?: Partial<Pick<import("./ModernAgentOutput/BatchProgressPanel").BatchProgressPanelProps,
-        'className' | 'headerClassName' | 'senderClassName' | 'progressBarClassName' |
-        'itemListClassName' | 'itemClassName' | 'summaryClassName'>>;
+    hideToolCallsInViewMode?: AgentConversationViewMode[];
+    streamingMessageClassNames?: StreamingMessageClassNames;
+    batchProgressPanelClassNames?: BatchProgressPanelClassNames;
 
     /** className override for the working indicator container */
     workingIndicatorClassName?: string;
@@ -738,13 +726,13 @@ function ModernAgentConversationInner({
     const [isCompleted, setIsCompleted] = useState(false);
     const [isSending, setIsSending] = useState(false);
     // View mode: controlled externally when props are provided, otherwise managed locally
-    const [internalViewMode, setInternalViewMode] = useState<ViewMode>("sliding");
+    const [internalViewMode, setInternalAgentConversationViewMode] = useState<AgentConversationViewMode>("sliding");
     const viewMode = controlledViewMode ?? internalViewMode;
-    const handleViewModeChange = useCallback((mode: ViewMode) => {
+    const handleViewModeChange = useCallback((mode: AgentConversationViewMode) => {
         if (onViewModeChangeProp) {
             onViewModeChangeProp(mode);
         } else {
-            setInternalViewMode(mode);
+            setInternalAgentConversationViewMode(mode);
         }
     }, [onViewModeChangeProp]);
     const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(!isModal);

@@ -3,7 +3,7 @@ import { Button, Command, CommandGroup, CommandItem, CommandList, cn, Popover, P
 import { useUserSession } from "@vertesia/ui/session";
 import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, MoreVertical, XIcon } from "lucide-react";
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
-import { type ViewMode } from "./AllMessagesMixed";
+import { type AgentConversationViewMode } from "./AllMessagesMixed";
 import { getConversationUrl } from "./utils";
 
 export interface HeaderProps {
@@ -12,8 +12,8 @@ export interface HeaderProps {
     onClose?: () => void;
     isModal: boolean;
     run: AsyncExecutionResult;
-    viewMode: ViewMode;
-    onViewModeChange: (mode: ViewMode) => void;
+    viewMode: AgentConversationViewMode;
+    onViewModeChange: (mode: AgentConversationViewMode) => void;
     showPlanPanel: boolean;
     hasPlan?: boolean;
     onTogglePlanPanel: () => void;

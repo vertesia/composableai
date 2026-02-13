@@ -104,6 +104,12 @@ export interface MessageItemProps {
     messageStyleOverrides?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
 }
 
+/** className overrides for MessageItem — subset of MessageItemProps containing only className props. */
+export type MessageItemClassNames = Partial<Pick<MessageItemProps,
+    'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
+    'timestampClassName' | 'senderClassName' | 'iconClassName' |
+    'detailsClassName' | 'artifactsClassName' | 'proseClassName'>>;
+
 // Consolidated message styling - single source of truth
 export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
     [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },

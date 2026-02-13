@@ -2,11 +2,11 @@ import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@ver
 import { cn } from "@vertesia/ui/core";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-export type ViewMode = "stacked" | "sliding";
-import BatchProgressPanel, { type BatchProgressPanelProps } from "./BatchProgressPanel";
-import MessageItem, { type MessageItemProps } from "./MessageItem";
-import StreamingMessage, { type StreamingMessageProps } from "./StreamingMessage";
-import ToolCallGroup, { type ToolCallGroupProps } from "./ToolCallGroup";
+export type AgentConversationViewMode = "stacked" | "sliding";
+import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
+import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "./MessageItem";
+import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
+import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
 import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
@@ -93,28 +93,16 @@ interface AllMessagesMixedProps {
     /** Stable index for thinking messages (changes on 4s interval) */
     thinkingMessageIndex?: number;
     /** className overrides passed to every MessageItem */
-    messageItemClassNames?: Partial<Pick<MessageItemProps,
-        'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
-        'timestampClassName' | 'senderClassName' | 'iconClassName' |
-        'detailsClassName' | 'artifactsClassName' | 'proseClassName'>>;
+    messageItemClassNames?: MessageItemClassNames;
     /** Sparse MESSAGE_STYLES overrides passed to every MessageItem */
     messageStyleOverrides?: MessageItemProps['messageStyleOverrides'];
-    /** className overrides passed to every ToolCallGroup */
-    toolCallGroupClassNames?: Partial<Pick<ToolCallGroupProps,
-        'rootClassName' | 'headerClassName' | 'senderClassName' | 'toolSummaryClassName' |
-        'toolBadgeClassName' | 'itemClassName' | 'itemHeaderClassName' | 'itemContentClassName'>>;
+    toolCallGroupClassNames?: ToolCallGroupClassNames;
     /** Hide ToolCallGroup in this view mode */
-    hideToolCallsInViewMode?: ViewMode[];
-    /** className overrides passed to every StreamingMessage */
-    streamingMessageClassNames?: Partial<Pick<StreamingMessageProps,
-        'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
-        'proseClassName' | 'senderClassName' | 'iconClassName'>>;
-    /** className overrides passed to every BatchProgressPanel */
-    batchProgressPanelClassNames?: Partial<Pick<BatchProgressPanelProps,
-        'className' | 'headerClassName' | 'senderClassName' | 'progressBarClassName' |
-        'itemListClassName' | 'itemClassName' | 'summaryClassName'>>;
+    hideToolCallsInViewMode?: AgentConversationViewMode[];
+    streamingMessageClassNames?: StreamingMessageClassNames;
+    batchProgressPanelClassNames?: BatchProgressPanelClassNames;
     /** Current view mode — "stacked" shows all messages, "sliding" shows important only */
-    viewMode?: ViewMode;
+    viewMode?: AgentConversationViewMode;
     /** Raw CSS string injected after the default .vprose styles */
     markdownStyles?: string;
     /** Hide the workstream tabs entirely */

@@ -34,6 +34,11 @@ export interface StreamingMessageProps {
     iconClassName?: string;
 }
 
+/** className overrides for StreamingMessage — subset of StreamingMessageProps containing only className props. */
+export type StreamingMessageClassNames = Partial<Pick<StreamingMessageProps,
+    'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
+    'proseClassName' | 'senderClassName' | 'iconClassName'>>;
+
 /**
  * Displays a streaming message with adaptive reveal effect.
  * Automatically adjusts speed to match the model's generation rate,

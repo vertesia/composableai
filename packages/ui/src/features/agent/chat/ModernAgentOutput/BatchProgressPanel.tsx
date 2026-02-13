@@ -33,6 +33,11 @@ export interface BatchProgressPanelProps {
     summaryClassName?: string;
 }
 
+/** className overrides for BatchProgressPanel — subset of BatchProgressPanelProps containing only className props. */
+export type BatchProgressPanelClassNames = Partial<Pick<BatchProgressPanelProps,
+    'className' | 'headerClassName' | 'senderClassName' | 'progressBarClassName' |
+    'itemListClassName' | 'itemClassName' | 'summaryClassName'>>;
+
 function BatchProgressPanelComponent({
     message,
     batchData,
