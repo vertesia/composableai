@@ -139,6 +139,12 @@ interface ModernAgentConversationProps {
 
     // Hide the default object linking (for apps that don't use it)
     hideObjectLinking?: boolean;
+    /** Hide the internal header (for apps that render their own) */
+    hideHeader?: boolean;
+    /** Hide the internal message input (for apps that render their own) */
+    hideMessageInput?: boolean;
+    /** Hide the internal plan panel (for apps that render their own) */
+    hidePlanPanel?: boolean;
 
     /** Override the route for store: and document:// object links. Receives the object ID, returns the href. */
     resolveStoreUrl?: (objectId: string) => string;
@@ -647,6 +653,10 @@ function ModernAgentConversationInner({
     onRemoveDocument,
     // Object linking
     hideObjectLinking,
+    // Section visibility
+    hideHeader,
+    hideMessageInput,
+    hidePlanPanel,
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
@@ -1517,25 +1527,27 @@ function ModernAgentConversationInner({
                 {/* Streaming activity indicator moved to Header */}
 
                 {/* Header - flex-shrink-0 to prevent shrinking */}
-                <div className={cn("flex-shrink-0", theme.headerWrapper)}>
-                    <Header
-                        title={actualTitle}
-                        isCompleted={isCompleted}
-                        onClose={onClose}
-                        isModal={isModal}
-                        run={run}
-                        viewMode={viewMode}
-                        onViewModeChange={handleViewModeChange}
-                        showPlanPanel={showSlidingPanel}
-                        hasPlan={plans.length > 0}
-                        onTogglePlanPanel={handleTogglePlanPanel}
-                        onDownload={downloadConversation}
-                        onCopyRunId={copyRunId}
-                        resetWorkflow={resetWorkflow}
-                        onExportPdf={exportConversationPdf}
-                        isReceivingChunks={debugChunkFlash}
-                    />
-                </div>
+                {!hideHeader && (
+                    <div className={cn("flex-shrink-0", theme.headerWrapper)}>
+                        <Header
+                            title={actualTitle}
+                            isCompleted={isCompleted}
+                            onClose={onClose}
+                            isModal={isModal}
+                            run={run}
+                            viewMode={viewMode}
+                            onViewModeChange={handleViewModeChange}
+                            showPlanPanel={showSlidingPanel}
+                            hasPlan={plans.length > 0}
+                            onTogglePlanPanel={handleTogglePlanPanel}
+                            onDownload={downloadConversation}
+                            onCopyRunId={copyRunId}
+                            resetWorkflow={resetWorkflow}
+                            onExportPdf={exportConversationPdf}
+                            isReceivingChunks={debugChunkFlash}
+                        />
+                    </div>
+                )}
 
                 {messages.length === 0 && !isCompleted ? (
                     <div className={cn("flex-1 flex flex-col items-center justify-center h-full text-center py-6", theme.emptyState)}>
@@ -1572,51 +1584,53 @@ function ModernAgentConversationInner({
 
                 {/* Show workflow status message when not running, or show input when running/unknown */}
                 {/* Input area - flex-shrink-0 to stay pinned at bottom, with iOS safe area support */}
-                <div className={cn("flex-shrink-0", theme.inputWrapper)} style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-                    {workflowStatus && workflowStatus !== "RUNNING" ? (
-                        <MessageBox
-                            status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
-                            icon={null}
-                            className="m-2"
-                        >
-                            This Workflow is {workflowStatus}
-                        </MessageBox>
-                    ) : showInput && (
-                        <MessageInput
-                            onSend={handleSendMessage}
-                            onStop={handleStopWorkflow}
-                            disabled={isUploading}
-                            isSending={isSending || isUploading}
-                            isStopping={isStopping}
-                            isStreaming={!isCompleted}
-                            isCompleted={isCompleted}
-                            activeTaskCount={getActiveTaskCount()}
-                            placeholder={placeholder}
-                            // File upload props - use internal handler that signals workflow
-                            onFilesSelected={handleFileUpload}
-                            uploadedFiles={uploadedFiles}
-                            onRemoveFile={onRemoveFile}
-                            acceptedFileTypes={acceptedFileTypes}
-                            maxFiles={maxFiles}
-                            // File processing state
-                            processingFiles={processingFiles}
-                            hasProcessingFiles={hasProcessingFiles}
-                            // Document search props
-                            renderDocumentSearch={renderDocumentSearch}
-                            selectedDocuments={selectedDocuments}
-                            onRemoveDocument={onRemoveDocument}
-                            // Object linking
-                            hideObjectLinking={hideObjectLinking}
-                            // Styling props
-                            className={inputContainerClassName}
-                            inputClassName={inputClassName}
-                        />
-                    )}
-                </div>
+                {!hideMessageInput && (
+                    <div className={cn("flex-shrink-0", theme.inputWrapper)} style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                        {workflowStatus && workflowStatus !== "RUNNING" ? (
+                            <MessageBox
+                                status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
+                                icon={null}
+                                className="m-2"
+                            >
+                                This Workflow is {workflowStatus}
+                            </MessageBox>
+                        ) : showInput && (
+                            <MessageInput
+                                onSend={handleSendMessage}
+                                onStop={handleStopWorkflow}
+                                disabled={isUploading}
+                                isSending={isSending || isUploading}
+                                isStopping={isStopping}
+                                isStreaming={!isCompleted}
+                                isCompleted={isCompleted}
+                                activeTaskCount={getActiveTaskCount()}
+                                placeholder={placeholder}
+                                // File upload props - use internal handler that signals workflow
+                                onFilesSelected={handleFileUpload}
+                                uploadedFiles={uploadedFiles}
+                                onRemoveFile={onRemoveFile}
+                                acceptedFileTypes={acceptedFileTypes}
+                                maxFiles={maxFiles}
+                                // File processing state
+                                processingFiles={processingFiles}
+                                hasProcessingFiles={hasProcessingFiles}
+                                // Document search props
+                                renderDocumentSearch={renderDocumentSearch}
+                                selectedDocuments={selectedDocuments}
+                                onRemoveDocument={onRemoveDocument}
+                                // Object linking
+                                hideObjectLinking={hideObjectLinking}
+                                // Styling props
+                                className={inputContainerClassName}
+                                inputClassName={inputClassName}
+                            />
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Plan Panel Area - only rendered when panel should be shown */}
-            {showSlidingPanel && (
+            {!hidePlanPanel && showSlidingPanel && (
                 <div className={cn("w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l", theme.planPanel)}>
                     <InlineSlidingPlanPanel
                         plan={getActivePlan.plan}
