@@ -49,10 +49,6 @@ export {
     type StreamingMessageThemeClasses, type StreamingMessageTheme,
 } from "./theme/resolveStreamingMessageTheme";
 export {
-    resolveToolCallGroupTheme,
-    type ToolCallGroupThemeClasses, type ToolCallGroupTheme,
-} from "./theme/resolveToolCallGroupTheme";
-export {
     resolveWorkstreamTabsTheme,
     type WorkstreamTabsThemeClasses, type WorkstreamTabsTheme,
 } from "./theme/resolveWorkstreamTabsTheme";

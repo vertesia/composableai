@@ -3,7 +3,6 @@ import { type AllMessagesMixedTheme } from "./resolveAllMessagesMixedTheme";
 import { type BatchProgressPanelTheme } from "./resolveBatchProgressPanelTheme";
 import { type ModernAgentConversationTheme } from "./resolveModernAgentConversationTheme";
 import { type StreamingMessageTheme } from "./resolveStreamingMessageTheme";
-import { type ToolCallGroupTheme } from "./resolveToolCallGroupTheme";
 import { type WorkstreamTabsTheme } from "./resolveWorkstreamTabsTheme";
 
 import { type ViewMode } from "./themeUtils";
@@ -20,7 +19,6 @@ export interface ConversationTheme {
     viewMode?: ViewMode;
     conversation?: ModernAgentConversationTheme;
     streamingMessage?: StreamingMessageTheme;
-    toolCallGroup?: ToolCallGroupTheme;
     batchProgressPanel?: BatchProgressPanelTheme;
     allMessagesMixed?: AllMessagesMixedTheme;
     workstreamTabs?: WorkstreamTabsTheme;

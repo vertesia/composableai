@@ -177,6 +177,13 @@ interface ModernAgentConversationProps {
     /** Sparse MESSAGE_STYLES overrides passed to every MessageItem */
     messageStyleOverrides?: import("./ModernAgentOutput/MessageItem").MessageItemProps['messageStyleOverrides'];
 
+    /** className overrides passed to every ToolCallGroup */
+    toolCallGroupClassNames?: Partial<Pick<import("./ModernAgentOutput/ToolCallGroup").ToolCallGroupProps,
+        'rootClassName' | 'headerClassName' | 'senderClassName' | 'toolSummaryClassName' |
+        'toolBadgeClassName' | 'itemClassName' | 'itemHeaderClassName' | 'itemContentClassName'>>;
+    /** Hide ToolCallGroup in this view mode */
+    hideToolCallsInViewMode?: ("stacked" | "sliding")[];
+
     // Fusion fragment props
     /**
      * Data to provide to fusion-fragment code blocks for rendering.
@@ -693,6 +700,9 @@ function ModernAgentConversationInner({
     // MessageItem className/style overrides
     messageItemClassNames,
     messageStyleOverrides,
+    // ToolCallGroup className overrides + view mode visibility
+    toolCallGroupClassNames,
+    hideToolCallsInViewMode,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -1592,6 +1602,8 @@ function ModernAgentConversationInner({
                         thinkingMessageIndex={thinkingMessageIndex}
                         messageItemClassNames={messageItemClassNames}
                         messageStyleOverrides={messageStyleOverrides}
+                        toolCallGroupClassNames={toolCallGroupClassNames}
+                        hideToolCallsInViewMode={hideToolCallsInViewMode}
                     />
                 )}
 

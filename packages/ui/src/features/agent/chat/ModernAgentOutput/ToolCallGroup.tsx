@@ -6,17 +6,38 @@ import dayjs from "dayjs";
 import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import { useState, memo, useEffect, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { useConversationTheme } from "../theme/ConversationThemeContext";
-import { resolveToolCallGroupTheme, type ToolCallGroupThemeClasses } from "../theme/resolveToolCallGroupTheme";
 import { useImageLightbox } from "../ImageLightbox";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
 import { ToolExecutionStatus } from "./utils";
 
-interface ToolCallGroupProps {
+export interface ToolCallGroupProps {
     messages: AgentMessage[];
     showPulsatingCircle?: boolean;
     toolRunId?: string;
     toolStatus?: ToolExecutionStatus;
+    /** Additional className for the root container */
+    rootClassName?: string;
+    /** Additional className for the header row */
+    headerClassName?: string;
+    /** Additional className for the sender label */
+    senderClassName?: string;
+    /** Additional className for the tool summary text */
+    toolSummaryClassName?: string;
+    /** Additional className for the tool name badge */
+    toolBadgeClassName?: string;
+    /** Additional className for individual item wrappers */
+    itemClassName?: string;
+    /** Additional className for item header rows */
+    itemHeaderClassName?: string;
+    /** Additional className for expanded item content */
+    itemContentClassName?: string;
+}
+
+interface ToolCallItemClassNames {
+    toolBadgeClassName?: string;
+    itemClassName?: string;
+    itemHeaderClassName?: string;
+    itemContentClassName?: string;
 }
 
 interface ToolCallItemProps {
@@ -24,7 +45,7 @@ interface ToolCallItemProps {
     isExpanded: boolean;
     onToggle: () => void;
     artifactRunId?: string;
-    themeClasses?: ToolCallGroupThemeClasses;
+    classNames?: ToolCallItemClassNames;
 }
 
 // Helper to check if URL is an image
@@ -79,7 +100,7 @@ const getFilesFromDetails = (details: { files?: string[]; outputFiles?: string[]
     return Array.isArray(files) ? files : undefined;
 };
 
-function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, themeClasses: theme = {} }: ToolCallItemProps) {
+function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames = {} }: ToolCallItemProps) {
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const toast = useToast();
     const { client } = useUserSession();
@@ -167,10 +188,10 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, themeClass
     };
 
     return (
-        <div className={cn("border-b border-gray-100 dark:border-gray-800 last:border-b-0", theme.item)}>
+        <div className={cn("border-b border-gray-100 dark:border-gray-800 last:border-b-0", classNames.itemClassName)}>
             {/* Collapsed header - always visible */}
             <div
-                className={cn("flex items-start justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", theme.itemHeader)}
+                className={cn("flex items-start justify-between px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", classNames.itemHeaderClassName)}
                 onClick={onToggle}
             >
                 <div className="flex items-start gap-2 flex-1 min-w-0">
@@ -195,7 +216,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, themeClass
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {/* Tool name badge on the right */}
                     {!isExpanded && (
-                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", theme.toolBadge)}>
+                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", classNames.toolBadgeClassName)}>
                             {toolName}
                         </span>
                     )}
@@ -217,32 +238,32 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, themeClass
             {/* Always show images inline, regardless of expanded state */}
             {imageFiles.length > 0 && (
                 <div className="px-4 pb-2">
-                    <FileDisplay files={imageFiles} className={theme.fileDisplay} />
+                    <FileDisplay files={imageFiles} />
                 </div>
             )}
 
             {/* Expanded content */}
             {isExpanded && (
-                <div className={cn("px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30", theme.itemContent)}>
+                <div className={cn("px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30", classNames.itemContentClassName)}>
                     {/* Tool name badge shown when expanded */}
                     <div className="mb-2">
-                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", theme.toolBadge)}>
+                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", classNames.toolBadgeClassName)}>
                             {toolName}
                         </span>
                     </div>
 
                     {messageContent && (
-                        <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm", theme.prose)}>
+                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
                             <MarkdownRenderer artifactRunId={artifactRunId}>{messageContent}</MarkdownRenderer>
                         </div>
                     )}
 
                     {/* Non-image files display */}
-                    {nonImageFiles.length > 0 && <FileDisplay files={nonImageFiles} className={theme.fileDisplay} />}
+                    {nonImageFiles.length > 0 && <FileDisplay files={nonImageFiles} />}
 
                     {/* Technical details - collapsible */}
                     {details && Object.keys(details).length > 1 && (
-                        <details className={cn("mt-3 text-xs border rounded p-2 bg-muted/30", theme.itemDetails)} onClick={(e) => e.stopPropagation()}>
+                        <details className="mt-3 text-xs border rounded p-2 bg-muted/30" onClick={(e) => e.stopPropagation()}>
                             <summary className="cursor-pointer text-muted">
                                 Technical Details
                             </summary>
@@ -413,16 +434,25 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
     );
 }
 
-function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRunId: _toolRunId, toolStatus }: ToolCallGroupProps) {
+function ToolCallGroupComponent({
+    messages,
+    showPulsatingCircle = false,
+    toolRunId: _toolRunId,
+    toolStatus,
+    rootClassName,
+    headerClassName,
+    senderClassName,
+    toolSummaryClassName,
+    toolBadgeClassName,
+    itemClassName,
+    itemHeaderClassName,
+    itemContentClassName,
+}: ToolCallGroupProps) {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
     const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(new Set());
     const prevCountRef = useRef(messages.length);
     const toast = useToast();
-
-    // Theme context: flat class overrides (highest priority)
-    const conversationTheme = useConversationTheme();
-    const theme = resolveToolCallGroupTheme(conversationTheme?.toolCallGroup);
 
     // Extract workflow_run_id from messages (any message in the group should have it)
     const artifactRunId = messages.find(m => (m as any).workflow_run_id)?.workflow_run_id as string | undefined
@@ -523,17 +553,17 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
 
     return (
         <div
-            className={cn("border-l-4 overflow-hidden bg-white dark:bg-gray-900 mb-4", getBorderColor(), theme.root)}
+            className={cn("border-l-4 overflow-hidden bg-white dark:bg-gray-900 mb-4", getBorderColor(), rootClassName)}
         >
             {/* Compact header */}
             <div
-                className={cn("flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", theme.header)}
+                className={cn("flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", headerClassName)}
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
-                <div className={cn("flex items-center gap-1.5", theme.headerLeft)}>
+                <div className="flex items-center gap-1.5">
                     {renderStatusIndicator()}
-                    <span className={cn("text-xs font-medium text-muted", theme.sender)}>Agent</span>
-                    <span className={cn("text-xs text-purple-600 dark:text-purple-400 font-medium", theme.toolSummary)}>
+                    <span className={cn("text-xs font-medium text-muted", senderClassName)}>Agent</span>
+                    <span className={cn("text-xs text-purple-600 dark:text-purple-400 font-medium", toolSummaryClassName)}>
                         {toolSummary}
                     </span>
                     {isCollapsed ? (
@@ -543,8 +573,8 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                     )}
                 </div>
 
-                <div className={cn("flex items-center gap-1.5", theme.headerRight)}>
-                    <span className={cn("text-[11px] text-muted/70", theme.timestamp)}>
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-muted/70">
                         {dayjs(firstTimestamp).format("HH:mm:ss")}
                         {messages.length > 1 && ` - ${dayjs(lastTimestamp).format("HH:mm:ss")}`}
                     </span>
@@ -555,7 +585,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                             e.stopPropagation();
                             copyAllToClipboard();
                         }}
-                        className={cn("text-muted/50 hover:text-muted h-5 w-5 p-0", theme.copyButton)}
+                        className="text-muted/50 hover:text-muted h-5 w-5 p-0"
                         title="Copy all tool calls"
                     >
                         <CopyIcon className="size-3" />
@@ -568,7 +598,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
 
             {/* Collapsed summary - show tool calls as single-line rows with expand option */}
             {isCollapsed && (
-                <div className={cn("px-4 py-1 space-y-0", theme.itemList)}>
+                <div className="px-4 py-1 space-y-0">
                     {messages.map((m, idx) => {
                         const details = m.details as { tool?: string; files?: string[]; outputFiles?: string[] } | undefined;
                         const toolName = details?.tool || "tool";
@@ -580,7 +610,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                         return (
                             <div
                                 key={`${m.timestamp}-${idx}`}
-                                className={cn("border-b border-gray-100 dark:border-gray-800 last:border-b-0", theme.item)}
+                                className={cn("border-b border-gray-100 dark:border-gray-800 last:border-b-0", itemClassName)}
                                 style={{
                                     opacity: isAnimating ? 0 : 1,
                                     transform: isAnimating ? 'translateX(-10px)' : 'translateX(0)',
@@ -592,7 +622,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                             >
                                 {/* Row header - clickable to expand */}
                                 <div
-                                    className={cn("flex items-start gap-2 py-2 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50", theme.itemHeader)}
+                                    className={cn("flex items-start gap-2 py-2 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50", itemHeaderClassName)}
                                     onClick={() => toggleItem(idx)}
                                     title={fullMessage}
                                 >
@@ -615,7 +645,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                                     </div>
                                     {/* Tool name badge on the right */}
                                     {!isItemExpanded && (
-                                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium flex-shrink-0", theme.toolBadge)}>
+                                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium flex-shrink-0", toolBadgeClassName)}>
                                             {toolName}
                                         </span>
                                     )}
@@ -624,13 +654,13 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                                 <CollapsedItemFiles files={files} artifactRunId={artifactRunId} />
                                 {/* Expanded content - show full message */}
                                 {isItemExpanded && (
-                                    <div className={cn("pl-5 pr-3 pb-2 text-sm", theme.itemContent)}>
-                                        <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm", theme.prose)}>
+                                    <div className={cn("pl-5 pr-3 pb-2 text-sm", itemContentClassName)}>
+                                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
                                             <MarkdownRenderer artifactRunId={artifactRunId}>{fullMessage}</MarkdownRenderer>
                                         </div>
                                         {/* Show details if available */}
                                         {details && Object.keys(details).length > 1 && (
-                                            <details className={cn("mt-2 text-xs", theme.itemDetails)}>
+                                            <details className="mt-2 text-xs">
                                                 <summary className="text-muted cursor-pointer">Show details</summary>
                                                 <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto">
                                                     {JSON.stringify(details, null, 2)}
@@ -661,7 +691,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
 
             {/* Expanded view - individual tool calls */}
             {!isCollapsed && (
-                <div className={cn("group", theme.itemList)}>
+                <div className="group">
                     {messages.map((message, index) => (
                         <ToolCallItem
                             key={`${message.timestamp}-${index}`}
@@ -669,7 +699,7 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
                             isExpanded={expandedItems.has(index)}
                             onToggle={() => toggleItem(index)}
                             artifactRunId={artifactRunId}
-                            themeClasses={theme}
+                            classNames={{ toolBadgeClassName, itemClassName, itemHeaderClassName, itemContentClassName }}
                         />
                     ))}
                 </div>
@@ -684,6 +714,14 @@ const ToolCallGroup = memo(ToolCallGroupComponent, (prevProps, nextProps) => {
     if (prevProps.showPulsatingCircle !== nextProps.showPulsatingCircle) return false;
     if (prevProps.toolRunId !== nextProps.toolRunId) return false;
     if (prevProps.toolStatus !== nextProps.toolStatus) return false;
+    if (prevProps.rootClassName !== nextProps.rootClassName) return false;
+    if (prevProps.headerClassName !== nextProps.headerClassName) return false;
+    if (prevProps.senderClassName !== nextProps.senderClassName) return false;
+    if (prevProps.toolSummaryClassName !== nextProps.toolSummaryClassName) return false;
+    if (prevProps.toolBadgeClassName !== nextProps.toolBadgeClassName) return false;
+    if (prevProps.itemClassName !== nextProps.itemClassName) return false;
+    if (prevProps.itemHeaderClassName !== nextProps.itemHeaderClassName) return false;
+    if (prevProps.itemContentClassName !== nextProps.itemContentClassName) return false;
     // Compare first and last timestamps as a proxy for content changes
     return (
         prevProps.messages[0]?.timestamp === nextProps.messages[0]?.timestamp &&

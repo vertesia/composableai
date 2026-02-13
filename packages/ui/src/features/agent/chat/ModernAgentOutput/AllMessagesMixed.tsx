@@ -7,7 +7,7 @@ import { resolveAllMessagesMixedTheme } from "../theme/resolveAllMessagesMixedTh
 import BatchProgressPanel from "./BatchProgressPanel";
 import MessageItem, { type MessageItemProps } from "./MessageItem";
 import StreamingMessage from "./StreamingMessage";
-import ToolCallGroup from "./ToolCallGroup";
+import ToolCallGroup, { type ToolCallGroupProps } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
 import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
@@ -100,6 +100,12 @@ interface AllMessagesMixedProps {
         'detailsClassName' | 'artifactsClassName' | 'proseClassName'>>;
     /** Sparse MESSAGE_STYLES overrides passed to every MessageItem */
     messageStyleOverrides?: MessageItemProps['messageStyleOverrides'];
+    /** className overrides passed to every ToolCallGroup */
+    toolCallGroupClassNames?: Partial<Pick<ToolCallGroupProps,
+        'rootClassName' | 'headerClassName' | 'senderClassName' | 'toolSummaryClassName' |
+        'toolBadgeClassName' | 'itemClassName' | 'itemHeaderClassName' | 'itemContentClassName'>>;
+    /** Hide ToolCallGroup in this view mode */
+    hideToolCallsInViewMode?: ("stacked" | "sliding")[];
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -114,6 +120,8 @@ function AllMessagesMixedComponent({
     thinkingMessageIndex = 0,
     messageItemClassNames,
     messageStyleOverrides,
+    toolCallGroupClassNames,
+    hideToolCallsInViewMode,
 }: AllMessagesMixedProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -473,13 +481,15 @@ function AllMessagesMixedComponent({
 
                                     return (
                                         <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
-                                            <ToolCallGroup
-                                                messages={group.messages}
-                                                showPulsatingCircle={isLatest}
-                                                toolRunId={group.toolRunId}
-                                                toolStatus={group.toolStatus}
-
-                                            />
+                                            {!hideToolCallsInViewMode?.includes(viewMode) && (
+                                                <ToolCallGroup
+                                                    {...toolCallGroupClassNames}
+                                                    messages={group.messages}
+                                                    showPulsatingCircle={isLatest}
+                                                    toolRunId={group.toolRunId}
+                                                    toolStatus={group.toolStatus}
+                                                />
+                                            )}
                                         </MessageErrorBoundary>
                                     );
                                 } else if (group.type === 'streaming') {
@@ -564,13 +574,15 @@ function AllMessagesMixedComponent({
 
                                     return (
                                         <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
-                                            <ToolCallGroup
-                                                messages={group.messages}
-                                                showPulsatingCircle={isLatest}
-                                                toolRunId={group.toolRunId}
-                                                toolStatus={group.toolStatus}
-
-                                            />
+                                            {!hideToolCallsInViewMode?.includes(viewMode) && (
+                                                <ToolCallGroup
+                                                    {...toolCallGroupClassNames}
+                                                    messages={group.messages}
+                                                    showPulsatingCircle={isLatest}
+                                                    toolRunId={group.toolRunId}
+                                                    toolStatus={group.toolStatus}
+                                                />
+                                            )}
                                         </MessageErrorBoundary>
                                     );
                                 } else if (group.type === 'streaming') {
