@@ -113,6 +113,8 @@ interface AllMessagesMixedProps {
     batchProgressPanelClassNames?: Partial<Pick<BatchProgressPanelProps,
         'className' | 'headerClassName' | 'senderClassName' | 'progressBarClassName' |
         'itemListClassName' | 'itemClassName' | 'summaryClassName'>>;
+    /** Hide the workstream tabs entirely */
+    hideWorkstreamTabs?: boolean;
     /** className override for the working indicator container */
     workingIndicatorClassName?: string;
     /** className override for the message list container (spacing/layout) */
@@ -135,6 +137,7 @@ function AllMessagesMixedComponent({
     hideToolCallsInViewMode,
     streamingMessageClassNames,
     batchProgressPanelClassNames,
+    hideWorkstreamTabs,
     workingIndicatorClassName,
     messageListClassName,
 }: AllMessagesMixedProps) {
@@ -458,15 +461,17 @@ function AllMessagesMixedComponent({
             {conversationTheme?.markdownStyles && <style>{conversationTheme.markdownStyles}</style>}
 
             {/* Workstream tabs with completion indicators */}
-            <div className="sticky top-0 z-10">
-                <WorkstreamTabs
-                    workstreams={workstreams}
-                    activeWorkstream={activeWorkstream}
-                    onSelectWorkstream={setActiveWorkstream}
-                    count={workstreamCounts}
-                    completionStatus={workstreamCompletionStatus}
-                />
-            </div>
+            {!hideWorkstreamTabs && (
+                <div className="sticky top-0 z-10">
+                    <WorkstreamTabs
+                        workstreams={workstreams}
+                        activeWorkstream={activeWorkstream}
+                        onSelectWorkstream={setActiveWorkstream}
+                        count={workstreamCounts}
+                        completionStatus={workstreamCompletionStatus}
+                    />
+                </div>
+            )}
 
             {displayMessages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-center py-8">

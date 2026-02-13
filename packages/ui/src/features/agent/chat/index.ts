@@ -31,12 +31,3 @@ export * from "./SkillWidgetProvider";
 // Conversation theming — shared primitives & context
 export { ConversationThemeProvider, useConversationTheme } from "./theme/ConversationThemeContext";
 export type { ConversationTheme, ViewMode } from "./theme/ConversationThemeContext";
-// Conversation theming — per-component types & resolvers
-export {
-    resolveModernAgentConversationTheme,
-    type ModernAgentConversationThemeClasses, type ModernAgentConversationTheme,
-} from "./theme/resolveModernAgentConversationTheme";
-export {
-    resolveWorkstreamTabsTheme,
-    type WorkstreamTabsThemeClasses, type WorkstreamTabsTheme,
-} from "./theme/resolveWorkstreamTabsTheme";

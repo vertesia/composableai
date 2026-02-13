@@ -18,7 +18,6 @@ import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFoote
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
 import { ConversationThemeProvider, useConversationTheme, type ConversationTheme, type ViewMode } from "./theme/ConversationThemeContext";
-import { resolveModernAgentConversationTheme } from "./theme/resolveModernAgentConversationTheme";
 import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
@@ -145,6 +144,8 @@ interface ModernAgentConversationProps {
     hideMessageInput?: boolean;
     /** Hide the internal plan panel (for apps that render their own) */
     hidePlanPanel?: boolean;
+    /** Hide workstream tabs */
+    hideWorkstreamTabs?: boolean;
 
     /** Override the route for store: and document:// object links. Receives the object ID, returns the href. */
     resolveStoreUrl?: (objectId: string) => string;
@@ -165,6 +166,9 @@ interface ModernAgentConversationProps {
     inputContainerClassName?: string;
     /** Additional className for the input field */
     inputClassName?: string;
+
+    /** Additional className for the root container */
+    className?: string;
 
     /** Conversation theme — cascading overrides for all child components */
     theme?: ConversationTheme;
@@ -686,6 +690,7 @@ function ModernAgentConversationInner({
     hideHeader,
     hideMessageInput,
     hidePlanPanel,
+    hideWorkstreamTabs,
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
@@ -694,6 +699,7 @@ function ModernAgentConversationInner({
     // Context callback
     getMessageContext,
     // Styling props
+    className,
     inputContainerClassName,
     inputClassName,
     // Fusion fragment data
@@ -727,9 +733,8 @@ function ModernAgentConversationInner({
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
-    // Theme context: resolve cascade into flat classes
+    // Theme context: viewMode + markdownStyles only
     const outerTheme = useConversationTheme();
-    const theme = resolveModernAgentConversationTheme(outerTheme?.conversation);
 
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const conversationRef = useRef<HTMLDivElement | null>(null);
@@ -1538,7 +1543,7 @@ function ModernAgentConversationInner({
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
         <div
-            className={cn("flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden", isDragOver && "ring-2 ring-blue-400 ring-inset", theme.root)}
+            className={cn("flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden", isDragOver && "ring-2 ring-blue-400 ring-inset", className)}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -1546,7 +1551,7 @@ function ModernAgentConversationInner({
         >
             {/* Drag overlay for full-panel file drop */}
             {isDragOver && (
-                <div className={cn("absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg", theme.dragOverlay)}>
+                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
                     <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
                         <UploadIcon className="size-6" />
                         Drop files to upload
@@ -1562,8 +1567,7 @@ function ModernAgentConversationInner({
                         ? "w-full lg:w-2/3 flex-1 min-h-[50vh]"
                         : fullWidth
                             ? "flex-1 w-full"
-                            : `flex-1 mx-auto ${!isModal ? "max-w-4xl" : ""}`,
-                    theme.conversationArea
+                            : `flex-1 mx-auto ${!isModal ? "max-w-4xl" : ""}`
                 )}
             >
                 {/* Streaming activity indicator moved to Header */}
@@ -1592,7 +1596,7 @@ function ModernAgentConversationInner({
                 )}
 
                 {messages.length === 0 && !isCompleted ? (
-                    <div className={cn("flex-1 flex flex-col items-center justify-center h-full text-center py-6", theme.emptyState)}>
+                    <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-6">
                         <div className="p-5 max-w-md border border-info rounded-lg shadow-sm">
                             <div className="flex items-center space-x-3 mb-3">
                                 <PulsatingCircle size="sm" color="blue" />
@@ -1627,6 +1631,7 @@ function ModernAgentConversationInner({
                         hideToolCallsInViewMode={hideToolCallsInViewMode}
                         streamingMessageClassNames={streamingMessageClassNames}
                         batchProgressPanelClassNames={batchProgressPanelClassNames}
+                        hideWorkstreamTabs={hideWorkstreamTabs}
                         workingIndicatorClassName={workingIndicatorClassName}
                         messageListClassName={messageListClassName}
                     />

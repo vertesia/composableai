@@ -1,6 +1,4 @@
 import { createContext, createElement, useContext, type ReactNode } from "react";
-import { type ModernAgentConversationTheme } from "./resolveModernAgentConversationTheme";
-import { type WorkstreamTabsTheme } from "./resolveWorkstreamTabsTheme";
 
 export type ViewMode = "stacked" | "sliding";
 
@@ -11,8 +9,6 @@ export type ViewMode = "stacked" | "sliding";
 export interface ConversationTheme {
     /** Current view mode. Set internally by ModernAgentConversation — do not set externally. */
     viewMode?: ViewMode;
-    conversation?: ModernAgentConversationTheme;
-    workstreamTabs?: WorkstreamTabsTheme;
     /** Raw CSS string injected after the default .vprose styles. Overrides markdown rendering. */
     markdownStyles?: string;
 }

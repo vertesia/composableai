@@ -1,8 +1,6 @@
 import { AgentMessage } from "@vertesia/common";
 import { cn } from "@vertesia/ui/core";
 import { CheckCircle, Clock } from "lucide-react";
-import { useConversationTheme } from "../theme/ConversationThemeContext";
-import { resolveWorkstreamTabsTheme } from "../theme/resolveWorkstreamTabsTheme";
 import { getWorkstreamId } from "./utils";
 
 interface WorkstreamTabsProps {
@@ -23,9 +21,6 @@ export default function WorkstreamTabs({
   count,
   completionStatus,
 }: WorkstreamTabsProps) {
-  const conversationTheme = useConversationTheme();
-  const theme = resolveWorkstreamTabsTheme(conversationTheme?.workstreamTabs);
-
   // Create a new map with just the core workstreams
   const filteredWorkstreams = new Map<string, string>();
   filteredWorkstreams.set("all", "All Messages");
@@ -64,11 +59,11 @@ export default function WorkstreamTabs({
 
   // If there are no multiple workstreams, return an empty div to maintain layout
   if (!hasMultipleWorkstreams) {
-    return <div className={cn("py-1", theme.empty)}></div>;
+    return <div className="py-1"></div>;
   }
 
   return (
-    <div className={cn("flex overflow-x-auto space-x-1 mb-2 bg-muted border-b-2 border-muted/20 sticky top-0 z-10", theme.root)}>
+    <div className="flex overflow-x-auto space-x-1 mb-2 bg-muted border-b-2 border-muted/20 sticky top-0 z-10">
       {sortedWorkstreams.map(([id, name]) => (
         <button
           key={id}
@@ -76,9 +71,7 @@ export default function WorkstreamTabs({
             "px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5",
             activeWorkstream === id
               ? "bg-info text-info border-b-2 border-info"
-              : "text-muted hover:bg-muted border-b-2 border-transparent",
-            theme.tab,
-            activeWorkstream === id ? theme.tabActive : theme.tabInactive
+              : "text-muted hover:bg-muted border-b-2 border-transparent"
           )}
           onClick={() => onSelectWorkstream(id)}
           title={name.length > 20 ? name : undefined}
@@ -86,15 +79,13 @@ export default function WorkstreamTabs({
           {/* Shorten long names for better UI */}
           {name.length > 20 ? name.substring(0, 18) + "..." : name}
           {count && count.has(id) && count.get(id)! > 0 && (
-            <div className={cn("flex items-center space-x-1", theme.badgeGroup)}>
+            <div className="flex items-center space-x-1">
               <span
                 className={cn(
                   "inline-flex items-center justify-center p-1 text-xs rounded-full",
                   activeWorkstream === id
                     ? "bg-info text-info"
-                    : "bg-muted text-muted",
-                  theme.badge,
-                  activeWorkstream === id ? theme.badgeActive : theme.badgeInactive
+                    : "bg-muted text-muted"
                 )}
               >
                 {count.get(id)}
