@@ -226,9 +226,9 @@ function StreamingMessageComponent({
 
     const isTyping = displayedLength < text.length;
 
-    // Theme context: resolve cascade into flat slots (highest priority)
+    // Theme context: flat class overrides (highest priority)
     const conversationTheme = useConversationTheme();
-    const theme = resolveStreamingMessageTheme(conversationTheme?.streamingMessage, conversationTheme?.viewMode);
+    const theme = resolveStreamingMessageTheme(conversationTheme?.streamingMessage);
 
     // PERFORMANCE: Append cursor character directly to text instead of DOM manipulation
     // This eliminates expensive TreeWalker traversal on every update

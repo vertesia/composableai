@@ -7,7 +7,7 @@ import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, Ale
 import { useState, memo, useEffect, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { useConversationTheme } from "../theme/ConversationThemeContext";
-import { resolveToolCallGroupTheme, type ResolvedToolCallGroupThemeClasses } from "../theme/resolveToolCallGroupTheme";
+import { resolveToolCallGroupTheme, type ToolCallGroupThemeClasses } from "../theme/resolveToolCallGroupTheme";
 import { useImageLightbox } from "../ImageLightbox";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
 import { ToolExecutionStatus } from "./utils";
@@ -24,7 +24,7 @@ interface ToolCallItemProps {
     isExpanded: boolean;
     onToggle: () => void;
     artifactRunId?: string;
-    themeClasses?: ResolvedToolCallGroupThemeClasses;
+    themeClasses?: ToolCallGroupThemeClasses;
 }
 
 // Helper to check if URL is an image
@@ -420,9 +420,9 @@ function ToolCallGroupComponent({ messages, showPulsatingCircle = false, toolRun
     const prevCountRef = useRef(messages.length);
     const toast = useToast();
 
-    // Theme context: resolve cascade into flat slots (highest priority)
+    // Theme context: flat class overrides (highest priority)
     const conversationTheme = useConversationTheme();
-    const theme = resolveToolCallGroupTheme(conversationTheme?.toolCallGroup, conversationTheme?.viewMode);
+    const theme = resolveToolCallGroupTheme(conversationTheme?.toolCallGroup);
 
     // Extract workflow_run_id from messages (any message in the group should have it)
     const artifactRunId = messages.find(m => (m as any).workflow_run_id)?.workflow_run_id as string | undefined

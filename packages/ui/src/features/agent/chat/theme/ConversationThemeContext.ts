@@ -10,7 +10,7 @@ import { type WorkstreamTabsTheme } from "./resolveWorkstreamTabsTheme";
 import { type ViewMode } from "./themeUtils";
 
 // Re-export shared primitives so existing imports from this module still work
-export { type ThemeClassValue, type ViewMode } from "./themeUtils";
+export { type ViewMode } from "./themeUtils";
 
 // ---------------------------------------------------------------------------
 // Top-level conversation theme

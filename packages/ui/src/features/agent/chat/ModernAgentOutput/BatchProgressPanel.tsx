@@ -25,9 +25,9 @@ function BatchProgressPanelComponent({ message, batchData, isRunning = false }: 
     const [isExpanded, setIsExpanded] = useState(false);
     const toast = useToast();
 
-    // Theme context: resolve cascade into flat classes (highest priority)
+    // Theme context: flat class overrides (highest priority)
     const conversationTheme = useConversationTheme();
-    const theme = resolveBatchProgressPanelTheme(conversationTheme?.batchProgressPanel, conversationTheme?.viewMode);
+    const theme = resolveBatchProgressPanelTheme(conversationTheme?.batchProgressPanel);
 
     const { tool_name, total, completed, succeeded, failed, items, started_at, completed_at } = batchData;
 

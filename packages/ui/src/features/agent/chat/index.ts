@@ -30,34 +30,33 @@ export type { StreamingMessageProps } from "./ModernAgentOutput/StreamingMessage
 export * from "./SkillWidgetProvider";
 // Conversation theming — shared primitives & context
 export { ConversationThemeProvider, useConversationTheme } from "./theme/ConversationThemeContext";
-export type { ConversationTheme, ThemeClassValue, ViewMode } from "./theme/ConversationThemeContext";
+export type { ConversationTheme, ViewMode } from "./theme/ConversationThemeContext";
 // Conversation theming — per-component types & resolvers
 export {
     resolveAllMessagesMixedTheme,
-    type AllMessagesMixedThemeClasses, type AllMessagesMixedTheme, type ResolvedAllMessagesMixedThemeClasses,
+    type AllMessagesMixedThemeClasses, type AllMessagesMixedTheme,
 } from "./theme/resolveAllMessagesMixedTheme";
 export {
     resolveBatchProgressPanelTheme,
-    type BatchProgressPanelThemeClasses, type BatchProgressPanelTheme, type ResolvedBatchProgressPanelThemeClasses,
+    type BatchProgressPanelThemeClasses, type BatchProgressPanelTheme,
 } from "./theme/resolveBatchProgressPanelTheme";
 export {
     resolveMessageItemTheme,
-    type MessageItemThemeClasses, type MessageItemTheme, type ResolvedMessageItemThemeClasses,
+    type MessageItemThemeClasses, type MessageItemTheme, type MessageStyleConfig,
 } from "./theme/resolveMessageItemTheme";
 export {
     resolveModernAgentConversationTheme,
-    type ModernAgentConversationThemeClasses, type ModernAgentConversationTheme, type ResolvedModernAgentConversationThemeClasses,
+    type ModernAgentConversationThemeClasses, type ModernAgentConversationTheme,
 } from "./theme/resolveModernAgentConversationTheme";
 export {
     resolveStreamingMessageTheme,
-    type StreamingMessageThemeClasses, type StreamingMessageTheme, type ResolvedStreamingMessageThemeClasses,
+    type StreamingMessageThemeClasses, type StreamingMessageTheme,
 } from "./theme/resolveStreamingMessageTheme";
 export {
     resolveToolCallGroupTheme,
-    type ToolCallGroupThemeClasses, type ToolCallGroupTheme, type ResolvedToolCallGroupThemeClasses,
+    type ToolCallGroupThemeClasses, type ToolCallGroupTheme,
 } from "./theme/resolveToolCallGroupTheme";
 export {
     resolveWorkstreamTabsTheme,
-    type WorkstreamTabsThemeClasses, type WorkstreamTabsTheme, type ResolvedWorkstreamTabsThemeClasses,
+    type WorkstreamTabsThemeClasses, type WorkstreamTabsTheme,
 } from "./theme/resolveWorkstreamTabsTheme";
-

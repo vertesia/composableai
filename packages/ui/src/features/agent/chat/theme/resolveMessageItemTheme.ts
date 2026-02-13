@@ -1,166 +1,84 @@
 import { type AgentMessageType } from "@vertesia/common";
-import { cn } from "@vertesia/ui/core";
-import { type ClassTree, type ThemeClassValue, type ViewMode, buildClassChains, getCascade, getSelf, mergeResolvedLayer, resolveClasses } from "./themeUtils";
 
 // ---------------------------------------------------------------------------
-// MessageItem theme classes — one per DOM element (22 total)
+// MessageItem theme classes (22 slots)
 // ---------------------------------------------------------------------------
 
 /** Class overrides for individual MessageItem DOM elements. */
 export interface MessageItemThemeClasses {
     /** Root container: "w-full max-w-full" */
-    root?: ThemeClassValue;
+    root?: string;
     /** Card wrapper: "border-l-4 bg-white dark:bg-gray-900 mb-4 ..." */
-    card?: ThemeClassValue;
+    card?: string;
     /** Header row: "flex items-center justify-between px-4 py-1.5" */
-    header?: ThemeClassValue;
+    header?: string;
     /** Header left group: "flex items-center gap-1.5" */
-    headerLeft?: ThemeClassValue;
+    headerLeft?: string;
     /** Icon wrapper */
-    icon?: ThemeClassValue;
+    icon?: string;
     /** Sender label: "text-xs font-medium text-muted" */
-    sender?: ThemeClassValue;
+    sender?: string;
     /** Workstream badge: "text-xs text-muted ml-1" */
-    badge?: ThemeClassValue;
+    badge?: string;
     /** Header right group: "flex items-center gap-1.5 print:hidden" */
-    headerRight?: ThemeClassValue;
+    headerRight?: string;
     /** Timestamp: "text-[11px] text-muted/70" */
-    timestamp?: ThemeClassValue;
+    timestamp?: string;
     /** Copy button: "text-muted/50 hover:text-muted h-5 w-5 p-0" */
-    copyButton?: ThemeClassValue;
+    copyButton?: string;
     /** Export button: "text-muted/50 hover:text-muted h-5 w-5 p-0" */
-    exportButton?: ThemeClassValue;
+    exportButton?: string;
     /** Content section: "px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden" */
-    content?: ThemeClassValue;
+    content?: string;
     /** Message body wrapper: "message-content break-words w-full" */
-    body?: ThemeClassValue;
+    body?: string;
     /** Prose wrapper for markdown: "vprose prose prose-slate ... text-[15px]" */
-    prose?: ThemeClassValue;
+    prose?: string;
     /** JSON pre block: "text-xs font-mono ..." */
-    jsonPre?: ThemeClassValue;
+    jsonPre?: string;
     /** Artifacts container: "mt-3 text-xs" */
-    artifacts?: ThemeClassValue;
+    artifacts?: string;
     /** Artifacts label: "font-medium text-muted mb-1" */
-    artifactsLabel?: ThemeClassValue;
+    artifactsLabel?: string;
     /** Image previews wrapper: "mb-2 flex flex-wrap gap-3" */
-    artifactImages?: ThemeClassValue;
+    artifactImages?: string;
     /** Artifact download buttons wrapper: "flex flex-wrap gap-2 print:hidden" */
-    artifactButtons?: ThemeClassValue;
+    artifactButtons?: string;
     /** Details section: "mt-2 print:hidden" */
-    details?: ThemeClassValue;
+    details?: string;
     /** Details toggle button: "text-xs text-muted flex items-center" */
-    detailsToggle?: ThemeClassValue;
+    detailsToggle?: string;
     /** Details content panel: "mt-2 p-2 bg-muted ..." */
-    detailsContent?: ThemeClassValue;
+    detailsContent?: string;
 }
 
-/** Resolved theme classes — always flat strings after cascade + byType resolution. */
-export type ResolvedMessageItemThemeClasses = { [K in keyof MessageItemThemeClasses]?: string };
+// ---------------------------------------------------------------------------
+// MESSAGE_STYLES override support
+// ---------------------------------------------------------------------------
 
-/**
- * Full MessageItem theme: base classes that cascade to all messages,
- * plus per-type overrides that take highest priority.
- *
- * Classes cascade down the DOM tree (root → card → header → icon, etc.).
- * Type overrides layer on top of the base cascade.
- *
- * Use `resolveMessageItemTheme()` to fold cascade + byType into a
- * flat resolved object for consumption in the component.
- */
+/** Per-message-type visual config (border, bg, icon color, sender label, icon component). */
+export interface MessageStyleConfig {
+    borderColor: string;
+    bgColor: string;
+    iconColor: string;
+    sender: string;
+    Icon: React.ComponentType<{ className?: string }>;
+}
+
+// ---------------------------------------------------------------------------
+// MessageItem theme
+// ---------------------------------------------------------------------------
+
+/** MessageItem theme — flat class overrides + optional message style overrides. */
 export interface MessageItemTheme extends MessageItemThemeClasses {
-    /**
-     * Per-message-type overrides keyed by AgentMessageType enum value.
-     * These cascade identically to base classes but at higher priority.
-     */
-    byType?: Partial<Record<AgentMessageType, MessageItemThemeClasses>>;
-    /** Per-view-mode overrides. Highest priority — layers on top of base + byType. */
-    byViewMode?: Partial<Record<ViewMode, MessageItemThemeClasses>>;
+    /** Override per-type visual styles (border color, bg, icon, sender label, icon component). */
+    messageStyles?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
 }
 
-// ---------------------------------------------------------------------------
-// Cascade tree — defines the DOM hierarchy. Chains are derived automatically.
-// ---------------------------------------------------------------------------
+const EMPTY: MessageItemThemeClasses = {};
 
-type ClassKey = keyof MessageItemThemeClasses;
-
-/** MessageItem DOM hierarchy — single source of truth for cascade relationships. */
-const MESSAGE_ITEM_TREE: ClassTree = {
-    root: {
-        card: {
-            header: {
-                headerLeft: { icon: {}, sender: {}, badge: {} },
-                headerRight: { timestamp: {}, copyButton: {}, exportButton: {} },
-            },
-            content: { body: { prose: {} }, jsonPre: {} },
-            artifacts: { artifactsLabel: {}, artifactImages: {}, artifactButtons: {} },
-            details: { detailsToggle: {}, detailsContent: {} },
-        },
-    },
-};
-
-/** Derived once at module load. */
-const CLASS_CHAINS = buildClassChains<ClassKey>(MESSAGE_ITEM_TREE);
-const CLASS_KEYS = Object.keys(CLASS_CHAINS) as ClassKey[];
-
-const EMPTY: ResolvedMessageItemThemeClasses = {};
-
-// ---------------------------------------------------------------------------
-// Resolver
-// ---------------------------------------------------------------------------
-
-/**
- * Resolve a MessageItemTheme into a flat set of class strings.
- *
- * For each class key, the resolved value is built by walking the ancestor chain:
- *   - Ancestors contribute only their `cascade` part
- *   - Self contributes both `cascade` and `self`
- *   - Base cascade runs first (lower priority), then type cascade (higher)
- *
- * Returns undefined per key when nothing is set — cn() will ignore it.
- */
 export function resolveMessageItemTheme(
     theme: MessageItemTheme | undefined,
-    messageType: AgentMessageType,
-    viewMode?: ViewMode,
-): ResolvedMessageItemThemeClasses {
-    if (!theme) return EMPTY;
-
-    const typeOverrides = theme.byType?.[messageType];
-    let resolved: ResolvedMessageItemThemeClasses = {};
-
-    for (const key of CLASS_KEYS) {
-        const chain = CLASS_CHAINS[key];
-        const values: (string | undefined)[] = [];
-
-        // Base cascade (lower priority)
-        for (const ancestor of chain) {
-            values.push(getCascade(theme[ancestor]));
-            if (ancestor === key) {
-                values.push(getSelf(theme[ancestor]));
-            }
-        }
-
-        // Type-specific cascade (higher priority)
-        if (typeOverrides) {
-            for (const ancestor of chain) {
-                values.push(getCascade(typeOverrides[ancestor]));
-                if (ancestor === key) {
-                    values.push(getSelf(typeOverrides[ancestor]));
-                }
-            }
-        }
-
-        const merged = cn(...values);
-        if (merged) {
-            resolved[key] = merged;
-        }
-    }
-
-    // ViewMode-specific cascade (highest priority)
-    if (viewMode && theme.byViewMode?.[viewMode]) {
-        const vmResolved = resolveClasses<ClassKey>(theme.byViewMode[viewMode], CLASS_CHAINS, CLASS_KEYS);
-        resolved = mergeResolvedLayer(resolved, vmResolved);
-    }
-
-    return resolved;
+): MessageItemThemeClasses {
+    return theme ?? EMPTY;
 }

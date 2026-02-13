@@ -144,12 +144,15 @@ function MessageItemComponent({
     urlCacheRef.current = urlCache;
     const { renderContent: exportContent, isDownloading: isExportingFile } = useDownloadFile({ client, toast });
 
-    // Get styles from consolidated config
-    const styles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
-
-    // Theme context: resolve cascade + byType into flat slots (highest priority)
+    // Theme context: flat class overrides (highest priority)
+    // Context is optional — MessageItem can be used standalone or within any conversation context
     const conversationTheme = useConversationTheme();
-    const theme = resolveMessageItemTheme(conversationTheme?.messageItem, message.type, conversationTheme?.viewMode);
+    const theme = resolveMessageItemTheme(conversationTheme?.messageItem);
+
+    // Get styles from consolidated config, with optional theme overrides
+    const baseStyles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
+    const styleOverrides = (conversationTheme?.messageItem as any)?.messageStyles?.[message.type];
+    const styles = styleOverrides ? { ...baseStyles, ...styleOverrides } : baseStyles;
 
     // PERFORMANCE: Memoize message content extraction - only recalculates when message changes
     const messageContent = useMemo(() => {
