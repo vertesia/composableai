@@ -1,11 +1,8 @@
 import { createContext, createElement, useContext, type ReactNode } from "react";
 import { type AllMessagesMixedTheme } from "./resolveAllMessagesMixedTheme";
 import { type BatchProgressPanelTheme } from "./resolveBatchProgressPanelTheme";
-import { type HeaderTheme } from "./resolveHeaderTheme";
-import { type MessageInputTheme } from "./resolveMessageInputTheme";
 import { type MessageItemTheme } from "./resolveMessageItemTheme";
 import { type ModernAgentConversationTheme } from "./resolveModernAgentConversationTheme";
-import { type PlanPanelTheme } from "./resolvePlanPanelTheme";
 import { type StreamingMessageTheme } from "./resolveStreamingMessageTheme";
 import { type ToolCallGroupTheme } from "./resolveToolCallGroupTheme";
 import { type WorkstreamTabsTheme } from "./resolveWorkstreamTabsTheme";
@@ -23,15 +20,12 @@ export interface ConversationTheme {
     /** Current view mode. Set internally by ModernAgentConversation — do not set externally. */
     viewMode?: ViewMode;
     conversation?: ModernAgentConversationTheme;
-    planPanel?: PlanPanelTheme;
     messageItem?: MessageItemTheme;
     streamingMessage?: StreamingMessageTheme;
     toolCallGroup?: ToolCallGroupTheme;
     batchProgressPanel?: BatchProgressPanelTheme;
     allMessagesMixed?: AllMessagesMixedTheme;
     workstreamTabs?: WorkstreamTabsTheme;
-    messageInput?: MessageInputTheme;
-    header?: HeaderTheme;
     /** Raw CSS string injected after the default .vprose styles. Overrides markdown rendering. */
     markdownStyles?: string;
 }

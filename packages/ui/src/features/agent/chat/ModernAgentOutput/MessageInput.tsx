@@ -3,8 +3,6 @@ import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCi
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
 import { SelectDocument } from "../../../store";
-import { useConversationTheme } from "../theme/ConversationThemeContext";
-import { resolveMessageInputTheme } from "../theme/resolveMessageInputTheme";
 
 /** Represents an uploaded file attachment */
 export interface UploadedFile {
@@ -107,10 +105,6 @@ export default function MessageInput({
     const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
     const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
-
-    // Theme context: resolve cascade into flat class strings (authoritative)
-    const conversationTheme = useConversationTheme();
-    const theme = resolveMessageInputTheme(conversationTheme?.messageInput);
 
     useEffect(() => {
         if (!disabled && isCompleted) ref.current?.focus();
@@ -301,7 +295,7 @@ export default function MessageInput({
 
     return (
         <div
-            className={cn("p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background z-10", isDragOver && "bg-blue-50 dark:bg-blue-900/20 border-blue-400", className, theme.root)}
+            className={cn("p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background z-10", isDragOver && "bg-blue-50 dark:bg-blue-900/20 border-blue-400", className)}
             style={{ minHeight: "120px" }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -309,9 +303,9 @@ export default function MessageInput({
         >
             {/* Drag overlay */}
             {isDragOver && (
-                <div className={cn("absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 rounded-lg z-10 pointer-events-none", theme.dragOverlay)}>
-                    <div className={cn("text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2", theme.dragOverlayText)}>
-                        <UploadIcon className={cn("size-5", theme.dragOverlayIcon)} />
+                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 rounded-lg z-10 pointer-events-none">
+                    <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2">
+                        <UploadIcon className="size-5" />
                         Drop files to upload
                     </div>
                 </div>
@@ -331,24 +325,23 @@ export default function MessageInput({
 
             {/* Attachments preview */}
             {hasAttachments && (
-                <div className={cn("flex flex-col gap-2 mb-3", theme.attachments)}>
+                <div className="flex flex-col gap-2 mb-3">
                     {/* Uploaded files section */}
                     {(uploadedFiles.length > 0 || (processingFiles && processingFiles.size > 0)) && (
                         <div>
-                            <div className={cn("flex items-center gap-1 mb-1", theme.fileSectionHeader)}>
-                                <span className={cn("text-xs font-medium text-gray-500 dark:text-gray-400", theme.fileLabel)}>
+                            <div className="flex items-center gap-1 mb-1">
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                                     Uploaded Files
                                 </span>
                                 <VTooltip
                                     description="Files uploaded to this conversation remain available throughout. The agent can access them anytime."
                                     placement="top"
                                     size="md"
-                                    className={theme.fileTooltip}
                                 >
-                                    <HelpCircleIcon className={cn("size-3 text-gray-400 dark:text-gray-500", theme.fileHelpIcon)} />
+                                    <HelpCircleIcon className="size-3 text-gray-400 dark:text-gray-500" />
                                 </VTooltip>
                             </div>
-                            <div className={cn("flex flex-wrap gap-2", theme.fileList)}>
+                            <div className="flex flex-wrap gap-2">
                                 {/* Processing files (uploading/processing/error) */}
                                 {processingFiles && Array.from(processingFiles.values()).map((file) => (
                                     <div
@@ -360,16 +353,14 @@ export default function MessageInput({
                                                 : file.status === FileProcessingStatus.READY
                                                     ? "bg-success/10 text-success"
                                                     : "bg-attention/10 text-attention",
-                                            theme.fileBadge,
                                         )}
                                     >
                                         <FileTextIcon className={cn(
                                             "size-3.5",
                                             (file.status === FileProcessingStatus.UPLOADING || file.status === FileProcessingStatus.PROCESSING) && "animate-pulse",
-                                            theme.fileBadgeIcon,
                                         )} />
-                                        <span className={cn("max-w-[120px] truncate", theme.fileBadgeName)}>{file.name}</span>
-                                        <span className={cn("text-xs opacity-70", theme.fileBadgeStatus)}>
+                                        <span className="max-w-[120px] truncate">{file.name}</span>
+                                        <span className="text-xs opacity-70">
                                             {file.status === FileProcessingStatus.UPLOADING ? 'Uploading...'
                                                 : file.status === FileProcessingStatus.PROCESSING ? 'Processing...'
                                                 : file.status === FileProcessingStatus.ERROR ? 'Error'
@@ -381,16 +372,16 @@ export default function MessageInput({
                                 {uploadedFiles.map((file) => (
                                     <div
                                         key={file.id}
-                                        className={cn("flex items-center gap-1.5 px-2 py-1 bg-success/10 text-success rounded-md text-sm", theme.fileBadge)}
+                                        className="flex items-center gap-1.5 px-2 py-1 bg-success/10 text-success rounded-md text-sm"
                                     >
-                                        <FileTextIcon className={cn("size-3.5", theme.fileBadgeIcon)} />
-                                        <span className={cn("max-w-[120px] truncate", theme.fileBadgeName)}>{file.name}</span>
+                                        <FileTextIcon className="size-3.5" />
+                                        <span className="max-w-[120px] truncate">{file.name}</span>
                                         {onRemoveFile && (
                                             <button
                                                 onClick={() => onRemoveFile(file.id)}
-                                                className={cn("ml-1 p-0.5 hover:bg-success/20 rounded", theme.fileRemoveButton)}
+                                                className="ml-1 p-0.5 hover:bg-success/20 rounded"
                                             >
-                                                <XIcon className={cn("size-3", theme.fileRemoveIcon)} />
+                                                <XIcon className="size-3" />
                                             </button>
                                         )}
                                     </div>
@@ -401,33 +392,32 @@ export default function MessageInput({
                     {/* Selected documents section */}
                     {selectedDocuments.length > 0 && (
                         <div>
-                            <div className={cn("flex items-center gap-1 mb-1", theme.documentSectionHeader)}>
-                                <span className={cn("text-xs font-medium text-blue-600 dark:text-blue-400", theme.documentLabel)}>
+                            <div className="flex items-center gap-1 mb-1">
+                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
                                     Document Attachments
                                 </span>
                                 <VTooltip
                                     description="Documents from the store attached to this message. The agent can re-fetch them by ID anytime, or re-attach to include content directly."
                                     placement="top"
                                     size="md"
-                                    className={theme.documentTooltip}
                                 >
-                                    <HelpCircleIcon className={cn("size-3 text-blue-400 dark:text-blue-500", theme.documentHelpIcon)} />
+                                    <HelpCircleIcon className="size-3 text-blue-400 dark:text-blue-500" />
                                 </VTooltip>
                             </div>
-                            <div className={cn("flex flex-wrap gap-2", theme.documentList)}>
+                            <div className="flex flex-wrap gap-2">
                                 {selectedDocuments.map((doc) => (
                                     <div
                                         key={doc.id}
-                                        className={cn("flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-md text-sm text-blue-700 dark:text-blue-300", theme.documentBadge)}
+                                        className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-md text-sm text-blue-700 dark:text-blue-300"
                                     >
-                                        <FileTextIcon className={cn("size-3.5", theme.documentBadgeIcon)} />
-                                        <span className={cn("max-w-[120px] truncate", theme.documentBadgeName)}>{doc.name}</span>
+                                        <FileTextIcon className="size-3.5" />
+                                        <span className="max-w-[120px] truncate">{doc.name}</span>
                                         {onRemoveDocument && (
                                             <button
                                                 onClick={() => onRemoveDocument(doc.id)}
-                                                className={cn("ml-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded", theme.documentRemoveButton)}
+                                                className="ml-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
                                             >
-                                                <XIcon className={cn("size-3", theme.documentRemoveIcon)} />
+                                                <XIcon className="size-3" />
                                             </button>
                                         )}
                                     </div>
@@ -440,16 +430,16 @@ export default function MessageInput({
 
             {/* Action buttons row */}
             {(onFilesSelected || renderDocumentSearch) && (
-                <div className={cn("flex gap-2 mb-2", theme.actionButtons)}>
+                <div className="flex gap-2 mb-2">
                     {onFilesSelected && (
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={openFileDialog}
                             disabled={disabled || uploadedFiles.length >= maxFiles}
-                            className={cn("text-xs", theme.uploadButton)}
+                            className="text-xs"
                         >
-                            <UploadIcon className={cn("size-3.5 mr-1.5", theme.uploadButtonIcon)} />
+                            <UploadIcon className="size-3.5 mr-1.5" />
                             Upload
                         </Button>
                     )}
@@ -459,9 +449,9 @@ export default function MessageInput({
                             size="sm"
                             onClick={() => setIsDocSearchOpen(true)}
                             disabled={disabled}
-                            className={cn("text-xs", theme.searchButton)}
+                            className="text-xs"
                         >
-                            <FileTextIcon className={cn("size-3.5 mr-1.5", theme.searchButtonIcon)} />
+                            <FileTextIcon className="size-3.5 mr-1.5" />
                             Search Documents
                         </Button>
                     )}
@@ -469,8 +459,8 @@ export default function MessageInput({
             )}
 
             {/* Input row */}
-            <div className={cn("flex items-end space-x-2", theme.inputRow)}>
-                <div className={cn("flex flex-1 items-end space-x-1", theme.textareaWrapper)}>
+            <div className="flex items-end space-x-2">
+                <div className="flex flex-1 items-end space-x-1">
                     <textarea
                         ref={ref}
                         value={value}
@@ -479,19 +469,19 @@ export default function MessageInput({
                         onPaste={handlePaste}
                         disabled={disabled}
                         placeholder={isStreaming ? "Agent is working... (Esc Esc to stop)" : (onFilesSelected ? "Ask anything... (drop or paste files)" : placeholder)}
-                        className={cn("flex-1 w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden", inputClassName, theme.textarea)}
+                        className={cn("flex-1 w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden", inputClassName)}
                         rows={2}
                         style={{ minHeight: '60px', maxHeight: '200px' }}
                     />
                     {!hideObjectLinking && (
                         <Button
                             variant="ghost"
-                            className={cn("rounded-full", theme.linkButton)}
+                            className="rounded-full"
                             disabled={!isCompleted}
                             onClick={() => setIsObjectModalOpen(true)}
                             alt="Link Object"
                         >
-                            <PaperclipIcon className={cn("size-4", theme.linkButtonIcon)} />
+                            <PaperclipIcon className="size-4" />
                         </Button>
                     )}
                 </div>
@@ -501,28 +491,28 @@ export default function MessageInput({
                     <Button
                         onClick={handleStop}
                         disabled={isStopping}
-                        className={cn("px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white", theme.stopButton)}
+                        className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white"
                         title="Stop the agent"
                     >
-                        {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className={cn("size-4 mr-2", theme.stopButtonIcon)} />} <span className={theme.stopButtonText}>Stop</span>
+                        {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className="size-4 mr-2" />} <span>Stop</span>
                     </Button>
                 ) : (
                     <Button
                         onClick={handleSend}
                         disabled={disabled || isSending || !value.trim() || hasProcessingFiles}
-                        className={cn("px-4 py-2.5", theme.sendButton)}
+                        className="px-4 py-2.5"
                         title={hasProcessingFiles ? "Wait for files to finish processing" : undefined}
                     >
-                        {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className={cn("size-4 mr-2", theme.sendButtonIcon)} />}
-                        <span className={theme.sendButtonText}>{hasProcessingFiles ? "Processing..." : "Send"}</span>
+                        {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className="size-4 mr-2" />}
+                        <span>{hasProcessingFiles ? "Processing..." : "Send"}</span>
                     </Button>
                 )}
             </div>
 
-            <div className={cn("text-xs text-muted mt-2 text-center", theme.statusText)}>
+            <div className="text-xs text-muted mt-2 text-center">
                 {activeTaskCount > 0 ? (
                     <div className="flex items-center justify-center">
-                        <Activity className={cn("h-3 w-3 mr-1 text-attention", theme.statusIcon)} />
+                        <Activity className="h-3 w-3 mr-1 text-attention" />
                         <span>Agent has {activeTaskCount} active workstream{activeTaskCount !== 1 ? 's' : ''} running</span>
                     </div>
                 ) : isStreaming

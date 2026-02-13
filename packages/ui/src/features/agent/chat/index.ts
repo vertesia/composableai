@@ -41,14 +41,6 @@ export {
     type BatchProgressPanelThemeClasses, type BatchProgressPanelTheme, type ResolvedBatchProgressPanelThemeClasses,
 } from "./theme/resolveBatchProgressPanelTheme";
 export {
-    resolveHeaderTheme,
-    type HeaderThemeClasses, type HeaderTheme, type ResolvedHeaderThemeClasses,
-} from "./theme/resolveHeaderTheme";
-export {
-    resolveMessageInputTheme,
-    type MessageInputThemeClasses, type MessageInputTheme, type ResolvedMessageInputThemeClasses,
-} from "./theme/resolveMessageInputTheme";
-export {
     resolveMessageItemTheme,
     type MessageItemThemeClasses, type MessageItemTheme, type ResolvedMessageItemThemeClasses,
 } from "./theme/resolveMessageItemTheme";
@@ -56,10 +48,6 @@ export {
     resolveModernAgentConversationTheme,
     type ModernAgentConversationThemeClasses, type ModernAgentConversationTheme, type ResolvedModernAgentConversationThemeClasses,
 } from "./theme/resolveModernAgentConversationTheme";
-export {
-    resolvePlanPanelTheme,
-    type PlanPanelThemeClasses, type PlanPanelTheme, type ResolvedPlanPanelThemeClasses,
-} from "./theme/resolvePlanPanelTheme";
 export {
     resolveStreamingMessageTheme,
     type StreamingMessageThemeClasses, type StreamingMessageTheme, type ResolvedStreamingMessageThemeClasses,

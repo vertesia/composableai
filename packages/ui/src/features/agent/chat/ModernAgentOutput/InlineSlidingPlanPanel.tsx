@@ -2,8 +2,6 @@ import { Plan } from "@vertesia/common";
 import { Badge, Button, cn } from "@vertesia/ui/core";
 import { AlertCircle, CheckCircle, Circle, Clock, X } from "lucide-react";
 import React from "react";
-import { useConversationTheme } from "../theme/ConversationThemeContext";
-import { resolvePlanPanelTheme } from "../theme/resolvePlanPanelTheme";
 
 interface InlinePlanPanelProps {
   plan: Plan;
@@ -24,9 +22,6 @@ function InlineSlidingPlanPanelComponent({
   activePlanIndex = 0,
   onChangePlan = () => { },
 }: InlinePlanPanelProps) {
-  const conversationTheme = useConversationTheme();
-  const theme = resolvePlanPanelTheme(conversationTheme?.planPanel);
-
   // Don't render if panel is closed
   if (!isOpen) {
     return null;
@@ -34,9 +29,9 @@ function InlineSlidingPlanPanelComponent({
 
   // Render the normal panel
   return (
-    <div className={cn("h-full shadow-xl border border-muted/20 overflow-hidden", theme.root)}>
-      <div className={cn("flex items-center justify-between p-3 border-b border-muted/20", theme.header)}>
-        <h3 className={cn("font-bold text-base", theme.title)}>
+    <div className="h-full shadow-xl border border-muted/20 overflow-hidden">
+      <div className="flex items-center justify-between p-3 border-b border-muted/20">
+        <h3 className="font-bold text-base">
           Plan
         </h3>
         <Button variant={"ghost"} onClick={onClose} >
@@ -45,15 +40,15 @@ function InlineSlidingPlanPanelComponent({
         </Button>
       </div>
       <div
-        className={cn("p-3 overflow-y-auto", theme.scrollContent)}
+        className="p-3 overflow-y-auto"
         style={{
           height: "calc(100% - 44px)",
           maxHeight: "calc(100vh - 150px)",
         }}
       >
         {/* Plan Summary - count only tasks, excluding main workstream */}
-        <div className={cn("mb-3 p-2 bg-info rounded-md border border-info", theme.taskProgress)}>
-          <div className={cn("text-xs font-medium text-info mb-1", theme.progressTitle)}>
+        <div className="mb-3 p-2 bg-info rounded-md border border-info">
+          <div className="text-xs font-medium text-info mb-1">
             Task Progress
           </div>
           <div className="flex items-center gap-2">
@@ -88,13 +83,13 @@ function InlineSlidingPlanPanelComponent({
 
               return (
                 <>
-                  <div className={cn("w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5", theme.progressTrack)}>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                     <div
                       className="bg-info h-2.5 rounded-full transition-all duration-300"
                       style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
-                  <span className={cn("text-xs text-foreground font-medium whitespace-nowrap", theme.progressCount)}>
+                  <span className="text-xs text-foreground font-medium whitespace-nowrap">
                     {totalTasks > 0 ? `${completedTasks}/${totalTasks}` : "0/0"}
                   </span>
                 </>
@@ -105,7 +100,7 @@ function InlineSlidingPlanPanelComponent({
 
         {/* Plan selector - only shown when multiple plans exist */}
         {plans.length > 1 && (
-          <div className={cn("mb-3 flex items-center justify-between", theme.planSelector)}>
+          <div className="mb-3 flex items-center justify-between">
             <Button variant={"ghost"}
               onClick={() =>
                 onChangePlan(Math.min(plans.length - 1, activePlanIndex + 1))
@@ -131,12 +126,12 @@ function InlineSlidingPlanPanelComponent({
         )}
 
         {/* Detailed Plan Steps */}
-        <div className={cn("rounded-md border border-muted/30", theme.stepsContainer)}>
-          <div className={cn("p-2 border-b border-muted/30 bg-muted", theme.stepsHeader)}>
+        <div className="rounded-md border border-muted/30">
+          <div className="p-2 border-b border-muted/30 bg-muted">
             <div className="font-medium text-xs">Step-by-Step Plan</div>
           </div>
 
-          <div className={cn("divide-y divide-muted/20 max-h-[calc(100vh-350px)] overflow-y-auto", theme.stepsList)}>
+          <div className="divide-y divide-muted/20 max-h-[calc(100vh-350px)] overflow-y-auto">
             {plan.plan && plan.plan.length > 0 ? (
               plan.plan.map((task, index) => {
                 // Extract task info with null checks
@@ -166,7 +161,7 @@ function InlineSlidingPlanPanelComponent({
                 }
 
                 return (
-                  <div key={index} className={cn("flex p-3 my-1", theme.stepItem)}>
+                  <div key={index} className="flex p-3 my-1">
                     <div className={`mr-2 mt-0.5 flex-shrink-0 text-muted`}>
                       {taskId}
                     </div>
@@ -191,7 +186,7 @@ function InlineSlidingPlanPanelComponent({
                 );
               })
             ) : (
-              <div className={cn("p-3 text-center text-muted italic", theme.stepsEmpty)}>
+              <div className="p-3 text-center text-muted italic">
                 <AlertCircle className="size-4 mx-auto mb-2 text-attention" />
                 <p className="text-xs">No plan has been detected yet</p>
                 <p className="text-xs mt-1">
@@ -218,8 +213,8 @@ function InlineSlidingPlanPanelComponent({
 
           // Only show the section if there are actual workstreams (not tasks or main)
           return workstreamEntries.length > 0 ? (
-            <div className={cn("mt-3 rounded-md border border-gray-200 dark:border-gray-800", theme.workstreams)}>
-              <div className={cn("p-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50", theme.workstreamsHeader)}>
+            <div className="mt-3 rounded-md border border-gray-200 dark:border-gray-800">
+              <div className="p-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
                 <div className="font-medium text-xs">Workstreams</div>
               </div>
               <div className="p-3">
@@ -245,7 +240,7 @@ function InlineSlidingPlanPanelComponent({
                     return (
                       <div
                         key={id}
-                        className={cn("flex items-center p-1.5 rounded", statusBg, theme.workstreamItem)}
+                        className={cn("flex items-center p-1.5 rounded", statusBg)}
                       >
                         <div className={`mr-1.5 ${statusColor}`}>
                           <StatusIcon className="h-3.5 w-3.5" />
