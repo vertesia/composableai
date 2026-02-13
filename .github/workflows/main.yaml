@@ -117,18 +117,14 @@ jobs:
     if: github.ref == 'refs/heads/preview'
     needs: composableai-build
     steps:
+      - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Bootstrap plugin template
-        run: npx --yes @vertesia/create-plugin@latest smoke-test-plugin -t "Vertesia Plugin" --yes
-
-      - name: Build bootstrapped project
-        run: |
-          cd smoke-test-plugin
-          pnpm build
+      - name: Smoke test published packages
+        run: ./.github/bin/test-template-smoke.sh --release-type release
 
   notify-repo-studio:
     runs-on: ubuntu-latest

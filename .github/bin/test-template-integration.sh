@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Script to test template integration using a local verdaccio registry
+# Script to test template integration using a local verdaccio registry.
 # Publishes all built packages to verdaccio, bootstraps a template, and builds it.
 #
 # Usage: test-template-integration.sh --release-type <snapshot|release> [--template <name>]
@@ -16,6 +16,9 @@ set -e
 #   pnpm build
 #   ./.github/bin/test-template-integration.sh --release-type snapshot
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib-template-test.sh"
+
 # =============================================================================
 # Configuration
 # =============================================================================
@@ -24,7 +27,6 @@ VERDACCIO_PORT=4873
 VERDACCIO_URL="http://localhost:${VERDACCIO_PORT}"
 VERDACCIO_DIR="/tmp/verdaccio-$$"
 VERDACCIO_PID=""
-TEST_PROJECT_DIR=""
 
 # =============================================================================
 # Functions
@@ -41,11 +43,7 @@ cleanup() {
     wait "$VERDACCIO_PID" 2>/dev/null || true
   fi
 
-  # Remove test project
-  if [ -n "$TEST_PROJECT_DIR" ] && [ -d "$TEST_PROJECT_DIR" ]; then
-    echo "Removing test project: ${TEST_PROJECT_DIR}"
-    rm -rf "$TEST_PROJECT_DIR"
-  fi
+  cleanup_test_project
 
   # Remove verdaccio data
   if [ -d "$VERDACCIO_DIR" ]; then
@@ -142,48 +140,6 @@ publish_to_verdaccio() {
   echo "Published ${count} packages to verdaccio"
 }
 
-bootstrap_template() {
-  echo ""
-  echo "=== Bootstrapping template ==="
-  echo "  Template: ${TEMPLATE_NAME}"
-  echo "  Branch: ${TEMPLATE_BRANCH}"
-  echo "  Tag: ${NPM_TAG}"
-
-  # Create project in /tmp to avoid interference from composableai's pnpm-workspace.yaml
-  TEST_PROJECT_DIR="/tmp/integration-test-plugin-$$"
-  local project_name
-  project_name=$(basename "$TEST_PROJECT_DIR")
-
-  # Use verdaccio for all npm operations
-  export npm_config_registry="${VERDACCIO_URL}"
-
-  # npx --yes: auto-install without prompting
-  # --yes after pkg: passed to create-plugin for non-interactive mode (long form avoids npx consuming it)
-  # Run from /tmp so the project is created outside the workspace
-  (cd /tmp && npx --yes "@vertesia/create-plugin@${NPM_TAG}" "$project_name" -t "${TEMPLATE_NAME}" --yes -b "${TEMPLATE_BRANCH}")
-}
-
-build_project() {
-  echo ""
-  echo "=== Building bootstrapped project ==="
-
-  if [ ! -d "$TEST_PROJECT_DIR" ]; then
-    echo "ERROR: Test project directory not found: ${TEST_PROJECT_DIR}"
-    exit 1
-  fi
-
-  cd "$TEST_PROJECT_DIR"
-
-  # Ensure pnpm uses verdaccio for @vertesia/* resolution
-  export npm_config_registry="${VERDACCIO_URL}"
-
-  pnpm build
-
-  echo ""
-  echo "=== Build succeeded ==="
-  cd ..
-}
-
 # =============================================================================
 # Argument parsing
 # =============================================================================
@@ -209,41 +165,22 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [ -z "$RELEASE_TYPE" ]; then
-  echo "Error: Missing required argument: --release-type"
-  echo "Usage: $0 --release-type <snapshot|release> [--template <name>]"
-  exit 1
-fi
-
-if [[ ! "$RELEASE_TYPE" =~ ^(release|snapshot)$ ]]; then
-  echo "Error: Invalid release type '$RELEASE_TYPE'. Must be 'release' or 'snapshot'."
-  exit 1
-fi
-
-# Derive npm tag and template branch from release type
-if [ "$RELEASE_TYPE" = "snapshot" ]; then
-  NPM_TAG="dev"
-  TEMPLATE_BRANCH="main"
-else
-  NPM_TAG="latest"
-  TEMPLATE_BRANCH="preview"
-fi
+validate_release_type
+derive_tag_and_branch
 
 # =============================================================================
 # Main flow
 # =============================================================================
 
-echo "Template Integration Test"
-echo "========================="
-echo "  Release type: ${RELEASE_TYPE}"
-echo "  NPM tag: ${NPM_TAG}"
-echo "  Template: ${TEMPLATE_NAME}"
-echo "  Template branch: ${TEMPLATE_BRANCH}"
-echo ""
+print_config "Template Integration Test"
 
 start_verdaccio
 publish_to_verdaccio
-bootstrap_template
+
+# Point npm/npx to verdaccio for bootstrap and build
+export npm_config_registry="${VERDACCIO_URL}"
+
+bootstrap_template "integration-test-plugin"
 build_project
 
 echo ""
