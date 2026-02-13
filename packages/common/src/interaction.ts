@@ -926,7 +926,7 @@ export interface BaseExecutionRun<P = any> {
     interaction_code?: string; // Interaction code name in case of in-code interaction (not stored in the DB as an Interaction document)
     /** Environment reference - populated with full object in API responses */
     environment: ExecutionEnvironmentRef;
-    modelId: string;
+    modelId?: string; //Can be undefined for virtual environments. In most cases should be defined.
     result_schema: JSONSchema4;
     ttl: number;
     status: ExecutionRunStatus;

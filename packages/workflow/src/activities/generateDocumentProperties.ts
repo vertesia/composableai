@@ -112,7 +112,7 @@ export async function generateDocumentProperties(
         generation_run_info: {
             id: infoRes.id,
             date: new Date().toISOString(),
-            model: infoRes.modelId,
+            model: infoRes.modelId ?? "",
         },
     }, { suppressWorkflows: true });
 
