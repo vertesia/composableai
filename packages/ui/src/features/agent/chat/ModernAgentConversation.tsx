@@ -169,6 +169,14 @@ interface ModernAgentConversationProps {
     /** Conversation theme — cascading overrides for all child components */
     theme?: ConversationTheme;
 
+    /** className overrides passed to every MessageItem */
+    messageItemClassNames?: Partial<Pick<import("./ModernAgentOutput/MessageItem").MessageItemProps,
+        'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
+        'timestampClassName' | 'senderClassName' | 'iconClassName' |
+        'detailsClassName' | 'artifactsClassName' | 'proseClassName'>>;
+    /** Sparse MESSAGE_STYLES overrides passed to every MessageItem */
+    messageStyleOverrides?: import("./ModernAgentOutput/MessageItem").MessageItemProps['messageStyleOverrides'];
+
     // Fusion fragment props
     /**
      * Data to provide to fusion-fragment code blocks for rendering.
@@ -682,6 +690,9 @@ function ModernAgentConversationInner({
     // External stop API
     stopRef,
     onStoppingChange,
+    // MessageItem className/style overrides
+    messageItemClassNames,
+    messageStyleOverrides,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -1579,6 +1590,8 @@ function ModernAgentConversationInner({
                         streamingMessages={streamingMessages}
                         onSendMessage={handleSendMessage}
                         thinkingMessageIndex={thinkingMessageIndex}
+                        messageItemClassNames={messageItemClassNames}
+                        messageStyleOverrides={messageStyleOverrides}
                     />
                 )}
 

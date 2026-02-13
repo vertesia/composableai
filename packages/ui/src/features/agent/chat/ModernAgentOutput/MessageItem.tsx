@@ -7,8 +7,6 @@ import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, MessageSquare, User } from "lucide-react";
 import React, { useEffect, useState, useMemo, memo, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { useConversationTheme } from "../theme/ConversationThemeContext";
-import { resolveMessageItemTheme } from "../theme/resolveMessageItemTheme";
 import { AskUserWidget } from "../AskUserWidget";
 import { useImageLightbox } from "../ImageLightbox";
 import { ThinkingMessages } from "../WaitingMessages";
@@ -68,6 +66,15 @@ function processContentForMarkdown(content: string | object, messageType: AgentM
     return content;
 }
 
+/** Per-message-type visual config (border, bg, icon color, sender label, icon component). */
+export interface MessageStyleConfig {
+    borderColor: string;
+    bgColor: string;
+    iconColor: string;
+    sender: string;
+    Icon: typeof Bot;
+}
+
 export interface MessageItemProps {
     message: AgentMessage;
     showPulsatingCircle?: boolean;
@@ -91,16 +98,14 @@ export interface MessageItemProps {
     detailsClassName?: string;
     /** Additional className for the artifacts section */
     artifactsClassName?: string;
+    /** Additional className for the prose/markdown wrapper */
+    proseClassName?: string;
+    /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
+    messageStyleOverrides?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
 }
 
 // Consolidated message styling - single source of truth
-const MESSAGE_STYLES: Record<AgentMessageType | 'default', {
-    borderColor: string;
-    bgColor: string;
-    iconColor: string;
-    sender: string;
-    Icon: typeof Bot;
-}> = {
+export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
     [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
     [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', bgColor: 'bg-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
     [AgentMessageType.IDLE]: { borderColor: 'border-l-info', bgColor: 'bg-info/50', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
@@ -131,6 +136,8 @@ function MessageItemComponent({
     iconClassName,
     detailsClassName,
     artifactsClassName,
+    proseClassName,
+    messageStyleOverrides,
 }: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
     const { client } = useUserSession();
@@ -144,15 +151,13 @@ function MessageItemComponent({
     urlCacheRef.current = urlCache;
     const { renderContent: exportContent, isDownloading: isExportingFile } = useDownloadFile({ client, toast });
 
-    // Theme context: flat class overrides (highest priority)
-    // Context is optional — MessageItem can be used standalone or within any conversation context
-    const conversationTheme = useConversationTheme();
-    const theme = resolveMessageItemTheme(conversationTheme?.messageItem);
-
-    // Get styles from consolidated config, with optional theme overrides
+    // Get styles from consolidated config, with optional sparse overrides
     const baseStyles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
-    const styleOverrides = (conversationTheme?.messageItem as any)?.messageStyles?.[message.type];
-    const styles = styleOverrides ? { ...baseStyles, ...styleOverrides } : baseStyles;
+    const defaultOverrides = messageStyleOverrides?.default;
+    const typeOverrides = messageStyleOverrides?.[message.type];
+    const styles = defaultOverrides || typeOverrides
+        ? { ...baseStyles, ...defaultOverrides, ...typeOverrides }
+        : baseStyles;
 
     // PERFORMANCE: Memoize message content extraction - only recalculates when message changes
     const messageContent = useMemo(() => {
@@ -275,7 +280,7 @@ function MessageItemComponent({
         // Handle object content (JSON)
         if (typeof content === "object") {
             return (
-                <pre className={cn("text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700", theme.jsonPre)}>
+                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700">
                     {JSON.stringify(content, null, 2)}
                 </pre>
             );
@@ -285,7 +290,7 @@ function MessageItemComponent({
         const runId = (message as any).workflow_run_id as string | undefined;
 
         return (
-            <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", theme.prose)} style={{ overflowWrap: 'anywhere' }}>
+            <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", proseClassName)} style={{ overflowWrap: 'anywhere' }}>
                 <MarkdownRenderer
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
@@ -391,32 +396,32 @@ function MessageItemComponent({
     };
 
     return (
-        <div className={cn("w-full max-w-full", className, theme.root)}>
+        <div className={cn("w-full max-w-full", className)}>
             <div
-                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden", styles.borderColor, cardClassName, theme.card)}
+                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden", styles.borderColor, cardClassName)}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
-                <div className={cn("flex items-center justify-between px-4 py-1.5", headerClassName, theme.header)}>
-                    <div className={cn("flex items-center gap-1.5", theme.headerLeft)}>
-                        <div className={cn(showPulsatingCircle ? "animate-fadeIn" : "", iconClassName, theme.icon)}>
+                <div className={cn("flex items-center justify-between px-4 py-1.5", headerClassName)}>
+                    <div className="flex items-center gap-1.5">
+                        <div className={cn(showPulsatingCircle ? "animate-fadeIn" : "", iconClassName)}>
                             {renderIcon()}
                         </div>
-                        <span className={cn("text-xs font-medium text-muted", senderClassName, theme.sender)}>{styles.sender}</span>
+                        <span className={cn("text-xs font-medium text-muted", senderClassName)}>{styles.sender}</span>
                         {workstreamId !== "main" && workstreamId !== "all" && (
-                            <Badge variant="default" className={cn("text-xs text-muted ml-1", theme.badge)}>
+                            <Badge variant="default" className="text-xs text-muted ml-1">
                                 {workstreamId}
                             </Badge>
                         )}
                     </div>
-                    <div className={cn("flex items-center gap-1.5 print:hidden", theme.headerRight)}>
-                        <span className={cn("text-[11px] text-muted/70", timestampClassName, theme.timestamp)}>
+                    <div className="flex items-center gap-1.5 print:hidden">
+                        <span className={cn("text-[11px] text-muted/70", timestampClassName)}>
                             {dayjs(message.timestamp).format("HH:mm:ss")}
                         </span>
                         <Button
                             variant="ghost" size="xs"
                             onClick={copyToClipboard}
-                            className={cn("text-muted/50 hover:text-muted h-5 w-5 p-0", theme.copyButton)}
+                            className="text-muted/50 hover:text-muted h-5 w-5 p-0"
                             title="Copy message"
                         >
                             <CopyIcon className="size-3" />
@@ -426,7 +431,7 @@ function MessageItemComponent({
                                 trigger={
                                     <Button
                                         variant="ghost" size="xs"
-                                        className={cn("text-muted/50 hover:text-muted h-5 w-5 p-0", theme.exportButton)}
+                                        className="text-muted/50 hover:text-muted h-5 w-5 p-0"
                                         title="Export message"
                                         disabled={isExportingFile}
                                     >
@@ -446,7 +451,7 @@ function MessageItemComponent({
                 </div>
 
                 {/* Message content */}
-                <div className={cn("px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden", contentClassName, theme.content)}>
+                <div className={cn("px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden", contentClassName)}>
                 {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                 {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
                     (() => {
@@ -467,19 +472,19 @@ function MessageItemComponent({
                         );
                     })()
                 ) : messageContent && (
-                    <div className={cn("message-content break-words w-full", theme.body)} style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                    <div className="message-content break-words w-full" style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                         {renderContent(processedContent || messageContent)}
                     </div>
                 )}
 
                 {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                 {artifactLinks.length > 0 && (
-                    <div className={cn("mt-3 text-xs", artifactsClassName, theme.artifacts)}>
-                        <div className={cn("font-medium text-muted mb-1", theme.artifactsLabel)}>Artifacts</div>
+                    <div className={cn("mt-3 text-xs", artifactsClassName)}>
+                        <div className="font-medium text-muted mb-1">Artifacts</div>
 
                         {/* Inline previews for image artifacts */}
                         {artifactLinks.some(a => a.isImage) && (
-                            <div className={cn("mb-2 flex flex-wrap gap-3", theme.artifactImages)}>
+                            <div className="mb-2 flex flex-wrap gap-3">
                                 {artifactLinks
                                     .filter(a => a.isImage)
                                     .map(({ displayName, artifactPath, url }) => (
@@ -502,7 +507,7 @@ function MessageItemComponent({
                         )}
 
                         {/* Buttons for all artifacts (files and images) */}
-                        <div className={cn("flex flex-wrap gap-2 print:hidden", theme.artifactButtons)}>
+                        <div className="flex flex-wrap gap-2 print:hidden">
                             {artifactLinks.map(({ displayName, artifactPath, url }) => (
                                 <Button
                                     key={artifactPath + url}
@@ -521,10 +526,10 @@ function MessageItemComponent({
 
                 {/* Optional details section */}
                 {message.details && (
-                    <div className={cn("mt-2 print:hidden", detailsClassName, theme.details)}>
+                    <div className={cn("mt-2 print:hidden", detailsClassName)}>
                         <button
                             onClick={() => setShowDetails(!showDetails)}
-                            className={cn("text-xs text-muted flex items-center", theme.detailsToggle)}
+                            className="text-xs text-muted flex items-center"
                         >
                             {showDetails ? "Hide" : "Show"} details
                             <svg
@@ -539,11 +544,11 @@ function MessageItemComponent({
                         </button>
 
                         {showDetails && (
-                            <div className={cn("mt-2 p-2 bg-muted border border-mixer-muted/40 rounded text-sm", theme.detailsContent)}>
+                            <div className="mt-2 p-2 bg-muted border border-mixer-muted/40 rounded text-sm">
                                 {typeof message.details === "string" ? (
                                     renderContent(message.details)
                                 ) : (
-                                    <pre className={cn("text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted", theme.jsonPre)}>
+                                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted">
                                         {JSON.stringify(message.details, null, 2)}
                                     </pre>
                                 )}
@@ -572,7 +577,9 @@ const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
         prevProps.senderClassName === nextProps.senderClassName &&
         prevProps.iconClassName === nextProps.iconClassName &&
         prevProps.detailsClassName === nextProps.detailsClassName &&
-        prevProps.artifactsClassName === nextProps.artifactsClassName
+        prevProps.artifactsClassName === nextProps.artifactsClassName &&
+        prevProps.proseClassName === nextProps.proseClassName &&
+        prevProps.messageStyleOverrides === nextProps.messageStyleOverrides
     );
 });
 

@@ -5,7 +5,7 @@ import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { useConversationTheme } from "../theme/ConversationThemeContext";
 import { resolveAllMessagesMixedTheme } from "../theme/resolveAllMessagesMixedTheme";
 import BatchProgressPanel from "./BatchProgressPanel";
-import MessageItem from "./MessageItem";
+import MessageItem, { type MessageItemProps } from "./MessageItem";
 import StreamingMessage from "./StreamingMessage";
 import ToolCallGroup from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
@@ -93,6 +93,13 @@ interface AllMessagesMixedProps {
     onSendMessage?: (message: string) => void;
     /** Stable index for thinking messages (changes on 4s interval) */
     thinkingMessageIndex?: number;
+    /** className overrides passed to every MessageItem */
+    messageItemClassNames?: Partial<Pick<MessageItemProps,
+        'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
+        'timestampClassName' | 'senderClassName' | 'iconClassName' |
+        'detailsClassName' | 'artifactsClassName' | 'proseClassName'>>;
+    /** Sparse MESSAGE_STYLES overrides passed to every MessageItem */
+    messageStyleOverrides?: MessageItemProps['messageStyleOverrides'];
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -105,6 +112,8 @@ function AllMessagesMixedComponent({
     streamingMessages = new Map(),
     onSendMessage,
     thinkingMessageIndex = 0,
+    messageItemClassNames,
+    messageStyleOverrides,
 }: AllMessagesMixedProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -509,10 +518,11 @@ function AllMessagesMixedComponent({
                                     return (
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
                                             <MessageItem
+                                                {...messageItemClassNames}
+                                                messageStyleOverrides={messageStyleOverrides}
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
-
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -600,10 +610,11 @@ function AllMessagesMixedComponent({
                                     return (
                                         <MessageErrorBoundary key={`${message.timestamp}-${groupIndex}`}>
                                             <MessageItem
+                                                {...messageItemClassNames}
+                                                messageStyleOverrides={messageStyleOverrides}
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
-
                                             />
                                         </MessageErrorBoundary>
                                     );

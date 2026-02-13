@@ -1,7 +1,6 @@
 import { createContext, createElement, useContext, type ReactNode } from "react";
 import { type AllMessagesMixedTheme } from "./resolveAllMessagesMixedTheme";
 import { type BatchProgressPanelTheme } from "./resolveBatchProgressPanelTheme";
-import { type MessageItemTheme } from "./resolveMessageItemTheme";
 import { type ModernAgentConversationTheme } from "./resolveModernAgentConversationTheme";
 import { type StreamingMessageTheme } from "./resolveStreamingMessageTheme";
 import { type ToolCallGroupTheme } from "./resolveToolCallGroupTheme";
@@ -20,7 +19,6 @@ export interface ConversationTheme {
     /** Current view mode. Set internally by ModernAgentConversation — do not set externally. */
     viewMode?: ViewMode;
     conversation?: ModernAgentConversationTheme;
-    messageItem?: MessageItemTheme;
     streamingMessage?: StreamingMessageTheme;
     toolCallGroup?: ToolCallGroupTheme;
     batchProgressPanel?: BatchProgressPanelTheme;

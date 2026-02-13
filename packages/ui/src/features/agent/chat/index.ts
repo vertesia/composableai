@@ -16,8 +16,8 @@ export {
     ConfirmationWidget, type AskUserOption, type AskUserWidgetProps, type ConfirmationWidgetProps
 } from "./AskUserWidget";
 // MessageItem widget and types for external use
-export { default as MessageItem } from "./ModernAgentOutput/MessageItem";
-export type { MessageItemProps } from "./ModernAgentOutput/MessageItem";
+export { default as MessageItem, MESSAGE_STYLES } from "./ModernAgentOutput/MessageItem";
+export type { MessageItemProps, MessageStyleConfig } from "./ModernAgentOutput/MessageItem";
 // MessagesContainer widget and types for external use
 export { default as MessagesContainer } from "./ModernAgentOutput/MessagesContainer";
 export type { MessagesContainerProps } from "./ModernAgentOutput/MessagesContainer";
@@ -40,10 +40,6 @@ export {
     resolveBatchProgressPanelTheme,
     type BatchProgressPanelThemeClasses, type BatchProgressPanelTheme,
 } from "./theme/resolveBatchProgressPanelTheme";
-export {
-    resolveMessageItemTheme,
-    type MessageItemThemeClasses, type MessageItemTheme, type MessageStyleConfig,
-} from "./theme/resolveMessageItemTheme";
 export {
     resolveModernAgentConversationTheme,
     type ModernAgentConversationThemeClasses, type ModernAgentConversationTheme,
