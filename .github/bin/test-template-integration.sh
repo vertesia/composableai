@@ -83,7 +83,6 @@ packages:
   '@vertesia/*':
     access: $all
     publish: $all
-    proxy: npmjs
   '@llumiverse/*':
     access: $all
     publish: $all
