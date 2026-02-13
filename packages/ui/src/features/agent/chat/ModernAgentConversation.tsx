@@ -118,6 +118,8 @@ interface ModernAgentConversationProps {
     viewMode?: "stacked" | "sliding";
     /** Called when view mode changes (for external control) */
     onViewModeChange?: (mode: "stacked" | "sliding") => void;
+    /** Called when follow-up input availability is determined (after messages load) */
+    onShowInputChange?: (canSendFollowUp: boolean) => void;
 
     // Document search props (render prop for custom search UI)
     /** Render custom document search UI - if provided, shows search button */
@@ -662,6 +664,7 @@ function ModernAgentConversationInner({
     // External view mode control
     viewMode: controlledViewMode,
     onViewModeChange: onViewModeChangeProp,
+    onShowInputChange,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -1251,6 +1254,25 @@ function ModernAgentConversationInner({
     useEffect(() => {
         onWorkstreamStatusChange?.(workstreamStatusMap);
     }, [workstreamStatusMap, onWorkstreamStatusChange]);
+
+    // Notify parent when input availability is determined
+    useEffect(() => {
+        if (messages.length === 0) return;
+        // TERMINATED detected from message stream (fast path)
+        if (!showInput) {
+            onShowInputChange?.(false);
+            return;
+        }
+        // Terminal workflow status from API (COMPLETED, FAILED, CANCELED, TIMED_OUT)
+        if (workflowStatus && workflowStatus !== "RUNNING") {
+            onShowInputChange?.(false);
+            return;
+        }
+        // Active: workflow confirmed running
+        if (workflowStatus !== null) {
+            onShowInputChange?.(true);
+        }
+    }, [showInput, workflowStatus, messages.length, onShowInputChange]);
 
     // Drag and drop handlers for full-panel file upload
     const handleDragEnter = useCallback((e: React.DragEvent) => {
