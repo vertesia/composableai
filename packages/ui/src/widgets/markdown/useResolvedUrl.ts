@@ -5,6 +5,7 @@ import {
     getArtifactCacheKey,
     getFileCacheKey,
 } from '../../features/agent/chat/useArtifactUrlCache';
+
 export type UrlScheme =
     | 'artifact'
     | 'image'
