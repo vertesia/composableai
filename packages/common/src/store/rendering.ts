@@ -54,6 +54,10 @@ export interface MarkdownRenditionVars extends BaseRenditionVars {
     templateUrl?: string;
     /** Optional logo URL for template variable `logo-path` (studio-hosted URL) */
     templateLogoUrl?: string;
+    /** Template file via artifact:/store: protocol (takes precedence over templateUrl) */
+    templatePath?: string;
+    /** Logo file via artifact:/store: protocol (takes precedence over templateLogoUrl) */
+    logoPath?: string;
     /** Use Vertesia default template if no templateUrl provided (default: true for pdf) */
     useDefaultTemplate?: boolean;
     /** Additional pandoc command-line options */
@@ -95,6 +99,10 @@ export interface RenderMarkdownPayload {
     templateUrl?: string;
     /** Optional logo URL for template variable `logo-path` (studio-hosted URL) */
     templateLogoUrl?: string;
+    /** Template file via artifact:/store: protocol (takes precedence over templateUrl) */
+    templatePath?: string;
+    /** Logo file via artifact:/store: protocol (takes precedence over templateLogoUrl) */
+    logoPath?: string;
     /** Use Vertesia default template if no templateUrl provided (default: true for pdf) */
     useDefaultTemplate?: boolean;
     /** Additional pandoc command-line options */
