@@ -1,5 +1,5 @@
-import { JSONSchema4 } from "json-schema";
 import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
+import { JSONSchema } from "../json-schema.js";
 import type { WorkflowInput } from "./dsl-workflow.js";
 
 export enum ContentEventName {
@@ -581,7 +581,7 @@ export interface WorkflowInteractionVars {
         environment: string,
         model: string
     },
-    interactionParamsSchema?: JSONSchema4
+    interactionParamsSchema?: JSONSchema,
     collection_id?: string;
     /**
      * Optional version of the interaction to use when restoring conversations.
