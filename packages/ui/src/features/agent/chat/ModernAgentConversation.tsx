@@ -114,9 +114,9 @@ interface ModernAgentConversationProps {
     onWorkstreamStatusChange?: (statusMap: Map<number, Map<string, "pending" | "in_progress" | "completed" | "skipped">>) => void;
 
     /** Controlled view mode — when provided, overrides internal state */
-    viewMode?: "stacked" | "sliding";
+    viewMode?: ViewMode;
     /** Called when view mode changes (for external control) */
-    onViewModeChange?: (mode: "stacked" | "sliding") => void;
+    onViewModeChange?: (mode: ViewMode) => void;
     /** Called when follow-up input availability is determined (after messages load) */
     onShowInputChange?: (canSendFollowUp: boolean) => void;
     /** Ref populated with the stop handler — call to interrupt the active agent. null when stop unavailable. */
@@ -738,9 +738,9 @@ function ModernAgentConversationInner({
     const [isCompleted, setIsCompleted] = useState(false);
     const [isSending, setIsSending] = useState(false);
     // View mode: controlled externally when props are provided, otherwise managed locally
-    const [internalViewMode, setInternalViewMode] = useState<"stacked" | "sliding">("sliding");
+    const [internalViewMode, setInternalViewMode] = useState<ViewMode>("sliding");
     const viewMode = controlledViewMode ?? internalViewMode;
-    const handleViewModeChange = useCallback((mode: "stacked" | "sliding") => {
+    const handleViewModeChange = useCallback((mode: ViewMode) => {
         if (onViewModeChangeProp) {
             onViewModeChangeProp(mode);
         } else {
