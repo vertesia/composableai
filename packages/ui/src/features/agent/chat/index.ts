@@ -45,10 +45,6 @@ export {
     type ModernAgentConversationThemeClasses, type ModernAgentConversationTheme,
 } from "./theme/resolveModernAgentConversationTheme";
 export {
-    resolveStreamingMessageTheme,
-    type StreamingMessageThemeClasses, type StreamingMessageTheme,
-} from "./theme/resolveStreamingMessageTheme";
-export {
     resolveWorkstreamTabsTheme,
     type WorkstreamTabsThemeClasses, type WorkstreamTabsTheme,
 } from "./theme/resolveWorkstreamTabsTheme";

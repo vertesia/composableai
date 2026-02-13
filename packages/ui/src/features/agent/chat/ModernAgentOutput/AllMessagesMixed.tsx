@@ -6,7 +6,7 @@ import { useConversationTheme, type ViewMode } from "../theme/ConversationThemeC
 import { resolveAllMessagesMixedTheme } from "../theme/resolveAllMessagesMixedTheme";
 import BatchProgressPanel from "./BatchProgressPanel";
 import MessageItem, { type MessageItemProps } from "./MessageItem";
-import StreamingMessage from "./StreamingMessage";
+import StreamingMessage, { type StreamingMessageProps } from "./StreamingMessage";
 import ToolCallGroup, { type ToolCallGroupProps } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
 import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, StreamingData } from "./utils";
@@ -106,6 +106,10 @@ interface AllMessagesMixedProps {
         'toolBadgeClassName' | 'itemClassName' | 'itemHeaderClassName' | 'itemContentClassName'>>;
     /** Hide ToolCallGroup in this view mode */
     hideToolCallsInViewMode?: ViewMode[];
+    /** className overrides passed to every StreamingMessage */
+    streamingMessageClassNames?: Partial<Pick<StreamingMessageProps,
+        'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
+        'proseClassName' | 'senderClassName' | 'iconClassName'>>;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -122,6 +126,7 @@ function AllMessagesMixedComponent({
     messageStyleOverrides,
     toolCallGroupClassNames,
     hideToolCallsInViewMode,
+    streamingMessageClassNames,
 }: AllMessagesMixedProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -497,11 +502,11 @@ function AllMessagesMixedComponent({
                                     return (
                                         <StreamingMessage
                                             key={`streaming-${group.streamingId}-${groupIndex}`}
+                                            {...streamingMessageClassNames}
                                             text={group.text}
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
-
                                         />
                                     );
                                 } else {
@@ -542,11 +547,11 @@ function AllMessagesMixedComponent({
                             {incompleteStreaming.map(({ id, data }) => (
                                 <StreamingMessage
                                     key={`streaming-incomplete-${id}`}
+                                    {...streamingMessageClassNames}
                                     text={data.text}
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
-
                                 />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
@@ -590,11 +595,11 @@ function AllMessagesMixedComponent({
                                     return (
                                         <StreamingMessage
                                             key={`streaming-${group.streamingId}-${groupIndex}`}
+                                            {...streamingMessageClassNames}
                                             text={group.text}
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
-
                                         />
                                     );
                                 } else {
@@ -636,22 +641,22 @@ function AllMessagesMixedComponent({
                             {recentThinking.map((thinking, idx) => (
                                 <StreamingMessage
                                     key={`thinking-${thinking.timestamp}-${idx}`}
+                                    {...streamingMessageClassNames}
                                     text={processThinkingPlaceholder(thinking.message || '', thinkingMessageIndex)}
                                     workstreamId={getWorkstreamId(thinking)}
                                     isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
                                     timestamp={thinking.timestamp}
-
                                 />
                             ))}
                             {/* Incomplete streaming - no error boundary to avoid interrupting streaming */}
                             {incompleteStreaming.map(({ id, data }) => (
                                 <StreamingMessage
                                     key={`streaming-incomplete-${id}`}
+                                    {...streamingMessageClassNames}
                                     text={data.text}
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
-
                                 />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}

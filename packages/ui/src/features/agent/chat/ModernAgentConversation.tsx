@@ -184,6 +184,11 @@ interface ModernAgentConversationProps {
     /** Hide ToolCallGroup in this view mode */
     hideToolCallsInViewMode?: ViewMode[];
 
+    /** className overrides passed to every StreamingMessage */
+    streamingMessageClassNames?: Partial<Pick<import("./ModernAgentOutput/StreamingMessage").StreamingMessageProps,
+        'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
+        'proseClassName' | 'senderClassName' | 'iconClassName'>>;
+
     // Fusion fragment props
     /**
      * Data to provide to fusion-fragment code blocks for rendering.
@@ -703,6 +708,8 @@ function ModernAgentConversationInner({
     // ToolCallGroup className overrides + view mode visibility
     toolCallGroupClassNames,
     hideToolCallsInViewMode,
+    // StreamingMessage className overrides
+    streamingMessageClassNames,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -1604,6 +1611,7 @@ function ModernAgentConversationInner({
                         messageStyleOverrides={messageStyleOverrides}
                         toolCallGroupClassNames={toolCallGroupClassNames}
                         hideToolCallsInViewMode={hideToolCallsInViewMode}
+                        streamingMessageClassNames={streamingMessageClassNames}
                     />
                 )}
 
