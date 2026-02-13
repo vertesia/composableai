@@ -187,6 +187,8 @@ interface ModernAgentConversationProps {
     workingIndicatorClassName?: string;
     /** className override for the message list container */
     messageListClassName?: string;
+    /** Custom component to render store/document links instead of default NavLink navigation */
+    StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
 
     // Fusion fragment props
     /**
@@ -714,6 +716,7 @@ function ModernAgentConversationInner({
     // AllMessagesMixed className overrides
     workingIndicatorClassName,
     messageListClassName,
+    StoreLinkComponent,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -1613,6 +1616,7 @@ function ModernAgentConversationInner({
                         hideWorkstreamTabs={hideWorkstreamTabs}
                         workingIndicatorClassName={workingIndicatorClassName}
                         messageListClassName={messageListClassName}
+                        StoreLinkComponent={StoreLinkComponent}
                     />
                 )}
 

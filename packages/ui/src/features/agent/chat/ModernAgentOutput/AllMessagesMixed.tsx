@@ -109,6 +109,8 @@ interface AllMessagesMixedProps {
     workingIndicatorClassName?: string;
     /** className override for the message list container (spacing/layout) */
     messageListClassName?: string;
+    /** Custom component to render store/document links instead of default NavLink navigation */
+    StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -131,6 +133,7 @@ function AllMessagesMixedComponent({
     hideWorkstreamTabs,
     workingIndicatorClassName,
     messageListClassName,
+    StoreLinkComponent,
 }: AllMessagesMixedProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -539,6 +542,7 @@ function AllMessagesMixedComponent({
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
+                                                StoreLinkComponent={StoreLinkComponent}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -634,6 +638,7 @@ function AllMessagesMixedComponent({
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
+                                                StoreLinkComponent={StoreLinkComponent}
                                             />
                                         </MessageErrorBoundary>
                                     );

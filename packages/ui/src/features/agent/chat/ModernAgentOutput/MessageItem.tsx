@@ -102,6 +102,8 @@ export interface MessageItemProps {
     proseClassName?: string;
     /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
     messageStyleOverrides?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
+    /** Custom component to render store/document links instead of default NavLink navigation */
+    StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
 }
 
 /** className overrides for MessageItem — subset of MessageItemProps containing only className props. */
@@ -144,6 +146,7 @@ function MessageItemComponent({
     artifactsClassName,
     proseClassName,
     messageStyleOverrides,
+    StoreLinkComponent,
 }: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
     const { client } = useUserSession();
@@ -252,6 +255,10 @@ function MessageItemComponent({
         a: ({ node, ref, "data-scheme": scheme, ...props }: { node?: any; ref?: any; "data-scheme"?: string; href?: string; children?: React.ReactNode }) => {
             const href = props.href || "";
             if (scheme === "store" || scheme === "document" || href.includes("/store/objects")) {
+                if (StoreLinkComponent) {
+                    const documentId = href.split("/store/objects/")[1] || href.replace(/^(store:|document:\/\/)/, "");
+                    return <StoreLinkComponent href={href} documentId={documentId}>{props.children}</StoreLinkComponent>;
+                }
                 return (
                     <NavLink
                         href={href}
@@ -279,7 +286,7 @@ function MessageItemComponent({
                 />
             );
         },
-    }), [openImage]);
+    }), [openImage, StoreLinkComponent]);
 
     // Render content with markdown support - all messages now rendered as markdown
     const renderContent = (content: string | object) => {
