@@ -1528,7 +1528,7 @@ function ModernAgentConversationInner({
 
                 {/* Header - flex-shrink-0 to prevent shrinking */}
                 {!hideHeader && (
-                    <div className={cn("flex-shrink-0", theme.headerWrapper)}>
+                    <div className="flex-shrink-0">
                         <Header
                             title={actualTitle}
                             isCompleted={isCompleted}
@@ -1585,7 +1585,7 @@ function ModernAgentConversationInner({
                 {/* Show workflow status message when not running, or show input when running/unknown */}
                 {/* Input area - flex-shrink-0 to stay pinned at bottom, with iOS safe area support */}
                 {!hideMessageInput && (
-                    <div className={cn("flex-shrink-0", theme.inputWrapper)} style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                    <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
                         {workflowStatus && workflowStatus !== "RUNNING" ? (
                             <MessageBox
                                 status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
@@ -1631,7 +1631,7 @@ function ModernAgentConversationInner({
 
             {/* Plan Panel Area - only rendered when panel should be shown */}
             {!hidePlanPanel && showSlidingPanel && (
-                <div className={cn("w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l", theme.planPanel)}>
+                <div className="w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l">
                     <InlineSlidingPlanPanel
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}

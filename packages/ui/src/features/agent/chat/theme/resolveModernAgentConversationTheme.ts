@@ -10,14 +10,8 @@ export interface ModernAgentConversationThemeClasses {
     root?: ThemeClassValue;
     /** Conversation area: "flex flex-col min-h-0 border-0" + responsive width */
     conversationArea?: ThemeClassValue;
-    /** Header wrapper: "flex-shrink-0" */
-    headerWrapper?: ThemeClassValue;
     /** Empty state (no messages): "flex-1 flex flex-col items-center justify-center ..." */
     emptyState?: ThemeClassValue;
-    /** Input wrapper: "flex-shrink-0" */
-    inputWrapper?: ThemeClassValue;
-    /** Plan panel: "w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t ..." */
-    planPanel?: ThemeClassValue;
     /** Drag overlay: "absolute inset-0 ..." */
     dragOverlay?: ThemeClassValue;
 }
@@ -37,11 +31,8 @@ type ClassKey = keyof ModernAgentConversationThemeClasses;
 const MODERN_AGENT_CONVERSATION_TREE: ClassTree = {
     root: {
         conversationArea: {
-            headerWrapper: {},
             emptyState: {},
-            inputWrapper: {},
         },
-        planPanel: {},
         dragOverlay: {},
     },
 };
