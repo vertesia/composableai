@@ -210,12 +210,11 @@ export function ModernAgentConversation(
                     runId: run.run_id,
                     workflowId: run.workflow_id,
                 };
-        let content = (
+        return (
             <SkillWidgetProvider>
                 <ModernAgentConversationInner {...props} run={execRun} />
             </SkillWidgetProvider>
         );
-        return content;
     } else if (startWorkflow) {
         // If we have startWorkflow capability but no run yet
         return <StartWorkflowView {...props} />;
