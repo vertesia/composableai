@@ -168,7 +168,6 @@ interface ModernAgentConversationProps {
 
     /** Conversation theme — cascading overrides for all child components */
     theme?: ConversationTheme;
-
     /** className overrides passed to every MessageItem */
     messageItemClassNames?: Partial<Pick<import("./ModernAgentOutput/MessageItem").MessageItemProps,
         'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
@@ -188,6 +187,11 @@ interface ModernAgentConversationProps {
     streamingMessageClassNames?: Partial<Pick<import("./ModernAgentOutput/StreamingMessage").StreamingMessageProps,
         'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
         'proseClassName' | 'senderClassName' | 'iconClassName'>>;
+
+    /** className override for the working indicator container */
+    workingIndicatorClassName?: string;
+    /** className override for the message list container */
+    messageListClassName?: string;
 
     // Fusion fragment props
     /**
@@ -710,6 +714,9 @@ function ModernAgentConversationInner({
     hideToolCallsInViewMode,
     // StreamingMessage className overrides
     streamingMessageClassNames,
+    // AllMessagesMixed className overrides
+    workingIndicatorClassName,
+    messageListClassName,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -1612,6 +1619,8 @@ function ModernAgentConversationInner({
                         toolCallGroupClassNames={toolCallGroupClassNames}
                         hideToolCallsInViewMode={hideToolCallsInViewMode}
                         streamingMessageClassNames={streamingMessageClassNames}
+                        workingIndicatorClassName={workingIndicatorClassName}
+                        messageListClassName={messageListClassName}
                     />
                 )}
 
