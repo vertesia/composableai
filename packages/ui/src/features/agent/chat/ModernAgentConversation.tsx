@@ -17,7 +17,7 @@ import { FusionFragmentProvider } from "@vertesia/fusion-ux";
 import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
-import { ConversationThemeProvider, useConversationTheme, type ConversationTheme } from "./theme/ConversationThemeContext";
+import { ConversationThemeProvider, useConversationTheme, type ConversationTheme, type ViewMode } from "./theme/ConversationThemeContext";
 import { resolveModernAgentConversationTheme } from "./theme/resolveModernAgentConversationTheme";
 import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
@@ -182,7 +182,7 @@ interface ModernAgentConversationProps {
         'rootClassName' | 'headerClassName' | 'senderClassName' | 'toolSummaryClassName' |
         'toolBadgeClassName' | 'itemClassName' | 'itemHeaderClassName' | 'itemContentClassName'>>;
     /** Hide ToolCallGroup in this view mode */
-    hideToolCallsInViewMode?: ("stacked" | "sliding")[];
+    hideToolCallsInViewMode?: ViewMode[];
 
     // Fusion fragment props
     /**

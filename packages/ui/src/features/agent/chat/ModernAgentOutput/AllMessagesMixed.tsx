@@ -2,7 +2,7 @@ import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@ver
 import { cn } from "@vertesia/ui/core";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { useConversationTheme } from "../theme/ConversationThemeContext";
+import { useConversationTheme, type ViewMode } from "../theme/ConversationThemeContext";
 import { resolveAllMessagesMixedTheme } from "../theme/resolveAllMessagesMixedTheme";
 import BatchProgressPanel from "./BatchProgressPanel";
 import MessageItem, { type MessageItemProps } from "./MessageItem";
@@ -105,7 +105,7 @@ interface AllMessagesMixedProps {
         'rootClassName' | 'headerClassName' | 'senderClassName' | 'toolSummaryClassName' |
         'toolBadgeClassName' | 'itemClassName' | 'itemHeaderClassName' | 'itemContentClassName'>>;
     /** Hide ToolCallGroup in this view mode */
-    hideToolCallsInViewMode?: ("stacked" | "sliding")[];
+    hideToolCallsInViewMode?: ViewMode[];
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)

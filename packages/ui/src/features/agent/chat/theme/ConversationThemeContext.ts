@@ -5,10 +5,7 @@ import { type ModernAgentConversationTheme } from "./resolveModernAgentConversat
 import { type StreamingMessageTheme } from "./resolveStreamingMessageTheme";
 import { type WorkstreamTabsTheme } from "./resolveWorkstreamTabsTheme";
 
-import { type ViewMode } from "./themeUtils";
-
-// Re-export shared primitives so existing imports from this module still work
-export { type ViewMode } from "./themeUtils";
+export type ViewMode = "stacked" | "sliding";
 
 // ---------------------------------------------------------------------------
 // Top-level conversation theme
