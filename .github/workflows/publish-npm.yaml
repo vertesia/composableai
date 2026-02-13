@@ -62,3 +62,61 @@ jobs:
               --release-type "${{ inputs.release_type }}" \
               --bump-type "${{ inputs.bump_type }}" \
               --dry-run "${{ inputs.dry_run }}"
+
+      # Template integration test using local verdaccio registry (dry-run only)
+      - name: Template integration test (verdaccio)
+        if: inputs.dry_run == true
+        run: ./.github/bin/test-template-integration.sh --release-type "${{ inputs.release_type }}"
+
+  # ============================================================
+  # Integration test after real publish (non-dry-run only)
+  # Verifies published packages work by bootstrapping a template.
+  # ============================================================
+
+  integration-test:
+    name: Integration test (published packages)
+    runs-on: ubuntu-latest
+    needs: publish
+    if: inputs.dry_run == false
+    steps:
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Determine npm tag and template branch
+        id: npm-tag
+        run: |
+          if [ "${{ inputs.release_type }}" = "snapshot" ]; then
+            echo "tag=dev" >> "$GITHUB_OUTPUT"
+            echo "branch=main" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+            echo "branch=preview" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for npm propagation
+        run: |
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          PACKAGE="@vertesia/create-plugin"
+          for i in $(seq 1 5); do
+            echo "Attempt $i/5: Checking ${PACKAGE}@${TAG}..."
+            VERSION=$(npm view "${PACKAGE}@${TAG}" version 2>/dev/null || true)
+            if [ -n "$VERSION" ]; then
+              echo "Found ${PACKAGE}@${TAG} = ${VERSION}"
+              exit 0
+            fi
+            DELAY=$((30 * i))
+            echo "Not yet available. Waiting ${DELAY}s..."
+            sleep $DELAY
+          done
+          echo "ERROR: Package not available after retries"
+          exit 1
+
+      - name: Bootstrap and build template
+        run: |
+          TAG="${{ steps.npm-tag.outputs.tag }}"
+          BRANCH="${{ steps.npm-tag.outputs.branch }}"
+          npx --yes "@vertesia/create-plugin@${TAG}" integration-test-plugin -t "Vertesia Plugin" --yes -b "${BRANCH}"
+          cd integration-test-plugin
+          pnpm build
