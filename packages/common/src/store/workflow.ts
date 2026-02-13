@@ -584,6 +584,12 @@ export interface WorkflowInteractionVars {
     interactionParamsSchema?: JSONSchema4
     collection_id?: string;
     /**
+     * The token threshold in thousands (K) for creating checkpoints.
+     * If total tokens exceed this value, a checkpoint will be created.
+     * If not specified, default value of 150K tokens will be used.
+     */
+    checkpoint_tokens?: number;
+    /**
      * Optional version of the interaction to use when restoring conversations.
      * If not specified, the latest version will be used.
      */
