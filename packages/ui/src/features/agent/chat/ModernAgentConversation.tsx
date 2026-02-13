@@ -17,7 +17,7 @@ import { FusionFragmentProvider } from "@vertesia/fusion-ux";
 import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
-import { ConversationThemeProvider, useConversationTheme, type ConversationTheme, type ViewMode } from "./theme/ConversationThemeContext";
+import { type ViewMode } from "./ModernAgentOutput/AllMessagesMixed";
 import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
@@ -170,8 +170,8 @@ interface ModernAgentConversationProps {
     /** Additional className for the root container */
     className?: string;
 
-    /** Conversation theme — cascading overrides for all child components */
-    theme?: ConversationTheme;
+    /** Raw CSS string injected after the default .vprose styles. Overrides markdown rendering. */
+    markdownStyles?: string;
     /** className overrides passed to every MessageItem */
     messageItemClassNames?: Partial<Pick<import("./ModernAgentOutput/MessageItem").MessageItemProps,
         'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
@@ -215,7 +215,7 @@ interface ModernAgentConversationProps {
 export function ModernAgentConversation(
     props: ModernAgentConversationProps,
 ) {
-    const { run, startWorkflow, theme, resolveStoreUrl } = props;
+    const { run, startWorkflow, resolveStoreUrl } = props;
 
     if (run) {
         // If we have a run, convert it to AsyncExecutionResult format if needed
@@ -234,9 +234,7 @@ export function ModernAgentConversation(
         if (resolveStoreUrl) {
             content = <SchemeRouteProvider overrides={{ resolveStoreUrl }}>{content}</SchemeRouteProvider>;
         }
-        return theme
-            ? <ConversationThemeProvider theme={theme}>{content}</ConversationThemeProvider>
-            : content;
+        return content;
     } else if (startWorkflow) {
         // If we have startWorkflow capability but no run yet
         return <StartWorkflowView {...props} />;
@@ -700,6 +698,7 @@ function ModernAgentConversationInner({
     getMessageContext,
     // Styling props
     className,
+    markdownStyles,
     inputContainerClassName,
     inputClassName,
     // Fusion fragment data
@@ -733,9 +732,6 @@ function ModernAgentConversationInner({
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
-    // Theme context: viewMode + markdownStyles only
-    const outerTheme = useConversationTheme();
-
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const conversationRef = useRef<HTMLDivElement | null>(null);
     const [messages, setMessages] = useState<AgentMessage[]>([]);
@@ -751,8 +747,6 @@ function ModernAgentConversationInner({
             setInternalViewMode(mode);
         }
     }, [onViewModeChangeProp]);
-    // Re-provide theme context with runtime viewMode so children read it from context
-    const themeWithViewMode = useMemo(() => ({ ...outerTheme, viewMode }), [outerTheme, viewMode]);
     const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(!isModal);
     const [isStopping, setIsStopping] = useState(false);
     // Keep track of multiple plans and their timestamps
@@ -1539,7 +1533,6 @@ function ModernAgentConversationInner({
 
     // Main content - wrapped with FusionFragmentProvider when fusionData is provided
     const mainContent = (
-        <ConversationThemeProvider theme={themeWithViewMode}>
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
         <div
@@ -1631,6 +1624,8 @@ function ModernAgentConversationInner({
                         hideToolCallsInViewMode={hideToolCallsInViewMode}
                         streamingMessageClassNames={streamingMessageClassNames}
                         batchProgressPanelClassNames={batchProgressPanelClassNames}
+                        viewMode={viewMode}
+                        markdownStyles={markdownStyles}
                         hideWorkstreamTabs={hideWorkstreamTabs}
                         workingIndicatorClassName={workingIndicatorClassName}
                         messageListClassName={messageListClassName}
@@ -1720,7 +1715,6 @@ function ModernAgentConversationInner({
         </div>
         </ImageLightboxProvider>
         </ArtifactUrlCacheProvider>
-        </ConversationThemeProvider>
     );
 
     // Wrap with FusionFragmentProvider when fusionData is provided

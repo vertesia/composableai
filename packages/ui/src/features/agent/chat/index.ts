@@ -28,6 +28,5 @@ export type { HeaderProps } from "./ModernAgentOutput/Header";
 export { default as StreamingMessage } from "./ModernAgentOutput/StreamingMessage";
 export type { StreamingMessageProps } from "./ModernAgentOutput/StreamingMessage";
 export * from "./SkillWidgetProvider";
-// Conversation theming — shared primitives & context
-export { ConversationThemeProvider, useConversationTheme } from "./theme/ConversationThemeContext";
-export type { ConversationTheme, ViewMode } from "./theme/ConversationThemeContext";
+// ViewMode type for external use
+export type { ViewMode } from "./ModernAgentOutput/AllMessagesMixed";

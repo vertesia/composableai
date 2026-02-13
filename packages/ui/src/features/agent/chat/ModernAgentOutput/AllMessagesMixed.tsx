@@ -2,7 +2,7 @@ import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@ver
 import { cn } from "@vertesia/ui/core";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { useConversationTheme, type ViewMode } from "../theme/ConversationThemeContext";
+export type ViewMode = "stacked" | "sliding";
 import BatchProgressPanel, { type BatchProgressPanelProps } from "./BatchProgressPanel";
 import MessageItem, { type MessageItemProps } from "./MessageItem";
 import StreamingMessage, { type StreamingMessageProps } from "./StreamingMessage";
@@ -113,6 +113,10 @@ interface AllMessagesMixedProps {
     batchProgressPanelClassNames?: Partial<Pick<BatchProgressPanelProps,
         'className' | 'headerClassName' | 'senderClassName' | 'progressBarClassName' |
         'itemListClassName' | 'itemClassName' | 'summaryClassName'>>;
+    /** Current view mode — "stacked" shows all messages, "sliding" shows important only */
+    viewMode?: ViewMode;
+    /** Raw CSS string injected after the default .vprose styles */
+    markdownStyles?: string;
     /** Hide the workstream tabs entirely */
     hideWorkstreamTabs?: boolean;
     /** className override for the working indicator container */
@@ -137,16 +141,14 @@ function AllMessagesMixedComponent({
     hideToolCallsInViewMode,
     streamingMessageClassNames,
     batchProgressPanelClassNames,
+    viewMode = "stacked",
+    markdownStyles,
     hideWorkstreamTabs,
     workingIndicatorClassName,
     messageListClassName,
 }: AllMessagesMixedProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
-
-    // Theme context: only viewMode and markdownStyles are read from context
-    const conversationTheme = useConversationTheme();
-    const viewMode = conversationTheme?.viewMode ?? "stacked";
 
     // PERFORMANCE: Throttle auto-scroll to prevent layout thrashing
     // During streaming, scrollIntoView was being called 30+ times/sec
@@ -458,7 +460,7 @@ function AllMessagesMixedComponent({
                     color: var(--color-foreground, #f9fafb);
                 }
             `}</style>
-            {conversationTheme?.markdownStyles && <style>{conversationTheme.markdownStyles}</style>}
+            {markdownStyles && <style>{markdownStyles}</style>}
 
             {/* Workstream tabs with completion indicators */}
             {!hideWorkstreamTabs && (
