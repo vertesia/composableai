@@ -23,14 +23,24 @@ function applyBranchOverride(repository: string, branch?: string): string {
 /**
  * Select a template (only prompts if multiple templates are available)
  * Returns the selected template definition with branch override applied if provided
+ * @param branchOverride - Optional branch to use instead of the template's default
+ * @param templateName - Optional template name for non-interactive selection
  */
-export async function selectTemplate(branchOverride?: string): Promise<TemplateDefinition> {
+export async function selectTemplate(branchOverride?: string, templateName?: string): Promise<TemplateDefinition> {
   const templates = config.templates;
 
   let selectedTemplate: TemplateDefinition;
 
-  // If only one template, return it directly
-  if (templates.length === 1) {
+  if (templateName) {
+    // Non-interactive: find template by name (case-insensitive)
+    const match = templates.find(t => t.name.toLowerCase() === templateName.toLowerCase());
+    if (!match) {
+      const available = templates.map(t => `  - ${t.name}`).join('\n');
+      throw new Error(`Template "${templateName}" not found. Available templates:\n${available}`);
+    }
+    selectedTemplate = match;
+  } else if (templates.length === 1) {
+    // If only one template, return it directly
     selectedTemplate = templates[0];
   } else {
     // Multiple templates - let user choose

@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "chalk": "^5.3.0",
+    "commander": "^14.0.2",
     "degit": "^2.8.4",
     "prompts": "^2.4.2"
   },
