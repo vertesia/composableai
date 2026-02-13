@@ -114,6 +114,11 @@ interface ModernAgentConversationProps {
     /** Called when workstream status changes (for external plan panel) */
     onWorkstreamStatusChange?: (statusMap: Map<number, Map<string, "pending" | "in_progress" | "completed" | "skipped">>) => void;
 
+    /** Controlled view mode — when provided, overrides internal state */
+    viewMode?: "stacked" | "sliding";
+    /** Called when view mode changes (for external control) */
+    onViewModeChange?: (mode: "stacked" | "sliding") => void;
+
     // Document search props (render prop for custom search UI)
     /** Render custom document search UI - if provided, shows search button */
     renderDocumentSearch?: (props: {
@@ -654,6 +659,9 @@ function ModernAgentConversationInner({
     // External plan panel API
     onPlansChange,
     onWorkstreamStatusChange,
+    // External view mode control
+    viewMode: controlledViewMode,
+    onViewModeChange: onViewModeChangeProp,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -666,7 +674,16 @@ function ModernAgentConversationInner({
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
     const [isSending, setIsSending] = useState(false);
-    const [viewMode, setViewMode] = useState<"stacked" | "sliding">("sliding");
+    // View mode: controlled externally when props are provided, otherwise managed locally
+    const [internalViewMode, setInternalViewMode] = useState<"stacked" | "sliding">("sliding");
+    const viewMode = controlledViewMode ?? internalViewMode;
+    const handleViewModeChange = useCallback((mode: "stacked" | "sliding") => {
+        if (onViewModeChangeProp) {
+            onViewModeChangeProp(mode);
+        } else {
+            setInternalViewMode(mode);
+        }
+    }, [onViewModeChangeProp]);
     // Re-provide theme context with runtime viewMode so children read it from context
     const themeWithViewMode = useMemo(() => ({ ...outerTheme, viewMode }), [outerTheme, viewMode]);
     const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(!isModal);
@@ -1468,7 +1485,7 @@ function ModernAgentConversationInner({
                         isModal={isModal}
                         run={run}
                         viewMode={viewMode}
-                        onViewModeChange={setViewMode}
+                        onViewModeChange={handleViewModeChange}
                         showPlanPanel={showSlidingPanel}
                         hasPlan={plans.length > 0}
                         onTogglePlanPanel={handleTogglePlanPanel}
