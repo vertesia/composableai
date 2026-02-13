@@ -120,6 +120,10 @@ interface ModernAgentConversationProps {
     onViewModeChange?: (mode: "stacked" | "sliding") => void;
     /** Called when follow-up input availability is determined (after messages load) */
     onShowInputChange?: (canSendFollowUp: boolean) => void;
+    /** Ref populated with the stop handler — call to interrupt the active agent. null when stop unavailable. */
+    stopRef?: React.MutableRefObject<(() => void) | null>;
+    /** Called when the stopping (in-progress) state changes */
+    onStoppingChange?: (isStopping: boolean) => void;
 
     // Document search props (render prop for custom search UI)
     /** Render custom document search UI - if provided, shows search button */
@@ -665,6 +669,9 @@ function ModernAgentConversationInner({
     viewMode: controlledViewMode,
     onViewModeChange: onViewModeChangeProp,
     onShowInputChange,
+    // External stop API
+    stopRef,
+    onStoppingChange,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -1313,7 +1320,7 @@ function ModernAgentConversationInner({
     }, [run, handleFileUpload]);
 
     // Stop/interrupt the active workflow
-    const handleStopWorkflow = async () => {
+    const handleStopWorkflow = useCallback(async () => {
         if (isStopping) return;
 
         setIsStopping(true);
@@ -1339,7 +1346,18 @@ function ModernAgentConversationInner({
         } finally {
             setIsStopping(false);
         }
-    };
+    }, [isStopping, client, run.workflowId, run.runId, toast]);
+
+    // Expose stop handler to external callers via ref
+    useEffect(() => {
+        if (stopRef) stopRef.current = !isCompleted ? handleStopWorkflow : null;
+        return () => { if (stopRef) stopRef.current = null; };
+    }, [stopRef, isCompleted, handleStopWorkflow]);
+
+    // Notify parent when stopping state changes
+    useEffect(() => {
+        onStoppingChange?.(isStopping);
+    }, [isStopping, onStoppingChange]);
 
     // Calculate number of active tasks for the status indicator
     const getActiveTaskCount = (): number => {
