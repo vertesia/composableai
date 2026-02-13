@@ -33,6 +33,10 @@ export interface ExaConfiguration extends IntegrationConfigurationBase {
     api_key: string;
 }
 
+export interface LinkupConfiguration extends IntegrationConfigurationBase {
+    api_key: string;
+}
+
 export interface ResendConfiguration extends IntegrationConfigurationBase {
     /** Resend API key for sending emails */
     api_key: string;
@@ -72,6 +76,7 @@ export enum SupportedIntegrations {
     magic_pdf = "magic_pdf",
     serper = "serper",
     exa = "exa",
+    linkup = "linkup",
     resend = "resend",
     ask_user_webhook = "ask_user_webhook",
 }
