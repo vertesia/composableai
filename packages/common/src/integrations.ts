@@ -29,6 +29,10 @@ export interface SerperConfiguration extends IntegrationConfigurationBase {
     url?: string;
 }
 
+export interface ExaConfiguration extends IntegrationConfigurationBase {
+    api_key: string;
+}
+
 export interface ResendConfiguration extends IntegrationConfigurationBase {
     /** Resend API key for sending emails */
     api_key: string;
@@ -67,6 +71,7 @@ export enum SupportedIntegrations {
     aws = "aws",
     magic_pdf = "magic_pdf",
     serper = "serper",
+    exa = "exa",
     resend = "resend",
     ask_user_webhook = "ask_user_webhook",
 }
