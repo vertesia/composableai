@@ -109,6 +109,10 @@ interface ModernAgentConversationProps {
     fileUploadRef?: React.MutableRefObject<((files: File[]) => void) | null>;
     /** Called when processingFiles state changes (for external progress display) */
     onProcessingFilesChange?: (files: Map<string, ConversationFile>) => void;
+    /** Called when plans change (for external plan panel) */
+    onPlansChange?: (plans: Array<{ plan: Plan; timestamp: number }>, activePlanIndex: number) => void;
+    /** Called when workstream status changes (for external plan panel) */
+    onWorkstreamStatusChange?: (statusMap: Map<number, Map<string, "pending" | "in_progress" | "completed" | "skipped">>) => void;
 
     // Document search props (render prop for custom search UI)
     /** Render custom document search UI - if provided, shows search button */
@@ -647,6 +651,9 @@ function ModernAgentConversationInner({
     // External file upload API
     fileUploadRef,
     onProcessingFilesChange,
+    // External plan panel API
+    onPlansChange,
+    onWorkstreamStatusChange,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -1217,6 +1224,16 @@ function ModernAgentConversationInner({
     useEffect(() => {
         onProcessingFilesChange?.(processingFiles);
     }, [processingFiles, onProcessingFilesChange]);
+
+    // Notify parent when plans change
+    useEffect(() => {
+        onPlansChange?.(plans, activePlanIndex);
+    }, [plans, activePlanIndex, onPlansChange]);
+
+    // Notify parent when workstream status changes
+    useEffect(() => {
+        onWorkstreamStatusChange?.(workstreamStatusMap);
+    }, [workstreamStatusMap, onWorkstreamStatusChange]);
 
     // Drag and drop handlers for full-panel file upload
     const handleDragEnter = useCallback((e: React.DragEvent) => {
