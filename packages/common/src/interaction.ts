@@ -9,7 +9,6 @@ import type {
     ToolDefinition,
     ToolUse,
 } from "@llumiverse/common";
-import type { JSONSchema4 } from "json-schema";
 
 import { ExecutionTokenUsage } from "@llumiverse/common";
 
@@ -328,7 +327,7 @@ export const InteractionRefWithSchemaPopulate =
     `${InteractionRefPopulate} result_schema`;
 
 export interface InteractionRefWithSchema extends Omit<InteractionRef, "prompts"> {
-    result_schema?: JSONSchema4;
+    result_schema?: JSONSchema;
     prompts?: PromptSegmentDef<PromptTemplateRefWithSchema>[];
 }
 
@@ -401,7 +400,7 @@ export interface InteractionData {
     project: string | ProjectRef;
     tags: string[];
     agent_runner_options?: AgentRunnerOptions;
-    result_schema?: JSONSchema4 | SchemaRef;
+    result_schema?: JSONSchema | SchemaRef;
     environment?: string | ExecutionEnvironmentRef;
     model?: string;
     model_options?: ModelOptions;
@@ -418,7 +417,7 @@ export interface Interaction extends InteractionData {
     visibility: InteractionVisibility;
     version: number;
     test_data?: JSONObject;
-    interaction_schema?: JSONSchema4 | SchemaRef;
+    interaction_schema?: JSONSchema | SchemaRef;
     cache_policy?: CachePolicy;
     prompts: PromptSegmentDef[];
     // only for drafts - when it was last published
@@ -468,7 +467,7 @@ export interface InteractionUpdatePayload
             "result_schema" | "id" | "created_at" | "updated_at" | "created_by" | "updated_by" | "project"
         >
     > {
-    result_schema?: JSONSchema4 | null;
+    result_schema?: JSONSchema | null;
 }
 
 export interface InteractionPublishPayload {
@@ -490,7 +489,7 @@ export interface InteractionExecutionPayload {
     data?: Record<string, any> | `memory:${string}`;
     config?: InteractionExecutionConfiguration;
     //Use null to explicitly state no schema, will not fallback to interaction schema
-    result_schema?: JSONSchema4 | null;
+    result_schema?: JSONSchema | null;
     stream?: boolean;
     do_validate?: boolean;
     tags?: string | string[]; // tags to be added to the execution run
@@ -927,7 +926,7 @@ export interface BaseExecutionRun<P = any> {
     /** Environment reference - populated with full object in API responses */
     environment: ExecutionEnvironmentRef;
     modelId?: string; //Can be undefined for virtual environments. In most cases should be defined.
-    result_schema: JSONSchema4;
+    result_schema: JSONSchema;
     ttl: number;
     status: ExecutionRunStatus;
     finish_reason?: string;
