@@ -33,10 +33,6 @@ export { ConversationThemeProvider, useConversationTheme } from "./theme/Convers
 export type { ConversationTheme, ViewMode } from "./theme/ConversationThemeContext";
 // Conversation theming — per-component types & resolvers
 export {
-    resolveBatchProgressPanelTheme,
-    type BatchProgressPanelThemeClasses, type BatchProgressPanelTheme,
-} from "./theme/resolveBatchProgressPanelTheme";
-export {
     resolveModernAgentConversationTheme,
     type ModernAgentConversationThemeClasses, type ModernAgentConversationTheme,
 } from "./theme/resolveModernAgentConversationTheme";

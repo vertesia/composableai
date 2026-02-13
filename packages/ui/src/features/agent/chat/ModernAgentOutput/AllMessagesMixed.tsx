@@ -3,7 +3,7 @@ import { cn } from "@vertesia/ui/core";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { useConversationTheme, type ViewMode } from "../theme/ConversationThemeContext";
-import BatchProgressPanel from "./BatchProgressPanel";
+import BatchProgressPanel, { type BatchProgressPanelProps } from "./BatchProgressPanel";
 import MessageItem, { type MessageItemProps } from "./MessageItem";
 import StreamingMessage, { type StreamingMessageProps } from "./StreamingMessage";
 import ToolCallGroup, { type ToolCallGroupProps } from "./ToolCallGroup";
@@ -109,6 +109,10 @@ interface AllMessagesMixedProps {
     streamingMessageClassNames?: Partial<Pick<StreamingMessageProps,
         'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
         'proseClassName' | 'senderClassName' | 'iconClassName'>>;
+    /** className overrides passed to every BatchProgressPanel */
+    batchProgressPanelClassNames?: Partial<Pick<BatchProgressPanelProps,
+        'className' | 'headerClassName' | 'senderClassName' | 'progressBarClassName' |
+        'itemListClassName' | 'itemClassName' | 'summaryClassName'>>;
     /** className override for the working indicator container */
     workingIndicatorClassName?: string;
     /** className override for the message list container (spacing/layout) */
@@ -130,6 +134,7 @@ function AllMessagesMixedComponent({
     toolCallGroupClassNames,
     hideToolCallsInViewMode,
     streamingMessageClassNames,
+    batchProgressPanelClassNames,
     workingIndicatorClassName,
     messageListClassName,
 }: AllMessagesMixedProps) {
@@ -525,6 +530,7 @@ function AllMessagesMixedComponent({
                                         return (
                                             <MessageErrorBoundary key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}>
                                                 <BatchProgressPanel
+                                                    {...batchProgressPanelClassNames}
                                                     message={message}
                                                     batchData={message.details}
                                                     isRunning={!message.details.completed_at}
@@ -619,6 +625,7 @@ function AllMessagesMixedComponent({
                                         return (
                                             <MessageErrorBoundary key={`batch-${message.details.batch_id}-${message.timestamp}-${groupIndex}`}>
                                                 <BatchProgressPanel
+                                                    {...batchProgressPanelClassNames}
                                                     message={message}
                                                     batchData={message.details}
                                                     isRunning={!message.details.completed_at}

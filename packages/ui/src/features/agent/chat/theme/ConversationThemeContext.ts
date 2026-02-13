@@ -1,5 +1,4 @@
 import { createContext, createElement, useContext, type ReactNode } from "react";
-import { type BatchProgressPanelTheme } from "./resolveBatchProgressPanelTheme";
 import { type ModernAgentConversationTheme } from "./resolveModernAgentConversationTheme";
 import { type WorkstreamTabsTheme } from "./resolveWorkstreamTabsTheme";
 
@@ -13,7 +12,6 @@ export interface ConversationTheme {
     /** Current view mode. Set internally by ModernAgentConversation — do not set externally. */
     viewMode?: ViewMode;
     conversation?: ModernAgentConversationTheme;
-    batchProgressPanel?: BatchProgressPanelTheme;
     workstreamTabs?: WorkstreamTabsTheme;
     /** Raw CSS string injected after the default .vprose styles. Overrides markdown rendering. */
     markdownStyles?: string;

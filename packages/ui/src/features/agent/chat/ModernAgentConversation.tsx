@@ -188,6 +188,11 @@ interface ModernAgentConversationProps {
         'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
         'proseClassName' | 'senderClassName' | 'iconClassName'>>;
 
+    /** className overrides passed to every BatchProgressPanel */
+    batchProgressPanelClassNames?: Partial<Pick<import("./ModernAgentOutput/BatchProgressPanel").BatchProgressPanelProps,
+        'className' | 'headerClassName' | 'senderClassName' | 'progressBarClassName' |
+        'itemListClassName' | 'itemClassName' | 'summaryClassName'>>;
+
     /** className override for the working indicator container */
     workingIndicatorClassName?: string;
     /** className override for the message list container */
@@ -714,6 +719,8 @@ function ModernAgentConversationInner({
     hideToolCallsInViewMode,
     // StreamingMessage className overrides
     streamingMessageClassNames,
+    // BatchProgressPanel className overrides
+    batchProgressPanelClassNames,
     // AllMessagesMixed className overrides
     workingIndicatorClassName,
     messageListClassName,
@@ -1619,6 +1626,7 @@ function ModernAgentConversationInner({
                         toolCallGroupClassNames={toolCallGroupClassNames}
                         hideToolCallsInViewMode={hideToolCallsInViewMode}
                         streamingMessageClassNames={streamingMessageClassNames}
+                        batchProgressPanelClassNames={batchProgressPanelClassNames}
                         workingIndicatorClassName={workingIndicatorClassName}
                         messageListClassName={messageListClassName}
                     />

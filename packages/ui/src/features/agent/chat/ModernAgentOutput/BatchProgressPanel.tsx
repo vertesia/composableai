@@ -12,22 +12,41 @@ import {
 } from "lucide-react";
 import { useState, memo } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import { useConversationTheme } from "../theme/ConversationThemeContext";
-import { resolveBatchProgressPanelTheme } from "../theme/resolveBatchProgressPanelTheme";
 
-interface BatchProgressPanelProps {
+export interface BatchProgressPanelProps {
     message: AgentMessage;
     batchData: BatchProgressDetails;
     isRunning?: boolean;
+    /** Additional className for the root container */
+    className?: string;
+    /** Additional className for the header row */
+    headerClassName?: string;
+    /** Additional className for the sender label */
+    senderClassName?: string;
+    /** Additional className for the progress bar section */
+    progressBarClassName?: string;
+    /** Additional className for the expanded item list */
+    itemListClassName?: string;
+    /** Additional className for individual item rows */
+    itemClassName?: string;
+    /** Additional className for the collapsed summary */
+    summaryClassName?: string;
 }
 
-function BatchProgressPanelComponent({ message, batchData, isRunning = false }: BatchProgressPanelProps) {
+function BatchProgressPanelComponent({
+    message,
+    batchData,
+    isRunning = false,
+    className,
+    headerClassName,
+    senderClassName,
+    progressBarClassName,
+    itemListClassName,
+    itemClassName,
+    summaryClassName,
+}: BatchProgressPanelProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const toast = useToast();
-
-    // Theme context: flat class overrides (highest priority)
-    const conversationTheme = useConversationTheme();
-    const theme = resolveBatchProgressPanelTheme(conversationTheme?.batchProgressPanel);
 
     const { tool_name, total, completed, succeeded, failed, items, started_at, completed_at } = batchData;
 
@@ -91,19 +110,19 @@ function BatchProgressPanelComponent({ message, batchData, isRunning = false }: 
     const durationSec = (duration / 1000).toFixed(1);
 
     return (
-        <div className={cn("border-l-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5", getBorderColor(), theme.root)}>
+        <div className={cn("border-l-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5", getBorderColor(), className)}>
             {/* Header */}
             <div
-                className={cn("flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-blue-50/50 dark:bg-blue-900/10 cursor-pointer", theme.header)}
+                className={cn("flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-blue-50/50 dark:bg-blue-900/10 cursor-pointer", headerClassName)}
                 onClick={() => setIsExpanded(!isExpanded)}
             >
-                <div className={cn("flex items-center gap-2", theme.headerLeft)}>
+                <div className="flex items-center gap-2">
                     {renderStatusIndicator()}
-                    <span className={cn("text-xs font-medium text-muted", theme.sender)}>Batch</span>
-                    <span className={cn("text-xs text-blue-600 dark:text-blue-400 font-medium", theme.toolName)}>
+                    <span className={cn("text-xs font-medium text-muted", senderClassName)}>Batch</span>
+                    <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
                         {tool_name}
                     </span>
-                    <span className={cn("text-xs text-muted", theme.progressCount)}>
+                    <span className="text-xs text-muted">
                         {completed}/{total}
                     </span>
                     {isExpanded ? (
@@ -113,11 +132,11 @@ function BatchProgressPanelComponent({ message, batchData, isRunning = false }: 
                     )}
                 </div>
 
-                <div className={cn("flex items-center gap-2", theme.headerRight)}>
-                    <span className={cn("text-xs text-muted", theme.timestamp)}>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted">
                         {durationSec}s
                     </span>
-                    <span className={cn("text-xs text-muted", theme.timestamp)}>
+                    <span className="text-xs text-muted">
                         {dayjs(started_at).format("HH:mm:ss")}
                     </span>
                     <Button
@@ -127,7 +146,7 @@ function BatchProgressPanelComponent({ message, batchData, isRunning = false }: 
                             e.stopPropagation();
                             copyToClipboard();
                         }}
-                        className={cn("text-muted", theme.copyButton)}
+                        className="text-muted"
                         title="Copy batch details"
                     >
                         <CopyIcon className="size-3" />
@@ -136,15 +155,15 @@ function BatchProgressPanelComponent({ message, batchData, isRunning = false }: 
             </div>
 
             {/* Progress bar */}
-            <div className={cn("px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30", theme.progressBar)}>
+            <div className={cn("px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30", progressBarClassName)}>
                 <div className="flex items-center gap-3">
-                    <div className={cn("flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden", theme.track)}>
+                    <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                         <div
                             className={`h-full ${getProgressColor()} transition-all duration-300 ease-out`}
                             style={{ width: `${progress}%` }}
                         />
                     </div>
-                    <div className={cn("flex items-center gap-2 text-xs", theme.counters)}>
+                    <div className="flex items-center gap-2 text-xs">
                         {succeeded > 0 && (
                             <span className="text-success flex items-center gap-1">
                                 <CheckCircle className="size-3" />
@@ -169,11 +188,11 @@ function BatchProgressPanelComponent({ message, batchData, isRunning = false }: 
 
             {/* Expanded item list */}
             {isExpanded && items.length > 0 && (
-                <div className={cn("max-h-64 overflow-y-auto", theme.itemList)}>
+                <div className={cn("max-h-64 overflow-y-auto", itemListClassName)}>
                     {items.map((item: BatchItemStatus) => (
                         <div
                             key={item.id}
-                            className={cn("flex items-center gap-2 px-4 py-1.5 text-xs border-b border-gray-100 dark:border-gray-800 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800/50", theme.item)}
+                            className={cn("flex items-center gap-2 px-4 py-1.5 text-xs border-b border-gray-100 dark:border-gray-800 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800/50", itemClassName)}
                         >
                             {/* Status icon */}
                             <div className="w-4 flex-shrink-0">
@@ -214,7 +233,7 @@ function BatchProgressPanelComponent({ message, batchData, isRunning = false }: 
 
             {/* Summary message if collapsed and has message */}
             {!isExpanded && message.message && (
-                <div className={cn("px-4 py-2 text-xs text-muted", theme.summary)}>
+                <div className={cn("px-4 py-2 text-xs text-muted", summaryClassName)}>
                     {message.message}
                 </div>
             )}
