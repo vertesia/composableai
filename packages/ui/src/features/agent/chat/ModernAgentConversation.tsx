@@ -174,8 +174,6 @@ interface ModernAgentConversationProps {
     /** Additional className for the root container */
     className?: string;
 
-    /** Raw CSS string injected after the default .vprose styles. Overrides markdown rendering. */
-    markdownStyles?: string;
     messageItemClassNames?: MessageItemClassNames;
     /** Sparse MESSAGE_STYLES overrides passed to every MessageItem */
     messageStyleOverrides?: import("./ModernAgentOutput/MessageItem").MessageItemProps['messageStyleOverrides'];
@@ -686,7 +684,6 @@ function ModernAgentConversationInner({
     getMessageContext,
     // Styling props
     className,
-    markdownStyles,
     inputContainerClassName,
     inputClassName,
     // Fusion fragment data
@@ -1613,7 +1610,6 @@ function ModernAgentConversationInner({
                         streamingMessageClassNames={streamingMessageClassNames}
                         batchProgressPanelClassNames={batchProgressPanelClassNames}
                         viewMode={viewMode}
-                        markdownStyles={markdownStyles}
                         hideWorkstreamTabs={hideWorkstreamTabs}
                         workingIndicatorClassName={workingIndicatorClassName}
                         messageListClassName={messageListClassName}

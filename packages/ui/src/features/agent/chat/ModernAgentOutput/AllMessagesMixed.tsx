@@ -103,8 +103,6 @@ interface AllMessagesMixedProps {
     batchProgressPanelClassNames?: BatchProgressPanelClassNames;
     /** Current view mode — "stacked" shows all messages, "sliding" shows important only */
     viewMode?: AgentConversationViewMode;
-    /** Raw CSS string injected after the default .vprose styles */
-    markdownStyles?: string;
     /** Hide the workstream tabs entirely */
     hideWorkstreamTabs?: boolean;
     /** className override for the working indicator container */
@@ -130,7 +128,6 @@ function AllMessagesMixedComponent({
     streamingMessageClassNames,
     batchProgressPanelClassNames,
     viewMode = "stacked",
-    markdownStyles,
     hideWorkstreamTabs,
     workingIndicatorClassName,
     messageListClassName,
@@ -448,7 +445,6 @@ function AllMessagesMixedComponent({
                     color: var(--color-foreground, #f9fafb);
                 }
             `}</style>
-            {markdownStyles && <style>{markdownStyles}</style>}
 
             {/* Workstream tabs with completion indicators */}
             {!hideWorkstreamTabs && (
