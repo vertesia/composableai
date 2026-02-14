@@ -1,14 +1,14 @@
-import { readdirSync, statSync, existsSync } from "fs";
-import { join } from "path";
-import { pathToFileURL } from "url";
+import { AgentToolDefinition } from "@vertesia/common";
+import { existsSync, readdirSync, statSync } from "fs";
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { join } from "path";
+import { pathToFileURL } from "url";
 import { authorize } from "./auth.js";
-import { ToolFilterOptions, ToolRegistry } from "./ToolRegistry.js";
 import { ToolContext } from "./server/types.js";
-import type { CollectionProperties, ICollection, Tool, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError } from "./types.js";
+import { ToolRegistry } from "./ToolRegistry.js";
+import type { CollectionProperties, ICollection, Tool, ToolExecutionPayload, ToolExecutionResponse, ToolExecutionResponseError, ToolUseContext } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
-import { AgentToolDefinition } from "@vertesia/common";
 
 export interface ToolCollectionProperties extends CollectionProperties {
     /**
@@ -125,20 +125,11 @@ export class ToolCollection implements ICollection<Tool<any>> {
 
     /**
      * Get tool definitions with optional filtering.
-     * @param options - Filtering options for default/unlocked tools
+     * @param options - context for filtering
      * @returns Filtered tool definitions
      */
-    getToolDefinitions(options?: ToolFilterOptions): AgentToolDefinition[] {
-        return this.tools.getDefinitions(options);
-    }
-
-    /**
-     * Get tools that are in reserve (default: false and not unlocked).
-     * @param unlockedTools - List of tool names that are unlocked
-     * @returns Tool definitions for reserve tools
-     */
-    getReserveTools(unlockedTools: string[] = []): AgentToolDefinition[] {
-        return this.tools.getReserveTools(unlockedTools);
+    getToolDefinitions(context?: ToolUseContext): AgentToolDefinition[] {
+        return this.tools.getDefinitions(context);
     }
 
 }

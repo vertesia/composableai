@@ -86,8 +86,9 @@ export interface SidebarItemProps {
     className?: string;
     id?: string; //HTML ID of the element
     external?: boolean; //If true, the link will open in a new tab
+    replace?: boolean; //If true, navigation replaces the current history entry instead of pushing
 }
-export function SidebarItem({ external, className, tools, children, icon: Icon, href, current, onClick }: SidebarItemProps) {
+export function SidebarItem({ external, className, tools, children, icon: Icon, href, current, onClick, replace }: SidebarItemProps) {
     const { toggleMobile } = useSidebarToggle();
     const _closeSideBar = () => {
         setTimeout(() => {
@@ -105,7 +106,7 @@ export function SidebarItem({ external, className, tools, children, icon: Icon, 
     }
     return (
         <li>
-            <Nav onClick={_closeSideBar}>
+            <Nav onClick={_closeSideBar} replace={replace}>
                 <SidebarTooltip text={children as string}>
                     <a
                         href={href}
