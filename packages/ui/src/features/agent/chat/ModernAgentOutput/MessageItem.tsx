@@ -1,5 +1,5 @@
 import { AgentMessage, AgentMessageType, AskUserMessageDetails, MarkdownRenditionFormat } from "@vertesia/common";
-import { Badge, Button, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
+import { Badge, Button, cn, Dropdown, MenuItem, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
@@ -66,6 +66,15 @@ function processContentForMarkdown(content: string | object, messageType: AgentM
     return content;
 }
 
+/** Per-message-type visual config (border, bg, icon color, sender label, icon component). */
+export interface MessageStyleConfig {
+    borderColor: string;
+    bgColor: string;
+    iconColor: string;
+    sender: string;
+    Icon: typeof Bot;
+}
+
 export interface MessageItemProps {
     message: AgentMessage;
     showPulsatingCircle?: boolean;
@@ -89,16 +98,22 @@ export interface MessageItemProps {
     detailsClassName?: string;
     /** Additional className for the artifacts section */
     artifactsClassName?: string;
+    /** Additional className for the prose/markdown wrapper */
+    proseClassName?: string;
+    /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
+    messageStyleOverrides?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
+    /** Custom component to render store/document links instead of default NavLink navigation */
+    StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
 }
 
+/** className overrides for MessageItem — subset of MessageItemProps containing only className props. */
+export type MessageItemClassNames = Partial<Pick<MessageItemProps,
+    'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
+    'timestampClassName' | 'senderClassName' | 'iconClassName' |
+    'detailsClassName' | 'artifactsClassName' | 'proseClassName'>>;
+
 // Consolidated message styling - single source of truth
-const MESSAGE_STYLES: Record<AgentMessageType | 'default', {
-    borderColor: string;
-    bgColor: string;
-    iconColor: string;
-    sender: string;
-    Icon: typeof Bot;
-}> = {
+export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
     [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
     [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', bgColor: 'bg-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
     [AgentMessageType.IDLE]: { borderColor: 'border-l-info', bgColor: 'bg-info/50', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
@@ -129,6 +144,9 @@ function MessageItemComponent({
     iconClassName,
     detailsClassName,
     artifactsClassName,
+    proseClassName,
+    messageStyleOverrides,
+    StoreLinkComponent,
 }: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
     const { client } = useUserSession();
@@ -142,8 +160,13 @@ function MessageItemComponent({
     urlCacheRef.current = urlCache;
     const { renderContent: exportContent, isDownloading: isExportingFile } = useDownloadFile({ client, toast });
 
-    // Get styles from consolidated config
-    const styles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
+    // Get styles from consolidated config, with optional sparse overrides
+    const baseStyles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
+    const defaultOverrides = messageStyleOverrides?.default;
+    const typeOverrides = messageStyleOverrides?.[message.type];
+    const styles = defaultOverrides || typeOverrides
+        ? { ...baseStyles, ...defaultOverrides, ...typeOverrides }
+        : baseStyles;
 
     // PERFORMANCE: Memoize message content extraction - only recalculates when message changes
     const messageContent = useMemo(() => {
@@ -232,6 +255,10 @@ function MessageItemComponent({
         a: ({ node, ref, ...props }: { node?: any; ref?: any; href?: string; children?: React.ReactNode }) => {
             const href = props.href || "";
             if (href.includes("/store/objects")) {
+                if (StoreLinkComponent) {
+                    const documentId = href.split("/store/objects/")[1] || "";
+                    return <StoreLinkComponent href={href} documentId={documentId}>{props.children}</StoreLinkComponent>;
+                }
                 return (
                     <NavLink
                         href={href}
@@ -259,14 +286,14 @@ function MessageItemComponent({
                 />
             );
         },
-    }), [openImage]);
+    }), [openImage, StoreLinkComponent]);
 
     // Render content with markdown support - all messages now rendered as markdown
     const renderContent = (content: string | object) => {
         // Handle object content (JSON)
         if (typeof content === "object") {
             return (
-                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700 ">
+                <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-gray-100 dark:bg-gray-800 p-2 rounded text-gray-700">
                     {JSON.stringify(content, null, 2)}
                 </pre>
             );
@@ -276,7 +303,7 @@ function MessageItemComponent({
         const runId = (message as any).workflow_run_id as string | undefined;
 
         return (
-            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words" style={{ overflowWrap: 'anywhere' }}>
+            <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", proseClassName)} style={{ overflowWrap: 'anywhere' }}>
                 <MarkdownRenderer
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
@@ -382,18 +409,18 @@ function MessageItemComponent({
     };
 
     return (
-        <div className={`w-full max-w-full ${className || ""}`}>
+        <div className={cn("w-full max-w-full", className)}>
             <div
-                className={`border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden ${styles.borderColor} ${cardClassName || ""}`}
+                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden", styles.borderColor, cardClassName)}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
-                <div className={`flex items-center justify-between px-4 py-1.5 ${headerClassName || ""}`}>
+                <div className={cn("flex items-center justify-between px-4 py-1.5", headerClassName)}>
                     <div className="flex items-center gap-1.5">
-                        <div className={`${showPulsatingCircle ? "animate-fadeIn" : ""} ${iconClassName || ""}`}>
+                        <div className={cn(showPulsatingCircle ? "animate-fadeIn" : "", iconClassName)}>
                             {renderIcon()}
                         </div>
-                        <span className={`text-xs font-medium text-muted ${senderClassName || ""}`}>{styles.sender}</span>
+                        <span className={cn("text-xs font-medium text-muted", senderClassName)}>{styles.sender}</span>
                         {workstreamId !== "main" && workstreamId !== "all" && (
                             <Badge variant="default" className="text-xs text-muted ml-1">
                                 {workstreamId}
@@ -401,7 +428,7 @@ function MessageItemComponent({
                         )}
                     </div>
                     <div className="flex items-center gap-1.5 print:hidden">
-                        <span className={`text-[11px] text-muted/70 ${timestampClassName || ""}`}>
+                        <span className={cn("text-[11px] text-muted/70", timestampClassName)}>
                             {dayjs(message.timestamp).format("HH:mm:ss")}
                         </span>
                         <Button
@@ -437,7 +464,7 @@ function MessageItemComponent({
                 </div>
 
                 {/* Message content */}
-                <div className={`px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden ${contentClassName || ""}`}>
+                <div className={cn("px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden", contentClassName)}>
                 {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                 {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
                     (() => {
@@ -465,7 +492,7 @@ function MessageItemComponent({
 
                 {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                 {artifactLinks.length > 0 && (
-                    <div className={`mt-3 text-xs ${artifactsClassName || ""}`}>
+                    <div className={cn("mt-3 text-xs", artifactsClassName)}>
                         <div className="font-medium text-muted mb-1">Artifacts</div>
 
                         {/* Inline previews for image artifacts */}
@@ -512,7 +539,7 @@ function MessageItemComponent({
 
                 {/* Optional details section */}
                 {message.details && (
-                    <div className={`mt-2 print:hidden ${detailsClassName || ""}`}>
+                    <div className={cn("mt-2 print:hidden", detailsClassName)}>
                         <button
                             onClick={() => setShowDetails(!showDetails)}
                             className="text-xs text-muted flex items-center"
@@ -534,7 +561,7 @@ function MessageItemComponent({
                                 {typeof message.details === "string" ? (
                                     renderContent(message.details)
                                 ) : (
-                                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted ">
+                                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto bg-muted p-2 rounded text-muted">
                                         {JSON.stringify(message.details, null, 2)}
                                     </pre>
                                 )}
@@ -563,7 +590,9 @@ const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
         prevProps.senderClassName === nextProps.senderClassName &&
         prevProps.iconClassName === nextProps.iconClassName &&
         prevProps.detailsClassName === nextProps.detailsClassName &&
-        prevProps.artifactsClassName === nextProps.artifactsClassName
+        prevProps.artifactsClassName === nextProps.artifactsClassName &&
+        prevProps.proseClassName === nextProps.proseClassName &&
+        prevProps.messageStyleOverrides === nextProps.messageStyleOverrides
     );
 });
 
