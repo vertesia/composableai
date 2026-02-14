@@ -128,10 +128,12 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
                     if (file.startsWith("http://") || file.startsWith("https://")) {
                         return file;
                     }
+                    // Strip artifact: protocol prefix if present
+                    const stripped = file.startsWith("artifact:") ? file.slice(9) : file;
                     // Resolve artifact path to signed URL
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
+                    const artifactPath = stripped.startsWith("out/") || stripped.startsWith("files/") || stripped.startsWith("scripts/")
+                        ? stripped
+                        : `out/${stripped}`;
                     const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     const isImage = imageExtensions.has(ext);
@@ -297,17 +299,20 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
 
+                    // Strip artifact: protocol prefix if present
+                    const stripped = file.startsWith("artifact:") ? file.slice(9) : file;
+
                     // Skip image files - they're shown at the group level
-                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const ext = stripped.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     if (imageExtensions.has(ext)) return null;
 
-                    if (file.startsWith("http://") || file.startsWith("https://")) {
-                        return file;
+                    if (stripped.startsWith("http://") || stripped.startsWith("https://")) {
+                        return stripped;
                     }
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
+                    const artifactPath = stripped.startsWith("out/") || stripped.startsWith("files/") || stripped.startsWith("scripts/")
+                        ? stripped
+                        : `out/${stripped}`;
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "attachment");
@@ -379,20 +384,23 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
 
+                    // Strip artifact: protocol prefix if present
+                    const stripped = file.startsWith("artifact:") ? file.slice(9) : file;
+
                     // Check if it's an image file
-                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const ext = stripped.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     if (!imageExtensions.has(ext)) return null;
 
                     // If it's already a full URL, return as-is
-                    if (file.startsWith("http://") || file.startsWith("https://")) {
-                        return file;
+                    if (stripped.startsWith("http://") || stripped.startsWith("https://")) {
+                        return stripped;
                     }
 
                     // Resolve artifact path to signed URL
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
+                    const artifactPath = stripped.startsWith("out/") || stripped.startsWith("files/") || stripped.startsWith("scripts/")
+                        ? stripped
+                        : `out/${stripped}`;
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "inline");

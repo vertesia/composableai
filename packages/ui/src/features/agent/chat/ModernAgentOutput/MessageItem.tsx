@@ -316,12 +316,14 @@ function MessageItemComponent({
                     outputFiles.map(async (name: unknown) => {
                         if (typeof name !== "string" || !name.trim()) return null;
                         const trimmed = name.trim();
+                        // Strip artifact: protocol prefix if present
+                        const stripped = trimmed.startsWith("artifact:") ? trimmed.slice(9) : trimmed;
                         // execute_shell returns relative paths like "result.csv" or "plots/chart.png"
                         // canonical artifact name is under out/
                         const artifactPath =
-                            trimmed.startsWith("out/") || trimmed.startsWith("files/") || trimmed.startsWith("scripts/")
-                                ? trimmed
-                                : `out/${trimmed}`;
+                            stripped.startsWith("out/") || stripped.startsWith("files/") || stripped.startsWith("scripts/")
+                                ? stripped
+                                : `out/${stripped}`;
 
                         const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                         const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
