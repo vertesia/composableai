@@ -66,6 +66,10 @@ export interface MarkdownRenditionVars extends BaseRenditionVars {
     artifactRunId?: string;
     /** Document metadata for PDF footer/header */
     metadata?: PdfRenderingMetadata;
+    /** Opt-in: inject structured data from a document's properties into frontmatter under `data:` */
+    autoWireTemplateData?: boolean;
+    /** Source reference for auto-wired template data: `store:<objectId>` or `artifact:<path-to-json>` */
+    templateDataSource?: string;
 }
 
 /** Discriminated union of all rendition workflow vars */
@@ -111,6 +115,10 @@ export interface RenderMarkdownPayload {
     artifactRunId?: string;
     /** Document metadata for PDF footer/header */
     metadata?: PdfRenderingMetadata;
+    /** Opt-in: inject structured data from a document's properties into frontmatter under `data:` */
+    autoWireTemplateData?: boolean;
+    /** Source reference for auto-wired template data: `store:<objectId>` or `artifact:<path-to-json>` */
+    templateDataSource?: string;
     /** Custom upload path for the rendered output */
     outputPath?: string;
 }
