@@ -316,12 +316,8 @@ function MessageItemComponent({
                     outputFiles.map(async (name: unknown) => {
                         if (typeof name !== "string" || !name.trim()) return null;
                         const trimmed = name.trim();
-                        // execute_shell returns relative paths like "result.csv" or "plots/chart.png"
-                        // canonical artifact name is under out/
-                        const artifactPath =
-                            trimmed.startsWith("out/") || trimmed.startsWith("files/") || trimmed.startsWith("scripts/")
-                                ? trimmed
-                                : `out/${trimmed}`;
+                        // Strip artifact: protocol prefix to get the artifact-relative path
+                        const artifactPath = trimmed.startsWith("artifact:") ? trimmed.slice(9) : trimmed;
 
                         const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                         const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);

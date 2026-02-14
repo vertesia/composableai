@@ -41,8 +41,8 @@ export interface InteractionExecutionError {
 export interface ConversationStripOptions {
     /**
      * Number of turns to keep images before stripping them.
-     * - 0: Strip images immediately after each turn (default)
-     * - N > 0: Keep images for N turns before stripping
+     * - 0: Strip images immediately after each turn
+     * - N > 0: Keep images for N turns before stripping (default: 5)
      * - Infinity: Never strip images
      */
     images_after_turns?: number;
@@ -877,8 +877,6 @@ export interface ToolResultsPayload extends ResumeConversationPayload {
 export interface UserMessagePayload extends ResumeConversationPayload {
     message: string;
 }
-
-export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results" | "tools">
 
 // ================= end async execution payloads ====================
 

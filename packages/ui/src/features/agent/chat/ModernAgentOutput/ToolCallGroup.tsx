@@ -128,10 +128,8 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId }: ToolCall
                     if (file.startsWith("http://") || file.startsWith("https://")) {
                         return file;
                     }
-                    // Resolve artifact path to signed URL
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
+                    // Strip artifact: protocol prefix to get the artifact-relative path
+                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
                     const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     const isImage = imageExtensions.has(ext);
@@ -297,17 +295,17 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
 
+                    // Strip artifact: protocol prefix to get the artifact-relative path
+                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
+
                     // Skip image files - they're shown at the group level
-                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     if (imageExtensions.has(ext)) return null;
 
-                    if (file.startsWith("http://") || file.startsWith("https://")) {
-                        return file;
+                    if (artifactPath.startsWith("http://") || artifactPath.startsWith("https://")) {
+                        return artifactPath;
                     }
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "attachment");
@@ -379,20 +377,18 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
 
+                    // Strip artifact: protocol prefix to get the artifact-relative path
+                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
+
                     // Check if it's an image file
-                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     if (!imageExtensions.has(ext)) return null;
 
                     // If it's already a full URL, return as-is
-                    if (file.startsWith("http://") || file.startsWith("https://")) {
-                        return file;
+                    if (artifactPath.startsWith("http://") || artifactPath.startsWith("https://")) {
+                        return artifactPath;
                     }
-
-                    // Resolve artifact path to signed URL
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "inline");
