@@ -96,7 +96,7 @@ export function addProperty(schema: JSONSchema, name: string, type: TypeSignatur
     if (!schema.properties) {
         schema.properties = {};
     }
-    const newSchema: JSONSchema = {};
+    const newSchema = {} as JSONSchema;
     setPropertyType(newSchema, type);
     schema.properties[name] = newSchema;
     if (isRequired) {

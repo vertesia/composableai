@@ -1,5 +1,6 @@
-import type { JSONObject, JSONSchema } from "@llumiverse/common";
+import type { JSONObject } from "@llumiverse/common";
 import { PromptRole } from "@llumiverse/common";
+import type { JSONSchema4 } from "json-schema";
 import { ProjectRef } from "./project.js";
 
 export interface ChatPromptSchema {
@@ -48,7 +49,7 @@ export interface PromptTemplateRef {
 }
 
 export interface PromptTemplateRefWithSchema extends PromptTemplateRef {
-    inputSchema?: JSONSchema;
+    inputSchema?: JSONSchema4;
 }
 
 export enum TemplateType {
@@ -60,7 +61,7 @@ export interface ExecutablePromptTemplate {
     role: PromptRole;
     content: string;
     content_type: TemplateType;
-    inputSchema?: JSONSchema;
+    inputSchema?: JSONSchema4;
 }
 export interface PromptTemplate extends ExecutablePromptTemplate {
     id: string;

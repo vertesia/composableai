@@ -25,6 +25,7 @@
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "devDependencies": {
+        "@types/json-schema": "^7.0.15",
         "@types/react": "^19.2.3",
         "typescript": "^5.9.3"
     },
@@ -33,7 +34,8 @@
     },
     "dependencies": {
         "@vertesia/client": "workspace:*",
-        "@vertesia/common": "workspace:*"
+        "@vertesia/common": "workspace:*",
+        "json-schema": "^0.4.0"
     },
     "repository": {
         "type": "git",
