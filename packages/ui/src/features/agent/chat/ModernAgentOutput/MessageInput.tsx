@@ -1,4 +1,4 @@
-import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip } from "@vertesia/ui/core";
+import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip, cn } from "@vertesia/ui/core";
 import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
@@ -295,7 +295,7 @@ export default function MessageInput({
 
     return (
         <div
-            className={`p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background z-10 ${isDragOver ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' : ''} ${className || ''}`}
+            className={cn("p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background z-10", isDragOver && "bg-blue-50 dark:bg-blue-900/20 border-blue-400", className)}
             style={{ minHeight: "120px" }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -346,18 +346,19 @@ export default function MessageInput({
                                 {processingFiles && Array.from(processingFiles.values()).map((file) => (
                                     <div
                                         key={file.id}
-                                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-sm ${
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-2 py-1 rounded-md text-sm",
                                             file.status === FileProcessingStatus.ERROR
-                                                ? 'bg-destructive/10 text-destructive'
+                                                ? "bg-destructive/10 text-destructive"
                                                 : file.status === FileProcessingStatus.READY
-                                                    ? 'bg-success/10 text-success'
-                                                    : 'bg-attention/10 text-attention'
-                                        }`}
+                                                    ? "bg-success/10 text-success"
+                                                    : "bg-attention/10 text-attention",
+                                        )}
                                     >
-                                        <FileTextIcon className={`size-3.5 ${
-                                            file.status === FileProcessingStatus.UPLOADING || file.status === FileProcessingStatus.PROCESSING
-                                                ? 'animate-pulse' : ''
-                                        }`} />
+                                        <FileTextIcon className={cn(
+                                            "size-3.5",
+                                            (file.status === FileProcessingStatus.UPLOADING || file.status === FileProcessingStatus.PROCESSING) && "animate-pulse",
+                                        )} />
                                         <span className="max-w-[120px] truncate">{file.name}</span>
                                         <span className="text-xs opacity-70">
                                             {file.status === FileProcessingStatus.UPLOADING ? 'Uploading...'
@@ -468,7 +469,7 @@ export default function MessageInput({
                         onPaste={handlePaste}
                         disabled={disabled}
                         placeholder={isStreaming ? "Agent is working... (Esc Esc to stop)" : (onFilesSelected ? "Ask anything... (drop or paste files)" : placeholder)}
-                        className={`flex-1 w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden ${inputClassName || ''}`}
+                        className={cn("flex-1 w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden", inputClassName)}
                         rows={2}
                         style={{ minHeight: '60px', maxHeight: '200px' }}
                     />
@@ -493,7 +494,7 @@ export default function MessageInput({
                         className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white"
                         title="Stop the agent"
                     >
-                        {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className="size-4 mr-2" />} Stop
+                        {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className="size-4 mr-2" />} <span>Stop</span>
                     </Button>
                 ) : (
                     <Button
@@ -503,7 +504,7 @@ export default function MessageInput({
                         title={hasProcessingFiles ? "Wait for files to finish processing" : undefined}
                     >
                         {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className="size-4 mr-2" />}
-                        {hasProcessingFiles ? "Processing..." : "Send"}
+                        <span>{hasProcessingFiles ? "Processing..." : "Send"}</span>
                     </Button>
                 )}
             </div>

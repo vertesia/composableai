@@ -205,9 +205,6 @@ importers:
       gradient-string:
         specifier: ^3.0.0
         version: 3.0.0
-      json-schema:
-        specifier: ^0.4.0
-        version: 0.4.0
       json-schema-to-typescript:
         specifier: ^15.0.4
         version: 15.0.4
@@ -297,9 +294,6 @@ importers:
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
-      json-schema:
-        specifier: ^0.4.0
-        version: 0.4.0
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^28.0.3
@@ -310,9 +304,6 @@ importers:
       '@rollup/plugin-typescript':
         specifier: ^12.1.2
         version: 12.3.0(rollup@4.54.0)(tslib@2.8.1)(typescript@5.9.3)
-      '@types/json-schema':
-        specifier: ^7.0.15
-        version: 7.0.15
       rollup:
         specifier: ^4.40.2
         version: 4.54.0
@@ -572,16 +563,10 @@ importers:
       '@vertesia/common':
         specifier: workspace:*
         version: link:../common
-      json-schema:
-        specifier: ^0.4.0
-        version: 0.4.0
       react:
         specifier: 19.2.3
         version: 19.2.3
     devDependencies:
-      '@types/json-schema':
-        specifier: ^7.0.15
-        version: 7.0.15
       '@types/react':
         specifier: 19.2.3
         version: 19.2.3
@@ -706,9 +691,6 @@ importers:
       framer-motion:
         specifier: ^12.23.12
         version: 12.23.26(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      json-schema:
-        specifier: ^0.4.0
-        version: 0.4.0
       jwt-decode:
         specifier: ^4.0.0
         version: 4.0.0
@@ -803,9 +785,6 @@ importers:
       '@types/hast':
         specifier: ^3.0.4
         version: 3.0.4
-      '@types/json-schema':
-        specifier: ^7.0.15
-        version: 7.0.15
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
@@ -875,9 +854,6 @@ importers:
       '@temporalio/workflow':
         specifier: ^1.11.5
         version: 1.14.0
-      '@types/json-schema':
-        specifier: ^7.0.15
-        version: 7.0.15
       '@vertesia/api-fetch-client':
         specifier: workspace:*
         version: link:../api-fetch-client
@@ -5482,9 +5458,6 @@ packages:
 
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
-
-  json-schema@0.4.0:
-    resolution: {integrity: sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==}
 
   json-stable-stringify-without-jsonify@1.0.1:
     resolution: {integrity: sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==}
@@ -12496,8 +12469,6 @@ snapshots:
   json-schema-traverse@0.4.1: {}
 
   json-schema-traverse@1.0.0: {}
-
-  json-schema@0.4.0: {}
 
   json-stable-stringify-without-jsonify@1.0.1: {}
 

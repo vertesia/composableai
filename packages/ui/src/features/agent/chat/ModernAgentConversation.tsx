@@ -14,9 +14,14 @@ import {
     UserInputSignal,
 } from "@vertesia/common";
 import { FusionFragmentProvider } from "@vertesia/fusion-ux";
-import { Button, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
+import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
+import { type AgentConversationViewMode } from "./ModernAgentOutput/AllMessagesMixed";
+import { type BatchProgressPanelClassNames } from "./ModernAgentOutput/BatchProgressPanel";
+import { type MessageItemClassNames } from "./ModernAgentOutput/MessageItem";
+import { type StreamingMessageClassNames } from "./ModernAgentOutput/StreamingMessage";
+import { type ToolCallGroupClassNames } from "./ModernAgentOutput/ToolCallGroup";
 import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
@@ -102,6 +107,26 @@ interface ModernAgentConversationProps {
     /** Max number of files allowed */
     maxFiles?: number;
 
+    /** Ref populated with the internal file upload handler for external triggering */
+    fileUploadRef?: React.MutableRefObject<((files: File[]) => void) | null>;
+    /** Called when processingFiles state changes (for external progress display) */
+    onProcessingFilesChange?: (files: Map<string, ConversationFile>) => void;
+    /** Called when plans change (for external plan panel) */
+    onPlansChange?: (plans: Array<{ plan: Plan; timestamp: number }>, activePlanIndex: number) => void;
+    /** Called when workstream status changes (for external plan panel) */
+    onWorkstreamStatusChange?: (statusMap: Map<number, Map<string, "pending" | "in_progress" | "completed" | "skipped">>) => void;
+
+    /** Controlled view mode — when provided, overrides internal state */
+    viewMode?: AgentConversationViewMode;
+    /** Called when view mode changes (for external control) */
+    onViewModeChange?: (mode: AgentConversationViewMode) => void;
+    /** Called when follow-up input availability is determined (after messages load) */
+    onShowInputChange?: (canSendFollowUp: boolean) => void;
+    /** Ref populated with the stop handler — call to interrupt the active agent. null when stop unavailable. */
+    stopRef?: React.MutableRefObject<(() => void) | null>;
+    /** Called when the stopping (in-progress) state changes */
+    onStoppingChange?: (isStopping: boolean) => void;
+
     // Document search props (render prop for custom search UI)
     /** Render custom document search UI - if provided, shows search button */
     renderDocumentSearch?: (props: {
@@ -116,6 +141,14 @@ interface ModernAgentConversationProps {
 
     // Hide the default object linking (for apps that don't use it)
     hideObjectLinking?: boolean;
+    /** Hide the internal header (for apps that render their own) */
+    hideHeader?: boolean;
+    /** Hide the internal message input (for apps that render their own) */
+    hideMessageInput?: boolean;
+    /** Hide the internal plan panel (for apps that render their own) */
+    hidePlanPanel?: boolean;
+    /** Hide workstream tabs */
+    hideWorkstreamTabs?: boolean;
 
     // Callback to get attached document IDs when sending messages
     // Returns array of document IDs to include in message metadata
@@ -133,6 +166,25 @@ interface ModernAgentConversationProps {
     inputContainerClassName?: string;
     /** Additional className for the input field */
     inputClassName?: string;
+
+    /** Additional className for the root container */
+    className?: string;
+
+    messageItemClassNames?: MessageItemClassNames;
+    /** Sparse MESSAGE_STYLES overrides passed to every MessageItem */
+    messageStyleOverrides?: import("./ModernAgentOutput/MessageItem").MessageItemProps['messageStyleOverrides'];
+    toolCallGroupClassNames?: ToolCallGroupClassNames;
+    /** Hide ToolCallGroup in this view mode */
+    hideToolCallsInViewMode?: AgentConversationViewMode[];
+    streamingMessageClassNames?: StreamingMessageClassNames;
+    batchProgressPanelClassNames?: BatchProgressPanelClassNames;
+
+    /** className override for the working indicator container */
+    workingIndicatorClassName?: string;
+    /** className override for the message list container */
+    messageListClassName?: string;
+    /** Custom component to render store/document links instead of default NavLink navigation */
+    StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
 
     // Fusion fragment props
     /**
@@ -162,7 +214,7 @@ export function ModernAgentConversation(
             <SkillWidgetProvider>
                 <ModernAgentConversationInner {...props} run={execRun} />
             </SkillWidgetProvider>
-        )
+        );
     } else if (startWorkflow) {
         // If we have startWorkflow capability but no run yet
         return <StartWorkflowView {...props} />;
@@ -612,6 +664,11 @@ function ModernAgentConversationInner({
     onRemoveDocument,
     // Object linking
     hideObjectLinking,
+    // Section visibility
+    hideHeader,
+    hideMessageInput,
+    hidePlanPanel,
+    hideWorkstreamTabs,
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
@@ -620,18 +677,56 @@ function ModernAgentConversationInner({
     // Context callback
     getMessageContext,
     // Styling props
+    className,
     inputContainerClassName,
     inputClassName,
     // Fusion fragment data
     fusionData,
+    // External file upload API
+    fileUploadRef,
+    onProcessingFilesChange,
+    // External plan panel API
+    onPlansChange,
+    onWorkstreamStatusChange,
+    // External view mode control
+    viewMode: controlledViewMode,
+    onViewModeChange: onViewModeChangeProp,
+    onShowInputChange,
+    // External stop API
+    stopRef,
+    onStoppingChange,
+    // MessageItem className/style overrides
+    messageItemClassNames,
+    messageStyleOverrides,
+    // ToolCallGroup className overrides + view mode visibility
+    toolCallGroupClassNames,
+    hideToolCallsInViewMode,
+    // StreamingMessage className overrides
+    streamingMessageClassNames,
+    // BatchProgressPanel className overrides
+    batchProgressPanelClassNames,
+    // AllMessagesMixed className overrides
+    workingIndicatorClassName,
+    messageListClassName,
+    StoreLinkComponent,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
+
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const conversationRef = useRef<HTMLDivElement | null>(null);
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
     const [isSending, setIsSending] = useState(false);
-    const [viewMode, setViewMode] = useState<"stacked" | "sliding">("sliding");
+    // View mode: controlled externally when props are provided, otherwise managed locally
+    const [internalViewMode, setInternalAgentConversationViewMode] = useState<AgentConversationViewMode>("sliding");
+    const viewMode = controlledViewMode ?? internalViewMode;
+    const handleViewModeChange = useCallback((mode: AgentConversationViewMode) => {
+        if (onViewModeChangeProp) {
+            onViewModeChangeProp(mode);
+        } else {
+            setInternalAgentConversationViewMode(mode);
+        }
+    }, [onViewModeChangeProp]);
     const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(!isModal);
     const [isStopping, setIsStopping] = useState(false);
     // Keep track of multiple plans and their timestamps
@@ -1177,6 +1272,46 @@ function ModernAgentConversationInner({
         }
     }, [client, run, toast]);
 
+    // Expose handleFileUpload to external callers via ref
+    useEffect(() => {
+        if (fileUploadRef) fileUploadRef.current = handleFileUpload;
+        return () => { if (fileUploadRef) fileUploadRef.current = null; };
+    }, [fileUploadRef, handleFileUpload]);
+
+    // Notify parent when processingFiles changes
+    useEffect(() => {
+        onProcessingFilesChange?.(processingFiles);
+    }, [processingFiles, onProcessingFilesChange]);
+
+    // Notify parent when plans change
+    useEffect(() => {
+        onPlansChange?.(plans, activePlanIndex);
+    }, [plans, activePlanIndex, onPlansChange]);
+
+    // Notify parent when workstream status changes
+    useEffect(() => {
+        onWorkstreamStatusChange?.(workstreamStatusMap);
+    }, [workstreamStatusMap, onWorkstreamStatusChange]);
+
+    // Notify parent when input availability is determined
+    useEffect(() => {
+        if (messages.length === 0) return;
+        // TERMINATED detected from message stream (fast path)
+        if (!showInput) {
+            onShowInputChange?.(false);
+            return;
+        }
+        // Terminal workflow status from API (COMPLETED, FAILED, CANCELED, TIMED_OUT)
+        if (workflowStatus && workflowStatus !== "RUNNING") {
+            onShowInputChange?.(false);
+            return;
+        }
+        // Active: workflow confirmed running
+        if (workflowStatus !== null) {
+            onShowInputChange?.(true);
+        }
+    }, [showInput, workflowStatus, messages.length, onShowInputChange]);
+
     // Drag and drop handlers for full-panel file upload
     const handleDragEnter = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -1216,7 +1351,7 @@ function ModernAgentConversationInner({
     }, [run, handleFileUpload]);
 
     // Stop/interrupt the active workflow
-    const handleStopWorkflow = async () => {
+    const handleStopWorkflow = useCallback(async () => {
         if (isStopping) return;
 
         setIsStopping(true);
@@ -1242,7 +1377,18 @@ function ModernAgentConversationInner({
         } finally {
             setIsStopping(false);
         }
-    };
+    }, [isStopping, client, run.workflowId, run.runId, toast]);
+
+    // Expose stop handler to external callers via ref
+    useEffect(() => {
+        if (stopRef) stopRef.current = !isCompleted ? handleStopWorkflow : null;
+        return () => { if (stopRef) stopRef.current = null; };
+    }, [stopRef, isCompleted, handleStopWorkflow]);
+
+    // Notify parent when stopping state changes
+    useEffect(() => {
+        onStoppingChange?.(isStopping);
+    }, [isStopping, onStoppingChange]);
 
     // Calculate number of active tasks for the status indicator
     const getActiveTaskCount = (): number => {
@@ -1370,7 +1516,7 @@ function ModernAgentConversationInner({
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
         <div
-            className={`flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden ${isDragOver ? 'ring-2 ring-blue-400 ring-inset' : ''}`}
+            className={cn("flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden", isDragOver && "ring-2 ring-blue-400 ring-inset", className)}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -1388,36 +1534,39 @@ function ModernAgentConversationInner({
             {/* Conversation Area - responsive width based on panel visibility */}
             <div
                 ref={conversationRef}
-                className={`flex flex-col min-h-0 border-0 ${
-                showSlidingPanel
-                    ? 'w-full lg:w-2/3 flex-1 min-h-[50vh]'
-                    : fullWidth
-                        ? 'flex-1 w-full'
-                        : `flex-1 mx-auto ${!isModal ? 'max-w-4xl' : ''}`
-            }`}
+                className={cn(
+                    "flex flex-col min-h-0 border-0",
+                    showSlidingPanel
+                        ? "w-full lg:w-2/3 flex-1 min-h-[50vh]"
+                        : fullWidth
+                            ? "flex-1 w-full"
+                            : `flex-1 mx-auto ${!isModal ? "max-w-4xl" : ""}`
+                )}
             >
                 {/* Streaming activity indicator moved to Header */}
 
                 {/* Header - flex-shrink-0 to prevent shrinking */}
-                <div className="flex-shrink-0">
-                    <Header
-                        title={actualTitle}
-                        isCompleted={isCompleted}
-                        onClose={onClose}
-                        isModal={isModal}
-                        run={run}
-                        viewMode={viewMode}
-                        onViewModeChange={setViewMode}
-                        showPlanPanel={showSlidingPanel}
-                        hasPlan={plans.length > 0}
-                        onTogglePlanPanel={handleTogglePlanPanel}
-                        onDownload={downloadConversation}
-                        onCopyRunId={copyRunId}
-                        resetWorkflow={resetWorkflow}
-                        onExportPdf={exportConversationPdf}
-                        isReceivingChunks={debugChunkFlash}
-                    />
-                </div>
+                {!hideHeader && (
+                    <div className="flex-shrink-0">
+                        <Header
+                            title={actualTitle}
+                            isCompleted={isCompleted}
+                            onClose={onClose}
+                            isModal={isModal}
+                            run={run}
+                            viewMode={viewMode}
+                            onViewModeChange={handleViewModeChange}
+                            showPlanPanel={showSlidingPanel}
+                            hasPlan={plans.length > 0}
+                            onTogglePlanPanel={handleTogglePlanPanel}
+                            onDownload={downloadConversation}
+                            onCopyRunId={copyRunId}
+                            resetWorkflow={resetWorkflow}
+                            onExportPdf={exportConversationPdf}
+                            isReceivingChunks={debugChunkFlash}
+                        />
+                    </div>
+                )}
 
                 {messages.length === 0 && !isCompleted ? (
                     <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-6">
@@ -1437,7 +1586,6 @@ function ModernAgentConversationInner({
                     <AllMessagesMixed
                         messages={messages}
                         bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
-                        viewMode={viewMode}
                         isCompleted={isCompleted}
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
@@ -1450,56 +1598,69 @@ function ModernAgentConversationInner({
                         streamingMessages={streamingMessages}
                         onSendMessage={handleSendMessage}
                         thinkingMessageIndex={thinkingMessageIndex}
+                        messageItemClassNames={messageItemClassNames}
+                        messageStyleOverrides={messageStyleOverrides}
+                        toolCallGroupClassNames={toolCallGroupClassNames}
+                        hideToolCallsInViewMode={hideToolCallsInViewMode}
+                        streamingMessageClassNames={streamingMessageClassNames}
+                        batchProgressPanelClassNames={batchProgressPanelClassNames}
+                        viewMode={viewMode}
+                        hideWorkstreamTabs={hideWorkstreamTabs}
+                        workingIndicatorClassName={workingIndicatorClassName}
+                        messageListClassName={messageListClassName}
+                        StoreLinkComponent={StoreLinkComponent}
                     />
                 )}
 
                 {/* Show workflow status message when not running, or show input when running/unknown */}
                 {/* Input area - flex-shrink-0 to stay pinned at bottom, with iOS safe area support */}
-                <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-                    {workflowStatus && workflowStatus !== "RUNNING" ? (
-                        <MessageBox
-                            status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
-                            icon={null}
-                            className="m-2"
-                        >
-                            This Workflow is {workflowStatus}
-                        </MessageBox>
-                    ) : showInput && (
-                        <MessageInput
-                            onSend={handleSendMessage}
-                            onStop={handleStopWorkflow}
-                            disabled={isUploading}
-                            isSending={isSending || isUploading}
-                            isStopping={isStopping}
-                            isStreaming={!isCompleted}
-                            isCompleted={isCompleted}
-                            activeTaskCount={getActiveTaskCount()}
-                            placeholder={placeholder}
-                            // File upload props - use internal handler that signals workflow
-                            onFilesSelected={handleFileUpload}
-                            uploadedFiles={uploadedFiles}
-                            onRemoveFile={onRemoveFile}
-                            acceptedFileTypes={acceptedFileTypes}
-                            maxFiles={maxFiles}
-                            // File processing state
-                            processingFiles={processingFiles}
-                            hasProcessingFiles={hasProcessingFiles}
-                            // Document search props
-                            renderDocumentSearch={renderDocumentSearch}
-                            selectedDocuments={selectedDocuments}
-                            onRemoveDocument={onRemoveDocument}
-                            // Object linking
-                            hideObjectLinking={hideObjectLinking}
-                            // Styling props
-                            className={inputContainerClassName}
-                            inputClassName={inputClassName}
-                        />
-                    )}
-                </div>
+                {!hideMessageInput && (
+                    <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                        {workflowStatus && workflowStatus !== "RUNNING" ? (
+                            <MessageBox
+                                status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
+                                icon={null}
+                                className="m-2"
+                            >
+                                This Workflow is {workflowStatus}
+                            </MessageBox>
+                        ) : showInput && (
+                            <MessageInput
+                                onSend={handleSendMessage}
+                                onStop={handleStopWorkflow}
+                                disabled={isUploading}
+                                isSending={isSending || isUploading}
+                                isStopping={isStopping}
+                                isStreaming={!isCompleted}
+                                isCompleted={isCompleted}
+                                activeTaskCount={getActiveTaskCount()}
+                                placeholder={placeholder}
+                                // File upload props - use internal handler that signals workflow
+                                onFilesSelected={handleFileUpload}
+                                uploadedFiles={uploadedFiles}
+                                onRemoveFile={onRemoveFile}
+                                acceptedFileTypes={acceptedFileTypes}
+                                maxFiles={maxFiles}
+                                // File processing state
+                                processingFiles={processingFiles}
+                                hasProcessingFiles={hasProcessingFiles}
+                                // Document search props
+                                renderDocumentSearch={renderDocumentSearch}
+                                selectedDocuments={selectedDocuments}
+                                onRemoveDocument={onRemoveDocument}
+                                // Object linking
+                                hideObjectLinking={hideObjectLinking}
+                                // Styling props
+                                className={inputContainerClassName}
+                                inputClassName={inputClassName}
+                            />
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Plan Panel Area - only rendered when panel should be shown */}
-            {showSlidingPanel && (
+            {!hidePlanPanel && showSlidingPanel && (
                 <div className="w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l">
                     <InlineSlidingPlanPanel
                         plan={getActivePlan.plan}

@@ -1,9 +1,8 @@
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { AgentSearchScope, ExecutionEnvironmentRef, InCodeInteraction, mergeInCodePromptSchemas, supportsToolUse, UserChannel, WorkflowInteractionVars } from "@vertesia/common";
+import { AgentSearchScope, ExecutionEnvironmentRef, InCodeInteraction, JSONSchema, mergeInCodePromptSchemas, supportsToolUse, UserChannel, WorkflowInteractionVars } from "@vertesia/common";
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
-import type { JSONSchema4 } from "json-schema";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 export type WorkflowMode = 'start' | 'schedule';
@@ -30,10 +29,10 @@ export class PayloadBuilder {
     _mode: WorkflowMode = 'start';
     _scheduledWorkflowConfig: ScheduledWorkflowConfig | undefined;
 
-    private _interactionParamsSchema?: JSONSchema4 | null;
+    private _interactionParamsSchema?: JSONSchema | null;
     private _inputValidator?: {
         validate: ValidateFunction;
-        schema: JSONSchema4;
+        schema: JSONSchema;
     };
 
     constructor(public vertesia: VertesiaClient, public updateState: (data: PayloadBuilder) => void) {
@@ -179,7 +178,7 @@ export class PayloadBuilder {
         if (interaction?.id !== this._interaction?.id) {
             this._interaction = interaction;
             // trigger the setter to update the onChange state
-            this.interactionParamsSchema = interaction ? mergeInCodePromptSchemas(interaction.prompts) as JSONSchema4 : undefined;
+            this.interactionParamsSchema = interaction ? mergeInCodePromptSchemas(interaction.prompts) : undefined;
             // Reset the validator when schema changes
             this._inputValidator = undefined;
             if (interaction && !this._preserveRunValues) {
@@ -263,11 +262,11 @@ export class PayloadBuilder {
         this._preserveRunValues = value;
     }
 
-    get interactionParamsSchema(): JSONSchema4 | null | undefined {
+    get interactionParamsSchema(): JSONSchema | null | undefined {
         return this._interactionParamsSchema;
     }
 
-    set interactionParamsSchema(schema: JSONSchema4 | null | undefined) {
+    set interactionParamsSchema(schema: JSONSchema | null | undefined) {
         if (this._interactionParamsSchema !== schema) {
             this._interactionParamsSchema = schema;
             // Booleans must be true or false, never undefined
@@ -278,7 +277,7 @@ export class PayloadBuilder {
         }
     }
 
-    private initializeBooleanDefaults(data: JSONObject, schema: JSONSchema4): JSONObject {
+    private initializeBooleanDefaults(data: JSONObject, schema: JSONSchema): JSONObject {
         if (!schema.properties) {
             return data;
         }
@@ -286,7 +285,7 @@ export class PayloadBuilder {
         const result = { ...data };
 
         for (const [name, propSchema] of Object.entries(schema.properties)) {
-            const prop = propSchema as JSONSchema4;
+            const prop = propSchema;
             // Initialize boolean fields to false if not already set
             if (prop.type === "boolean" && result[name] === undefined) {
                 result[name] = false;
