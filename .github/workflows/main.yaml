@@ -112,6 +112,20 @@ jobs:
       - run: pnpm build
       - run: npm --prefix packages/workflow test
 
+  template-smoke-test:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/preview'
+    needs: composableai-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Smoke test published packages
+        run: ./.github/bin/test-template-smoke.sh --release-type release
+
   notify-repo-studio:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/repo-dispatch')
