@@ -38,6 +38,7 @@ async function main() {
     .option('-t, --template <name>', 'Template name (skips interactive selection)')
     .option('-y, --yes', 'Non-interactive mode: use defaults for all prompts', false)
     .option('--dev', 'Use workspace dependencies (development mode)', false)
+    .option('--local-templates <path>', 'Use local template directory instead of fetching from GitHub')
     .addHelpText('after', `
 Available Templates:
 ${config.templates.map(t => `  - ${t.name}`).join('\n')}
@@ -47,8 +48,8 @@ Documentation: ${config.docsUrl}
     .parse();
 
   const projectName = program.args[0];
-  const opts = program.opts<{ branch?: string; template?: string; yes: boolean; dev: boolean }>();
-  const { branch, template, yes: nonInteractive, dev } = opts;
+  const opts = program.opts<{ branch?: string; template?: string; yes: boolean; dev: boolean; localTemplates?: string }>();
+  const { branch, template, yes: nonInteractive, dev, localTemplates } = opts;
 
   // Validate project name
   if (!validation.projectNamePattern.test(projectName)) {
@@ -75,8 +76,8 @@ Documentation: ${config.docsUrl}
     const branchInfo = branch ? chalk.gray(` (branch: ${branch})`) : '';
     console.log(chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}`) + branchInfo + '\n');
 
-    // Step 2: Download template from GitHub
-    await downloadTemplate(projectName, selectedTemplate.repository);
+    // Step 2: Download template from GitHub (or copy from local path)
+    await downloadTemplate(projectName, selectedTemplate.repository, localTemplates);
 
     // Step 3: Read template configuration
     const templateConfig = readTemplateConfig(projectName);

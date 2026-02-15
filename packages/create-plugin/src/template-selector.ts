@@ -4,26 +4,33 @@
 import prompts from 'prompts';
 import chalk from 'chalk';
 import { config, TemplateDefinition } from './configuration.js';
+import { getCliVersion } from './version.js';
 
 /**
- * Apply branch override to repository URL
+ * Resolve the git ref (branch or tag) for template fetching.
+ *
+ * Priority:
+ * 1. Explicit --branch flag from user (override for testing)
+ * 2. Release CLI version (no -dev. suffix) → templates@{version} tag
+ * 3. Dev/snapshot CLI version → main branch
  */
-function applyBranchOverride(repository: string, branch?: string): string {
-  if (!branch) {
-    return repository;
+function resolveTemplateRef(branchOverride?: string): string {
+  if (branchOverride) {
+    return branchOverride;
   }
 
-  // Remove existing branch/tag if present (after #)
-  const baseRepo = repository.split('#')[0];
+  const version = getCliVersion();
+  if (!version.includes('-dev.')) {
+    return `templates@${version}`;
+  }
 
-  // Apply the override branch
-  return `${baseRepo}#${branch}`;
+  return 'main';
 }
 
 /**
  * Select a template (only prompts if multiple templates are available)
- * Returns the selected template definition with branch override applied if provided
- * @param branchOverride - Optional branch to use instead of the template's default
+ * Returns the selected template definition with the resolved git ref applied
+ * @param branchOverride - Optional branch to use instead of the auto-resolved ref
  * @param templateName - Optional template name for non-interactive selection
  */
 export async function selectTemplate(branchOverride?: string, templateName?: string): Promise<TemplateDefinition> {
@@ -65,9 +72,10 @@ export async function selectTemplate(branchOverride?: string, templateName?: str
     selectedTemplate = templates[response.template];
   }
 
-  // Apply branch override if provided
+  // Apply resolved git ref (branch or tag)
+  const ref = resolveTemplateRef(branchOverride);
   return {
     ...selectedTemplate,
-    repository: applyBranchOverride(selectedTemplate.repository, branchOverride)
+    repository: `${selectedTemplate.repository}#${ref}`
   };
 }

@@ -26,6 +26,10 @@
   ],
   "author": "Vertesia",
   "license": "Apache-2.0",
+  "templateVersions": {
+    "@vertesia": "0.0.0",
+    "@llumiverse": "0.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/vertesia/composableai.git",

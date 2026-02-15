@@ -5,7 +5,7 @@ set -e
 # Publishes all built packages to verdaccio, bootstraps a template, and builds it.
 #
 # Usage: test-template-integration.sh --release-type <snapshot|release> [--template <name>]
-#   --release-type: Determines npm tag (dev for snapshot, latest for release) and template branch (main/preview)
+#   --release-type: Determines npm tag (dev for snapshot, latest for release) and template ref
 #   --template: Template name to test (default: "Vertesia Plugin")
 #
 # Prerequisites:
@@ -179,6 +179,10 @@ publish_to_verdaccio
 
 # Point npm/npx to verdaccio for bootstrap and build
 export npm_config_registry="${VERDACCIO_URL}"
+
+# Use local templates so integration tests don't need a git tag on GitHub
+TEMPLATES_PATH="$(cd "${SCRIPT_DIR}/../.." && pwd)/templates"
+EXTRA_CREATE_ARGS="--local-templates ${TEMPLATES_PATH}"
 
 bootstrap_template "integration-test-plugin"
 build_project
