@@ -14,6 +14,7 @@ import { MarkdownLink } from './MarkdownLink';
 import { MarkdownImage } from './MarkdownImage';
 import { MarkdownFigure } from './MarkdownFigure';
 import { remarkDirectiveHandler } from './remarkDirectiveHandler';
+import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 import {
     CodeBlockHandlerProvider,
     createDefaultCodeBlockHandlers,
@@ -101,6 +102,10 @@ export function MarkdownRenderer({
     onProposalSubmit,
 }: MarkdownRendererProps) {
     const codeBlockRegistry = useCodeBlockRendererRegistry();
+    const normalizedMarkdown = React.useMemo(
+        () => normalizeCustomSchemeLinks(children),
+        [children]
+    );
 
     // Remark plugins (markdown parsing)
     // Order matters: GFM first, then directive (must precede handler),
@@ -282,7 +287,7 @@ export function MarkdownRenderer({
                 components={componentsWithOverrides}
                 urlTransform={customUrlTransform}
             >
-                {children}
+                {normalizedMarkdown}
             </Markdown>
         </CodeBlockHandlerProvider>
     );
