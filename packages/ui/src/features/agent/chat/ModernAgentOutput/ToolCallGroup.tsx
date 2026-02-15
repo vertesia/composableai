@@ -1,4 +1,4 @@
-import { AgentMessage } from "@vertesia/common";
+import { AgentMessage, AgentMessageType } from "@vertesia/common";
 import { Button, cn, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
@@ -105,6 +105,24 @@ const getFilesFromDetails = (details: { files?: string[]; outputFiles?: string[]
     return Array.isArray(files) ? files : undefined;
 };
 
+const getMessageActivityLabel = (message: AgentMessage): string => {
+    const details = message.details as { tool?: string } | undefined;
+    if (details?.tool) return details.tool;
+
+    switch (message.type) {
+        case AgentMessageType.UPDATE:
+            return "update";
+        case AgentMessageType.WARNING:
+            return "warning";
+        case AgentMessageType.ERROR:
+            return "error";
+        case AgentMessageType.SYSTEM:
+            return "system";
+        default:
+            return "activity";
+    }
+};
+
 function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames = {} }: ToolCallItemProps) {
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const toast = useToast();
@@ -117,7 +135,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
     urlCacheRef.current = urlCache;
 
     const details = message.details as { tool?: string; files?: string[]; outputFiles?: string[]; [key: string]: unknown } | undefined;
-    const toolName = details?.tool || "Tool";
+    const toolName = getMessageActivityLabel(message);
     const files = getFilesFromDetails(details);
     const messageContent = typeof message.message === "string" ? message.message : "";
 
@@ -139,10 +157,8 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                     if (file.startsWith("http://") || file.startsWith("https://")) {
                         return file;
                     }
-                    // Resolve artifact path to signed URL
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
+                    // Strip artifact: protocol prefix to get the artifact-relative path
+                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
                     const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     const isImage = imageExtensions.has(ext);
@@ -214,7 +230,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                                 {messageContent}
                             </span>
                         ) : (
-                            <span className="text-xs text-muted italic">Tool: {toolName}</span>
+                            <span className="text-xs text-muted italic">Activity: {toolName}</span>
                         )}
                     </div>
                 </div>
@@ -242,7 +258,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
 
             {/* Always show images inline, regardless of expanded state */}
             {imageFiles.length > 0 && (
-                <div className="px-4 pb-2">
+                <div className="px-3 pb-1.5">
                     <FileDisplay files={imageFiles} />
                 </div>
             )}
@@ -268,7 +284,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
 
                     {/* Technical details - collapsible */}
                     {details && Object.keys(details).length > 1 && (
-                        <details className="mt-3 text-xs border rounded p-2 bg-muted/30" onClick={(e) => e.stopPropagation()}>
+                        <details className="mt-2 text-xs border rounded p-1.5 bg-muted/30" onClick={(e) => e.stopPropagation()}>
                             <summary className="cursor-pointer text-muted">
                                 Technical Details
                             </summary>
@@ -308,17 +324,17 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
 
+                    // Strip artifact: protocol prefix to get the artifact-relative path
+                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
+
                     // Skip image files - they're shown at the group level
-                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     if (imageExtensions.has(ext)) return null;
 
-                    if (file.startsWith("http://") || file.startsWith("https://")) {
-                        return file;
+                    if (artifactPath.startsWith("http://") || artifactPath.startsWith("https://")) {
+                        return artifactPath;
                     }
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "attachment");
@@ -349,7 +365,7 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
     if (resolvedFiles.length === 0) return null;
 
     return (
-        <div className="pl-5 pr-3 pb-2">
+        <div className="pl-4 pr-2 pb-1.5">
             <FileDisplay files={resolvedFiles} />
         </div>
     );
@@ -390,20 +406,18 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
 
+                    // Strip artifact: protocol prefix to get the artifact-relative path
+                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
+
                     // Check if it's an image file
-                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     if (!imageExtensions.has(ext)) return null;
 
                     // If it's already a full URL, return as-is
-                    if (file.startsWith("http://") || file.startsWith("https://")) {
-                        return file;
+                    if (artifactPath.startsWith("http://") || artifactPath.startsWith("https://")) {
+                        return artifactPath;
                     }
-
-                    // Resolve artifact path to signed URL
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "inline");
@@ -433,7 +447,7 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
     if (resolvedImages.length === 0) return null;
 
     return (
-        <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+        <div className="px-3 py-1.5 border-b border-gray-100 dark:border-gray-800">
             <FileDisplay files={resolvedImages} />
         </div>
     );
@@ -465,8 +479,12 @@ function ToolCallGroupComponent({
 
     // Render status indicator based on tool execution status
     const renderStatusIndicator = () => {
-        if (showPulsatingCircle || toolStatus === "running") {
+        // Only pulse for the currently active/latest group
+        if (showPulsatingCircle) {
             return <PulsatingCircle size="sm" color="blue" />;
+        }
+        if (toolStatus === "running") {
+            return <span className="size-2 rounded-full bg-blue-500 inline-block" />;
         }
         if (toolStatus === "completed") {
             return <CheckCircle className="size-4 text-success" />;
@@ -519,15 +537,12 @@ function ToolCallGroupComponent({
     const lastTimestamp = lastMessage.timestamp;
 
     // Get tool names for summary
-    const toolNames = messages.map(m => {
-        const details = m.details as { tool?: string } | undefined;
-        return details?.tool || "tool";
-    });
+    const toolNames = messages.map((m) => getMessageActivityLabel(m));
 
     const uniqueToolCount = new Set(toolNames).size;
     const toolSummary = uniqueToolCount === 1
         ? `${messages.length}× ${toolNames[0]}`
-        : `${messages.length} tool calls`;
+        : `${messages.length} activity updates`;
 
     const toggleItem = (index: number) => {
         setExpandedItems(prev => {
@@ -544,7 +559,7 @@ function ToolCallGroupComponent({
     const copyAllToClipboard = () => {
         const allContent = messages.map(m => {
             const details = m.details as { tool?: string; [key: string]: unknown } | undefined;
-            return `[${details?.tool || "tool"}] ${m.message || ""}\n${details ? JSON.stringify(details, null, 2) : ""}`;
+            return `[${getMessageActivityLabel(m)}] ${m.message || ""}\n${details ? JSON.stringify(details, null, 2) : ""}`;
         }).join("\n\n---\n\n");
 
         navigator.clipboard.writeText(allContent).then(() => {
@@ -565,7 +580,7 @@ function ToolCallGroupComponent({
                 className={cn("flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", headerClassName)}
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                     {renderStatusIndicator()}
                     <span className={cn("text-xs font-medium text-muted", senderClassName)}>Agent</span>
                     <span className={cn("text-xs text-purple-600 dark:text-purple-400 font-medium", toolSummaryClassName)}>
@@ -578,7 +593,7 @@ function ToolCallGroupComponent({
                     )}
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                     <span className="text-[11px] text-muted/70">
                         {dayjs(firstTimestamp).format("HH:mm:ss")}
                         {messages.length > 1 && ` - ${dayjs(lastTimestamp).format("HH:mm:ss")}`}
@@ -603,10 +618,10 @@ function ToolCallGroupComponent({
 
             {/* Collapsed summary - show tool calls as single-line rows with expand option */}
             {isCollapsed && (
-                <div className="px-4 py-1 space-y-0">
+                <div className="px-3 py-0.5 space-y-0">
                     {messages.map((m, idx) => {
                         const details = m.details as { tool?: string; files?: string[]; outputFiles?: string[] } | undefined;
-                        const toolName = details?.tool || "tool";
+                        const toolName = getMessageActivityLabel(m);
                         const fullMessage = typeof m.message === "string" ? m.message : "";
                         const isAnimating = animatingIndices.has(idx);
                         const isItemExpanded = expandedItems.has(idx);
@@ -645,7 +660,7 @@ function ToolCallGroupComponent({
                                                 {fullMessage}
                                             </span>
                                         ) : (
-                                            <span className="text-muted italic">Tool: {toolName}</span>
+                                            <span className="text-muted italic">Activity: {toolName}</span>
                                         )}
                                     </div>
                                     {/* Tool name badge on the right */}
@@ -665,7 +680,7 @@ function ToolCallGroupComponent({
                                         </div>
                                         {/* Show details if available */}
                                         {details && Object.keys(details).length > 1 && (
-                                            <details className="mt-2 text-xs">
+                                            <details className="mt-1.5 text-xs">
                                                 <summary className="text-muted cursor-pointer">Show details</summary>
                                                 <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto">
                                                     {JSON.stringify(details, null, 2)}

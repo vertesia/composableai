@@ -263,6 +263,16 @@ export function getToolStatus(message: AgentMessage): ToolExecutionStatus | unde
 }
 
 /**
+ * Get the activity_group_id from message details, if present.
+ * This groups all internal activity updates for one tool-execution cycle.
+ */
+export function getActivityGroupId(message: AgentMessage): string | undefined {
+    const value = message.details?.activity_group_id;
+    if (typeof value !== "string" || value.trim() === "") return undefined;
+    return value;
+}
+
+/**
  * Group consecutive tool call messages together for a cleaner display
  * Non-tool messages remain as single items
  *
@@ -329,6 +339,12 @@ export function groupMessagesWithStreaming(
     streamingMessages: Map<string, StreamingData>,
     activeWorkstream?: string
 ): RenderableGroup[] {
+    // First pass: collect messages by activity_group_id (core grouping signal)
+    const activityGroups = new Map<string, {
+        messages: AgentMessage[];
+        firstTimestamp: number;
+    }>();
+
     // First pass: collect messages by tool_iteration (for parallel tool calls in same iteration)
     const iterationGroups = new Map<number, {
         messages: AgentMessage[];
@@ -345,7 +361,17 @@ export function groupMessagesWithStreaming(
     const standaloneMessages: AgentMessage[] = [];
 
     for (const message of messages) {
-        if (isToolCallMessage(message)) {
+        const activityGroupId = getActivityGroupId(message);
+
+        if (activityGroupId) {
+            if (!activityGroups.has(activityGroupId)) {
+                activityGroups.set(activityGroupId, {
+                    messages: [],
+                    firstTimestamp: getTimestampMs(message.timestamp),
+                });
+            }
+            activityGroups.get(activityGroupId)!.messages.push(message);
+        } else if (isToolCallMessage(message)) {
             const toolIteration = getToolIteration(message);
             const toolRunId = getToolRunId(message);
 
@@ -380,10 +406,21 @@ export function groupMessagesWithStreaming(
     type GroupedItem =
         | { kind: 'message'; message: AgentMessage; timestamp: number }
         | { kind: 'streaming'; streamingId: string; data: StreamingData; timestamp: number }
+        | { kind: 'activity_group'; activityGroupId: string; messages: AgentMessage[]; timestamp: number }
         | { kind: 'iteration_group'; iteration: number; messages: AgentMessage[]; timestamp: number }
         | { kind: 'tool_run'; toolRunId: string; messages: AgentMessage[]; timestamp: number };
 
     const items: GroupedItem[] = [];
+
+    // Add activity groups first (strongest grouping signal from core)
+    activityGroups.forEach((group, activityGroupId) => {
+        items.push({
+            kind: 'activity_group',
+            activityGroupId,
+            messages: group.messages,
+            timestamp: group.firstTimestamp
+        });
+    });
 
     // Add iteration groups (parallel tool calls from same iteration)
     iterationGroups.forEach((group, iteration) => {
@@ -477,6 +514,23 @@ export function groupMessagesWithStreaming(
                 workstreamId: item.data.workstreamId,
                 startTimestamp: item.data.startTimestamp,
                 isComplete: item.data.isComplete
+            });
+        } else if (item.kind === 'activity_group') {
+            // Core activity group - includes tool calls and related progress updates
+            flushToolGroup();
+            const sortedMessages = [...item.messages].sort(
+                (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp)
+            );
+            const latestStatus = sortedMessages.reduce<ToolExecutionStatus | undefined>(
+                (status, msg) => getToolStatus(msg) || status,
+                undefined
+            );
+            groups.push({
+                type: 'tool_group',
+                messages: sortedMessages,
+                firstTimestamp: item.timestamp,
+                toolRunId: item.activityGroupId,
+                toolStatus: latestStatus
             });
         } else if (item.kind === 'iteration_group') {
             // Iteration group - parallel tool calls from same iteration

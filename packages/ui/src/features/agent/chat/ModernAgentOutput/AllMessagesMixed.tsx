@@ -24,15 +24,17 @@ const isBatchProgressMessage = (message: AgentMessage): message is AgentMessage 
     return message.type === AgentMessageType.BATCH_PROGRESS && !!message.details?.batch_id;
 };
 
-// Check if message is a system metadata message that should be hidden from users
-const isSystemMetadataMessage = (message: AgentMessage): boolean => {
-    if (message.type !== AgentMessageType.UPDATE) return false;
-    const text = message.message?.toString() || '';
-    // Hide "Tools enabled:" messages that list all available tools
-    if (text.startsWith('Tools enabled:')) return true;
-    // Hide "Starting work with interaction" messages
-    if (text.startsWith('Starting work with interaction')) return true;
-    return false;
+const shouldDedupeAdjacentMessage = (previous: AgentMessage, current: AgentMessage): boolean => {
+    if (previous.type !== current.type) return false;
+    if (previous.message !== current.message) return false;
+
+    const prevDetails = previous.details as { tool_status?: string } | undefined;
+    const currDetails = current.details as { tool_status?: string } | undefined;
+    if (prevDetails?.tool_status !== "completed" || currDetails?.tool_status !== "completed") return false;
+
+    const prevTs = typeof previous.timestamp === "number" ? previous.timestamp : new Date(previous.timestamp).getTime();
+    const currTs = typeof current.timestamp === "number" ? current.timestamp : new Date(current.timestamp).getTime();
+    return currTs - prevTs < 2000;
 };
 
 // Error boundary to catch and isolate errors in individual message components
@@ -188,16 +190,26 @@ function AllMessagesMixedComponent({
         };
     }, [messages.length, streamingMessages.size, streamingContentBucket, performScroll]);
 
-    // Sort all messages chronologically and filter out system metadata
+    // Sort all messages chronologically and dedupe adjacent identical messages
+    // Low-signal messages are suppressed at the source (server-side) via shouldSuppressLowSignalMessage
     const sortedMessages = React.useMemo(
-        () =>
-            [...messages]
-                .filter(msg => !isSystemMetadataMessage(msg))
-                .sort((a, b) => {
-                    const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
-                    const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
-                    return timeA - timeB;
-                }),
+        () => {
+            const sorted = [...messages].sort((a, b) => {
+                const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
+                const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
+                return timeA - timeB;
+            });
+
+            const deduped: AgentMessage[] = [];
+            for (const msg of sorted) {
+                const previous = deduped[deduped.length - 1];
+                if (previous && shouldDedupeAdjacentMessage(previous, msg)) {
+                    continue;
+                }
+                deduped.push(msg);
+            }
+            return deduped;
+        },
         [messages],
     );
 
@@ -254,9 +266,7 @@ function AllMessagesMixedComponent({
             msg.type === AgentMessageType.TERMINATED ||
             msg.type === AgentMessageType.ERROR ||
             // Include THOUGHT messages that have tool details (progress from message_to_human or streamed content)
-            (msg.type === AgentMessageType.THOUGHT && (msg.details?.tool || msg.details?.tools || msg.details?.streamed)) ||
-            // Include toolkit_ready SYSTEM message (shows at conversation start)
-            (msg.type === AgentMessageType.SYSTEM && msg.details?.system_type === 'toolkit_ready')
+            (msg.type === AgentMessageType.THOUGHT && (msg.details?.tool || msg.details?.tools || msg.details?.streamed))
         );
 
         // Latest thinking: show only the most recent generic thinking message (UPDATE/PLAN or THOUGHT without tool)
@@ -366,30 +376,30 @@ function AllMessagesMixedComponent({
         <div
             ref={containerRef}
             tabIndex={0}
-            className="flex-1 min-h-0 h-full w-full max-w-full overflow-y-auto overflow-x-hidden px-2 sm:px-3 lg:px-4 flex flex-col relative focus:outline-none"
+            className="flex-1 min-h-0 h-full w-full max-w-full overflow-y-auto overflow-x-hidden px-1.5 sm:px-2.5 lg:px-3 flex flex-col relative focus:outline-none"
             data-testid="all-messages-mixed"
         >
             {/* Global styles for vprose markdown content */}
             <style>{`
                 /* Better vertical rhythm for markdown */
                 .vprose > * + * {
-                    margin-top: 0.875rem;
+                    margin-top: 0.625rem;
                 }
                 .vprose > h1 + *,
                 .vprose > h2 + *,
                 .vprose > h3 + * {
-                    margin-top: 0.5rem;
+                    margin-top: 0.375rem;
                 }
                 /* Tables need more separation and better styling */
                 .vprose table {
-                    margin-top: 1.25rem;
-                    margin-bottom: 1.25rem;
+                    margin-top: 0.875rem;
+                    margin-bottom: 0.875rem;
                     border-collapse: collapse;
                     width: 100%;
                 }
                 .vprose th,
                 .vprose td {
-                    padding: 0.625rem 0.875rem;
+                    padding: 0.5rem 0.625rem;
                     border: 1px solid var(--gray-6, #e5e7eb);
                     text-align: left;
                 }
@@ -418,14 +428,14 @@ function AllMessagesMixedComponent({
                 }
                 /* Horizontal rules as section dividers */
                 .vprose hr {
-                    margin-top: 1.5rem;
-                    margin-bottom: 1.5rem;
+                    margin-top: 1rem;
+                    margin-bottom: 1rem;
                     border-color: var(--gray-5, #d1d5db);
                 }
                 /* Better blockquote styling */
                 .vprose blockquote {
-                    margin-top: 1.25rem;
-                    margin-bottom: 1.25rem;
+                    margin-top: 0.875rem;
+                    margin-bottom: 0.875rem;
                     padding-left: 1rem;
                     border-left-width: 3px;
                     border-left-color: var(--gray-6, #d1d5db);
@@ -433,9 +443,9 @@ function AllMessagesMixedComponent({
                 }
                 /* Code blocks */
                 .vprose pre {
-                    margin-top: 1rem;
-                    margin-bottom: 1rem;
-                    padding: 1rem;
+                    margin-top: 0.75rem;
+                    margin-bottom: 0.75rem;
+                    padding: 0.75rem;
                     border-radius: 0.5rem;
                     overflow-x: auto;
                     background-color: var(--color-muted-background, #f3f4f6);
@@ -464,7 +474,7 @@ function AllMessagesMixedComponent({
 
             {displayMessages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-center py-8">
-                    <div className="flex items-center px-4 py-3 text-muted">
+                    <div className="flex items-center px-3 py-2 text-sm text-muted">
                         {activeWorkstream === "all"
                             ? "Waiting for agent response..."
                             : "No messages in this workstream yet..."}
@@ -482,10 +492,14 @@ function AllMessagesMixedComponent({
                                 if (group.type === 'tool_group') {
                                     // Render grouped tool calls
                                     const lastMessage = group.messages[group.messages.length - 1];
+                                    const isTerminalToolStatus =
+                                        group.toolStatus === "completed" ||
+                                        group.toolStatus === "error" ||
+                                        group.toolStatus === "warning";
                                     const isLatest = !isCompleted &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(lastMessage.type) &&
-                                        group.toolStatus !== "completed";
+                                        !isTerminalToolStatus;
 
                                     return (
                                         <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
@@ -563,7 +577,7 @@ function AllMessagesMixedComponent({
                             {isAgentWorking && incompleteStreaming.length === 0 && (
                                 <div className={cn("flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-sm text-muted">Working...</span>
+                                    <span className="text-xs text-muted">Working...</span>
                                 </div>
                             )}
                         </>
@@ -576,11 +590,15 @@ function AllMessagesMixedComponent({
                                 if (group.type === 'tool_group') {
                                     // Render grouped tool calls
                                     const lastMessage = group.messages[group.messages.length - 1];
+                                    const isTerminalToolStatus =
+                                        group.toolStatus === "completed" ||
+                                        group.toolStatus === "error" ||
+                                        group.toolStatus === "warning";
                                     const isLatest = !isCompleted &&
                                         recentThinking.length === 0 &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(lastMessage.type) &&
-                                        group.toolStatus !== "completed";
+                                        !isTerminalToolStatus;
 
                                     return (
                                         <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
@@ -670,12 +688,12 @@ function AllMessagesMixedComponent({
                             {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
                                 <div className={cn("flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-sm text-muted">Working...</span>
+                                    <span className="text-xs text-muted">Working...</span>
                                 </div>
                             )}
                         </>
                     )}
-                    <div ref={bottomRef} className="h-4" />
+                    <div ref={bottomRef} className="h-2" />
                 </div>
             )}
         </div>

@@ -1,40 +1,40 @@
 {
-    "name": "@vertesia/create-worker",
-    "version": "1.0.0-dev.20260203.130115Z",
-    "description": "Initialize workflow worker package (deprecated - use @vertesia/create-plugin instead)",
-    "type": "module",
-    "bin": {
-        "create-worker": "./bin/create-worker.mjs"
-    },
-    "main": "./lib/main.js",
-    "types": "./lib/main.d.ts",
-    "files": [
-        "lib",
-        "bin"
-    ],
-    "license": "Apache-2.0",
-    "homepage": "https://docs.vertesiahq.com",
-    "keywords": [
-        "workflow",
-        "temporal",
-        "agent",
-        "llm",
-        "composable",
-        "deprecated"
-    ],
-    "scripts": {
-        "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build",
-        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
-    },
-    "dependencies": {},
-    "devDependencies": {
-        "@types/node": "^22.19.2",
-        "typescript": "^5.9.3"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/vertesia/composableai.git",
-        "directory": "packages/create-worker"
-    }
+  "name": "@vertesia/create-worker",
+  "version": "1.0.0-dev.20260203.130115Z",
+  "description": "Initialize workflow worker package (deprecated - use @vertesia/create-plugin instead)",
+  "type": "module",
+  "bin": {
+    "create-worker": "./bin/create-worker.mjs"
+  },
+  "main": "./lib/main.js",
+  "types": "./lib/main.d.ts",
+  "files": [
+    "lib",
+    "bin"
+  ],
+  "license": "Apache-2.0",
+  "homepage": "https://docs.vertesiahq.com",
+  "keywords": [
+    "workflow",
+    "temporal",
+    "agent",
+    "llm",
+    "composable",
+    "deprecated"
+  ],
+  "scripts": {
+    "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+    "build": "tsc --build",
+    "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.19.2",
+    "typescript": "^5.9.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vertesia/composableai.git",
+    "directory": "packages/create-worker"
+  }
 }
