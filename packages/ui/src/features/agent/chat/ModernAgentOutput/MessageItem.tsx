@@ -66,7 +66,7 @@ function processContentForMarkdown(content: string | object, messageType: AgentM
     return content;
 }
 
-/** className overrides for MessageItem — single source of truth for all className slots. */
+/** className overrides for MessageItem — single source of truth for all className overrides. */
 export interface MessageItemClassNames {
     /** Additional className for the outer container */
     className?: string;
@@ -90,7 +90,27 @@ export interface MessageItemClassNames {
     proseClassName?: string;
 }
 
-/** Per-message-type visual config (border, bg, icon color, sender label, icon component, optional className slots). */
+/** Keys of {@link MessageItemClassNames} — drives className merging and memo comparison. */
+const MESSAGE_ITEM_CLASS_NAME_KEYS: (keyof MessageItemClassNames)[] = [
+    'className', 'cardClassName', 'headerClassName', 'contentClassName',
+    'timestampClassName', 'senderClassName', 'iconClassName',
+    'detailsClassName', 'artifactsClassName', 'proseClassName',
+];
+
+/** Merge className slots across base, prop, and override layers with consistent priority. */
+function mergeClassNames(
+    base: MessageItemClassNames,
+    props: MessageItemClassNames,
+    ...overrides: (Partial<MessageItemClassNames> | undefined)[]
+): MessageItemClassNames {
+    const result: Record<string, string | undefined> = {};
+    for (const key of MESSAGE_ITEM_CLASS_NAME_KEYS) {
+        result[key] = cn(base[key], props[key], ...overrides.map(o => o?.[key]));
+    }
+    return result as MessageItemClassNames;
+}
+
+/** Per-message-type visual config (border, bg, icon color, sender label, icon component, optional className overrides). */
 export interface MessageStyleConfig extends MessageItemClassNames {
     borderColor: string;
     bgColor: string;
@@ -110,7 +130,7 @@ export interface MessageItemProps extends MessageItemClassNames {
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
 }
 
-// Consolidated message styling - single source of truth
+// Consolidated Studio/default message styling - single source of truth
 export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
     [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
     [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', bgColor: 'bg-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
@@ -165,22 +185,13 @@ function MessageItemComponent({
         const defOvr = messageStyleOverrides?.default;
         const typeOvr = messageStyleOverrides?.[message.type];
 
-        // Merge identity fields (spread: base < default override < type override)
-        const merged = { ...base, ...defOvr, ...typeOvr };
-
-        // Merge className slots with explicit priority chain
         return {
-            ...merged,
-            className:          cn(base.className, className, defOvr?.className, typeOvr?.className),
-            cardClassName:      cn(base.cardClassName, cardClassName, defOvr?.cardClassName, typeOvr?.cardClassName),
-            headerClassName:    cn(base.headerClassName, headerClassName, defOvr?.headerClassName, typeOvr?.headerClassName),
-            contentClassName:   cn(base.contentClassName, contentClassName, defOvr?.contentClassName, typeOvr?.contentClassName),
-            timestampClassName: cn(base.timestampClassName, timestampClassName, defOvr?.timestampClassName, typeOvr?.timestampClassName),
-            senderClassName:    cn(base.senderClassName, senderClassName, defOvr?.senderClassName, typeOvr?.senderClassName),
-            iconClassName:      cn(base.iconClassName, iconClassName, defOvr?.iconClassName, typeOvr?.iconClassName),
-            detailsClassName:   cn(base.detailsClassName, detailsClassName, defOvr?.detailsClassName, typeOvr?.detailsClassName),
-            artifactsClassName: cn(base.artifactsClassName, artifactsClassName, defOvr?.artifactsClassName, typeOvr?.artifactsClassName),
-            proseClassName:     cn(base.proseClassName, proseClassName, defOvr?.proseClassName, typeOvr?.proseClassName),
+            ...base, ...defOvr, ...typeOvr,
+            ...mergeClassNames(base, {
+                className, cardClassName, headerClassName, contentClassName,
+                timestampClassName, senderClassName, iconClassName,
+                detailsClassName, artifactsClassName, proseClassName,
+            }, defOvr, typeOvr),
         };
     }, [message.type, messageStyleOverrides,
         className, cardClassName, headerClassName, contentClassName,
@@ -601,17 +612,8 @@ const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
         prevProps.message.timestamp === nextProps.message.timestamp &&
         prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
         prevProps.onSendMessage === nextProps.onSendMessage &&
-        prevProps.className === nextProps.className &&
-        prevProps.cardClassName === nextProps.cardClassName &&
-        prevProps.headerClassName === nextProps.headerClassName &&
-        prevProps.contentClassName === nextProps.contentClassName &&
-        prevProps.timestampClassName === nextProps.timestampClassName &&
-        prevProps.senderClassName === nextProps.senderClassName &&
-        prevProps.iconClassName === nextProps.iconClassName &&
-        prevProps.detailsClassName === nextProps.detailsClassName &&
-        prevProps.artifactsClassName === nextProps.artifactsClassName &&
-        prevProps.proseClassName === nextProps.proseClassName &&
-        prevProps.messageStyleOverrides === nextProps.messageStyleOverrides
+        prevProps.messageStyleOverrides === nextProps.messageStyleOverrides &&
+        MESSAGE_ITEM_CLASS_NAME_KEYS.every(key => prevProps[key] === nextProps[key])
     );
 });
 
