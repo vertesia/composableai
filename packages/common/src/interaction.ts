@@ -704,7 +704,7 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /**
      * The token threshold in thousands (K) for creating checkpoints.
      * If total tokens exceed this value, a checkpoint will be created.
-     * If not specified, default value of 150K tokens will be used.
+     * If not specified, the default is computed from the selected model context window (75%).
      */
     checkpoint_tokens?: number;
 
