@@ -113,7 +113,6 @@ function mergeClassNames(
 /** Per-message-type visual config (border, bg, icon color, sender label, icon component, optional className overrides). */
 export interface MessageStyleConfig extends MessageItemClassNames {
     borderColor: string;
-    bgColor: string;
     iconColor: string;
     sender: string;
     Icon: LucideIcon;
@@ -132,21 +131,21 @@ export interface MessageItemProps extends MessageItemClassNames {
 
 // Consolidated Studio/default message styling - single source of truth
 export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
-    [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', bgColor: 'bg-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
-    [AgentMessageType.IDLE]: { borderColor: 'border-l-info', bgColor: 'bg-info/50', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
-    [AgentMessageType.REQUEST_INPUT]: { borderColor: 'border-l-attention', bgColor: 'bg-attention', iconColor: 'text-attention', sender: 'Input', Icon: User },
-    [AgentMessageType.QUESTION]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
-    [AgentMessageType.THOUGHT]: { borderColor: 'border-l-purple-500', bgColor: 'bg-purple-50/50 dark:bg-purple-900/10', iconColor: 'text-purple-600 dark:text-purple-400', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.ERROR]: { borderColor: 'border-l-destructive', bgColor: 'bg-destructive', iconColor: 'text-destructive', sender: 'Error', Icon: AlertCircle },
-    [AgentMessageType.UPDATE]: { borderColor: 'border-l-success', bgColor: 'bg-success', iconColor: 'text-success', sender: 'Update', Icon: Info },
-    [AgentMessageType.PLAN]: { borderColor: 'border-l-attention', bgColor: 'bg-attention', iconColor: 'text-attention', sender: 'Plan', Icon: MessageSquare },
-    [AgentMessageType.TERMINATED]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'Terminated', Icon: CheckCircle },
-    [AgentMessageType.WARNING]: { borderColor: 'border-l-attention', bgColor: 'bg-attention', iconColor: 'text-attention', sender: 'Warning', Icon: AlertCircle },
-    [AgentMessageType.SYSTEM]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
-    [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-l-blue-500', bgColor: 'bg-blue-50/50 dark:bg-blue-900/10', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
-    default: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
+    [AgentMessageType.IDLE]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
+    [AgentMessageType.REQUEST_INPUT]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Input', Icon: User },
+    [AgentMessageType.QUESTION]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
+    [AgentMessageType.THOUGHT]: { borderColor: 'border-l-purple-500', iconColor: 'text-purple-600 dark:text-purple-400', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ERROR]: { borderColor: 'border-l-destructive', iconColor: 'text-destructive', sender: 'Error', Icon: AlertCircle },
+    [AgentMessageType.UPDATE]: { borderColor: 'border-l-success', iconColor: 'text-success', sender: 'Update', Icon: Info },
+    [AgentMessageType.PLAN]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Plan', Icon: MessageSquare },
+    [AgentMessageType.TERMINATED]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'Terminated', Icon: CheckCircle },
+    [AgentMessageType.WARNING]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Warning', Icon: AlertCircle },
+    [AgentMessageType.SYSTEM]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
+    [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-l-blue-500', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
+    default: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
 };
 
 function MessageItemComponent({
