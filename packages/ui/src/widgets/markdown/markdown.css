@@ -9,6 +9,17 @@
  */
 
 /* ------------------------------------------------------------------ */
+/* Page break (:::pagebreak)                                          */
+/* Rendered as a subtle divider on the web (actual break in PDF)      */
+/* ------------------------------------------------------------------ */
+
+.md-pagebreak {
+    border: none;
+    border-top: 2px dashed var(--color-border);
+    margin: 2rem 0;
+}
+
+/* ------------------------------------------------------------------ */
 /* Columns layout (:::columns / :::column)                            */
 /* ------------------------------------------------------------------ */
 

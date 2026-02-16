@@ -55,6 +55,13 @@ export function remarkDirectiveHandler() {
             const attrs = d.attributes || {};
             const name = d.name;
 
+            // ::pagebreak / :::pagebreak → visual page break indicator
+            if (name === 'pagebreak') {
+                data.hName = 'hr';
+                data.hProperties = { className: 'md-pagebreak' };
+                return;
+            }
+
             // :::columns → flex container
             if (name === 'columns') {
                 data.hName = 'div';

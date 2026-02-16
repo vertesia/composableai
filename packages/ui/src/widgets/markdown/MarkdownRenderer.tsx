@@ -15,6 +15,7 @@ import { MarkdownImage } from './MarkdownImage';
 import { MarkdownFigure } from './MarkdownFigure';
 import { remarkDirectiveHandler } from './remarkDirectiveHandler';
 import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
+import { normalizeDirectives } from './normalizeDirectives';
 import {
     CodeBlockHandlerProvider,
     createDefaultCodeBlockHandlers,
@@ -103,7 +104,7 @@ export function MarkdownRenderer({
 }: MarkdownRendererProps) {
     const codeBlockRegistry = useCodeBlockRendererRegistry();
     const normalizedMarkdown = React.useMemo(
-        () => normalizeCustomSchemeLinks(children),
+        () => normalizeDirectives(normalizeCustomSchemeLinks(children)),
         [children]
     );
 
