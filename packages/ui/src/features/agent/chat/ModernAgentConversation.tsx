@@ -32,6 +32,8 @@ import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
 import { VegaLiteChart } from "./VegaLiteChart";
+import { DocumentPanel } from "./DocumentPanel.js";
+import type { OpenDocument } from "./types/document.js";
 
 export type StartWorkflowFn = (
     initialMessage?: string,
@@ -750,6 +752,12 @@ function ModernAgentConversationInner({
     // Include startTimestamp to preserve chronological order when converting to regular messages
     const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number; activityId?: string }>>(new Map());
 
+    // Document panel state
+    const [openDocuments, setOpenDocuments] = useState<OpenDocument[]>([]);
+    const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
+    const [isDocPanelOpen, setIsDocPanelOpen] = useState(false);
+    const [docRefreshKey, setDocRefreshKey] = useState(0);
+
     // Track files being processed by the workflow
     const [processingFiles, setProcessingFiles] = useState<Map<string, ConversationFile>>(new Map());
 
@@ -821,6 +829,48 @@ function ModernAgentConversationInner({
         setShowSlidingPanel(false);
     }, []);
 
+    // Document panel handlers
+    const handleCloseDocPanel = useCallback(() => {
+        setIsDocPanelOpen(false);
+    }, []);
+
+    const handleCloseDocument = useCallback((docId: string) => {
+        setOpenDocuments(prev => {
+            const next = prev.filter(d => d.id !== docId);
+            if (next.length === 0) {
+                setIsDocPanelOpen(false);
+                setActiveDocumentId(null);
+            } else if (activeDocumentId === docId) {
+                setActiveDocumentId(next[0].id);
+            }
+            return next;
+        });
+    }, [activeDocumentId]);
+
+    const openDocInPanel = useCallback((docId: string) => {
+        setOpenDocuments(prev => {
+            if (prev.some(d => d.id === docId)) return prev;
+            return [...prev, { id: docId, title: 'Document' }];
+        });
+        setActiveDocumentId(docId);
+        setIsDocPanelOpen(true);
+    }, []);
+
+    // Default StoreLinkComponent that opens documents in the panel
+    const internalStoreLinkComponent = useCallback(
+        ({ documentId, children }: { href: string; documentId: string; children: React.ReactNode }) => (
+            <button
+                className="text-info underline cursor-pointer hover:text-info/80"
+                onClick={() => openDocInPanel(documentId)}
+            >
+                {children}
+            </button>
+        ),
+        [openDocInPanel]
+    );
+
+    const effectiveStoreLinkComponent = StoreLinkComponent ?? internalStoreLinkComponent;
+
     // Show rotating thinking messages
     useEffect(() => {
         if (!isCompleted) {
@@ -852,6 +902,10 @@ function ModernAgentConversationInner({
         setShowSlidingPanel(false);
         setWorkflowStatus(null);
         setStreamingMessages(new Map());
+        setOpenDocuments([]);
+        setActiveDocumentId(null);
+        setIsDocPanelOpen(false);
+        setDocRefreshKey(0);
 
         checkWorkflowStatus();
         client.store.workflows.streamMessages(run.workflowId, run.runId, (message) => {
@@ -926,6 +980,26 @@ function ModernAgentConversationInner({
             if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
                 if (pendingStreamingChunks.current.size > 0) {
                     flushStreamingChunks();
+                }
+            }
+
+            // Detect document creation/update events for the document panel
+            if (message.type === AgentMessageType.UPDATE && message.details) {
+                const details = message.details as Record<string, unknown>;
+                if (details.event_class === 'document_created' || details.event_class === 'document_updated') {
+                    const docId = details.document_id as string;
+                    const docTitle = details.title as string;
+                    if (docId) {
+                        setOpenDocuments(prev => {
+                            if (prev.some(d => d.id === docId)) return prev;
+                            return [...prev, { id: docId, title: docTitle || 'Document' }];
+                        });
+                        setActiveDocumentId(docId);
+                        setIsDocPanelOpen(true);
+                        if (details.event_class === 'document_updated') {
+                            setDocRefreshKey(k => k + 1);
+                        }
+                    }
                 }
             }
 
@@ -1536,8 +1610,8 @@ function ModernAgentConversationInner({
                 ref={conversationRef}
                 className={cn(
                     "flex flex-col min-h-0 border-0",
-                    showSlidingPanel
-                        ? "w-full lg:w-2/3 flex-1 min-h-[50vh]"
+                    (showSlidingPanel || isDocPanelOpen)
+                        ? "w-full lg:w-3/5 flex-1 min-h-[50vh]"
                         : fullWidth
                             ? "flex-1 w-full"
                             : `flex-1 mx-auto ${!isModal ? "max-w-4xl" : ""}`
@@ -1608,7 +1682,7 @@ function ModernAgentConversationInner({
                         hideWorkstreamTabs={hideWorkstreamTabs}
                         workingIndicatorClassName={workingIndicatorClassName}
                         messageListClassName={messageListClassName}
-                        StoreLinkComponent={StoreLinkComponent}
+                        StoreLinkComponent={effectiveStoreLinkComponent}
                     />
                 )}
 
@@ -1670,6 +1744,25 @@ function ModernAgentConversationInner({
                         plans={plans}
                         activePlanIndex={activePlanIndex}
                         onChangePlan={handleChangePlan}
+                    />
+                </div>
+            )}
+
+            {/* Document Panel Area - slides in when documents are created/edited */}
+            {isDocPanelOpen && openDocuments.length > 0 && (
+                <div className={cn(
+                    "w-full lg:w-2/5 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l",
+                    showSlidingPanel && "lg:w-1/3"
+                )}>
+                    <DocumentPanel
+                        isOpen={isDocPanelOpen}
+                        onClose={handleCloseDocPanel}
+                        documents={openDocuments}
+                        activeDocumentId={activeDocumentId}
+                        onSelectDocument={setActiveDocumentId}
+                        onCloseDocument={handleCloseDocument}
+                        refreshKey={docRefreshKey}
+                        runId={run.runId}
                     />
                 </div>
             )}
