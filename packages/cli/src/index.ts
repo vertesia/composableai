@@ -14,6 +14,7 @@ import { getConfigFile } from './profiles/index.js';
 import { listProjects } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
+import { registerAgentCommand } from './tui/index.js';
 import { registerWorkerCommand } from './worker/index.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
 //warnIfNotLatest();
@@ -179,6 +180,7 @@ profilesRoot.command('file')
         console.log(getConfigFile('profiles.json'));
     });
 
+registerAgentCommand(program);
 registerObjectsCommand(program);
 registerWorkflowsCommand(program);
 
