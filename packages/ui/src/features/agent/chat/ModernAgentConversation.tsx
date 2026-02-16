@@ -188,6 +188,10 @@ interface ModernAgentConversationProps {
     /** Custom component to render store/collection links instead of default NavLink navigation */
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
 
+    /** Optional message to display as the first user message in the conversation.
+     *  Purely visual — not sent to temporal. Renders as a QUESTION MessageItem before real messages. */
+    prependFriendlyMessage?: string;
+
     // Fusion fragment props
     /**
      * Data to provide to fusion-fragment code blocks for rendering.
@@ -712,6 +716,7 @@ function ModernAgentConversationInner({
     messageListClassName,
     StoreLinkComponent,
     CollectionLinkComponent,
+    prependFriendlyMessage,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -767,6 +772,28 @@ function ModernAgentConversationInner({
     isSendingRef.current = isSending;
     const hasProcessingFilesRef = useRef(hasProcessingFiles);
     hasProcessingFilesRef.current = hasProcessingFiles;
+
+    // Stable timestamp for the synthetic prepend message (locked on first real message arrival)
+    const syntheticTimestampRef = useRef<number | null>(null);
+
+    const messagesWithPrepend = useMemo(() => {
+        if (!prependFriendlyMessage || messages.length === 0) return messages;
+        if (syntheticTimestampRef.current === null) {
+            const earliest = messages.reduce((min, m) => {
+                const t = typeof m.timestamp === "number" ? m.timestamp : new Date(m.timestamp).getTime();
+                return t < min ? t : min;
+            }, Infinity);
+            syntheticTimestampRef.current = earliest - 1;
+        }
+        const synthetic: AgentMessage = {
+            type: AgentMessageType.QUESTION,
+            message: prependFriendlyMessage,
+            timestamp: syntheticTimestampRef.current,
+            workflow_run_id: run.runId,
+            workstream_id: "main",
+        };
+        return [synthetic, ...messages];
+    }, [prependFriendlyMessage, messages, run.runId]);
 
     // Performance optimization: Batch streaming updates using RAF
     // Instead of updating state on every chunk (100+ times/sec), batch them per animation frame
@@ -855,6 +882,7 @@ function ModernAgentConversationInner({
         setShowSlidingPanel(false);
         setWorkflowStatus(null);
         setStreamingMessages(new Map());
+        syntheticTimestampRef.current = null;
 
         checkWorkflowStatus();
         client.store.workflows.streamMessages(run.workflowId, run.runId, (message) => {
@@ -1587,7 +1615,7 @@ function ModernAgentConversationInner({
                     </div>
                 ) : (
                     <AllMessagesMixed
-                        messages={messages}
+                        messages={messagesWithPrepend}
                         bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
                         isCompleted={isCompleted}
                         plan={getActivePlan.plan}
