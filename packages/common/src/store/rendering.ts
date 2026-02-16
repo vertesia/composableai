@@ -161,6 +161,8 @@ export interface GenerateRenditionsResult {
     format: string;
     status: string;
     fileUri?: string;
+    /** Warnings about rich content blocks that failed to render (document was still produced) */
+    warnings?: string[];
 }
 
 /**
