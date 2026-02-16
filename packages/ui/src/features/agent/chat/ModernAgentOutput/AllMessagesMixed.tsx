@@ -113,6 +113,8 @@ interface AllMessagesMixedProps {
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
     /** Custom component to render store/collection links instead of default NavLink navigation */
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
+    /** Optional message to display as the first user message. Purely visual — not from temporal. */
+    prependFriendlyMessage?: string;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -137,6 +139,7 @@ function AllMessagesMixedComponent({
     messageListClassName,
     StoreLinkComponent,
     CollectionLinkComponent,
+    prependFriendlyMessage,
 }: AllMessagesMixedProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -475,6 +478,21 @@ function AllMessagesMixedComponent({
                 </div>
             ) : (
                 <div className={cn("flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full", messageListClassName)}>
+                    {/* Friendly message — rendered outside the messages array to avoid memo/scroll issues */}
+                    {prependFriendlyMessage && (
+                        <MessageItem
+                            key={prependFriendlyMessage}
+                            {...messageItemClassNames}
+                            messageStyleOverrides={messageStyleOverrides}
+                            message={{
+                                type: AgentMessageType.QUESTION,
+                                message: prependFriendlyMessage,
+                                timestamp: displayMessages[0]?.timestamp ?? Date.now(),
+                                workflow_run_id: "",
+                                workstream_id: "main",
+                            }}
+                        />
+                    )}
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
                         // Details view - show ALL messages with streaming interleaved

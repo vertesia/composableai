@@ -773,28 +773,6 @@ function ModernAgentConversationInner({
     const hasProcessingFilesRef = useRef(hasProcessingFiles);
     hasProcessingFilesRef.current = hasProcessingFiles;
 
-    // Stable timestamp for the synthetic prepend message (locked on first real message arrival)
-    const syntheticTimestampRef = useRef<number | null>(null);
-
-    const messagesWithPrepend = useMemo(() => {
-        if (!prependFriendlyMessage || messages.length === 0) return messages;
-        if (syntheticTimestampRef.current === null) {
-            const earliest = messages.reduce((min, m) => {
-                const t = typeof m.timestamp === "number" ? m.timestamp : new Date(m.timestamp).getTime();
-                return t < min ? t : min;
-            }, Infinity);
-            syntheticTimestampRef.current = earliest - 1;
-        }
-        const synthetic: AgentMessage = {
-            type: AgentMessageType.QUESTION,
-            message: prependFriendlyMessage,
-            timestamp: syntheticTimestampRef.current,
-            workflow_run_id: run.runId,
-            workstream_id: "main",
-        };
-        return [synthetic, ...messages];
-    }, [prependFriendlyMessage, messages, run.runId]);
-
     // Performance optimization: Batch streaming updates using RAF
     // Instead of updating state on every chunk (100+ times/sec), batch them per animation frame
     const pendingStreamingChunks = useRef<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number; activityId?: string }>>(new Map());
@@ -882,7 +860,6 @@ function ModernAgentConversationInner({
         setShowSlidingPanel(false);
         setWorkflowStatus(null);
         setStreamingMessages(new Map());
-        syntheticTimestampRef.current = null;
 
         checkWorkflowStatus();
         client.store.workflows.streamMessages(run.workflowId, run.runId, (message) => {
@@ -1615,7 +1592,7 @@ function ModernAgentConversationInner({
                     </div>
                 ) : (
                     <AllMessagesMixed
-                        messages={messagesWithPrepend}
+                        messages={messages}
                         bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
                         isCompleted={isCompleted}
                         plan={getActivePlan.plan}
@@ -1641,6 +1618,7 @@ function ModernAgentConversationInner({
                         messageListClassName={messageListClassName}
                         StoreLinkComponent={StoreLinkComponent}
                         CollectionLinkComponent={CollectionLinkComponent}
+                        prependFriendlyMessage={prependFriendlyMessage}
                     />
                 )}
 
