@@ -127,6 +127,8 @@ export interface MessageItemProps extends MessageItemClassNames {
     messageStyleOverrides?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
     /** Custom component to render store/document links instead of default NavLink navigation */
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
+    /** Custom component to render store/collection links instead of default NavLink navigation */
+    CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
 }
 
 // Consolidated Studio/default message styling - single source of truth
@@ -164,6 +166,7 @@ function MessageItemComponent({
     proseClassName,
     messageStyleOverrides,
     StoreLinkComponent,
+    CollectionLinkComponent,
 }: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
     const { client } = useUserSession();
@@ -297,6 +300,20 @@ function MessageItemComponent({
                     </NavLink>
                 );
             }
+            if (href.includes("/store/collections")) {
+                if (CollectionLinkComponent) {
+                    const collectionId = href.split("/store/collections/")[1] || "";
+                    return <CollectionLinkComponent href={href} collectionId={collectionId}>{props.children}</CollectionLinkComponent>;
+                }
+                return (
+                    <NavLink
+                        href={href}
+                        topLevelNav
+                    >
+                        {props.children}
+                    </NavLink>
+                );
+            }
             return (
                 <a
                     {...props}
@@ -315,7 +332,7 @@ function MessageItemComponent({
                 />
             );
         },
-    }), [openImage, StoreLinkComponent]);
+    }), [openImage, StoreLinkComponent, CollectionLinkComponent]);
 
     // Render content with markdown support - all messages now rendered as markdown
     const renderContent = (content: string | object) => {

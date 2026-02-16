@@ -111,6 +111,8 @@ interface AllMessagesMixedProps {
     messageListClassName?: string;
     /** Custom component to render store/document links instead of default NavLink navigation */
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
+    /** Custom component to render store/collection links instead of default NavLink navigation */
+    CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -134,6 +136,7 @@ function AllMessagesMixedComponent({
     workingIndicatorClassName,
     messageListClassName,
     StoreLinkComponent,
+    CollectionLinkComponent,
 }: AllMessagesMixedProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -543,6 +546,7 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
                                                 StoreLinkComponent={StoreLinkComponent}
+                                                CollectionLinkComponent={CollectionLinkComponent}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -639,6 +643,7 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
                                                 StoreLinkComponent={StoreLinkComponent}
+                                                CollectionLinkComponent={CollectionLinkComponent}
                                             />
                                         </MessageErrorBoundary>
                                     );

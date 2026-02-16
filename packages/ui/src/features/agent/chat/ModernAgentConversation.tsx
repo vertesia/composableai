@@ -185,6 +185,8 @@ interface ModernAgentConversationProps {
     messageListClassName?: string;
     /** Custom component to render store/document links instead of default NavLink navigation */
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
+    /** Custom component to render store/collection links instead of default NavLink navigation */
+    CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
 
     // Fusion fragment props
     /**
@@ -709,6 +711,7 @@ function ModernAgentConversationInner({
     workingIndicatorClassName,
     messageListClassName,
     StoreLinkComponent,
+    CollectionLinkComponent,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -1609,6 +1612,7 @@ function ModernAgentConversationInner({
                         workingIndicatorClassName={workingIndicatorClassName}
                         messageListClassName={messageListClassName}
                         StoreLinkComponent={StoreLinkComponent}
+                        CollectionLinkComponent={CollectionLinkComponent}
                     />
                 )}
 
