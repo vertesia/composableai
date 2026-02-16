@@ -4,7 +4,7 @@ import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
-import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, MessageSquare, User } from "lucide-react";
+import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, type LucideIcon, MessageSquare, User } from "lucide-react";
 import React, { useEffect, useState, useMemo, memo, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
@@ -116,7 +116,7 @@ export interface MessageStyleConfig extends MessageItemClassNames {
     bgColor: string;
     iconColor: string;
     sender: string;
-    Icon: typeof Bot;
+    Icon: LucideIcon;
 }
 
 export interface MessageItemProps extends MessageItemClassNames {
@@ -182,16 +182,16 @@ function MessageItemComponent({
     // Priority (lowest → highest): base MESSAGE_STYLES → flat props → overrides.default → overrides[type]
     const resolvedStyle = useMemo(() => {
         const base = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
-        const defOvr = messageStyleOverrides?.default;
-        const typeOvr = messageStyleOverrides?.[message.type];
+        const defaultOverrides = messageStyleOverrides?.default;
+        const typeOverrides = messageStyleOverrides?.[message.type];
 
         return {
-            ...base, ...defOvr, ...typeOvr,
+            ...base, ...defaultOverrides, ...typeOverrides,
             ...mergeClassNames(base, {
                 className, cardClassName, headerClassName, contentClassName,
                 timestampClassName, senderClassName, iconClassName,
                 detailsClassName, artifactsClassName, proseClassName,
-            }, defOvr, typeOvr),
+            }, defaultOverrides, typeOverrides),
         };
     }, [message.type, messageStyleOverrides,
         className, cardClassName, headerClassName, contentClassName,
