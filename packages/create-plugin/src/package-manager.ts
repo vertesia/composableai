@@ -24,8 +24,9 @@ function commandExists(command: string): boolean {
  * Detect available package managers and let user choose
  * Returns the selected package manager ('pnpm' or 'npm')
  * @param forcedPackageManager - If specified, skip selection and use this package manager
+ * @param nonInteractive - If true, auto-select pnpm (if available) or npm without prompting
  */
-export async function selectPackageManager(forcedPackageManager?: 'pnpm' | 'npm'): Promise<string> {
+export async function selectPackageManager(forcedPackageManager?: 'pnpm' | 'npm', nonInteractive = false): Promise<string> {
   const hasPnpm = commandExists('pnpm');
   const hasNpm = commandExists('npm');
 
@@ -47,6 +48,12 @@ export async function selectPackageManager(forcedPackageManager?: 'pnpm' | 'npm'
   if (!hasPnpm) {
     console.log(chalk.gray('Using npm (pnpm not found)\n'));
     return 'npm';
+  }
+
+  // Non-interactive: auto-select pnpm (recommended default)
+  if (nonInteractive) {
+    console.log(chalk.gray('Using pnpm (non-interactive mode)\n'));
+    return 'pnpm';
   }
 
   // Both are installed - let user choose

@@ -1,9 +1,9 @@
+import { Env } from "@vertesia/ui/env";
 import { onAuthStateChanged } from "firebase/auth";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { UserNotFoundError, getComposableToken } from "./auth/composable";
 import { getFirebaseAuth } from "./auth/firebase";
 import { useAuthState } from "./auth/useAuthState";
-import { Env } from "@vertesia/ui/env";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from "./UserSession";
 
 const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app"];
@@ -129,6 +129,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                         },
                     });
                     redirectToCentralAuth();
+                    return; // Don't register onAuthStateChanged listener when redirecting
                 } else {
                     console.log("Auth: not on dev domain");
                     Env.logger.info("Not on dev domain", {
