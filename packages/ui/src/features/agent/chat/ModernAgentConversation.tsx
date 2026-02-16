@@ -143,6 +143,8 @@ interface ModernAgentConversationProps {
     hideObjectLinking?: boolean;
     /** Hide the internal header (for apps that render their own) */
     hideHeader?: boolean;
+    /** Hide the instructional text in the start workflow view */
+    hideInstructions?: boolean;
     /** Hide the internal message input (for apps that render their own) */
     hideMessageInput?: boolean;
     /** Hide the internal plan panel (for apps that render their own) */
@@ -252,6 +254,8 @@ function StartWorkflowView({
     placeholder = "Type your message...",
     startButtonText = "Start Agent",
     title = "Start New Conversation",
+    hideHeader,
+    hideInstructions,
     // Attachment callback - used to include existing document attachments in the first message
     getAttachedDocs,
     onAttachmentsSent,
@@ -513,29 +517,31 @@ function StartWorkflowView({
             />
 
             {/* Header */}
-            <div className="flex items-center justify-between py-2 px-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-                <div className="flex items-center space-x-2">
-                    <div className="p-1">
-                        <Cpu className="size-3.5 text-muted" />
+            {!hideHeader && (
+                <div className="flex items-center justify-between py-2 px-3 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+                    <div className="flex items-center space-x-2">
+                        <div className="p-1">
+                            <Cpu className="size-3.5 text-muted" />
+                        </div>
+                        <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+                            {title}
+                        </span>
                     </div>
-                    <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
-                        {title}
-                    </span>
-                </div>
 
-                {/* Close button if needed */}
-                {onClose && !isModal && (
-                    <Button
-                        size="xs"
-                        variant="ghost"
-                        onClick={onClose}
-                        title="Close"
-                        className="text-slate-500 hover:text-slate-700"
-                    >
-                        <XIcon className="size-4" />
-                    </Button>
-                )}
-            </div>
+                    {/* Close button if needed */}
+                    {onClose && !isModal && (
+                        <Button
+                            size="xs"
+                            variant="ghost"
+                            onClick={onClose}
+                            title="Close"
+                            className="text-slate-500 hover:text-slate-700"
+                        >
+                            <XIcon className="size-4" />
+                        </Button>
+                    )}
+                </div>
+            )}
 
             {/* Empty conversation area with instructions */}
             <div
@@ -553,19 +559,21 @@ function StartWorkflowView({
                     </div>
                 )}
 
-                <div
-                    className={`bg-white dark:bg-slate-800 p-4 border-l-2 border-blue-400 dark:border-blue-500 ${
-                        fullWidth ? 'w-full' : 'max-w-md'
-                    }`}
-                >
-                    <div className="text-base text-slate-600 dark:text-slate-300 font-medium">
-                        Enter a message to start a conversation
+                {!hideInstructions && (
+                    <div
+                        className={`bg-white dark:bg-slate-800 p-4 border-l-2 border-blue-400 dark:border-blue-500 ${
+                            fullWidth ? 'w-full' : 'max-w-md'
+                        }`}
+                    >
+                        <div className="text-base text-slate-600 dark:text-slate-300 font-medium">
+                            Enter a message to start a conversation
+                        </div>
+                        <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                            Type your question below and press Enter or click {startButtonText}{" "}
+                            to begin
+                        </div>
                     </div>
-                    <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                        Type your question below and press Enter or click {startButtonText}{" "}
-                        to begin
-                    </div>
-                </div>
+                )}
             </div>
 
             {/* Input Area */}
@@ -592,8 +600,19 @@ function StartWorkflowView({
                     </div>
                 )}
 
-                {/* Upload button row */}
-                <div className="flex gap-2 mb-2">
+                <textarea
+                    ref={inputRef}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={placeholder}
+                    disabled={isSending}
+                    rows={2}
+                    className="w-full py-2.5 px-3 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden"
+                    style={{ minHeight: '60px', maxHeight: '200px' }}
+                />
+
+                <div className="flex items-center justify-between mt-2">
                     <Button
                         variant="outline"
                         size="sm"
@@ -604,22 +623,6 @@ function StartWorkflowView({
                         <UploadIcon className="size-3.5 mr-1.5" />
                         Upload
                     </Button>
-                </div>
-
-                <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                        <textarea
-                            ref={inputRef}
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder={placeholder}
-                            disabled={isSending}
-                            rows={2}
-                            className="w-full py-2.5 px-3 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden"
-                            style={{ minHeight: '60px', maxHeight: '200px' }}
-                        />
-                    </div>
                     <Button
                         onClick={startWorkflowWithMessage}
                         disabled={!inputValue.trim() || isSending}

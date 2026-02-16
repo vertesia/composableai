@@ -428,9 +428,36 @@ export default function MessageInput({
                 </div>
             )}
 
+            {/* Input row */}
+            <div className="flex items-end space-x-1">
+                <textarea
+                    ref={ref}
+                    value={value}
+                    onKeyDown={keyDown}
+                    onChange={(e) => setValue(e.target.value)}
+                    onPaste={handlePaste}
+                    disabled={disabled}
+                    placeholder={isStreaming ? "Agent is working... (Esc Esc to stop)" : (onFilesSelected ? "Ask anything... (drop or paste files)" : placeholder)}
+                    className={cn("flex-1 w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden", inputClassName)}
+                    rows={2}
+                    style={{ minHeight: '60px', maxHeight: '200px' }}
+                />
+                {!hideObjectLinking && (
+                    <Button
+                        variant="ghost"
+                        className="rounded-full"
+                        disabled={!isCompleted}
+                        onClick={() => setIsObjectModalOpen(true)}
+                        alt="Link Object"
+                    >
+                        <PaperclipIcon className="size-4" />
+                    </Button>
+                )}
+            </div>
+
             {/* Action buttons row */}
-            {(onFilesSelected || renderDocumentSearch) && (
-                <div className="flex gap-2 mb-2">
+            <div className="flex items-center justify-between mt-2">
+                <div className="flex gap-2">
                     {onFilesSelected && (
                         <Button
                             variant="outline"
@@ -453,35 +480,6 @@ export default function MessageInput({
                         >
                             <FileTextIcon className="size-3.5 mr-1.5" />
                             Search Documents
-                        </Button>
-                    )}
-                </div>
-            )}
-
-            {/* Input row */}
-            <div className="flex items-end space-x-2">
-                <div className="flex flex-1 items-end space-x-1">
-                    <textarea
-                        ref={ref}
-                        value={value}
-                        onKeyDown={keyDown}
-                        onChange={(e) => setValue(e.target.value)}
-                        onPaste={handlePaste}
-                        disabled={disabled}
-                        placeholder={isStreaming ? "Agent is working... (Esc Esc to stop)" : (onFilesSelected ? "Ask anything... (drop or paste files)" : placeholder)}
-                        className={cn("flex-1 w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden", inputClassName)}
-                        rows={2}
-                        style={{ minHeight: '60px', maxHeight: '200px' }}
-                    />
-                    {!hideObjectLinking && (
-                        <Button
-                            variant="ghost"
-                            className="rounded-full"
-                            disabled={!isCompleted}
-                            onClick={() => setIsObjectModalOpen(true)}
-                            alt="Link Object"
-                        >
-                            <PaperclipIcon className="size-4" />
                         </Button>
                     )}
                 </div>
