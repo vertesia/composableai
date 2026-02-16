@@ -66,31 +66,8 @@ function processContentForMarkdown(content: string | object, messageType: AgentM
     return content;
 }
 
-/** Per-message-type visual config (border, bg, icon color, sender label, icon component, optional className slots). */
-export interface MessageStyleConfig {
-    borderColor: string;
-    bgColor: string;
-    iconColor: string;
-    sender: string;
-    Icon: typeof Bot;
-    // Per-type className overrides (all optional)
-    className?: string;
-    cardClassName?: string;
-    headerClassName?: string;
-    contentClassName?: string;
-    timestampClassName?: string;
-    senderClassName?: string;
-    iconClassName?: string;
-    detailsClassName?: string;
-    artifactsClassName?: string;
-    proseClassName?: string;
-}
-
-export interface MessageItemProps {
-    message: AgentMessage;
-    showPulsatingCircle?: boolean;
-    /** Callback when user sends a message (e.g., from proposal selection) */
-    onSendMessage?: (message: string) => void;
+/** className overrides for MessageItem — single source of truth for all className slots. */
+export interface MessageItemClassNames {
     /** Additional className for the outer container */
     className?: string;
     /** Additional className for the card wrapper */
@@ -111,17 +88,27 @@ export interface MessageItemProps {
     artifactsClassName?: string;
     /** Additional className for the prose/markdown wrapper */
     proseClassName?: string;
+}
+
+/** Per-message-type visual config (border, bg, icon color, sender label, icon component, optional className slots). */
+export interface MessageStyleConfig extends MessageItemClassNames {
+    borderColor: string;
+    bgColor: string;
+    iconColor: string;
+    sender: string;
+    Icon: typeof Bot;
+}
+
+export interface MessageItemProps extends MessageItemClassNames {
+    message: AgentMessage;
+    showPulsatingCircle?: boolean;
+    /** Callback when user sends a message (e.g., from proposal selection) */
+    onSendMessage?: (message: string) => void;
     /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
     messageStyleOverrides?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
     /** Custom component to render store/document links instead of default NavLink navigation */
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
 }
-
-/** className overrides for MessageItem — subset of MessageItemProps containing only className props. */
-export type MessageItemClassNames = Partial<Pick<MessageItemProps,
-    'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
-    'timestampClassName' | 'senderClassName' | 'iconClassName' |
-    'detailsClassName' | 'artifactsClassName' | 'proseClassName'>>;
 
 // Consolidated message styling - single source of truth
 export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
