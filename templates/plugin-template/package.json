@@ -56,7 +56,7 @@
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",
     "@vertesia/build-tools": "workspace:*",
-    "@vertesia/plugin-builder": "^0.79.4",
+    "@vertesia/plugin-builder": "workspace:*",
     "@vitejs/plugin-basic-ssl": "^2.1.0",
     "@vitejs/plugin-react": "^5.1.2",
     "concurrently": "^9.1.2",

@@ -1,4 +1,5 @@
 import { AgentMessage } from "@vertesia/common";
+import { cn } from "@vertesia/ui/core";
 import { CheckCircle, Clock } from "lucide-react";
 import { getWorkstreamId } from "./utils";
 
@@ -66,11 +67,12 @@ export default function WorkstreamTabs({
       {sortedWorkstreams.map(([id, name]) => (
         <button
           key={id}
-          className={`px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5
-                        ${activeWorkstream === id
+          className={cn(
+            "px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5",
+            activeWorkstream === id
               ? "bg-info text-info border-b-2 border-info"
               : "text-muted hover:bg-muted border-b-2 border-transparent"
-            }`}
+          )}
           onClick={() => onSelectWorkstream(id)}
           title={name.length > 20 ? name : undefined}
         >
@@ -79,11 +81,12 @@ export default function WorkstreamTabs({
           {count && count.has(id) && count.get(id)! > 0 && (
             <div className="flex items-center space-x-1">
               <span
-                className={`inline-flex items-center justify-center p-1 text-xs rounded-full
-                                ${activeWorkstream === id
+                className={cn(
+                  "inline-flex items-center justify-center p-1 text-xs rounded-full",
+                  activeWorkstream === id
                     ? "bg-info text-info"
                     : "bg-muted text-muted"
-                  }`}
+                )}
               >
                 {count.get(id)}
               </span>
