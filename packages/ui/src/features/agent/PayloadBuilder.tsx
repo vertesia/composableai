@@ -1,9 +1,8 @@
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { AgentSearchScope, ExecutionEnvironmentRef, InCodeInteraction, mergeInCodePromptSchemas, supportsToolUse, UserChannel, WorkflowInteractionVars } from "@vertesia/common";
+import { AgentSearchScope, ConversationVisibility, ExecutionEnvironmentRef, InCodeInteraction, JSONSchema, mergeInCodePromptSchemas, supportsToolUse, UserChannel, WorkflowInteractionVars } from "@vertesia/common";
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
-import type { JSONSchema4 } from "json-schema";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 export type WorkflowMode = 'start' | 'schedule';
@@ -18,6 +17,8 @@ export interface ScheduledWorkflowConfig {
 export class PayloadBuilder {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
+    _checkpoint_tokens: number | undefined;
+    _visibility: ConversationVisibility | undefined;
     _user_channels: UserChannel[] | undefined;
     _collection: string | undefined;
     _start: boolean = false;
@@ -30,10 +31,10 @@ export class PayloadBuilder {
     _mode: WorkflowMode = 'start';
     _scheduledWorkflowConfig: ScheduledWorkflowConfig | undefined;
 
-    private _interactionParamsSchema?: JSONSchema4 | null;
+    private _interactionParamsSchema?: JSONSchema | null;
     private _inputValidator?: {
         validate: ValidateFunction;
-        schema: JSONSchema4;
+        schema: JSONSchema;
     };
 
     constructor(public vertesia: VertesiaClient, public updateState: (data: PayloadBuilder) => void) {
@@ -54,6 +55,8 @@ export class PayloadBuilder {
         builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
+        builder._checkpoint_tokens = this._checkpoint_tokens;
+        builder._visibility = this._visibility;
         builder._user_channels = this._user_channels ? [...this._user_channels] : undefined;
         builder._inputValidator = this._inputValidator;
         builder._start = this._start;
@@ -102,6 +105,28 @@ export class PayloadBuilder {
     set debug_mode(debug_mode: boolean) {
         if (debug_mode !== this._debug_mode) {
             this._debug_mode = debug_mode;
+            this.onStateChanged();
+        }
+    }
+
+    get checkpoint_tokens(): number | undefined {
+        return this._checkpoint_tokens;
+    }
+
+    set checkpoint_tokens(value: number | undefined) {
+        if (value !== this._checkpoint_tokens) {
+            this._checkpoint_tokens = value;
+            this.onStateChanged();
+        }
+    }
+
+    get visibility(): ConversationVisibility | undefined {
+        return this._visibility;
+    }
+
+    set visibility(value: ConversationVisibility | undefined) {
+        if (value !== this._visibility) {
+            this._visibility = value;
             this.onStateChanged();
         }
     }
@@ -160,6 +185,7 @@ export class PayloadBuilder {
         this._data = context.data;
         this._interactive = context.interactive;
         this._debug_mode = context.debug_mode ?? false;
+        this._checkpoint_tokens = context.checkpoint_tokens;
         this._user_channels = context.user_channels;
         this.collection = context.collection_id ?? undefined;
 
@@ -179,7 +205,7 @@ export class PayloadBuilder {
         if (interaction?.id !== this._interaction?.id) {
             this._interaction = interaction;
             // trigger the setter to update the onChange state
-            this.interactionParamsSchema = interaction ? mergeInCodePromptSchemas(interaction.prompts) as JSONSchema4 : undefined;
+            this.interactionParamsSchema = interaction ? mergeInCodePromptSchemas(interaction.prompts) : undefined;
             // Reset the validator when schema changes
             this._inputValidator = undefined;
             if (interaction && !this._preserveRunValues) {
@@ -263,11 +289,11 @@ export class PayloadBuilder {
         this._preserveRunValues = value;
     }
 
-    get interactionParamsSchema(): JSONSchema4 | null | undefined {
+    get interactionParamsSchema(): JSONSchema | null | undefined {
         return this._interactionParamsSchema;
     }
 
-    set interactionParamsSchema(schema: JSONSchema4 | null | undefined) {
+    set interactionParamsSchema(schema: JSONSchema | null | undefined) {
         if (this._interactionParamsSchema !== schema) {
             this._interactionParamsSchema = schema;
             // Booleans must be true or false, never undefined
@@ -278,7 +304,7 @@ export class PayloadBuilder {
         }
     }
 
-    private initializeBooleanDefaults(data: JSONObject, schema: JSONSchema4): JSONObject {
+    private initializeBooleanDefaults(data: JSONObject, schema: JSONSchema): JSONObject {
         if (!schema.properties) {
             return data;
         }
@@ -286,7 +312,7 @@ export class PayloadBuilder {
         const result = { ...data };
 
         for (const [name, propSchema] of Object.entries(schema.properties)) {
-            const prop = propSchema as JSONSchema4;
+            const prop = propSchema;
             // Initialize boolean fields to false if not already set
             if (prop.type === "boolean" && result[name] === undefined) {
                 result[name] = false;
@@ -306,6 +332,8 @@ export class PayloadBuilder {
         this._start = false;
         this._interactive = true;
         this._debug_mode = false;
+        this._checkpoint_tokens = undefined;
+        this._visibility = undefined;
         this._user_channels = undefined;
         this._collection = undefined;
         this._preserveRunValues = false;
