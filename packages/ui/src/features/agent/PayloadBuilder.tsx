@@ -1,5 +1,5 @@
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
-import { AgentSearchScope, ExecutionEnvironmentRef, InCodeInteraction, JSONSchema, mergeInCodePromptSchemas, supportsToolUse, UserChannel, WorkflowInteractionVars } from "@vertesia/common";
+import { AgentSearchScope, ConversationVisibility, ExecutionEnvironmentRef, InCodeInteraction, JSONSchema, mergeInCodePromptSchemas, supportsToolUse, UserChannel, WorkflowInteractionVars } from "@vertesia/common";
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
@@ -17,6 +17,8 @@ export interface ScheduledWorkflowConfig {
 export class PayloadBuilder {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
+    _checkpoint_tokens: number | undefined;
+    _visibility: ConversationVisibility | undefined;
     _user_channels: UserChannel[] | undefined;
     _collection: string | undefined;
     _start: boolean = false;
@@ -53,6 +55,8 @@ export class PayloadBuilder {
         builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
+        builder._checkpoint_tokens = this._checkpoint_tokens;
+        builder._visibility = this._visibility;
         builder._user_channels = this._user_channels ? [...this._user_channels] : undefined;
         builder._inputValidator = this._inputValidator;
         builder._start = this._start;
@@ -101,6 +105,28 @@ export class PayloadBuilder {
     set debug_mode(debug_mode: boolean) {
         if (debug_mode !== this._debug_mode) {
             this._debug_mode = debug_mode;
+            this.onStateChanged();
+        }
+    }
+
+    get checkpoint_tokens(): number | undefined {
+        return this._checkpoint_tokens;
+    }
+
+    set checkpoint_tokens(value: number | undefined) {
+        if (value !== this._checkpoint_tokens) {
+            this._checkpoint_tokens = value;
+            this.onStateChanged();
+        }
+    }
+
+    get visibility(): ConversationVisibility | undefined {
+        return this._visibility;
+    }
+
+    set visibility(value: ConversationVisibility | undefined) {
+        if (value !== this._visibility) {
+            this._visibility = value;
             this.onStateChanged();
         }
     }
@@ -159,6 +185,7 @@ export class PayloadBuilder {
         this._data = context.data;
         this._interactive = context.interactive;
         this._debug_mode = context.debug_mode ?? false;
+        this._checkpoint_tokens = context.checkpoint_tokens;
         this._user_channels = context.user_channels;
         this.collection = context.collection_id ?? undefined;
 
@@ -305,6 +332,8 @@ export class PayloadBuilder {
         this._start = false;
         this._interactive = true;
         this._debug_mode = false;
+        this._checkpoint_tokens = undefined;
+        this._visibility = undefined;
         this._user_channels = undefined;
         this._collection = undefined;
         this._preserveRunValues = false;
