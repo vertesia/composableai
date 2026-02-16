@@ -113,7 +113,8 @@ interface AllMessagesMixedProps {
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
     /** Custom component to render store/collection links instead of default NavLink navigation */
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
-    /** Optional message to display as the first user message. Purely visual — not from temporal. */
+    /** Optional message to display as the first user message in the conversation.
+     *  Purely visual/UI — not sent to temporal. Renders as a QUESTION MessageItem before real messages. */
     prependFriendlyMessage?: string;
 }
 
@@ -478,7 +479,7 @@ function AllMessagesMixedComponent({
                 </div>
             ) : (
                 <div className={cn("flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full", messageListClassName)}>
-                    {/* Friendly message — rendered outside the messages array to avoid memo/scroll issues */}
+                    {/* Friendly message — rendered outside the messages array to avoid memo issues/triggering autoscroll */}
                     {prependFriendlyMessage && (
                         <MessageItem
                             key={prependFriendlyMessage}

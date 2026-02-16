@@ -189,7 +189,7 @@ interface ModernAgentConversationProps {
     CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
 
     /** Optional message to display as the first user message in the conversation.
-     *  Purely visual — not sent to temporal. Renders as a QUESTION MessageItem before real messages. */
+     *  Purely visual/UI — not sent to temporal. Renders as a QUESTION MessageItem before real messages. */
     prependFriendlyMessage?: string;
 
     // Fusion fragment props
