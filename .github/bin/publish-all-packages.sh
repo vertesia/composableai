@@ -182,6 +182,27 @@ verify_published_packages() {
   fi
 }
 
+update_template_versions() {
+  echo "=== Updating create-plugin templateVersions ==="
+
+  # Get the llumiverse version from its root package.json
+  llumiverse_version=$(node -e "console.log(JSON.parse(require('fs').readFileSync('llumiverse/package.json', 'utf8')).version)")
+
+  echo "  @vertesia version: ${new_version}"
+  echo "  @llumiverse version: ${llumiverse_version}"
+
+  # Write both versions into create-plugin's package.json templateVersions field
+  node -e "
+    const fs = require('fs');
+    const pkgPath = 'packages/create-plugin/package.json';
+    const p = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    p.templateVersions = { '@vertesia': '${new_version}', '@llumiverse': '${llumiverse_version}' };
+    fs.writeFileSync(pkgPath, JSON.stringify(p, null, 2) + '\n');
+  "
+
+  echo "  ✓ Updated packages/create-plugin/package.json templateVersions"
+}
+
 commit_and_push() {
   echo "=== Committing version changes ==="
 
@@ -199,6 +220,14 @@ commit_and_push() {
   fi
 
   git push origin "$REF"
+
+  # Create git tag for template stability on releases
+  if [ "$RELEASE_TYPE" = "release" ]; then
+    tag_name="templates@${version}"
+    git tag "$tag_name"
+    git push origin "$tag_name"
+    echo "Created and pushed tag: ${tag_name}"
+  fi
 
   echo "Version changes pushed to ${REF}"
 }
@@ -329,9 +358,9 @@ if [[ ! "$BUMP_TYPE" =~ ^(minor|patch|keep)$ ]]; then
   exit 1
 fi
 
-# Validate that releases can only be published from 'preview' branch
-if [ "$RELEASE_TYPE" = "release" ] && [ "$REF" != "preview" ]; then
-  echo "Error: Release versions can only be published from the 'preview' branch."
+# Validate that releases can only be published from 'preview' or 'production/*' branches
+if [ "$RELEASE_TYPE" = "release" ] && [ "$REF" != "preview" ] && [[ ! "$REF" =~ ^production/ ]]; then
+  echo "Error: Release versions can only be published from 'preview' or 'production/*' branches."
   echo "Current branch: $REF"
   exit 1
 fi
@@ -349,6 +378,8 @@ fi
 # =============================================================================
 
 update_package_versions
+
+update_template_versions
 
 echo "=== Building all packages ==="
 pnpm build
