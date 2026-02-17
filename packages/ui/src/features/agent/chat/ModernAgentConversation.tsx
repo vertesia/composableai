@@ -189,6 +189,12 @@ interface ModernAgentConversationProps {
     messageListClassName?: string;
     /** Custom component to render store/document links instead of default NavLink navigation */
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
+    /** Custom component to render store/collection links instead of default NavLink navigation */
+    CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
+
+    /** Optional message to display as the first user message in the conversation.
+     *  Purely visual/UI — not sent to temporal. Renders as a QUESTION MessageItem before real messages. */
+    prependFriendlyMessage?: string;
 
     // Fusion fragment props
     /**
@@ -714,6 +720,8 @@ function ModernAgentConversationInner({
     workingIndicatorClassName,
     messageListClassName,
     StoreLinkComponent,
+    CollectionLinkComponent,
+    prependFriendlyMessage,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
 
@@ -1686,6 +1694,8 @@ function ModernAgentConversationInner({
                         workingIndicatorClassName={workingIndicatorClassName}
                         messageListClassName={messageListClassName}
                         StoreLinkComponent={effectiveStoreLinkComponent}
+                        CollectionLinkComponent={CollectionLinkComponent}
+                        prependFriendlyMessage={prependFriendlyMessage}
                     />
                 )}
 

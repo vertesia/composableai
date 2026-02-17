@@ -4,7 +4,7 @@ import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
-import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, MessageSquare, User } from "lucide-react";
+import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, type LucideIcon, MessageSquare, User } from "lucide-react";
 import React, { useEffect, useState, useMemo, memo, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
@@ -66,20 +66,8 @@ function processContentForMarkdown(content: string | object, messageType: AgentM
     return content;
 }
 
-/** Per-message-type visual config (border, bg, icon color, sender label, icon component). */
-export interface MessageStyleConfig {
-    borderColor: string;
-    bgColor: string;
-    iconColor: string;
-    sender: string;
-    Icon: typeof Bot;
-}
-
-export interface MessageItemProps {
-    message: AgentMessage;
-    showPulsatingCircle?: boolean;
-    /** Callback when user sends a message (e.g., from proposal selection) */
-    onSendMessage?: (message: string) => void;
+/** className overrides for MessageItem — single source of truth for all className overrides. */
+export interface MessageItemClassNames {
     /** Additional className for the outer container */
     className?: string;
     /** Additional className for the card wrapper */
@@ -100,35 +88,66 @@ export interface MessageItemProps {
     artifactsClassName?: string;
     /** Additional className for the prose/markdown wrapper */
     proseClassName?: string;
+}
+
+/** Keys of {@link MessageItemClassNames} — drives className merging and memo comparison. */
+const MESSAGE_ITEM_CLASS_NAME_KEYS: (keyof MessageItemClassNames)[] = [
+    'className', 'cardClassName', 'headerClassName', 'contentClassName',
+    'timestampClassName', 'senderClassName', 'iconClassName',
+    'detailsClassName', 'artifactsClassName', 'proseClassName',
+];
+
+/** Merge className slots across base, prop, and override layers with consistent priority. */
+function mergeClassNames(
+    base: MessageItemClassNames,
+    props: MessageItemClassNames,
+    ...overrides: (Partial<MessageItemClassNames> | undefined)[]
+): MessageItemClassNames {
+    const result: Record<string, string | undefined> = {};
+    for (const key of MESSAGE_ITEM_CLASS_NAME_KEYS) {
+        result[key] = cn(base[key], props[key], ...overrides.map(o => o?.[key]));
+    }
+    return result as MessageItemClassNames;
+}
+
+/** Per-message-type visual config (border, bg, icon color, sender label, icon component, optional className overrides). */
+export interface MessageStyleConfig extends MessageItemClassNames {
+    borderColor: string;
+    iconColor: string;
+    sender: string;
+    Icon: LucideIcon;
+}
+
+export interface MessageItemProps extends MessageItemClassNames {
+    message: AgentMessage;
+    showPulsatingCircle?: boolean;
+    /** Callback when user sends a message (e.g., from proposal selection) */
+    onSendMessage?: (message: string) => void;
     /** Sparse per-type overrides for MESSAGE_STYLES (deep-merged with defaults) */
     messageStyleOverrides?: Partial<Record<AgentMessageType | 'default', Partial<MessageStyleConfig>>>;
     /** Custom component to render store/document links instead of default NavLink navigation */
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
+    /** Custom component to render store/collection links instead of default NavLink navigation */
+    CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
 }
 
-/** className overrides for MessageItem — subset of MessageItemProps containing only className props. */
-export type MessageItemClassNames = Partial<Pick<MessageItemProps,
-    'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
-    'timestampClassName' | 'senderClassName' | 'iconClassName' |
-    'detailsClassName' | 'artifactsClassName' | 'proseClassName'>>;
-
-// Consolidated message styling - single source of truth
+// Consolidated Studio/default message styling - single source of truth
 export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleConfig> = {
-    [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', bgColor: 'bg-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
-    [AgentMessageType.IDLE]: { borderColor: 'border-l-info', bgColor: 'bg-info/50', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
-    [AgentMessageType.REQUEST_INPUT]: { borderColor: 'border-l-attention', bgColor: 'bg-attention', iconColor: 'text-attention', sender: 'Input', Icon: User },
-    [AgentMessageType.QUESTION]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
-    [AgentMessageType.THOUGHT]: { borderColor: 'border-l-purple-500', bgColor: 'bg-purple-50/50 dark:bg-purple-900/10', iconColor: 'text-purple-600 dark:text-purple-400', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.ERROR]: { borderColor: 'border-l-destructive', bgColor: 'bg-destructive', iconColor: 'text-destructive', sender: 'Error', Icon: AlertCircle },
-    [AgentMessageType.UPDATE]: { borderColor: 'border-l-success', bgColor: 'bg-success', iconColor: 'text-success', sender: 'Update', Icon: Info },
-    [AgentMessageType.PLAN]: { borderColor: 'border-l-attention', bgColor: 'bg-attention', iconColor: 'text-attention', sender: 'Plan', Icon: MessageSquare },
-    [AgentMessageType.TERMINATED]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'Terminated', Icon: CheckCircle },
-    [AgentMessageType.WARNING]: { borderColor: 'border-l-attention', bgColor: 'bg-attention', iconColor: 'text-attention', sender: 'Warning', Icon: AlertCircle },
-    [AgentMessageType.SYSTEM]: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
-    [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-l-info', bgColor: 'bg-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
-    [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-l-blue-500', bgColor: 'bg-blue-50/50 dark:bg-blue-900/10', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
-    default: { borderColor: 'border-l-muted', bgColor: 'bg-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ANSWER]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.COMPLETE]: { borderColor: 'border-l-success', iconColor: 'text-success', sender: 'Completed', Icon: CheckCircle },
+    [AgentMessageType.IDLE]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Ready', Icon: Clock },
+    [AgentMessageType.REQUEST_INPUT]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Input', Icon: User },
+    [AgentMessageType.QUESTION]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'User', Icon: User },
+    [AgentMessageType.THOUGHT]: { borderColor: 'border-l-purple-500', iconColor: 'text-purple-600 dark:text-purple-400', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.ERROR]: { borderColor: 'border-l-destructive', iconColor: 'text-destructive', sender: 'Error', Icon: AlertCircle },
+    [AgentMessageType.UPDATE]: { borderColor: 'border-l-success', iconColor: 'text-success', sender: 'Update', Icon: Info },
+    [AgentMessageType.PLAN]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Plan', Icon: MessageSquare },
+    [AgentMessageType.TERMINATED]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'Terminated', Icon: CheckCircle },
+    [AgentMessageType.WARNING]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Warning', Icon: AlertCircle },
+    [AgentMessageType.SYSTEM]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
+    [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
+    [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-l-blue-500', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
+    default: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
 };
 
 function MessageItemComponent({
@@ -147,6 +166,7 @@ function MessageItemComponent({
     proseClassName,
     messageStyleOverrides,
     StoreLinkComponent,
+    CollectionLinkComponent,
 }: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
     const { client } = useUserSession();
@@ -160,13 +180,25 @@ function MessageItemComponent({
     urlCacheRef.current = urlCache;
     const { renderContent: exportContent, isDownloading: isExportingFile } = useDownloadFile({ client, toast });
 
-    // Get styles from consolidated config, with optional sparse overrides
-    const baseStyles = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
-    const defaultOverrides = messageStyleOverrides?.default;
-    const typeOverrides = messageStyleOverrides?.[message.type];
-    const styles = defaultOverrides || typeOverrides
-        ? { ...baseStyles, ...defaultOverrides, ...typeOverrides }
-        : baseStyles;
+    // Unified style resolution: merge MESSAGE_STYLES base, flat className props, and per-type overrides.
+    // Priority (lowest → highest): base MESSAGE_STYLES → flat props → overrides.default → overrides[type]
+    const resolvedStyle = useMemo(() => {
+        const base = MESSAGE_STYLES[message.type] || MESSAGE_STYLES.default;
+        const defaultOverrides = messageStyleOverrides?.default;
+        const typeOverrides = messageStyleOverrides?.[message.type];
+
+        return {
+            ...base, ...defaultOverrides, ...typeOverrides,
+            ...mergeClassNames(base, {
+                className, cardClassName, headerClassName, contentClassName,
+                timestampClassName, senderClassName, iconClassName,
+                detailsClassName, artifactsClassName, proseClassName,
+            }, defaultOverrides, typeOverrides),
+        };
+    }, [message.type, messageStyleOverrides,
+        className, cardClassName, headerClassName, contentClassName,
+        timestampClassName, senderClassName, iconClassName,
+        detailsClassName, artifactsClassName, proseClassName]);
 
     // PERFORMANCE: Memoize message content extraction - only recalculates when message changes
     const messageContent = useMemo(() => {
@@ -268,6 +300,20 @@ function MessageItemComponent({
                     </NavLink>
                 );
             }
+            if (href.includes("/store/collections")) {
+                if (CollectionLinkComponent) {
+                    const collectionId = href.split("/store/collections/")[1] || "";
+                    return <CollectionLinkComponent href={href} collectionId={collectionId}>{props.children}</CollectionLinkComponent>;
+                }
+                return (
+                    <NavLink
+                        href={href}
+                        topLevelNav
+                    >
+                        {props.children}
+                    </NavLink>
+                );
+            }
             return (
                 <a
                     {...props}
@@ -286,7 +332,7 @@ function MessageItemComponent({
                 />
             );
         },
-    }), [openImage, StoreLinkComponent]);
+    }), [openImage, StoreLinkComponent, CollectionLinkComponent]);
 
     // Render content with markdown support - all messages now rendered as markdown
     const renderContent = (content: string | object) => {
@@ -303,7 +349,7 @@ function MessageItemComponent({
         const runId = (message as any).workflow_run_id as string | undefined;
 
         return (
-            <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", proseClassName)} style={{ overflowWrap: 'anywhere' }}>
+            <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", resolvedStyle.proseClassName)} style={{ overflowWrap: 'anywhere' }}>
                 <MarkdownRenderer
                     artifactRunId={runId}
                     onProposalSelect={(optionId) => onSendMessage?.(optionId)}
@@ -394,29 +440,29 @@ function MessageItemComponent({
     }, [runId, outputFilesKey]);
 
     const workstreamId = getWorkstreamId(message);
-    const { Icon } = styles;
+    const { Icon } = resolvedStyle;
 
     // Render icon - show pulsating animation for active messages
     const renderIcon = () => {
         if (showPulsatingCircle) {
             return <PulsatingCircle size="sm" color="blue" />;
         }
-        return <Icon className={`size-4 ${styles.iconColor}`} />;
+        return <Icon className={`size-4 ${resolvedStyle.iconColor}`} />;
     };
 
     return (
-        <div className={cn("w-full max-w-full", className)}>
+        <div className={cn("w-full max-w-full", resolvedStyle.className)}>
             <div
-                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden", styles.borderColor, cardClassName)}
+                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 w-full max-w-full overflow-hidden", resolvedStyle.borderColor, resolvedStyle.cardClassName)}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
-                <div className={cn("flex items-center justify-between px-4 py-1.5", headerClassName)}>
+                <div className={cn("flex items-center justify-between px-4 py-1.5", resolvedStyle.headerClassName)}>
                     <div className="flex items-center gap-1.5">
-                        <div className={cn(showPulsatingCircle ? "animate-fadeIn" : "", iconClassName)}>
+                        <div className={cn(showPulsatingCircle ? "animate-fadeIn" : "", resolvedStyle.iconClassName)}>
                             {renderIcon()}
                         </div>
-                        <span className={cn("text-xs font-medium text-muted", senderClassName)}>{styles.sender}</span>
+                        <span className={cn("text-xs font-medium text-muted", resolvedStyle.senderClassName)}>{resolvedStyle.sender}</span>
                         {workstreamId !== "main" && workstreamId !== "all" && (
                             <Badge variant="default" className="text-xs text-muted ml-1">
                                 {workstreamId}
@@ -424,7 +470,7 @@ function MessageItemComponent({
                         )}
                     </div>
                     <div className="flex items-center gap-1.5 print:hidden">
-                        <span className={cn("text-[11px] text-muted/70", timestampClassName)}>
+                        <span className={cn("text-[11px] text-muted/70", resolvedStyle.timestampClassName)}>
                             {dayjs(message.timestamp).format("HH:mm:ss")}
                         </span>
                         <Button
@@ -460,7 +506,7 @@ function MessageItemComponent({
                 </div>
 
                 {/* Message content */}
-                <div className={cn("px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden", contentClassName)}>
+                <div className={cn("px-4 pb-3 bg-white dark:bg-gray-900 overflow-hidden", resolvedStyle.contentClassName)}>
                 {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                 {message.type === AgentMessageType.REQUEST_INPUT && (message.details as AskUserMessageDetails)?.ux ? (
                     (() => {
@@ -488,7 +534,7 @@ function MessageItemComponent({
 
                 {/* Auto-surfaced artifacts from tool details (e.g. execute_shell.outputFiles) */}
                 {artifactLinks.length > 0 && (
-                    <div className={cn("mt-3 text-xs", artifactsClassName)}>
+                    <div className={cn("mt-3 text-xs", resolvedStyle.artifactsClassName)}>
                         <div className="font-medium text-muted mb-1">Artifacts</div>
 
                         {/* Inline previews for image artifacts */}
@@ -535,7 +581,7 @@ function MessageItemComponent({
 
                 {/* Optional details section */}
                 {message.details && (
-                    <div className={cn("mt-2 print:hidden", detailsClassName)}>
+                    <div className={cn("mt-2 print:hidden", resolvedStyle.detailsClassName)}>
                         <button
                             onClick={() => setShowDetails(!showDetails)}
                             className="text-[11px] text-muted flex items-center"
@@ -578,17 +624,8 @@ const MessageItem = memo(MessageItemComponent, (prevProps, nextProps) => {
         prevProps.message.timestamp === nextProps.message.timestamp &&
         prevProps.showPulsatingCircle === nextProps.showPulsatingCircle &&
         prevProps.onSendMessage === nextProps.onSendMessage &&
-        prevProps.className === nextProps.className &&
-        prevProps.cardClassName === nextProps.cardClassName &&
-        prevProps.headerClassName === nextProps.headerClassName &&
-        prevProps.contentClassName === nextProps.contentClassName &&
-        prevProps.timestampClassName === nextProps.timestampClassName &&
-        prevProps.senderClassName === nextProps.senderClassName &&
-        prevProps.iconClassName === nextProps.iconClassName &&
-        prevProps.detailsClassName === nextProps.detailsClassName &&
-        prevProps.artifactsClassName === nextProps.artifactsClassName &&
-        prevProps.proseClassName === nextProps.proseClassName &&
-        prevProps.messageStyleOverrides === nextProps.messageStyleOverrides
+        prevProps.messageStyleOverrides === nextProps.messageStyleOverrides &&
+        MESSAGE_ITEM_CLASS_NAME_KEYS.every(key => prevProps[key] === nextProps[key])
     );
 });
 

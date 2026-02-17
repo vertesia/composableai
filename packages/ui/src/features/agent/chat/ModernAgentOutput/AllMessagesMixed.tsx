@@ -1,5 +1,6 @@
 import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
+import { cn } from "@vertesia/ui/core";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 export type AgentConversationViewMode = "stacked" | "sliding";
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
@@ -111,6 +112,11 @@ interface AllMessagesMixedProps {
     messageListClassName?: string;
     /** Custom component to render store/document links instead of default NavLink navigation */
     StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
+    /** Custom component to render store/collection links instead of default NavLink navigation */
+    CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
+    /** Optional message to display as the first user message in the conversation.
+     *  Purely visual/UI — not sent to temporal. Renders as a QUESTION MessageItem before real messages. */
+    prependFriendlyMessage?: string;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -124,6 +130,18 @@ function AllMessagesMixedComponent({
     streamingMessages = new Map(),
     onSendMessage,
     thinkingMessageIndex = 0,
+    messageItemClassNames,
+    messageStyleOverrides,
+    toolCallGroupClassNames,
+    hideToolCallsInViewMode,
+    streamingMessageClassNames,
+    batchProgressPanelClassNames,
+    hideWorkstreamTabs,
+    workingIndicatorClassName,
+    messageListClassName,
+    StoreLinkComponent,
+    CollectionLinkComponent,
+    prependFriendlyMessage,
 }: AllMessagesMixedProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -467,7 +485,22 @@ function AllMessagesMixedComponent({
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col justify-start pb-2 space-y-1.5 w-full max-w-full">
+                <div className={cn("flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full", messageListClassName)}>
+                    {/* Friendly message — rendered outside the messages array to avoid memo issues/triggering autoscroll */}
+                    {prependFriendlyMessage && (
+                        <MessageItem
+                            key={prependFriendlyMessage}
+                            {...messageItemClassNames}
+                            messageStyleOverrides={messageStyleOverrides}
+                            message={{
+                                type: AgentMessageType.QUESTION,
+                                message: prependFriendlyMessage,
+                                timestamp: displayMessages[0]?.timestamp ?? Date.now(),
+                                workflow_run_id: "",
+                                workstream_id: "main",
+                            }}
+                        />
+                    )}
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
                         // Details view - show ALL messages with streaming interleaved
@@ -534,6 +567,8 @@ function AllMessagesMixedComponent({
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
+                                                StoreLinkComponent={StoreLinkComponent}
+                                                CollectionLinkComponent={CollectionLinkComponent}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -624,6 +659,8 @@ function AllMessagesMixedComponent({
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
+                                                StoreLinkComponent={StoreLinkComponent}
+                                                CollectionLinkComponent={CollectionLinkComponent}
                                             />
                                         </MessageErrorBoundary>
                                     );
