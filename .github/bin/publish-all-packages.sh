@@ -129,7 +129,7 @@ commit_and_push() {
 
   # Create git tag for template stability on releases
   if [ "$RELEASE_TYPE" = "release" ]; then
-    tag_name="templates@${version}"
+    tag_name="v${version}"
     git tag "$tag_name"
     git push origin "$tag_name"
     echo "Created and pushed tag: ${tag_name}"
