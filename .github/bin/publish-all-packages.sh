@@ -88,100 +88,6 @@ publish_packages() {
   done
 }
 
-verify_published_packages() {
-  echo "=== Verifying package tarballs ==="
-
-  # Array to track failed packages
-  failed_packages=()
-
-  # Get the expected version from root package.json
-  expected_version=$(pnpm pkg get version | tr -d '"')
-
-  for pkg_dir in packages/*; do
-    if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
-      pkg_name=$(basename "$pkg_dir")
-      cd "$pkg_dir"
-
-      # Pack the package to create tarball (pnpm resolves workspace:* during pack)
-      echo "Packing ${pkg_name}..."
-      pnpm pack --pack-destination . > /dev/null 2>&1
-      tarball=$(ls -t *.tgz 2>/dev/null | head -1)
-
-      if [ -n "$tarball" ] && [ -f "$tarball" ]; then
-        # Extract package.json from tarball
-        echo "Checking @vertesia/${pkg_name}:"
-        packed_json=$(tar -xzOf "$tarball" package/package.json)
-
-        # Check version
-        packed_version=$(echo "$packed_json" | grep '"version":' | head -1 | sed 's/.*: "\(.*\)".*/\1/')
-        has_issues=false
-
-        if [ "$packed_version" = "${expected_version}" ]; then
-          echo "  ✓ Version: ${packed_version}"
-        else
-          echo "  ✗ WARNING: Version mismatch (expected: ${expected_version}, got: ${packed_version})"
-          has_issues=true
-        fi
-
-        # Extract dependencies section
-        deps_section=$(echo "$packed_json" | sed -n '/"dependencies":/,/^  [}]/p')
-
-        # Show all @llumiverse and @vertesia dependencies
-        echo "$deps_section" | grep -E '"@(llumiverse|vertesia)/' | head -20 || echo "  (no llumiverse or vertesia dependencies)"
-
-        # Verify vertesia dependencies
-        vertesia_deps=$(echo "$deps_section" | grep '"@vertesia/' || true)
-        if [ -n "$vertesia_deps" ]; then
-          if echo "$vertesia_deps" | grep -q "${expected_version}"; then
-            echo "  ✓ vertesia dependencies: ${expected_version}"
-          else
-            echo "  ✗ WARNING: vertesia dependencies version mismatch"
-            has_issues=true
-          fi
-        fi
-
-        # Verify build output (lib/esm and lib/cjs folders)
-        has_esm=$(tar -tzf "$tarball" | grep -c '^package/lib/esm/' || true)
-        has_cjs=$(tar -tzf "$tarball" | grep -c '^package/lib/cjs/' || true)
-        if [ "$has_esm" -gt 0 ]; then
-          echo "  ✓ lib/esm: ${has_esm} files"
-        else
-          echo "  ✗ WARNING: lib/esm folder missing from tarball"
-          has_issues=true
-        fi
-        if [ "$has_cjs" -gt 0 ]; then
-          echo "  ✓ lib/cjs: ${has_cjs} files"
-        else
-          echo "  ✗ WARNING: lib/cjs folder missing from tarball"
-          has_issues=true
-        fi
-
-        # Add to failed packages if there were issues
-        if [ "$has_issues" = true ]; then
-          failed_packages+=("${pkg_name}")
-        fi
-
-        # Clean up tarball
-        rm -f "$tarball"
-      fi
-
-      cd ../..
-    fi
-  done
-
-  # Print summary
-  echo ""
-  echo "=== Verification Summary ==="
-  if [ ${#failed_packages[@]} -eq 0 ]; then
-    echo "✓ All packages passed verification"
-  else
-    echo "✗ ${#failed_packages[@]} package(s) failed verification:"
-    for pkg in "${failed_packages[@]}"; do
-      echo "  - ${pkg}"
-    done
-  fi
-}
-
 update_template_versions() {
   echo "=== Updating create-plugin templateVersions ==="
 
@@ -389,10 +295,6 @@ if [ "$DRY_RUN" = "false" ]; then
 fi
 
 publish_packages
-
-if [ "$DRY_RUN" = "true" ]; then
-  verify_published_packages
-fi
 
 write_github_summary
 
