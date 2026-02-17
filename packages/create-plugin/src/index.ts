@@ -92,7 +92,7 @@ Documentation: ${config.docsUrl}
     replaceVariables(projectName, templateConfig, answers);
 
     // Step 6: Adjust package.json (name and workspace dependencies)
-    adjustPackageJson(projectName, answers);
+    adjustPackageJson(projectName, answers, dev);
 
     // Step 7: Handle conditional removes
     if (templateConfig.conditionalRemove) {

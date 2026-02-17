@@ -145,7 +145,7 @@ publish_to_verdaccio() {
 # =============================================================================
 
 RELEASE_TYPE=""
-TEMPLATE_NAME="Vertesia Plugin"
+TEMPLATE_NAME="Vertesia Tool Server"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -185,6 +185,11 @@ TEMPLATES_PATH="$(cd "${SCRIPT_DIR}/../.." && pwd)/templates"
 EXTRA_CREATE_ARGS="--local-templates ${TEMPLATES_PATH}"
 
 bootstrap_template "integration-test-plugin"
+
+echo ""
+echo "=== Bootstrapped package.json ==="
+cat "${TEST_PROJECT_DIR}/package.json"
+
 build_project
 
 echo ""

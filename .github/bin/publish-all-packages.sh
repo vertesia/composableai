@@ -358,9 +358,9 @@ if [[ ! "$BUMP_TYPE" =~ ^(minor|patch|keep)$ ]]; then
   exit 1
 fi
 
-# Validate that releases can only be published from 'preview' or 'production/*' branches
-if [ "$RELEASE_TYPE" = "release" ] && [ "$REF" != "preview" ] && [[ ! "$REF" =~ ^production/ ]]; then
-  echo "Error: Release versions can only be published from 'preview' or 'production/*' branches."
+# Validate that releases can only be published from 'preview' or maintenance branches
+if [ "$RELEASE_TYPE" = "release" ] && [ "$REF" != "preview" ] && [[ ! "$REF" =~ ^[0-9]+\.[0-9]+\+$ ]]; then
+  echo "Error: Release versions can only be published from 'preview' or maintenance branches."
   echo "Current branch: $REF"
   exit 1
 fi

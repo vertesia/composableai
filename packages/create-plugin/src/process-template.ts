@@ -172,7 +172,7 @@ export function replaceVariables(
  * 1. Sets the package name to PROJECT_NAME
  * 2. Resolves workspace:* dependencies to actual latest versions
  */
-export function adjustPackageJson(projectName: string, answers: Record<string, any>): void {
+export function adjustPackageJson(projectName: string, answers: Record<string, any>, isDev: boolean): void {
   console.log(chalk.blue('📝 Adjusting package.json...\n'));
 
   const packageJsonPath = path.join(projectName, 'package.json');
