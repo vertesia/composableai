@@ -94,7 +94,7 @@ packages:
     proxy: npmjs
 max_body_size: 20mb
 server:
-  keepAliveTimeout: 120
+  keepAliveTimeout: 180
 listen: 0.0.0.0:4873
 log:
   type: stdout
