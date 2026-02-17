@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
 # Script to test template integration using a local verdaccio registry.
 # Publishes all built packages to verdaccio, bootstraps a template, and builds it.
