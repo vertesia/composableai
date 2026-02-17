@@ -1,5 +1,5 @@
-import { JSONSchema4 } from "json-schema";
 import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
+import { JSONSchema } from "../json-schema.js";
 import type { WorkflowInput } from "./dsl-workflow.js";
 
 export enum ContentEventName {
@@ -581,8 +581,14 @@ export interface WorkflowInteractionVars {
         environment: string,
         model: string
     },
-    interactionParamsSchema?: JSONSchema4
+    interactionParamsSchema?: JSONSchema,
     collection_id?: string;
+    /**
+     * The token threshold in thousands (K) for creating checkpoints.
+     * If total tokens exceed this value, a checkpoint will be created.
+     * If not specified, default value of 150K tokens will be used.
+     */
+    checkpoint_tokens?: number;
     /**
      * Optional version of the interaction to use when restoring conversations.
      * If not specified, the latest version will be used.
