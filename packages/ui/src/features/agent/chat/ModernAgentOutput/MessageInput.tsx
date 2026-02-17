@@ -1,4 +1,4 @@
-import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip, cn } from "@vertesia/ui/core";
+import { Button, Spinner, Modal, ModalBody, ModalTitle, VTooltip, cn, Textarea } from "@vertesia/ui/core";
 import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCircleIcon, UploadIcon, XIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
@@ -63,6 +63,8 @@ interface MessageInputProps {
 
     // Hide the default object linking (for apps that don't use it)
     hideObjectLinking?: boolean;
+    // Hide file upload (for apps that don't use it)
+    hideFileUpload?: boolean;
 
     // Styling props for Tailwind customization
     /** Additional className for the container */
@@ -95,9 +97,10 @@ export default function MessageInput({
     onRemoveDocument,
     // Object linking
     hideObjectLinking = false,
+    // File upload
+    hideFileUpload = false,
     // Styling props
     className,
-    inputClassName,
 }: MessageInputProps) {
     const ref = useRef<HTMLTextAreaElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -324,7 +327,7 @@ export default function MessageInput({
             )}
 
             {/* Attachments preview */}
-            {hasAttachments && (
+            {hasAttachments && !hideFileUpload && (
                 <div className="flex flex-col gap-2 mb-3">
                     {/* Uploaded files section */}
                     {(uploadedFiles.length > 0 || (processingFiles && processingFiles.size > 0)) && (
@@ -461,7 +464,7 @@ export default function MessageInput({
             {/* Input row */}
             <div className="flex items-end space-x-2">
                 <div className="flex flex-1 items-end space-x-1">
-                    <textarea
+                    <Textarea
                         ref={ref}
                         value={value}
                         onKeyDown={keyDown}
@@ -469,7 +472,6 @@ export default function MessageInput({
                         onPaste={handlePaste}
                         disabled={disabled}
                         placeholder={isStreaming ? "Agent is working... (Esc Esc to stop)" : (onFilesSelected ? "Ask anything... (drop or paste files)" : placeholder)}
-                        className={cn("flex-1 w-full px-3 py-2.5 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:border-gray-300 dark:focus:border-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded-md resize-none overflow-hidden", inputClassName)}
                         rows={2}
                         style={{ minHeight: '60px', maxHeight: '200px' }}
                     />
