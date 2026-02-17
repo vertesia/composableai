@@ -168,8 +168,12 @@ EOF
   for pkg_dir in packages/*; do
     if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
       pkg_name=$(basename "$pkg_dir")
-      pkg_url="https://www.npmjs.com/package/@vertesia/${pkg_name}?activeTab=versions"
-      echo "| \`@vertesia/${pkg_name}\` | [${version}](${pkg_url}) |" >> "$GITHUB_STEP_SUMMARY"
+      if [ "$DRY_RUN" = "true" ]; then
+        echo "| \`@vertesia/${pkg_name}\` | ${version} |" >> "$GITHUB_STEP_SUMMARY"
+      else
+        pkg_url="https://www.npmjs.com/package/@vertesia/${pkg_name}?activeTab=versions"
+        echo "| \`@vertesia/${pkg_name}\` | [${version}](${pkg_url}) |" >> "$GITHUB_STEP_SUMMARY"
+      fi
     fi
   done
 
