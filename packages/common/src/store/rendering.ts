@@ -208,6 +208,8 @@ export interface RenderSlidesDeckOptions {
     scale?: number;
     /** Background color for each slide (default: '#ffffff') */
     backgroundColor?: string;
+    /** Slide theme — replaces default colors in SVG templates */
+    theme?: Record<string, string>;
 }
 
 /** Result of rendering a slide deck to PDF */
