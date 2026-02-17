@@ -75,7 +75,7 @@ export class ManagedSchema implements SchemaLoader {
         return this;
     }
 
-    replaceSchema(schema: JSONSchema | null) {
+    replaceSchema(schema: JSONSchema | null | undefined) {
         if (!schema) {
             this.schema = {
                 title: this.schema.title,
