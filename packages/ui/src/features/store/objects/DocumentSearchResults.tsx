@@ -253,6 +253,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 handleVectorSearch={handleVectorSearch}
                 handleRefetch={handleRefetch}
                 setIsGridView={setIsGridView}
+                refetch={handleRefetch}
             />
             <DocumentTable
                 objects={objects}
@@ -289,6 +290,7 @@ interface ToolsbarProps {
     handleVectorSearch: (query?: ComplexSearchQuery) => void;
     handleRefetch: () => void;
     setIsGridView: React.Dispatch<React.SetStateAction<boolean>>;
+    refetch: () => void;
 }
 function Toolsbar(props: ToolsbarProps) {
     const {
@@ -301,11 +303,12 @@ function Toolsbar(props: ToolsbarProps) {
         handleFilterChange,
         handleVectorSearch,
         handleRefetch,
-        setIsGridView
+        setIsGridView,
+        refetch
     } = props;
 
     return (
-        <div className="sticky top-0 z-10 bg-background py-2">
+        <div className="sticky top-0 z-10 bg-background py-2 flex justify-between items-center">
             {
                 allowFilter && (
                     <FilterProvider
@@ -343,6 +346,7 @@ function Toolsbar(props: ToolsbarProps) {
                     </div>
                 )
             }
+            <Button variant="outline" onClick={refetch} alt="Refresh"><RefreshCw size={16} /></Button>
         </div>
     );
 }
