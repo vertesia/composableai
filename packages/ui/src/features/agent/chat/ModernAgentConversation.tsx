@@ -149,6 +149,8 @@ interface ModernAgentConversationProps {
     hidePlanPanel?: boolean;
     /** Hide workstream tabs */
     hideWorkstreamTabs?: boolean;
+    /** Hide the default file upload */
+    hideFileUpload?: boolean;
 
     // Callback to get attached document IDs when sending messages
     // Returns array of document IDs to include in message metadata
@@ -669,6 +671,7 @@ function ModernAgentConversationInner({
     hideMessageInput,
     hidePlanPanel,
     hideWorkstreamTabs,
+    hideFileUpload,
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
@@ -1650,6 +1653,8 @@ function ModernAgentConversationInner({
                                 onRemoveDocument={onRemoveDocument}
                                 // Object linking
                                 hideObjectLinking={hideObjectLinking}
+                                // Files Uploaded
+                                hideFileUpload={hideFileUpload}
                                 // Styling props
                                 className={inputContainerClassName}
                                 inputClassName={inputClassName}
