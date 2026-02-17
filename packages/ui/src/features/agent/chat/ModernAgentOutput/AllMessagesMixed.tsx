@@ -466,7 +466,7 @@ function AllMessagesMixedComponent({
             `}</style>
 
             {/* Workstream tabs with completion indicators */}
-            <div className="sticky top-0 z-10">
+            <div className={cn("sticky top-0 z-10", hideWorkstreamTabs && "hidden")}>
                 <WorkstreamTabs
                     workstreams={workstreams}
                     activeWorkstream={activeWorkstream}
@@ -520,6 +520,7 @@ function AllMessagesMixedComponent({
                                         !DONE_STATES.includes(lastMessage.type) &&
                                         !isTerminalToolStatus;
 
+                                    if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
                                         <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
                                             <ToolCallGroup
@@ -527,6 +528,7 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatest}
                                                 toolRunId={group.toolRunId}
                                                 toolStatus={group.toolStatus}
+                                                {...toolCallGroupClassNames}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -539,6 +541,7 @@ function AllMessagesMixedComponent({
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
+                                            {...streamingMessageClassNames}
                                         />
                                     );
                                 } else {
@@ -556,6 +559,7 @@ function AllMessagesMixedComponent({
                                                     message={message}
                                                     batchData={message.details}
                                                     isRunning={!message.details.completed_at}
+                                                    {...batchProgressPanelClassNames}
                                                 />
                                             </MessageErrorBoundary>
                                         );
@@ -567,6 +571,8 @@ function AllMessagesMixedComponent({
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
+                                                {...messageItemClassNames}
+                                                messageStyleOverrides={messageStyleOverrides}
                                                 StoreLinkComponent={StoreLinkComponent}
                                                 CollectionLinkComponent={CollectionLinkComponent}
                                             />
@@ -582,11 +588,12 @@ function AllMessagesMixedComponent({
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
+                                    {...streamingMessageClassNames}
                                 />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && incompleteStreaming.length === 0 && (
-                                <div className="flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500">
+                                <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-xs text-muted">Working...</span>
                                 </div>
@@ -611,6 +618,7 @@ function AllMessagesMixedComponent({
                                         !DONE_STATES.includes(lastMessage.type) &&
                                         !isTerminalToolStatus;
 
+                                    if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
                                         <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
                                             <ToolCallGroup
@@ -618,6 +626,7 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatest}
                                                 toolRunId={group.toolRunId}
                                                 toolStatus={group.toolStatus}
+                                                {...toolCallGroupClassNames}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -630,6 +639,7 @@ function AllMessagesMixedComponent({
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
+                                            {...streamingMessageClassNames}
                                         />
                                     );
                                 } else {
@@ -648,6 +658,7 @@ function AllMessagesMixedComponent({
                                                     message={message}
                                                     batchData={message.details}
                                                     isRunning={!message.details.completed_at}
+                                                    {...batchProgressPanelClassNames}
                                                 />
                                             </MessageErrorBoundary>
                                         );
@@ -659,6 +670,8 @@ function AllMessagesMixedComponent({
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
+                                                {...messageItemClassNames}
+                                                messageStyleOverrides={messageStyleOverrides}
                                                 StoreLinkComponent={StoreLinkComponent}
                                                 CollectionLinkComponent={CollectionLinkComponent}
                                             />
@@ -674,6 +687,7 @@ function AllMessagesMixedComponent({
                                     workstreamId={getWorkstreamId(thinking)}
                                     isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
                                     timestamp={thinking.timestamp}
+                                    {...streamingMessageClassNames}
                                 />
                             ))}
                             {/* Incomplete streaming - no error boundary to avoid interrupting streaming */}
@@ -684,11 +698,12 @@ function AllMessagesMixedComponent({
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
+                                    {...streamingMessageClassNames}
                                 />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
-                                <div className="flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500">
+                                <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
                                     <span className="text-xs text-muted">Working...</span>
                                 </div>
