@@ -156,11 +156,6 @@ export interface ProjectConfiguration {
 
     human_context: string;
 
-    /** @deprecated Use defaults.base - kept for backward compatibility */
-    default_environment?: string;
-    /** @deprecated Use defaults.base - kept for backward compatibility */
-    default_model?: string;
-
     defaults?: ProjectModelDefaults;
 
     default_visibility?: ResourceVisibility;
