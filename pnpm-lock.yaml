@@ -893,8 +893,8 @@ importers:
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.3)
       '@vertesia/plugin-builder':
-        specifier: ^0.79.4
-        version: 0.79.4(vite@6.4.1(@types/node@25.0.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(yaml@2.8.1))
+        specifier: workspace:*
+        version: link:../../packages/plugin-builder
       '@vitejs/plugin-basic-ssl':
         specifier: ^2.1.0
         version: 2.1.0(vite@6.4.1(@types/node@25.0.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(yaml@2.8.1))
@@ -3374,11 +3374,6 @@ packages:
     resolution: {integrity: sha512-lrW200hZdbfRtztbygyaq/6jP6AKE8qQN2KvPcJ+x7wiD038YtnYtZ82IMNJ69GJibV7bwL3y9FgK+5w/pYt6g==}
     cpu: [x64]
     os: [win32]
-
-  '@vertesia/plugin-builder@0.79.4':
-    resolution: {integrity: sha512-loEQbMdIhpT6hhUsXc/GXlu5YNHI1eh9ZUwL0/EH/BtENCqbhembEXqA6/uu6SaAFWcsHLDszZJ6VrHHUmPnmg==}
-    peerDependencies:
-      vite: ^6.3.6
 
   '@vitejs/plugin-basic-ssl@2.1.0':
     resolution: {integrity: sha512-dOxxrhgyDIEUADhb/8OlV9JIqYLgos03YorAueTIeOUskLJSEsfwCByjbu98ctXitUN3znXKp0bYD/WHSudCeA==}
@@ -9875,12 +9870,6 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
-
-  '@vertesia/plugin-builder@0.79.4(vite@6.4.1(@types/node@25.0.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(yaml@2.8.1))':
-    dependencies:
-      '@adobe/css-tools': 4.4.4
-      '@types/node': 22.19.1
-      vite: 6.4.1(@types/node@25.0.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@3.14.0)(yaml@2.8.1)
 
   '@vitejs/plugin-basic-ssl@2.1.0(vite@6.4.1(@types/node@25.0.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(yaml@2.8.1))':
     dependencies:
