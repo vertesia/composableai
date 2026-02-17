@@ -302,8 +302,26 @@ export interface CreateContentObjectPayload<T = any>
     generation_run_info?: GenerationRunMetadata;
 }
 
-export interface ContentObjectTypeRef {
+/**
+ * Reference to a content object type. Either `id` (stored type) or `code` (in-code type) must be set.
+ */
+export type ContentObjectTypeRef = StoredTypeRef | InCodeTypeRef;
+
+interface StoredTypeRef {
+    /**
+     * MongoDB ObjectId string for stored types
+     */
     id: string;
+    code?: never;
+    name: string;
+}
+
+interface InCodeTypeRef {
+    id?: never;
+    /**
+     * Namespaced identifier for in-code types (e.g. "sys:Invoice", "app:myapp:Contract")
+     */
+    code: string;
     name: string;
 }
 
