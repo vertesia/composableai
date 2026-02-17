@@ -877,6 +877,8 @@ export interface UserMessagePayload extends ResumeConversationPayload {
     message: string;
 }
 
+export type CheckpointConversationPayload = Omit<ToolResultsPayload, "results" | "tools">
+
 // ================= end async execution payloads ====================
 
 export enum RunSourceTypes {

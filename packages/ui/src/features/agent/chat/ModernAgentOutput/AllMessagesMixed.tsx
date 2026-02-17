@@ -1,10 +1,11 @@
 import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import BatchProgressPanel from "./BatchProgressPanel";
-import MessageItem from "./MessageItem";
-import StreamingMessage from "./StreamingMessage";
-import ToolCallGroup from "./ToolCallGroup";
+export type AgentConversationViewMode = "stacked" | "sliding";
+import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
+import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "./MessageItem";
+import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
+import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
 import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
@@ -93,6 +94,23 @@ interface AllMessagesMixedProps {
     onSendMessage?: (message: string) => void;
     /** Stable index for thinking messages (changes on 4s interval) */
     thinkingMessageIndex?: number;
+    /** className overrides passed to every MessageItem */
+    messageItemClassNames?: MessageItemClassNames;
+    /** Sparse MESSAGE_STYLES overrides passed to every MessageItem */
+    messageStyleOverrides?: MessageItemProps['messageStyleOverrides'];
+    toolCallGroupClassNames?: ToolCallGroupClassNames;
+    /** Hide ToolCallGroup in this view mode */
+    hideToolCallsInViewMode?: AgentConversationViewMode[];
+    streamingMessageClassNames?: StreamingMessageClassNames;
+    batchProgressPanelClassNames?: BatchProgressPanelClassNames;
+    /** Hide the workstream tabs entirely */
+    hideWorkstreamTabs?: boolean;
+    /** className override for the working indicator container */
+    workingIndicatorClassName?: string;
+    /** className override for the message list container (spacing/layout) */
+    messageListClassName?: string;
+    /** Custom component to render store/document links instead of default NavLink navigation */
+    StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
