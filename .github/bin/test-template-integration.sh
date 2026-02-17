@@ -92,6 +92,7 @@ packages:
   '**':
     access: $all
     proxy: npmjs
+max_body_size: 20mb
 listen: 0.0.0.0:4873
 log:
   type: stdout
