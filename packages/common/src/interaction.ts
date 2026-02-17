@@ -539,7 +539,7 @@ export interface NamedInteractionExecutionPayload extends InteractionExecutionPa
 export type ToolRef = string | { name: string; description: string };
 
 interface AsyncExecutionPayloadBase extends Omit<NamedInteractionExecutionPayload, "toolDefinitions" | "stream"> {
-    type: "conversation" | "interaction" | "ExecuteConversationWorkflow";
+    type: "conversation" | "interaction";
 
     /**
      * An array of endpoint URLs to be notified upon execution
@@ -654,7 +654,7 @@ export {
 // ================= end user communication channels ====================
 
 export interface AsyncConversationExecutionPayload extends AsyncExecutionPayloadBase {
-    type: "conversation" | "ExecuteConversationWorkflow";
+    type: "conversation";
 
     /**
     * Visibility determine if the conversation should be seen by the user only or by anyone with access to the project
