@@ -134,7 +134,7 @@ publish_to_verdaccio() {
       cd "$pkg_dir"
       pkg_version=$(pnpm pkg get version | tr -d '"')
       echo "  Publishing @vertesia/${pkg_name}@${pkg_version}..."
-      pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" 2>&1 | sed 's/^/    /'
+      pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" > /dev/null 2>&1
       count=$((count + 1))
       cd ../..
     fi
