@@ -10,6 +10,47 @@ import { useImageLightbox } from "../ImageLightbox";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
 import { ToolExecutionStatus } from "./utils";
 
+/** Keys that are internal metadata and not interesting to display */
+const META_KEYS = new Set([
+    'tool', 'tool_run_id', 'activity_group_id', 'event_class',
+    'tool_iteration', 'tool_status', 'tools', 'streamed',
+    'files', 'outputFiles',
+]);
+
+/** Filter out internal metadata keys, return user-facing detail entries */
+function extractInterestingDetails(
+    details: Record<string, unknown> | undefined
+): Array<[string, unknown]> {
+    if (!details) return [];
+    return Object.entries(details).filter(
+        ([key, value]) => !META_KEYS.has(key) && value !== undefined && value !== null && value !== ''
+    );
+}
+
+/** Convert snake_case or camelCase key to a readable label */
+function formatDetailKey(key: string): string {
+    return key
+        .replace(/_/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/^./, c => c.toUpperCase());
+}
+
+/** Badge color per status */
+function statusBadgeClass(status?: ToolExecutionStatus): string {
+    switch (status) {
+        case 'completed':
+            return 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
+        case 'running':
+            return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+        case 'error':
+            return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800';
+        case 'warning':
+            return 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
+        default:
+            return '';
+    }
+}
+
 export interface ToolCallGroupProps {
     messages: AgentMessage[];
     showPulsatingCircle?: boolean;
@@ -263,38 +304,60 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                 </div>
             )}
 
-            {/* Expanded content */}
-            {isExpanded && (
-                <div className={cn("px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30", classNames.itemContentClassName)}>
-                    {/* Tool name badge shown when expanded */}
-                    <div className="mb-2">
-                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", classNames.toolBadgeClassName)}>
-                            {toolName}
-                        </span>
-                    </div>
-
-                    {messageContent && (
-                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
-                            <MarkdownRenderer artifactRunId={artifactRunId}>{messageContent}</MarkdownRenderer>
+            {/* Expanded content — shows tool metadata, key params, then raw details */}
+            {isExpanded && (() => {
+                const toolStatusValue = (details as Record<string, unknown> | undefined)?.tool_status as ToolExecutionStatus | undefined;
+                const interestingDetails = extractInterestingDetails(details as Record<string, unknown> | undefined);
+                return (
+                    <div className={cn("px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30", classNames.itemContentClassName)}>
+                        {/* Badges row: tool name + status + timestamp */}
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", classNames.toolBadgeClassName)}>
+                                {toolName}
+                            </span>
+                            {toolStatusValue && (
+                                <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md border font-medium", statusBadgeClass(toolStatusValue))}>
+                                    {toolStatusValue}
+                                </span>
+                            )}
+                            <span className="text-[10px] text-muted/70">{dayjs(message.timestamp).format("HH:mm:ss")}</span>
                         </div>
-                    )}
 
-                    {/* Non-image files display */}
-                    {nonImageFiles.length > 0 && <FileDisplay files={nonImageFiles} />}
+                        {/* Key parameters */}
+                        {interestingDetails.length > 0 && (
+                            <div className="mb-2 space-y-0.5">
+                                {interestingDetails.map(([key, value]) => (
+                                    <div key={key} className="flex gap-1.5 text-xs">
+                                        <span className="text-muted font-medium flex-shrink-0">{formatDetailKey(key)}:</span>
+                                        <span className="text-foreground break-all">
+                                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
-                    {/* Technical details - collapsible */}
-                    {details && Object.keys(details).length > 1 && (
-                        <details className="mt-2 text-xs border rounded p-1.5 bg-muted/30" onClick={(e) => e.stopPropagation()}>
-                            <summary className="cursor-pointer text-muted">
-                                Technical Details
-                            </summary>
-                            <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto font-mono whitespace-pre-wrap">
-                                {JSON.stringify(details, null, 2)}
-                            </pre>
-                        </details>
-                    )}
-                </div>
-            )}
+                        {messageContent && (
+                            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
+                                <MarkdownRenderer artifactRunId={artifactRunId}>{messageContent}</MarkdownRenderer>
+                            </div>
+                        )}
+
+                        {/* Non-image files display */}
+                        {nonImageFiles.length > 0 && <FileDisplay files={nonImageFiles} />}
+
+                        {/* Raw details — demoted to collapsible */}
+                        {details && Object.keys(details).length > 1 && (
+                            <details className="mt-2 text-xs border rounded p-1.5 bg-muted/30" onClick={(e) => e.stopPropagation()}>
+                                <summary className="cursor-pointer text-muted">Raw details</summary>
+                                <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto font-mono whitespace-pre-wrap">
+                                    {JSON.stringify(details, null, 2)}
+                                </pre>
+                            </details>
+                        )}
+                    </div>
+                );
+            })()}
         </div>
     );
 }
@@ -642,7 +705,7 @@ function ToolCallGroupComponent({
                             >
                                 {/* Row header - clickable to expand */}
                                 <div
-                                    className={cn("flex items-start gap-2 py-2 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50", itemHeaderClassName)}
+                                    className={cn("flex items-start gap-2 py-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50", itemHeaderClassName)}
                                     onClick={() => toggleItem(idx)}
                                     title={fullMessage}
                                 >
@@ -672,23 +735,57 @@ function ToolCallGroupComponent({
                                 </div>
                                 {/* Always show images inline with resolved URLs */}
                                 <CollapsedItemFiles files={files} artifactRunId={artifactRunId} />
-                                {/* Expanded content - show full message */}
-                                {isItemExpanded && (
-                                    <div className={cn("pl-5 pr-3 pb-2 text-sm", itemContentClassName)}>
-                                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
-                                            <MarkdownRenderer artifactRunId={artifactRunId}>{fullMessage}</MarkdownRenderer>
+                                {/* Expanded content — tool metadata + key params + raw details */}
+                                {isItemExpanded && (() => {
+                                    const toolStatusValue = (details as Record<string, unknown> | undefined)?.tool_status as ToolExecutionStatus | undefined;
+                                    const interestingDetails = extractInterestingDetails(details as Record<string, unknown> | undefined);
+                                    return (
+                                        <div className={cn("pl-5 pr-3 pb-2 text-sm", itemContentClassName)}>
+                                            {/* Badges row: tool name + status + timestamp */}
+                                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                                <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", toolBadgeClassName)}>
+                                                    {toolName}
+                                                </span>
+                                                {toolStatusValue && (
+                                                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md border font-medium", statusBadgeClass(toolStatusValue))}>
+                                                        {toolStatusValue}
+                                                    </span>
+                                                )}
+                                                <span className="text-[10px] text-muted/70">{dayjs(m.timestamp).format("HH:mm:ss")}</span>
+                                            </div>
+
+                                            {/* Key parameters */}
+                                            {interestingDetails.length > 0 && (
+                                                <div className="mb-1.5 space-y-0.5">
+                                                    {interestingDetails.map(([key, value]) => (
+                                                        <div key={key} className="flex gap-1.5 text-xs">
+                                                            <span className="text-muted font-medium flex-shrink-0">{formatDetailKey(key)}:</span>
+                                                            <span className="text-foreground break-all">
+                                                                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {fullMessage && (
+                                                <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
+                                                    <MarkdownRenderer artifactRunId={artifactRunId}>{fullMessage}</MarkdownRenderer>
+                                                </div>
+                                            )}
+
+                                            {/* Raw details — demoted to collapsible */}
+                                            {details && Object.keys(details).length > 1 && (
+                                                <details className="mt-1.5 text-xs">
+                                                    <summary className="text-muted cursor-pointer">Raw details</summary>
+                                                    <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto">
+                                                        {JSON.stringify(details, null, 2)}
+                                                    </pre>
+                                                </details>
+                                            )}
                                         </div>
-                                        {/* Show details if available */}
-                                        {details && Object.keys(details).length > 1 && (
-                                            <details className="mt-1.5 text-xs">
-                                                <summary className="text-muted cursor-pointer">Show details</summary>
-                                                <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto">
-                                                    {JSON.stringify(details, null, 2)}
-                                                </pre>
-                                            </details>
-                                        )}
-                                    </div>
-                                )}
+                                    );
+                                })()}
                             </div>
                         );
                     })}
