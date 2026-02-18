@@ -7,10 +7,7 @@ import {
     AgentMessageType,
     ConversationFile,
     ConversationFileRef,
-    FileProcessingDetails,
-    FileProcessingStatus,
     Plan,
-    StreamingChunkDetails,
     UserInputSignal,
 } from "@vertesia/common";
 import { FusionFragmentProvider } from "@vertesia/fusion-ux";
@@ -26,14 +23,17 @@ import { ImageLightboxProvider } from "./ImageLightbox";
 import AllMessagesMixed from "./ModernAgentOutput/AllMessagesMixed";
 import Header from "./ModernAgentOutput/Header";
 import MessageInput, { UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
-import { getWorkstreamId, insertMessageInTimeline, isInProgress } from "./ModernAgentOutput/utils";
+import { getWorkstreamId } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
 import { VegaLiteChart } from "./VegaLiteChart";
 import { DocumentPanel } from "./DocumentPanel.js";
-import type { OpenDocument } from "./types/document.js";
+import { useAgentStream } from "./hooks/useAgentStream.js";
+import { useAgentPlans } from "./hooks/useAgentPlans.js";
+import { useDocumentPanel } from "./hooks/useDocumentPanel.js";
+import { useFileProcessing } from "./hooks/useFileProcessing.js";
 
 export type StartWorkflowFn = (
     initialMessage?: string,
@@ -724,59 +724,68 @@ function ModernAgentConversationInner({
     prependFriendlyMessage,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
+    const toast = useToast();
 
+    // ────────────────────────────────────────────
+    // Extracted hooks
+    // ────────────────────────────────────────────
+    const {
+        messages,
+        streamingMessages,
+        isCompleted,
+        debugChunkFlash,
+        addOptimisticMessage,
+        removeOptimisticMessages,
+        workflowStatus,
+        serverFileUpdates,
+    } = useAgentStream(client, run);
+
+    const {
+        plans,
+        activePlanIndex,
+        setActivePlanIndex,
+        workstreamStatusMap,
+        showInput,
+        showSlidingPanel,
+        setShowSlidingPanel,
+    } = useAgentPlans(messages, interactive, isModal);
+
+    const {
+        openDocuments,
+        activeDocumentId,
+        isDocPanelOpen,
+        docRefreshKey,
+        closeDocPanel: handleCloseDocPanel,
+        closeDocument: handleCloseDocument,
+        selectDocument,
+        openDocInPanel,
+    } = useDocumentPanel(messages);
+
+    const {
+        processingFiles,
+        hasProcessingFiles,
+        handleFileUpload,
+    } = useFileProcessing(client, run, serverFileUpdates, toast);
+
+    // ────────────────────────────────────────────
+    // Local state (UI-only concerns)
+    // ────────────────────────────────────────────
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const conversationRef = useRef<HTMLDivElement | null>(null);
-    const [messages, setMessages] = useState<AgentMessage[]>([]);
-    const [isCompleted, setIsCompleted] = useState(false);
     const [isSending, setIsSending] = useState(false);
-    // View mode: controlled externally when props are provided, otherwise managed locally
-    const [internalViewMode, setInternalAgentConversationViewMode] = useState<AgentConversationViewMode>("sliding");
+    const [internalViewMode, setInternalViewMode] = useState<AgentConversationViewMode>("sliding");
     const viewMode = controlledViewMode ?? internalViewMode;
     const handleViewModeChange = useCallback((mode: AgentConversationViewMode) => {
         if (onViewModeChangeProp) {
             onViewModeChangeProp(mode);
         } else {
-            setInternalAgentConversationViewMode(mode);
+            setInternalViewMode(mode);
         }
     }, [onViewModeChangeProp]);
-    const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(!isModal);
     const [isStopping, setIsStopping] = useState(false);
-    // Keep track of multiple plans and their timestamps
-    const [plans, setPlans] = useState<Array<{ plan: Plan; timestamp: number }>>(
-        [],
-    );
-    // Track which plan is currently active in the UI
-    const [activePlanIndex, setActivePlanIndex] = useState<number>(0);
-    // Store workstream status for each plan separately
-    const [workstreamStatusMap, setWorkstreamStatusMap] = useState<
-        Map<
-            number,
-            Map<string, "pending" | "in_progress" | "completed" | "skipped">
-        >
-    >(new Map());
     const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
-    const toast = useToast();
-    const [showInput, setShowInput] = useState(interactive);
-    const [workflowStatus, setWorkflowStatus] = useState<string | null>(null);
-    // Track streaming messages by streaming_id for real-time chunk aggregation
-    // Include startTimestamp to preserve chronological order when converting to regular messages
-    const [streamingMessages, setStreamingMessages] = useState<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number; activityId?: string }>>(new Map());
-
-    // Document panel state
-    const [openDocuments, setOpenDocuments] = useState<OpenDocument[]>([]);
-    const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
-    const [isDocPanelOpen, setIsDocPanelOpen] = useState(false);
-    const [docRefreshKey, setDocRefreshKey] = useState(0);
-
-    // Track files being processed by the workflow
-    const [processingFiles, setProcessingFiles] = useState<Map<string, ConversationFile>>(new Map());
-
-    // Check if any files are still uploading or processing
-    const hasProcessingFiles = useMemo(() =>
-        Array.from(processingFiles.values()).some(
-            f => f.status === FileProcessingStatus.UPLOADING || f.status === FileProcessingStatus.PROCESSING
-        ), [processingFiles]);
+    const [isDragOver, setIsDragOver] = useState(false);
+    const dragCounterRef = useRef(0);
 
     // PERFORMANCE: Refs for values used inside useCallback to avoid re-creating the callback
     const isSendingRef = useRef(isSending);
@@ -784,31 +793,16 @@ function ModernAgentConversationInner({
     const hasProcessingFilesRef = useRef(hasProcessingFiles);
     hasProcessingFilesRef.current = hasProcessingFiles;
 
-    // Performance optimization: Batch streaming updates using RAF
-    // Instead of updating state on every chunk (100+ times/sec), batch them per animation frame
-    const pendingStreamingChunks = useRef<Map<string, { text: string; workstreamId?: string; isComplete?: boolean; startTimestamp: number; activityId?: string }>>(new Map());
-    const streamingFlushScheduled = useRef<number | null>(null);
+    // Derive effective workflow status (API status + TERMINATED from messages)
+    const effectiveWorkflowStatus = useMemo(() => {
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg?.type === AgentMessageType.TERMINATED) return "TERMINATED";
+        return workflowStatus;
+    }, [messages, workflowStatus]);
 
-    // Debug: Visual flash indicator for incoming chunks
-    const [debugChunkFlash, setDebugChunkFlash] = useState(false);
-    const debugFlashTimeout = useRef<NodeJS.Timeout | null>(null);
-
-    const flushStreamingChunks = useCallback(() => {
-        if (pendingStreamingChunks.current.size > 0) {
-            setStreamingMessages(new Map(pendingStreamingChunks.current));
-            // Flash indicator fires at most once per animation frame instead of per chunk
-            setDebugChunkFlash(true);
-            if (debugFlashTimeout.current) clearTimeout(debugFlashTimeout.current);
-            debugFlashTimeout.current = setTimeout(() => setDebugChunkFlash(false), 50);
-        }
-        streamingFlushScheduled.current = null;
-    }, []);
-
-    // Drag and drop state for full-panel file upload
-    const [isDragOver, setIsDragOver] = useState(false);
-    const dragCounterRef = useRef(0);
-
-    // Helper function to get the current active plan and its workstream status
+    // ────────────────────────────────────────────
+    // Computed values
+    // ────────────────────────────────────────────
     const getActivePlan = useMemo(() => {
         const currentPlanData = plans[activePlanIndex] || {
             plan: { plan: [] },
@@ -822,50 +816,25 @@ function ModernAgentConversationInner({
         };
     }, [plans, activePlanIndex, workstreamStatusMap]);
 
-    // PERFORMANCE: Stabilize callback props to prevent child re-renders
+    // ────────────────────────────────────────────
+    // Stable callbacks
+    // ────────────────────────────────────────────
     const handleTogglePlanPanel = useCallback(() => {
-        setShowSlidingPanel((prev) => {
+        setShowSlidingPanel((prev: boolean) => {
             if (!prev) {
                 sessionStorage.setItem("plan-panel-shown", "true");
             }
             return !prev;
         });
-    }, []);
+    }, [setShowSlidingPanel]);
 
     const handleChangePlan = useCallback((index: number) => {
         setActivePlanIndex(index);
-    }, []);
+    }, [setActivePlanIndex]);
 
     const handleClosePlanPanel = useCallback(() => {
         setShowSlidingPanel(false);
-    }, []);
-
-    // Document panel handlers
-    const handleCloseDocPanel = useCallback(() => {
-        setIsDocPanelOpen(false);
-    }, []);
-
-    const handleCloseDocument = useCallback((docId: string) => {
-        setOpenDocuments(prev => {
-            const next = prev.filter(d => d.id !== docId);
-            if (next.length === 0) {
-                setIsDocPanelOpen(false);
-                setActiveDocumentId(null);
-            } else if (activeDocumentId === docId) {
-                setActiveDocumentId(next[0].id);
-            }
-            return next;
-        });
-    }, [activeDocumentId]);
-
-    const openDocInPanel = useCallback((docId: string) => {
-        setOpenDocuments(prev => {
-            if (prev.some(d => d.id === docId)) return prev;
-            return [...prev, { id: docId, title: 'Document' }];
-        });
-        setActiveDocumentId(docId);
-        setIsDocPanelOpen(true);
-    }, []);
+    }, [setShowSlidingPanel]);
 
     // Default StoreLinkComponent that opens documents in the panel
     const internalStoreLinkComponent = useCallback(
@@ -882,6 +851,10 @@ function ModernAgentConversationInner({
 
     const effectiveStoreLinkComponent = StoreLinkComponent ?? internalStoreLinkComponent;
 
+    // ────────────────────────────────────────────
+    // Effects
+    // ────────────────────────────────────────────
+
     // Show rotating thinking messages
     useEffect(() => {
         if (!isCompleted) {
@@ -893,468 +866,6 @@ function ModernAgentConversationInner({
             return () => clearInterval(interval);
         }
     }, [isCompleted]);
-
-    const checkWorkflowStatus = async () => {
-        try {
-            const statusResult = await client.store.workflows.getRunDetails(run.runId, run.workflowId);
-            setWorkflowStatus(statusResult.status as string);
-        } catch (error) {
-            console.error('Failed to check workflow status:', error);
-        }
-    }
-
-    // Stream messages from the agent
-    useEffect(() => {
-        // Reset all state when runId changes (new agent)
-        setMessages([]);
-        setPlans([]);
-        setActivePlanIndex(0);
-        setWorkstreamStatusMap(new Map());
-        setShowSlidingPanel(false);
-        setWorkflowStatus(null);
-        setStreamingMessages(new Map());
-        setOpenDocuments([]);
-        setActiveDocumentId(null);
-        setIsDocPanelOpen(false);
-        setDocRefreshKey(0);
-
-        checkWorkflowStatus();
-        client.store.workflows.streamMessages(run.workflowId, run.runId, (message) => {
-            // Client now converts compact wire format to AgentMessage internally
-
-            // Handle streaming chunks separately for real-time aggregation
-            // PERFORMANCE: Batch updates using RAF instead of immediate state updates
-            if (message.type === AgentMessageType.STREAMING_CHUNK) {
-                const details = message.details as StreamingChunkDetails;
-                // Use activity_id as key if available (for dedup), fall back to streaming_id
-                const streamKey = details?.activity_id || details?.streaming_id;
-                if (!streamKey) return;
-
-                // Accumulate chunks in the ref (no state update yet)
-                const current = pendingStreamingChunks.current.get(streamKey) || {
-                    text: '',
-                    workstreamId: message.workstream_id,
-                    startTimestamp: Date.now(),
-                    activityId: details?.activity_id,
-                };
-                const newText = current.text + (message.message || '');
-
-                pendingStreamingChunks.current.set(streamKey, {
-                    text: newText,
-                    workstreamId: message.workstream_id,
-                    isComplete: details.is_final,
-                    startTimestamp: current.startTimestamp,
-                    activityId: details?.activity_id,
-                });
-
-                // Schedule a flush if not already scheduled (batches ~60 updates/sec max)
-                if (streamingFlushScheduled.current === null) {
-                    streamingFlushScheduled.current = requestAnimationFrame(flushStreamingChunks);
-                }
-                return;
-            }
-
-            // Handle file processing status updates (SYSTEM messages with system_type: 'file_processing')
-            if (message.type === AgentMessageType.SYSTEM) {
-                const details = message.details as FileProcessingDetails | undefined;
-                if (details?.system_type === 'file_processing' && details.files) {
-                    setProcessingFiles(prev => {
-                        const newMap = new Map(prev);
-                        for (const file of details.files) {
-                            newMap.set(file.id, file);
-                        }
-                        return newMap;
-                    });
-                    return; // Don't add to messages array - this is status only
-                }
-                // Other SYSTEM messages fall through to normal handling
-            }
-
-            // When THOUGHT or ANSWER arrives with activity_id, remove matching streaming message
-            // This prevents duplicate content (streamed content replaced by final message)
-            if ((message.type === AgentMessageType.THOUGHT || message.type === AgentMessageType.ANSWER) && message.details?.activity_id) {
-                const activityId = message.details.activity_id as string;
-                // Remove from pending chunks
-                pendingStreamingChunks.current.delete(activityId);
-                // Remove from streaming messages state
-                setStreamingMessages(prev => {
-                    if (prev.has(activityId)) {
-                        const next = new Map(prev);
-                        next.delete(activityId);
-                        return next;
-                    }
-                    return prev;
-                });
-            }
-
-            // On COMPLETE or IDLE, just flush any pending chunks
-            if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
-                if (pendingStreamingChunks.current.size > 0) {
-                    flushStreamingChunks();
-                }
-            }
-
-            // Detect document creation/update events for the document panel
-            if (message.type === AgentMessageType.UPDATE && message.details) {
-                const details = message.details as Record<string, unknown>;
-                if (details.event_class === 'document_created' || details.event_class === 'document_updated') {
-                    const docId = details.document_id as string;
-                    const docTitle = details.title as string;
-                    if (docId) {
-                        setOpenDocuments(prev => {
-                            if (prev.some(d => d.id === docId)) return prev;
-                            return [...prev, { id: docId, title: docTitle || 'Document' }];
-                        });
-                        setActiveDocumentId(docId);
-                        setIsDocPanelOpen(true);
-                        if (details.event_class === 'document_updated') {
-                            setDocRefreshKey(k => k + 1);
-                        }
-                    }
-                }
-            }
-
-            if (message.message) {
-                setMessages((prev_messages) => {
-                    // Check for duplicate by timestamp
-                    if (prev_messages.find((m) => m.timestamp === message.timestamp)) {
-                        return prev_messages;
-                    }
-
-                    // For QUESTION messages from server, replace any optimistic version
-                    if (message.type === AgentMessageType.QUESTION && !message.details?._optimistic) {
-                        const withoutOptimistic = prev_messages.filter(
-                            (m) => !(m.type === AgentMessageType.QUESTION && m.details?._optimistic)
-                        );
-                        insertMessageInTimeline(withoutOptimistic, message);
-                        return [...withoutOptimistic];
-                    }
-
-                    insertMessageInTimeline(prev_messages, message);
-                    return [...prev_messages];
-                });
-            }
-        });
-
-        // Clear messages and unsubscribe when component unmounts or runId changes
-        return () => {
-            setMessages([]);
-            // Cancel any pending streaming flush
-            if (streamingFlushScheduled.current !== null) {
-                cancelAnimationFrame(streamingFlushScheduled.current);
-                streamingFlushScheduled.current = null;
-            }
-            pendingStreamingChunks.current.clear();
-            // Client handles unsubscribing from the message stream internally
-        };
-    }, [run.runId, client.store.workflows, flushStreamingChunks]);
-
-
-    // Update completion status when messages change
-    // This now accounts for multiple workstreams
-    useEffect(() => {
-        setIsCompleted(!isInProgress(messages));
-
-        // Only automatically hide the panel when there are no plans
-        // But don't auto-show it when plans appear
-        if (plans.length === 0) {
-            // If there are no plans, make sure the plan panel is hidden
-            setShowSlidingPanel(false);
-        }
-        // We removed the auto-show functionality to allow users to keep the panel closed if they want
-    }, [messages, plans.length]);
-
-    // Update plans and workstream status based on incoming messages
-    useEffect(() => {
-        // Only show the sliding panel for the very first plan and only once
-        if (
-            plans.length === 1 &&
-            !showSlidingPanel &&
-            !sessionStorage.getItem("plan-panel-shown")
-        ) {
-            // For first-time plan detection only, show the panel with a delay
-            const notificationTimeout = setTimeout(() => {
-                setShowSlidingPanel(true);
-                // Mark that we've shown the panel once
-                sessionStorage.setItem("plan-panel-shown", "true");
-            }, 500); // Short delay to ensure the UI has fully rendered
-
-            return () => clearTimeout(notificationTimeout);
-        }
-
-        // Process messages to extract plan information
-        messages.forEach((message) => {
-            if (message.type === AgentMessageType.PLAN) {
-                try {
-                    // Log message details for debugging
-                    console.log("PLAN message received:", message.type);
-
-                    let newPlanDetails: Plan | null = null;
-
-                    // Extract the plan from the message details object
-                    if (message.details && typeof message.details === "object") {
-                        // For a PLAN type message like the example you provided
-                        if (message.details.plan && Array.isArray(message.details.plan)) {
-                            console.log("Valid plan array found in message.details.plan");
-                            newPlanDetails = { plan: message.details.plan } as Plan;
-                        }
-                    }
-
-                    // Only proceed if we have a valid plan
-                    if (newPlanDetails) {
-                        const timestamp =
-                            typeof message.timestamp === "number"
-                                ? message.timestamp
-                                : new Date(message.timestamp).getTime();
-
-                        // Check if we already have this plan
-                        const existingPlanIndex = plans.findIndex(
-                            (p) => p.timestamp === timestamp,
-                        );
-
-                        if (existingPlanIndex === -1 && newPlanDetails) {
-                            console.log("Adding new plan to plans array");
-                            // This is a new plan - add it to our plans array
-                            const newPlan = {
-                                plan: newPlanDetails,
-                                timestamp,
-                            };
-
-                            // Add new plan to the beginning of the array (newest first)
-                            console.log("Adding plan to plans array:", newPlan);
-                            setPlans((prev) => {
-                                const newPlans = [newPlan, ...prev];
-                                console.log("New plans array:", newPlans);
-                                return newPlans;
-                            });
-                            // Set this as the active plan
-                            setActivePlanIndex(0);
-
-                            // Automatically show sliding plan panel when a plan is detected
-                            console.log("Setting showSlidingPanel to true");
-                            setShowSlidingPanel(true);
-
-                            // Initialize workstreams as pending based on the plan tasks
-                            const newWorkstreamStatus = new Map<
-                                string,
-                                "pending" | "in_progress" | "completed" | "skipped"
-                            >();
-
-                            // Always initialize main workstream
-                            newWorkstreamStatus.set("main", "in_progress");
-
-                            // Initialize each task in the plan with its status
-                            if (Array.isArray(newPlanDetails.plan)) {
-                                newPlanDetails.plan.forEach((task) => {
-                                    if (task && typeof task === "object" && task.id) {
-                                        const taskId = task.id.toString();
-                                        // Use the task's status if available, otherwise default to pending
-                                        newWorkstreamStatus.set(taskId, task.status || "pending");
-                                    }
-                                });
-                            }
-
-                            // Update the workstream status map with the new status for this plan
-                            setWorkstreamStatusMap((prev) => {
-                                const newMap = new Map(prev);
-                                newMap.set(timestamp, newWorkstreamStatus);
-                                return newMap;
-                            });
-                        }
-                    }
-                } catch (error) {
-                    console.error("Failed to parse plan from message:", error);
-                }
-            }
-
-            // Handle UPDATE type messages with plan updates
-            if (message.type === AgentMessageType.UPDATE && message.details) {
-                // We no longer process UPDATE messages with details.updates
-                // Instead, we rely on the PLAN message that follows with the complete plan
-                if (message.details.updates && Array.isArray(message.details.updates)) {
-                    console.log(
-                        "Ignoring UPDATE message with details.updates - waiting for PLAN message with full plan",
-                    );
-                    // This is an initial update notification, but we'll wait for the PLAN message that follows
-                    // with the complete updated plan before making any UI changes
-                }
-            }
-        });
-
-        const lastMessage = messages[messages.length - 1];
-        if (lastMessage) {
-            if (lastMessage.type === AgentMessageType.TERMINATED) {
-                setShowInput(false);
-                setWorkflowStatus("TERMINATED");
-            }
-            else {
-                if (interactive) {
-                    setShowInput(true);
-                } else {
-                    setShowInput(lastMessage.type === AgentMessageType.REQUEST_INPUT);
-                }
-            }
-        }
-    }, [messages, plans, activePlanIndex]);
-
-    // Send a message to the agent
-    const handleSendMessage = useCallback((message: string) => {
-        const trimmed = message.trim();
-        if (!trimmed || isSendingRef.current) return;
-
-        // Block if files are still processing
-        if (hasProcessingFilesRef.current) {
-            toast({
-                status: "warning",
-                title: "Files Still Processing",
-                description: "Please wait for all files to finish processing before sending",
-                duration: 3000,
-            });
-            return;
-        }
-
-        setIsSending(true);
-
-        // Get attached documents if callback provided
-        const attachedDocs = getAttachedDocs?.() || [];
-
-        // Get additional context metadata if callback provided (e.g., fundId)
-        const contextMetadata = getMessageContext?.() || {};
-
-        // Build message content with attachment references as markdown links
-        let messageContent = trimmed;
-        if (attachedDocs.length > 0 && !/store:\S+/.test(trimmed)) {
-            const lines = attachedDocs.map((doc) => `[${doc.name}](/store/objects/${doc.id})`);
-            messageContent = [trimmed, '', 'Attachments:', ...lines].join('\n');
-        }
-
-        // Generate a unique message ID for optimistic deduplication
-        const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-        // Add optimistic QUESTION message immediately for better UX
-        const optimisticMessage: AgentMessage = {
-            timestamp: Date.now(),
-            workflow_run_id: run.runId,
-            type: AgentMessageType.QUESTION,
-            message: messageContent,
-            workstream_id: "main",
-            details: { _optimistic: true, _messageId: messageId },
-        };
-
-        setMessages((prev) => {
-            const newMessages = [...prev, optimisticMessage];
-            newMessages.sort((a, b) => {
-                const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
-                const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
-                return timeA - timeB;
-            });
-            return newMessages;
-        });
-
-        // Build metadata combining attached docs, context, and message ID for dedup
-        const metadata = {
-            ...(attachedDocs.length > 0 ? { attached_docs: attachedDocs.map((d) => d.id) } : {}),
-            ...contextMetadata,
-            _messageId: messageId,
-        };
-
-        client.store.workflows
-            .sendSignal(run.workflowId, run.runId, "UserInput", {
-                message: messageContent,
-                metadata,
-            } as UserInputSignal)
-            .then(() => {
-                setIsCompleted(false);
-                // Clear attachments after successful send
-                onAttachmentsSent?.();
-            })
-            .catch((err) => {
-                // Remove optimistic message on failure by message ID
-                setMessages((prev) => prev.filter((m) =>
-                    !(m.details as any)?._messageId || (m.details as any)._messageId !== messageId
-                ));
-                toast({
-                    status: "error",
-                    title: "Failed to Send Message",
-                    description: err instanceof Error ? err.message : "Unknown error",
-                    duration: 3000,
-                });
-            })
-            .finally(() => {
-                setIsSending(false);
-            });
-    }, [run.runId, run.workflowId, client, toast, getAttachedDocs, getMessageContext, onAttachmentsSent]);
-
-    // Handle file uploads - upload to artifact storage and signal workflow
-    const handleFileUpload = useCallback(async (files: File[]) => {
-        for (const file of files) {
-            const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            const artifactPath = `files/${file.name}`;
-
-            // Add to local state immediately (optimistic - uploading status)
-            const fileState: ConversationFile = {
-                id: fileId,
-                name: file.name,
-                content_type: file.type || 'application/octet-stream',
-                size: file.size,
-                status: FileProcessingStatus.UPLOADING,
-                started_at: Date.now(),
-            };
-
-            setProcessingFiles(prev => new Map(prev).set(fileId, fileState));
-
-            try {
-                // Upload to artifact storage
-                await client.files.uploadArtifact(run.runId, artifactPath, file);
-
-                // Update local state to processing
-                setProcessingFiles(prev => {
-                    const newMap = new Map(prev);
-                    const f = newMap.get(fileId);
-                    if (f) {
-                        f.status = FileProcessingStatus.PROCESSING;
-                        f.artifact_path = artifactPath;
-                        f.reference = `artifact:${artifactPath}`;
-                    }
-                    return newMap;
-                });
-
-                // Signal workflow that file was uploaded
-                await client.store.workflows.sendSignal(
-                    run.workflowId,
-                    run.runId,
-                    "FileUploaded",
-                    {
-                        id: fileId,
-                        name: file.name,
-                        content_type: file.type || 'application/octet-stream',
-                        reference: `artifact:${artifactPath}`,
-                        artifact_path: artifactPath,
-                    } as ConversationFileRef
-                );
-
-            } catch (error) {
-                // Update local state to error
-                setProcessingFiles(prev => {
-                    const newMap = new Map(prev);
-                    const f = newMap.get(fileId);
-                    if (f) {
-                        f.status = FileProcessingStatus.ERROR;
-                        f.error = error instanceof Error ? error.message : 'Upload failed';
-                        f.completed_at = Date.now();
-                    }
-                    return newMap;
-                });
-
-                toast({
-                    status: "error",
-                    title: "Upload Failed",
-                    description: error instanceof Error ? error.message : "Failed to upload file",
-                    duration: 3000,
-                });
-            }
-        }
-    }, [client, run, toast]);
 
     // Expose handleFileUpload to external callers via ref
     useEffect(() => {
@@ -1380,28 +891,98 @@ function ModernAgentConversationInner({
     // Notify parent when input availability is determined
     useEffect(() => {
         if (messages.length === 0) return;
-        // TERMINATED detected from message stream (fast path)
         if (!showInput) {
             onShowInputChange?.(false);
             return;
         }
-        // Terminal workflow status from API (COMPLETED, FAILED, CANCELED, TIMED_OUT)
-        if (workflowStatus && workflowStatus !== "RUNNING") {
+        if (effectiveWorkflowStatus && effectiveWorkflowStatus !== "RUNNING") {
             onShowInputChange?.(false);
             return;
         }
-        // Active: workflow confirmed running
-        if (workflowStatus !== null) {
+        if (effectiveWorkflowStatus !== null) {
             onShowInputChange?.(true);
         }
-    }, [showInput, workflowStatus, messages.length, onShowInputChange]);
+    }, [showInput, effectiveWorkflowStatus, messages.length, onShowInputChange]);
+
+    // ────────────────────────────────────────────
+    // Handlers
+    // ────────────────────────────────────────────
+
+    // Send a message to the agent
+    const handleSendMessage = useCallback((message: string) => {
+        const trimmed = message.trim();
+        if (!trimmed || isSendingRef.current) return;
+
+        // Block if files are still processing
+        if (hasProcessingFilesRef.current) {
+            toast({
+                status: "warning",
+                title: "Files Still Processing",
+                description: "Please wait for all files to finish processing before sending",
+                duration: 3000,
+            });
+            return;
+        }
+
+        setIsSending(true);
+
+        const attachedDocs = getAttachedDocs?.() || [];
+        const contextMetadata = getMessageContext?.() || {};
+
+        let messageContent = trimmed;
+        if (attachedDocs.length > 0 && !/store:\S+/.test(trimmed)) {
+            const lines = attachedDocs.map((doc) => `[${doc.name}](/store/objects/${doc.id})`);
+            messageContent = [trimmed, '', 'Attachments:', ...lines].join('\n');
+        }
+
+        const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        const optimisticMessage: AgentMessage = {
+            timestamp: Date.now(),
+            workflow_run_id: run.runId,
+            type: AgentMessageType.QUESTION,
+            message: messageContent,
+            workstream_id: "main",
+            details: { _optimistic: true, _messageId: messageId },
+        };
+
+        addOptimisticMessage(optimisticMessage);
+
+        const metadata = {
+            ...(attachedDocs.length > 0 ? { attached_docs: attachedDocs.map((d) => d.id) } : {}),
+            ...contextMetadata,
+            _messageId: messageId,
+        };
+
+        client.store.workflows
+            .sendSignal(run.workflowId, run.runId, "UserInput", {
+                message: messageContent,
+                metadata,
+            } as UserInputSignal)
+            .then(() => {
+                onAttachmentsSent?.();
+            })
+            .catch((err) => {
+                removeOptimisticMessages((m) =>
+                    (m.details as any)?._messageId === messageId
+                );
+                toast({
+                    status: "error",
+                    title: "Failed to Send Message",
+                    description: err instanceof Error ? err.message : "Unknown error",
+                    duration: 3000,
+                });
+            })
+            .finally(() => {
+                setIsSending(false);
+            });
+    }, [run.runId, run.workflowId, client, toast, getAttachedDocs, getMessageContext, onAttachmentsSent, addOptimisticMessage, removeOptimisticMessages]);
 
     // Drag and drop handlers for full-panel file upload
     const handleDragEnter = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current++;
-        // Enable drag if we have a run (for internal file processing)
         if (run && e.dataTransfer?.types?.includes('Files')) {
             setIsDragOver(true);
         }
@@ -1427,7 +1008,6 @@ function ModernAgentConversationInner({
         dragCounterRef.current = 0;
         setIsDragOver(false);
 
-        // Use internal handleFileUpload for proper workflow signaling and status tracking
         if (run && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
             const filesArray = Array.from(e.dataTransfer.files);
             handleFileUpload(filesArray);
@@ -1450,7 +1030,6 @@ function ModernAgentConversationInner({
                 description: "Type your message to give new instructions",
                 duration: 3000,
             });
-            setIsCompleted(true);
         } catch (err) {
             toast({
                 status: "error",
@@ -1702,13 +1281,13 @@ function ModernAgentConversationInner({
                 {/* Input area - flex-shrink-0 to stay pinned at bottom, with iOS safe area support */}
                 {!hideMessageInput && (
                     <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-                        {workflowStatus && workflowStatus !== "RUNNING" ? (
+                        {effectiveWorkflowStatus && effectiveWorkflowStatus !== "RUNNING" ? (
                             <MessageBox
-                                status={workflowStatus === "COMPLETED" ? 'success' : 'done'}
+                                status={effectiveWorkflowStatus === "COMPLETED" ? 'success' : 'done'}
                                 icon={null}
                                 className="m-2"
                             >
-                                This Workflow is {workflowStatus}
+                                This Workflow is {effectiveWorkflowStatus}
                             </MessageBox>
                         ) : showInput && (
                             <MessageInput
@@ -1773,7 +1352,7 @@ function ModernAgentConversationInner({
                         onClose={handleCloseDocPanel}
                         documents={openDocuments}
                         activeDocumentId={activeDocumentId}
-                        onSelectDocument={setActiveDocumentId}
+                        onSelectDocument={selectDocument}
                         onCloseDocument={handleCloseDocument}
                         refreshKey={docRefreshKey}
                         runId={run.runId}
