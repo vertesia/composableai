@@ -154,9 +154,9 @@ interface ModernAgentConversationProps {
     /** Hide the default file upload */
     hideFileUpload?: boolean;
 
-    // Callback to get attached document IDs when sending messages
-    // Returns array of document IDs to include in message metadata
-    getAttachedDocs?: () => string[];
+    // Callback to get attached documents when sending messages
+    // Returns array of { id, name } to include in message metadata and display
+    getAttachedDocs?: () => SelectedDocument[];
     // Called after attachments are sent to allow clearing them
     onAttachmentsSent?: () => void;
     // Whether files are currently being uploaded - disables send/start buttons
@@ -364,13 +364,13 @@ function StartWorkflowView({
                 duration: 3000,
             });
 
-            // Get attached document IDs if callback provided
+            // Get attached documents if callback provided
             const attachedDocs = getAttachedDocs?.() || [];
 
-            // Build message content with attachment references if present
+            // Build message content with attachment references as markdown links
             let messageContent = message;
             if (attachedDocs.length > 0 && !/store:\S+/.test(message)) {
-                const lines = attachedDocs.map((id) => `store:${id}`);
+                const lines = attachedDocs.map((doc) => `[${doc.name}](/store/objects/${doc.id})`);
                 messageContent = [message, '', 'Attachments:', ...lines].join('\n');
             }
 
@@ -1024,9 +1024,7 @@ function ModernAgentConversationInner({
                     // For QUESTION messages from server, replace any optimistic version
                     if (message.type === AgentMessageType.QUESTION && !message.details?._optimistic) {
                         const withoutOptimistic = prev_messages.filter(
-                            (m) => !(m.type === AgentMessageType.QUESTION &&
-                                m.details?._optimistic &&
-                                m.message === message.message)
+                            (m) => !(m.type === AgentMessageType.QUESTION && m.details?._optimistic)
                         );
                         insertMessageInTimeline(withoutOptimistic, message);
                         return [...withoutOptimistic];
@@ -1217,54 +1215,53 @@ function ModernAgentConversationInner({
 
         setIsSending(true);
 
-        // Add optimistic QUESTION message immediately for better UX
-        const optimisticTimestamp = Date.now();
-        const optimisticMessage: AgentMessage = {
-            timestamp: optimisticTimestamp,
-            workflow_run_id: run.runId,
-            type: AgentMessageType.QUESTION,
-            message: trimmed,
-            workstream_id: "main",
-            details: { _optimistic: true },
-        };
-
-        console.log("[Optimistic] Adding user message:", trimmed);
-
-        setMessages((prev) => {
-            const newMessages = [...prev, optimisticMessage];
-            // Sort by timestamp to maintain order
-            newMessages.sort((a, b) => {
-                const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
-                const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
-                return timeA - timeB;
-            });
-            console.log("[Optimistic] Messages after add:", newMessages.length, "messages");
-            return newMessages;
-        });
-
-        // Get attached document IDs if callback provided
+        // Get attached documents if callback provided
         const attachedDocs = getAttachedDocs?.() || [];
 
         // Get additional context metadata if callback provided (e.g., fundId)
         const contextMetadata = getMessageContext?.() || {};
 
-        // Build message content with attachment references if present
+        // Build message content with attachment references as markdown links
         let messageContent = trimmed;
         if (attachedDocs.length > 0 && !/store:\S+/.test(trimmed)) {
-            const lines = attachedDocs.map((id) => `store:${id}`);
+            const lines = attachedDocs.map((doc) => `[${doc.name}](/store/objects/${doc.id})`);
             messageContent = [trimmed, '', 'Attachments:', ...lines].join('\n');
         }
 
-        // Build metadata combining attached docs and context
+        // Generate a unique message ID for optimistic deduplication
+        const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        // Add optimistic QUESTION message immediately for better UX
+        const optimisticMessage: AgentMessage = {
+            timestamp: Date.now(),
+            workflow_run_id: run.runId,
+            type: AgentMessageType.QUESTION,
+            message: messageContent,
+            workstream_id: "main",
+            details: { _optimistic: true, _messageId: messageId },
+        };
+
+        setMessages((prev) => {
+            const newMessages = [...prev, optimisticMessage];
+            newMessages.sort((a, b) => {
+                const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
+                const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
+                return timeA - timeB;
+            });
+            return newMessages;
+        });
+
+        // Build metadata combining attached docs, context, and message ID for dedup
         const metadata = {
-            ...(attachedDocs.length > 0 ? { attached_docs: attachedDocs } : {}),
+            ...(attachedDocs.length > 0 ? { attached_docs: attachedDocs.map((d) => d.id) } : {}),
             ...contextMetadata,
+            _messageId: messageId,
         };
 
         client.store.workflows
             .sendSignal(run.workflowId, run.runId, "UserInput", {
                 message: messageContent,
-                metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+                metadata,
             } as UserInputSignal)
             .then(() => {
                 setIsCompleted(false);
@@ -1272,8 +1269,10 @@ function ModernAgentConversationInner({
                 onAttachmentsSent?.();
             })
             .catch((err) => {
-                // Remove optimistic message on failure
-                setMessages((prev) => prev.filter((m) => m.timestamp !== optimisticTimestamp));
+                // Remove optimistic message on failure by message ID
+                setMessages((prev) => prev.filter((m) =>
+                    !(m.details as any)?._messageId || (m.details as any)._messageId !== messageId
+                ));
                 toast({
                     status: "error",
                     title: "Failed to Send Message",
