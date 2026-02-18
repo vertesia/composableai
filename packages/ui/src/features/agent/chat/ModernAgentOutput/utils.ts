@@ -584,3 +584,78 @@ export function groupMessagesWithStreaming(
 
     return groups;
 }
+
+/**
+ * Merge the ToolExecutionStatus of two groups.
+ * Priority: error > warning > running > completed > undefined
+ */
+export function mergeToolStatus(
+    a: ToolExecutionStatus | undefined,
+    b: ToolExecutionStatus | undefined,
+): ToolExecutionStatus | undefined {
+    const priority: Record<ToolExecutionStatus, number> = {
+        error: 4,
+        warning: 3,
+        running: 2,
+        completed: 1,
+    };
+    const pa = a ? priority[a] : 0;
+    const pb = b ? priority[b] : 0;
+    return pa >= pb ? (a ?? b) : b;
+}
+
+/**
+ * Post-processing step: merge consecutive tool_group entries into a single
+ * larger group so the UI shows one block instead of many.
+ * Non-tool-group entries (single, streaming) act as separators and are
+ * passed through unchanged.
+ */
+export function mergeConsecutiveToolGroups(groups: RenderableGroup[]): RenderableGroup[] {
+    const merged: RenderableGroup[] = [];
+    let pendingToolGroup: {
+        messages: AgentMessage[];
+        firstTimestamp: number;
+        toolRunId?: string;
+        toolStatus?: ToolExecutionStatus;
+    } | null = null;
+
+    const flushPending = () => {
+        if (pendingToolGroup) {
+            merged.push({
+                type: 'tool_group',
+                messages: pendingToolGroup.messages,
+                firstTimestamp: pendingToolGroup.firstTimestamp,
+                toolRunId: pendingToolGroup.toolRunId,
+                toolStatus: pendingToolGroup.toolStatus,
+            });
+            pendingToolGroup = null;
+        }
+    };
+
+    for (const group of groups) {
+        if (group.type === 'tool_group') {
+            if (pendingToolGroup) {
+                // Merge into the pending group
+                pendingToolGroup.messages = [...pendingToolGroup.messages, ...group.messages];
+                pendingToolGroup.toolStatus = mergeToolStatus(pendingToolGroup.toolStatus, group.toolStatus);
+                // Keep the first toolRunId if any, otherwise take the new one
+                if (!pendingToolGroup.toolRunId && group.toolRunId) {
+                    pendingToolGroup.toolRunId = group.toolRunId;
+                }
+            } else {
+                pendingToolGroup = {
+                    messages: [...group.messages],
+                    firstTimestamp: group.firstTimestamp,
+                    toolRunId: group.toolRunId,
+                    toolStatus: group.toolStatus,
+                };
+            }
+        } else {
+            flushPending();
+            merged.push(group);
+        }
+    }
+    flushPending();
+
+    return merged;
+}

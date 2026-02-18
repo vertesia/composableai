@@ -8,7 +8,7 @@ import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "
 import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
 import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, StreamingData } from "./utils";
+import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
 
 // Replace %thinking_message% placeholder with actual thinking message
@@ -326,13 +326,13 @@ function AllMessagesMixedComponent({
     // Group messages with ONLY complete streaming interleaved for stacked view
     // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk)
     const groupedMessages = React.useMemo(
-        () => groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream),
+        () => mergeConsecutiveToolGroups(groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream)),
         [displayMessages, completeStreaming, activeWorkstream]
     );
 
     // Group important messages with ONLY complete streaming interleaved for sliding view
     const groupedImportantMessages = React.useMemo(
-        () => groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream),
+        () => mergeConsecutiveToolGroups(groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream)),
         [importantMessages, completeStreaming, activeWorkstream]
     );
 
