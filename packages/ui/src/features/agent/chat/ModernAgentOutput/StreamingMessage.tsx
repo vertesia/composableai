@@ -299,7 +299,7 @@ function StreamingMessageComponent({
                 {/* Content - cursor character is appended directly to text (no DOM manipulation) */}
                 <div
                     className={cn(
-                        "px-4 pb-3 streaming-content",
+                        "px-3 pb-2 streaming-content",
                         isTyping && "streaming-active",
                         contentClassName
                     )}
