@@ -31,7 +31,7 @@
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
-        "ajv": "^8.17.1"
+        "ajv": "^8.18.0"
     },
     "repository": {
         "type": "git",
