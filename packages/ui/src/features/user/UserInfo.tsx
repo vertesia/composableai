@@ -188,7 +188,7 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
                 </div>
                 {showTitle && (
                     <div className="text-sm font-semibold truncate">
-                        {user ? `Agent (${user.name || user.email})` : apiKey ? `Agent (${apiKey.name})` : "Agent"}
+                        {user ? `Agent (${user.name || user.email})` : apiKey ? `Agent (${apiKey.name})` : title}
                     </div>
                 )}
             </div>

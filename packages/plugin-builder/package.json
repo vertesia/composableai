@@ -23,8 +23,8 @@
   ],
   "scripts": {
     "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
-    "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc",
-    "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+    "build": "tsc",
+    "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
