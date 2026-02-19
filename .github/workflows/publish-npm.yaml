@@ -66,7 +66,7 @@ jobs:
       # Template integration tests using local verdaccio registry (dry-run only)
       - name: Template integration test - Tool Server (verdaccio)
         if: inputs.dry_run == true
-        run: ./.github/bin/test-template-integration.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Tool Server"
+        run: ./.github/bin/test-template-integration.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Plugin"
       - name: Template integration test - UI Plugin (verdaccio)
         if: inputs.dry_run == true
         run: ./.github/bin/test-template-integration.sh --release-type "${{ inputs.release_type }}" --template "Vertesia UI Plugin"
@@ -88,7 +88,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Smoke test - Tool Server
-        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Tool Server" --wait
-      - name: Smoke test - UI Plugin
-        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia UI Plugin" --wait
+      - name: Smoke test - Plugin
+        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Plugin" --wait
+      - name: Smoke test - Tool Server (deprecated)
+        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Tool Server (deprecated)" --wait

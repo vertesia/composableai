@@ -148,7 +148,7 @@ publish_to_verdaccio() {
 # =============================================================================
 
 RELEASE_TYPE=""
-TEMPLATE_NAME="Vertesia Tool Server"
+TEMPLATE_NAME="Vertesia Plugin"
 
 while [[ $# -gt 0 ]]; do
   case $1 in

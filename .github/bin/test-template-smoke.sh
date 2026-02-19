@@ -59,7 +59,7 @@ wait_for_npm() {
 # =============================================================================
 
 RELEASE_TYPE=""
-TEMPLATE_NAME="Vertesia Tool Server"
+TEMPLATE_NAME="Vertesia Plugin"
 WAIT_FOR_NPM=false
 
 while [[ $# -gt 0 ]]; do
