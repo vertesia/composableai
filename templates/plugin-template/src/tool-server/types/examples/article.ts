@@ -1,10 +1,10 @@
-import { InCodeTypeDefinition } from "@vertesia/common";
+import { InCodeTypeDefinition, InCodeTypeSpec } from "@vertesia/common";
 
 /**
  * Example content type: Article
  * A simple schema for article content with title and author
  */
-export const ArticleType: InCodeTypeDefinition = {
+export const ArticleType = {
     name: "article",
     description: "A simple article content type with title and author metadata",
     tags: ["content", "example", "article"],
@@ -57,4 +57,4 @@ export const ArticleType: InCodeTypeDefinition = {
      * Enforce strict validation against the schema
      */
     strict_mode: true
-} satisfies InCodeTypeDefinition;
+} satisfies InCodeTypeSpec;

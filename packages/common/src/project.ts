@@ -1,4 +1,5 @@
 import { SupportedIntegrations } from "./integrations.js";
+import { ContentObjectTypeRef } from "./store/store.js";
 import { AccountRef } from "./user.js";
 
 export interface ICreateProjectPayload {
@@ -351,10 +352,7 @@ export interface ElasticsearchDocumentData {
     text?: string;
     properties?: Record<string, unknown>;
     status?: string;
-    type?: {
-        id?: string;
-        name?: string;
-    };
+    type?: ContentObjectTypeRef;
     security?: {
         'content:read'?: string[];
         'content:write'?: string[];
