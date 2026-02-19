@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/common",
-    "version": "0.82.3",
+    "version": "0.82.4",
     "license": "Apache-2.0",
     "type": "module",
     "types": "./lib/types/index.d.ts",

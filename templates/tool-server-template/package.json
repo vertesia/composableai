@@ -1,6 +1,6 @@
 {
     "name": "tool-server-template",
-    "version": "0.82.3",
+    "version": "0.82.4",
     "description": "A template for building custom tool servers with tools, skills, and interactions",
     "type": "module",
     "main": "lib/server.js",
