@@ -179,6 +179,7 @@ class UserSession {
 
     async _loadTypes() {
         if (this.project) {
+            //return this.store.types.catalog.list({ layout: true }).then(types => this.typeRegistry = new TypeRegistry(types)).catch(err => {
             return this.store.types.list({}, { layout: true }).then(types => this.typeRegistry = new TypeRegistry(types)).catch(err => {
                 console.error('Failed to fetch object types', err);
                 throw err;

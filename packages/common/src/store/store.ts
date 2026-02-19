@@ -302,6 +302,10 @@ export interface CreateContentObjectPayload<T = any>
     generation_run_info?: GenerationRunMetadata;
 }
 
+export function getContentTypeRefId(type: ContentObjectTypeRef) {
+    return (type as StoredTypeRef).id || (type as InCodeTypeRef).code;
+}
+
 /**
  * Reference to a content object type. Either `id` (stored type) or `code` (in-code type) must be set.
  */

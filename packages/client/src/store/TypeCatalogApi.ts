@@ -10,7 +10,7 @@ export class TypeCatalogApi extends ApiTopic {
     /**
      * List all content types (system + app + stored)
      */
-    list(query: { tag?: string } = {}): Promise<ContentObjectTypeItem[]> {
+    list(query: { tag?: string, layout?: boolean, schema?: boolean } = {}): Promise<ContentObjectTypeItem[]> {
         return this.get('/', { query });
     }
 
@@ -44,9 +44,9 @@ export class TypeCatalogApi extends ApiTopic {
     /**
      * List stored types only
      */
-    listStoredTypes(tag?: string): Promise<ContentObjectTypeItem[]> {
+    listStoredTypes(query: { tag?: string, layout?: boolean, schema?: boolean } = {}): Promise<ContentObjectTypeItem[]> {
         return this.get('/stored', {
-            query: { tag }
+            query
         });
     }
 
