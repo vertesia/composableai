@@ -133,6 +133,9 @@ export interface ConversationState {
      * All updates emitted during one tool-execution cycle should share this ID.
      */
     active_activity_group_id?: string;
+
+    /** LLM stop reason from the latest call (e.g., "stop", "length", "tool_use") */
+    finish_reason?: string;
 }
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */
