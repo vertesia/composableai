@@ -17,6 +17,7 @@ export interface ScheduledWorkflowConfig {
 export class PayloadBuilder {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
+    _non_blocking_subagents: boolean = false;
     _checkpoint_tokens: number | undefined;
     _visibility: ConversationVisibility | undefined;
     _user_channels: UserChannel[] | undefined;
@@ -55,6 +56,7 @@ export class PayloadBuilder {
         builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
+        builder._non_blocking_subagents = this._non_blocking_subagents;
         builder._checkpoint_tokens = this._checkpoint_tokens;
         builder._visibility = this._visibility;
         builder._user_channels = this._user_channels ? [...this._user_channels] : undefined;
@@ -105,6 +107,17 @@ export class PayloadBuilder {
     set debug_mode(debug_mode: boolean) {
         if (debug_mode !== this._debug_mode) {
             this._debug_mode = debug_mode;
+            this.onStateChanged();
+        }
+    }
+
+    get non_blocking_subagents() {
+        return this._non_blocking_subagents;
+    }
+
+    set non_blocking_subagents(value: boolean) {
+        if (value !== this._non_blocking_subagents) {
+            this._non_blocking_subagents = value;
             this.onStateChanged();
         }
     }
@@ -185,6 +198,7 @@ export class PayloadBuilder {
         this._data = context.data;
         this._interactive = context.interactive;
         this._debug_mode = context.debug_mode ?? false;
+        this._non_blocking_subagents = context.non_blocking_subagents ?? false;
         this._checkpoint_tokens = context.checkpoint_tokens;
         this._user_channels = context.user_channels;
         this.collection = context.collection_id ?? undefined;
@@ -332,6 +346,7 @@ export class PayloadBuilder {
         this._start = false;
         this._interactive = true;
         this._debug_mode = false;
+        this._non_blocking_subagents = false;
         this._checkpoint_tokens = undefined;
         this._visibility = undefined;
         this._user_channels = undefined;

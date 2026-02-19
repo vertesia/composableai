@@ -731,6 +731,13 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      */
     parent_metadata?: Record<string, any>;
 
+    /**
+     * When true, subagent/workstream tool calls use fire-and-forget `startChild()`
+     * instead of blocking `executeChild()`. The parent continues reasoning while
+     * children run, receiving progress/completion via Temporal signals.
+     */
+    non_blocking_subagents?: boolean;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {

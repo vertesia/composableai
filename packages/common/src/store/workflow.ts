@@ -570,6 +570,7 @@ export interface WorkflowInteractionVars {
     interaction: string,
     interactive: boolean,
     debug_mode?: boolean,
+    non_blocking_subagents?: boolean,
     /**
      * Array of channels to use for user communication.
      * Multiple channels can be active simultaneously.
