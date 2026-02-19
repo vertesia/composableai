@@ -381,6 +381,15 @@ export type InCodeTypeDefinition = Pick<ContentObjectTypeItem, 'id' | 'name' | '
  */
 export type InCodeTypeSpec = Omit<InCodeTypeDefinition, 'id'>;
 
+/**
+ * Returns true if the type id represents an in-code type (system or app-contributed).
+ * In-code types use colon-separated ids like "sys:Invoice" or "app:myapp:Article".
+ * These types are read-only and cannot be edited through the UI.
+ */
+export function isInCodeType(typeId: string): boolean {
+    return typeId.includes(':');
+}
+
 export interface CreateContentObjectTypePayload
     extends Omit<
         ContentObjectType,
