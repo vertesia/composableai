@@ -20,12 +20,8 @@ export const config = {
    * Available templates
    * Array of template definitions with display names and repository paths
    *
-   * Format for repository: 'owner/repo/subdirectory' or 'owner/repo/subdirectory#branch'
-   *
-   * Examples:
-   * - 'vertesia/composableai/templates/tool-server-template'
-   * - 'vertesia/composableai/templates/tool-server-template#main'
-   * - 'vertesia/composableai/templates/tool-server-template#v1.0.0'
+   * Format for repository: 'owner/repo/subdirectory' (without branch/tag suffix)
+   * The branch or tag is resolved at runtime based on CLI version and --branch flag.
    */
   templates: [
     {
@@ -38,7 +34,7 @@ export const config = {
     },
     {
       name: 'Vertesia Workflow Worker',
-      repository: 'vertesia/composableai/templates/worker-template#preview'
+      repository: 'vertesia/composableai/templates/worker-template'
     }
   ] as TemplateDefinition[],
 
