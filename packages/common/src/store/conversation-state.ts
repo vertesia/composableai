@@ -133,6 +133,9 @@ export interface ConversationState {
      * All updates emitted during one tool-execution cycle should share this ID.
      */
     active_activity_group_id?: string;
+
+    /** LLM stop reason from the latest call (e.g., "stop", "length", "tool_use") */
+    finish_reason?: string;
 }
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */
@@ -155,14 +158,4 @@ export interface UsedSkill {
     packages?: string[];
     /** System-level packages to install via sudo apt-get (e.g., ["poppler-utils"]) */
     system_packages?: string[];
-}
-
-/**
- * Wrapper returned by conversation activities (startConversation / resumeConversation).
- * Pairs the conversation state with per-call metadata that shouldn't persist in state.
- */
-export interface ConversationActivityResult {
-    state: ConversationState;
-    /** The reason the LLM stopped generating (e.g., "stop", "length", "tool_use") */
-    finish_reason?: string;
 }
