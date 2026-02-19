@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
-import { ContentObjectTypeItem, ContentObjectTypeRef, InCodeTypeDefinition } from '@vertesia/common';
+import { ContentObjectTypeItem, ContentObjectTypeRef } from '@vertesia/common';
 
 
 export class TypeCatalogApi extends ApiTopic {
@@ -46,7 +46,7 @@ export class TypeCatalogApi extends ApiTopic {
      * Accepts a string (type ID or code) or a ContentObjectTypeRef (extracts code or id automatically).
      * @param typeOrRef Type identifier string, or a ContentObjectTypeRef from a content object
      */
-    resolve(typeOrRef: string | ContentObjectTypeRef): Promise<ContentObjectTypeItem | InCodeTypeDefinition> {
+    resolve(typeOrRef: string | ContentObjectTypeRef): Promise<ContentObjectTypeItem> {
         const typeId = typeof typeOrRef === 'string' ? typeOrRef : (typeOrRef.code || typeOrRef.id!);
         return this.get(`/resolve/${typeId}`);
     }
