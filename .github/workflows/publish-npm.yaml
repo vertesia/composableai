@@ -64,12 +64,12 @@ jobs:
               --dry-run "${{ inputs.dry_run }}"
 
       # Template integration tests using local verdaccio registry (dry-run only)
-      - name: Template integration test - Tool Server (verdaccio)
+      - name: Template integration test - Plugin
         if: inputs.dry_run == true
         run: ./.github/bin/test-template-integration.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Plugin"
-      - name: Template integration test - UI Plugin (verdaccio)
+      - name: Template integration test - Tool Server (deprecated)
         if: inputs.dry_run == true
-        run: ./.github/bin/test-template-integration.sh --release-type "${{ inputs.release_type }}" --template "Vertesia UI Plugin"
+        run: ./.github/bin/test-template-integration.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Tool Server (deprecated)"
 
   # ============================================================
   # Integration test after real publish (non-dry-run only)
