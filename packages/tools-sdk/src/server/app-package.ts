@@ -55,7 +55,10 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
         const allTypes: InCodeTypeDefinition[] = [];
         for (const coll of config.types || []) {
             for (const type of coll.types) {
-                allTypes.push(type);
+                allTypes.push({
+                    ...type,
+                    id: coll.name + ":" + type.name
+                });
             }
         }
         pkg.types = allTypes;

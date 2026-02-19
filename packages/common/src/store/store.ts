@@ -375,7 +375,11 @@ export interface ContentObjectTypeItem extends BaseObject {
      */
     strict_mode?: boolean;
 }
-export type InCodeTypeDefinition = Pick<ContentObjectTypeItem, 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'>;
+export type InCodeTypeDefinition = Pick<ContentObjectTypeItem, 'id' | 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'>;
+/**
+ * The itnerface to be used whend efining types in a plugin app.
+ */
+export type InCodeTypeSpec = Omit<InCodeTypeDefinition, 'id'>;
 
 export interface CreateContentObjectTypePayload
     extends Omit<

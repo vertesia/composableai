@@ -26,17 +26,8 @@ export class TypeCatalogApi extends ApiTopic {
     /**
      * List all app types from all installed apps
      */
-    listAllAppTypes(tag?: string): Promise<ContentObjectTypeItem[]> {
+    listAppTypes(tag?: string): Promise<ContentObjectTypeItem[]> {
         return this.get('/apps', {
-            query: { tag }
-        });
-    }
-
-    /**
-     * List types from a specific app
-     */
-    listAppTypes(appName: string, tag?: string): Promise<ContentObjectTypeItem[]> {
-        return this.get(`/apps/${appName}`, {
             query: { tag }
         });
     }
