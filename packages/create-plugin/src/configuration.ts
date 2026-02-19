@@ -26,11 +26,11 @@ export const config = {
   templates: [
     {
       name: 'Vertesia Tool Server',
-      repository: 'vertesia/composableai/templates/tool-server-template#preview'
+      repository: 'vertesia/composableai/templates/tool-server-template'
     },
     {
       name: 'Vertesia UI Plugin',
-      repository: 'vertesia/composableai/templates/ui-plugin-template#preview'
+      repository: 'vertesia/composableai/templates/ui-plugin-template'
     },
     {
       name: 'Vertesia Workflow Worker',

@@ -21,7 +21,7 @@ function resolveTemplateRef(branchOverride?: string): string {
 
   const version = getCliVersion();
   if (!version.includes('-dev.')) {
-    return `v@${version}`;
+    return `v${version}`;
   }
 
   return 'main';
