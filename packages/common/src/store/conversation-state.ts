@@ -156,3 +156,13 @@ export interface UsedSkill {
     /** System-level packages to install via sudo apt-get (e.g., ["poppler-utils"]) */
     system_packages?: string[];
 }
+
+/**
+ * Wrapper returned by conversation activities (startConversation / resumeConversation).
+ * Pairs the conversation state with per-call metadata that shouldn't persist in state.
+ */
+export interface ConversationActivityResult {
+    state: ConversationState;
+    /** The reason the LLM stopped generating (e.g., "stop", "length", "tool_use") */
+    finish_reason?: string;
+}
