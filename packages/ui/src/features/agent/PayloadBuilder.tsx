@@ -17,7 +17,7 @@ export interface ScheduledWorkflowConfig {
 export class PayloadBuilder {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
-    _non_blocking_subagents: boolean = false;
+    _non_blocking_subagents: boolean = true;
     _checkpoint_tokens: number | undefined;
     _visibility: ConversationVisibility | undefined;
     _user_channels: UserChannel[] | undefined;
@@ -198,7 +198,7 @@ export class PayloadBuilder {
         this._data = context.data;
         this._interactive = context.interactive;
         this._debug_mode = context.debug_mode ?? false;
-        this._non_blocking_subagents = context.non_blocking_subagents ?? false;
+        this._non_blocking_subagents = context.non_blocking_subagents ?? true;
         this._checkpoint_tokens = context.checkpoint_tokens;
         this._user_channels = context.user_channels;
         this.collection = context.collection_id ?? undefined;
@@ -346,7 +346,7 @@ export class PayloadBuilder {
         this._start = false;
         this._interactive = true;
         this._debug_mode = false;
-        this._non_blocking_subagents = false;
+        this._non_blocking_subagents = true;
         this._checkpoint_tokens = undefined;
         this._visibility = undefined;
         this._user_channels = undefined;
