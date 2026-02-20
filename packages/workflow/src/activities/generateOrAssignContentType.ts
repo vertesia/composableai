@@ -80,7 +80,7 @@ export async function generateOrAssignContentType(
     return { status: "failed", error: "no-text" };
   }
 
-  const types = await client.types.list(undefined, {
+  const types = await client.types.catalog.list({
     schema: true,
   });
 

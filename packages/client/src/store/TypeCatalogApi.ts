@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
-import { ContentObjectTypeItem, InCodeTypeDefinition } from '@vertesia/common';
+import { ContentObjectTypeItem, ContentObjectTypeRef } from '@vertesia/common';
 
 
 export class TypeCatalogApi extends ApiTopic {
@@ -10,7 +10,7 @@ export class TypeCatalogApi extends ApiTopic {
     /**
      * List all content types (system + app + stored)
      */
-    list(query: { tag?: string } = {}): Promise<ContentObjectTypeItem[]> {
+    list(query: { tag?: string, limit?: number, offset?: number, layout?: boolean, schema?: boolean } = {}): Promise<ContentObjectTypeItem[]> {
         return this.get('/', { query });
     }
 
@@ -26,17 +26,8 @@ export class TypeCatalogApi extends ApiTopic {
     /**
      * List all app types from all installed apps
      */
-    listAllAppTypes(tag?: string): Promise<ContentObjectTypeItem[]> {
+    listAppTypes(tag?: string): Promise<ContentObjectTypeItem[]> {
         return this.get('/apps', {
-            query: { tag }
-        });
-    }
-
-    /**
-     * List types from a specific app
-     */
-    listAppTypes(appName: string, tag?: string): Promise<ContentObjectTypeItem[]> {
-        return this.get(`/apps/${appName}`, {
             query: { tag }
         });
     }
@@ -44,17 +35,19 @@ export class TypeCatalogApi extends ApiTopic {
     /**
      * List stored types only
      */
-    listStoredTypes(tag?: string): Promise<ContentObjectTypeItem[]> {
+    listStoredTypes(query: { tag?: string, limit?: number, offset?: number, layout?: boolean, schema?: boolean } = {}): Promise<ContentObjectTypeItem[]> {
         return this.get('/stored', {
-            query: { tag }
+            query
         });
     }
 
     /**
-     * Resolve a type ID to its full definition
-     * @param typeId Type identifier (sys:name, app:appName:name, or ObjectId)
+     * Resolve a type to its full definition.
+     * Accepts a string (type ID or code) or a ContentObjectTypeRef (extracts code or id automatically).
+     * @param typeOrRef Type identifier string, or a ContentObjectTypeRef from a content object
      */
-    resolve(typeId: string): Promise<ContentObjectTypeItem | InCodeTypeDefinition> {
+    resolve(typeOrRef: string | ContentObjectTypeRef): Promise<ContentObjectTypeItem> {
+        const typeId = typeof typeOrRef === 'string' ? typeOrRef : (typeOrRef.code || typeOrRef.id!);
         return this.get(`/resolve/${typeId}`);
     }
 }

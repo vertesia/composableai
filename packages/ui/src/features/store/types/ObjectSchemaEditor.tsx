@@ -9,8 +9,9 @@ import { Ajv } from "ajv";
 interface ObjectSchemaEditorProps {
     objectType: ContentObjectType;
     onSchemaUpdate: (jsonSchema: any) => void;
+    readonly?: boolean;
 }
-export function ObjectSchemaEditor({ objectType, onSchemaUpdate }: ObjectSchemaEditorProps) {
+export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = false }: ObjectSchemaEditorProps) {
     const { store } = useUserSession();
     const toast = useToast();
     const { theme } = useTheme();
@@ -84,19 +85,19 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate }: ObjectSchemaE
 
     const title = (
         <div className='flex gap-2 items-center'><div className="text-base font-semibold">Schema Editor</div>
-            <div>
+            {!readonly && <div>
                 <Button variant="outline" size="sm" onClick={handleOnSave}>
                     {
                         displayJson ? "Edit Schema" : "Edit Json"
                     }
                 </Button>
-            </div>
+            </div>}
         </div>
     );
 
     return (
         <Panel title={title} className="bg-background! h-[calc(100vh-197px)]"
-            action={<Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>Save Changes</Button>}
+            action={!readonly ? <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>Save Changes</Button> : undefined}
         >
             {
                 displayJson
@@ -105,8 +106,9 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate }: ObjectSchemaE
                         language="json"
                         editorRef={editorRef}
                         theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+                        options={{ readOnly: readonly }}
                     />
-                    : <SchemaEditor schema={schema} />
+                    : <SchemaEditor schema={schema} readonly={readonly} />
             }
 
 

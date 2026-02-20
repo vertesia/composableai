@@ -492,6 +492,9 @@ export interface AgentTask {
 
     /** Workstream tracking */
     workstreamId?: string;
+
+    /** LLM stop reason for llm_call tasks (e.g., "stop", "length", "tool_use") */
+    finish_reason?: string;
 }
 
 export interface WorkflowRun {
