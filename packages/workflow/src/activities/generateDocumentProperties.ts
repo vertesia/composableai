@@ -1,4 +1,4 @@
-import { log } from "@temporalio/activity";
+import { ApplicationFailure, log } from "@temporalio/activity";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { TruncateSpec, truncByMaxTokens } from "../utils/tokens.js";
@@ -72,18 +72,43 @@ export async function generateDocumentProperties(
         payload.debug_mode ? { params } : undefined,
     );
 
-    const infoRes = await executeInteractionFromActivity(
-        client,
-        interactionName,
-        {
-            ...params,
-            include_previous_error: true,
-            result_schema: type.object_schema,
-            validate_result: type.strict_mode,
-        },
-        promptData,
-        payload.debug_mode ?? false,
-    );
+    let infoRes;
+    try {
+        infoRes = await executeInteractionFromActivity(
+            client,
+            interactionName,
+            {
+                ...params,
+                include_previous_error: true,
+                result_schema: type.object_schema,
+                validate_result: type.strict_mode,
+            },
+            promptData,
+            payload.debug_mode ?? false,
+        );
+    } catch (error: any) {
+        log.error(`Failed to extract document properties for ${objectId}`, { error, retryable: error.retryable });
+        
+        const isRetryable = error.retryable !== undefined 
+            ? error.retryable !== false
+            : undefined;
+        
+        if (isRetryable !== undefined) {
+            if (isRetryable) {
+                throw ApplicationFailure.create({
+                    message: `Document property extraction failed for ${objectId}: ${error.message}`,
+                    nonRetryable: false,
+                });
+            } else {
+                throw ApplicationFailure.create({
+                    message: `Non-retryable document property extraction failed for ${objectId}: ${error.message}`,
+                    nonRetryable: true,
+                });
+            }
+        }
+        
+        throw error;
+    }
 
     const getText = () => {
         if (doc.text) {
