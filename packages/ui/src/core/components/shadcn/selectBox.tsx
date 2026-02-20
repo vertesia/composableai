@@ -205,7 +205,10 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
                 </div>
             )}
             <Command className="overflow-hidden">
-                <CommandList className={inline ? "max-h-full overflow-y-auto" : "max-h-[200px] overflow-y-auto"}>
+                <CommandList
+                    className={inline ? "max-h-full overflow-y-auto" : "max-h-[200px] overflow-y-auto"}
+                    onWheel={(e) => { e.currentTarget.scrollTop += e.deltaY; }}
+                >
                     <CommandEmpty>No result found.</CommandEmpty>
                     <CommandGroup>
                         {filteredOptions?.map((opt, index) => {
