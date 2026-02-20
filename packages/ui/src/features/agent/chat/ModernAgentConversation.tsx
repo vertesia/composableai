@@ -966,7 +966,7 @@ function ModernAgentConversationInner({
         };
 
         fetchActiveWorkstreams();
-        const pollHandle = window.setInterval(fetchActiveWorkstreams, 2000);
+        const pollHandle = window.setInterval(fetchActiveWorkstreams, 10000);
 
         return () => {
             isCancelled = true;
