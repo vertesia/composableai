@@ -120,15 +120,17 @@ export function useAgentStream(
                 }
             });
 
-        const streamMessagesWithAbort = client.store.workflows.streamMessages as (
-            workflowId: string,
-            runId: string,
-            onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
-            since?: number,
-            signal?: AbortSignal,
-        ) => Promise<unknown>;
+        const workflowsApi = client.store.workflows as typeof client.store.workflows & {
+            streamMessages: (
+                workflowId: string,
+                runId: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+            ) => Promise<unknown>;
+        };
 
-        streamMessagesWithAbort(run.workflowId, run.runId, (message) => {
+        workflowsApi.streamMessages(run.workflowId, run.runId, (message) => {
             if (abortController.signal.aborted) return;
 
             // Handle streaming chunks separately for real-time aggregation

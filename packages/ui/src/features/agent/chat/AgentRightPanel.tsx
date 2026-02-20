@@ -18,7 +18,7 @@ import type { OpenDocument } from './types/document.js';
 // Workstream list types
 // ---------------------------------------------------------------------------
 
-interface WorkstreamInfo {
+export interface WorkstreamInfo {
     workstream_id: string;
     launch_id: string;
     elapsed_ms: number;
@@ -185,6 +185,7 @@ export interface AgentRightPanelProps {
     // Workstreams
     activeWorkstreams?: WorkstreamInfo[];
     messages?: AgentMessage[];
+    hideWorkstreams?: boolean;
 
     // Documents
     openDocuments?: OpenDocument[];
@@ -215,6 +216,7 @@ function AgentRightPanelComponent({
     // Workstreams
     activeWorkstreams = [],
     messages = [],
+    hideWorkstreams = false,
 
     // Documents
     openDocuments = [],
@@ -241,17 +243,21 @@ function AgentRightPanelComponent({
     }, [defaultTab]);
 
     // Determine which tabs have content (for badges/indicators)
-    const hasWorkstreams = activeWorkstreams.length > 0;
+    const hasWorkstreams = !hideWorkstreams && activeWorkstreams.length > 0;
     const hasDocuments = openDocuments.length > 0;
     const hasUploads = processingFiles ? processingFiles.size > 0 : false;
     const hasPlan = showPlan && plan;
 
-    const tabs: { id: RightPanelTab; label: string; badge?: number | boolean }[] = [
+    const baseTabs: { id: RightPanelTab; label: string; badge?: number | boolean }[] = [
         { id: 'plan', label: 'Plan', badge: hasPlan ? true : false },
         { id: 'workstreams', label: 'Workstreams', badge: hasWorkstreams ? activeWorkstreams.length : false },
         { id: 'documents', label: 'Documents', badge: hasDocuments ? openDocuments.length : false },
         { id: 'uploads', label: 'Uploads', badge: hasUploads },
     ];
+
+    const tabs = hideWorkstreams
+        ? baseTabs.filter(tab => tab.id !== 'workstreams')
+        : baseTabs;
 
     const handleCloseDocPanel = useCallback(() => {
         // Just switch away from documents tab

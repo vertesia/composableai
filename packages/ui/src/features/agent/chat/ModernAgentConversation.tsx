@@ -3,6 +3,7 @@ import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from "lucide-reac
 import { useUserSession } from "@vertesia/ui/session";
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
 import {
+    ActiveWorkstreamEntry,
     AgentMessage,
     AgentMessageType,
     ConversationFile,
@@ -28,7 +29,7 @@ import { ThinkingMessages } from "./WaitingMessages";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
 import { VegaLiteChart } from "./VegaLiteChart";
-import { AgentRightPanel } from "./AgentRightPanel.js";
+import { AgentRightPanel, type WorkstreamInfo } from "./AgentRightPanel.js";
 import { useAgentStream } from "./hooks/useAgentStream.js";
 import { useAgentPlans } from "./hooks/useAgentPlans.js";
 import { useDocumentPanel } from "./hooks/useDocumentPanel.js";
@@ -787,6 +788,8 @@ function ModernAgentConversationInner({
     const [isStopping, setIsStopping] = useState(false);
     const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [activeWorkstreams, setActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
+    const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
 
     // PERFORMANCE: Refs for values used inside useCallback to avoid re-creating the callback
@@ -818,6 +821,20 @@ function ModernAgentConversationInner({
         };
     }, [plans, activePlanIndex, workstreamStatusMap]);
 
+    const panelWorkstreams = useMemo<WorkstreamInfo[]>(() => {
+        return activeWorkstreams.map((ws) => ({
+            workstream_id: ws.workstream_id,
+            launch_id: ws.launch_id,
+            elapsed_ms: ws.elapsed_ms,
+            deadline_ms: ws.deadline_ms,
+            remaining_ms: Math.max(0, ws.deadline_ms - ws.elapsed_ms),
+            status: ws.status,
+            phase: ws.latest_progress?.phase,
+            child_workflow_id: ws.child_workflow_id,
+            child_workflow_run_id: ws.child_workflow_run_id,
+        }));
+    }, [activeWorkstreams]);
+
     // ────────────────────────────────────────────
     // Stable callbacks
     // ────────────────────────────────────────────
@@ -840,7 +857,9 @@ function ModernAgentConversationInner({
     type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads';
     const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('plan');
 
-    const showRightPanel = showSlidingPanel || isDocPanelOpen;
+    const showRightPanel = showSlidingPanel
+        || isDocPanelOpen
+        || (!hideWorkstreamTabs && panelWorkstreams.length > 0);
 
     // Auto-switch tab when plan panel opens
     useEffect(() => {
@@ -855,6 +874,13 @@ function ModernAgentConversationInner({
             setRightPanelTab('documents');
         }
     }, [isDocPanelOpen]);
+
+    // Auto-switch tab when active workstreams appear and no other panel is focused.
+    useEffect(() => {
+        if (!hideWorkstreamTabs && panelWorkstreams.length > 0 && !showSlidingPanel && !isDocPanelOpen) {
+            setRightPanelTab('workstreams');
+        }
+    }, [hideWorkstreamTabs, panelWorkstreams.length, showSlidingPanel, isDocPanelOpen]);
 
     const handleCloseRightPanel = useCallback(() => {
         setShowSlidingPanel(false);
@@ -912,6 +938,41 @@ function ModernAgentConversationInner({
     useEffect(() => {
         onWorkstreamStatusChange?.(workstreamStatusMap);
     }, [workstreamStatusMap, onWorkstreamStatusChange]);
+
+    // Poll active workstreams from backend query for right-panel visibility and details.
+    useEffect(() => {
+        const shouldPoll = !isCompleted || activeWorkstreams.length > 0;
+        if (!shouldPoll) {
+            setActiveWorkstreams((prev) => (prev.length === 0 ? prev : []));
+            return;
+        }
+
+        let isCancelled = false;
+
+        const fetchActiveWorkstreams = async () => {
+            try {
+                const result = await client.store.workflows.getActiveWorkstreams(run.workflowId, run.runId);
+                if (isCancelled) return;
+                setActiveWorkstreams(result.running ?? []);
+                workstreamFetchFailedRef.current = false;
+            } catch (error) {
+                if (isCancelled) return;
+                setActiveWorkstreams([]);
+                if (!workstreamFetchFailedRef.current) {
+                    console.warn("Failed to fetch active workstreams:", error);
+                    workstreamFetchFailedRef.current = true;
+                }
+            }
+        };
+
+        fetchActiveWorkstreams();
+        const pollHandle = window.setInterval(fetchActiveWorkstreams, 2000);
+
+        return () => {
+            isCancelled = true;
+            window.clearInterval(pollHandle);
+        };
+    }, [client.store.workflows, run.workflowId, run.runId, isCompleted, activeWorkstreams.length]);
 
     // Notify parent when input availability is determined
     useEffect(() => {
@@ -1080,6 +1141,10 @@ function ModernAgentConversationInner({
 
     // Calculate number of active tasks for the status indicator
     const getActiveTaskCount = (): number => {
+        if (activeWorkstreams.length > 0) {
+            return activeWorkstreams.filter((ws) => ws.status === "running").length;
+        }
+
         if (!messages.length) return 0;
 
         // Group messages by workstream
@@ -1362,6 +1427,9 @@ function ModernAgentConversationInner({
                         activePlanIndex={activePlanIndex}
                         onChangePlan={handleChangePlan}
                         showPlan={!hidePlanPanel && showSlidingPanel}
+                        // Workstreams
+                        activeWorkstreams={panelWorkstreams}
+                        hideWorkstreams={hideWorkstreamTabs}
                         // Documents
                         openDocuments={openDocuments}
                         activeDocumentId={activeDocumentId}
