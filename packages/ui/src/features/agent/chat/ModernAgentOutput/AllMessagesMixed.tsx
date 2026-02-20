@@ -272,7 +272,7 @@ function AllMessagesMixedComponent({
             msg.type === AgentMessageType.TERMINATED ||
             msg.type === AgentMessageType.ERROR ||
             // Include THOUGHT messages that have tool details (progress from message_to_human or streamed content)
-            (msg.type === AgentMessageType.THOUGHT && (msg.details?.tool || msg.details?.tools || msg.details?.streamed))
+            (msg.type === AgentMessageType.THOUGHT && (msg.details?.tool || msg.details?.tools || msg.details?.streamed || msg.details?.display_role === "tool_preamble"))
         );
 
         // Latest thinking: show only the most recent generic thinking message (UPDATE/PLAN or THOUGHT without tool)
@@ -282,7 +282,11 @@ function AllMessagesMixedComponent({
                 .filter(msg =>
                     msg.type === AgentMessageType.UPDATE ||
                     msg.type === AgentMessageType.PLAN ||
-                    (msg.type === AgentMessageType.THOUGHT && !msg.details?.tool && !msg.details?.tools && !msg.details?.streamed))
+                    (msg.type === AgentMessageType.THOUGHT &&
+                        !msg.details?.tool &&
+                        !msg.details?.tools &&
+                        !msg.details?.streamed &&
+                        msg.details?.display_role !== "tool_preamble"))
                 .slice(-1) // Show only the latest thinking message
             : [];
 

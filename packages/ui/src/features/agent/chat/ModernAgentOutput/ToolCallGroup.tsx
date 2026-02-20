@@ -14,7 +14,7 @@ import { ToolExecutionStatus } from "./utils";
 const META_KEYS = new Set([
     'tool', 'tool_run_id', 'activity_group_id', 'event_class',
     'tool_iteration', 'tool_status', 'tools', 'streamed',
-    'files', 'outputFiles',
+    'files', 'outputFiles', 'display_role',
 ]);
 
 /** Filter out internal metadata keys, return user-facing detail entries */
@@ -146,8 +146,17 @@ const getFilesFromDetails = (details: { files?: string[]; outputFiles?: string[]
     return Array.isArray(files) ? files : undefined;
 };
 
+const TOOL_BADGE_CLASS = "text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium";
+const ASSISTANT_BADGE_CLASS = "text-[10px] px-1.5 py-0.5 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 font-medium";
+
+const isToolPreambleMessage = (message: AgentMessage): boolean => {
+    const details = message.details as { display_role?: string } | undefined;
+    return message.type === AgentMessageType.THOUGHT && details?.display_role === "tool_preamble";
+};
+
 const getMessageActivityLabel = (message: AgentMessage): string => {
     const details = message.details as { tool?: string } | undefined;
+    if (isToolPreambleMessage(message)) return "assistant";
     if (details?.tool) return details.tool;
 
     switch (message.type) {
@@ -164,6 +173,10 @@ const getMessageActivityLabel = (message: AgentMessage): string => {
     }
 };
 
+const getMessageBadgeClass = (message: AgentMessage): string => {
+    return isToolPreambleMessage(message) ? ASSISTANT_BADGE_CLASS : TOOL_BADGE_CLASS;
+};
+
 function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames = {} }: ToolCallItemProps) {
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const toast = useToast();
@@ -177,6 +190,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
 
     const details = message.details as { tool?: string; files?: string[]; outputFiles?: string[]; [key: string]: unknown } | undefined;
     const toolName = getMessageActivityLabel(message);
+    const badgeClass = getMessageBadgeClass(message);
     const files = getFilesFromDetails(details);
     const messageContent = typeof message.message === "string" ? message.message : "";
 
@@ -278,7 +292,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {/* Tool name badge on the right */}
                     {!isExpanded && (
-                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", classNames.toolBadgeClassName)}>
+                        <span className={cn(badgeClass, classNames.toolBadgeClassName)}>
                             {toolName}
                         </span>
                     )}
@@ -312,7 +326,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                     <div className={cn("px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30", classNames.itemContentClassName)}>
                         {/* Badges row: tool name + status + timestamp */}
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", classNames.toolBadgeClassName)}>
+                            <span className={cn(badgeClass, classNames.toolBadgeClassName)}>
                                 {toolName}
                             </span>
                             {toolStatusValue && (
@@ -685,6 +699,7 @@ function ToolCallGroupComponent({
                     {messages.map((m, idx) => {
                         const details = m.details as { tool?: string; files?: string[]; outputFiles?: string[] } | undefined;
                         const toolName = getMessageActivityLabel(m);
+                        const badgeClass = getMessageBadgeClass(m);
                         const fullMessage = typeof m.message === "string" ? m.message : "";
                         const isAnimating = animatingIndices.has(idx);
                         const isItemExpanded = expandedItems.has(idx);
@@ -728,7 +743,7 @@ function ToolCallGroupComponent({
                                     </div>
                                     {/* Tool name badge on the right */}
                                     {!isItemExpanded && (
-                                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium flex-shrink-0", toolBadgeClassName)}>
+                                        <span className={cn(badgeClass, "flex-shrink-0", toolBadgeClassName)}>
                                             {toolName}
                                         </span>
                                     )}
@@ -743,7 +758,7 @@ function ToolCallGroupComponent({
                                         <div className={cn("pl-5 pr-3 pb-2 text-sm", itemContentClassName)}>
                                             {/* Badges row: tool name + status + timestamp */}
                                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                                <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", toolBadgeClassName)}>
+                                                <span className={cn(badgeClass, toolBadgeClassName)}>
                                                     {toolName}
                                                 </span>
                                                 {toolStatusValue && (
