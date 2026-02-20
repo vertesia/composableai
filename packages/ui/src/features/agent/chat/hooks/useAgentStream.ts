@@ -65,11 +65,23 @@ export function useAgentStream(
 
     // RAF-batched streaming updates
     const pendingStreamingChunks = useRef<Map<string, StreamingData>>(new Map());
-    const streamingFlushScheduled = useRef<number | null>(null);
+    const streamingFlushScheduled = useRef<{ mode: 'raf' | 'timeout'; id: number } | null>(null);
 
     // Debug: visual flash indicator for incoming chunks
     const [debugChunkFlash, setDebugChunkFlash] = useState(false);
     const debugFlashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const cancelScheduledStreamingFlush = useCallback(() => {
+        const scheduled = streamingFlushScheduled.current;
+        if (!scheduled) return;
+
+        if (scheduled.mode === 'raf') {
+            cancelAnimationFrame(scheduled.id);
+        } else {
+            clearTimeout(scheduled.id);
+        }
+        streamingFlushScheduled.current = null;
+    }, []);
 
     const flushStreamingChunks = useCallback(() => {
         if (pendingStreamingChunks.current.size > 0) {
@@ -93,17 +105,32 @@ export function useAgentStream(
         setWorkflowStatus(null);
         setStreamingMessages(new Map());
         setServerFileUpdates(new Map());
+        const abortController = new AbortController();
 
         // Check workflow status
         client.store.workflows.getRunDetails(run.runId, run.workflowId)
             .then((statusResult) => {
-                setWorkflowStatus(statusResult.status as string);
+                if (!abortController.signal.aborted) {
+                    setWorkflowStatus(statusResult.status as string);
+                }
             })
             .catch((error) => {
-                console.error('Failed to check workflow status:', error);
+                if (!abortController.signal.aborted) {
+                    console.error('Failed to check workflow status:', error);
+                }
             });
 
-        client.store.workflows.streamMessages(run.workflowId, run.runId, (message) => {
+        const streamMessagesWithAbort = client.store.workflows.streamMessages as (
+            workflowId: string,
+            runId: string,
+            onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+            since?: number,
+            signal?: AbortSignal,
+        ) => Promise<unknown>;
+
+        streamMessagesWithAbort(run.workflowId, run.runId, (message) => {
+            if (abortController.signal.aborted) return;
+
             // Handle streaming chunks separately for real-time aggregation
             // PERFORMANCE: Batch updates using RAF instead of immediate state updates
             if (message.type === AgentMessageType.STREAMING_CHUNK) {
@@ -130,7 +157,17 @@ export function useAgentStream(
 
                 // Schedule a flush if not already scheduled (~60 updates/sec max)
                 if (streamingFlushScheduled.current === null) {
-                    streamingFlushScheduled.current = requestAnimationFrame(flushStreamingChunks);
+                    if (document.hidden) {
+                        streamingFlushScheduled.current = {
+                            mode: 'timeout',
+                            id: window.setTimeout(flushStreamingChunks, 16),
+                        };
+                    } else {
+                        streamingFlushScheduled.current = {
+                            mode: 'raf',
+                            id: requestAnimationFrame(flushStreamingChunks),
+                        };
+                    }
                 }
                 return;
             }
@@ -176,7 +213,15 @@ export function useAgentStream(
                 }
             }
 
-            if (message.message) {
+            const hasContent = !!message.message;
+            const isStateMessage = [
+                AgentMessageType.COMPLETE,
+                AgentMessageType.IDLE,
+                AgentMessageType.TERMINATED,
+                AgentMessageType.REQUEST_INPUT,
+            ].includes(message.type);
+
+            if (hasContent || isStateMessage) {
                 setMessages((prev) => {
                     // Check for duplicate by timestamp
                     if (prev.find((m) => m.timestamp === message.timestamp)) {
@@ -196,17 +241,39 @@ export function useAgentStream(
                     return [...prev];
                 });
             }
-        });
+        }, undefined, abortController.signal)
+            .catch((error) => {
+                if (!abortController.signal.aborted) {
+                    console.error('Failed to stream workflow messages:', error);
+                }
+            });
 
         return () => {
+            abortController.abort();
             setMessages([]);
-            if (streamingFlushScheduled.current !== null) {
-                cancelAnimationFrame(streamingFlushScheduled.current);
-                streamingFlushScheduled.current = null;
-            }
+            cancelScheduledStreamingFlush();
             pendingStreamingChunks.current.clear();
+            if (debugFlashTimeout.current) {
+                clearTimeout(debugFlashTimeout.current);
+                debugFlashTimeout.current = null;
+            }
         };
-    }, [run.runId, client.store.workflows, flushStreamingChunks]);
+    }, [run.runId, client.store.workflows, flushStreamingChunks, cancelScheduledStreamingFlush]);
+
+    // Flush pending streaming chunks when tab becomes visible.
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (!document.hidden && pendingStreamingChunks.current.size > 0) {
+                cancelScheduledStreamingFlush();
+                flushStreamingChunks();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [flushStreamingChunks, cancelScheduledStreamingFlush]);
 
     // Add an optimistic message to the timeline
     const addOptimisticMessage = useCallback((msg: AgentMessage) => {

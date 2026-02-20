@@ -163,11 +163,12 @@ export class WorkflowsApi extends ApiTopic {
         workstream: { child_workflow_id: string; child_workflow_run_id?: string },
         onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
         since?: number,
+        signal?: AbortSignal,
     ): Promise<unknown> {
         if (!workstream.child_workflow_run_id) {
             return Promise.resolve(null);
         }
-        return this.streamMessages(workstream.child_workflow_id, workstream.child_workflow_run_id, onMessage, since);
+        return this.streamMessages(workstream.child_workflow_id, workstream.child_workflow_run_id, onMessage, since, signal);
     }
 
     execute(
@@ -205,13 +206,21 @@ export class WorkflowsApi extends ApiTopic {
      * This approach provides better performance for conversations with large historical messages
      * since HTTP responses are compressed while SSE streams cannot be compressed.
      */
-    async streamMessages(workflowId: string, runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
+    async streamMessages(
+        workflowId: string,
+        runId: string,
+        onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+        since?: number,
+        signal?: AbortSignal,
+    ): Promise<unknown> {
         return new Promise<unknown>(async (resolve, reject) => {
             let reconnectAttempts = 0;
             let lastMessageTimestamp = since || 0;
             let isClosed = false;
             let currentSse: EventSource | null = null;
             let interval: NodeJS.Timeout | null = null;
+            let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+            let abortHandler: (() => void) | null = null;
 
             const maxReconnectAttempts = 10;
             const baseDelay = 1000; // 1 second base delay
@@ -225,6 +234,10 @@ export class WorkflowsApi extends ApiTopic {
             };
 
             const cleanup = () => {
+                if (reconnectTimer) {
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = null;
+                }
                 if (interval) {
                     clearInterval(interval);
                     interval = null;
@@ -232,6 +245,10 @@ export class WorkflowsApi extends ApiTopic {
                 if (currentSse) {
                     currentSse.close();
                     currentSse = null;
+                }
+                if (signal && abortHandler) {
+                    signal.removeEventListener("abort", abortHandler);
+                    abortHandler = null;
                 }
             };
 
@@ -243,11 +260,28 @@ export class WorkflowsApi extends ApiTopic {
                 }
             };
 
+            // Allow callers to externally cancel the stream lifecycle.
+            if (signal) {
+                if (signal.aborted) {
+                    isClosed = true;
+                    cleanup();
+                    resolve(null);
+                    return;
+                }
+                abortHandler = () => {
+                    exit(null);
+                };
+                signal.addEventListener("abort", abortHandler, { once: true });
+            }
+
             // 1. Fetch historical messages via GET /updates (gzip-compressed if > 3KB)
             // This is more efficient than receiving historical over uncompressed SSE
             try {
+                if (isClosed) return;
                 const historical = await this.retrieveMessages(workflowId, runId, since);
+                if (isClosed) return;
                 for (const msg of historical) {
+                    if (isClosed) return;
                     // Update timestamp for SSE connection
                     lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
 
@@ -255,6 +289,7 @@ export class WorkflowsApi extends ApiTopic {
                     if (onMessage) {
                         onMessage(msg, exit);
                     }
+                    if (isClosed) return;
 
                     // Check if workflow already completed
                     const workstreamId = msg.workstream_id || 'main';
@@ -262,11 +297,12 @@ export class WorkflowsApi extends ApiTopic {
                         (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
                     if (streamIsOver) {
                         console.log("Workflow already completed in historical messages");
-                        resolve(null);
+                        exit(null);
                         return;
                     }
                 }
             } catch (err) {
+                if (isClosed) return;
                 console.warn("Failed to fetch historical messages, continuing with SSE:", err);
                 // Continue to SSE - it will send historical if skipHistory is not set
             }
@@ -277,6 +313,7 @@ export class WorkflowsApi extends ApiTopic {
 
                 try {
                     const EventSourceImpl = await EventSourceProvider();
+                    if (isClosed) return;
                     const client = this.client as VertesiaClient;
                     const streamUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/stream`);
 
@@ -289,7 +326,10 @@ export class WorkflowsApi extends ApiTopic {
                     streamUrl.searchParams.set("skipHistory", "true");
 
                     const bearerToken = client._auth ? await client._auth() : undefined;
+                    if (isClosed) return;
                     if (!bearerToken) {
+                        isClosed = true;
+                        cleanup();
                         reject(new Error("No auth token available"));
                         return;
                     }
@@ -301,6 +341,7 @@ export class WorkflowsApi extends ApiTopic {
                         console.log(`Reconnecting to SSE stream for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
                     }
 
+                    if (isClosed) return;
                     const sse = new EventSourceImpl(streamUrl.href);
                     currentSse = sse;
 
@@ -316,8 +357,8 @@ export class WorkflowsApi extends ApiTopic {
                     };
 
                     sse.onmessage = (ev: MessageEvent) => {
+                        if (isClosed) return;
                         if (!ev.data || ev.data.startsWith(":")) {
-                            console.log("Received comment or heartbeat; ignoring it.: ", ev.data);
                             return;
                         }
 
@@ -347,11 +388,7 @@ export class WorkflowsApi extends ApiTopic {
                             // Only close the stream when the main workstream completes or terminates
                             if (streamIsOver) {
                                 console.log("Closing stream due to COMPLETE message from main workstream");
-                                if (!isClosed) {
-                                    isClosed = true;
-                                    cleanup();
-                                    resolve(null);
-                                }
+                                exit(null);
                             } else if (compactMessage.t === AgentMessageType.COMPLETE) {
                                 console.log(`Received COMPLETE message from non-main workstream: ${workstreamId}, keeping stream open`);
                             }
@@ -372,7 +409,8 @@ export class WorkflowsApi extends ApiTopic {
                             console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
 
                             reconnectAttempts++;
-                            setTimeout(() => {
+                            reconnectTimer = setTimeout(() => {
+                                reconnectTimer = null;
                                 if (!isClosed) {
                                     setupStream(true);
                                 }
@@ -380,20 +418,25 @@ export class WorkflowsApi extends ApiTopic {
                         } else {
                             console.error(`Failed to reconnect to SSE stream for run ${runId} after ${maxReconnectAttempts} attempts`);
                             isClosed = true;
+                            cleanup();
                             reject(new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`));
                         }
                     };
                 } catch (err) {
+                    if (isClosed) return;
                     console.error("Error setting up SSE stream:", err);
                     if (reconnectAttempts < maxReconnectAttempts) {
                         const delay = calculateBackoffDelay(reconnectAttempts);
                         reconnectAttempts++;
-                        setTimeout(() => {
+                        reconnectTimer = setTimeout(() => {
+                            reconnectTimer = null;
                             if (!isClosed) {
                                 setupStream(true);
                             }
                         }, delay);
                     } else {
+                        isClosed = true;
+                        cleanup();
                         reject(err);
                     }
                 }
@@ -401,12 +444,6 @@ export class WorkflowsApi extends ApiTopic {
 
             // Start the async setup process
             setupStream(false);
-
-            // Return cleanup function for external cancellation
-            return () => {
-                isClosed = true;
-                cleanup();
-            };
         });
     }
 
