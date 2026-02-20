@@ -86,12 +86,12 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
 
         const rendition = await storeClient.rendering.render(payload);
 
-        // Use downloadUrl if available (direct signed URL), otherwise fall back to fileUri
-        if (rendition.downloadUrl) {
-            triggerDownload(rendition.downloadUrl, filename);
-        } else if (rendition.fileUri) {
+        // Use download_url if available (direct signed URL), otherwise fall back to file_uri
+        if (rendition.download_url) {
+            triggerDownload(rendition.download_url, filename);
+        } else if (rendition.file_uri) {
             const result = await client.files.getDownloadUrlWithOptions({
-                file: rendition.fileUri,
+                file: rendition.file_uri,
                 name: filename
             });
             triggerDownload(result.url, filename);
@@ -112,10 +112,10 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
             const filename = `${options.title || "document"}.${options.format}`;
 
             await handleRenderResult({
-                objectId,
+                object_id: objectId,
                 format: options.format,
                 title: options.title,
-                pandocOptions: options.pandocOptions,
+                pandoc_options: options.pandocOptions,
             }, filename);
 
             toast({
@@ -151,8 +151,8 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
                 content,
                 format: options.format,
                 title: options.title,
-                artifactRunId: options.artifactRunId,
-                pandocOptions: options.pandocOptions,
+                artifact_run_id: options.artifactRunId,
+                pandoc_options: options.pandocOptions,
             }, filename);
 
             toast({

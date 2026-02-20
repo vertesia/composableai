@@ -7,8 +7,9 @@ import { MonacoEditor, EditorApi } from '@vertesia/ui/widgets';
 interface TableLayoutEditorProps {
     objectType: ContentObjectType;
     onLayoutUpdate: (value: ColumnLayout[] | undefined) => void;
+    readonly?: boolean;
 }
-export function TableLayoutEditor({ objectType, onLayoutUpdate }: TableLayoutEditorProps) {
+export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false }: TableLayoutEditorProps) {
     const toast = useToast();
     const { theme } = useTheme();
 
@@ -79,13 +80,14 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate }: TableLayoutEdi
 
     return (
         <Panel title="Table Layout Editor" className="bg-background! h-[calc(100vh-197px)]" action={
-            <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>Save Changes</Button>
+            !readonly ? <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>Save Changes</Button> : undefined
         }>
             <MonacoEditor
                 value={value}
                 language="json"
                 editorRef={editorRef}
                 theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+                options={{ readOnly: readonly }}
             />
         </Panel>
     )
