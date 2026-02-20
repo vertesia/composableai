@@ -25,11 +25,10 @@ import Header from "./ModernAgentOutput/Header";
 import MessageInput, { UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
 import { getWorkstreamId } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
-import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
 import { VegaLiteChart } from "./VegaLiteChart";
-import { DocumentPanel } from "./DocumentPanel.js";
+import { AgentRightPanel } from "./AgentRightPanel.js";
 import { useAgentStream } from "./hooks/useAgentStream.js";
 import { useAgentPlans } from "./hooks/useAgentPlans.js";
 import { useDocumentPanel } from "./hooks/useDocumentPanel.js";
@@ -113,6 +112,8 @@ interface ModernAgentConversationProps {
     fileUploadRef?: React.MutableRefObject<((files: File[]) => void) | null>;
     /** Called when processingFiles state changes (for external progress display) */
     onProcessingFilesChange?: (files: Map<string, ConversationFile>) => void;
+    /** Processing files to display in the right panel Uploads tab */
+    processingFiles?: Map<string, ConversationFile>;
     /** Called when plans change (for external plan panel) */
     onPlansChange?: (plans: Array<{ plan: Plan; timestamp: number }>, activePlanIndex: number) => void;
     /** Called when workstream status changes (for external plan panel) */
@@ -696,6 +697,7 @@ function ModernAgentConversationInner({
     // External file upload API
     fileUploadRef,
     onProcessingFilesChange,
+    processingFiles: processingFilesProp,
     // External plan panel API
     onPlansChange,
     onWorkstreamStatusChange,
@@ -832,9 +834,32 @@ function ModernAgentConversationInner({
         setActivePlanIndex(index);
     }, [setActivePlanIndex]);
 
-    const handleClosePlanPanel = useCallback(() => {
+    // ────────────────────────────────────────────
+    // Unified right panel state
+    // ────────────────────────────────────────────
+    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads';
+    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('plan');
+
+    const showRightPanel = showSlidingPanel || isDocPanelOpen;
+
+    // Auto-switch tab when plan panel opens
+    useEffect(() => {
+        if (showSlidingPanel) {
+            setRightPanelTab('plan');
+        }
+    }, [showSlidingPanel]);
+
+    // Auto-switch tab when document panel opens
+    useEffect(() => {
+        if (isDocPanelOpen) {
+            setRightPanelTab('documents');
+        }
+    }, [isDocPanelOpen]);
+
+    const handleCloseRightPanel = useCallback(() => {
         setShowSlidingPanel(false);
-    }, [setShowSlidingPanel]);
+        handleCloseDocPanel();
+    }, [setShowSlidingPanel, handleCloseDocPanel]);
 
     // Default StoreLinkComponent that opens documents in the panel
     const internalStoreLinkComponent = useCallback(
@@ -1199,7 +1224,7 @@ function ModernAgentConversationInner({
                 ref={conversationRef}
                 className={cn(
                     "flex flex-col min-h-0 border-0",
-                    (showSlidingPanel || isDocPanelOpen)
+                    showRightPanel
                         ? "w-full lg:w-3/5 flex-1 min-h-[50vh]"
                         : fullWidth
                             ? "flex-1 w-full"
@@ -1326,36 +1351,31 @@ function ModernAgentConversationInner({
                 )}
             </div>
 
-            {/* Plan Panel Area - only rendered when panel should be shown */}
-            {!hidePlanPanel && showSlidingPanel && (
-                <div className="w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l">
-                    <InlineSlidingPlanPanel
+            {/* Unified Right Panel — Plan | Workstreams | Documents | Uploads */}
+            {showRightPanel && (
+                <div className="w-full lg:w-2/5 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l">
+                    <AgentRightPanel
+                        // Plan
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
-                        isOpen={showSlidingPanel}
-                        onClose={handleClosePlanPanel}
                         plans={plans}
                         activePlanIndex={activePlanIndex}
                         onChangePlan={handleChangePlan}
-                    />
-                </div>
-            )}
-
-            {/* Document Panel Area - slides in when documents are created/edited */}
-            {isDocPanelOpen && openDocuments.length > 0 && (
-                <div className={cn(
-                    "w-full lg:w-2/5 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l",
-                    showSlidingPanel && "lg:w-1/3"
-                )}>
-                    <DocumentPanel
-                        isOpen={isDocPanelOpen}
-                        onClose={handleCloseDocPanel}
-                        documents={openDocuments}
+                        showPlan={!hidePlanPanel && showSlidingPanel}
+                        // Documents
+                        openDocuments={openDocuments}
                         activeDocumentId={activeDocumentId}
                         onSelectDocument={selectDocument}
                         onCloseDocument={handleCloseDocument}
-                        refreshKey={docRefreshKey}
+                        docRefreshKey={docRefreshKey}
                         runId={run.runId}
+                        // Uploads
+                        processingFiles={processingFilesProp ?? processingFiles}
+                        // Messages (for workstreams tab context)
+                        messages={messages}
+                        // Panel control
+                        onClose={handleCloseRightPanel}
+                        defaultTab={rightPanelTab}
                     />
                 </div>
             )}

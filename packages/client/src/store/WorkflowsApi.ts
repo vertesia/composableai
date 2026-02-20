@@ -1,5 +1,6 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
+    ActiveWorkstreamsQueryResult,
     ActivityCatalog,
     AgentEvent,
     AgentMessage,
@@ -115,6 +116,58 @@ export class WorkflowsApi extends ApiTopic {
      */
     query<T = unknown>(workflowId: string, runId: string, queryName: string): Promise<T> {
         return this.get(`/runs/${workflowId}/${runId}/query/${queryName}`);
+    }
+
+    // ========================================================================
+    // Workstream helpers
+    // ========================================================================
+
+    /**
+     * List active workstreams for a running conversation workflow.
+     * Each entry includes `child_workflow_id` / `child_workflow_run_id` which
+     * can be passed to `retrieveMessages` or `streamMessages` to fetch the
+     * child's own message stream.
+     *
+     * @example
+     * ```ts
+     * const { running } = await client.workflows.getActiveWorkstreams(wfId, runId);
+     * for (const ws of running) {
+     *   const msgs = await client.workflows.retrieveWorkstreamMessages(ws);
+     *   console.log(ws.workstream_id, msgs.length, 'messages');
+     * }
+     * ```
+     */
+    getActiveWorkstreams(workflowId: string, runId: string): Promise<ActiveWorkstreamsQueryResult> {
+        return this.query<ActiveWorkstreamsQueryResult>(workflowId, runId, 'ActiveWorkstreams');
+    }
+
+    /**
+     * Retrieve historical messages for a specific workstream (child workflow).
+     * Convenience wrapper — extracts child IDs from an `ActiveWorkstreamEntry`.
+     */
+    retrieveWorkstreamMessages(
+        workstream: { child_workflow_id: string; child_workflow_run_id?: string },
+        since?: number,
+    ): Promise<AgentMessage[]> {
+        if (!workstream.child_workflow_run_id) {
+            return Promise.resolve([]);
+        }
+        return this.retrieveMessages(workstream.child_workflow_id, workstream.child_workflow_run_id, since);
+    }
+
+    /**
+     * Stream messages for a specific workstream (child workflow) in real-time.
+     * Convenience wrapper — extracts child IDs from an `ActiveWorkstreamEntry`.
+     */
+    streamWorkstreamMessages(
+        workstream: { child_workflow_id: string; child_workflow_run_id?: string },
+        onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+        since?: number,
+    ): Promise<unknown> {
+        if (!workstream.child_workflow_run_id) {
+            return Promise.resolve(null);
+        }
+        return this.streamMessages(workstream.child_workflow_id, workstream.child_workflow_run_id, onMessage, since);
     }
 
     execute(

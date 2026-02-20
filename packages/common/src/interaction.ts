@@ -717,6 +717,10 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /** In child execution workflow, this is the curent task_id */
     task_id?: string;
 
+    /** Parent-assigned launch ID for non-blocking workstreams.
+     *  The child uses this when signaling progress/completion back to the parent. */
+    launch_id?: string;
+
     /** Whether to enable debug mode */
     debug_mode?: boolean;
 

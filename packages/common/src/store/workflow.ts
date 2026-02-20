@@ -1253,3 +1253,39 @@ export interface AgentIntakeWorkflowResult {
     /** Whether embeddings were generated */
     hasEmbeddings: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Workstream query types (used by client helpers)
+// ---------------------------------------------------------------------------
+
+/** Progress reported by a child workstream */
+export interface WorkstreamProgressInfo {
+    launch_id: string;
+    workstream_id: string;
+    phase: 'planning' | 'executing_tool' | 'synthesizing' | 'blocked' | 'done';
+    current_step?: string;
+    current_tool?: string;
+    percent?: number;
+    updated_at: number;
+}
+
+/** Entry returned by the ActiveWorkstreams query */
+export interface ActiveWorkstreamEntry {
+    launch_id: string;
+    workstream_id: string;
+    interaction: string;
+    started_at: number;
+    elapsed_ms: number;
+    deadline_ms: number;
+    status: 'running' | 'canceling';
+    latest_progress?: WorkstreamProgressInfo;
+    /** Child workflow ID — use to fetch per-workstream messages */
+    child_workflow_id: string;
+    /** Child workflow run ID — use with retrieveMessages / streamMessages */
+    child_workflow_run_id?: string;
+}
+
+/** Result of the ActiveWorkstreams Temporal query */
+export interface ActiveWorkstreamsQueryResult {
+    running: ActiveWorkstreamEntry[];
+}
