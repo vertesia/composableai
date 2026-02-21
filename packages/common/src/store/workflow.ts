@@ -228,6 +228,8 @@ export interface ExecuteWorkflowPayload {
     run_at?: string;
 }
 
+export type ConversationActivityState = 'working' | 'idle';
+
 export interface ListWorkflowRunsPayload {
     /**
      * The document ID passed to a workflow run.
@@ -297,6 +299,16 @@ export interface ListWorkflowRunsPayload {
      * Filter by whether the workflow has reported errors (TemporalReportedProblems).
      */
     has_reported_errors?: boolean;
+
+    /**
+     * Filter by the activity state of the conversation (running or idle).
+     */
+    activity_state?: ConversationActivityState;
+
+    /**
+     * Filter by whether the conversation is interactive.
+     */
+    interactive?: boolean;
 }
 
 /**
@@ -538,6 +550,16 @@ export interface WorkflowRun {
      * A brief summary of the conversation workflow.
      */
     topic?: string;
+    /**
+     * The current activity state of the conversation.
+     * - 'working': The agent is actively processing
+     * - 'idle': The agent is waiting for user input
+     */
+    activity_state?: ConversationActivityState;
+    /**
+     * Whether this conversation is interactive (accepts user input).
+     */
+    interactive?: boolean;
 }
 
 export interface PendingActivity {
