@@ -87,10 +87,10 @@ export default function Header({
                                 variant={showPlanPanel ? "primary" : "secondary"}
                                 onClick={onTogglePlanPanel}
                                 className="transition-all duration-200 rounded-md"
-                                title="Toggle plan panel"
+                                title="Toggle right sidebar"
                             >
                                 <ClipboardList className="size-4 mr-1.5" />
-                                <span className="font-medium text-xs">{showPlanPanel ? "Hide Plan" : "Show Plan"}</span>
+                                <span className="font-medium text-xs">{showPlanPanel ? "Hide Sidebar" : "Show Sidebar"}</span>
                             </Button>
                         </div>
                     )}
