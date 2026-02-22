@@ -153,6 +153,8 @@ interface ModernAgentConversationProps {
     hidePlanPanel?: boolean;
     /** Hide workstream tabs */
     hideWorkstreamTabs?: boolean;
+    /** Enable or disable the internal right panel (plan/workstreams/documents/uploads) */
+    showRightPanel?: boolean;
     /** Hide the default file upload */
     hideFileUpload?: boolean;
 
@@ -681,6 +683,7 @@ function ModernAgentConversationInner({
     hideMessageInput,
     hidePlanPanel,
     hideWorkstreamTabs,
+    showRightPanel: showRightPanelProp = true,
     hideFileUpload,
     // Attachment callback
     getAttachedDocs,
@@ -775,6 +778,7 @@ function ModernAgentConversationInner({
     // ────────────────────────────────────────────
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const conversationRef = useRef<HTMLDivElement | null>(null);
+    const conversationLayoutRef = useRef<HTMLDivElement | null>(null);
     const [isSending, setIsSending] = useState(false);
     const [internalViewMode, setInternalViewMode] = useState<AgentConversationViewMode>("sliding");
     const viewMode = controlledViewMode ?? internalViewMode;
@@ -856,10 +860,52 @@ function ModernAgentConversationInner({
     // ────────────────────────────────────────────
     type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads';
     const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('plan');
+    const [rightPanelWidth, setRightPanelWidth] = useState(400);
+    const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
 
-    const showRightPanel = showSlidingPanel
+    const isRightPanelVisible = showRightPanelProp && (showSlidingPanel
         || isDocPanelOpen
-        || (!hideWorkstreamTabs && panelWorkstreams.length > 0);
+        || (!hideWorkstreamTabs && panelWorkstreams.length > 0));
+
+    useEffect(() => {
+        if (!isRightPanelVisible && isRightPanelResizing) {
+            setIsRightPanelResizing(false);
+        }
+    }, [isRightPanelVisible, isRightPanelResizing]);
+
+    useEffect(() => {
+        if (!isRightPanelResizing) return;
+
+        const minRightPanelWidth = 300;
+        const minConversationWidth = 420;
+
+        const handleMouseMove = (event: MouseEvent) => {
+            const container = conversationLayoutRef.current;
+            if (!container) return;
+
+            const containerRect = container.getBoundingClientRect();
+            const maxRightPanelWidth = Math.max(minRightPanelWidth, containerRect.width - minConversationWidth);
+            const nextWidth = containerRect.right - event.clientX;
+            const clampedWidth = Math.min(Math.max(nextWidth, minRightPanelWidth), maxRightPanelWidth);
+            setRightPanelWidth(clampedWidth);
+        };
+
+        const handleMouseUp = () => {
+            setIsRightPanelResizing(false);
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        };
+    }, [isRightPanelResizing]);
 
     // Auto-switch tab when plan panel opens
     useEffect(() => {
@@ -1269,6 +1315,7 @@ function ModernAgentConversationInner({
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
         <div
+            ref={conversationLayoutRef}
             className={cn("flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden", isDragOver && "ring-2 ring-blue-400 ring-inset", className)}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
@@ -1288,9 +1335,9 @@ function ModernAgentConversationInner({
             <div
                 ref={conversationRef}
                 className={cn(
-                    "flex flex-col min-h-0 border-0",
-                    showRightPanel
-                        ? "w-full lg:w-3/5 flex-1 min-h-[50vh]"
+                    "flex flex-col min-h-0 min-w-0 border-0",
+                    isRightPanelVisible
+                        ? "w-full flex-1 min-h-[50vh]"
                         : fullWidth
                             ? "flex-1 w-full"
                             : `flex-1 mx-auto ${!isModal ? "max-w-4xl" : ""}`
@@ -1309,8 +1356,9 @@ function ModernAgentConversationInner({
                             run={run}
                             viewMode={viewMode}
                             onViewModeChange={handleViewModeChange}
-                            showPlanPanel={showSlidingPanel}
-                            hasPlan={plans.length > 0}
+                            showPlanPanel={showRightPanelProp && showSlidingPanel}
+                            hasPlan={showRightPanelProp && plans.length > 0}
+                            showPlanButton={showRightPanelProp}
                             onTogglePlanPanel={handleTogglePlanPanel}
                             onDownload={downloadConversation}
                             onCopyRunId={copyRunId}
@@ -1342,7 +1390,7 @@ function ModernAgentConversationInner({
                         isCompleted={isCompleted}
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
-                        showPlanPanel={showSlidingPanel}
+                        showPlanPanel={showRightPanelProp && showSlidingPanel}
                         onTogglePlanPanel={handleTogglePlanPanel}
                         plans={plans}
                         activePlanIndex={activePlanIndex}
@@ -1417,8 +1465,19 @@ function ModernAgentConversationInner({
             </div>
 
             {/* Unified Right Panel — Plan | Workstreams | Documents | Uploads */}
-            {showRightPanel && (
-                <div className="w-full lg:w-2/5 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l">
+            {isRightPanelVisible && (
+                <>
+                    <div
+                        className="hidden lg:block lg:w-1 lg:shrink-0 cursor-col-resize bg-border/70 hover:bg-border transition-colors"
+                        onMouseDown={() => setIsRightPanelResizing(true)}
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label="Resize right panel"
+                    />
+                    <div
+                        className="w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l"
+                        style={{ ['--agent-right-panel-width' as string]: `${rightPanelWidth}px` } as React.CSSProperties}
+                    >
                     <AgentRightPanel
                         // Plan
                         plan={getActivePlan.plan}
@@ -1445,7 +1504,8 @@ function ModernAgentConversationInner({
                         onClose={handleCloseRightPanel}
                         defaultTab={rightPanelTab}
                     />
-                </div>
+                    </div>
+                </>
             )}
             <Modal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
                 <ModalTitle>Export conversation as PDF</ModalTitle>

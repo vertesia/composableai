@@ -202,6 +202,14 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         log.error(`Failed to execute interaction ${interactionName}`, { error });
         if (error.statusCode === 429 && params.exit_on_resource_exhaustion) {
             throw new ResourceExhaustedError(error.statusCode, "Resource exhausted - rate limit exceeded");
+        } else if ((error.status >= 400 && error.status < 500 && error.status !== 429) ||
+            (error.statusCode >= 400 && error.statusCode < 500 && error.statusCode !== 429)) {
+            // 4xx HTTP errors (except 429 rate-limit) are permanent client errors (e.g. model not found, invalid request).
+            // They will not be resolved by retrying.
+            throw ApplicationFailure.create({
+                message: `Interaction Execution failed ${interactionName}: ${error.message}`,
+                nonRetryable: true,
+            });
         } else if (error.message.includes("Failed to validate merged prompt schema")) {
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError("prompt_data", payload.activity, error.message);

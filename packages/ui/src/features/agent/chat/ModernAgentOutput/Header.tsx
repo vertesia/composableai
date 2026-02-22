@@ -16,6 +16,7 @@ export interface HeaderProps {
     onViewModeChange: (mode: AgentConversationViewMode) => void;
     showPlanPanel: boolean;
     hasPlan?: boolean;
+    showPlanButton?: boolean;
     onTogglePlanPanel: () => void;
     onDownload?: () => void;
     onCopyRunId?: () => void;
@@ -36,6 +37,7 @@ export default function Header({
     onViewModeChange,
     showPlanPanel,
     hasPlan = false,
+    showPlanButton = true,
     onTogglePlanPanel,
     onDownload,
     onCopyRunId,
@@ -74,23 +76,24 @@ export default function Header({
                         </Button>
                     </div>
 
-                    {/* Plan Panel Toggle - Nicer styled button */}
-                    <div className="relative">
-                        {/* Notification badge when plan is available but hidden */}
-                        {hasPlan && !showPlanPanel && (
-                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-border z-10"></span>
-                        )}
-                        <Button
-                            size="sm"
-                            variant={showPlanPanel ? "primary" : "secondary"}
-                            onClick={onTogglePlanPanel}
-                            className="transition-all duration-200 rounded-md"
-                            title="Toggle plan panel"
-                        >
-                            <ClipboardList className="size-4 mr-1.5" />
-                            <span className="font-medium text-xs">{showPlanPanel ? "Hide Plan" : "Show Plan"}</span>
-                        </Button>
-                    </div>
+                    {showPlanButton && (
+                        <div className="relative">
+                            {/* Notification badge when plan is available but hidden */}
+                            {hasPlan && !showPlanPanel && (
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-border z-10"></span>
+                            )}
+                            <Button
+                                size="sm"
+                                variant={showPlanPanel ? "primary" : "secondary"}
+                                onClick={onTogglePlanPanel}
+                                className="transition-all duration-200 rounded-md"
+                                title="Toggle plan panel"
+                            >
+                                <ClipboardList className="size-4 mr-1.5" />
+                                <span className="font-medium text-xs">{showPlanPanel ? "Hide Plan" : "Show Plan"}</span>
+                            </Button>
+                        </div>
+                    )}
 
                     {/* More actions */}
                     <MoreDropdown
