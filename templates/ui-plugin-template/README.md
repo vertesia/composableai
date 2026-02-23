@@ -22,6 +22,10 @@ src/
 └── main.tsx         # Dev mode entry point
 ```
 
+## Prerequisites
+
+- An application manifest [created and installed](/apps/overview) in your Vertesia project
+
 ## Getting Started
 
 ### Installation
@@ -29,6 +33,8 @@ src/
 ```bash
 pnpm install
 ```
+
+Next, set the app Id in the `VITE_APP_NAME` variable in the `.env.local` file.
 
 ### Development
 

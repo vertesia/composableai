@@ -1,5 +1,5 @@
-import { JSONSchema4 } from "json-schema";
 import { ConversationVisibility, InteractionRef, UserChannel } from "../interaction.js";
+import { JSONSchema } from "../json-schema.js";
 import type { WorkflowInput } from "./dsl-workflow.js";
 
 export enum ContentEventName {
@@ -492,6 +492,9 @@ export interface AgentTask {
 
     /** Workstream tracking */
     workstreamId?: string;
+
+    /** LLM stop reason for llm_call tasks (e.g., "stop", "length", "tool_use") */
+    finish_reason?: string;
 }
 
 export interface WorkflowRun {
@@ -581,8 +584,14 @@ export interface WorkflowInteractionVars {
         environment: string,
         model: string
     },
-    interactionParamsSchema?: JSONSchema4
+    interactionParamsSchema?: JSONSchema,
     collection_id?: string;
+    /**
+     * The token threshold in thousands (K) for creating checkpoints.
+     * If total tokens exceed this value, a checkpoint will be created.
+     * If not specified, default value of 150K tokens will be used.
+     */
+    checkpoint_tokens?: number;
     /**
      * Optional version of the interaction to use when restoring conversations.
      * If not specified, the latest version will be used.
@@ -655,6 +664,97 @@ export enum AgentMessageType {
     TERMINATED = 11,
     STREAMING_CHUNK = 12,
     BATCH_PROGRESS = 13,
+}
+
+// ============================================
+// AGENT MESSAGE DETAIL TYPES & TYPE GUARDS
+// ============================================
+
+/**
+ * Details for THOUGHT messages representing tool calls (event_class: 'activity').
+ */
+export interface ToolCallDetails {
+    event_class: 'activity';
+    tool: string;
+    tool_run_id?: string;
+    tool_status?: 'running' | 'completed' | 'error' | 'warning';
+    tool_iteration?: number;
+    activity_group_id?: string;
+    activity_id?: string;
+    files?: string[];
+    outputFiles?: string[];
+    [key: string]: unknown;
+}
+
+/**
+ * Details for UPDATE messages signaling document creation or update.
+ */
+export interface DocumentEventDetails {
+    event_class: 'document_created' | 'document_updated';
+    document_id: string;
+    title?: string;
+    [key: string]: unknown;
+}
+
+/**
+ * Details for REQUEST_INPUT messages with UX configuration.
+ */
+export interface RequestInputDetails {
+    ux?: {
+        options?: Array<{ id: string; label: string }>;
+        variant?: string;
+        multiSelect?: boolean;
+        allowFreeResponse?: boolean;
+        placeholder?: string;
+    };
+    [key: string]: unknown;
+}
+
+/**
+ * Details for PLAN messages containing the plan structure.
+ */
+export interface PlanMessageDetails {
+    plan: PlanTask[];
+    comment?: string;
+    [key: string]: unknown;
+}
+
+// Type guards — check both message type and details shape for safety
+
+export function isToolCallMessage(msg: AgentMessage): msg is AgentMessage & { details: ToolCallDetails } {
+    return msg.type === AgentMessageType.THOUGHT &&
+        !!msg.details &&
+        typeof msg.details === 'object' &&
+        typeof msg.details.tool === 'string';
+}
+
+export function isDocumentEventMessage(msg: AgentMessage): msg is AgentMessage & { details: DocumentEventDetails } {
+    return msg.type === AgentMessageType.UPDATE &&
+        !!msg.details &&
+        typeof msg.details === 'object' &&
+        (msg.details.event_class === 'document_created' || msg.details.event_class === 'document_updated') &&
+        typeof msg.details.document_id === 'string';
+}
+
+export function isFileProcessingMessage(msg: AgentMessage): msg is AgentMessage & { details: FileProcessingDetails } {
+    return msg.type === AgentMessageType.SYSTEM &&
+        !!msg.details &&
+        typeof msg.details === 'object' &&
+        msg.details.system_type === 'file_processing' &&
+        Array.isArray(msg.details.files);
+}
+
+export function isPlanMessage(msg: AgentMessage): msg is AgentMessage & { details: PlanMessageDetails } {
+    return msg.type === AgentMessageType.PLAN &&
+        !!msg.details &&
+        typeof msg.details === 'object' &&
+        Array.isArray(msg.details.plan);
+}
+
+export function isRequestInputMessage(msg: AgentMessage): msg is AgentMessage & { details: RequestInputDetails } {
+    return msg.type === AgentMessageType.REQUEST_INPUT &&
+        !!msg.details &&
+        typeof msg.details === 'object';
 }
 
 /**

@@ -2,6 +2,8 @@
  * Skill transformer preset for markdown files with frontmatter
  */
 
+import path from 'node:path';
+import { existsSync } from 'node:fs';
 import { z } from 'zod';
 import type { TransformerPreset } from '../types.js';
 import { parseFrontmatter } from '../parsers/frontmatter.js';
@@ -92,6 +94,9 @@ const SkillFrontmatterSchema = z.object({
  * Zod schema for skill definition
  * This validates the structure of skill objects generated from markdown
  * Matches the SkillDefinition interface from @vertesia/tools-sdk
+ *
+ * Note: The isEnabled property is not included in this schema because Zod cannot
+ * properly validate function signatures. It will be type-checked by TypeScript instead.
  */
 export const SkillDefinitionSchema = z.object({
     name: z.string().min(1, 'Skill name is required'),
@@ -109,7 +114,17 @@ export const SkillDefinitionSchema = z.object({
     related_tools: z.array(z.string()).optional(),
     scripts: z.array(z.string()).optional(),
     widgets: z.array(z.string()).optional()
-});
+}).passthrough();
+
+/**
+ * Schema for validating properties exported from properties.ts
+ * This is a partial schema - allows any subset of SkillDefinition fields
+ *
+ * Note: Function properties like isEnabled cannot be validated by Zod for their signatures.
+ * Zod will only check that they are functions, not their specific parameter/return types.
+ * Use TypeScript for proper type checking of function signatures.
+ */
+export const SkillPropertiesSchema = SkillDefinitionSchema.partial().passthrough();
 
 /**
  * TypeScript type inferred from the Zod schema
@@ -220,6 +235,11 @@ function buildSkillDefinition(
  * - Files with ?skill suffix: ./my-skill.md?skill
  * - SKILL.md files: ./my-skill/SKILL.md
  *
+ * Runtime Properties:
+ * - Supports properties.ts file in skill directory for runtime properties (functions, overrides)
+ * - Properties from properties.ts override those from frontmatter
+ * - See README.md for detailed usage examples
+ *
  * @example
  * ```typescript
  * import skill1 from './my-skill.md?skill';
@@ -238,8 +258,8 @@ export const skillTransformer: TransformerPreset = {
         if (!frontmatterValidation.success) {
             const errors = frontmatterValidation.error.errors
                 .map((err) => {
-                    const path = err.path.length > 0 ? err.path.join('.') : 'frontmatter';
-                    return `  - ${path}: ${err.message}`;
+                    const pathStr = err.path.length > 0 ? err.path.join('.') : 'frontmatter';
+                    return `  - ${pathStr}: ${err.message}`;
                 })
                 .join('\n');
             throw new Error(
@@ -261,6 +281,34 @@ export const skillTransformer: TransformerPreset = {
             assets.widgets,
             assets.scripts
         );
+
+        // Check if properties.ts exists in the skill directory
+        const skillDir = path.dirname(filePath);
+        const propertiesPath = path.join(skillDir, 'properties.ts');
+        const hasProperties = existsSync(propertiesPath);
+
+        // If properties.ts exists, generate custom code with import and merge
+        // Rollup will handle transpiling properties.ts to properties.js
+        if (hasProperties) {
+            const skillDataJson = JSON.stringify(skillData, null, 2);
+            const code = `import properties from './properties.js';
+
+// Runtime validation for function properties
+if ('isEnabled' in properties && typeof properties.isEnabled !== 'function') {
+  throw new Error('properties.isEnabled must be a function, got ' + typeof properties.isEnabled);
+}
+
+const skill = ${skillDataJson};
+
+export default { ...skill, ...properties };
+`;
+            return {
+                data: skillData,
+                assets: assets.assetFiles,
+                widgets: assets.widgetMetadata,
+                code
+            };
+        }
 
         return {
             data: skillData,

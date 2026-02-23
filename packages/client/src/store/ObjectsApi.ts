@@ -1,10 +1,10 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     canGenerateRendition,
-    ContentObjectApiHeaders,
     ComplexSearchPayload,
     ComputeObjectFacetPayload,
     ContentObject,
+    ContentObjectApiHeaders,
     ContentObjectItem,
     ContentObjectProcessingPriority,
     ContentSource,
@@ -23,7 +23,7 @@ import {
     ObjectSearchPayload,
     ObjectSearchQuery,
     SupportedEmbeddingTypes,
-    supportsVisualRendition,
+    supportsVisualRendition
 } from "@vertesia/common";
 
 // Re-export rendition utilities for consumers
@@ -151,6 +151,7 @@ export class ObjectsApi extends ApiTopic {
             name: source.name,
             mime_type: source.type,
         });
+        const sourceMimeType = source.type || mime_type;
 
         // upload the file content to the signed URL
         /*const res = await this.fetch(url, {
@@ -175,9 +176,7 @@ export class ObjectsApi extends ApiTopic {
             body: isStream ? source.stream : source,
             //@ts-ignore: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
             duplex: isStream ? "half" : undefined,
-            headers: {
-                "Content-Type": mime_type || "application/octet-stream",
-            },
+            headers: sourceMimeType ? { "Content-Type": sourceMimeType } : undefined,
         })
             .then((res: Response) => {
                 if (res.ok) {
@@ -201,7 +200,7 @@ export class ObjectsApi extends ApiTopic {
         return {
             source: id,
             name: source.name,
-            type: mime_type,
+            type: sourceMimeType,
             etag,
         };
     }
@@ -226,7 +225,7 @@ export class ObjectsApi extends ApiTopic {
         const headers: Record<string, string> = {};
         if (options?.processing_priority) {
             headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
-        } 
+        }
         if (options?.collection_id) {
             headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
         }
@@ -270,7 +269,7 @@ export class ObjectsApi extends ApiTopic {
         const headers: Record<string, string> = {};
         if (options?.processing_priority) {
             headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
-        } 
+        }
         if (options?.collection_id) {
             headers[ContentObjectApiHeaders.COLLECTION_ID] = options.collection_id;
         }
@@ -301,6 +300,8 @@ export class ObjectsApi extends ApiTopic {
             revisionLabel?: string;
             processing_priority?: ContentObjectProcessingPriority;
             suppressWorkflows?: boolean;
+            /** If provided, the server will reject the update with 412 if the document's content etag no longer matches. */
+            ifMatch?: string;
         },
     ): Promise<ContentObject> {
         const updatePayload: Partial<CreateContentObjectPayload> = {
@@ -316,6 +317,9 @@ export class ObjectsApi extends ApiTopic {
         }
 
         const headers: Record<string, string> = {};
+        if (options?.ifMatch) {
+            headers['if-match'] = options.ifMatch;
+        }
         if (options?.processing_priority) {
             headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
         }

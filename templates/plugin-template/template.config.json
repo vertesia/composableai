@@ -52,8 +52,12 @@
     "index.html",
     "src/tool-server/config.ts",
     "src/ui/env.ts",
-    "src/ui/plugin.tsx"
+    "src/ui/plugin.tsx",
+    ".env.local.template"
   ],
+  "renameFiles": {
+    ".env.local.template": ".env.local"
+  },
   "removeAfterInstall": [
     "template.config.json"
   ]

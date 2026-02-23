@@ -5,8 +5,9 @@
  */
 
 import { useMemo, type ReactElement } from 'react';
+import DOMPurify from 'dompurify';
 import { CodeBlockPlaceholder, CodeBlockErrorBoundary } from './CodeBlockPlaceholder';
-import { AgentChart, type AgentChartSpec, type VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
+import { type VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { FusionFragmentHandler, FusionFragmentProvider } from '@vertesia/fusion-ux';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -18,6 +19,7 @@ export type ExpandRenderType =
     | 'table'
     | 'markdown'
     | 'fusion-fragment'
+    | 'mockup'
     | 'code'
     | 'image'
     | 'auto';
@@ -45,8 +47,13 @@ function autoDetectRenderType(
 ): ExpandRenderType {
     const ext = path.split('.').pop()?.toLowerCase();
 
-    // Image extensions
-    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext || '')) {
+    // SVG files → mockup renderer (inline SVG from text content)
+    if (ext === 'svg') {
+        return 'mockup';
+    }
+
+    // Image extensions (binary → rendered via URL)
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext || '')) {
         return 'image';
     }
 
@@ -74,11 +81,6 @@ function autoDetectRenderType(
             return 'vega-lite';
         }
 
-        // Check for Recharts format
-        if (('chart' in obj || 'type' in obj) && 'data' in obj && Array.isArray(obj.data)) {
-            return 'chart';
-        }
-
         // Check for fusion fragment template with data
         if ('template' in obj && 'data' in obj) {
             return 'fusion-fragment';
@@ -92,6 +94,24 @@ function autoDetectRenderType(
 
     // Default to code
     return 'code';
+}
+
+function toVegaLiteSpec(content: unknown): VegaLiteChartSpec | null {
+    if (typeof content !== 'object' || content === null) {
+        return null;
+    }
+
+    const obj = content as Record<string, unknown>;
+
+    if (obj.library === 'vega-lite' && 'spec' in obj && typeof obj.spec === 'object' && obj.spec !== null) {
+        return obj as unknown as VegaLiteChartSpec;
+    }
+
+    if (typeof obj.$schema === 'string' && obj.$schema.includes('vega')) {
+        return { library: 'vega-lite', spec: obj };
+    }
+
+    return null;
 }
 
 /**
@@ -176,6 +196,67 @@ function CodeRenderer({ content, path }: { content: unknown; path: string }): Re
 }
 
 /**
+ * Sanitize SVG markup using DOMPurify.
+ * Allows only safe SVG elements; strips scripts, event handlers, and foreignObject.
+ */
+export function sanitizeSvg(svg: string): string {
+    return DOMPurify.sanitize(svg, {
+        USE_PROFILES: { svg: true, svgFilters: true },
+        ADD_TAGS: ['use'],
+        FORBID_TAGS: ['foreignObject'],
+    });
+}
+
+/**
+ * Make SVG responsive — remove fixed dimensions, ensure viewBox.
+ */
+export function makeSvgResponsive(svg: string): string {
+    return svg.replace(/<svg([^>]*)>/i, (_full: string, attrs: string) => {
+        let a = attrs;
+        if (!/viewBox/i.test(a)) {
+            const w = /\swidth\s*=\s*["']?(\d+(?:\.\d+)?)/i.exec(a);
+            const h = /\sheight\s*=\s*["']?(\d+(?:\.\d+)?)/i.exec(a);
+            if (w && h) a += ` viewBox="0 0 ${w[1]} ${h[1]}"`;
+        }
+        a = a
+            .replace(/\swidth\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i, '')
+            .replace(/\sheight\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i, '');
+        if (/style="/i.test(a)) {
+            a = a.replace(/style="([^"]*)"/i, (_: string, v: string) =>
+                `style="${v};width:100%;height:auto;display:block;max-width:100%;"`);
+        } else {
+            a += ' style="width:100%;height:auto;display:block;max-width:100%;"';
+        }
+        if (!/preserveAspectRatio=/i.test(a)) {
+            a += ' preserveAspectRatio="xMidYMid meet"';
+        }
+        return `<svg${a}>`;
+    });
+}
+
+/**
+ * Mockup renderer — renders raw SVG content inline after sanitization.
+ */
+function MockupRenderer({ content }: { content: unknown }): ReactElement {
+    const processedSvg = useMemo(() => {
+        const raw = typeof content === 'string' ? content.trim() : '';
+        if (!raw) return null;
+        return makeSvgResponsive(sanitizeSvg(raw));
+    }, [content]);
+
+    if (!processedSvg) {
+        return <CodeBlockPlaceholder type="expand" error="Empty mockup" />;
+    }
+
+    return (
+        <div
+            style={{ margin: '16px 0', width: '100%', overflowX: 'auto' }}
+            dangerouslySetInnerHTML={{ __html: processedSvg }}
+        />
+    );
+}
+
+/**
  * Image renderer
  */
 function ImageRenderer({ content, path }: { content: unknown; path: string }): ReactElement {
@@ -215,19 +296,32 @@ export function ArtifactContentRenderer({
     // Render based on type
     switch (actualType) {
         case 'chart': {
+            const spec = toVegaLiteSpec(content);
+            if (!spec) {
+                return (
+                    <CodeBlockPlaceholder
+                        type="chart"
+                        error="Only Vega-Lite charts are supported. Recharts rendering has been retired."
+                    />
+                );
+            }
             return (
                 <CodeBlockErrorBoundary type="chart" fallbackCode={JSON.stringify(content, null, 2)}>
-                    <AgentChart spec={content as AgentChartSpec} artifactRunId={runId} />
+                    <VegaLiteChart spec={spec} artifactRunId={runId} />
                 </CodeBlockErrorBoundary>
             );
         }
 
         case 'vega-lite': {
-            const spec: VegaLiteChartSpec = typeof content === 'object' && content !== null
-                ? ('library' in (content as Record<string, unknown>)
-                    ? content as VegaLiteChartSpec
-                    : { library: 'vega-lite', spec: content as Record<string, unknown> })
-                : { library: 'vega-lite', spec: content as Record<string, unknown> };
+            const spec = toVegaLiteSpec(content);
+            if (!spec) {
+                return (
+                    <CodeBlockPlaceholder
+                        type="chart"
+                        error="Invalid Vega-Lite specification"
+                    />
+                );
+            }
             return (
                 <CodeBlockErrorBoundary type="chart" fallbackCode={JSON.stringify(content, null, 2)}>
                     <VegaLiteChart spec={spec} artifactRunId={runId} />
@@ -286,6 +380,13 @@ export function ArtifactContentRenderer({
                 </CodeBlockErrorBoundary>
             );
         }
+
+        case 'mockup':
+            return (
+                <CodeBlockErrorBoundary type="expand" fallbackCode={typeof content === 'string' ? content : path}>
+                    <MockupRenderer content={content} />
+                </CodeBlockErrorBoundary>
+            );
 
         case 'image':
             return (

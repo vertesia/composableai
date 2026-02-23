@@ -7,6 +7,7 @@ export {
 export { MarkdownRenderer, type MarkdownRendererProps } from './MarkdownRenderer';
 export { MarkdownLink, type MarkdownLinkProps } from './MarkdownLink';
 export { MarkdownImage, type MarkdownImageProps } from './MarkdownImage';
+export { MarkdownFigure, type MarkdownFigureProps } from './MarkdownFigure';
 export {
     useResolvedUrl,
     parseUrlScheme,

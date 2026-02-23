@@ -13,6 +13,7 @@ import type {
     ToolCollectionDefinition,
     ToolExecutionPayload,
     ToolExecutionResult,
+    ToolUseContext,
 } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
 import { AgentToolDefinition } from "@vertesia/common";
@@ -87,7 +88,7 @@ export class SkillCollection implements ICollection<SkillDefinition> {
      * When called, they return rendered instructions.
      * Includes related_tools for dynamic tool discovery.
      */
-    getToolDefinitions(): AgentToolDefinition[] {
+    getToolDefinitions(filterContext?: ToolUseContext): AgentToolDefinition[] {
         const defaultSchema: ToolDefinition['input_schema'] = {
             type: 'object',
             properties: {
@@ -98,7 +99,14 @@ export class SkillCollection implements ICollection<SkillDefinition> {
             }
         };
 
-        return Array.from(this.skills.values()).map(skill => {
+        let skills = Array.from(this.skills.values());
+        if (filterContext) {
+            skills = skills.filter(skill => {
+                return skill.isEnabled ? skill.isEnabled(filterContext) : true;
+            });
+        }
+
+        return skills.map(skill => {
             // Build description with related tools info if available
             let description = `[Skill] ${skill.description}. Returns contextual instructions for this task.`;
             if (skill.related_tools && skill.related_tools.length > 0) {

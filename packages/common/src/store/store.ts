@@ -302,8 +302,30 @@ export interface CreateContentObjectPayload<T = any>
     generation_run_info?: GenerationRunMetadata;
 }
 
-export interface ContentObjectTypeRef {
+export function getContentTypeRefId(type: ContentObjectTypeRef) {
+    return (type as StoredTypeRef).id || (type as InCodeTypeRef).code;
+}
+
+/**
+ * Reference to a content object type. Either `id` (stored type) or `code` (in-code type) must be set.
+ */
+export type ContentObjectTypeRef = StoredTypeRef | InCodeTypeRef;
+
+interface StoredTypeRef {
+    /**
+     * MongoDB ObjectId string for stored types
+     */
     id: string;
+    code?: never;
+    name: string;
+}
+
+interface InCodeTypeRef {
+    id?: never;
+    /**
+     * Namespaced identifier for in-code types (e.g. "sys:Invoice", "app:myapp:Contract")
+     */
+    code: string;
     name: string;
 }
 
@@ -353,7 +375,20 @@ export interface ContentObjectTypeItem extends BaseObject {
      */
     strict_mode?: boolean;
 }
-export type InCodeTypeDefinition = Pick<ContentObjectTypeItem, 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'>;
+export type InCodeTypeDefinition = Pick<ContentObjectTypeItem, 'id' | 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'>;
+/**
+ * The itnerface to be used whend efining types in a plugin app.
+ */
+export type InCodeTypeSpec = Omit<InCodeTypeDefinition, 'id'>;
+
+/**
+ * Returns true if the type id represents an in-code type (system or app-contributed).
+ * In-code types use colon-separated ids like "sys:Invoice" or "app:myapp:Article".
+ * These types are read-only and cannot be edited through the UI.
+ */
+export function isInCodeType(typeId: string): boolean {
+    return typeId.includes(':');
+}
 
 export interface CreateContentObjectTypePayload
     extends Omit<
@@ -456,8 +491,8 @@ const RENDITION_COMPATIBILITY: Record<string, RenditionFormat[]> = {
     'application/pdf': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png, ImageRenditionFormat.webp],
     // Markdown can generate: pdf, docx (NOT jpeg/png)
     'text/markdown': [MarkdownRenditionFormat.pdf, MarkdownRenditionFormat.docx],
-    // Plain text can generate: docx
-    'text/plain': [MarkdownRenditionFormat.docx],
+    // Any text/* can generate: docx (editable export)
+    'text/*': [MarkdownRenditionFormat.docx],
     // Office documents can generate: pdf
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [MarkdownRenditionFormat.pdf],
     'application/msword': [MarkdownRenditionFormat.pdf],
@@ -563,7 +598,7 @@ export interface GetFileUrlPayload {
 export interface GetFileUrlResponse {
     url: string;
     id: string;
-    mime_type: string;
+    mime_type?: string;
     path: string;
 }
 

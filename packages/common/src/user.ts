@@ -18,6 +18,17 @@ export interface User {
     sign_in_provider?: string;
     last_selected_account?: string;
     source?: 'firebase' | 'scim';
+    updated_by?: string;
+}
+
+
+export interface UpdateUserPayload {
+    name?: string;
+    username?: string;
+    picture?: string;
+    language?: string;
+    phone?: string;
+    last_selected_account?: string;
 }
 
 

@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from "react";
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
 import { ContentDispositionButton } from './components/ContentDispositionButton';
 import { ContentOverview } from './components/ContentOverview';
-import { useDownloadDocument } from './components/useDownloadObject';
+import { useDownloadFile } from './components/useDownloadFile';
 import { VectorSearchWidget } from './components/VectorSearchWidget';
 import { DocumentTable } from './DocumentTable';
 import { ExtendedColumnLayout } from './layout/DocumentTableColumn';
@@ -301,11 +301,11 @@ function Toolsbar(props: ToolsbarProps) {
         handleFilterChange,
         handleVectorSearch,
         handleRefetch,
-        setIsGridView
+        setIsGridView,
     } = props;
 
     return (
-        <div className="sticky top-0 z-10 bg-background py-2">
+        <div className="sticky top-0 z-10 bg-background py-2 flex justify-between items-center">
             {
                 allowFilter && (
                     <FilterProvider
@@ -336,13 +336,13 @@ function Toolsbar(props: ToolsbarProps) {
                                 allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} />
                             }
                         </div>
-                        <div className="flex gap-1 items-center">
-                            <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
-                            <ContentDispositionButton onUpdate={setIsGridView} />
-                        </div>
                     </div>
                 )
             }
+            <div className="flex gap-1 items-center">
+                <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                <ContentDispositionButton onUpdate={setIsGridView} />
+            </div>
         </div>
     );
 }
@@ -355,7 +355,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
     const { store } = useUserSession();
     const toast = useToast();
     const navigate = useNavigate();
-    const onDownload = useDownloadDocument(store, toast, object?.content?.source, object?.name || object?.content?.name);
+    const { downloadFromContentSource } = useDownloadFile({ client: store, toast });
 
     return object ? (
         <SidePanel title={object.properties?.title || object.name} isOpen={true} onClose={onClose}>
@@ -364,7 +364,7 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
                     <ExternalLink className="size-4" />
                 </Button>
                 {object.content?.source && (
-                    <Button variant="ghost" size="sm" title="Download" onClick={onDownload}>
+                    <Button variant="ghost" size="sm" title="Download" onClick={() => downloadFromContentSource(object.content!.source!, object.name || object.content?.name)}>
                         <Download className="size-4" />
                     </Button>
                 )}

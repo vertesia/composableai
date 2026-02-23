@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import type { CodeBlockRendererProps } from './CodeBlockRendering';
 import { CodeBlockPlaceholder, CodeBlockErrorBoundary } from './CodeBlockPlaceholder';
-import { AgentChart, type AgentChartSpec } from '../../features/agent/chat/AgentChart';
+import type { VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { MermaidDiagram } from './MermaidDiagram';
 import { AskUserWidget, type AskUserWidgetProps } from '../../features/agent/chat/AskUserWidget';
 import { useArtifactContent } from './useArtifactContent';
-import { ArtifactContentRenderer, type ExpandRenderType } from './ArtifactContentRenderer';
+import { ArtifactContentRenderer, type ExpandRenderType, sanitizeSvg, makeSvgResponsive } from './ArtifactContentRenderer';
 
 /**
  * Context for passing artifact run ID and callbacks to code block handlers
@@ -125,7 +125,7 @@ function parseChartJson(code: string): Record<string, unknown> | null {
  */
 function detectChartLibrary(
     spec: Record<string, unknown>
-): 'vega-lite' | 'recharts' | null {
+): 'vega-lite' | null {
     // Detect Vega-Lite by $schema containing "vega"
     const hasVegaSchema =
         typeof spec.$schema === 'string' && spec.$schema.includes('vega');
@@ -133,16 +133,6 @@ function detectChartLibrary(
 
     if (hasVegaSchema || isExplicitVegaLite) {
         return 'vega-lite';
-    }
-
-    // Recharts: check for 'chart' property OR library === 'recharts' with data
-    const isRecharts =
-        ('chart' in spec || 'type' in spec || spec.library === 'recharts') &&
-        'data' in spec &&
-        Array.isArray(spec.data);
-
-    if (isRecharts) {
-        return 'recharts';
     }
 
     return null;
@@ -196,8 +186,7 @@ export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
 
 /**
  * Chart code block handler
- * Supports both Vega-Lite and Recharts specifications
- * Routes directly to the appropriate chart component based on detected library
+ * `chart` now accepts Vega-Lite specifications only.
  */
 export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const { artifactRunId } = useCodeBlockContext();
@@ -205,27 +194,22 @@ export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
     // Check if JSON is incomplete (streaming in progress)
     const incomplete = useMemo(() => isIncompleteJson(code), [code]);
 
-    const { chartSpec, isVegaLite } = useMemo(() => {
-        if (incomplete) return { chartSpec: null, isVegaLite: false };
+    const chartSpec = useMemo((): VegaLiteChartSpec | null => {
+        if (incomplete) return null;
 
         const spec = parseChartJson(code);
-        if (!spec) return { chartSpec: null, isVegaLite: false };
+        if (!spec) return null;
 
         const library = detectChartLibrary(spec);
-        if (!library) return { chartSpec: null, isVegaLite: false };
+        if (!library) return null;
 
-        // Vega-Lite spec - wrap in expected format
-        if (library === 'vega-lite') {
-            // If already wrapped (has library: 'vega-lite' and spec property), use as-is
-            if (spec.library === 'vega-lite' && 'spec' in spec) {
-                return { chartSpec: spec, isVegaLite: true };
-            }
-            // Native Vega-Lite spec - wrap it
-            return { chartSpec: { library: 'vega-lite' as const, spec }, isVegaLite: true };
+        // If already wrapped, use as-is.
+        if (spec.library === 'vega-lite' && 'spec' in spec && typeof spec.spec === 'object') {
+            return spec as unknown as VegaLiteChartSpec;
         }
 
-        // Recharts spec
-        return { chartSpec: spec, isVegaLite: false };
+        // Native Vega-Lite spec - wrap it.
+        return { library: 'vega-lite' as const, spec };
     }, [code, incomplete]);
 
     // Show loading placeholder for incomplete JSON (streaming)
@@ -242,23 +226,14 @@ export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
         return (
             <CodeBlockPlaceholder
                 type="chart"
-                error="Invalid chart specification"
+                error="Invalid Vega-Lite chart specification"
             />
-        );
-    }
-
-    // Route directly to the appropriate chart component
-    if (isVegaLite) {
-        return (
-            <CodeBlockErrorBoundary type="chart" fallbackCode={code}>
-                <VegaLiteChart spec={chartSpec as any} artifactRunId={artifactRunId} />
-            </CodeBlockErrorBoundary>
         );
     }
 
     return (
         <CodeBlockErrorBoundary type="chart" fallbackCode={code}>
-            <AgentChart spec={chartSpec as AgentChartSpec} artifactRunId={artifactRunId} />
+            <VegaLiteChart spec={chartSpec} artifactRunId={artifactRunId} />
         </CodeBlockErrorBoundary>
     );
 }
@@ -358,6 +333,32 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
 }
 
 /**
+ * Mockup code block handler — renders inline SVG after sanitization.
+ */
+export function MockupCodeBlockHandler({ code }: CodeBlockRendererProps) {
+    const processedSvg = useMemo(() => {
+        const trimmed = code.trim();
+        if (!trimmed) return null;
+        return makeSvgResponsive(sanitizeSvg(trimmed));
+    }, [code]);
+
+    if (!processedSvg) {
+        return (
+            <CodeBlockPlaceholder type="code" error="Empty mockup" />
+        );
+    }
+
+    return (
+        <CodeBlockErrorBoundary type="code" fallbackCode={code}>
+            <div
+                style={{ margin: '16px 0', width: '100%', overflowX: 'auto' }}
+                dangerouslySetInnerHTML={{ __html: processedSvg }}
+            />
+        </CodeBlockErrorBoundary>
+    );
+}
+
+/**
  * Expand code block handler - fetches artifact and renders content inline.
  *
  * Usage: ```expand:chart, ```expand:table, ```expand:markdown, ```expand:fusion-fragment, etc.
@@ -381,7 +382,7 @@ export function ExpandCodeBlockHandler({ code, language }: CodeBlockRendererProp
         // Validate known types
         const validTypes: ExpandRenderType[] = [
             'chart', 'vega-lite', 'table', 'markdown',
-            'fusion-fragment', 'code', 'image', 'auto'
+            'fusion-fragment', 'mockup', 'code', 'image', 'auto'
         ];
         return validTypes.includes(type) ? type : 'auto';
     }, [language]);
@@ -467,7 +468,7 @@ export function createDefaultCodeBlockHandlers(): Record<
     React.FunctionComponent<CodeBlockRendererProps>
 > {
     return {
-        // Chart handler for generic chart code blocks (auto-detects library)
+        // Chart handler for generic chart code blocks (Vega-Lite only)
         chart: ChartCodeBlockHandler,
         // Vega-Lite handlers - always treat as Vega-Lite
         'vega-lite': VegaLiteCodeBlockHandler,
@@ -475,6 +476,10 @@ export function createDefaultCodeBlockHandlers(): Record<
 
         // Mermaid handler
         mermaid: MermaidCodeBlockHandler,
+
+        // Mockup handler (inline SVG)
+        mockup: MockupCodeBlockHandler,
+        svg: MockupCodeBlockHandler,
 
         // Proposal handlers
         proposal: ProposalCodeBlockHandler,

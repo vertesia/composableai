@@ -1,36 +1,53 @@
 /**
  * Template selection when multiple templates are available
  */
-import prompts from 'prompts';
 import chalk from 'chalk';
+import prompts from 'prompts';
 import { config, TemplateDefinition } from './configuration.js';
+import { getCliVersion } from './version.js';
 
 /**
- * Apply branch override to repository URL
+ * Resolve the git ref (branch or tag) for template fetching.
+ *
+ * Priority:
+ * 1. Explicit --branch flag from user (override for testing)
+ * 2. Release CLI version (no -dev. suffix) → templates@{version} tag
+ * 3. Dev/snapshot CLI version → main branch
  */
-function applyBranchOverride(repository: string, branch?: string): string {
-  if (!branch) {
-    return repository;
+function resolveTemplateRef(branchOverride?: string): string {
+  if (branchOverride) {
+    return branchOverride;
   }
 
-  // Remove existing branch/tag if present (after #)
-  const baseRepo = repository.split('#')[0];
+  const version = getCliVersion();
+  if (!version.includes('-dev.')) {
+    return `v${version}`;
+  }
 
-  // Apply the override branch
-  return `${baseRepo}#${branch}`;
+  return 'main';
 }
 
 /**
  * Select a template (only prompts if multiple templates are available)
- * Returns the selected template definition with branch override applied if provided
+ * Returns the selected template definition with the resolved git ref applied
+ * @param branchOverride - Optional branch to use instead of the auto-resolved ref
+ * @param templateName - Optional template name for non-interactive selection
  */
-export async function selectTemplate(branchOverride?: string): Promise<TemplateDefinition> {
+export async function selectTemplate(branchOverride?: string, templateName?: string): Promise<TemplateDefinition> {
   const templates = config.templates;
 
   let selectedTemplate: TemplateDefinition;
 
-  // If only one template, return it directly
-  if (templates.length === 1) {
+  if (templateName) {
+    // Non-interactive: find template by name (case-insensitive)
+    const match = templates.find(t => t.name.toLowerCase() === templateName.toLowerCase());
+    if (!match) {
+      const available = templates.map(t => `  - ${t.name}`).join('\n');
+      throw new Error(`Template "${templateName}" not found. Available templates:\n${available}`);
+    }
+    selectedTemplate = match;
+  } else if (templates.length === 1) {
+    // If only one template, return it directly
     selectedTemplate = templates[0];
   } else {
     // Multiple templates - let user choose
@@ -55,9 +72,10 @@ export async function selectTemplate(branchOverride?: string): Promise<TemplateD
     selectedTemplate = templates[response.template];
   }
 
-  // Apply branch override if provided
+  // Apply resolved git ref (branch or tag)
+  const ref = resolveTemplateRef(branchOverride);
   return {
     ...selectedTemplate,
-    repository: applyBranchOverride(selectedTemplate.repository, branchOverride)
+    repository: `${selectedTemplate.repository}#${ref}`
   };
 }

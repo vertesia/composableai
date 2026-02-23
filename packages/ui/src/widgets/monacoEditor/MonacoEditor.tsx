@@ -51,7 +51,7 @@ interface MonacoEditorProps {
 
 export function MonacoEditor({
     onChange,
-    value = '',
+    value,
     className,
     editorRef,
     language = 'javascript',
@@ -61,7 +61,7 @@ export function MonacoEditor({
     onMount,
     defaultValue,
 }: MonacoEditorProps) {
-    const [editorValue, setEditorValue] = useState(value);
+    const [editorValue, setEditorValue] = useState(value || defaultValue || '');
     const editorInstanceRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     const { theme } = useTheme();
 
@@ -148,10 +148,11 @@ export function MonacoEditor({
 
     // Update editor value when prop changes from outside
     useEffect(() => {
-        if (value !== editorValue) {
-            setEditorValue(value);
+        const effectiveValue = value || defaultValue || '';
+        if (effectiveValue !== editorValue) {
+            setEditorValue(effectiveValue);
             if (editorInstanceRef.current) {
-                editorInstanceRef.current.setValue(value);
+                editorInstanceRef.current.setValue(effectiveValue);
             }
         }
     }, [value]); // Only depend on value prop, not editorValue

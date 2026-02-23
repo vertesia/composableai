@@ -1,6 +1,5 @@
 import type { JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { PromptRole } from "@llumiverse/common";
-import type { JSONSchema4 } from "json-schema";
 import { InCodePrompt, InteractionRefWithSchema, PopulatedInteraction } from "../interaction.js";
 import { ExecutablePromptSegmentDef, PromptSegmentDefType } from "../prompt.js";
 
@@ -48,7 +47,7 @@ export function removeExtraProperties<T>(schema: T): T {
 }
 
 export function mergeJSONSchemas(schemas: JSONSchema[]) {
-    const props: Record<string, JSONSchema4> = {};
+    const props: Record<string, JSONSchema> = {};
     let required: string[] = [];
     for (const schema of schemas) {
         if (schema.properties) {
@@ -60,13 +59,13 @@ export function mergeJSONSchemas(schemas: JSONSchema[]) {
             Object.assign(props, schema.properties);
         }
     }
-    const schema = Object.keys(props).length > 0 ? { properties: props, required, type: 'object' } as JSONSchema : null;
+    const schema: JSONSchema | null = Object.keys(props).length > 0 ? { properties: props, required, type: 'object' } : null;
     return schema;
 }
 
 export function _mergePromptsSchema(prompts: ExecutablePromptSegmentDef[]) {
-    const props: Record<string, JSONSchema4> = {};
-    let required = new Set<String>();
+    const props: Record<string, JSONSchema> = {};
+    let required = new Set<string>();
     for (const prompt of prompts) {
         if (prompt.template?.inputSchema?.properties) {
             const schema = prompt.template?.inputSchema;
@@ -96,10 +95,12 @@ export function _mergePromptsSchema(prompts: ExecutablePromptSegmentDef[]) {
             required.add('chat');
         }
     }
-    return Object.keys(props).length > 0 ? {
+    
+    const schema: JSONSchema | null = Object.keys(props).length > 0 ? {
         properties: props,
         required: Array.from(required)
-    } as JSONSchema4 : null;
+    } : null;
+    return schema;
 }
 
 export function mergePromptsSchema(interaction: InteractionRefWithSchema | PopulatedInteraction) {
@@ -109,7 +110,7 @@ export function mergePromptsSchema(interaction: InteractionRefWithSchema | Popul
 
 export function mergeInCodePromptSchemas(prompts: InCodePrompt[]) {
     const props: Record<string, JSONSchema> = {};
-    let required = new Set<String>();
+    let required = new Set<string>();
     for (const prompt of prompts) {
         if (prompt.schema?.properties) {
             const schema = prompt.schema;
@@ -121,8 +122,9 @@ export function mergeInCodePromptSchemas(prompts: InCodePrompt[]) {
             Object.assign(props, schema.properties);
         }
     }
-    return Object.keys(props).length > 0 ? {
+    const schema: JSONSchema | null = Object.keys(props).length > 0 ? {
         properties: props,
         required: Array.from(required)
-    } as JSONSchema : null;
+    } : null;
+    return schema;
 }

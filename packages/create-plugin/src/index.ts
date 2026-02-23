@@ -8,81 +8,48 @@
  */
 
 import chalk from 'chalk';
+import { Command } from 'commander';
 import fs from 'fs';
 import { config, validation } from './configuration.js';
-import { selectTemplate } from './template-selector.js';
-import { selectPackageManager, installDependencies } from './package-manager.js';
 import { downloadTemplate } from './download-template.js';
-import { readTemplateConfig } from './template-config.js';
-import { promptUser } from './prompts.js';
+import { installDependencies, selectPackageManager } from './package-manager.js';
+import { runPostInstallHooks, runPreInstallHooks } from './post-install.js';
 import {
-  replaceVariables,
   adjustPackageJson,
   handleConditionalRemoves,
+  removeMetaFiles,
   renameFiles,
-  removeMetaFiles
+  replaceVariables
 } from './process-template.js';
-import { runPreInstallHooks, runPostInstallHooks } from './post-install.js';
-
-/**
- * Parse command line arguments
- */
-function parseArgs(args: string[]): { projectName: string; branch?: string, dev: boolean } {
-  let projectName: string | undefined;
-  let branch: string | undefined;
-
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-
-    if (arg === '-b' || arg === '--branch') {
-      branch = args[i + 1];
-      i++; // Skip next arg
-    } else if (!arg.startsWith('-')) {
-      projectName = arg;
-    }
-  }
-
-  if (!projectName) {
-    throw new Error('Project name is required');
-  }
-
-  return { projectName, branch, dev: args.includes('--dev') };
-}
+import { promptUser } from './prompts.js';
+import { readTemplateConfig } from './template-config.js';
+import { selectTemplate } from './template-selector.js';
 
 /**
  * Main entry point
  */
 async function main() {
 
-  const args = process.argv.slice(2);
+  const program = new Command()
+    .name('create-plugin')
+    .description('CLI to create Vertesia plugins: UI plugins or tool servers')
+    .argument('<project-name>', 'Name of the project to create')
+    .option('-b, --branch <branch>', 'Use a specific template branch')
+    .option('-t, --template <name>', 'Template name (skips interactive selection)')
+    .option('-y, --yes', 'Non-interactive mode: use defaults for all prompts', false)
+    .option('--dev', 'Use workspace dependencies (development mode)', false)
+    .option('--local-templates <path>', 'Use local template directory instead of fetching from GitHub')
+    .addHelpText('after', `
+Available Templates:
+${config.templates.map(t => `  - ${t.name}`).join('\n')}
 
-  // Show help
-  if (args.includes('--help') || args.includes('-h')) {
-    showHelp();
-    process.exit(0);
-  }
+Documentation: ${config.docsUrl}
+`)
+    .parse();
 
-  // Parse arguments
-  let projectName: string;
-  let branch: string | undefined;
-  let dev: boolean = false;
-
-  try {
-    const parsed = parseArgs(args);
-    projectName = parsed.projectName;
-    branch = parsed.branch;
-    dev = parsed.dev;
-  } catch (error) {
-    console.log(chalk.red('❌ Please specify a project name:\n'));
-    console.log(chalk.white('Usage:'));
-    console.log(chalk.cyan('  npx @vertesia/create-plugin') + chalk.gray(' <project-name> [options]\n'));
-    console.log(chalk.white('Example:'));
-    console.log(chalk.gray('  npx @vertesia/create-plugin my-project\n'));
-    console.log(chalk.white('Options:'));
-    console.log(chalk.gray('  -b, --branch <branch>  Use specific branch'));
-    console.log(chalk.gray('  -h, --help             Show help\n'));
-    process.exit(1);
-  }
+  const projectName = program.args[0];
+  const opts = program.opts<{ branch?: string; template?: string; yes: boolean; dev: boolean; localTemplates?: string }>();
+  const { branch, template, yes: nonInteractive, dev, localTemplates } = opts;
 
   // Validate project name
   if (!validation.projectNamePattern.test(projectName)) {
@@ -103,23 +70,23 @@ async function main() {
 
   try {
     // Step 1: Select template (only prompts if multiple templates available)
-    const selectedTemplate = await selectTemplate(branch);
+    const selectedTemplate = await selectTemplate(branch, template);
 
     // Show the selected template name with branch if specified
     const branchInfo = branch ? chalk.gray(` (branch: ${branch})`) : '';
     console.log(chalk.blue.bold(`\n🚀 Create ${selectedTemplate.name}`) + branchInfo + '\n');
 
-    // Step 2: Download template from GitHub
-    await downloadTemplate(projectName, selectedTemplate.repository);
+    // Step 2: Download template from GitHub (or copy from local path)
+    await downloadTemplate(projectName, selectedTemplate.repository, localTemplates);
 
     // Step 3: Read template configuration
     const templateConfig = readTemplateConfig(projectName);
 
     // Step 4: Detect and select package manager (may be forced by template)
-    const packageManager = await selectPackageManager(templateConfig.packageManager);
+    const packageManager = await selectPackageManager(templateConfig.packageManager, nonInteractive);
 
     // Step 5: Prompt user for configuration
-    const answers = await promptUser(projectName, templateConfig);
+    const answers = await promptUser(projectName, templateConfig, nonInteractive);
 
     // Step 5: Replace variables in files
     replaceVariables(projectName, templateConfig, answers);
@@ -141,7 +108,7 @@ async function main() {
     // Step 9: Run pre-install hooks (if any) - e.g., CLI authentication for private registries
     let skipDependencyInstall = false;
     if (templateConfig.preInstall) {
-      const preInstallSuccess = await runPreInstallHooks(projectName, templateConfig.preInstall, packageManager);
+      const preInstallSuccess = await runPreInstallHooks(projectName, templateConfig.preInstall, packageManager, nonInteractive);
       if (!preInstallSuccess) {
         console.log(chalk.yellow('⚠️  Pre-install hooks failed. Skipping dependency installation.\n'));
         console.log(chalk.gray('You can install dependencies manually after resolving the issue:\n'));
@@ -158,7 +125,7 @@ async function main() {
 
     // Step 11: Run post-install hooks (if any)
     if (!skipDependencyInstall && templateConfig.postInstall) {
-      await runPostInstallHooks(projectName, templateConfig.postInstall, packageManager);
+      await runPostInstallHooks(projectName, templateConfig.postInstall, packageManager, nonInteractive);
     }
 
     // Step 12: Success!
@@ -191,31 +158,6 @@ function showSuccess(projectName: string, packageManager: string, templateName: 
   console.log(chalk.gray(`Repository: ${repository}\n`));
 }
 
-/**
- * Show help message
- */
-function showHelp(): void {
-  console.log(chalk.blue.bold('\nVertesia Project Generator\n'));
-  console.log('Usage:');
-  console.log(chalk.gray('  pnpm create @vertesia/tool-server <project-name> [options]'));
-  console.log(chalk.gray('  npm create @vertesia/tool-server <project-name> [options]'));
-  console.log(chalk.gray('  npx @vertesia/create-tool-server <project-name> [options]\n'));
-  console.log('Options:');
-  console.log(chalk.gray('  -h, --help              Show this help message'));
-  console.log(chalk.gray('  -b, --branch <branch>   Use specific branch (default: configured branch or main)\n'));
-  console.log('Examples:');
-  console.log(chalk.gray('  pnpm create @vertesia/tool-server my-tool-server'));
-  console.log(chalk.gray('  npm create @vertesia/tool-server my-api-tools -b develop'));
-  console.log(chalk.gray('  npx @vertesia/create-tool-server my-project --branch v1.0.0\n'));
-
-  console.log('Available Templates:');
-  config.templates.forEach(template => {
-    console.log(chalk.gray(`  - ${template.name}`));
-  });
-  console.log();
-
-  console.log(`Documentation: ${chalk.cyan(config.docsUrl)}\n`);
-}
 
 // Run the installer
 main().catch((error) => {

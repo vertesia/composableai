@@ -55,7 +55,9 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
 
     const document = await client.objects.retrieve(objectId, "+text");
 
-    const type = document.type ? await client.types.retrieve(document.type.id) : undefined;
+    const type = document.type
+        ? await client.types.catalog.resolve(document.type)
+        : undefined;
 
     if (!type?.is_chunkable) {
         log.warn('Type is not chunkable for object ID: ' + objectId);

@@ -90,7 +90,7 @@ export async function createOrUpdateDocumentFromInteractionRun(payload: DSLActiv
         generation_run_info: {
             id: run.id,
             date: new Date().toISOString(),
-            model: run.modelId,
+            model: run.modelId ?? "",
             target: jsonResult ? 'properties' : 'text'
         }
     };

@@ -6,10 +6,11 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { TemplateConfig } from './template-config.js';
+import { getTemplateVersions } from './version.js';
 
 /**
- * Get the latest version of an npm package
- * Returns the version string (e.g., "1.2.3") or null if not found
+ * Get the latest version of an npm package from the registry.
+ * Used as a fallback when templateVersions is not available.
  */
 function getLatestVersion(packageName: string): string | null {
   try {
@@ -21,6 +22,29 @@ function getLatestVersion(packageName: string): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Resolve the version for an internal package using the version map.
+ * Falls back to npm registry lookup if the map is not available or doesn't cover the scope.
+ * Returns { version, pinned } where pinned=true means the version came from the map
+ * and should be used as-is (exact), pinned=false means it came from the registry
+ * and should use caret range.
+ */
+function resolveInternalVersion(
+  pkgName: string,
+  versionMap: Record<string, string> | undefined
+): { version: string; pinned: boolean } | null {
+  if (versionMap) {
+    for (const [scope, version] of Object.entries(versionMap)) {
+      if (pkgName.startsWith(`${scope}/`)) {
+        return { version, pinned: true };
+      }
+    }
+  }
+  // Fallback: query npm registry
+  const latest = getLatestVersion(pkgName);
+  return latest ? { version: latest, pinned: false } : null;
 }
 
 /**
@@ -169,25 +193,31 @@ export function adjustPackageJson(projectName: string, answers: Record<string, a
       console.log(chalk.gray(`   ✓ Set package name to "${newName}"`));
     }
 
-    // 2. Replace workspace:* with actual latest versions
+    // 2. Replace workspace:* with pinned versions
     const internalScopes = ['@vertesia/', '@llumiverse/', '@dglabs/'];
+    const versionMap = isDev ? undefined : getTemplateVersions();
     let workspaceReplacements = 0;
+
+    if (versionMap) {
+      console.log(chalk.gray('   Using pinned versions from CLI package'));
+    }
 
     ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'].forEach(depType => {
       if (packageJson[depType]) {
         Object.keys(packageJson[depType]).forEach(pkgName => {
           const isInternalPackage = internalScopes.some(scope => pkgName.startsWith(scope));
           if (isInternalPackage && packageJson[depType][pkgName] === 'workspace:*') {
-            if (isDev) { // use latest dev tag version
+            if (isDev) {
+              // Dev mode: use 'dev' npm tag
               packageJson[depType][pkgName] = 'dev';
               workspaceReplacements++;
             } else {
-              const latestVersion = getLatestVersion(pkgName);
-              if (latestVersion) {
-                packageJson[depType][pkgName] = `^${latestVersion}`;
+              const resolved = resolveInternalVersion(pkgName, versionMap);
+              if (resolved) {
+                // Exact version when from version map, caret range when from registry
+                packageJson[depType][pkgName] = resolved.pinned ? resolved.version : `^${resolved.version}`;
                 workspaceReplacements++;
               } else {
-                // Fallback to 'latest' if we can't fetch the version
                 packageJson[depType][pkgName] = 'latest';
                 workspaceReplacements++;
               }
@@ -198,7 +228,8 @@ export function adjustPackageJson(projectName: string, answers: Record<string, a
     });
 
     if (workspaceReplacements > 0) {
-      console.log(chalk.gray(`   ✓ Resolved ${workspaceReplacements} workspace:* dependencies to latest versions`));
+      const method = versionMap ? 'pinned' : 'latest';
+      console.log(chalk.gray(`   ✓ Resolved ${workspaceReplacements} workspace:* dependencies to ${method} versions`));
     }
 
     // Write back to file

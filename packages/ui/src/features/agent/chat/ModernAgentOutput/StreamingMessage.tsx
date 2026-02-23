@@ -20,11 +20,24 @@ export interface StreamingMessageProps {
     timestamp?: number | string;
     /** Additional className for the outer container */
     className?: string;
+    /** Additional className for the card wrapper */
+    cardClassName?: string;
     /** Additional className for the header section */
     headerClassName?: string;
     /** Additional className for the content section */
     contentClassName?: string;
+    /** Additional className for the prose/markdown container */
+    proseClassName?: string;
+    /** Additional className for the sender label */
+    senderClassName?: string;
+    /** Additional className for the icon wrapper */
+    iconClassName?: string;
 }
+
+/** className overrides for StreamingMessage — subset of StreamingMessageProps containing only className props. */
+export type StreamingMessageClassNames = Partial<Pick<StreamingMessageProps,
+    'className' | 'cardClassName' | 'headerClassName' | 'contentClassName' |
+    'proseClassName' | 'senderClassName' | 'iconClassName'>>;
 
 /**
  * Displays a streaming message with adaptive reveal effect.
@@ -38,8 +51,12 @@ function StreamingMessageComponent({
     isComplete = false,
     timestamp,
     className,
+    cardClassName,
     headerClassName,
     contentClassName,
+    proseClassName,
+    senderClassName,
+    iconClassName,
 }: StreamingMessageProps) {
     const [displayedLength, setDisplayedLength] = useState(0);
     const [throttledText, setThrottledText] = useState("");
@@ -247,20 +264,20 @@ function StreamingMessageComponent({
         <div className={cn("w-full max-w-full", className)}>
             {/* Card wrapper matching MessageItem structure */}
             <div
-                className="border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 w-full max-w-full overflow-hidden"
+                className={cn("border-l-4 bg-white dark:bg-gray-900 mb-4 border-l-purple-500 w-full max-w-full overflow-hidden", cardClassName)}
                 data-workstream-id={workstreamId}
             >
                 {/* Compact header */}
                 <div className={cn("flex items-center justify-between px-4 py-1.5", headerClassName)}>
                     <div className="flex items-center gap-1.5">
-                        <div className="animate-fadeIn">
+                        <div className={cn("animate-fadeIn", iconClassName)}>
                             {isTyping ? (
                                 <span className="size-2 rounded-full bg-blue-500 animate-pulse inline-block" />
                             ) : (
                                 <Bot className="size-4 text-purple-600 dark:text-purple-400" />
                             )}
                         </div>
-                        <span className="text-xs font-medium text-muted">Agent</span>
+                        <span className={cn("text-xs font-medium text-muted", senderClassName)}>Agent</span>
                         {workstreamId && workstreamId !== "main" && (
                             <span className="text-xs text-muted">• Task {workstreamId}</span>
                         )}
@@ -282,12 +299,12 @@ function StreamingMessageComponent({
                 {/* Content - cursor character is appended directly to text (no DOM manipulation) */}
                 <div
                     className={cn(
-                        "px-4 pb-3 streaming-content",
+                        "px-3 pb-2 streaming-content",
                         isTyping && "streaming-active",
                         contentClassName
                     )}
                 >
-                    <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words" style={{ overflowWrap: 'anywhere' }}>
+                    <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", proseClassName)} style={{ overflowWrap: 'anywhere' }}>
                         <MarkdownRenderer>
                             {displayTextWithCursor}
                         </MarkdownRenderer>

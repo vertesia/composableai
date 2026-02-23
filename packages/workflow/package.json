@@ -36,7 +36,6 @@
         "@llumiverse/common": "workspace:*",
         "@temporalio/activity": "^1.11.5",
         "@temporalio/workflow": "^1.11.5",
-        "@types/json-schema": "^7.0.15",
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",

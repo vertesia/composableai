@@ -41,18 +41,11 @@ describe('Chart JSON parsing', () => {
         }
     };
 
-    const detectChartLibrary = (spec: Record<string, unknown>): 'vega-lite' | 'recharts' | null => {
+    const detectChartLibrary = (spec: Record<string, unknown>): 'vega-lite' | null => {
         const hasVegaSchema = typeof spec.$schema === 'string' && spec.$schema.includes('vega');
         const isExplicitVegaLite = spec.library === 'vega-lite' && 'spec' in spec;
         if (hasVegaSchema || isExplicitVegaLite) {
             return 'vega-lite';
-        }
-        const isRecharts =
-            ('chart' in spec || 'type' in spec || spec.library === 'recharts') &&
-            'data' in spec &&
-            Array.isArray(spec.data);
-        if (isRecharts) {
-            return 'recharts';
         }
         return null;
     };
@@ -102,39 +95,15 @@ describe('Chart JSON parsing', () => {
             expect(detectChartLibrary(spec)).toBe('vega-lite');
         });
 
-        it('should detect Recharts by chart field', () => {
-            const spec = {
-                chart: 'bar',
-                data: [{ x: 1, y: 2 }],
-            };
-            expect(detectChartLibrary(spec)).toBe('recharts');
-        });
-
-        it('should detect Recharts by type field', () => {
-            const spec = {
-                type: 'line',
-                data: [{ x: 1, y: 2 }],
-            };
-            expect(detectChartLibrary(spec)).toBe('recharts');
-        });
-
-        it('should detect explicit Recharts with library field', () => {
-            const spec = {
-                library: 'recharts',
-                data: [{ x: 1, y: 2 }],
-            };
-            expect(detectChartLibrary(spec)).toBe('recharts');
-        });
-
         it('should return null for non-chart spec', () => {
             const spec = { foo: 'bar' };
             expect(detectChartLibrary(spec)).toBeNull();
         });
 
-        it('should return null for Recharts without data array', () => {
+        it('should return null for legacy chart format', () => {
             const spec = {
                 chart: 'bar',
-                data: 'not an array',
+                data: [{ x: 1, y: 2 }],
             };
             expect(detectChartLibrary(spec)).toBeNull();
         });
