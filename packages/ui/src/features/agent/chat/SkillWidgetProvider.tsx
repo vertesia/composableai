@@ -4,7 +4,7 @@ import { FusionFragmentHandler } from "@vertesia/fusion-ux";
 import { useUserSession } from "@vertesia/ui/session";
 import { CodeBlockRendererProps, CodeBlockRendererProvider } from "@vertesia/ui/widgets";
 import { memo, useEffect, useMemo, useState } from "react";
-import { AgentChart, AgentChartSpec } from "./AgentChart";
+import { VegaLiteChartSpec } from "./AgentChart";
 import { VegaLiteChart } from "./VegaLiteChart";
 
 interface SkillWidgetProviderProperties {
@@ -12,13 +12,25 @@ interface SkillWidgetProviderProperties {
 }
 
 /**
- * Widget for rendering Recharts-based charts (bar, line, pie, etc.)
- * Used for `chart` code blocks that use Recharts format
+ * Widget for rendering chart code blocks.
+ * `chart` and `vega-lite` now both render through Vega-Lite.
  */
-const RechartsChartWidget = memo(function RechartsChartWidget({ code }: { code: string }) {
+const ChartWidget = memo(function ChartWidget({ code }: { code: string }) {
     const spec = useMemo(() => {
         try {
-            return JSON.parse(code) as AgentChartSpec;
+            const parsed = JSON.parse(code);
+
+            // Wrapped Vega-Lite format
+            if (parsed?.library === 'vega-lite' && parsed?.spec && typeof parsed.spec === 'object') {
+                return parsed as VegaLiteChartSpec;
+            }
+
+            // Native Vega-Lite spec format
+            if (typeof parsed?.$schema === 'string' && parsed.$schema.includes('vega')) {
+                return { library: 'vega-lite' as const, spec: parsed };
+            }
+
+            return null;
         } catch {
             // During streaming, code may be incomplete JSON - return null to skip rendering
             return null;
@@ -30,7 +42,7 @@ const RechartsChartWidget = memo(function RechartsChartWidget({ code }: { code: 
         return null;
     }
 
-    return <AgentChart spec={spec} />
+    return <VegaLiteChart spec={spec} />
 });
 
 /**
@@ -59,7 +71,7 @@ const VegaLiteChartWidget = memo(function VegaLiteChartWidget({ code }: { code: 
 });
 
 const defaultComponents: Record<string, React.FunctionComponent<CodeBlockRendererProps>> = {
-    "chart": RechartsChartWidget,
+    "chart": ChartWidget,
     "vega-lite": VegaLiteChartWidget,
     "vegalite": VegaLiteChartWidget,
     "fusion-fragment": FusionFragmentHandler,
@@ -83,16 +95,21 @@ async function fetchSkillWidgets(client: VertesiaClient): Promise<Record<string,
     const installedApps = await client.apps.getInstalledApps("tools");
     const urls = new Set<string>();
     for (const app of installedApps) {
-        for (const item of app.manifest.tool_collections || []) {
-            const collection = normalizeToolCollection(item);
-            const collUrl = collection.url;
-            if (collUrl.startsWith("http://") || collUrl.startsWith("https://")) {
-                const i = collUrl.indexOf("/api/");
-                if (i > 0) {
-                    const url = collUrl.substring(0, i);
-                    urls.add(url + '/api/widgets');
+        if (app.manifest.tool_collections && app.manifest.tool_collections.length > 0) {
+            for (const item of app.manifest.tool_collections || []) {
+                const collection = normalizeToolCollection(item);
+                const collUrl = collection.url;
+                if (collUrl.startsWith("http://") || collUrl.startsWith("https://")) {
+                    const i = collUrl.indexOf("/api/");
+                    if (i > 0) {
+                        const url = collUrl.substring(0, i);
+                        urls.add(url + '/api/widgets');
+                    }
                 }
             }
+        }
+        if (app.manifest.endpoint && app.manifest.capabilities?.includes("tools")) {
+            urls.add(new URL('/api/widgets', app.manifest.endpoint).toString());
         }
     }
 

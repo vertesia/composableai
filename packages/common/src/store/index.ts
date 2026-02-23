@@ -9,6 +9,7 @@ export * from "./object-types.js";
 export * from "./schedule.js";
 export * from "./signals.js";
 export * from "./store.js";
+export * from "./rendering.js";
 export * from "./temporalio.js";
 export * from "./worker.js";
 export * from "./workflow.js";

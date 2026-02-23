@@ -9,6 +9,8 @@ import { imageResizer } from "../conversion/image.js";
 export interface ImageRenditionParams {
     max_hw: number; //maximum size of the longest side of the image
     format: ImageRenditionFormat;
+    /** Custom upload path — overrides default renditions/{etag}/{max_hw}/{page}.{format} path */
+    outputPath?: string;
 }
 
 /**
@@ -53,7 +55,7 @@ export async function uploadRenditionPages(
     params: ImageRenditionParams,
     concurrency?: number,
 ) {
-    log.info(
+    log.debug(
         `Uploading rendition for etag ${contentEtag} with ${files.length} pages (max_hw: ${params.max_hw}, format: ${params.format})`,
         { files },
     );
@@ -61,11 +63,15 @@ export async function uploadRenditionPages(
     const limit = pLimit(concurrency ?? 20);
 
     const uploads = files.map((file, i) => limit(async () => {
-        const pageId = getRenditionPagePath(contentEtag, params, i);
+        const pageId = params.outputPath
+            ? (files.length === 1
+                ? params.outputPath
+                : `${params.outputPath}/${String(i).padStart(4, "0")}.${params.format}`)
+            : getRenditionPagePath(contentEtag, params, i);
         let resizedImagePath = null;
 
         try {
-            log.info(`Resizing image for ${contentEtag} page ${i}`, {
+            log.debug(`Resizing image for ${contentEtag} page ${i}`, {
                 file,
                 params,
             });
@@ -87,7 +93,7 @@ export async function uploadRenditionPages(
                 pageId,
             );
 
-            log.info(
+            log.debug(
                 `Uploading rendition for ${contentEtag} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`,
                 {
                     resizedImagePath,
@@ -110,7 +116,7 @@ export async function uploadRenditionPages(
                     );
                     return Promise.reject(`Upload failed: ${err.message}`);
                 });
-            log.info(`Rendition uploaded for ${contentEtag} page ${i}`, {
+            log.debug(`Rendition uploaded for ${contentEtag} page ${i}`, {
                 result,
             });
 

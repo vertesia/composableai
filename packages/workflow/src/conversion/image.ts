@@ -24,7 +24,7 @@ export async function imageResizer(
     colorspaceCorrection: boolean = true,
     colorspace: 'RGB' | 'LAB' | 'LUV' | 'sigmoidal' = 'RGB'
 ): Promise<string> {
-    log.info(`[image-resizer] Resizing image: ${inputPath} to max_hw: ${max_hw}, format: ${format}, progressive: ${progressive}, colorspaceCorrection: ${colorspaceCorrection ? colorspace : 'disabled'}`);
+    log.debug(`[image-resizer] Resizing image: ${inputPath} to max_hw: ${max_hw}, format: ${format}, progressive: ${progressive}, colorspaceCorrection: ${colorspaceCorrection ? colorspace : 'disabled'}`);
 
     const allowedFormats = ["jpg", "jpeg", "png", "webp"];
 
@@ -63,17 +63,17 @@ export async function imageResizer(
             const lowerFormat = format.toLowerCase();
             if (lowerFormat === "jpg" || lowerFormat === "jpeg") {
                 conversionOption = "-interlace JPEG";
-                log.info(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
+                log.debug(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
             } else if (lowerFormat === "png") {
                 conversionOption = "-interlace PNG";
-                log.info(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
+                log.debug(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
             } else if (lowerFormat === "gif") {
                 conversionOption = "-interlace GIF";
-                log.info(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
+                log.debug(`Enabling interlaced ${lowerFormat.toUpperCase()} format`);
             }
         }
 
-        log.info(`Resizing image using ImageMagick: ${inputPath} -> ${outputPath}`);
+        log.debug(`Resizing image using ImageMagick: ${inputPath} -> ${outputPath}`);
 
         const command = `convert`
         let args = [inputPath];
@@ -92,26 +92,26 @@ export async function imageResizer(
                     // Linear light, recommended default
                     // Convert from sRGB to linear RGB for processing
                     args.push("-colorspace", "RGB");
-                    log.info("Using linear RGB colorspace for resize processing");
+                    log.debug("Using linear RGB colorspace for resize processing");
                     break;
                 case 'LAB':
                     // Perceptual linear light
                     // Use LAB colorspace which separates intensity from color
                     // Better for avoiding color clipping and distortion
                     args.push("-colorspace", "LAB");
-                    log.info("Using LAB colorspace for resize processing");
+                    log.debug("Using LAB colorspace for resize processing");
                     break;
                 case 'LUV':
                     // Perceptual linear light
                     // Alternative to LAB with perceptually uniform color deltas
                     args.push("-colorspace", "LUV");
-                    log.info("Using LUV colorspace for resize processing");
+                    log.debug("Using LUV colorspace for resize processing");
                     break;
                 case 'sigmoidal':
                     // Sigmoidal colorspace modification to reduce ringing artifacts
                     args.push("-colorspace", "RGB");
                     args.push("+sigmoidal-contrast", "6.5,50%");
-                    log.info("Using sigmoidal contrast modification for resize processing");
+                    log.debug("Using sigmoidal contrast modification for resize processing");
                     break;
             }
         }
@@ -144,7 +144,7 @@ export async function imageResizer(
         // Output path
         args.push(outputPath);
 
-        log.info(`ImageMagick command: ${command} ${args.join(" ")}`);
+        log.debug(`ImageMagick command: ${command} ${args.join(" ")}`);
 
         const { stderr } = await execFile(command, args);
 

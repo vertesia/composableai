@@ -30,7 +30,9 @@ export async function generateDocumentProperties(
     const project = await context.fetchProject();
 
     const doc = await client.objects.retrieve(objectId, "+text");
-    const type = doc.type ? await client.types.retrieve(doc.type.id) : undefined;
+    const type = doc.type
+        ? await client.types.catalog.resolve(doc.type)
+        : undefined;
 
     if (!doc?.text && !params.use_vision && !doc?.content?.type?.startsWith("image/")) {
         log.warn(`Object ${objectId} not found or text is empty`);
@@ -112,7 +114,7 @@ export async function generateDocumentProperties(
         generation_run_info: {
             id: infoRes.id,
             date: new Date().toISOString(),
-            model: infoRes.modelId,
+            model: infoRes.modelId ?? "",
         },
     }, { suppressWorkflows: true });
 

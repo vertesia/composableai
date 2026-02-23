@@ -1,8 +1,8 @@
 /**
  * Install hooks for running commands before/after project creation
  */
-import { spawn, spawnSync } from 'child_process';
 import chalk from 'chalk';
+import { spawn, spawnSync } from 'child_process';
 import prompts from 'prompts';
 import { PostInstallConfig, PreInstallConfig } from './template-config.js';
 
@@ -80,7 +80,8 @@ async function runInstallHooks(
   projectName: string,
   config: PreInstallConfig | PostInstallConfig,
   packageManager: string,
-  phase: 'pre' | 'post'
+  phase: 'pre' | 'post',
+  nonInteractive = false
 ): Promise<boolean> {
   if (!config.commands || config.commands.length === 0) {
     return true;
@@ -97,12 +98,16 @@ async function runInstallHooks(
     const cliBinary = scopeMatch ? scopeMatch[1] : config.cliPackage.replace(/-cli$/, '');
 
     if (!commandExists(cliBinary)) {
-      const { installCli } = await prompts({
-        type: 'confirm',
-        name: 'installCli',
-        message: `The ${config.cliPackage} package is required. Do you want to install it globally?`,
-        initial: true
-      });
+      let installCli = true;
+      if (!nonInteractive) {
+        const response = await prompts({
+          type: 'confirm',
+          name: 'installCli',
+          message: `The ${config.cliPackage} package is required. Do you want to install it globally?`,
+          initial: true
+        });
+        installCli = response.installCli;
+      }
 
       if (installCli) {
         const installed = await installGlobalPackage(config.cliPackage, packageManager);
@@ -119,7 +124,7 @@ async function runInstallHooks(
 
   // Run each command
   for (const cmd of config.commands) {
-    if (cmd.optional) {
+    if (cmd.optional && !nonInteractive) {
       const promptMessage = cmd.prompt || `Do you want to run "${cmd.name}"?`;
       const { proceed } = await prompts({
         type: 'confirm',
@@ -158,9 +163,10 @@ async function runInstallHooks(
 export async function runPreInstallHooks(
   projectName: string,
   preInstall: PreInstallConfig,
-  packageManager: string
+  packageManager: string,
+  nonInteractive = false
 ): Promise<boolean> {
-  return runInstallHooks(projectName, preInstall, packageManager, 'pre');
+  return runInstallHooks(projectName, preInstall, packageManager, 'pre', nonInteractive);
 }
 
 /**
@@ -169,7 +175,8 @@ export async function runPreInstallHooks(
 export async function runPostInstallHooks(
   projectName: string,
   postInstall: PostInstallConfig,
-  packageManager: string
+  packageManager: string,
+  nonInteractive = false
 ): Promise<void> {
-  await runInstallHooks(projectName, postInstall, packageManager, 'post');
+  await runInstallHooks(projectName, postInstall, packageManager, 'post', nonInteractive);
 }

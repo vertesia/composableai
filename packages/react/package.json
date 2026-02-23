@@ -1,45 +1,43 @@
 {
-    "name": "@vertesia/react",
-    "version": "1.0.0-dev.20260203.130115Z",
-    "description": "React helpers for Composable AI",
-    "type": "module",
-    "types": "./lib/index.d.ts",
-    "main": "./lib/index.js",
-    "files": [
-        "lib",
-        "src"
-    ],
-    "license": "Apache-2.0",
-    "homepage": "https://docs.vertesiahq.com",
-    "keywords": [
-        "llm",
-        "streaming",
-        "composable",
-        "prompt",
-        "ai",
-        "react"
-    ],
-    "scripts": {
-        "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
-        "build": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build",
-        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
-    },
-    "devDependencies": {
-        "@types/json-schema": "^7.0.15",
-        "@types/react": "^19.2.3",
-        "typescript": "^5.9.3"
-    },
-    "peerDependencies": {
-        "react": ">=16.8.0"
-    },
-    "dependencies": {
-        "@vertesia/client": "workspace:*",
-        "@vertesia/common": "workspace:*",
-        "json-schema": "^0.4.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/vertesia/composableai.git",
-        "directory": "packages/react"
-    }
+  "name": "@vertesia/react",
+  "version": "1.0.0-dev.20260203.130115Z",
+  "description": "React helpers for Composable AI",
+  "type": "module",
+  "types": "./lib/index.d.ts",
+  "main": "./lib/index.js",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "license": "Apache-2.0",
+  "homepage": "https://docs.vertesiahq.com",
+  "keywords": [
+    "llm",
+    "streaming",
+    "composable",
+    "prompt",
+    "ai",
+    "react"
+  ],
+  "scripts": {
+    "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+    "build": "tsc --build",
+    "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "dependencies": {
+    "@vertesia/client": "workspace:*",
+    "@vertesia/common": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vertesia/composableai.git",
+    "directory": "packages/react"
+  }
 }

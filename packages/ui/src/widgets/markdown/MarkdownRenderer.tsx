@@ -3,9 +3,19 @@ import type { Element } from 'hast';
 import React from 'react';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import remarkDirective from 'remark-directive';
+import remarkAlert from 'remark-github-blockquote-alert';
+import { remarkDefinitionList, defListHastHandlers } from 'remark-definition-list';
+import remarkSupersub from 'remark-supersub';
+import rehypeKatex from 'rehype-katex';
 import { SKIP, visit } from 'unist-util-visit';
 import { MarkdownLink } from './MarkdownLink';
 import { MarkdownImage } from './MarkdownImage';
+import { MarkdownFigure } from './MarkdownFigure';
+import { remarkDirectiveHandler } from './remarkDirectiveHandler';
+import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
+import { normalizeDirectives } from './normalizeDirectives';
 import {
     CodeBlockHandlerProvider,
     createDefaultCodeBlockHandlers,
@@ -93,13 +103,40 @@ export function MarkdownRenderer({
     onProposalSubmit,
 }: MarkdownRendererProps) {
     const codeBlockRegistry = useCodeBlockRendererRegistry();
-    const plugins = React.useMemo(() => {
-        const result = [remarkGfm, ...remarkPlugins];
+    const normalizedMarkdown = React.useMemo(
+        () => normalizeDirectives(normalizeCustomSchemeLinks(children)),
+        [children]
+    );
+
+    // Remark plugins (markdown parsing)
+    // Order matters: GFM first, then directive (must precede handler),
+    // then definition-list/supersub, then math, then user plugins.
+    const remarkPluginsArray = React.useMemo(() => {
+        const result: any[] = [
+            remarkGfm,
+            remarkDirective,
+            remarkDirectiveHandler,
+            remarkAlert,
+            remarkDefinitionList,
+            remarkSupersub,
+            remarkMath,
+            ...remarkPlugins,
+        ];
         if (removeComments) {
             result.push(remarkRemoveComments);
         }
         return result;
     }, [remarkPlugins, removeComments]);
+
+    // Rehype plugins (HTML processing, including KaTeX for math)
+    const rehypePluginsArray = React.useMemo(() => [rehypeKatex], []);
+
+    // Remark-rehype bridge options (custom AST handlers for definition lists)
+    const remarkRehypeOptions = React.useMemo(() => ({
+        handlers: {
+            ...defListHastHandlers,
+        },
+    }), []);
 
     const componentsWithOverrides = React.useMemo(() => {
         const baseComponents = components || {};
@@ -157,7 +194,7 @@ export function MarkdownRenderer({
 
             // Default code rendering
             const baseInlineClass = 'px-1.5 py-0.5 rounded';
-            const baseCodeClass = 'text-muted';
+            const baseCodeClass = '';
 
             return (
                 <code
@@ -193,8 +230,22 @@ export function MarkdownRenderer({
             );
         };
 
-        const ImageComponent = (props: { node?: any; src?: string; alt?: string }) => {
-            const { node, src, alt, ...rest } = props as any;
+        const ImageComponent = (props: { node?: any; src?: string; alt?: string; title?: string }) => {
+            const { node, src, alt, title, ...rest } = props as any;
+
+            // If image has a title, render as figure with caption
+            if (title) {
+                return (
+                    <MarkdownFigure
+                        src={src}
+                        alt={alt}
+                        caption={title}
+                        className={imageClassName}
+                        artifactRunId={artifactRunId}
+                    />
+                );
+            }
+
             return (
                 <MarkdownImage
                     node={node}
@@ -231,18 +282,20 @@ export function MarkdownRenderer({
             onProposalSubmit={onProposalSubmit}
         >
             <Markdown
-                remarkPlugins={plugins}
+                remarkPlugins={remarkPluginsArray}
+                rehypePlugins={rehypePluginsArray}
+                remarkRehypeOptions={remarkRehypeOptions}
                 components={componentsWithOverrides}
                 urlTransform={customUrlTransform}
             >
-                {children}
+                {normalizedMarkdown}
             </Markdown>
         </CodeBlockHandlerProvider>
     );
 
     if (className) {
-        return <div className={className}>{markdownContent}</div>;
+        return <div className={`md-content ${className}`}>{markdownContent}</div>;
     }
 
-    return markdownContent;
+    return <div className="md-content">{markdownContent}</div>;
 }

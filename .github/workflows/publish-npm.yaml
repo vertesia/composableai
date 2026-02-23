@@ -62,3 +62,33 @@ jobs:
               --release-type "${{ inputs.release_type }}" \
               --bump-type "${{ inputs.bump_type }}" \
               --dry-run "${{ inputs.dry_run }}"
+
+      # Template integration tests using local verdaccio registry (dry-run only)
+      - name: Template integration test - Plugin
+        if: inputs.dry_run == true
+        run: ./.github/bin/test-template-integration.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Plugin"
+      - name: Template integration test - Tool Server (deprecated)
+        if: inputs.dry_run == true
+        run: ./.github/bin/test-template-integration.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Tool Server (deprecated)"
+
+  # ============================================================
+  # Integration test after real publish (non-dry-run only)
+  # Verifies published packages work by bootstrapping a template.
+  # ============================================================
+
+  integration-test:
+    name: Integration test (published packages)
+    runs-on: ubuntu-latest
+    needs: publish
+    if: inputs.dry_run == false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Smoke test - Plugin
+        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Plugin" --wait
+      - name: Smoke test - Tool Server (deprecated)
+        run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Tool Server (deprecated)" --wait

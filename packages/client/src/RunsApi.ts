@@ -1,7 +1,6 @@
 import type { ExecutionResponse } from "@llumiverse/common";
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
-    CheckpointConversationPayload,
     ComputeRunFacetPayload,
     ExecutionRun,
     ExecutionRunRef,
@@ -122,12 +121,6 @@ export class RunsApi extends ApiTopic {
      */
     sendUserMessage(payload: UserMessagePayload): Promise<ExecutionResponse> {
         return this.post(`/user-message`, {
-            payload,
-        });
-    }
-
-    createCheckpoint(payload: CheckpointConversationPayload): Promise<ExecutionResponse> {
-        return this.post(`/checkpoint`, {
             payload,
         });
     }

@@ -12,15 +12,20 @@ interface NavProps {
      * @returns
      */
     onClick?: (ev: SyntheticEvent) => void;
+    /**
+     * If true, use replaceState instead of pushState (no new browser history entry).
+     * Defaults to true for backward compatibility.
+     */
+    replace?: boolean;
 }
-export function Nav({ children, onClick }: NavProps) {
+export function Nav({ children, onClick, replace = true }: NavProps) {
     const navigate = useNavigate();
     const _onClick = (ev: SyntheticEvent) => {
         const link = (ev.target as HTMLElement).closest('a');
         if (link && link.href) {
             ev.stopPropagation();
             ev.preventDefault();
-            navigate(link.href, { replace: true });
+            navigate(link.href, { replace });
             onClick?.(ev);
         }
     }

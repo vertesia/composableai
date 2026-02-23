@@ -3,6 +3,7 @@ import { AuthTokenPayload, AuthTokenResponse } from "@vertesia/common";
 import AccountApi from "./AccountApi.js";
 import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";
+import AuditTrailApi from "./AuditTrailApi.js";
 import { ApiKeysApi } from "./ApiKeysApi.js";
 import AppsApi from "./AppsApi.js";
 import CommandsApi from "./CommandsApi.js";
@@ -333,6 +334,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     accounts = new AccountsApi(this);
     apikeys = new ApiKeysApi(this);
     analytics = new AnalyticsApi(this);
+    auditTrail = new AuditTrailApi(this);
     training = new TrainingApi(this);
     users = new UsersApi(this);
     iam = new IamApi(this);

@@ -1,4 +1,4 @@
-import { ComplexSearchPayload, ContentObjectItem } from "@vertesia/common";
+import { ComplexSearchPayload, ContentObjectItem, FindPayload } from "@vertesia/common";
 import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Md5 } from "ts-md5";
@@ -128,25 +128,31 @@ export function useSmartFileUploadProcessing() {
             const filesWithMetadata = await prepareFilesWithMetadata(files, selectedFolder);
 
             const identifyExistingHash = async () => {
+                const hashes = filesWithMetadata.map((file) => file.hash).filter(Boolean);
+                if (hashes.length === 0) return;
+
                 const query = {
-                    "content.etag": { $in: filesWithMetadata.map((file) => file.hash) },
+                    "content.etag": { $in: hashes },
                 };
 
                 let res: ContentObjectItem[];
 
-                const payload: ComplexSearchPayload = {
-                    query: { match: query },
-                    select: "id content.etag" // Only fetch fields needed for comparison
-                };
-
                 if (limitToCollectionId) {
+                    const payload: ComplexSearchPayload = {
+                        query: { match: query },
+                        select: "id content.etag"
+                    };
                     res = (await client.store.collections.searchMembers(limitToCollectionId, payload)).results;
                 } else {
-                    res = (await client.store.objects.search(payload)).results;
+                    const payload: FindPayload = {
+                        query,
+                        select: "id content.etag"
+                    };
+                    res = await client.store.objects.find(payload);
                 }
 
                 for (const doc of res) {
-                    const file = filesWithMetadata.find((f) => f.hash === doc.content.etag);
+                    const file = filesWithMetadata.find((f) => f.hash === doc.content?.etag);
                     if (file) {
                         file.existingId = doc.id;
                         file.action = FileUploadAction.SKIP;
@@ -196,7 +202,7 @@ export function useSmartFileUploadProcessing() {
                     const file = filesWithMetadata.find(
                         //name must be the same, and location must match (default is "/")
                         (f) =>
-                            f.name === doc.content.name &&
+                            f.name === doc.content?.name &&
                             (f.location ? f.location === doc.location : doc.location === "/"),
                     );
                     if (file) {

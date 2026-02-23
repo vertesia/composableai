@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { AwsConfiguration, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, ProjectToolInfo, SupportedIntegrations } from "@vertesia/common";
+import { AwsConfiguration, CompositeAppConfig, CompositeAppConfigPayload, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, InCodeTypeDefinition, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, ProjectToolInfo, SupportedIntegrations } from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -52,6 +52,26 @@ export default class ProjectsApi extends ApiTopic {
                 return null;
             }
             throw err;
+        });
+    }
+
+    listAppContentTypes(projectId: string, tag?: string): Promise<InCodeTypeDefinition[]> {
+        return this.get(`/${projectId}/app-types`, {
+            query: { tag }
+        });
+    }
+
+    getAppContentType(projectId: string, typeId: string): Promise<InCodeTypeDefinition> {
+        return this.get(`/${projectId}/app-types/${typeId}`);
+    }
+
+    getCompositeAppConfiguration(projectId: string): Promise<CompositeAppConfig> {
+        return this.get(`/${projectId}/composite-app`);
+    }
+
+    updateCompositeAppConfiguration(projectId: string, payload: CompositeAppConfigPayload): Promise<CompositeAppConfig> {
+        return this.put(`/${projectId}/composite-app`, {
+            payload
         });
     }
 

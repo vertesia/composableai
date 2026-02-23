@@ -1,12 +1,14 @@
 import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
+import { cn } from "@vertesia/ui/core";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
-import BatchProgressPanel from "./BatchProgressPanel";
-import MessageItem from "./MessageItem";
-import StreamingMessage from "./StreamingMessage";
-import ToolCallGroup from "./ToolCallGroup";
+export type AgentConversationViewMode = "stacked" | "sliding";
+import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
+import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "./MessageItem";
+import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
+import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, StreamingData } from "./utils";
+import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
 
 // Replace %thinking_message% placeholder with actual thinking message
@@ -22,15 +24,17 @@ const isBatchProgressMessage = (message: AgentMessage): message is AgentMessage 
     return message.type === AgentMessageType.BATCH_PROGRESS && !!message.details?.batch_id;
 };
 
-// Check if message is a system metadata message that should be hidden from users
-const isSystemMetadataMessage = (message: AgentMessage): boolean => {
-    if (message.type !== AgentMessageType.UPDATE) return false;
-    const text = message.message?.toString() || '';
-    // Hide "Tools enabled:" messages that list all available tools
-    if (text.startsWith('Tools enabled:')) return true;
-    // Hide "Starting work with interaction" messages
-    if (text.startsWith('Starting work with interaction')) return true;
-    return false;
+const shouldDedupeAdjacentMessage = (previous: AgentMessage, current: AgentMessage): boolean => {
+    if (previous.type !== current.type) return false;
+    if (previous.message !== current.message) return false;
+
+    const prevDetails = previous.details as { tool_status?: string } | undefined;
+    const currDetails = current.details as { tool_status?: string } | undefined;
+    if (prevDetails?.tool_status !== "completed" || currDetails?.tool_status !== "completed") return false;
+
+    const prevTs = typeof previous.timestamp === "number" ? previous.timestamp : new Date(previous.timestamp).getTime();
+    const currTs = typeof current.timestamp === "number" ? current.timestamp : new Date(current.timestamp).getTime();
+    return currTs - prevTs < 2000;
 };
 
 // Error boundary to catch and isolate errors in individual message components
@@ -91,6 +95,28 @@ interface AllMessagesMixedProps {
     onSendMessage?: (message: string) => void;
     /** Stable index for thinking messages (changes on 4s interval) */
     thinkingMessageIndex?: number;
+    /** className overrides passed to every MessageItem */
+    messageItemClassNames?: MessageItemClassNames;
+    /** Sparse MESSAGE_STYLES overrides passed to every MessageItem */
+    messageStyleOverrides?: MessageItemProps['messageStyleOverrides'];
+    toolCallGroupClassNames?: ToolCallGroupClassNames;
+    /** Hide ToolCallGroup in this view mode */
+    hideToolCallsInViewMode?: AgentConversationViewMode[];
+    streamingMessageClassNames?: StreamingMessageClassNames;
+    batchProgressPanelClassNames?: BatchProgressPanelClassNames;
+    /** Hide the workstream tabs entirely */
+    hideWorkstreamTabs?: boolean;
+    /** className override for the working indicator container */
+    workingIndicatorClassName?: string;
+    /** className override for the message list container (spacing/layout) */
+    messageListClassName?: string;
+    /** Custom component to render store/document links instead of default NavLink navigation */
+    StoreLinkComponent?: React.ComponentType<{ href: string; documentId: string; children: React.ReactNode }>;
+    /** Custom component to render store/collection links instead of default NavLink navigation */
+    CollectionLinkComponent?: React.ComponentType<{ href: string; collectionId: string; children: React.ReactNode }>;
+    /** Optional message to display as the first user message in the conversation.
+     *  Purely visual/UI — not sent to temporal. Renders as a QUESTION MessageItem before real messages. */
+    prependFriendlyMessage?: string;
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -104,6 +130,18 @@ function AllMessagesMixedComponent({
     streamingMessages = new Map(),
     onSendMessage,
     thinkingMessageIndex = 0,
+    messageItemClassNames,
+    messageStyleOverrides,
+    toolCallGroupClassNames,
+    hideToolCallsInViewMode,
+    streamingMessageClassNames,
+    batchProgressPanelClassNames,
+    hideWorkstreamTabs,
+    workingIndicatorClassName,
+    messageListClassName,
+    StoreLinkComponent,
+    CollectionLinkComponent,
+    prependFriendlyMessage,
 }: AllMessagesMixedProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
@@ -158,16 +196,26 @@ function AllMessagesMixedComponent({
         };
     }, [messages.length, streamingMessages.size, streamingContentBucket, performScroll]);
 
-    // Sort all messages chronologically and filter out system metadata
+    // Sort all messages chronologically and dedupe adjacent identical messages
+    // Low-signal messages are suppressed at the source (server-side) via shouldSuppressLowSignalMessage
     const sortedMessages = React.useMemo(
-        () =>
-            [...messages]
-                .filter(msg => !isSystemMetadataMessage(msg))
-                .sort((a, b) => {
-                    const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
-                    const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
-                    return timeA - timeB;
-                }),
+        () => {
+            const sorted = [...messages].sort((a, b) => {
+                const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
+                const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
+                return timeA - timeB;
+            });
+
+            const deduped: AgentMessage[] = [];
+            for (const msg of sorted) {
+                const previous = deduped[deduped.length - 1];
+                if (previous && shouldDedupeAdjacentMessage(previous, msg)) {
+                    continue;
+                }
+                deduped.push(msg);
+            }
+            return deduped;
+        },
         [messages],
     );
 
@@ -224,9 +272,7 @@ function AllMessagesMixedComponent({
             msg.type === AgentMessageType.TERMINATED ||
             msg.type === AgentMessageType.ERROR ||
             // Include THOUGHT messages that have tool details (progress from message_to_human or streamed content)
-            (msg.type === AgentMessageType.THOUGHT && (msg.details?.tool || msg.details?.tools || msg.details?.streamed)) ||
-            // Include toolkit_ready SYSTEM message (shows at conversation start)
-            (msg.type === AgentMessageType.SYSTEM && msg.details?.system_type === 'toolkit_ready')
+            (msg.type === AgentMessageType.THOUGHT && (msg.details?.tool || msg.details?.tools || msg.details?.streamed))
         );
 
         // Latest thinking: show only the most recent generic thinking message (UPDATE/PLAN or THOUGHT without tool)
@@ -243,11 +289,19 @@ function AllMessagesMixedComponent({
         return { importantMessages: important, recentThinking: thinkingMessages };
     }, [displayMessages, isCompleted, streamingMessages.size]);
 
-    // Split streaming messages: complete ones get interleaved, incomplete ones render at end
-    // This prevents re-grouping all messages when incomplete streaming updates
+    // Split streaming messages:
+    // - complete (or stale incomplete) ones are interleaved chronologically
+    // - actively incomplete ones render at the end
+    // This keeps live streaming performant while preventing old incomplete streams
+    // from being pinned forever at the bottom.
     const { completeStreaming, incompleteStreaming } = React.useMemo(() => {
         const complete = new Map<string, StreamingData>();
         const incomplete: Array<{ id: string; data: StreamingData }> = [];
+        const newestMessageTimestamp = displayMessages.length > 0
+            ? Math.max(...displayMessages.map(msg =>
+                typeof msg.timestamp === "number" ? msg.timestamp : new Date(msg.timestamp).getTime()
+            ))
+            : -Infinity;
 
         streamingMessages.forEach((data, id) => {
             // Filter by workstream if specified
@@ -256,7 +310,10 @@ function AllMessagesMixedComponent({
                 if (activeWorkstream !== streamWorkstream) return;
             }
 
-            if (data.isComplete) {
+            // If a newer persisted message exists, this stream is stale and should be
+            // treated as complete for ordering purposes.
+            const isStale = data.startTimestamp <= newestMessageTimestamp;
+            if (data.isComplete || isStale) {
                 complete.set(id, data);
             } else if (data.text) {
                 incomplete.push({ id, data });
@@ -264,18 +321,18 @@ function AllMessagesMixedComponent({
         });
 
         return { completeStreaming: complete, incompleteStreaming: incomplete };
-    }, [streamingMessages, activeWorkstream]);
+    }, [streamingMessages, activeWorkstream, displayMessages]);
 
     // Group messages with ONLY complete streaming interleaved for stacked view
     // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk)
     const groupedMessages = React.useMemo(
-        () => groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream),
+        () => mergeConsecutiveToolGroups(groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream)),
         [displayMessages, completeStreaming, activeWorkstream]
     );
 
     // Group important messages with ONLY complete streaming interleaved for sliding view
     const groupedImportantMessages = React.useMemo(
-        () => groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream),
+        () => mergeConsecutiveToolGroups(groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream)),
         [importantMessages, completeStreaming, activeWorkstream]
     );
 
@@ -325,30 +382,30 @@ function AllMessagesMixedComponent({
         <div
             ref={containerRef}
             tabIndex={0}
-            className="flex-1 min-h-0 h-full w-full max-w-full overflow-y-auto overflow-x-hidden px-2 sm:px-3 lg:px-4 flex flex-col relative focus:outline-none"
+            className="flex-1 min-h-0 h-full w-full max-w-full overflow-y-auto overflow-x-hidden px-1.5 sm:px-2.5 lg:px-3 flex flex-col relative focus:outline-none"
             data-testid="all-messages-mixed"
         >
             {/* Global styles for vprose markdown content */}
             <style>{`
                 /* Better vertical rhythm for markdown */
                 .vprose > * + * {
-                    margin-top: 0.875rem;
+                    margin-top: 0.625rem;
                 }
                 .vprose > h1 + *,
                 .vprose > h2 + *,
                 .vprose > h3 + * {
-                    margin-top: 0.5rem;
+                    margin-top: 0.375rem;
                 }
                 /* Tables need more separation and better styling */
                 .vprose table {
-                    margin-top: 1.25rem;
-                    margin-bottom: 1.25rem;
+                    margin-top: 0.875rem;
+                    margin-bottom: 0.875rem;
                     border-collapse: collapse;
                     width: 100%;
                 }
                 .vprose th,
                 .vprose td {
-                    padding: 0.625rem 0.875rem;
+                    padding: 0.5rem 0.625rem;
                     border: 1px solid var(--gray-6, #e5e7eb);
                     text-align: left;
                 }
@@ -377,14 +434,14 @@ function AllMessagesMixedComponent({
                 }
                 /* Horizontal rules as section dividers */
                 .vprose hr {
-                    margin-top: 1.5rem;
-                    margin-bottom: 1.5rem;
+                    margin-top: 1rem;
+                    margin-bottom: 1rem;
                     border-color: var(--gray-5, #d1d5db);
                 }
                 /* Better blockquote styling */
                 .vprose blockquote {
-                    margin-top: 1.25rem;
-                    margin-bottom: 1.25rem;
+                    margin-top: 0.875rem;
+                    margin-bottom: 0.875rem;
                     padding-left: 1rem;
                     border-left-width: 3px;
                     border-left-color: var(--gray-6, #d1d5db);
@@ -392,16 +449,24 @@ function AllMessagesMixedComponent({
                 }
                 /* Code blocks */
                 .vprose pre {
-                    margin-top: 1rem;
-                    margin-bottom: 1rem;
-                    padding: 1rem;
+                    margin-top: 0.75rem;
+                    margin-bottom: 0.75rem;
+                    padding: 0.75rem;
                     border-radius: 0.5rem;
                     overflow-x: auto;
+                    background-color: var(--color-muted-background, #f3f4f6);
+                    color: var(--color-foreground, #1f2937);
+                }
+                .vprose pre code {
+                    color: inherit;
+                }
+                .dark .vprose pre {
+                    color: var(--color-foreground, #f9fafb);
                 }
             `}</style>
 
             {/* Workstream tabs with completion indicators */}
-            <div className="sticky top-0 z-10">
+            <div className={cn("sticky top-0 z-10", hideWorkstreamTabs && "hidden")}>
                 <WorkstreamTabs
                     workstreams={workstreams}
                     activeWorkstream={activeWorkstream}
@@ -413,14 +478,29 @@ function AllMessagesMixedComponent({
 
             {displayMessages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-center py-8">
-                    <div className="flex items-center px-4 py-3 text-muted">
+                    <div className="flex items-center px-3 py-2 text-sm text-muted">
                         {activeWorkstream === "all"
                             ? "Waiting for agent response..."
                             : "No messages in this workstream yet..."}
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full">
+                <div className={cn("flex-1 flex flex-col justify-start pb-4 space-y-2 w-full max-w-full", messageListClassName)}>
+                    {/* Friendly message — rendered outside the messages array to avoid memo issues/triggering autoscroll */}
+                    {prependFriendlyMessage && (
+                        <MessageItem
+                            key={prependFriendlyMessage}
+                            {...messageItemClassNames}
+                            messageStyleOverrides={messageStyleOverrides}
+                            message={{
+                                type: AgentMessageType.QUESTION,
+                                message: prependFriendlyMessage,
+                                timestamp: displayMessages[0]?.timestamp ?? Date.now(),
+                                workflow_run_id: "",
+                                workstream_id: "main",
+                            }}
+                        />
+                    )}
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
                         // Details view - show ALL messages with streaming interleaved
@@ -431,11 +511,16 @@ function AllMessagesMixedComponent({
                                 if (group.type === 'tool_group') {
                                     // Render grouped tool calls
                                     const lastMessage = group.messages[group.messages.length - 1];
+                                    const isTerminalToolStatus =
+                                        group.toolStatus === "completed" ||
+                                        group.toolStatus === "error" ||
+                                        group.toolStatus === "warning";
                                     const isLatest = !isCompleted &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(lastMessage.type) &&
-                                        group.toolStatus !== "completed";
+                                        !isTerminalToolStatus;
 
+                                    if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
                                         <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
                                             <ToolCallGroup
@@ -443,6 +528,7 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatest}
                                                 toolRunId={group.toolRunId}
                                                 toolStatus={group.toolStatus}
+                                                {...toolCallGroupClassNames}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -455,6 +541,7 @@ function AllMessagesMixedComponent({
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
+                                            {...streamingMessageClassNames}
                                         />
                                     );
                                 } else {
@@ -472,6 +559,7 @@ function AllMessagesMixedComponent({
                                                     message={message}
                                                     batchData={message.details}
                                                     isRunning={!message.details.completed_at}
+                                                    {...batchProgressPanelClassNames}
                                                 />
                                             </MessageErrorBoundary>
                                         );
@@ -483,6 +571,10 @@ function AllMessagesMixedComponent({
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
+                                                {...messageItemClassNames}
+                                                messageStyleOverrides={messageStyleOverrides}
+                                                StoreLinkComponent={StoreLinkComponent}
+                                                CollectionLinkComponent={CollectionLinkComponent}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -496,13 +588,14 @@ function AllMessagesMixedComponent({
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
+                                    {...streamingMessageClassNames}
                                 />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && incompleteStreaming.length === 0 && (
-                                <div className="flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500">
+                                <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-sm text-muted">Working...</span>
+                                    <span className="text-xs text-muted">Working...</span>
                                 </div>
                             )}
                         </>
@@ -515,12 +608,17 @@ function AllMessagesMixedComponent({
                                 if (group.type === 'tool_group') {
                                     // Render grouped tool calls
                                     const lastMessage = group.messages[group.messages.length - 1];
+                                    const isTerminalToolStatus =
+                                        group.toolStatus === "completed" ||
+                                        group.toolStatus === "error" ||
+                                        group.toolStatus === "warning";
                                     const isLatest = !isCompleted &&
                                         recentThinking.length === 0 &&
                                         isLastGroup &&
                                         !DONE_STATES.includes(lastMessage.type) &&
-                                        group.toolStatus !== "completed";
+                                        !isTerminalToolStatus;
 
+                                    if (hideToolCallsInViewMode?.includes(viewMode)) return null;
                                     return (
                                         <MessageErrorBoundary key={`group-${group.toolRunId || group.firstTimestamp}-${groupIndex}`}>
                                             <ToolCallGroup
@@ -528,6 +626,7 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatest}
                                                 toolRunId={group.toolRunId}
                                                 toolStatus={group.toolStatus}
+                                                {...toolCallGroupClassNames}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -540,6 +639,7 @@ function AllMessagesMixedComponent({
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
+                                            {...streamingMessageClassNames}
                                         />
                                     );
                                 } else {
@@ -558,6 +658,7 @@ function AllMessagesMixedComponent({
                                                     message={message}
                                                     batchData={message.details}
                                                     isRunning={!message.details.completed_at}
+                                                    {...batchProgressPanelClassNames}
                                                 />
                                             </MessageErrorBoundary>
                                         );
@@ -569,6 +670,10 @@ function AllMessagesMixedComponent({
                                                 message={message}
                                                 showPulsatingCircle={isLatestMessage}
                                                 onSendMessage={onSendMessage}
+                                                {...messageItemClassNames}
+                                                messageStyleOverrides={messageStyleOverrides}
+                                                StoreLinkComponent={StoreLinkComponent}
+                                                CollectionLinkComponent={CollectionLinkComponent}
                                             />
                                         </MessageErrorBoundary>
                                     );
@@ -582,6 +687,7 @@ function AllMessagesMixedComponent({
                                     workstreamId={getWorkstreamId(thinking)}
                                     isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
                                     timestamp={thinking.timestamp}
+                                    {...streamingMessageClassNames}
                                 />
                             ))}
                             {/* Incomplete streaming - no error boundary to avoid interrupting streaming */}
@@ -592,18 +698,19 @@ function AllMessagesMixedComponent({
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
+                                    {...streamingMessageClassNames}
                                 />
                             ))}
                             {/* Working indicator - shows agent is actively processing */}
                             {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
-                                <div className="flex items-center gap-3 pl-4 py-2 border-l-2 border-l-purple-500">
+                                <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-sm text-muted">Working...</span>
+                                    <span className="text-xs text-muted">Working...</span>
                                 </div>
                             )}
                         </>
                     )}
-                    <div ref={bottomRef} className="h-4" />
+                    <div ref={bottomRef} className="h-2" />
                 </div>
             )}
         </div>

@@ -111,8 +111,9 @@ interface AgentAvatarProps extends InfoProps {
     agentId: string;  // Format: accountId:projectId:timestamp
     onBehalfOfType?: string;
     onBehalfOfId?: string;
+    isScheduleAgent?: boolean;
 }
-function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false, size = "md" }: AgentAvatarProps) {
+function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false, size = "md", isScheduleAgent = false }: AgentAvatarProps) {
     // Fetch user info - must call hooks unconditionally per React rules
     const shouldFetchUser = onBehalfOfType === 'user' && onBehalfOfId;
     const shouldFetchApiKey = onBehalfOfType === 'apikey' && onBehalfOfId;
@@ -126,6 +127,7 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
 
     // Determine title and description
     const title = user ? "Agent on behalf of" : apiKey ? "Agent on behalf of API key" : "Service Account";
+    const _title = isScheduleAgent ? `Schedule ${title}` : title;
 
     const description = (
         <div className="space-y-2">
@@ -160,7 +162,7 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
     );
 
     return (
-        <UserPopoverPanel title={title} description={description}>
+        <UserPopoverPanel title={_title} description={description}>
             <div className="flex items-center gap-2">
                 <div className="flex items-center -space-x-2">
                     <Avatar
@@ -188,7 +190,7 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
                 </div>
                 {showTitle && (
                     <div className="text-sm font-semibold truncate">
-                        {user ? `Agent (${user.name || user.email})` : apiKey ? `Agent (${apiKey.name})` : "Agent"}
+                        {user ? `Agent (${user.name || user.email})` : apiKey ? `Agent (${apiKey.name})` : title}
                     </div>
                 )}
             </div>
@@ -271,6 +273,22 @@ export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoPr
                 onBehalfOfId={onBehalfOfId}
                 showTitle={showTitle}
                 size={size}
+            />
+        }
+
+        case PrincipalType.Schedule: {
+            // format: schedule:agentId:user:userId
+            const agentId = parts[1];
+            const onBehalfOfType = parts[2];
+            const onBehalfOfId = parts[3];
+
+            return <AgentAvatar
+                agentId={agentId}
+                onBehalfOfType={onBehalfOfType}
+                onBehalfOfId={onBehalfOfId}
+                showTitle={showTitle}
+                size={size}
+                isScheduleAgent={true}
             />
         }
 
