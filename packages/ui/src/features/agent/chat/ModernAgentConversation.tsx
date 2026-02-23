@@ -153,6 +153,8 @@ interface ModernAgentConversationProps {
     hideWorkstreamTabs?: boolean;
     /** Hide the default file upload */
     hideFileUpload?: boolean;
+    /** Hide the document preview panel that auto-opens on create_document */
+    hideDocumentPanel?: boolean;
 
     // Callback to get attached documents when sending messages
     // Returns array of { id, name } to include in message metadata and display
@@ -680,6 +682,7 @@ function ModernAgentConversationInner({
     hidePlanPanel,
     hideWorkstreamTabs,
     hideFileUpload,
+    hideDocumentPanel,
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
@@ -1342,7 +1345,7 @@ function ModernAgentConversationInner({
             )}
 
             {/* Document Panel Area - slides in when documents are created/edited */}
-            {isDocPanelOpen && openDocuments.length > 0 && (
+            {!hideDocumentPanel && isDocPanelOpen && openDocuments.length > 0 && (
                 <div className={cn(
                     "w-full lg:w-2/5 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l",
                     showSlidingPanel && "lg:w-1/3"
