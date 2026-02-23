@@ -1,4 +1,4 @@
-import { log } from "@temporalio/activity";
+import { ApplicationFailure, log } from "@temporalio/activity";
 import {
   ContentObjectTypeItem,
   CreateContentObjectTypePayload,
@@ -122,16 +122,41 @@ export async function generateOrAssignContentType(
     existing_types.filter((t) => !t.tags?.includes("system")),
   );
 
-  const res = await executeInteractionFromActivity(
-    client,
-    interactionName,
-    params,
-    {
-      existing_types,
-      content,
-      image: fileRef,
-    },
-  );
+  let res;
+  try {
+    res = await executeInteractionFromActivity(
+      client,
+      interactionName,
+      params,
+      {
+        existing_types,
+        content,
+        image: fileRef,
+      },
+    );
+  } catch (error: any) {
+    log.error(`Failed to select document type`, { error, retryable: error.retryable });
+    
+    const isRetryable = error.retryable !== undefined 
+      ? error.retryable !== false
+      : undefined;
+    
+    if (isRetryable !== undefined) {
+      if (isRetryable) {
+        throw ApplicationFailure.create({
+          message: `Document type selection failed: ${error.message}`,
+          nonRetryable: false,
+        });
+      } else {
+        throw ApplicationFailure.create({
+          message: `Non-retryable document type selection failed: ${error.message}`,
+          nonRetryable: true,
+        });
+      }
+    }
+    
+    throw error;
+  }
 
   const jsonResult = res.result.object();
 
@@ -184,17 +209,42 @@ async function generateNewType(
     params.interactionNames?.generateMetadataModel ??
     INT_GENERATE_METADATA_MODEL;
 
-  const genTypeRes = await executeInteractionFromActivity(
-    client,
-    interactionName,
-    params,
-    {
-      existing_types,
-      content: content,
-      human_context: project?.configuration?.human_context ?? undefined,
-      image: fileRef ? fileRef : undefined,
-    },
-  );
+  let genTypeRes;
+  try {
+    genTypeRes = await executeInteractionFromActivity(
+      client,
+      interactionName,
+      params,
+      {
+        existing_types,
+        content: content,
+        human_context: project?.configuration?.human_context ?? undefined,
+        image: fileRef ? fileRef : undefined,
+      },
+    );
+  } catch (error: any) {
+    log.error(`Failed to generate new document type`, { error, retryable: error.retryable });
+    
+    const isRetryable = error.retryable !== undefined 
+      ? error.retryable !== false
+      : undefined;
+    
+    if (isRetryable !== undefined) {
+      if (isRetryable) {
+        throw ApplicationFailure.create({
+          message: `Document type generation failed: ${error.message}`,
+          nonRetryable: false,
+        });
+      } else {
+        throw ApplicationFailure.create({
+          message: `Non-retryable document type generation failed: ${error.message}`,
+          nonRetryable: true,
+        });
+      }
+    }
+    
+    throw error;
+  }
 
   const jsonResult = genTypeRes.result.object();
 

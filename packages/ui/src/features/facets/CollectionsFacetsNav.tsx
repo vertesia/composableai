@@ -1,7 +1,7 @@
 import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
 import { useState } from 'react';
+import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
 import { SearchInterface } from './utils/SearchInterface';
-import { useUserSession } from '@vertesia/ui/session';
 
 interface CollectionsFacetsNavProps {
     facets: {
@@ -14,7 +14,7 @@ interface CollectionsFacetsNavProps {
 // Hook to create filter groups for collections
 export function useCollectionsFilterGroups(facets: CollectionsFacetsNavProps['facets']): FilterGroup[] {
     void facets;
-    const { typeRegistry } = useUserSession();
+    const { registry: typeRegistry } = useTypeRegistry();
 
     const customFilterGroups: FilterGroup[] = [];
 

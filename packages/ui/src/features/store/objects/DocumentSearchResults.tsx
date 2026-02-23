@@ -9,7 +9,9 @@ import {
     SidePanel, Spinner, useIntersectionObserver, useToast
 } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
-import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
+import { useUserSession } from '@vertesia/ui/session';
+import { TypeRegistry } from '../types/TypeRegistry.js';
+import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
 import { Download, ExternalLink, RefreshCw } from 'lucide-react';
 import { useEffect, useRef, useState } from "react";
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
@@ -95,7 +97,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const searchContext = useDocumentSearch();
     const [isReady, setIsReady] = useState(false);
     const [selectedObject, setSelectedObject] = useState<ContentObjectItem | null>(null);
-    const { typeRegistry } = useUserSession();
+    const { registry: typeRegistry } = useTypeRegistry();
     const { search, isLoading, error, objects, hasMore } = useWatchDocumentSearchResult();
     const [actualLayout, setActualLayout] = useState<ColumnLayout[]>(
         typeRegistry ? layout || getTableLayout(typeRegistry, search.query.type) : defaultLayout,
