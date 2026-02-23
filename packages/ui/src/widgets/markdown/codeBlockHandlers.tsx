@@ -145,6 +145,10 @@ function detectChartLibrary(
 export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const { artifactRunId } = useCodeBlockContext();
 
+    if (!artifactRunId) {
+        console.warn('[VegaLiteCodeBlockHandler] artifactRunId is missing from CodeBlockContext');
+    }
+
     // Check if JSON is incomplete (streaming in progress)
     const incomplete = useMemo(() => isIncompleteJson(code), [code]);
 
@@ -190,6 +194,10 @@ export function VegaLiteCodeBlockHandler({ code }: CodeBlockRendererProps) {
  */
 export function ChartCodeBlockHandler({ code }: CodeBlockRendererProps) {
     const { artifactRunId } = useCodeBlockContext();
+
+    if (!artifactRunId) {
+        console.warn('[ChartCodeBlockHandler] artifactRunId is missing from CodeBlockContext');
+    }
 
     // Check if JSON is incomplete (streaming in progress)
     const incomplete = useMemo(() => isIncompleteJson(code), [code]);

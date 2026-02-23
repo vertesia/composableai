@@ -4,7 +4,7 @@ import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
-import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, type LucideIcon, MessageSquare, User } from "lucide-react";
+import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, type LucideIcon, MessageSquare, RefreshCcw, User } from "lucide-react";
 import React, { useEffect, useState, useMemo, memo, useRef } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
@@ -147,6 +147,7 @@ export const MESSAGE_STYLES: Record<AgentMessageType | 'default', MessageStyleCo
     [AgentMessageType.SYSTEM]: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'System', Icon: Info },
     [AgentMessageType.STREAMING_CHUNK]: { borderColor: 'border-l-info', iconColor: 'text-info', sender: 'Agent', Icon: Bot },
     [AgentMessageType.BATCH_PROGRESS]: { borderColor: 'border-l-blue-500', iconColor: 'text-blue-600 dark:text-blue-400', sender: 'Batch', Icon: Layers },
+    [AgentMessageType.RESTARTING]: { borderColor: 'border-l-attention', iconColor: 'text-attention', sender: 'Restarting', Icon: RefreshCcw },
     default: { borderColor: 'border-l-muted', iconColor: 'text-muted', sender: 'Agent', Icon: Bot },
 };
 
@@ -347,6 +348,14 @@ function MessageItemComponent({
 
         // Handle string content with markdown - content is already processed
         const runId = (message as any).workflow_run_id as string | undefined;
+
+        if (!runId && typeof content === 'string' && content.includes('artifact:')) {
+            console.warn('[MessageItem] message contains artifact references but workflow_run_id is missing!', {
+                type: message.type,
+                workflow_run_id: (message as any).workflow_run_id,
+                hasArtifact: content.includes('artifact:'),
+            });
+        }
 
         return (
             <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", resolvedStyle.proseClassName)} style={{ overflowWrap: 'anywhere' }}>

@@ -743,6 +743,13 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      */
     non_blocking_subagents?: boolean;
 
+    /**
+     * Temporal runId of a previous workflow to restart/fork from.
+     * When set, conversation history is loaded from the old run's GCS storage
+     * instead of calling startConversation fresh.
+     */
+    restart_from_workflow_run_id?: string;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {

@@ -581,6 +581,15 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
             return;
         }
 
+        if (!artifactRunId) {
+            console.warn('[VegaLiteChart] artifact references found but artifactRunId is missing!', {
+                references: references.map(r => r.artifactPath),
+                artifactRunId,
+            });
+        } else {
+            console.info('[VegaLiteChart] resolving artifacts with runId:', artifactRunId, references.map(r => r.artifactPath));
+        }
+
         let cancelled = false;
         setIsLoadingArtifacts(true);
         setArtifactError(null);

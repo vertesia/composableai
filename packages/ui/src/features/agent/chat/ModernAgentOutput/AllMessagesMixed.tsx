@@ -146,6 +146,10 @@ function AllMessagesMixedComponent({
     CollectionLinkComponent,
     prependFriendlyMessage,
 }: AllMessagesMixedProps) {
+    if (!artifactRunId) {
+        console.warn('[AllMessagesMixed] artifactRunId prop is missing!');
+    }
+
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
 

@@ -687,6 +687,7 @@ export enum AgentMessageType {
     TERMINATED = 11,
     STREAMING_CHUNK = 12,
     BATCH_PROGRESS = 13,
+    RESTARTING = 14,
 }
 
 // ============================================
