@@ -1,6 +1,6 @@
 import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
-import { useUserSession } from '@vertesia/ui/session';
 import { useState } from 'react';
+import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
 import { VStringFacet } from './utils/VStringFacet';
 import { VTypeFacet } from './utils/VTypeFacet';
 import { SearchInterface } from './utils/SearchInterface';
@@ -18,7 +18,7 @@ interface DocumentsFacetsNavProps {
 
 // Hook to create filter groups for documents
 export function useDocumentFilterGroups(facets: DocumentsFacetsNavProps['facets']): FilterGroup[] {
-    const { typeRegistry } = useUserSession();
+    const { registry: typeRegistry } = useTypeRegistry();
     const customFilterGroups: FilterGroup[] = [];
 
     customFilterGroups.push({

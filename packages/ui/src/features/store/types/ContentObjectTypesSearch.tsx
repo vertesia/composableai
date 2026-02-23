@@ -5,6 +5,7 @@ import { useWatchSearchResult } from "./search/ObjectTypeSearchContext";
 
 import { EmptyCollection, ErrorBox, Input, SelectBox, useDebounce, useIntersectionObserver, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
+import { useTypeRegistry } from "./TypeRegistryProvider.js";
 
 import { CreateOrUpdateTypeModal, CreateOrUpdateTypePayload } from "./CreateOrUpdateTypeModal";
 
@@ -14,8 +15,8 @@ interface ContentObjectTypesSearchProps {
     isDirty?: boolean;
 }
 export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypesSearchProps) {
-    const session = useUserSession();
-    const { store } = session;
+    const { store } = useUserSession();
+    const { reload: reloadTypes } = useTypeRegistry();
 
     const toast = useToast();
 
@@ -80,7 +81,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
                 title: "Type created",
                 duration: 2000
             });
-            session.reloadTypes();
+            reloadTypes();
             search.search().then(() => setIsReady(true));
         }).catch(err => {
             toast({
