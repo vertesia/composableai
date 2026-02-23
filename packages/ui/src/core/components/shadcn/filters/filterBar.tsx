@@ -26,39 +26,38 @@ interface FilterProviderProps {
   children: React.ReactNode;
 }
 
+// Syncs filters ↔ URL. On mount, captures the initial URL param and restores matching filters
+// incrementally as filterGroups loads. URL writes are blocked until the first filterGroups load
+// so the address bar doesn't flicker. Filters not matching any filterGroup are silently dropped
+// (prevents cross-page URL contamination, e.g. a modal inheriting a parent page's filters).
+
+// Parse format with array indicators: filterName:value or filterName:[value1,value2]
 const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterProviderProps) => {
   const url = new URL(window.location.href);
   const searchParams = url.searchParams;
-  // Capture URL filters at mount time before the write-effect can clear them
   const [initialFiltersParam] = React.useState(() => new URLSearchParams(window.location.search).get('filters'));
-  // Track which filter names have been resolved so we don't re-add after a user removes them
   const processedUrlFilters = React.useRef<Set<string>>(new Set());
+  const hasRestoredFromUrl = React.useRef(!initialFiltersParam);
 
   useEffect(() => {
+    if (!hasRestoredFromUrl.current) return;
     try {
       const params = new URLSearchParams(searchParams.toString());
       if (filters.length > 0) {
-        // Convert filters to format with array indicators: filterName:value,value;filterName2:value
-        // Arrays are prefixed with []: filterName:[value1,value2]
         const filterString = filters.map(filter => {
           let values;
           if (filter.type === 'stringList' && Array.isArray(filter.value) && typeof filter.value[0] === 'string') {
-            // Handle stringList with direct string array - always array format
             values = `[${(filter.value as string[]).map(item => encodeURIComponent(item)).join(',')}]`;
           } else if (Array.isArray(filter.value)) {
             if (filter.multiple) {
-              // Handle multiple filters - always use array format for multiple=true
               values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || item || '')).join(',')}]`;
             } else if (filter.value.length > 1) {
-              // Handle multiple values for non-multiple filters
               values = `[${filter.value.map((item: any) => encodeURIComponent(item.value || item || '')).join(',')}]`;
             } else {
-              // Single value in array for non-multiple filter - don't use array format
               const firstValue = filter.value[0];
               if (typeof firstValue === 'string') {
                 values = encodeURIComponent(firstValue);
               } else if (typeof firstValue === 'object' && firstValue?.value !== undefined) {
-                // Handle FilterOption object
                 values = encodeURIComponent(String(firstValue.value));
               } else {
                 values = encodeURIComponent(String(firstValue || ''));
@@ -84,7 +83,6 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
   useEffect(() => {
     if (!initialFiltersParam || filterGroups.length === 0) return;
     try {
-      // Parse format with array indicators: filterName:value or filterName:[value1,value2]
       const filterPairs = initialFiltersParam.split(';');
       const newFilters: Filter[] = [];
 
@@ -92,43 +90,32 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
         const [encodedName, valuesString] = pair.split(':');
         const name = decodeURIComponent(encodedName);
 
-        // Skip filter names already resolved (e.g. from a previous filterGroups update)
         if (processedUrlFilters.current.has(name)) continue;
 
-        // Skip filters whose group isn't in this FilterProvider — either not loaded yet
-        // (will retry on next filterGroups change) or genuinely absent (cross-page contamination)
         const group = filterGroups.find(g => g.name === name);
         if (!group) continue;
 
-        // Mark as processed so we don't re-add if the user later removes this filter
         processedUrlFilters.current.add(name);
 
         let values: string[];
-        // Check if it's an array format [value1,value2]
         if (valuesString.startsWith('[') && valuesString.endsWith(']')) {
-          // Array format - remove brackets and split by comma
-          const arrayContent = valuesString.slice(1, -1); // Remove [ and ]
+          const arrayContent = valuesString.slice(1, -1);
           values = arrayContent ? arrayContent.split(',').map(encodedValue => decodeURIComponent(encodedValue)) : [];
         } else {
-          // Single value format
           values = [decodeURIComponent(valuesString)];
         }
 
         let filterValue;
 
         if (group.type === 'stringList') {
-          // For stringList, return direct string array
           filterValue = values;
         } else if (group.type === 'text') {
-          // For text, return FilterOption array (single value for text inputs)
           filterValue = values.length === 1 ? [{ value: values[0], label: values[0] }] :
             values.map(value => ({ value, label: value }));
         } else {
-          // For other types, find options with labels
           filterValue = values.map(value => {
             const matchingOption = group.options?.find(opt => opt.value === value);
             let label = value;
-
             if (matchingOption?.label) {
               label = String(matchingOption.label);
             } else if (matchingOption?.labelRenderer) {
@@ -136,7 +123,6 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
             } else if (group.labelRenderer) {
               label = String(group.labelRenderer(value));
             }
-
             return { value, label };
           });
         }
@@ -161,6 +147,8 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
       if (newFilters.length > 0) {
         setFilters(prev => [...prev, ...newFilters]);
       }
+
+      hasRestoredFromUrl.current = true;
     } catch (_error) {
       // ignore parse errors
     }
@@ -352,7 +340,7 @@ const FilterBar = ({ className }: { className?: string }) => {
   );
 };
 
-const FilterClear = ({ className }: { className?: string}) => {
+const FilterClear = ({ className }: { className?: string }) => {
   const { filters, setFilters } = React.useContext(FilterContext);
 
   const hasActiveFilters = filters.filter((filter) => filter.value?.length > 0).length > 0;
