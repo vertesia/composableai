@@ -17,7 +17,7 @@ interface GenericPageNavHeaderProps {
     useDynamicBreadcrumbs?: boolean;
 }
 
-export function GenericPageNavHeader({ className, children, title, description, actions, breadcrumbs, isCompact = false, useDynamicBreadcrumbs = true }: GenericPageNavHeaderProps) {
+export function GenericPageNavHeader({ className, children, title, description, actions, breadcrumbs, useDynamicBreadcrumbs = true }: GenericPageNavHeaderProps) {
     const navigate = useNavigate();
 
     function formatTitle(title: string): string {
@@ -89,7 +89,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
     const breadcrumbItems = buildBreadcrumbItems();
 
     return (
-        <div className={clsx(isCompact ? 'pb-0' : 'pb-2', 'pl-4 pr-2 py-2 flex flex-col', className)}>
+        <div className={clsx('pb-0 pl-4 pr-2 py-2 flex flex-col', className)}>
             <div className='flex items-start gap-4'>
                 <div className="w-full flex place-content-between h-auto min-h-8 flex-col items-start justify-center">
                     <nav className="flex-1 flex justify-start text-sm">

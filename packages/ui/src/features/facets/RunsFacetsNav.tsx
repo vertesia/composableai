@@ -194,15 +194,15 @@ export function RunsFacetsNav({ facets, search }: RunsFacetsNavProps) {
             filters={filters}
             setFilters={handleFilterChange}
         >
-            <div className='flex justify-between mb-1'>
-                <FilterBtn />
+            <div className='flex justify-between mb-1 sticky top-0 py-2 z-10 bg-background'>
+                <div className='flex gap-2 items-center'>
+                    <FilterBtn />
+                    <FilterBar />
+                    <FilterClear />
+                </div>
                 <Button onClick={handleRefetch} variant='outline' title="Refresh">
                     <RefreshCw className="size-5" />
                 </Button>
-            </div>
-            <div className='flex gap-2 items-center'>
-                <FilterBar />
-                <FilterClear />
             </div>
         </FilterProvider>
     );
