@@ -12,6 +12,8 @@ const CURSOR_CHAR = "│";
 export interface StreamingMessageProps {
     text: string;
     workstreamId?: string;
+    /** Run ID used to resolve artifact references in chart specs */
+    artifactRunId?: string;
     /** Characters per second for reveal animation (default: 300) */
     revealSpeed?: number;
     /** Whether streaming has completed (triggers fast catch-up) */
@@ -47,6 +49,7 @@ export type StreamingMessageClassNames = Partial<Pick<StreamingMessageProps,
 function StreamingMessageComponent({
     text,
     workstreamId,
+    artifactRunId,
     revealSpeed = 300,
     isComplete = false,
     timestamp,
@@ -305,7 +308,7 @@ function StreamingMessageComponent({
                     )}
                 >
                     <div className={cn("vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words", proseClassName)} style={{ overflowWrap: 'anywhere' }}>
-                        <MarkdownRenderer>
+                        <MarkdownRenderer artifactRunId={artifactRunId}>
                             {displayTextWithCursor}
                         </MarkdownRenderer>
                     </div>

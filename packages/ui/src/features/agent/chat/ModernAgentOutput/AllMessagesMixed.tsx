@@ -104,6 +104,8 @@ interface AllMessagesMixedProps {
     hideToolCallsInViewMode?: AgentConversationViewMode[];
     streamingMessageClassNames?: StreamingMessageClassNames;
     batchProgressPanelClassNames?: BatchProgressPanelClassNames;
+    /** Run ID used to resolve artifact references in streaming chart specs */
+    artifactRunId?: string;
     /** Hide the workstream tabs entirely */
     hideWorkstreamTabs?: boolean;
     /** className override for the working indicator container */
@@ -136,6 +138,7 @@ function AllMessagesMixedComponent({
     hideToolCallsInViewMode,
     streamingMessageClassNames,
     batchProgressPanelClassNames,
+    artifactRunId,
     hideWorkstreamTabs,
     workingIndicatorClassName,
     messageListClassName,
@@ -545,6 +548,7 @@ function AllMessagesMixedComponent({
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
+                                            artifactRunId={artifactRunId}
                                             {...streamingMessageClassNames}
                                         />
                                     );
@@ -592,6 +596,7 @@ function AllMessagesMixedComponent({
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
+                                    artifactRunId={artifactRunId}
                                     {...streamingMessageClassNames}
                                 />
                             ))}
@@ -643,6 +648,7 @@ function AllMessagesMixedComponent({
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
+                                            artifactRunId={artifactRunId}
                                             {...streamingMessageClassNames}
                                         />
                                     );
@@ -691,6 +697,7 @@ function AllMessagesMixedComponent({
                                     workstreamId={getWorkstreamId(thinking)}
                                     isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
                                     timestamp={thinking.timestamp}
+                                    artifactRunId={artifactRunId}
                                     {...streamingMessageClassNames}
                                 />
                             ))}
@@ -702,6 +709,7 @@ function AllMessagesMixedComponent({
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
+                                    artifactRunId={artifactRunId}
                                     {...streamingMessageClassNames}
                                 />
                             ))}
