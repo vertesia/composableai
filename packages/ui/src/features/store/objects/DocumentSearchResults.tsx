@@ -253,7 +253,6 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 handleVectorSearch={handleVectorSearch}
                 handleRefetch={handleRefetch}
                 setIsGridView={setIsGridView}
-                refetch={handleRefetch}
             />
             <DocumentTable
                 objects={objects}
@@ -290,7 +289,6 @@ interface ToolsbarProps {
     handleVectorSearch: (query?: ComplexSearchQuery) => void;
     handleRefetch: () => void;
     setIsGridView: React.Dispatch<React.SetStateAction<boolean>>;
-    refetch: () => void;
 }
 function Toolsbar(props: ToolsbarProps) {
     const {
@@ -304,7 +302,6 @@ function Toolsbar(props: ToolsbarProps) {
         handleVectorSearch,
         handleRefetch,
         setIsGridView,
-        refetch
     } = props;
 
     return (
