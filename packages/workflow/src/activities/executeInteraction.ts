@@ -1,5 +1,5 @@
-import { CompletionResult, ModelOptions } from "@llumiverse/common";
-import { activityInfo, log } from "@temporalio/activity";
+import { CompletionResult, ModelOptions, LlumiverseError } from "@llumiverse/common";
+import { activityInfo, ApplicationFailure, log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
 import {
@@ -208,9 +208,32 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         } else if (error.message.includes("modelId: Path `modelId` is required")) {
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError("model", payload.activity, error.message);
-        } else {
-            throw new Error(`Interaction Execution failed ${interactionName}: ${error.message}`);
         }
+        
+        // Check retryability from error object (set by executeInteractionFromActivity)
+        // or from LlumiverseError instance (direct driver errors in some paths)
+        const isRetryable = error.retryable !== undefined 
+            ? error.retryable !== false  // Treat undefined as retryable
+            : (error instanceof LlumiverseError ? error.retryable !== false : undefined);
+        
+        if (isRetryable !== undefined) {
+            if (isRetryable) {
+                log.debug('Marking error as retryable', { interactionName, errorCode: error.errorCode });
+                throw ApplicationFailure.create({
+                    message: `Interaction Execution failed ${interactionName}: ${error.message}`,
+                    nonRetryable: false,
+                });
+            } else {
+                log.debug('Marking error as non-retryable', { interactionName, errorCode: error.errorCode });
+                throw ApplicationFailure.create({
+                    message: `Non-retryable Interaction Execution failed ${interactionName}: ${error.message}`,
+                    nonRetryable: true,
+                });
+            }
+        }
+        
+        // Unknown retryability - rethrow as generic error (Temporal will use default retry policy)
+        throw new Error(`Interaction Execution failed ${interactionName}: ${error.message}`);
     }
 }
 
@@ -293,7 +316,16 @@ export async function executeInteractionFromActivity(
 
     if (res.error || res.status === ExecutionRunStatus.failed) {
         log.error(`Error executing interaction ${interactionName}`, { error: res.error });
-        throw new Error(`Interaction Execution failed ${interactionName}: ${res.error}`);
+        
+        // Create error with retryability information
+        const errorMessage = `Interaction Execution failed ${interactionName}: ${res.error?.message || 'Unknown error'}`;
+        const error = new Error(errorMessage);
+        
+        // Attach retryable property so the catch block can access it
+        (error as any).retryable = res.error?.retryable;
+        (error as any).errorCode = res.error?.code;
+        
+        throw error;
     }
 
     return res;
