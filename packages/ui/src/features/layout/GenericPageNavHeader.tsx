@@ -100,18 +100,19 @@ export function GenericPageNavHeader({ className, children, title, description, 
                                 maxItems={4}
                             />
                         )}
+                        {
+                            description &&
+                            <VTooltip
+                                description={description}>
+                                <Info className="size-4 text-muted ml-4" />
+                            </VTooltip>
+                        }
                     </nav>
                     {
                         title && (
                             <div className='flex gap-2 items-center'>
                                 <h1 className="text-xl font-semibold break-all">{title}</h1>
-                                {
-                                    description &&
-                                    <VTooltip
-                                        description={description}>
-                                        <Info className="size-4 text-muted" />
-                                    </VTooltip>
-                                }
+
                             </div>
 
                         )
