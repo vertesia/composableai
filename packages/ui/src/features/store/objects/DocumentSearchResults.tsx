@@ -339,14 +339,13 @@ function Toolsbar(props: ToolsbarProps) {
                                 allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} />
                             }
                         </div>
-                        <div className="flex gap-1 items-center">
-                            <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
-                            <ContentDispositionButton onUpdate={setIsGridView} />
-                        </div>
                     </div>
                 )
             }
-            <Button variant="outline" onClick={refetch} alt="Refresh"><RefreshCw size={16} /></Button>
+            <div className="flex gap-1 items-center">
+                <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                <ContentDispositionButton onUpdate={setIsGridView} />
+            </div>
         </div>
     );
 }
