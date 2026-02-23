@@ -29,7 +29,10 @@ interface FilterProviderProps {
 const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterProviderProps) => {
   const url = new URL(window.location.href);
   const searchParams = url.searchParams;
-  const [hasInitialized, setHasInitialized] = React.useState(false);
+  // Capture URL filters at mount time before the write-effect can clear them
+  const [initialFiltersParam] = React.useState(() => new URLSearchParams(window.location.search).get('filters'));
+  // Track which filter names have been resolved so we don't re-add after a user removes them
+  const processedUrlFilters = React.useRef<Set<string>>(new Set());
 
   useEffect(() => {
     try {
@@ -79,90 +82,89 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
   }, [filters]);
 
   useEffect(() => {
-    const filtersParam = searchParams.get('filters');
-    if (filtersParam && filterGroups.length > 0 && !hasInitialized) {
-      try {
-        // Parse format with array indicators: filterName:value or filterName:[value1,value2]
-        const filterPairs = filtersParam.split(';');
-        const parsedFilters = filterPairs.map(pair => {
-          const [encodedName, valuesString] = pair.split(':');
-          const name = decodeURIComponent(encodedName);
+    if (!initialFiltersParam || filterGroups.length === 0) return;
+    try {
+      // Parse format with array indicators: filterName:value or filterName:[value1,value2]
+      const filterPairs = initialFiltersParam.split(';');
+      const newFilters: Filter[] = [];
 
-          let values: string[];
-          // Check if it's an array format [value1,value2]
-          if (valuesString.startsWith('[') && valuesString.endsWith(']')) {
-            // Array format - remove brackets and split by comma
-            const arrayContent = valuesString.slice(1, -1); // Remove [ and ]
-            values = arrayContent ? arrayContent.split(',').map(encodedValue => decodeURIComponent(encodedValue)) : [];
-          } else {
-            // Single value format
-            values = [decodeURIComponent(valuesString)];
-          }
+      for (const pair of filterPairs) {
+        const [encodedName, valuesString] = pair.split(':');
+        const name = decodeURIComponent(encodedName);
 
-          const group = filterGroups.find(g => g.name === name);
-          if (!group) return null;
+        // Skip filter names already resolved (e.g. from a previous filterGroups update)
+        if (processedUrlFilters.current.has(name)) continue;
 
-          let filterValue;
+        // Skip filters whose group isn't in this FilterProvider — either not loaded yet
+        // (will retry on next filterGroups change) or genuinely absent (cross-page contamination)
+        const group = filterGroups.find(g => g.name === name);
+        if (!group) continue;
 
-          if (group.type === 'stringList') {
-            // For stringList, return direct string array
-            filterValue = values;
-          } else if (group.type === 'text') {
-            // For text, return FilterOption array (single value for text inputs)
-            filterValue = values.length === 1 ? [{ value: values[0], label: values[0] }] :
-              values.map(value => ({ value, label: value }));
-          } else {
-            // For other types, find options with labels
-            filterValue = values.map(value => {
-              const matchingOption = group.options?.find(opt => opt.value === value);
-              let label = value;
+        // Mark as processed so we don't re-add if the user later removes this filter
+        processedUrlFilters.current.add(name);
 
-              if (matchingOption?.label) {
-                label = String(matchingOption.label);
-              } else if (matchingOption?.labelRenderer) {
-                label = String(matchingOption.labelRenderer(value));
-              } else if (group.labelRenderer) {
-                label = String(group.labelRenderer(value));
-              }
+        let values: string[];
+        // Check if it's an array format [value1,value2]
+        if (valuesString.startsWith('[') && valuesString.endsWith(']')) {
+          // Array format - remove brackets and split by comma
+          const arrayContent = valuesString.slice(1, -1); // Remove [ and ]
+          values = arrayContent ? arrayContent.split(',').map(encodedValue => decodeURIComponent(encodedValue)) : [];
+        } else {
+          // Single value format
+          values = [decodeURIComponent(valuesString)];
+        }
 
-              return {
-                value,
-                label
-              };
-            });
-          }
+        let filterValue;
 
-          if (group.multiple && !valuesString.startsWith('[') && !valuesString.endsWith(']')) {
-            if (group.type === 'stringList') {
-              filterValue = values;
-            } else {
-              if (!Array.isArray(filterValue)) {
-                filterValue = [filterValue];
-              }
+        if (group.type === 'stringList') {
+          // For stringList, return direct string array
+          filterValue = values;
+        } else if (group.type === 'text') {
+          // For text, return FilterOption array (single value for text inputs)
+          filterValue = values.length === 1 ? [{ value: values[0], label: values[0] }] :
+            values.map(value => ({ value, label: value }));
+        } else {
+          // For other types, find options with labels
+          filterValue = values.map(value => {
+            const matchingOption = group.options?.find(opt => opt.value === value);
+            let label = value;
+
+            if (matchingOption?.label) {
+              label = String(matchingOption.label);
+            } else if (matchingOption?.labelRenderer) {
+              label = String(matchingOption.labelRenderer(value));
+            } else if (group.labelRenderer) {
+              label = String(group.labelRenderer(value));
             }
+
+            return { value, label };
+          });
+        }
+
+        if (group.multiple && !valuesString.startsWith('[') && !valuesString.endsWith(']')) {
+          if (group.type === 'stringList') {
+            filterValue = values;
+          } else if (!Array.isArray(filterValue)) {
+            filterValue = [filterValue];
           }
+        }
 
-          const filter = {
-            name,
-            type: group.type,
-            placeholder: group.placeholder,
-            value: filterValue,
-            multiple: group.multiple
-          };
-
-          return filter;
+        newFilters.push({
+          name,
+          type: group.type,
+          placeholder: group.placeholder,
+          value: filterValue,
+          multiple: group.multiple,
         });
-
-        setFilters(parsedFilters.filter(Boolean) as Filter[]);
-        setHasInitialized(true);
-      } catch (error) {
-        setHasInitialized(true);
       }
-    } else if (filterGroups.length > 0 && !hasInitialized) {
-      // No URL params but we have groups - mark as initialized
-      setHasInitialized(true);
+
+      if (newFilters.length > 0) {
+        setFilters(prev => [...prev, ...newFilters]);
+      }
+    } catch (_error) {
+      // ignore parse errors
     }
-  }, [filterGroups, hasInitialized]);
+  }, [filterGroups, initialFiltersParam]);
 
   return (
     <FilterContext.Provider value={{ filters, setFilters, filterGroups }}>
