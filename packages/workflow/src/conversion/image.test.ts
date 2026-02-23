@@ -7,6 +7,7 @@ import { expect, test, vi, describe } from "vitest";
 // Mock Temporal activity context
 vi.mock("@temporalio/activity", () => ({
     log: {
+        debug: vi.fn(),
         info: vi.fn(),
         warn: vi.fn(),
         error: vi.fn(),

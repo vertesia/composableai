@@ -55,7 +55,7 @@ export async function uploadRenditionPages(
     params: ImageRenditionParams,
     concurrency?: number,
 ) {
-    log.info(
+    log.debug(
         `Uploading rendition for etag ${contentEtag} with ${files.length} pages (max_hw: ${params.max_hw}, format: ${params.format})`,
         { files },
     );
@@ -71,7 +71,7 @@ export async function uploadRenditionPages(
         let resizedImagePath = null;
 
         try {
-            log.info(`Resizing image for ${contentEtag} page ${i}`, {
+            log.debug(`Resizing image for ${contentEtag} page ${i}`, {
                 file,
                 params,
             });
@@ -93,7 +93,7 @@ export async function uploadRenditionPages(
                 pageId,
             );
 
-            log.info(
+            log.debug(
                 `Uploading rendition for ${contentEtag} page ${i} with max_hw: ${params.max_hw} and format: ${params.format}`,
                 {
                     resizedImagePath,
@@ -116,7 +116,7 @@ export async function uploadRenditionPages(
                     );
                     return Promise.reject(`Upload failed: ${err.message}`);
                 });
-            log.info(`Rendition uploaded for ${contentEtag} page ${i}`, {
+            log.debug(`Rendition uploaded for ${contentEtag} page ${i}`, {
                 result,
             });
 
