@@ -30,7 +30,7 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
 
   if (items.length <= maxItems) {
     return (
-      <Breadcrumb className={cn("w-full", className)}>
+      <Breadcrumb className={cn("w-full flex items-center", className)}>
         <BreadcrumbList>
           {items.map((item, index) => (
             <React.Fragment key={index}>
@@ -50,7 +50,7 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
   const lastThreeItems = items.slice(-(maxItems - 1));
 
   return (
-    <Breadcrumb className={cn("w-full", className)}>
+    <Breadcrumb className={cn("w-full flex items-center", className)}>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbEllipsis />

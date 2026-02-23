@@ -31,10 +31,10 @@ export function GenericPageNavHeader({ className, children, title, description, 
     const buildBreadcrumbLabel = (entry: any): string => {
         const href = entry?.href || '';
         if (!href) return 'Page';
-        
+
         const cleanHref = href.split('#')[0].split('?')[0];
         const pathSegments: string[] = (cleanHref as string).split('/').filter((segment: string) => segment.length > 0);
-        
+
         if (pathSegments.length === 3) {
             if (entry.title !== document.title && entry.title) {
                 return entry.title;
@@ -46,7 +46,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
         } else if (pathSegments.length === 1) {
             return formatTitle(pathSegments[0]);
         }
-        
+
         return 'Page';
     }
 
@@ -73,7 +73,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
                 // Preserve the entire React element as label
                 const label = breadcrumb.props?.children || breadcrumb;
 
-                items.push(( breadcrumb?.props?.href ) ? {
+                items.push((breadcrumb?.props?.href) ? {
                     href: breadcrumb?.props?.href,
                     label: label,
                     onClick: () => navigate(breadcrumb.props.href, { replace: breadcrumb.props.clearBreadcrumbs }),
@@ -91,7 +91,7 @@ export function GenericPageNavHeader({ className, children, title, description, 
     return (
         <div className={clsx(isCompact ? 'pb-0' : 'pb-2', 'px-4 py-2 flex flex-col', className)}>
             <div className='flex items-start gap-4'>
-                <div className="w-full flex place-content-between h-auto min-h-8 flex-col items-start">
+                <div className="w-full flex place-content-between h-auto min-h-8 flex-col items-start justify-center">
                     <nav className="flex-1 flex justify-start text-sm">
                         {breadcrumbItems.length > 0 && (
                             <Breadcrumbs
@@ -101,16 +101,21 @@ export function GenericPageNavHeader({ className, children, title, description, 
                             />
                         )}
                     </nav>
-                    <div className='flex gap-2 items-center'>
-                        {title && <h1 className="text-xl font-semibold break-all">{title}</h1>}
-                        {
-                            description &&
-                            <VTooltip
-                                description={description}>
-                                <Info className="size-4 text-muted" />
-                            </VTooltip>
-                        }
-                    </div>
+                    {
+                        title && (
+                            <div className='flex gap-2 items-center'>
+                                <h1 className="text-xl font-semibold break-all">{title}</h1>
+                                {
+                                    description &&
+                                    <VTooltip
+                                        description={description}>
+                                        <Info className="size-4 text-muted" />
+                                    </VTooltip>
+                                }
+                            </div>
+
+                        )
+                    }
                 </div>
                 <div className="flex gap-x-2 shrink-0">{actions}</div>
             </div>
