@@ -100,26 +100,28 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
           }
 
           const group = filterGroups.find(g => g.name === name);
+          if (!group) return null;
+
           let filterValue;
 
-          if (group?.type === 'stringList') {
+          if (group.type === 'stringList') {
             // For stringList, return direct string array
             filterValue = values;
-          } else if (group?.type === 'text') {
+          } else if (group.type === 'text') {
             // For text, return FilterOption array (single value for text inputs)
             filterValue = values.length === 1 ? [{ value: values[0], label: values[0] }] :
               values.map(value => ({ value, label: value }));
           } else {
             // For other types, find options with labels
             filterValue = values.map(value => {
-              const matchingOption = group?.options?.find(opt => opt.value === value);
+              const matchingOption = group.options?.find(opt => opt.value === value);
               let label = value;
 
               if (matchingOption?.label) {
                 label = String(matchingOption.label);
               } else if (matchingOption?.labelRenderer) {
                 label = String(matchingOption.labelRenderer(value));
-              } else if (group?.labelRenderer) {
+              } else if (group.labelRenderer) {
                 label = String(group.labelRenderer(value));
               }
 
@@ -130,7 +132,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
             });
           }
 
-          if (group?.multiple && !valuesString.startsWith('[') && !valuesString.endsWith(']')) {
+          if (group.multiple && !valuesString.startsWith('[') && !valuesString.endsWith(']')) {
             if (group.type === 'stringList') {
               filterValue = values;
             } else {
@@ -140,21 +142,18 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
             }
           }
 
-          // Fallback: if group not found but we detected array format, assume it should be multiple
-          const shouldBeMultiple = group?.multiple || (!group && valuesString.startsWith('[') && valuesString.endsWith(']'));
-
           const filter = {
             name,
-            type: group?.type || 'select',
-            placeholder: group?.placeholder,
+            type: group.type,
+            placeholder: group.placeholder,
             value: filterValue,
-            multiple: shouldBeMultiple
+            multiple: group.multiple
           };
 
           return filter;
         });
 
-        setFilters(parsedFilters);
+        setFilters(parsedFilters.filter(Boolean) as Filter[]);
         setHasInitialized(true);
       } catch (error) {
         setHasInitialized(true);
