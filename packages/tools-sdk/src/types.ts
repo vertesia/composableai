@@ -152,6 +152,46 @@ export interface MCPConnectionDetails {
     headers?: Record<string, string>;
 }
 
+// ================== Template Types ==================
+
+/**
+ * Template definition - parsed from TEMPLATE.md
+ */
+export interface TemplateDefinition {
+    /**
+     * Unique template id: "category:name"
+     */
+    id: string;
+    /**
+     * Unique template name (kebab-case)
+     */
+    name: string;
+    /**
+     * Display title
+     */
+    title?: string;
+    /**
+     * Short description
+     */
+    description: string;
+    /**
+     * The template instructions (markdown)
+     */
+    instructions: string;
+    /**
+     * Tags for categorization
+     */
+    tags?: string[];
+    /**
+     * Template type
+     */
+    type: 'presentation' | 'document';
+    /**
+     * Absolute paths to asset files: "/templates/<collection>/<name>/<file>"
+     */
+    assets: string[];
+}
+
 // ================== Skill Types ==================
 
 /**

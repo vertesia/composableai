@@ -1,6 +1,7 @@
 import { Context } from "hono";
 import { InteractionCollection } from "../InteractionCollection.js";
 import { SkillCollection } from "../SkillCollection.js";
+import { TemplateCollection } from "../TemplateCollection.js";
 import { ToolCollection } from "../ToolCollection.js";
 import { ToolExecutionPayload } from "../types.js";
 import { JSONSchema } from "@llumiverse/common";
@@ -60,6 +61,10 @@ export interface ToolServerConfig {
      * Skill collections to expose
      */
     skills?: SkillCollection[];
+    /**
+     * Template collections to expose
+     */
+    templates?: TemplateCollection[];
     /**
      * MCP providers to expose
      */

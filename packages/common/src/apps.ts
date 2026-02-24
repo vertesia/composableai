@@ -279,7 +279,7 @@ export interface AppManifestData {
      */
     endpoint?: string;
 }
-export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'settings' | 'widgets' | 'all';
+export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'templates' | 'settings' | 'widgets' | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
@@ -302,7 +302,12 @@ export interface AppPackage {
     types?: InCodeTypeDefinition[];
 
     /**
-     * Widgets provided by the app. 
+     * Templates provided by the app.
+     */
+    templates?: TemplateDefinitionRef[];
+
+    /**
+     * Widgets provided by the app.
      */
     widgets?: Record<string, AppWidgetInfo>;
 
@@ -316,6 +321,17 @@ export interface AppWidgetInfo {
     collection: string;
     skill: string;
     url: string;
+}
+
+export interface TemplateDefinitionRef {
+    id: string;  // "collection:name"
+    name: string;
+    title?: string;
+    description: string;
+    type: 'presentation' | 'document';
+    tags?: string[];
+    assets: string[];
+    instructions: string;
 }
 
 export interface AppManifest extends AppManifestData {

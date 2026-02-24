@@ -23,6 +23,27 @@ declare module '*?skills' {
   export default skills;
 }
 
+// Template imports - markdown files named TEMPLATE.md
+declare module '*/TEMPLATE.md' {
+  import type { TemplateDefinition } from '@vertesia/build-tools';
+  const template: TemplateDefinition;
+  export default template;
+}
+
+// Template imports - markdown files with ?template suffix
+declare module '*.md?template' {
+  import type { TemplateDefinition } from '@vertesia/build-tools';
+  const template: TemplateDefinition;
+  export default template;
+}
+
+// Template collection imports - any file with ?templates suffix
+declare module '*?templates' {
+  import type { TemplateDefinition } from '@vertesia/build-tools';
+  const templates: TemplateDefinition[];
+  export default templates;
+}
+
 // Raw imports - any file with ?raw suffix
 declare module '*?raw' {
   const content: string;
