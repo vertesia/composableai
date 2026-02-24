@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Button, cn } from '@vertesia/ui/core';
+import { Badge, Button, cn, useToast } from '@vertesia/ui/core';
 import {
     CheckCircleIcon,
+    ClipboardCopyIcon,
+    DownloadCloudIcon,
     FileTextIcon,
     Loader2Icon,
     LayoutListIcon,
@@ -10,7 +12,9 @@ import {
 } from 'lucide-react';
 import { FileProcessingStatus } from '@vertesia/common';
 import type { Plan, ConversationFile, AgentMessage } from '@vertesia/common';
+import { useUserSession } from '@vertesia/ui/session';
 import InlineSlidingPlanPanel from './ModernAgentOutput/InlineSlidingPlanPanel';
+import { getConversationUrl } from './ModernAgentOutput/utils.js';
 import { DocumentPanel } from './DocumentPanel.js';
 import type { OpenDocument } from './types/document.js';
 
@@ -118,6 +122,23 @@ interface WorkstreamsTabProps {
 }
 
 function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
+    const { client } = useUserSession();
+    const toast = useToast();
+
+    const copyRunId = useCallback((runId: string) => {
+        navigator.clipboard.writeText(runId);
+        toast({ status: 'success', title: 'Run ID copied', duration: 2000 });
+    }, [toast]);
+
+    const downloadConversation = useCallback(async (runId: string) => {
+        try {
+            const url = await getConversationUrl(client, runId);
+            if (url) window.open(url, '_blank');
+        } catch {
+            toast({ status: 'error', title: 'Failed to download conversation' });
+        }
+    }, [client, toast]);
+
     if (workstreams.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-8 text-muted">
@@ -160,6 +181,29 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
                             <span>{elapsed}s elapsed</span>
                             <span>{remaining}s remaining</span>
                         </div>
+                        {/* Actions */}
+                        {ws.child_workflow_run_id && (
+                            <div className="flex gap-1 pt-1 border-t border-muted">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-xs h-7 px-2 text-muted hover:text-foreground"
+                                    onClick={() => copyRunId(ws.child_workflow_run_id!)}
+                                >
+                                    <ClipboardCopyIcon className="size-3 mr-1" />
+                                    Copy Run ID
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-xs h-7 px-2 text-muted hover:text-foreground"
+                                    onClick={() => downloadConversation(ws.child_workflow_run_id!)}
+                                >
+                                    <DownloadCloudIcon className="size-3 mr-1" />
+                                    Download
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 );
             })}
