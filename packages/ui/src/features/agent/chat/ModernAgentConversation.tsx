@@ -941,13 +941,17 @@ function ModernAgentConversationInner({
 
     // Default StoreLinkComponent that opens documents in the panel
     const internalStoreLinkComponent = useCallback(
-        ({ documentId, children }: { href: string; documentId: string; children: React.ReactNode }) => (
-            <button
+        ({ href, documentId, children }: { href: string; documentId: string; children: React.ReactNode }) => (
+            <a
+                href={href}
                 className="text-info underline cursor-pointer hover:text-info/80"
-                onClick={() => openDocInPanel(documentId)}
+                onClick={(e) => {
+                    e.preventDefault();
+                    openDocInPanel(documentId);
+                }}
             >
                 {children}
-            </button>
+            </a>
         ),
         [openDocInPanel]
     );
