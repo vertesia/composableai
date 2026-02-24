@@ -947,6 +947,7 @@ function ModernAgentConversationInner({
                 className="text-info underline cursor-pointer hover:text-info/80"
                 onClick={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     openDocInPanel(documentId);
                 }}
             >
