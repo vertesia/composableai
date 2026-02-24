@@ -3,6 +3,7 @@ import {
     indexPage,
     interactionCollectionPage,
     skillCollectionPage,
+    templateCollectionPage,
     toolCollectionPage
 } from "@vertesia/tools-sdk";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -62,6 +63,18 @@ async function build(outDir: string) {
         writeFile(
             `${dir}/index.html`,
             interactionCollectionPage(coll)
+        );
+    }
+
+    // Create pages for each template collection
+    const templates = ServerConfig.templates;
+    console.log(`Creating ${templates.length} template collection pages...`);
+    for (const coll of templates) {
+        const dir = `${outDir}/templates/${coll.name}`;
+        mkdirSync(dir, { recursive: true });
+        writeFile(
+            `${dir}/index.html`,
+            templateCollectionPage(coll)
         );
     }
 
