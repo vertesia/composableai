@@ -1,7 +1,7 @@
 import { AsyncExecutionResult } from "@vertesia/client";
 import { Button, Command, CommandGroup, CommandItem, CommandList, cn, Popover, PopoverContent, PopoverTrigger, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, MoreVertical, XIcon } from "lucide-react";
+import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
 import { type AgentConversationViewMode } from "./AllMessagesMixed";
 import { getConversationUrl } from "./utils";
@@ -22,6 +22,10 @@ export interface HeaderProps {
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
+    /** Called after a restart/fork succeeds with the new run info */
+    onRestart?: (newRun: { runId: string; workflowId: string }) => void;
+    /** Called after a fork succeeds with the new run info */
+    onFork?: (newRun: { runId: string; workflowId: string }) => void;
     /** Show green indicator when receiving streaming chunks */
     isReceivingChunks?: boolean;
     /** Additional className for the outer container */
@@ -43,6 +47,8 @@ export default function Header({
     onCopyRunId,
     resetWorkflow,
     onExportPdf,
+    onRestart,
+    onFork,
     isReceivingChunks = false,
     className,
 }: HeaderProps) {
@@ -104,6 +110,8 @@ export default function Header({
                         onCopyRunId={onCopyRunId}
                         resetWorkflow={resetWorkflow}
                         onExportPdf={onExportPdf}
+                        onRestart={onRestart}
+                        onFork={onFork}
                     />
                     {onClose && !isModal && (
                         <Button size="xs" variant="ghost" onClick={onClose}>
@@ -124,6 +132,8 @@ function MoreDropdown({
     onCopyRunId,
     resetWorkflow,
     onExportPdf,
+    onRestart,
+    onFork,
 }: {
     run: AsyncExecutionResult;
     isModal: boolean;
@@ -132,6 +142,8 @@ function MoreDropdown({
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
+    onRestart?: (newRun: { runId: string; workflowId: string }) => void;
+    onFork?: (newRun: { runId: string; workflowId: string }) => void;
 }) {
     const toast = useToast();
     const { client } = useUserSession();
@@ -158,6 +170,42 @@ function MoreDropdown({
                 duration: 2000,
             });
             return false;
+        }
+    };
+
+    const restartWorkflow = async () => {
+        try {
+            const newRun = await client.runs.restart(run.runId);
+            toast({
+                status: "success",
+                title: "Conversation restarted",
+                duration: 2000,
+            });
+            onRestart?.(newRun);
+        } catch (error) {
+            toast({
+                status: "error",
+                title: "Failed to restart conversation",
+                duration: 2000,
+            });
+        }
+    };
+
+    const forkWorkflow = async () => {
+        try {
+            const newRun = await client.runs.fork(run.runId);
+            toast({
+                status: "success",
+                title: "Conversation forked",
+                duration: 2000,
+            });
+            onFork?.(newRun);
+        } catch (error) {
+            toast({
+                status: "error",
+                title: "Failed to fork conversation",
+                duration: 2000,
+            });
         }
     };
 
@@ -221,6 +269,16 @@ function MoreDropdown({
                                     {onClose && isModal && (
                                         <CommandItem className="text-xs" onSelect={onClose}>
                                             <XIcon className="size-3.5 mr-2 text-muted" /> Close
+                                        </CommandItem>
+                                    )}
+                                    {onRestart && (
+                                        <CommandItem className="text-xs" onSelect={restartWorkflow}>
+                                            <RefreshCcw className="size-3.5 mr-2 text-muted" /> Restart Conversation
+                                        </CommandItem>
+                                    )}
+                                    {onFork && (
+                                        <CommandItem className="text-xs" onSelect={forkWorkflow}>
+                                            <GitFork className="size-3.5 mr-2 text-muted" /> Fork Conversation
                                         </CommandItem>
                                     )}
                                     <CommandItem className="text-xs text-destructive" onSelect={() => {

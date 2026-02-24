@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { clsx } from "clsx";
 import { RefreshCw } from "lucide-react";
@@ -25,23 +25,30 @@ interface SelectDocumentProps {
     onChange: (value: ContentObjectItem) => void;
     type?: string;
     mimeType?: string;
+    /** IDs of already-selected documents — used to highlight rows */
+    selectedIds?: Set<string>;
 }
-export function SelectDocument({ onChange }: Readonly<SelectDocumentProps>) {
+export function SelectDocument({ onChange, selectedIds }: Readonly<SelectDocumentProps>) {
     const onRowClick = (selected: ContentObjectItem) => {
         onChange(selected || undefined);
     }
 
     return (
         <DocumentSearchProvider>
-            <SelectDocumentImpl onRowClick={onRowClick} />
+            <SelectDocumentImpl onRowClick={onRowClick} selectedIds={selectedIds} />
         </DocumentSearchProvider>
     )
 }
 
 interface SelectDocumentImplProps {
     onRowClick: (selected: ContentObjectItem) => void;
+    selectedIds?: Set<string>;
 }
-function SelectDocumentImpl({ onRowClick }: Readonly<SelectDocumentImplProps>) {
+function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocumentImplProps>) {
+    const highlightRow = useCallback(
+        (item: ContentObjectItem) => !!selectedIds?.has(item.id),
+        [selectedIds],
+    );
     const [isReady, setIsReady] = useState(false);
     const [isGridView, setIsGridView] = useState(localStorage.getItem(LAST_DISPLAYED_VIEW) === "grid");
     const { search, isLoading, error, objects, hasMore } = useWatchDocumentSearchResult();
@@ -89,7 +96,7 @@ function SelectDocumentImpl({ onRowClick }: Readonly<SelectDocumentImplProps>) {
             </div>
             <div className="@container flex-1 overflow-y-auto">
                 {/* Documents Display Grid or Table */}
-                <DocumentTable objects={objects || []} isLoading={false} layout={layout} onRowClick={onRowClick} isGridView={isGridView} />
+                <DocumentTable objects={objects || []} isLoading={false} layout={layout} onRowClick={onRowClick} highlightRow={selectedIds?.size ? highlightRow : undefined} isGridView={isGridView} />
 
                 {/* Intersection observer target */}
                 <div ref={loadMoreRef} className="h-4 w-full" />

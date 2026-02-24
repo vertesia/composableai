@@ -8,8 +8,59 @@ import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "
 import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
 import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, StreamingData } from "./utils";
+import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
+
+/** Extended group that may carry preamble info (text from a preceding single/streaming message) */
+type RenderableGroupWithPreamble = RenderableGroup & {
+    preambleText?: string;
+    preambleMessage?: AgentMessage;
+    /** When true, this group was consumed as a preamble and should not render */
+    _consumed?: boolean;
+};
+
+/**
+ * Scan grouped messages and attach preamble text to tool_groups.
+ * When a single THOUGHT/UPDATE message (without tool details) immediately precedes
+ * a tool_group, the text is attached as preamble and the single message is marked
+ * as consumed so it doesn't render as a separate "Agent" box.
+ */
+function attachPreambles(groups: RenderableGroup[]): RenderableGroupWithPreamble[] {
+    const result: RenderableGroupWithPreamble[] = groups.map(g => ({ ...g }));
+
+    for (let i = 1; i < result.length; i++) {
+        const current = result[i];
+        const prev = result[i - 1];
+
+        // Only attach preamble to tool_groups
+        if (current.type !== 'tool_group') continue;
+        // Previous must be a single message with text content
+        if (prev.type !== 'single' || prev._consumed) continue;
+
+        const msg = prev.message;
+        const text = typeof msg.message === 'string' ? msg.message.trim() : '';
+        if (!text) continue;
+
+        // Only consume THOUGHT or UPDATE messages that are NOT tool activity themselves
+        // (i.e., they don't have tool/tools details — pure LLM reasoning text)
+        const isToolActivity = msg.details?.tool || msg.details?.tools;
+        if (isToolActivity) continue;
+
+        const isReasoningMessage = (
+            msg.type === AgentMessageType.THOUGHT ||
+            msg.type === AgentMessageType.UPDATE
+        );
+        if (!isReasoningMessage) continue;
+
+        // Attach as preamble
+        current.preambleText = text;
+        current.preambleMessage = msg;
+        prev._consumed = true;
+    }
+
+    // Filter out consumed groups
+    return result.filter(g => !g._consumed);
+}
 
 // Replace %thinking_message% placeholder with actual thinking message
 const processThinkingPlaceholder = (text: string, thinkingMessageIndex: number): string => {
@@ -336,14 +387,15 @@ function AllMessagesMixedComponent({
 
     // Group messages with ONLY complete streaming interleaved for stacked view
     // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk)
+    // Then attach preamble text from preceding reasoning messages to tool_groups
     const groupedMessages = React.useMemo(
-        () => mergeConsecutiveToolGroups(groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream)),
+        () => attachPreambles(mergeConsecutiveToolGroups(groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream))),
         [displayMessages, completeStreaming, activeWorkstream]
     );
 
     // Group important messages with ONLY complete streaming interleaved for sliding view
     const groupedImportantMessages = React.useMemo(
-        () => mergeConsecutiveToolGroups(groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream)),
+        () => attachPreambles(mergeConsecutiveToolGroups(groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream))),
         [importantMessages, completeStreaming, activeWorkstream]
     );
 
@@ -539,6 +591,8 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatest}
                                                 toolRunId={group.toolRunId}
                                                 toolStatus={group.toolStatus}
+                                                preambleText={group.preambleText}
+                                                preambleMessage={group.preambleMessage}
                                                 {...toolCallGroupClassNames}
                                             />
                                         </MessageErrorBoundary>
@@ -639,6 +693,8 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatest}
                                                 toolRunId={group.toolRunId}
                                                 toolStatus={group.toolStatus}
+                                                preambleText={group.preambleText}
+                                                preambleMessage={group.preambleMessage}
                                                 {...toolCallGroupClassNames}
                                             />
                                         </MessageErrorBoundary>

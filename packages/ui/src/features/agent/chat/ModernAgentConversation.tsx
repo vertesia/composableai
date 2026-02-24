@@ -96,6 +96,10 @@ interface ModernAgentConversationProps {
     placeholder?: string;
     hideUserInput?: boolean;
     resetWorkflow?: () => void;
+    /** Called after a restart succeeds — receives the new run info for navigation */
+    onRestart?: (newRun: { runId: string; workflowId: string }) => void;
+    /** Called after a fork succeeds — receives the new run info for navigation */
+    onFork?: (newRun: { runId: string; workflowId: string }) => void;
 
     // File upload props - passed through to MessageInput
     /** Called when files are dropped/pasted/selected */
@@ -667,6 +671,8 @@ function ModernAgentConversationInner({
     fullWidth = false,
     placeholder = "Type your message...",
     resetWorkflow,
+    onRestart,
+    onFork,
     // File upload props (onFilesSelected handled internally by handleFileUpload)
     uploadedFiles,
     onRemoveFile,
@@ -1363,6 +1369,8 @@ function ModernAgentConversationInner({
                             onDownload={downloadConversation}
                             onCopyRunId={copyRunId}
                             resetWorkflow={resetWorkflow}
+                            onRestart={onRestart}
+                            onFork={onFork}
                             onExportPdf={exportConversationPdf}
                             isReceivingChunks={debugChunkFlash}
                         />

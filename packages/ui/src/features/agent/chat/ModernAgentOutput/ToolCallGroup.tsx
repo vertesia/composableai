@@ -14,7 +14,7 @@ import { ToolExecutionStatus } from "./utils";
 const META_KEYS = new Set([
     'tool', 'tool_run_id', 'activity_group_id', 'event_class',
     'tool_iteration', 'tool_status', 'tools', 'streamed',
-    'files', 'outputFiles', 'display_role',
+    'files', 'outputFiles', 'display_role', 'observation',
 ]);
 
 /** Filter out internal metadata keys, return user-facing detail entries */
@@ -56,6 +56,10 @@ export interface ToolCallGroupProps {
     showPulsatingCircle?: boolean;
     toolRunId?: string;
     toolStatus?: ToolExecutionStatus;
+    /** LLM reasoning text from the preceding message, shown as the group header */
+    preambleText?: string;
+    /** The preceding AgentMessage that was consumed as preamble (for key/timestamp) */
+    preambleMessage?: AgentMessage;
     /** Additional className for the root container */
     rootClassName?: string;
     /** Additional className for the header row */
@@ -78,6 +82,70 @@ export interface ToolCallGroupProps {
 export type ToolCallGroupClassNames = Partial<Pick<ToolCallGroupProps,
     'rootClassName' | 'headerClassName' | 'senderClassName' | 'toolSummaryClassName' |
     'toolBadgeClassName' | 'itemClassName' | 'itemHeaderClassName' | 'itemContentClassName'>>;
+
+/**
+ * Merge messages within a tool group by tool_run_id.
+ * Running + completed messages for the same tool_run_id are collapsed into
+ * a single visual item: the running message provides display text (message_to_human),
+ * while the completed message provides status, files, and observation.
+ */
+function mergeByToolRunId(messages: AgentMessage[]): AgentMessage[] {
+    const byRunId = new Map<string, AgentMessage[]>();
+    const result: AgentMessage[] = [];
+
+    for (const msg of messages) {
+        const runId = msg.details?.tool_run_id as string | undefined;
+        if (runId) {
+            if (!byRunId.has(runId)) {
+                byRunId.set(runId, []);
+            }
+            byRunId.get(runId)!.push(msg);
+        } else {
+            result.push(msg);
+        }
+    }
+
+    // For each tool_run_id group, merge into one message
+    for (const [_runId, msgs] of byRunId) {
+        if (msgs.length <= 1) {
+            result.push(...msgs);
+            continue;
+        }
+
+        // Sort by timestamp: earliest first
+        msgs.sort((a, b) => {
+            const ta = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
+            const tb = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
+            return ta - tb;
+        });
+
+        // Take the last message as the base (has final status), but prefer
+        // message text from the running message (message_to_human) if the
+        // completed message has no text or empty text.
+        const base = msgs[msgs.length - 1];
+        const runningMsg = msgs.find(m => (m.details as any)?.tool_status === 'running');
+
+        if (runningMsg && (!base.message || base.message.trim() === '') && runningMsg.message) {
+            // Merge: use running message text with completed message details
+            const merged: AgentMessage = {
+                ...base,
+                message: runningMsg.message,
+            };
+            result.push(merged);
+        } else {
+            result.push(base);
+        }
+    }
+
+    // Re-sort by timestamp to maintain chronological order
+    result.sort((a, b) => {
+        const ta = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime();
+        const tb = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime();
+        return ta - tb;
+    });
+
+    return result;
+}
 
 interface ToolCallItemClassNames {
     toolBadgeClassName?: string;
@@ -351,24 +419,21 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                             </div>
                         )}
 
-                        {messageContent && (
-                            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
-                                <MarkdownRenderer artifactRunId={artifactRunId}>{messageContent}</MarkdownRenderer>
-                            </div>
-                        )}
+                        {/* Show observation from details if available and different from header text */}
+                        {(() => {
+                            const observation = (details as any)?.observation as string | undefined;
+                            if (observation && observation !== messageContent) {
+                                return (
+                                    <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
+                                        <MarkdownRenderer artifactRunId={artifactRunId}>{observation}</MarkdownRenderer>
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })()}
 
                         {/* Non-image files display */}
                         {nonImageFiles.length > 0 && <FileDisplay files={nonImageFiles} />}
-
-                        {/* Raw details — demoted to collapsible */}
-                        {details && Object.keys(details).length > 1 && (
-                            <details className="mt-2 text-xs border rounded p-1.5 bg-muted/30" onClick={(e) => e.stopPropagation()}>
-                                <summary className="cursor-pointer text-muted">Raw details</summary>
-                                <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto font-mono whitespace-pre-wrap">
-                                    {JSON.stringify(details, null, 2)}
-                                </pre>
-                            </details>
-                        )}
                     </div>
                 );
             })()}
@@ -531,10 +596,12 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
 }
 
 function ToolCallGroupComponent({
-    messages,
+    messages: rawMessages,
     showPulsatingCircle = false,
     toolRunId: _toolRunId,
     toolStatus,
+    preambleText,
+    preambleMessage: _preambleMessage,
     rootClassName,
     headerClassName,
     senderClassName,
@@ -544,6 +611,9 @@ function ToolCallGroupComponent({
     itemHeaderClassName,
     itemContentClassName,
 }: ToolCallGroupProps) {
+    // Merge messages sharing the same tool_run_id into single visual items
+    const messages = mergeByToolRunId(rawMessages);
+
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
     const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(new Set());
@@ -657,20 +727,33 @@ function ToolCallGroupComponent({
                 className={cn("flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", headerClassName)}
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-1 min-w-0">
                     {renderStatusIndicator()}
-                    <span className={cn("text-xs font-medium text-muted", senderClassName)}>Agent</span>
-                    <span className={cn("text-xs text-purple-600 dark:text-purple-400 font-medium", toolSummaryClassName)}>
-                        {toolSummary}
-                    </span>
-                    {isCollapsed ? (
-                        <ChevronRight className="size-3 text-muted" />
+                    {preambleText ? (
+                        <span className={cn("text-xs text-foreground line-clamp-2 flex-1 min-w-0", toolSummaryClassName)}>
+                            {preambleText}
+                        </span>
                     ) : (
-                        <ChevronDown className="size-3 text-muted" />
+                        <>
+                            <span className={cn("text-xs font-medium text-muted", senderClassName)}>Agent</span>
+                            <span className={cn("text-xs text-purple-600 dark:text-purple-400 font-medium", toolSummaryClassName)}>
+                                {toolSummary}
+                            </span>
+                        </>
+                    )}
+                    {isCollapsed ? (
+                        <ChevronRight className="size-3 text-muted flex-shrink-0" />
+                    ) : (
+                        <ChevronDown className="size-3 text-muted flex-shrink-0" />
                     )}
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0">
+                    {preambleText && (
+                        <span className={cn("text-[10px] text-purple-600 dark:text-purple-400 font-medium", toolSummaryClassName)}>
+                            {toolSummary}
+                        </span>
+                    )}
                     <span className="text-[11px] text-muted/70">
                         {dayjs(firstTimestamp).format("HH:mm:ss")}
                         {messages.length > 1 && ` - ${dayjs(lastTimestamp).format("HH:mm:ss")}`}
@@ -783,21 +866,18 @@ function ToolCallGroupComponent({
                                                 </div>
                                             )}
 
-                                            {fullMessage && (
-                                                <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
-                                                    <MarkdownRenderer artifactRunId={artifactRunId}>{fullMessage}</MarkdownRenderer>
-                                                </div>
-                                            )}
-
-                                            {/* Raw details — demoted to collapsible */}
-                                            {details && Object.keys(details).length > 1 && (
-                                                <details className="mt-1.5 text-xs">
-                                                    <summary className="text-muted cursor-pointer">Raw details</summary>
-                                                    <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto">
-                                                        {JSON.stringify(details, null, 2)}
-                                                    </pre>
-                                                </details>
-                                            )}
+                                            {/* Show observation from details if different from header text */}
+                                            {(() => {
+                                                const observation = (details as any)?.observation as string | undefined;
+                                                if (observation && observation !== fullMessage) {
+                                                    return (
+                                                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
+                                                            <MarkdownRenderer artifactRunId={artifactRunId}>{observation}</MarkdownRenderer>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
                                         </div>
                                     );
                                 })()}
@@ -846,6 +926,7 @@ const ToolCallGroup = memo(ToolCallGroupComponent, (prevProps, nextProps) => {
     if (prevProps.showPulsatingCircle !== nextProps.showPulsatingCircle) return false;
     if (prevProps.toolRunId !== nextProps.toolRunId) return false;
     if (prevProps.toolStatus !== nextProps.toolStatus) return false;
+    if (prevProps.preambleText !== nextProps.preambleText) return false;
     if (prevProps.rootClassName !== nextProps.rootClassName) return false;
     if (prevProps.headerClassName !== nextProps.headerClassName) return false;
     if (prevProps.senderClassName !== nextProps.senderClassName) return false;

@@ -294,7 +294,6 @@ export default function MessageInput({
         }, 100);
     };
 
-    const hasAttachments = uploadedFiles.length > 0 || selectedDocuments.length > 0 || (processingFiles && processingFiles.size > 0);
 
     return (
         <div
@@ -326,108 +325,106 @@ export default function MessageInput({
                 />
             )}
 
-            {/* Attachments preview */}
-            {hasAttachments && !hideFileUpload && (
+            {/* Uploaded files preview */}
+            {!hideFileUpload && (uploadedFiles.length > 0 || (processingFiles && processingFiles.size > 0)) && (
                 <div className="flex flex-col gap-2 mb-3">
-                    {/* Uploaded files section */}
-                    {(uploadedFiles.length > 0 || (processingFiles && processingFiles.size > 0)) && (
-                        <div>
-                            <div className="flex items-center gap-1 mb-1">
-                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                    Uploaded Files
-                                </span>
-                                <VTooltip
-                                    description="Files uploaded to this conversation remain available throughout. The agent can access them anytime."
-                                    placement="top"
-                                    size="md"
-                                >
-                                    <HelpCircleIcon className="size-3 text-gray-400 dark:text-gray-500" />
-                                </VTooltip>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {/* Processing files (uploading/processing/error) */}
-                                {processingFiles && Array.from(processingFiles.values()).map((file) => (
-                                    <div
-                                        key={file.id}
-                                        className={cn(
-                                            "flex items-center gap-1.5 px-2 py-1 rounded-md text-sm",
-                                            file.status === FileProcessingStatus.ERROR
-                                                ? "bg-destructive/10 text-destructive"
-                                                : file.status === FileProcessingStatus.READY
-                                                    ? "bg-success/10 text-success"
-                                                    : "bg-attention/10 text-attention",
-                                        )}
-                                    >
-                                        <FileTextIcon className={cn(
-                                            "size-3.5",
-                                            (file.status === FileProcessingStatus.UPLOADING || file.status === FileProcessingStatus.PROCESSING) && "animate-pulse",
-                                        )} />
-                                        <span className="max-w-[120px] truncate">{file.name}</span>
-                                        <span className="text-xs opacity-70">
-                                            {file.status === FileProcessingStatus.UPLOADING ? 'Uploading...'
-                                                : file.status === FileProcessingStatus.PROCESSING ? 'Processing...'
-                                                : file.status === FileProcessingStatus.ERROR ? 'Error'
-                                                : file.status === FileProcessingStatus.READY ? 'Ready' : file.status}
-                                        </span>
-                                    </div>
-                                ))}
-                                {/* Uploaded files (with remove button) */}
-                                {uploadedFiles.map((file) => (
-                                    <div
-                                        key={file.id}
-                                        className="flex items-center gap-1.5 px-2 py-1 bg-success/10 text-success rounded-md text-sm"
-                                    >
-                                        <FileTextIcon className="size-3.5" />
-                                        <span className="max-w-[120px] truncate">{file.name}</span>
-                                        {onRemoveFile && (
-                                            <button
-                                                onClick={() => onRemoveFile(file.id)}
-                                                className="ml-1 p-0.5 hover:bg-success/20 rounded"
-                                            >
-                                                <XIcon className="size-3" />
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
+                    <div>
+                        <div className="flex items-center gap-1 mb-1">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                Uploaded Files
+                            </span>
+                            <VTooltip
+                                description="Files uploaded to this conversation remain available throughout. The agent can access them anytime."
+                                placement="top"
+                                size="md"
+                            >
+                                <HelpCircleIcon className="size-3 text-gray-400 dark:text-gray-500" />
+                            </VTooltip>
                         </div>
-                    )}
-                    {/* Selected documents section */}
-                    {selectedDocuments.length > 0 && (
-                        <div>
-                            <div className="flex items-center gap-1 mb-1">
-                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                                    Document Attachments
-                                </span>
-                                <VTooltip
-                                    description="Documents from the store attached to this message. The agent can re-fetch them by ID anytime, or re-attach to include content directly."
-                                    placement="top"
-                                    size="md"
+                        <div className="flex flex-wrap gap-2">
+                            {/* Processing files (uploading/processing/error) */}
+                            {processingFiles && Array.from(processingFiles.values()).map((file) => (
+                                <div
+                                    key={file.id}
+                                    className={cn(
+                                        "flex items-center gap-1.5 px-2 py-1 rounded-md text-sm",
+                                        file.status === FileProcessingStatus.ERROR
+                                            ? "bg-destructive/10 text-destructive"
+                                            : file.status === FileProcessingStatus.READY
+                                                ? "bg-success/10 text-success"
+                                                : "bg-attention/10 text-attention",
+                                    )}
                                 >
-                                    <HelpCircleIcon className="size-3 text-blue-400 dark:text-blue-500" />
-                                </VTooltip>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {selectedDocuments.map((doc) => (
-                                    <div
-                                        key={doc.id}
-                                        className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-md text-sm text-blue-700 dark:text-blue-300"
-                                    >
-                                        <FileTextIcon className="size-3.5" />
-                                        <span className="max-w-[120px] truncate">{doc.name}</span>
-                                        {onRemoveDocument && (
-                                            <button
-                                                onClick={() => onRemoveDocument(doc.id)}
-                                                className="ml-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
-                                            >
-                                                <XIcon className="size-3" />
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
+                                    <FileTextIcon className={cn(
+                                        "size-3.5",
+                                        (file.status === FileProcessingStatus.UPLOADING || file.status === FileProcessingStatus.PROCESSING) && "animate-pulse",
+                                    )} />
+                                    <span className="max-w-[120px] truncate">{file.name}</span>
+                                    <span className="text-xs opacity-70">
+                                        {file.status === FileProcessingStatus.UPLOADING ? 'Uploading...'
+                                            : file.status === FileProcessingStatus.PROCESSING ? 'Processing...'
+                                            : file.status === FileProcessingStatus.ERROR ? 'Error'
+                                            : file.status === FileProcessingStatus.READY ? 'Ready' : file.status}
+                                    </span>
+                                </div>
+                            ))}
+                            {/* Uploaded files (with remove button) */}
+                            {uploadedFiles.map((file) => (
+                                <div
+                                    key={file.id}
+                                    className="flex items-center gap-1.5 px-2 py-1 bg-success/10 text-success rounded-md text-sm"
+                                >
+                                    <FileTextIcon className="size-3.5" />
+                                    <span className="max-w-[120px] truncate">{file.name}</span>
+                                    {onRemoveFile && (
+                                        <button
+                                            onClick={() => onRemoveFile(file.id)}
+                                            className="ml-1 p-0.5 hover:bg-success/20 rounded"
+                                        >
+                                            <XIcon className="size-3" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
                         </div>
-                    )}
+                    </div>
+                </div>
+            )}
+
+            {/* Selected documents section — always visible regardless of hideFileUpload */}
+            {selectedDocuments.length > 0 && (
+                <div className="mb-3">
+                    <div className="flex items-center gap-1 mb-1">
+                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                            Document Attachments
+                        </span>
+                        <VTooltip
+                            description="Documents from the store attached to this message. The agent can re-fetch them by ID anytime, or re-attach to include content directly."
+                            placement="top"
+                            size="md"
+                        >
+                            <HelpCircleIcon className="size-3 text-blue-400 dark:text-blue-500" />
+                        </VTooltip>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {selectedDocuments.map((doc) => (
+                            <div
+                                key={doc.id}
+                                className="flex items-center gap-1.5 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-md text-sm text-blue-700 dark:text-blue-300"
+                            >
+                                <FileTextIcon className="size-3.5" />
+                                <span className="max-w-[120px] truncate">{doc.name}</span>
+                                {onRemoveDocument && (
+                                    <button
+                                        onClick={() => onRemoveDocument(doc.id)}
+                                        className="ml-1 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded"
+                                    >
+                                        <XIcon className="size-3" />
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -456,6 +453,11 @@ export default function MessageInput({
                         >
                             <FileTextIcon className="size-3.5 mr-1.5" />
                             Search Documents
+                            {selectedDocuments.length > 0 && (
+                                <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-blue-600 text-white">
+                                    {selectedDocuments.length}
+                                </span>
+                            )}
                         </Button>
                     )}
                 </div>
