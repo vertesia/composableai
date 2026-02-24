@@ -64,7 +64,13 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
         pkg.types = allTypes;
     },
     async templates(pkg: AppPackage, config: ToolServerConfig) {
-        pkg.templates = (config.templates || []).flatMap(coll => coll.templates);
+        const basePath = `${config.prefix || '/api'}/templates`;
+        pkg.templates = (config.templates || []).flatMap(coll =>
+            coll.templates.map(({ instructions: _, ...ref }) => ({
+                ...ref,
+                path: `${basePath}/${coll.name}/${ref.name}`,
+            }))
+        );
     },
     async widgets(pkg: AppPackage, config: ToolServerConfig) {
         const { skills: skillCollections = [] } = config;

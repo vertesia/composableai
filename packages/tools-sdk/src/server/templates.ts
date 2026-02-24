@@ -1,16 +1,23 @@
 // ================== Template Endpoints ==================
 
+import { RenderingTemplateDefinition, RenderingTemplateDefinitionRef } from "@vertesia/common";
 import { Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
 import { ToolServerConfig } from "./types.js";
 
+function toRef(basePath: string, collectionName: string, { instructions: _, ...ref }: RenderingTemplateDefinition): RenderingTemplateDefinitionRef {
+    return { ...ref, path: `${basePath}/${collectionName}/${ref.name}` };
+}
+
 export function createTemplatesRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { templates = [] } = config;
 
-    // GET /api/templates - Returns all templates from all collections
+    // GET /api/templates - Returns all templates from all collections (without instructions)
     app.get(basePath, (c) => {
-        const allTemplates = templates.flatMap(coll => coll.templates);
+        const allTemplates = templates.flatMap(coll =>
+            coll.templates.map(t => toRef(basePath, coll.name, t))
+        );
 
         return c.json({
             title: 'All Templates',
@@ -26,7 +33,7 @@ export function createTemplatesRoute(app: Hono, basePath: string, config: ToolSe
 
     // Create template collection endpoints
     for (const coll of templates) {
-        app.route(`${basePath}/${coll.name}`, createTemplateEndpoints(coll));
+        app.route(`${basePath}/${coll.name}`, createTemplateEndpoints(basePath, coll));
     }
 
     // GET /api/templates/:name - Direct access by "collection:name" id format
@@ -51,11 +58,11 @@ export function createTemplatesRoute(app: Hono, basePath: string, config: ToolSe
     });
 }
 
-function createTemplateEndpoints(coll: RenderingTemplateCollection): Hono {
+function createTemplateEndpoints(basePath: string, coll: RenderingTemplateCollection): Hono {
     const endpoint = new Hono();
 
     endpoint.get('/', (c: Context) => {
-        return c.json(coll.templates);
+        return c.json(coll.templates.map(t => toRef(basePath, coll.name, t)));
     });
 
     endpoint.get('/:name', (c: Context) => {

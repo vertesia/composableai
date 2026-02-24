@@ -1,6 +1,6 @@
 import type { ToolDefinition, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
-import { AgentToolDefinition, AuthTokenPayload, ProjectConfiguration, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
+import { AgentToolDefinition, AuthTokenPayload, ProjectConfiguration, RenderingTemplateDefinition, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
 
 export type { ToolExecutionMetadata };
 
@@ -154,43 +154,7 @@ export interface MCPConnectionDetails {
 
 // ================== Template Types ==================
 
-/**
- * Template definition - parsed from TEMPLATE.md
- */
-export interface RenderingTemplateDefinition {
-    /**
-     * Unique template id: "category:name"
-     */
-    id: string;
-    /**
-     * Unique template name (kebab-case)
-     */
-    name: string;
-    /**
-     * Display title
-     */
-    title?: string;
-    /**
-     * Short description
-     */
-    description: string;
-    /**
-     * The template instructions (markdown)
-     */
-    instructions: string;
-    /**
-     * Tags for categorization
-     */
-    tags?: string[];
-    /**
-     * Template type
-     */
-    type: 'presentation' | 'document';
-    /**
-     * Absolute paths to asset files: "/templates/<collection>/<name>/<file>"
-     */
-    assets: string[];
-}
+export type { RenderingTemplateDefinition };
 
 // ================== Skill Types ==================
 

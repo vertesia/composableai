@@ -323,16 +323,29 @@ export interface AppWidgetInfo {
     url: string;
 }
 
-export interface RenderingTemplateDefinitionRef {
-    id: string;  // "collection:name"
+export interface RenderingTemplateDefinition {
+    /** Unique template id: "collection:name" */
+    id: string;
+    /** Unique template name (kebab-case) */
     name: string;
+    /** Display title */
     title?: string;
+    /** Short description */
     description: string;
+    /** Template type */
     type: 'presentation' | 'document';
+    /** Tags for categorization */
     tags?: string[];
+    /** Absolute paths to asset files */
     assets: string[];
+    /** The template instructions (markdown) */
     instructions: string;
 }
+
+export type RenderingTemplateDefinitionRef = Omit<RenderingTemplateDefinition, 'instructions'> & {
+    /** Absolute API path to fetch the full template definition */
+    path: string;
+};
 
 export interface AppManifest extends AppManifestData {
     id: string;
