@@ -50,7 +50,7 @@ src/
         <type-name>.ts   # InCodeTypeSpec with object_schema + table_layout
     templates/           # Template collections (for document/presentation generation)
       <collection>/
-        index.ts         # Exports TemplateCollection (uses ?templates auto-discovery)
+        index.ts         # Exports RenderingTemplateCollection (uses ?templates auto-discovery)
         <template-name>/
           TEMPLATE.md    # Template definition (YAML frontmatter + markdown body)
           *.svg, *.latex, *.png  # Asset files (auto-discovered, copied to dist/templates/)
@@ -128,7 +128,7 @@ import skills from './all?skills';
 ```typescript
 import myTemplate from './my-template/TEMPLATE.md';     // Convention-based
 import myTemplate from './definition.md?template';       // Query-based
-// Produces: TemplateDefinition object { name, description, instructions, type, path, assets, ... }
+// Produces: RenderingTemplateDefinition object { name, description, instructions, type, path, assets, ... }
 ```
 
 ### Template Collection Auto-Discovery
@@ -136,7 +136,7 @@ import myTemplate from './definition.md?template';       // Query-based
 ```typescript
 import templates from './all?templates';
 // Virtual module - scans directory for subdirs containing TEMPLATE.md
-// Produces: TemplateDefinition[]
+// Produces: RenderingTemplateDefinition[]
 ```
 
 ### Prompt Import
@@ -324,10 +324,10 @@ Instructions for the document generation system...
 
 ```typescript
 // src/tool-server/templates/<collection>/index.ts
-import { TemplateCollection } from "@vertesia/tools-sdk";
+import { RenderingTemplateCollection } from "@vertesia/tools-sdk";
 import templates from './all?templates';
 
-export const MyTemplates = new TemplateCollection({
+export const MyTemplates = new RenderingTemplateCollection({
     name: "my-collection",
     description: "My template collection",
     templates

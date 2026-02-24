@@ -1,12 +1,12 @@
-import { CollectionProperties, ICollection, TemplateDefinition } from "./types.js";
+import { CollectionProperties, ICollection, RenderingTemplateDefinition } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
 
-export interface TemplateCollectionProps extends CollectionProperties {
-    templates: TemplateDefinition[];
+export interface RenderingTemplateCollectionProps extends CollectionProperties {
+    templates: RenderingTemplateDefinition[];
 }
 
-export class TemplateCollection implements ICollection<TemplateDefinition> {
-    templates: TemplateDefinition[];
+export class RenderingTemplateCollection implements ICollection<RenderingTemplateDefinition> {
+    templates: RenderingTemplateDefinition[];
     name: string;
     title?: string;
     icon?: string;
@@ -14,7 +14,7 @@ export class TemplateCollection implements ICollection<TemplateDefinition> {
 
     constructor({
         name, title, icon, description, templates
-    }: TemplateCollectionProps) {
+    }: RenderingTemplateCollectionProps) {
         this.name = name;
         this.title = title || kebabCaseToTitle(name);
         this.icon = icon;
@@ -26,16 +26,16 @@ export class TemplateCollection implements ICollection<TemplateDefinition> {
         return this.templates;
     }
 
-    getTemplate(name: string): TemplateDefinition | undefined {
+    getTemplate(name: string): RenderingTemplateDefinition | undefined {
         return this.templates.find(t => t.name === name);
     }
 
-    [Symbol.iterator](): Iterator<TemplateDefinition> {
+    [Symbol.iterator](): Iterator<RenderingTemplateDefinition> {
         let index = 0;
         const templates = this.templates;
 
         return {
-            next(): IteratorResult<TemplateDefinition> {
+            next(): IteratorResult<RenderingTemplateDefinition> {
                 if (index < templates.length) {
                     return { value: templates[index++], done: false };
                 } else {
@@ -45,7 +45,7 @@ export class TemplateCollection implements ICollection<TemplateDefinition> {
         };
     }
 
-    map<U>(callback: (template: TemplateDefinition, index: number) => U): U[] {
+    map<U>(callback: (template: RenderingTemplateDefinition, index: number) => U): U[] {
         return this.templates.map(callback);
     }
 }

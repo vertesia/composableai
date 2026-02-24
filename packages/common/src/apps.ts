@@ -190,7 +190,7 @@ export interface AgentToolDefinition extends ToolDefinition {
     related_tools?: string[];
 }
 
-export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types';
+export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 export interface AppManifestData {
     /**
@@ -304,7 +304,7 @@ export interface AppPackage {
     /**
      * Templates provided by the app.
      */
-    templates?: TemplateDefinitionRef[];
+    templates?: RenderingTemplateDefinitionRef[];
 
     /**
      * Widgets provided by the app.
@@ -323,7 +323,7 @@ export interface AppWidgetInfo {
     url: string;
 }
 
-export interface TemplateDefinitionRef {
+export interface RenderingTemplateDefinitionRef {
     id: string;  // "collection:name"
     name: string;
     title?: string;

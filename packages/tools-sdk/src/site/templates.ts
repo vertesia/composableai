@@ -1,10 +1,10 @@
 import type { InteractionCollection } from "../InteractionCollection.js";
 import { ToolServerConfig } from "../server/types.js";
 import type { SkillCollection } from "../SkillCollection.js";
-import type { TemplateCollection } from "../TemplateCollection.js";
+import type { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
 import type { ToolCollection } from "../ToolCollection.js";
 import type { ContentTypesCollection } from "../ContentTypesCollection.js";
-import type { ICollection, SkillDefinition, TemplateDefinition, Tool } from "../types.js";
+import type { ICollection, SkillDefinition, RenderingTemplateDefinition, Tool } from "../types.js";
 import { join } from "../utils.js";
 import { baseStyles } from "./styles.js";
 
@@ -610,7 +610,7 @@ export function skillDetailCard(skill: SkillDefinition, collection: SkillCollect
 /**
  * Render a template endpoint URL with copy button
  */
-function renderTemplateUrl(template: TemplateDefinition, collectionName: string): string {
+function renderTemplateUrl(template: RenderingTemplateDefinition, collectionName: string): string {
     const templatePath = `/api/templates/${collectionName}/${template.name}`;
     return /*html*/`<div class="script-item" style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span class="script-name">${templatePath}</span>
         <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '${templatePath}')" title="Copy endpoint URL">
@@ -666,7 +666,7 @@ function instructionsPreview(instructions: string): string {
 /**
  * Render a detailed template card
  */
-export function templateDetailCard(template: TemplateDefinition, collection: TemplateCollection): string {
+export function templateDetailCard(template: RenderingTemplateDefinition, collection: RenderingTemplateCollection): string {
     return /*html*/`
 <div class="detail-card">
     <div class="detail-header">
@@ -701,7 +701,7 @@ export function templateDetailCard(template: TemplateDefinition, collection: Tem
 /**
  * Render a template collection detail page
  */
-export function templateCollectionPage(collection: TemplateCollection): string {
+export function templateCollectionPage(collection: RenderingTemplateCollection): string {
     const templatesArray = Array.from(collection);
     return /*html*/`
 <!DOCTYPE html>
@@ -957,11 +957,11 @@ export function indexPage(
         <section data-section="templates">
             <hr>
             <div class="section-header">
-                <h2>Template Collections</h2>
+                <h2>Rendering Template Collections</h2>
                 <p class="section-subtitle">Document and presentation templates for content generation.</p>
             </div>
             <div class="card-grid">
-                ${templates.map((t: TemplateCollection) => {
+                ${templates.map((t: RenderingTemplateCollection) => {
         const count = t.getTemplateDefinitions().length;
         return collectionCard(t, 'templates', `${count} template${count !== 1 ? 's' : ''}`);
     }).join('')}

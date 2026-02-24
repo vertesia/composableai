@@ -157,7 +157,7 @@ export interface MCPConnectionDetails {
 /**
  * Template definition - parsed from TEMPLATE.md
  */
-export interface TemplateDefinition {
+export interface RenderingTemplateDefinition {
     /**
      * Unique template id: "category:name"
      */

@@ -21,10 +21,10 @@ const TemplateFrontmatterSchema = z.object({
 }).strict();
 
 /**
- * MUST be kept in sync with @vertesia/tools-sdk TemplateDefinition
+ * MUST be kept in sync with @vertesia/tools-sdk RenderingTemplateDefinition
  * Zod schema for template definition
  */
-export const TemplateDefinitionSchema = z.object({
+export const RenderingTemplateDefinitionSchema = z.object({
     id: z.string().min(1, 'Template id is required'),
     name: z.string().min(1, 'Template name is required'),
     title: z.string().optional(),
@@ -38,7 +38,7 @@ export const TemplateDefinitionSchema = z.object({
 /**
  * TypeScript type inferred from the Zod schema
  */
-export type TemplateDefinition = z.infer<typeof TemplateDefinitionSchema>;
+export type RenderingTemplateDefinition = z.infer<typeof RenderingTemplateDefinitionSchema>;
 
 /**
  * Derive the template path segments from the file path.
@@ -66,12 +66,12 @@ function deriveTemplatePathInfo(filePath: string): { category: string; templateN
  * ```typescript
  * import template1 from './my-template.md?template';
  * import template2 from './my-template/TEMPLATE.md';
- * // Both are TemplateDefinition objects
+ * // Both are RenderingTemplateDefinition objects
  * ```
  */
 export const templateTransformer: TransformerPreset = {
     pattern: /(\.md\?template$|\/TEMPLATE\.md$)/,
-    schema: TemplateDefinitionSchema,
+    schema: RenderingTemplateDefinitionSchema,
     transform: (content: string, filePath: string) => {
         const { frontmatter, content: markdown } = parseFrontmatter(content);
 
@@ -97,7 +97,7 @@ export const templateTransformer: TransformerPreset = {
 
         // Build template definition
         // Assets use absolute paths for direct server-side resolution
-        const templateData: TemplateDefinition = {
+        const templateData: RenderingTemplateDefinition = {
             id: `${category}:${templateName}`,
             name: templateName,
             title: frontmatter.title,

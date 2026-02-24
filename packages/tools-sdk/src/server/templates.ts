@@ -2,7 +2,7 @@
 
 import { Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { TemplateCollection } from "../TemplateCollection.js";
+import { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
 import { ToolServerConfig } from "./types.js";
 
 export function createTemplatesRoute(app: Hono, basePath: string, config: ToolServerConfig) {
@@ -51,7 +51,7 @@ export function createTemplatesRoute(app: Hono, basePath: string, config: ToolSe
     });
 }
 
-function createTemplateEndpoints(coll: TemplateCollection): Hono {
+function createTemplateEndpoints(coll: RenderingTemplateCollection): Hono {
     const endpoint = new Hono();
 
     endpoint.get('/', (c: Context) => {
