@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig } from 'eslint/config';
 
 export default defineConfig(
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'lib'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -24,6 +24,12 @@ export default defineConfig(
         'warn',
         { allowConstantExport: true },
       ],
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      }],
     },
   },
 )

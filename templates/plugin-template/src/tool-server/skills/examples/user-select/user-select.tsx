@@ -46,7 +46,7 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
         } else {
             data = props.code;
         }
-    } catch (error) {
+    } catch (_error) {
         return (
             <div className="border border-destructive bg-destructive/10 rounded-lg p-4">
                 <p className="text-destructive font-medium">Error: Invalid selection data</p>
@@ -134,7 +134,7 @@ export default function UserSelectWidget(props: UserSelectWidgetProps) {
 
             {/* Options */}
             <div className="space-y-2 mb-4">
-                {data.options.map((option, index) => {
+                {data.options.map((option, _index) => {
                     const isSelected = selected.has(option.value);
 
                     return (

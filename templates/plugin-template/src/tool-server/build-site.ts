@@ -25,7 +25,7 @@ async function build(outDir: string) {
 
     // Create main index page
     console.log('Creating index page...');
-    let indexHtml = indexPage(ServerConfig);
+    const indexHtml = indexPage(ServerConfig);
 
     writeFile(
         `${outDir}/index.html`,

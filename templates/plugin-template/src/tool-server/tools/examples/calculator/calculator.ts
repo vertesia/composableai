@@ -1,4 +1,4 @@
-import { Tool, ToolExecutionContext, ToolExecutionPayload } from "@vertesia/tools-sdk";
+import { ToolExecutionContext, ToolExecutionPayload } from "@vertesia/tools-sdk";
 import { type CalculatorParams } from "./schema.js";
 import { ToolResultContent } from "@vertesia/common";
 
