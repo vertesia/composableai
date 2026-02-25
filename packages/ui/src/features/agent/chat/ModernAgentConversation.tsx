@@ -161,6 +161,8 @@ interface ModernAgentConversationProps {
     showRightPanel?: boolean;
     /** Hide the default file upload */
     hideFileUpload?: boolean;
+    /** Show the Artifacts tab in the right panel (default false) */
+    showArtifacts?: boolean;
 
     // Callback to get attached documents when sending messages
     // Returns array of { id, name } to include in message metadata and display
@@ -691,6 +693,7 @@ function ModernAgentConversationInner({
     hideWorkstreamTabs,
     showRightPanel: showRightPanelProp = true,
     hideFileUpload,
+    showArtifacts = false,
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
@@ -864,7 +867,7 @@ function ModernAgentConversationInner({
     // ────────────────────────────────────────────
     // Unified right panel state
     // ────────────────────────────────────────────
-    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads';
+    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts';
     const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('plan');
     const [rightPanelWidth, setRightPanelWidth] = useState(400);
     const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
@@ -1313,6 +1316,19 @@ function ModernAgentConversationInner({
         setIsPdfModalOpen(false);
     };
 
+    // Artifact refresh key — bumps when tool calls complete or conversation finishes,
+    // which is when new artifacts are most likely to appear.
+    const artifactRefreshKey = useMemo(() => {
+        return messages.filter((m) => {
+            if (m.type === AgentMessageType.COMPLETE) return true;
+            if (m.type === AgentMessageType.THOUGHT) {
+                const details = m.details as Record<string, unknown> | undefined;
+                return details?.tool_status === 'completed';
+            }
+            return false;
+        }).length;
+    }, [messages]);
+
     // PERFORMANCE: Memoize taskLabels to prevent AllMessagesMixed re-renders
     const taskLabels = useMemo(() =>
         getActivePlan.plan.plan?.reduce((acc, task) => {
@@ -1512,6 +1528,9 @@ function ModernAgentConversationInner({
                         runId={run.runId}
                         // Uploads
                         processingFiles={processingFilesProp ?? processingFiles}
+                        // Artifacts
+                        showArtifacts={showArtifacts}
+                        artifactRefreshKey={artifactRefreshKey}
                         // Messages (for workstreams tab context)
                         messages={messages}
                         // Panel control

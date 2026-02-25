@@ -16,6 +16,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import InlineSlidingPlanPanel from './ModernAgentOutput/InlineSlidingPlanPanel';
 import { getConversationUrl } from './ModernAgentOutput/utils.js';
 import { DocumentPanel } from './DocumentPanel.js';
+import { ArtifactsTab } from './ArtifactsTab.js';
 import type { OpenDocument } from './types/document.js';
 
 // ---------------------------------------------------------------------------
@@ -215,7 +216,7 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
 // Right panel tabs
 // ---------------------------------------------------------------------------
 
-type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads';
+type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts';
 
 export interface AgentRightPanelProps {
     // Plan
@@ -241,6 +242,11 @@ export interface AgentRightPanelProps {
 
     // Uploads
     processingFiles?: Map<string, ConversationFile>;
+
+    // Artifacts
+    /** Show the Artifacts tab (opt-in, default false) */
+    showArtifacts?: boolean;
+    artifactRefreshKey?: number;
 
     // Panel control
     onClose: () => void;
@@ -273,6 +279,10 @@ function AgentRightPanelComponent({
     // Uploads
     processingFiles,
 
+    // Artifacts
+    showArtifacts = false,
+    artifactRefreshKey = 0,
+
     // Panel
     onClose,
     defaultTab,
@@ -297,11 +307,14 @@ function AgentRightPanelComponent({
         { id: 'workstreams', label: 'Workstreams', badge: hasWorkstreams ? activeWorkstreams.length : false },
         { id: 'documents', label: 'Documents', badge: hasDocuments ? openDocuments.length : false },
         { id: 'uploads', label: 'Uploads', badge: hasUploads },
+        { id: 'artifacts', label: 'Artifacts' },
     ];
 
-    const tabs = hideWorkstreams
-        ? baseTabs.filter(tab => tab.id !== 'workstreams')
-        : baseTabs;
+    const tabs = baseTabs.filter(tab => {
+        if (tab.id === 'workstreams' && hideWorkstreams) return false;
+        if (tab.id === 'artifacts' && !showArtifacts) return false;
+        return true;
+    });
 
     const handleCloseDocPanel = useCallback(() => {
         // Just switch away from documents tab
@@ -394,6 +407,10 @@ function AgentRightPanelComponent({
 
                 {activeTab === 'uploads' && (
                     <UploadedDocumentsTab files={processingFiles} />
+                )}
+
+                {activeTab === 'artifacts' && (
+                    <ArtifactsTab runId={runId} refreshKey={artifactRefreshKey} />
                 )}
             </div>
         </div>
