@@ -84,6 +84,7 @@
     "vega-lite": "^6.4.1"
   },
   "devDependencies": {
+    "@eslint/compat": "^2.0.2",
     "@eslint/js": "^10.0.1",
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-json": "^6.1.0",

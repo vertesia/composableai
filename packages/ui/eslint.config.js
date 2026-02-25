@@ -1,8 +1,9 @@
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import pluginImport from 'eslint-plugin-import';
 import pluginReact from 'eslint-plugin-react';
 import pluginReactHooks from 'eslint-plugin-react-hooks';
-import pluginImport from 'eslint-plugin-import';
+import tseslint from 'typescript-eslint';
+import { fixupPluginRules } from '@eslint/compat';
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
@@ -15,11 +16,22 @@ export default [
     // // TypeScript ESLint recommended rules
     ...tseslint.configs.recommended,
 
+    // TypeScript parser configuration
+    {
+        languageOptions: {
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+                allowDefaultProject: ['*.js', '*.mjs'],
+            },
+        },
+    },
+
     // React and hooks rules
     {
         plugins: {
-            react: pluginReact,
-            'react-hooks': pluginReactHooks,
+            react: fixupPluginRules(pluginReact),
+            'react-hooks': fixupPluginRules(pluginReactHooks),
         },
         languageOptions: {
             parserOptions: {
@@ -75,7 +87,7 @@ export default [
     // Import plugin rules
     {
         plugins: {
-            import: pluginImport,
+            import: fixupPluginRules(pluginImport),
         },
         rules: {
             ...pluginImport.configs.recommended.rules,
