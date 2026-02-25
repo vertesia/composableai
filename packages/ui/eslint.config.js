@@ -71,6 +71,10 @@ export default [
     {
         rules: {
             '@typescript-eslint/explicit-module-boundary-types': 'off',
+            '@typescript-eslint/no-unused-expressions': ['error', {
+                allowShortCircuit: true,
+                allowTernary: true,
+            }],
 
             //TODO review the following rules
             "@typescript-eslint/no-unused-vars": "off",
