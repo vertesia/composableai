@@ -19,9 +19,20 @@ type RenderableGroupWithPreamble = RenderableGroup & {
     _consumed?: boolean;
 };
 
+/** Message types that must never be consumed as preamble text */
+const NON_PREAMBLE_TYPES = new Set([
+    AgentMessageType.QUESTION,
+    AgentMessageType.COMPLETE,
+    AgentMessageType.IDLE,
+    AgentMessageType.TERMINATED,
+    AgentMessageType.ERROR,
+    AgentMessageType.REQUEST_INPUT,
+    AgentMessageType.BATCH_PROGRESS,
+]);
+
 /**
  * Scan grouped messages and attach preamble text to tool_groups.
- * When a single THOUGHT/UPDATE message (without tool details) immediately precedes
+ * When a single message (THOUGHT, UPDATE, ANSWER, etc.) immediately precedes
  * a tool_group, the text is attached as preamble and the single message is marked
  * as consumed so it doesn't render as a separate "Agent" box.
  */
@@ -41,16 +52,12 @@ function attachPreambles(groups: RenderableGroup[]): RenderableGroupWithPreamble
         const text = typeof msg.message === 'string' ? msg.message.trim() : '';
         if (!text) continue;
 
-        // Only consume THOUGHT or UPDATE messages that are NOT tool activity themselves
-        // (i.e., they don't have tool/tools details — pure LLM reasoning text)
+        // Skip messages that are tool activity themselves (already part of tool groups)
         const isToolActivity = msg.details?.tool || msg.details?.tools;
         if (isToolActivity) continue;
 
-        const isReasoningMessage = (
-            msg.type === AgentMessageType.THOUGHT ||
-            msg.type === AgentMessageType.UPDATE
-        );
-        if (!isReasoningMessage) continue;
+        // Skip terminal/interactive message types that should always render independently
+        if (NON_PREAMBLE_TYPES.has(msg.type)) continue;
 
         // Attach as preamble
         current.preambleText = text;

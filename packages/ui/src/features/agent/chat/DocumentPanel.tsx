@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FileTextIcon, Loader2Icon, X } from 'lucide-react';
+import { ExternalLinkIcon, FileTextIcon, Loader2Icon, X } from 'lucide-react';
 import { useUserSession } from '@vertesia/ui/session';
 import { Button } from '@vertesia/ui/core';
+import { NavLink } from '@vertesia/ui/router';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
 import { DocumentTabBar } from './DocumentTabBar.js';
 import type { OpenDocument } from './types/document.js';
@@ -73,10 +74,22 @@ function DocumentPanelComponent({
                         {docName || 'Document'}
                     </h3>
                 </div>
-                <Button variant="ghost" size="sm" onClick={onClose}>
-                    <X className="size-4" />
-                    <span className="sr-only">Close</span>
-                </Button>
+                <div className="flex items-center gap-1">
+                    {activeDocumentId && (
+                        <NavLink
+                            href={`/store/objects/${activeDocumentId}`}
+                            topLevelNav
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 w-8 hover:bg-muted/20 text-muted hover:text-foreground"
+                        >
+                            <ExternalLinkIcon className="size-4" />
+                            <span className="sr-only">Open document</span>
+                        </NavLink>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={onClose}>
+                        <X className="size-4" />
+                        <span className="sr-only">Close</span>
+                    </Button>
+                </div>
             </div>
 
             {/* Tab bar */}
