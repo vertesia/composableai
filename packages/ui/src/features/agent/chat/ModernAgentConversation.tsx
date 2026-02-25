@@ -274,7 +274,7 @@ function StartWorkflowView({
     getAttachedDocs,
     onAttachmentsSent,
     // File upload props
-    acceptedFileTypes = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp",
+    acceptedFileTypes,
     maxFiles = 5,
 }: ModernAgentConversationProps) {
     const { client } = useUserSession();

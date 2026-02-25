@@ -87,7 +87,7 @@ export default function MessageInput({
     onFilesSelected,
     uploadedFiles = [],
     onRemoveFile,
-    acceptedFileTypes = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp",
+    acceptedFileTypes,
     maxFiles = 5,
     processingFiles,
     hasProcessingFiles = false,
