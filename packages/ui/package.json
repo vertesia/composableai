@@ -84,7 +84,7 @@
     "vega-lite": "^6.4.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.27.0",
+    "@eslint/js": "^10.0.1",
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.1",
@@ -94,16 +94,16 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.3",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^9.27.0",
+    "eslint": "^10.0.2",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "rimraf": "^6.1.2",
     "rollup": "^4.53.3",
     "rollup-plugin-terser": "^7.0.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.49.0",
+    "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.16"
   },
   "exports": {

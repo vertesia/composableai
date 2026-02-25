@@ -37,18 +37,18 @@
         "@vertesia/workflow": "workspace:*"
     },
     "devDependencies": {
-        "@eslint/compat": "^2.0.0",
-        "@eslint/js": "^9.35.0",
-        "eslint": "^9.35.0",
+        "@eslint/compat": "^2.0.2",
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.0.2",
         "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-prettier": "^5.5.4",
+        "eslint-plugin-prettier": "^5.5.5",
         "@types/node": "^22.19.2",
         "prettier": "3.5.3",
         "rimraf": "^6.0.1",
         "@temporalio/proto": "^1.13.0",
         "@temporalio/testing": "^1.13.0",
         "typescript": "^5.9.2",
-        "typescript-eslint": "^8.43.0",
+        "typescript-eslint": "^8.56.1",
         "vitest": "^4.0.16",
         "vitest-fetch-mock": "^0.4.5"
     },
