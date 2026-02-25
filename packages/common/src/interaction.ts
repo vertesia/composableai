@@ -53,6 +53,17 @@ export interface ConversationStripOptions {
      * Uses ~4 characters per token estimate.
      */
     text_max_tokens?: number;
+
+    /**
+     * Number of turns to keep heartbeat messages before stripping them.
+     * Heartbeat messages are periodic workstream status updates wrapped in
+     * `<heartbeat>...</heartbeat>` tags that clutter conversation history.
+     * - 0: Strip heartbeats immediately after each turn
+     * - 1 (default): Keep only the most recent heartbeat
+     * - N > 0: Keep heartbeats for N turns before stripping
+     * - Infinity: Never strip heartbeats
+     */
+    heartbeats_after_turns?: number;
 }
 
 
