@@ -20,7 +20,12 @@ export default defineConfig(
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-unused-vars": [
         "error",
-        { argsIgnorePattern: "^_" },
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          "allowShortCircuit": true,
+          "allowTernary": true
+        },
       ],
     },
   },
