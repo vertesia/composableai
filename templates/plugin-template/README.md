@@ -5,6 +5,7 @@ This is a unified template for building custom UI plugins and tool servers for t
 ## What's Inside
 
 This template combines:
+
 - **UI Plugin**: Custom React-based UI components that extend the Vertesia interface
 - **Tool Server**: Backend services that provide custom tools, skills, and interactions for AI agents
 
@@ -13,29 +14,35 @@ This template combines:
 Choose the documentation for what you want to build:
 
 ### 📱 [UI Plugin Documentation →](./README-ui.md)
+
 Build custom UI components and pages that integrate with Vertesia's interface.
 
 **Use cases:**
+
 - Custom dashboards and visualizations
 - Specialized UI workflows
 - Interactive data exploration interfaces
 - Custom settings panels
 
 ### 🔧 [Tool Server Documentation →](./README-tools.md)
+
 Build backend services that provide custom capabilities for AI agents.
 
 **Use cases:**
+
 - Custom tools (e.g., API integrations, data processing)
 - Skills (instructions packed as tools that inject runtime context and enable additional tools)
 - Interactions (reusable agent instructions for specialized workflows)
 - MCP server integrations
 
 ### 📋 [Tool Server Testing Guide →](./TESTING-tools.md)
+
 Learn how to test your tool server locally and in development.
 
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 18+ and pnpm
 - Vertesia platform access
 
@@ -98,18 +105,21 @@ plugin-template/
 ## Development Workflow
 
 ### UI Plugin Development
+
 1. Run `pnpm dev:ui` to start Vite dev server
 2. Edit files in `src/ui/`
 3. View at `https://localhost:5173` (with SSL)
 4. Build with `pnpm build:ui:lib` to create the plugin library
 
 ### Tool Server Development
+
 1. Run `pnpm dev:tool-server` to start tool server with watch mode
 2. Edit files in `src/tool-server/`
 3. View at `http://localhost:3000` (or configured port)
 4. Test tools, skills, and interactions via the web interface
 
 ### Combined Development
+
 - Run `pnpm dev` to run both UI and tool server concurrently
 - Access tool server at `http://localhost:3000`
 - Access UI at `https://localhost:5173`
@@ -118,6 +128,7 @@ plugin-template/
 ## Deployment
 
 Both UI plugin and tool server deploy as a single Vercel project:
+
 - Static files (UI builds, tool server HTML) are served from `dist/`
 - Serverless functions are served from `api/`
 - See `vercel.json` for routing configuration

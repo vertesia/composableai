@@ -24,7 +24,7 @@ src/
 
 ## Prerequisites
 
-- An application manifest [created and installed](/apps/overview) in your Vertesia project
+- An application manifest [created and installed](https://docs.vertesiahq.com/apps/overview) in your Vertesia project
 
 ## Getting Started
 
@@ -41,7 +41,7 @@ Next, set the app Id in the `VITE_APP_NAME` variable in the `.env.local` file.
 Run the app in development mode with hot module replacement:
 
 ```bash
-pnpm dev
+pnpm dev:ui
 ```
 
 The app will be available at `https://localhost:5173`.
@@ -51,17 +51,17 @@ The app will be available at `https://localhost:5173`.
 Build both standalone app and plugin library:
 
 ```bash
-pnpm build
+pnpm build:ui
 ```
 
 Or build individually:
 
 ```bash
 # Build standalone app
-pnpm build:app
+pnpm build:ui:app
 
 # Build plugin library
-pnpm build:lib
+pnpm build:ui:lib
 ```
 
 The plugin library will be output to the `dist/lib/` directory.
@@ -108,7 +108,7 @@ For more information, visit the [Vercel CLI documentation](https://vercel.com/do
 
 #### Update App Manifest with Deployment URL
 
-After deploying to Vercel, update your app manifest to point to the deployed URL using the vertesia CLI:
+To make the application available in the Vertesia App portal, after deploying to Vercel, update your app manifest to point to the deployed URL using the vertesia CLI:
 
 ```bash
 vertesia apps update <appId> --manifest '{
