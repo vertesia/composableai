@@ -332,7 +332,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
 
     const importParams = vars.createImportVars(activity.import);
     const executionPayload = dslActivityPayload(basePayload, activity, importParams);
-    log.info("Executing activity: " + activity.name, { payload: executionPayload });
+    log.debug("Executing activity: " + activity.name, { payload: executionPayload });
 
     let proxy = defaultProxy;
     if (activity.options) {
@@ -364,7 +364,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
     ];
 
     if (activity.name && rateLimitedActivities.includes(activity.name)) {
-        log.info(`Applying rate limit for activity ${activity.name}`);
+        log.debug(`Applying rate limit for activity ${activity.name}`);
         // Apply rate limiting logic here
          // Check rate limit first - loop until no delay
         const rateLimitParams = buildRateLimitParams(activity, executionPayload);
@@ -373,7 +373,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         let rateLimitResult = await proxy.checkRateLimit(rateLimitPayload);
     
         while (rateLimitResult.delayMs > 0) {
-            log.info(`Rate limit delay applied: ${rateLimitResult.delayMs}ms`);
+            log.debug(`Rate limit delay applied: ${rateLimitResult.delayMs}ms`);
             await sleep(rateLimitResult.delayMs);
 
             // Check again after sleeping
@@ -386,7 +386,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         //TODO execute in parallel
         log.info("Parallel execution not yet implemented");
     } else {
-        log.info("Executing activity: " + activity.name, { importParams });
+        log.debug("Executing activity: " + activity.name, { importParams });
         const result = await fn(executionPayload);
         if (activity.output) {
             vars.setValue(activity.output, result);

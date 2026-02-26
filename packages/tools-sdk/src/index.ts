@@ -1,5 +1,6 @@
 export { authorize, AuthSession } from "./auth.js";
 export * from "./ContentTypesCollection.js";
+export * from "./RenderingTemplateCollection.js";
 export { copyRuntimeAssets } from "./copy-assets.js";
 export * from "./InteractionCollection.js";
 export * from "./server.js";

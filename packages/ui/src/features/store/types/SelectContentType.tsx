@@ -1,7 +1,7 @@
 import { ContentObjectTypeItem } from "@vertesia/common";
 import { SelectBox } from "@vertesia/ui/core";
-import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
+import { useTypeRegistry } from "./TypeRegistryProvider.js";
 
 const optionLabel = (t: ContentObjectTypeItem | null) => {
     if (t === null) return 'None';
@@ -22,7 +22,7 @@ interface SelectContentTypeProps {
     multiple?: boolean;
 }
 export function SelectContentType({ className, defaultValue, onChange, isClearable, multiple}: SelectContentTypeProps) {
-    const session = useUserSession();
+    const { registry: typeRegistry } = useTypeRegistry();
     const [isMounted, setIsMounted] = useState(false);
     const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | undefined>();
     const [selectedTypes, setSelectedTypes] = useState<ContentObjectTypeItem[]>([])
@@ -30,18 +30,18 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
     useEffect(() => {
         if (!isMounted) {
             setIsMounted(true);
-            if (session.typeRegistry && defaultValue) {
+            if (typeRegistry && defaultValue) {
                 if (multiple && Array.isArray(defaultValue)) {
-                    const types = session.typeRegistry.types.filter(t => defaultValue.includes(t.id));
+                    const types = typeRegistry.types.filter(t => defaultValue.includes(t.id));
                     setSelectedTypes(types);
                 }
-                const type = session.typeRegistry.types.find(t => t.id === defaultValue);
+                const type = typeRegistry.types.find(t => t.id === defaultValue);
                 if (type) {
                     setSelectedType(type);
                 }
             }
         }
-    }, [session.typeRegistry, defaultValue, multiple])
+    }, [typeRegistry, defaultValue, multiple])
 
     const _onChange = (option: ContentObjectTypeItem | null) => {
         setSelectedType(option || undefined);
@@ -57,7 +57,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
         return (
             <div className='flex flex-col gap-4 content-between'>
                 <SelectBox<ContentObjectTypeItem>
-                    options={session.typeRegistry?.types || []}
+                    options={typeRegistry?.types || []}
                     value={selectedTypes}
                     onChange={_onChangeMultiple}
                     placeholder="Choose Content Types..."
@@ -74,7 +74,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
     return (
         <div className='flex flex-col gap-4 content-between'>
             <SelectBox<ContentObjectTypeItem>
-                options={session.typeRegistry?.types || []}
+                options={typeRegistry?.types || []}
                 value={selectedType}
                 onChange={_onChange}
                 placeholder="Choose a Content Type..."

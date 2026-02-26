@@ -9,7 +9,9 @@ import {
     SidePanel, Spinner, useIntersectionObserver, useToast
 } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
-import { TypeRegistry, useUserSession } from '@vertesia/ui/session';
+import { useUserSession } from '@vertesia/ui/session';
+import { TypeRegistry } from '../types/TypeRegistry.js';
+import { useTypeRegistry } from '../types/TypeRegistryProvider.js';
 import { Download, ExternalLink, RefreshCw } from 'lucide-react';
 import { useEffect, useRef, useState } from "react";
 import { useDocumentFilterGroups, useDocumentFilterHandler } from "../../facets/DocumentsFacetsNav";
@@ -95,7 +97,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
     const searchContext = useDocumentSearch();
     const [isReady, setIsReady] = useState(false);
     const [selectedObject, setSelectedObject] = useState<ContentObjectItem | null>(null);
-    const { typeRegistry } = useUserSession();
+    const { registry: typeRegistry } = useTypeRegistry();
     const { search, isLoading, error, objects, hasMore } = useWatchDocumentSearchResult();
     const [actualLayout, setActualLayout] = useState<ColumnLayout[]>(
         typeRegistry ? layout || getTableLayout(typeRegistry, search.query.type) : defaultLayout,
@@ -253,7 +255,6 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
                 handleVectorSearch={handleVectorSearch}
                 handleRefetch={handleRefetch}
                 setIsGridView={setIsGridView}
-                refetch={handleRefetch}
             />
             <DocumentTable
                 objects={objects}
@@ -290,7 +291,6 @@ interface ToolsbarProps {
     handleVectorSearch: (query?: ComplexSearchQuery) => void;
     handleRefetch: () => void;
     setIsGridView: React.Dispatch<React.SetStateAction<boolean>>;
-    refetch: () => void;
 }
 function Toolsbar(props: ToolsbarProps) {
     const {
@@ -304,7 +304,6 @@ function Toolsbar(props: ToolsbarProps) {
         handleVectorSearch,
         handleRefetch,
         setIsGridView,
-        refetch
     } = props;
 
     return (
@@ -339,14 +338,13 @@ function Toolsbar(props: ToolsbarProps) {
                                 allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} />
                             }
                         </div>
-                        <div className="flex gap-1 items-center">
-                            <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
-                            <ContentDispositionButton onUpdate={setIsGridView} />
-                        </div>
                     </div>
                 )
             }
-            <Button variant="outline" onClick={refetch} alt="Refresh"><RefreshCw size={16} /></Button>
+            <div className="flex gap-1 items-center">
+                <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                <ContentDispositionButton onUpdate={setIsGridView} />
+            </div>
         </div>
     );
 }

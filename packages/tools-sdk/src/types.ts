@@ -1,6 +1,6 @@
 import type { ToolDefinition, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
-import { AgentToolDefinition, AuthTokenPayload, ProjectConfiguration, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
+import { AgentToolDefinition, AuthTokenPayload, ProjectConfiguration, RenderingTemplateDefinition, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
 
 export type { ToolExecutionMetadata };
 
@@ -151,6 +151,10 @@ export interface MCPConnectionDetails {
      */
     headers?: Record<string, string>;
 }
+
+// ================== Template Types ==================
+
+export type { RenderingTemplateDefinition };
 
 // ================== Skill Types ==================
 

@@ -163,6 +163,8 @@ interface ModernAgentConversationProps {
     hideFileUpload?: boolean;
     /** Show the Artifacts tab in the right panel (default false) */
     showArtifacts?: boolean;
+    /** Hide the document preview panel that auto-opens on create_document */
+    hideDocumentPanel?: boolean;
 
     // Callback to get attached documents when sending messages
     // Returns array of { id, name } to include in message metadata and display
@@ -694,6 +696,7 @@ function ModernAgentConversationInner({
     showRightPanel: showRightPanelProp = true,
     hideFileUpload,
     showArtifacts = false,
+    hideDocumentPanel,
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
