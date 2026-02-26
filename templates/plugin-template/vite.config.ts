@@ -4,6 +4,7 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type ConfigEnv, type UserConfig } from 'vite';
 import serveStatic from "vite-plugin-serve-static";
+import { apiServerPlugin } from './vite-api-server.js';
 
 
 /**
@@ -64,7 +65,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
         plugins: [
             tailwindcss(),
             react(),
-            vertesiaPluginBuilder({ inlineCss: CONFIG__inlineCss }),
+            vertesiaPluginBuilder({ inlineCss: CONFIG__inlineCss, input: 'src/ui/index.css' }),
         ],
         build: {
             outDir: 'dist/lib', // the plugin will be generated in the `dist/lib` directory
@@ -103,6 +104,8 @@ function defineAppConfig(): UserConfig {
                     resolve: (groups: string[]) => `./dist/lib/plugin.${groups[1]}`
                 },
             ]),
+            // Mount the Hono tool server API as middleware (includes import transformers)
+            ...apiServerPlugin(),
         ],
         build: {
             outDir: 'dist/ui', // UI app build goes to dist/ui/

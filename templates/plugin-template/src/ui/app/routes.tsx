@@ -1,4 +1,4 @@
-import { HomePage, NextPage } from "./pages";
+import { HomePage, NextPage } from "../pages";
 
 export const routes = [
     {
