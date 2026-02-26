@@ -13,7 +13,7 @@
     "scripts": {
         "dev": "vite dev",
         "build": "npm run build:server && npm run build:ui",
-        "build:server": "rollup -c && node ./lib/build-site.js ./dist",
+        "build:server": "rollup -c",
         "build:ui": "npm run build:ui:app && npm run build:ui:lib",
         "build:ui:app": "vite build --mode app",
         "build:ui:lib": "vite build --mode lib",

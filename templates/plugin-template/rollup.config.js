@@ -35,7 +35,6 @@ const serverBuild = {
     input: {
         server: './src/tool-server/server.ts',
         'server-node': './src/tool-server/server-node.ts',
-        'build-site': './src/tool-server/build-site.ts'
     },
     output: {
         dir: 'lib',
