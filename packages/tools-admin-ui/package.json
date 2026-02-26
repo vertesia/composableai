@@ -32,7 +32,8 @@
         "vite": "^7.3.0"
     },
     "dependencies": {
-        "@vertesia/common": "workspace:*"
+        "@vertesia/common": "workspace:*",
+        "@vertesia/ui": "workspace:*"
     },
     "repository": {
         "type": "git",

@@ -362,6 +362,135 @@
     text-overflow: ellipsis;
 }
 
+/* ── Card link wrapper ─────────────────────────────────────────── */
+
+.vta-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.vta-card--link {
+    cursor: pointer;
+}
+
+/* ── Detail page ───────────────────────────────────────────────── */
+
+.vta-detail-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.875rem;
+    color: #3b82f6;
+    text-decoration: none;
+    margin-bottom: 1.25rem;
+    transition: opacity 0.15s;
+}
+
+.vta-detail-back:hover {
+    opacity: 0.75;
+}
+
+.vta-detail-header {
+    margin-bottom: 2rem;
+}
+
+.vta-detail-title {
+    font-size: 1.75rem;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+    margin: 0.5rem 0 0.25rem;
+}
+
+.vta-detail-desc {
+    font-size: 0.95rem;
+    color: #4b5563;
+    margin: 0 0 0.75rem;
+    line-height: 1.6;
+}
+
+.vta-detail-section {
+    margin-bottom: 2rem;
+}
+
+.vta-detail-section h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0 0 0.75rem;
+}
+
+.vta-detail-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.vta-detail-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.vta-detail-role {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+}
+
+.vta-detail-role--system    { background: #dbeafe; color: #1e40af; }
+.vta-detail-role--user      { background: #d1fae5; color: #065f46; }
+.vta-detail-role--assistant { background: #ede9fe; color: #5b21b6; }
+.vta-detail-role--safety    { background: #fce7f3; color: #9d174d; }
+.vta-detail-role--tool      { background: #fef3c7; color: #92400e; }
+
+.vta-detail-prompt-name {
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.vta-detail-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin: 0;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #111827;
+}
+
+.vta-detail-flags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.vta-detail-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: #d1fae5;
+    color: #065f46;
+}
+
 /* ── Loading / error states ─────────────────────────────────────── */
 
 .vta-loading {
@@ -479,5 +608,37 @@
     .vta-tag {
         background: rgba(250, 204, 21, 0.12);
         color: #facc15;
+    }
+
+    /* Detail page dark mode */
+    .vta-detail-back { color: #60a5fa; }
+
+    .vta-detail-title { color: #f9fafb; }
+    .vta-detail-desc { color: #cbd5e1; }
+
+    .vta-detail-section h2 { color: #e5e7eb; }
+
+    .vta-detail-card {
+        background: rgba(15, 23, 42, 0.9);
+        border-color: rgba(148, 163, 184, 0.5);
+    }
+
+    .vta-detail-role--system    { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+    .vta-detail-role--user      { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+    .vta-detail-role--assistant { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
+    .vta-detail-role--safety    { background: rgba(236, 72, 153, 0.15); color: #f9a8d4; }
+    .vta-detail-role--tool      { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
+
+    .vta-detail-prompt-name { color: #9ca3af; }
+
+    .vta-detail-code {
+        background: rgba(15, 23, 42, 0.95);
+        border-color: rgba(148, 163, 184, 0.4);
+        color: #e5e7eb;
+    }
+
+    .vta-detail-flag {
+        background: rgba(16, 185, 129, 0.15);
+        color: #6ee7b7;
     }
 }

@@ -579,6 +579,9 @@ importers:
       '@vertesia/common':
         specifier: workspace:*
         version: link:../common
+      '@vertesia/ui':
+        specifier: workspace:*
+        version: link:../ui
     devDependencies:
       '@types/react':
         specifier: 19.2.3

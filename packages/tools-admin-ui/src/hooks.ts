@@ -1,46 +1,10 @@
 /**
  * Data fetching hooks for the admin panel.
- * Self-contained — no dependency on @vertesia/ui.
  */
 
-import { useEffect, useState } from 'react';
-import type { AppPackage } from '@vertesia/common';
-import type { ServerInfo } from './types.js';
-
-interface FetchState<T> {
-    data: T | undefined;
-    isLoading: boolean;
-    error: Error | undefined;
-}
-
-/**
- * Minimal data-fetching hook (replaces @vertesia/ui's useFetch).
- */
-function useFetch<T>(fetcher: () => Promise<T>, deps: unknown[]): FetchState<T> {
-    const [state, setState] = useState<FetchState<T>>({
-        data: undefined,
-        isLoading: true,
-        error: undefined,
-    });
-
-    useEffect(() => {
-        let cancelled = false;
-        setState(prev => ({ ...prev, isLoading: true, error: undefined }));
-
-        fetcher()
-            .then(data => {
-                if (!cancelled) setState({ data, isLoading: false, error: undefined });
-            })
-            .catch((err: unknown) => {
-                if (!cancelled) setState({ data: undefined, isLoading: false, error: err as Error });
-            });
-
-        return () => { cancelled = true; };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, deps);
-
-    return state;
-}
+import { useFetch } from '@vertesia/ui/core';
+import type { ServerInfo, ResourceData } from './types.js';
+import { buildResourceData } from './types.js';
 
 /**
  * Fetches the tool server info (message, version, endpoints).
@@ -53,11 +17,20 @@ export function useServerInfo(baseUrl: string) {
 }
 
 /**
- * Fetches the full app package with all resources.
+ * Fetches all 5 resource endpoints in parallel and builds collections + flat resource list.
+ * MCP endpoints are passed separately since they come from serverInfo.
  */
-export function useAppPackage(baseUrl: string) {
-    return useFetch<AppPackage>(() =>
-        fetch(`${baseUrl}/package`).then(r => r.json()),
-        [baseUrl]
-    );
+export function useResourceData(baseUrl: string, mcpEndpoints?: string[]) {
+    return useFetch<ResourceData>(() => {
+        const fetchJson = (path: string) => fetch(`${baseUrl}/${path}`).then(r => r.json());
+        return Promise.all([
+            fetchJson('interactions'),
+            fetchJson('tools'),
+            fetchJson('skills'),
+            fetchJson('types'),
+            fetchJson('templates'),
+        ]).then(([interactions, tools, skills, types, templates]) =>
+            buildResourceData(interactions, tools, skills, types, templates, mcpEndpoints)
+        );
+    }, [baseUrl, mcpEndpoints]);
 }
