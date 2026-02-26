@@ -1,22 +1,22 @@
 import * as protos from '@temporalio/proto';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
-import { Worker } from '@temporalio/worker';
+import { Worker, bundleWorkflowCode, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
 import { ContentEventName, DSLActivityExecutionPayload, DSLActivitySpec, DSLWorkflowExecutionPayload } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from "./setup/ActivityContext.js";
 
-async function sayHello(payload: DSLActivityExecutionPayload): Promise<string> {
+async function sayHello(payload: DSLActivityExecutionPayload<Record<string, any>>): Promise<string> {
     const { params } = await setupActivity(payload);
     return params.lang === 'fr' ? "Bonjour" : "Hello";
 }
 
-async function sayName(payload: DSLActivityExecutionPayload): Promise<string> {
+async function sayName(payload: DSLActivityExecutionPayload<Record<string, any>>): Promise<string> {
     const { params } = await setupActivity(payload);
     return params.lang === 'fr' ? "Monde" : "World";
 }
 
-async function sayGreeting(payload: DSLActivityExecutionPayload): Promise<string> {
+async function sayGreeting(payload: DSLActivityExecutionPayload<Record<string, any>>): Promise<string> {
     const { params } = await setupActivity(payload);
     return `${params.hello}, ${params.name}!`;
 }
@@ -50,6 +50,7 @@ const activities: DSLActivitySpec[] = [
 describe('DSL Workflow', () => {
 
     let testEnv: TestWorkflowEnvironment;
+    let workflowBundle: WorkflowBundleWithSourceMap;
 
     beforeAll(async () => {
         testEnv = await TestWorkflowEnvironment.createLocal();
@@ -64,7 +65,10 @@ describe('DSL Workflow', () => {
                 InitiatedBy: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
             },
         });
-    });
+        workflowBundle = await bundleWorkflowCode({
+            workflowsPath: new URL('./dsl-workflow.ts', import.meta.url).pathname,
+        });
+    }, 60_000);
 
     afterAll(async () => {
         await testEnv?.teardown();
@@ -79,7 +83,7 @@ describe('DSL Workflow', () => {
         const worker = await Worker.create({
             connection: nativeConnection,
             taskQueue,
-            workflowsPath: new URL("./dsl-workflow.ts", import.meta.url).pathname,
+            workflowBundle,
             activities: { sayHello, sayName, sayGreeting },
         });
 
@@ -89,7 +93,6 @@ describe('DSL Workflow', () => {
             vars: {},
             account_id: '123',
             project_id: '123',
-            timestamp: Date.now(),
             wf_rule_name: 'test',
             auth_token: process.env.VERTESIA_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature',
             config: {
@@ -105,7 +108,7 @@ describe('DSL Workflow', () => {
             }
         }
 
-        let result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
+        const result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
             args: [payload],
             workflowId: 'test',
             taskQueue,

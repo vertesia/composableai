@@ -1,15 +1,12 @@
-import { MockActivityEnvironment, TestWorkflowEnvironment } from '@temporalio/testing';
+import { MockActivityEnvironment } from '@temporalio/testing';
 import fs from 'fs';
 import path from 'path';
 import { beforeAll, expect, test } from 'vitest';
 import { markdownWithPandoc } from '../conversion/pandoc';
 
-
-let testEnv: TestWorkflowEnvironment;
 let activityContext: MockActivityEnvironment;
 
 beforeAll(async () => {
-    testEnv = await TestWorkflowEnvironment.createLocal();
     activityContext = new MockActivityEnvironment();
 });
 
