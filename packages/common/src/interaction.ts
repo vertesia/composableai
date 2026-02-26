@@ -31,6 +31,7 @@ export interface InteractionExecutionError {
     code: string;
     message: string;
     data?: any;
+    retryable?: boolean;
 }
 
 /**

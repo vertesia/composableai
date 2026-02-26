@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import { AwsConfiguration, CompositeAppConfig, CompositeAppConfigPayload, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, InCodeTypeDefinition, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, ProjectToolInfo, SupportedIntegrations } from "@vertesia/common";
+import { AwsConfiguration, CompositeAppConfig, CompositeAppConfigPayload, GithubConfiguration, GladiaConfiguration, ICreateProjectPayload, InCodeTypeDefinition, MagicPdfConfiguration, Project, ProjectConfiguration, ProjectIntegrationListEntry, ProjectRef, ProjectToolInfo, RenderingTemplateDefinition, RenderingTemplateDefinitionRef, SupportedIntegrations } from "@vertesia/common";
 
 export default class ProjectsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -63,6 +63,16 @@ export default class ProjectsApi extends ApiTopic {
 
     getAppContentType(projectId: string, typeId: string): Promise<InCodeTypeDefinition> {
         return this.get(`/${projectId}/app-types/${typeId}`);
+    }
+
+    listAppRenderingTemplates(projectId: string, tag?: string): Promise<RenderingTemplateDefinitionRef[]> {
+        return this.get(`/${projectId}/app-templates`, {
+            query: { tag }
+        });
+    }
+
+    getAppRenderingTemplate(projectId: string, templateUri: string): Promise<RenderingTemplateDefinition> {
+        return this.get(`/${projectId}/app-templates/${templateUri}`);
     }
 
     getCompositeAppConfiguration(projectId: string): Promise<CompositeAppConfig> {
