@@ -9,6 +9,8 @@
  * Includes the Rollup-compatible import transformers (?skill, ?template, ?prompt, ?raw)
  * needed by ssrLoadModule to process tool server source files.
  */
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Plugin, ViteDevServer } from 'vite';
 import { getRequestListener } from '@hono/node-server';
 import {
@@ -43,6 +45,12 @@ export function apiServerPlugin(options: ApiServerPluginOptions = {}): Plugin[] 
         compiledEntry = './lib/server.js',
     } = options;
 
+    // Resolve compiledEntry to an absolute path relative to this file's directory.
+    // This is necessary because Vite compiles the config to a temp directory,
+    // so relative dynamic imports would resolve from the wrong location.
+    const __dirname = fileURLToPath(new URL('.', import.meta.url));
+    const absoluteCompiledEntry = resolve(__dirname, compiledEntry);
+
     return [
         // Rollup-compatible transformers for tool server imports (?skill, ?template, etc.)
         vertesiaImportPlugin({
@@ -69,7 +77,7 @@ export function apiServerPlugin(options: ApiServerPluginOptions = {}): Plugin[] 
 
             // Preview mode: load compiled server from lib/
             configurePreviewServer(server) {
-                const listener = createPreviewListener(compiledEntry);
+                const listener = createPreviewListener(absoluteCompiledEntry);
                 server.middlewares.use(listener);
             },
         },

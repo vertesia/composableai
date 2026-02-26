@@ -1,0 +1,49 @@
+{
+    "name": "@vertesia/tools-admin-ui",
+    "version": "1.0.0-dev.20260225.024852Z",
+    "description": "Shared admin UI for Vertesia tool servers",
+    "type": "module",
+    "license": "Apache-2.0",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "import": "./lib/tools-admin-ui.js"
+        }
+    },
+    "scripts": {
+        "build": "rm -rf lib tsconfig.tsbuildinfo && tsc --build && vite build --mode lib",
+        "dev": "vite dev"
+    },
+    "peerDependencies": {
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
+    },
+    "devDependencies": {
+        "@types/react": "^19.2.3",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.1.2",
+        "react": "^19.2.3",
+        "react-dom": "^19.2.3",
+        "typescript": "^5.9.3",
+        "vite": "^7.3.0"
+    },
+    "dependencies": {
+        "@vertesia/common": "workspace:*"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vertesia/composableai.git",
+        "directory": "packages/tools-admin-ui"
+    },
+    "keywords": [
+        "vertesia",
+        "tools",
+        "admin",
+        "ui",
+        "react"
+    ]
+}

@@ -7,7 +7,7 @@ import { RouterProvider, type Route } from '@vertesia/ui/router'
 import { App } from './app'
 import "./env"
 import { setUsePluginAssets } from './assets'
-import { AdminApp } from './admin/AdminApp'
+import { AdminApp } from '@vertesia/tools-admin-ui'
 
 setUsePluginAssets(false);
 
