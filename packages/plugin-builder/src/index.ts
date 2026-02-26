@@ -24,7 +24,7 @@ export function vertesiaPluginBuilder({
     const jsOutput = output.replace('.css', '.js');
     return {
         name: 'vertesia-plugin-builder',
-        apply: 'build' as 'build',
+        apply: 'build' as const,
         enforce: 'post',
         resolveId(id) {
             // Create a virtual CSS entry module
