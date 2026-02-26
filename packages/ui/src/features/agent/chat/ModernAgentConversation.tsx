@@ -696,7 +696,7 @@ function ModernAgentConversationInner({
     showRightPanel: showRightPanelProp = true,
     hideFileUpload,
     showArtifacts = false,
-    hideDocumentPanel,
+    hideDocumentPanel: _hideDocumentPanel,
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
