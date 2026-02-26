@@ -63,6 +63,15 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
         }
         pkg.types = allTypes;
     },
+    async templates(pkg: AppPackage, config: ToolServerConfig) {
+        const basePath = `${config.prefix || '/api'}/templates`;
+        pkg.templates = (config.templates || []).flatMap(coll =>
+            coll.templates.map(({ instructions: _, ...ref }) => ({
+                ...ref,
+                path: `${basePath}/${coll.name}/${ref.name}`,
+            }))
+        );
+    },
     async widgets(pkg: AppPackage, config: ToolServerConfig) {
         const { skills: skillCollections = [] } = config;
         const widgets: Record<string, AppWidgetInfo> = {};
@@ -107,6 +116,7 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
         await builders.tools(pkg, config, c);
         await builders.interactions(pkg, config, c);
         await builders.types(pkg, config, c);
+        await builders.templates(pkg, config, c);
         await builders.widgets(pkg, config, c);
         await builders.ui(pkg, config, c);
         await builders.settings(pkg, config, c);
@@ -119,6 +129,9 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
         }
         if (scopes.has('types')) {
             await builders.types(pkg, config, c);
+        }
+        if (scopes.has('templates')) {
+            await builders.templates(pkg, config, c);
         }
         if (scopes.has('widgets')) {
             await builders.widgets(pkg, config, c);

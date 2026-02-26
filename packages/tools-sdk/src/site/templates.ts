@@ -1,9 +1,10 @@
 import type { InteractionCollection } from "../InteractionCollection.js";
 import { ToolServerConfig } from "../server/types.js";
 import type { SkillCollection } from "../SkillCollection.js";
+import type { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
 import type { ToolCollection } from "../ToolCollection.js";
 import type { ContentTypesCollection } from "../ContentTypesCollection.js";
-import type { ICollection, SkillDefinition, Tool } from "../types.js";
+import type { ICollection, SkillDefinition, RenderingTemplateDefinition, Tool } from "../types.js";
 import { join } from "../utils.js";
 import { baseStyles } from "./styles.js";
 
@@ -23,6 +24,15 @@ const defaultIcon = /*html*/`
 const skillIcon = /*html*/`
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+</svg>`;
+
+const templateIcon = /*html*/`
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+  <polyline points="14 2 14 8 20 8"/>
+  <line x1="16" y1="13" x2="8" y2="13"/>
+  <line x1="16" y1="17" x2="8" y2="17"/>
+  <polyline points="10 9 9 9 8 9"/>
 </svg>`;
 
 /**
@@ -245,6 +255,19 @@ ${baseStyles}
 .skill-type-badge {
     background: #10b981;
     color: white;
+}
+
+.template-type-badge {
+    background: #f59e0b;
+    color: white;
+}
+
+.template-type-badge.document {
+    background: #f59e0b;
+}
+
+.template-type-badge.presentation {
+    background: #8b5cf6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -585,6 +608,140 @@ export function skillDetailCard(skill: SkillDefinition, collection: SkillCollect
 }
 
 /**
+ * Render a template endpoint URL with copy button
+ */
+function renderTemplateUrl(template: RenderingTemplateDefinition, collectionName: string): string {
+    const templatePath = `/api/templates/${collectionName}/${template.name}`;
+    return /*html*/`<div class="script-item" style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span class="script-name">${templatePath}</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '${templatePath}')" title="Copy endpoint URL">
+            ${copyIcon}
+        </button>
+    </div>`;
+}
+
+/**
+ * Render a tag list
+ */
+function tagList(tags: string[] | undefined): string {
+    if (!tags || tags.length === 0) return '';
+    return /*html*/`
+    <div class="detail-section">
+        <h4 class="detail-section-title">Tags</h4>
+        <div class="keyword-list">
+            ${tags.map(tag => `<span class="keyword-tag">${tag}</span>`).join('')}
+        </div>
+    </div>`;
+}
+
+/**
+ * Render an asset file list
+ */
+function assetList(assets: string[]): string {
+    if (assets.length === 0) return '';
+    return /*html*/`
+    <div class="detail-section">
+        <h4 class="detail-section-title">Assets</h4>
+        <div class="script-list">
+            ${assets.map(asset => /*html*/`
+            <div class="script-item">
+                ${fileIcon}
+                <span class="script-name">${asset}</span>
+            </div>
+            `).join('')}
+        </div>
+    </div>`;
+}
+
+/**
+ * Render an instructions preview section
+ */
+function instructionsPreview(instructions: string): string {
+    return /*html*/`
+    <div class="detail-section">
+        <h4 class="detail-section-title">Instructions Preview</h4>
+        <div class="instructions-preview">${escapeHtml(instructions.slice(0, 1000))}${instructions.length > 1000 ? '...' : ''}</div>
+    </div>`;
+}
+
+/**
+ * Render a detailed template card
+ */
+export function templateDetailCard(template: RenderingTemplateDefinition, collection: RenderingTemplateCollection): string {
+    return /*html*/`
+<div class="detail-card">
+    <div class="detail-header">
+        <div>
+            <h3 class="detail-title">${template.title || template.name}</h3>
+            <p class="detail-desc">${template.description || 'No description'}</p>
+            ${renderTemplateUrl(template, collection.name)}
+        </div>
+        <div class="detail-badges">
+            <span class="badge template-type-badge ${template.type}">${template.type}</span>
+        </div>
+    </div>
+    <div class="detail-body">
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Type</div>
+                <div class="info-value"><code>${template.type}</code></div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Assets</div>
+                <div class="info-value">${template.assets.length} file${template.assets.length !== 1 ? 's' : ''}</div>
+            </div>
+        </div>
+
+        ${tagList(template.tags)}
+        ${assetList(template.assets)}
+        ${instructionsPreview(template.instructions)}
+    </div>
+</div>`;
+}
+
+/**
+ * Render a template collection detail page
+ */
+export function templateCollectionPage(collection: RenderingTemplateCollection): string {
+    const templatesArray = Array.from(collection);
+    return /*html*/`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${collection.title || collection.name} - Templates</title>
+    <style>${detailStyles}</style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/">${backArrow} Back to all collections</a>
+    </nav>
+
+    <div class="header">
+        <div class="header-icon">${collection.icon || templateIcon}</div>
+        <div>
+            <h1>${collection.title || collection.name}</h1>
+            <p style="color: #6b7280; margin: 0.25rem 0 0 0;">${collection.description || ''}</p>
+            <div class="endpoint-box">
+                <code>/api/templates/${collection.name}</code>
+                <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '/api/templates/${collection.name}')" title="Copy endpoint URL">
+                    ${copyIcon}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <h2>${templatesArray.length} Template${templatesArray.length !== 1 ? 's' : ''}</h2>
+
+    ${templatesArray.length > 0 ?
+            templatesArray.map(template => templateDetailCard(template, collection)).join('') :
+            '<div class="empty-state">No templates in this collection</div>'
+        }
+</body>
+</html>`;
+}
+
+/**
  * Escape HTML for safe rendering
  */
 function escapeHtml(str: string): string {
@@ -665,6 +822,7 @@ export function indexPage(
         tools = [],
         interactions = [],
         skills = [],
+        templates = [],
         types = [],
         mcpProviders = [],
         hideUILinks = false,
@@ -698,6 +856,7 @@ export function indexPage(
                         ${skills.length ? /*html*/`<span><dot></dot> ${skills.length} skill collection${skills.length !== 1 ? 's' : ''}</span>` : ''}
                         ${interactions.length ? /*html*/`<span><dot></dot> ${interactions.length} interaction collection${interactions.length !== 1 ? 's' : ''}</span>` : ''}
                         ${types.length ? /*html*/`<span><dot></dot> ${types.length} content type collection${types.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${templates.length ? /*html*/`<span><dot></dot> ${templates.length} template collection${templates.length !== 1 ? 's' : ''}</span>` : ''}
                         ${mcpProviders.length ? /*html*/`<span><dot></dot> ${mcpProviders.length} MCP provider${mcpProviders.length !== 1 ? 's' : ''}</span>` : ''}
                     </div>
                     ${hideUILinks ? '' : renderUILinks()}
@@ -725,7 +884,7 @@ export function indexPage(
                 type="search"
                 id="collection-search"
                 class="search-input"
-                placeholder="Search tools, skills, interactions, types..."
+                placeholder="Search tools, skills, interactions, types, templates..."
                 aria-label="Search collections"
                 autocomplete="off"
             />
@@ -789,6 +948,22 @@ export function indexPage(
                 ${types.map((t: ContentTypesCollection) => {
         const count = t.getContentTypes().length;
         return collectionCard(t, 'types', `${count} type${count !== 1 ? 's' : ''}`);
+    }).join('')}
+            </div>
+        </section>
+        ` : ''}
+
+        ${templates.length > 0 ? /*html*/`
+        <section data-section="templates">
+            <hr>
+            <div class="section-header">
+                <h2>Rendering Template Collections</h2>
+                <p class="section-subtitle">Document and presentation templates for content generation.</p>
+            </div>
+            <div class="card-grid">
+                ${templates.map((t: RenderingTemplateCollection) => {
+        const count = t.getTemplateDefinitions().length;
+        return collectionCard(t, 'templates', `${count} template${count !== 1 ? 's' : ''}`);
     }).join('')}
             </div>
         </section>
