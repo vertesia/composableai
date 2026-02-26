@@ -13,7 +13,7 @@ setUsePluginAssets(false);
 
 const routes: Route[] = [
     { path: "*", Component: AdminApp },
-    { path: "ui/*", Component: AppWrapper },
+    { path: "app/*", Component: AppWrapper },
 ]
 
 function AppWrapper() {

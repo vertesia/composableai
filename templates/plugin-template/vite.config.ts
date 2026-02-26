@@ -108,7 +108,7 @@ function defineAppConfig(): UserConfig {
             ...apiServerPlugin(),
         ],
         build: {
-            outDir: 'dist/ui', // UI app build goes to dist/ui/
+            outDir: 'dist/app', // App build goes to dist/app/
         },
         // for authentication with Firebase
         server: {
