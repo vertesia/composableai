@@ -10,20 +10,23 @@
     ],
     "license": "Apache-2.0",
     "scripts": {
-        "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+        "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
         "build": "pnpm exec tsmod build && pnpm exec rollup -c",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "test": "vitest run"
     },
     "devDependencies": {
+        "@eslint/js": "^10.0.1",
         "@rollup/plugin-commonjs": "^28.0.3",
         "@rollup/plugin-node-resolve": "^16.0.1",
         "@rollup/plugin-typescript": "^12.1.2",
         "@types/node": "^22.19.2",
+        "eslint": "^10.0.2",
         "rollup": "^4.40.2",
         "rollup-plugin-terser": "^7.0.2",
         "ts-dual-module": "^0.6.3",
         "typescript": "^5.9.3",
+        "typescript-eslint": "^8.56.1",
         "vitest": "^4.0.16"
     },
     "dependencies": {

@@ -22,12 +22,15 @@
     "tailwind"
   ],
   "scripts": {
-    "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+    "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
     "build": "tsc",
     "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc"
   },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
     "@adobe/css-tools": "^4.4.1",

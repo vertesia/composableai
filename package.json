@@ -3,16 +3,18 @@
     "version": "1.0.0-dev.20260225.024852Z",
     "license": "Apache-2.0",
     "private": true,
+    "type": "module",
     "scripts": {
         "bump": "pnpm exec wst bump minor -x llumiverse",
         "release": "pnpm -r publish --access public",
         "build": "pnpm -r build",
         "test": "pnpm -r test",
         "clean": "rimraf ./node_modules && pnpm -r clean",
-        "prepublishOnly": "pnpm build"
+        "prepublishOnly": "pnpm build",
+        "lint": "pnpm -r lint"
     },
     "devDependencies": {
-        "eslint": "^9.32.0",
+        "eslint": "^10.0.2",
         "npm-ws-tools": "^0.3.0",
         "rimraf": "^5.0.5",
         "typescript": "^5.9.3",

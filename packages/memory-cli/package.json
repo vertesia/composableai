@@ -24,7 +24,7 @@
     "typescript"
   ],
   "scripts": {
-    "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+    "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
     "build": "tsc --build",
     "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build"
   },
@@ -34,8 +34,11 @@
     "commander": "^14.0.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.19.2",
+    "eslint": "^10.0.2",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.16"
   },
   "repository": {

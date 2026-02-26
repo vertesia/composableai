@@ -27,7 +27,7 @@
     "cli"
   ],
   "scripts": {
-    "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+    "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
     "build": "tsc --build",
     "clean": "rm -rf ./lib ./tsconfig.tsbuildinfo && tsc --build"
   },
@@ -62,7 +62,10 @@
     "typescript": "^5.5.3"
   },
   "devDependencies": {
-    "@types/jsonwebtoken": "^9.0.10"
+    "@eslint/js": "^10.0.1",
+    "@types/jsonwebtoken": "^9.0.10",
+    "eslint": "^10.0.2",
+    "typescript-eslint": "^8.56.1"
   },
   "repository": {
     "type": "git",

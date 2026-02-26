@@ -18,7 +18,7 @@
     },
     "scripts": {
         "test": "ESBK_TSCONFIG_PATH=./test/tsconfig.json pnpm exec mocha -r tsx --exit ./test/**/*.ts",
-        "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+        "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
         "build": "pnpm exec tsmod build",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
@@ -45,16 +45,19 @@
     },
     "homepage": "https://github.com/vertesia/composableai/tree/main/packages/api-fetch-client#readme",
     "devDependencies": {
+        "@eslint/js": "^10.0.1",
         "@koa-stack/router": "^0.24.0",
         "@koa-stack/server": "^0.24.0",
         "@types/koa": "^2.15.0",
         "@types/mocha": "^10.0.10",
+        "eslint": "^10.0.2",
         "koa": "^2.16.3",
         "mocha": "^10.2.0",
         "ts-dual-module": "^0.6.3",
         "ts-node": "^10.9.2",
         "tsx": "^3.14.0",
         "typescript": "^5.9.3",
+        "typescript-eslint": "^8.56.1",
         "vitest": "^4.0.16"
     },
     "dependencies": {
