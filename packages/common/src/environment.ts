@@ -60,7 +60,7 @@ export interface VirtualEnvEntry {
  **/
 export interface LoadBalancingEnvConfig {
     entries?: LoadBalancingEnvEntryConfig[];
-    balance_if_failed?: boolean;
+    failover?: boolean;
 }
 
 export interface LoadBalancingEnvEntryConfig extends VirtualEnvEntry {
