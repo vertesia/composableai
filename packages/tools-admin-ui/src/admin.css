@@ -376,6 +376,13 @@
 
 /* ── Detail page ───────────────────────────────────────────────── */
 
+.vta-detail-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
 .vta-detail-back {
     display: inline-flex;
     align-items: center;
@@ -383,7 +390,6 @@
     font-size: 0.875rem;
     color: #3b82f6;
     text-decoration: none;
-    margin-bottom: 1.25rem;
     transition: opacity 0.15s;
 }
 

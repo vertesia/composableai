@@ -5,12 +5,26 @@ import { AdminContext } from './AdminContext.js';
 import { HomePage } from './pages/HomePage.js';
 import { InteractionCollection } from './pages/InteractionCollection.js';
 import { InteractionDetail } from './pages/InteractionDetail.js';
+import { ToolCollection } from './pages/ToolCollection.js';
+import { SkillCollection } from './pages/SkillCollection.js';
+import { SkillDetail } from './pages/SkillDetail.js';
+import { TypeCollection } from './pages/TypeCollection.js';
+import { TypeDetail } from './pages/TypeDetail.js';
+import { TemplateCollection } from './pages/TemplateCollection.js';
+import { TemplateDetail } from './pages/TemplateDetail.js';
 import adminStyles from './admin.css?inline';
 
 const routes: Route[] = [
     { path: '/', Component: HomePage },
     { path: '/interactions/:collection', Component: InteractionCollection },
     { path: '/interactions/:collection/:name', Component: InteractionDetail },
+    { path: '/tools/:collection', Component: ToolCollection },
+    { path: '/skills/:collection', Component: SkillCollection },
+    { path: '/skills/:collection/:name', Component: SkillDetail },
+    { path: '/types/:collection', Component: TypeCollection },
+    { path: '/types/:collection/:name', Component: TypeDetail },
+    { path: '/templates/:collection', Component: TemplateCollection },
+    { path: '/templates/:collection/:name', Component: TemplateDetail },
 ];
 
 export interface AdminAppProps {

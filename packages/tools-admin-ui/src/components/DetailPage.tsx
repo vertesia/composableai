@@ -14,7 +14,12 @@ interface DetailPageProps {
 export function DetailPage({ type, title, description, tags, backHref = '/', children }: DetailPageProps) {
     return (
         <div className="vta-root">
-            <NavLink href={backHref} className="vta-detail-back">&larr; Back</NavLink>
+            <nav className="vta-detail-nav">
+                {backHref !== '/' && (
+                    <NavLink href="/" className="vta-detail-back">Home</NavLink>
+                )}
+                <NavLink href={backHref} className="vta-detail-back">&larr; Back</NavLink>
+            </nav>
 
             <div className="vta-detail-header">
                 <span className={`vta-card-type vta-card-type--${type}`}>{type}</span>
