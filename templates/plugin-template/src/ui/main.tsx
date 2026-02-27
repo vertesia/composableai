@@ -8,6 +8,7 @@ import { App } from './app'
 import "./env"
 import { setUsePluginAssets } from './assets'
 import { AdminApp } from '@vertesia/tools-admin-ui'
+import { OrgGate } from './OrgGate'
 
 setUsePluginAssets(false);
 
@@ -27,7 +28,9 @@ function AppWrapper() {
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <VertesiaShell>
-            <RouterProvider routes={routes} />
+            <OrgGate>
+                <RouterProvider routes={routes} />
+            </OrgGate>
         </VertesiaShell>
     </StrictMode>,
 )

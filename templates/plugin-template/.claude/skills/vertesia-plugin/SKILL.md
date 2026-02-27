@@ -433,6 +433,21 @@ async run(payload, context) {
 }
 ```
 
+### Organization Access Restriction
+
+To restrict a tool server to specific Vertesia organizations, set the `VERTESIA_ALLOWED_ORGS` environment variable to a comma-separated list of organization IDs:
+
+```bash
+VERTESIA_ALLOWED_ORGS=org_abc123,org_def456
+```
+
+When set, only requests from the listed organizations are allowed. Requests from other organizations receive a `403 Forbidden` response. When not set, all authenticated organizations can access the server.
+
+This is enforced automatically by `@vertesia/tools-sdk`'s `authorize()` middleware — no code changes are needed in the plugin. The org ID is read from the JWT token's `account.id` field.
+
+**Vercel:** Set via Project Settings > Environment Variables or `vercel env add VERTESIA_ALLOWED_ORGS`.
+**Docker/Node.js:** Set as a standard environment variable.
+
 ## Deployment
 
 ### Vercel (Primary)
