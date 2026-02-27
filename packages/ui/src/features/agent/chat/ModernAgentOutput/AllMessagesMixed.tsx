@@ -150,8 +150,34 @@ function AllMessagesMixedComponent({
     // During streaming, scrollIntoView was being called 30+ times/sec
     const lastScrollTimeRef = useRef<number>(0);
     const scrollScheduledRef = useRef<number | null>(null);
+    // Track whether the user has manually scrolled away from the bottom.
+    // When true, auto-scroll is suppressed so the user can read earlier content.
+    const userScrolledUpRef = useRef<boolean>(false);
+    // Guard to distinguish programmatic scrolls from user-initiated ones
+    const programmaticScrollRef = useRef<boolean>(false);
 
     const isStreaming = streamingMessages.size > 0;
+
+    // Detect user scroll: if they scroll away from the bottom, stop auto-scrolling.
+    // Re-enable auto-scroll when they scroll back near the bottom.
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const NEAR_BOTTOM_THRESHOLD = 80; // px from bottom to consider "at bottom"
+
+        const handleScroll = () => {
+            // Ignore scrolls triggered by our own performScroll
+            if (programmaticScrollRef.current) return;
+
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+            userScrolledUpRef.current = distanceFromBottom > NEAR_BOTTOM_THRESHOLD;
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, []);
 
     // Compute bucketed streaming content length for scroll dependency
     // Changes every ~200 chars to trigger scroll without excessive updates
@@ -166,15 +192,24 @@ function AllMessagesMixedComponent({
     // Throttled scroll function
     const performScroll = useCallback(() => {
         if (bottomRef.current) {
+            programmaticScrollRef.current = true;
             bottomRef.current.scrollIntoView({ behavior: isStreaming ? "instant" : "smooth" });
             lastScrollTimeRef.current = Date.now();
+            // Reset the programmatic flag after the browser processes the scroll
+            requestAnimationFrame(() => {
+                programmaticScrollRef.current = false;
+            });
         }
         scrollScheduledRef.current = null;
     }, [bottomRef, isStreaming]);
 
     // Auto-scroll to bottom when messages or streaming messages change
     // Throttled to max 10 scrolls/sec to prevent layout thrashing
+    // Skipped when the user has manually scrolled up to read earlier content
     useEffect(() => {
+        // Respect user's scroll position — don't yank them back to the bottom
+        if (userScrolledUpRef.current) return;
+
         const now = Date.now();
         const timeSinceLastScroll = now - lastScrollTimeRef.current;
 
