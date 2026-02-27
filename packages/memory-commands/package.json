@@ -1,7 +1,7 @@
 {
     "name": "@vertesia/memory-commands",
     "description": "Memory commands for memory recipe scripts",
-    "version": "1.0.0-dev.20260203.130115Z",
+    "version": "1.0.0-dev.20260225.024852Z",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [

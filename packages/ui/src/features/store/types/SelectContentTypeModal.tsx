@@ -9,7 +9,7 @@ import {
     VTooltip,
 } from "@vertesia/ui/core";
 import { ContentObjectTypeItem } from "@vertesia/common";
-import { useUserSession } from "@vertesia/ui/session";
+import { useTypeRegistry } from "./TypeRegistryProvider.js";
 import { CheckCircleIcon, Info } from "lucide-react";
 
 /**
@@ -49,7 +49,7 @@ export function SelectContentTypeModal({
     initialSelectedType = null,
     allowNone = true,
 }: SelectContentTypeModalProps) {
-    const { typeRegistry } = useUserSession();
+    const { registry: typeRegistry } = useTypeRegistry();
     const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | null>(initialSelectedType);
 
     // Get available types from the registry
