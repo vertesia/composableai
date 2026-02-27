@@ -67,10 +67,12 @@ export async function authorize(ctx: Context, endpointOverrides?: EndpointOverri
     }
     try {
         const { payload } = await verifyToken(value);
+        assertAllowedOrg(payload);
         const session = new AuthSession(value, payload, endpointOverrides, toolContext);
         ctx.set("auth", session);
         return session;
     } catch (err: any) {
+        if (err instanceof HTTPException) throw err;
         throw new HTTPException(401, {
             message: err.message,
             cause: err
@@ -120,4 +122,29 @@ export class AuthSession implements ToolExecutionContext {
 
 function isAllowedIssuer(iss: string) {
     return iss.endsWith(".vertesia.io") || iss.endsWith(".becomposable.com");
+}
+
+/**
+ * If VERTESIA_ALLOWED_ORGS is set (comma-separated org IDs), restrict access
+ * to only those organizations. If not set, all authenticated orgs are allowed.
+ */
+let _allowedOrgs: Set<string> | null | undefined;
+function getAllowedOrgs(): Set<string> | null {
+    if (_allowedOrgs === undefined) {
+        const raw = process.env.VERTESIA_ALLOWED_ORGS;
+        _allowedOrgs = raw
+            ? new Set(raw.split(',').map(s => s.trim()).filter(Boolean))
+            : null;
+    }
+    return _allowedOrgs;
+}
+
+function assertAllowedOrg(payload: AuthTokenPayload) {
+    const allowed = getAllowedOrgs();
+    if (!allowed) return;
+    if (!allowed.has(payload.account.id)) {
+        throw new HTTPException(403, {
+            message: `Organization ${payload.account.name} is not authorized to access this server`,
+        });
+    }
 }

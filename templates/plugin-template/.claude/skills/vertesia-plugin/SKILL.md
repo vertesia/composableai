@@ -20,7 +20,6 @@ src/
     server-node.ts       # Node.js HTTP adapter for local dev
     config.ts            # Server configuration - registers all collections here
     settings.ts          # JSON Schema for plugin settings
-    build-site.ts        # Generates static HTML landing page at build time
     tools/               # Tool collections
       <collection>/
         index.ts         # Exports ToolCollection with tool list
@@ -89,7 +88,7 @@ This project has two independent build pipelines:
 pnpm build                 # Server + UI (both lib and app)
 
 # Server only
-pnpm build:server          # Rollup compile + static HTML generation
+pnpm build:server          # Rollup compile
 pnpm dev                   # Build server + start on port 3000
 
 # UI only
@@ -336,6 +335,66 @@ export const MyTemplates = new RenderingTemplateCollection({
 
 6. Register in `src/tool-server/templates/index.ts` and add to `config.ts`.
 
+## Admin UI (`@vertesia/tools-admin-ui`)
+
+The admin UI is a shared React library that provides a browsable interface for all resources exposed by the plugin. It is mounted alongside the plugin app in dev mode.
+
+### How it integrates
+
+In `src/ui/main.tsx`, the admin UI is mounted at the root path while the plugin app lives under `/app/`:
+
+```typescript
+import { AdminApp } from '@vertesia/tools-admin-ui'
+
+const routes: Route[] = [
+    { path: "*", Component: AdminApp },      // Admin UI at /
+    { path: "app/*", Component: AppWrapper }, // Plugin app at /app/
+]
+```
+
+### What the admin UI shows
+
+The admin UI fetches the tool server's per-type API endpoints in parallel:
+
+| Endpoint | Data |
+|----------|------|
+| `GET /api` | Server info (name, version, endpoints) |
+| `GET /api/interactions` | Interaction collections and refs |
+| `GET /api/tools` | Tool collections and definitions |
+| `GET /api/skills` | Skill collections (exposed as tools) |
+| `GET /api/types` | Content type collections and schemas |
+| `GET /api/templates` | Template collections and refs |
+| `GET /api/package?scope=widgets` | Widget info per skill collection |
+
+The home page shows collection cards grouped by type. Clicking a collection navigates to its detail page. A search bar filters across all individual resources.
+
+### Admin UI pages
+
+| Route | Shows |
+|-------|-------|
+| `/` | Collection cards grouped by type, or search results |
+| `/tools/:collection` | Tool definitions with input schemas |
+| `/skills/:collection` | Skill list with widgets summary |
+| `/skills/:collection/:name` | Full skill: widgets, scripts, instructions, schema |
+| `/interactions/:collection` | Interaction list |
+| `/interactions/:collection/:name` | Prompts, result schema, agent runner flags |
+| `/types/:collection` | Content type list |
+| `/types/:collection/:name` | Object schema, table layout, flags |
+| `/templates/:collection` | Template list |
+| `/templates/:collection/:name` | Instructions, assets, type |
+
+### Developing the admin UI itself
+
+The admin UI package has its own dev mode for standalone development:
+
+```bash
+cd composableai/packages/tools-admin-ui
+cp .env.local.example .env.local  # Set VITE_API_BASE_URL to your running tool server
+pnpm dev                          # Vite dev server on http://localhost:5174
+```
+
+The dev entry point wraps AdminApp in `VertesiaShell` for authentication context.
+
 ## UI Plugin Development
 
 The UI uses React 19, Tailwind CSS 4, and `@vertesia/ui` components.
@@ -346,7 +405,8 @@ The UI uses React 19, Tailwind CSS 4, and `@vertesia/ui` components.
 - This component is loaded by the Vertesia host application
 
 ### Standalone Dev Mode (`main.tsx`)
-- Wraps the app in `StandaloneApp` from `@vertesia/ui/shell` for independent development
+- Wraps the app in `VertesiaShell` from `@vertesia/ui/shell` with `RouterProvider`
+- Mounts `AdminApp` at root (`/`) and the plugin app at `/app/`
 - Requires `VITE_APP_NAME` env var (set in `.env.local`)
 - Access at `https://localhost:5173` (HTTPS required for Firebase auth)
 
@@ -373,6 +433,21 @@ async run(payload, context) {
 }
 ```
 
+### Organization Access Restriction
+
+To restrict a tool server to specific Vertesia organizations, set the `VERTESIA_ALLOWED_ORGS` environment variable to a comma-separated list of organization IDs:
+
+```bash
+VERTESIA_ALLOWED_ORGS=org_abc123,org_def456
+```
+
+When set, only requests from the listed organizations are allowed. Requests from other organizations receive a `403 Forbidden` response. When not set, all authenticated organizations can access the server.
+
+This is enforced automatically by `@vertesia/tools-sdk`'s `authorize()` middleware — no code changes are needed in the plugin. The org ID is read from the JWT token's `account.id` field.
+
+**Vercel:** Set via Project Settings > Environment Variables or `vercel env add VERTESIA_ALLOWED_ORGS`.
+**Docker/Node.js:** Set as a standard environment variable.
+
 ## Deployment
 
 ### Vercel (Primary)
@@ -394,11 +469,12 @@ The Node server (`server-node.ts`) serves static files from `dist/` via `@hono/n
 | Package | Role |
 |---------|------|
 | `@vertesia/tools-sdk` | Tool server framework: `createToolServer`, `ToolCollection`, `SkillCollection`, auth |
+| `@vertesia/tools-admin-ui` | Admin UI: browsable interface for all plugin resources (tools, skills, interactions, types, templates) |
 | `@vertesia/build-tools` | Rollup import plugins: `?skill`, `?skills`, `?template`, `?templates`, `?prompt`, `?raw` transformers |
 | `@vertesia/plugin-builder` | Vite plugin for UI library builds (CSS extraction/injection) |
 | `@vertesia/client` | Vertesia API client for tool implementations |
 | `@vertesia/common` | Shared types: `InteractionSpec`, `InCodeTypeSpec`, etc. |
-| `@vertesia/ui` | UI component library: `core`, `features`, `router`, `layout`, `session` |
+| `@vertesia/ui` | UI component library: `core`, `features`, `router`, `layout`, `session`, `shell` |
 | `hono` | Lightweight web framework for the tool server |
 | `@hono/node-server` | Node.js HTTP adapter for local dev and non-serverless deployment |
 
