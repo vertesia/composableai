@@ -187,7 +187,7 @@ describe("Builder", () => {
 
     test("MemoryPack.exportObject with nested props", async () => {
         const memory = await loadMemoryPack(memoryFile);
-        let obj = await memory.exportObject({
+        const obj = await memory.exportObject({
             "child": "@parent.child",
         });
         expect(obj).toStrictEqual({
@@ -197,7 +197,7 @@ describe("Builder", () => {
 
     test("MemoryPack.exportObject with runtime values", async () => {
         const memory = await loadMemoryPack(memoryFile);
-        let obj = await memory.exportObject({
+        const obj = await memory.exportObject({
             "father": "@parent",
             "instruction": "Use this runtime instruction",
             someNullValue: null,

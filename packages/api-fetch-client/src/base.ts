@@ -156,7 +156,6 @@ export abstract class ClientBase {
      * @param res
      */
     handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined) {
-        res.url
         if (params && params.reader) {
             if (params.reader === 'sse') {
                 return sse(res);
