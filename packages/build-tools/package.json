@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/build-tools",
-  "version": "1.0.0-dev.20260225.024852Z",
+  "version": "1.0.0-dev.20260227.104700Z",
   "description": "Build tools for Vertesia projects - Rollup and Vite plugins for transforming imports, bundling skills, and compiling widgets",
   "type": "module",
   "main": "./lib/esm/index.js",

@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/fusion-ux",
-  "version": "1.0.0-dev.20260225.024852Z",
+  "version": "1.0.0-dev.20260227.104700Z",
   "description": "Dynamic model-generated UI components for Vertesia",
   "type": "module",
   "main": "./lib/esm/index.js",
