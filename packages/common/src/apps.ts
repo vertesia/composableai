@@ -190,7 +190,7 @@ export interface AgentToolDefinition extends ToolDefinition {
     related_tools?: string[];
 }
 
-export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types';
+export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 export interface AppManifestData {
     /**
@@ -279,7 +279,7 @@ export interface AppManifestData {
      */
     endpoint?: string;
 }
-export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'settings' | 'widgets' | 'all';
+export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'templates' | 'settings' | 'widgets' | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
@@ -302,7 +302,12 @@ export interface AppPackage {
     types?: InCodeTypeDefinition[];
 
     /**
-     * Widgets provided by the app. 
+     * Templates provided by the app.
+     */
+    templates?: RenderingTemplateDefinitionRef[];
+
+    /**
+     * Widgets provided by the app.
      */
     widgets?: Record<string, AppWidgetInfo>;
 
@@ -317,6 +322,30 @@ export interface AppWidgetInfo {
     skill: string;
     url: string;
 }
+
+export interface RenderingTemplateDefinition {
+    /** Unique template id: "collection:name" */
+    id: string;
+    /** Unique template name (kebab-case) */
+    name: string;
+    /** Display title */
+    title?: string;
+    /** Short description */
+    description: string;
+    /** Template type */
+    type: 'presentation' | 'document';
+    /** Tags for categorization */
+    tags?: string[];
+    /** Absolute paths to asset files */
+    assets: string[];
+    /** The template instructions (markdown) */
+    instructions: string;
+}
+
+export type RenderingTemplateDefinitionRef = Omit<RenderingTemplateDefinition, 'instructions'> & {
+    /** Absolute API path to fetch the full template definition */
+    path: string;
+};
 
 export interface AppManifest extends AppManifestData {
     id: string;

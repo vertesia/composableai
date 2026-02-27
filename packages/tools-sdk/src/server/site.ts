@@ -4,6 +4,7 @@ import {
     indexPage,
     interactionCollectionPage,
     skillCollectionPage,
+    templateCollectionPage,
     toolCollectionPage
 } from "../site/templates.js";
 import { ToolServerConfig } from "./types.js";
@@ -15,6 +16,7 @@ export function createSiteRoute(app: Hono, basePath: string, config: ToolServerC
         interactions = [],
         types = [],
         skills = [],
+        templates = [],
     } = config;
 
     // Index page
@@ -40,6 +42,13 @@ export function createSiteRoute(app: Hono, basePath: string, config: ToolServerC
     for (const coll of interactions) {
         app.get(`${basePath}/interactions/${coll.name}`, (c) => {
             return c.html(interactionCollectionPage(coll));
+        });
+    }
+
+    // Template collection pages
+    for (const coll of templates) {
+        app.get(`${basePath}/templates/${coll.name}`, (c) => {
+            return c.html(templateCollectionPage(coll));
         });
     }
 
