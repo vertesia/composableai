@@ -22,6 +22,7 @@ export interface EnvProps {
         appId?: string,
         providerType?: string,
     },
+    region?: string,
     datadog?: boolean,
     logger?: {
         info: (msg: string, ...args: any) => void,
@@ -96,6 +97,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     get firebase() {
         return this.prop("firebase");
+    }
+
+    get region() {
+        return this._props?.region;
     }
 
     get datadog() {

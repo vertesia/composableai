@@ -8,10 +8,10 @@
  *
  * Output: dist/widgets/{widget-name}.js
  */
-import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
-import { terser } from 'rollup-plugin-terser';
 import { globSync } from 'fs';
 import path from 'path';
 
