@@ -38,24 +38,32 @@ export function setRequireProperty(schema: JSONSchema, name: string, isRequired:
     }
 }
 
-export function setPropertyType(schema: JSONSchema, type: TypeSignature) {
+export function setPropertyType(schema: JSONSchema, type: TypeSignature, enumValues?: string[]) {
     const isAny = type.name === "any";
+    const isEnum = type.name === "enum";
+
+    // For enum, underlying type is "string"
     let typeObj: JSONSchemaTypeName | JSONSchemaTypeName[] | undefined = isAny ?
         undefined
         : (type.isNullable ?
-            [type.name, "null"] as JSONSchemaTypeName[]
-            : type.name as JSONSchemaTypeName);
+            [isEnum ? "string" : type.name, "null"] as JSONSchemaTypeName[]
+            : (isEnum ? "string" : type.name) as JSONSchemaTypeName);
+
     if (type.isArray) {
         schema.type = "array";
         schema.properties = undefined;
+        schema.enum = undefined; // Clear top-level enum for arrays
+
         if (!schema.items || Array.isArray(schema.items)) {
             schema.items = {
                 type: typeObj,
-                properties: type.isObject ? {} : undefined
+                properties: type.isObject ? {} : undefined,
+                enum: isEnum ? (enumValues || []) : undefined
             }
         } else {
             const items = schema.items as JSONSchema;
             items.type = typeObj;
+            items.enum = isEnum ? (enumValues || items.enum || []) : undefined;
             if (type.isObject && !items.properties) {
                 items.properties = {};
             }
@@ -63,6 +71,8 @@ export function setPropertyType(schema: JSONSchema, type: TypeSignature) {
     } else {
         schema.type = typeObj;
         schema.items = undefined;
+        schema.enum = isEnum ? (enumValues || schema.enum || []) : undefined;
+
         if (type.isObject) {
             if (!schema.properties) {
                 schema.properties = {};
@@ -129,8 +139,28 @@ export function getTypeSignature(schema: JSONSchema): TypeSignature {
     }
     if (typeName === 'array') {
         isArray = true;
+        // Check for enum in items first
+        if (schema.items && !Array.isArray(schema.items) && (schema.items as JSONSchema).enum) {
+            return {
+                isNullable,
+                isArray,
+                isObject: false,
+                name: TypeNames.enum
+            };
+        }
         typeName = getItemTypeName(schema.items);
     }
+
+    // Check for enum at top level (non-array)
+    if (schema.enum) {
+        return {
+            isNullable,
+            isArray,
+            isObject: false,
+            name: TypeNames.enum
+        };
+    }
+
     let displayTypeName: string = typeName;
     switch (schema.editor) {
         case 'textarea': {

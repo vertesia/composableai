@@ -9,6 +9,7 @@ export enum TypeNames {
     text = "text", // a string with an additional editor: textarea property
     media = "media", // a media file ref
     document = "document", // a document ref
+    enum = "enum", // a string with enum constraint
 }
 
 
