@@ -1,49 +1,49 @@
 {
-    "name": "@vertesia/json",
-    "version": "1.0.0-dev.20260225.024852Z",
-    "description": "JSON utlities",
-    "type": "module",
+  "name": "@vertesia/json",
+  "version": "1.0.0-dev.20260225.024852Z",
+  "description": "JSON utlities",
+  "type": "module",
+  "types": "./lib/types/index.d.ts",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "vitest run",
+    "build": "pnpm exec tsmod build && pnpm exec rollup -c",
+    "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+  },
+  "exports": {
     "types": "./lib/types/index.d.ts",
-    "files": [
-        "lib",
-        "src"
-    ],
-    "license": "Apache-2.0",
-    "scripts": {
-        "test": "vitest run",
-        "build": "pnpm exec tsmod build && pnpm exec rollup -c",
-        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
-    },
-    "exports": {
-        "types": "./lib/types/index.d.ts",
-        "import": "./lib/esm/index.js",
-        "require": "./lib/cjs/index.js"
-    },
-    "devDependencies": {
-        "@rollup/plugin-commonjs": "^28.0.3",
-        "@rollup/plugin-node-resolve": "^16.0.1",
-        "@rollup/plugin-typescript": "^12.1.2",
-        "rollup": "^4.40.2",
-        "rollup-plugin-terser": "^7.0.2",
-        "ts-dual-module": "^0.6.3",
-        "typescript": "^5.9.3",
-        "vitest": "^4.0.16"
-    },
-    "ts_dual_module": {
-        "outDir": "lib"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/vertesia/composableai.git",
-        "directory": "packages/json"
-    },
-    "keywords": [
-        "vertesia",
-        "json",
-        "utilities",
-        "walker",
-        "visitor",
-        "traverse",
-        "typescript"
-    ]
+    "import": "./lib/esm/index.js",
+    "require": "./lib/cjs/index.js"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "rollup": "^4.40.2",
+    "@rollup/plugin-terser": "^0.4.4",
+    "ts-dual-module": "^0.6.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  },
+  "ts_dual_module": {
+    "outDir": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vertesia/composableai.git",
+    "directory": "packages/json"
+  },
+  "keywords": [
+    "vertesia",
+    "json",
+    "utilities",
+    "walker",
+    "visitor",
+    "traverse",
+    "typescript"
+  ]
 }

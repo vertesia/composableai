@@ -130,6 +130,9 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.1
         version: 16.0.3(rollup@4.57.1)
+      '@rollup/plugin-terser':
+        specifier: ^0.4.4
+        version: 0.4.4(rollup@4.57.1)
       '@rollup/plugin-typescript':
         specifier: ^12.1.2
         version: 12.3.0(rollup@4.57.1)(tslib@2.8.1)(typescript@5.9.3)
@@ -139,9 +142,6 @@ importers:
       rollup:
         specifier: ^4.40.2
         version: 4.57.1
-      rollup-plugin-terser:
-        specifier: ^7.0.2
-        version: 7.0.2(rollup@4.57.1)
       ts-dual-module:
         specifier: ^0.6.3
         version: 0.6.3
@@ -264,6 +264,9 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.1
         version: 16.0.3(rollup@4.57.1)
+      '@rollup/plugin-terser':
+        specifier: ^0.4.4
+        version: 0.4.4(rollup@4.57.1)
       '@rollup/plugin-typescript':
         specifier: ^12.1.2
         version: 12.3.0(rollup@4.57.1)(tslib@2.8.1)(typescript@5.9.3)
@@ -273,9 +276,6 @@ importers:
       rollup:
         specifier: ^4.40.2
         version: 4.57.1
-      rollup-plugin-terser:
-        specifier: ^7.0.2
-        version: 7.0.2(rollup@4.57.1)
       ts-dual-module:
         specifier: ^0.6.3
         version: 0.6.3
@@ -301,15 +301,15 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.1
         version: 16.0.3(rollup@4.57.1)
+      '@rollup/plugin-terser':
+        specifier: ^0.4.4
+        version: 0.4.4(rollup@4.57.1)
       '@rollup/plugin-typescript':
         specifier: ^12.1.2
         version: 12.3.0(rollup@4.57.1)(tslib@2.8.1)(typescript@5.9.3)
       rollup:
         specifier: ^4.40.2
         version: 4.57.1
-      rollup-plugin-terser:
-        specifier: ^7.0.2
-        version: 7.0.2(rollup@4.57.1)
       ts-dual-module:
         specifier: ^0.6.3
         version: 0.6.3
@@ -403,6 +403,9 @@ importers:
       '@rollup/plugin-replace':
         specifier: ^6.0.2
         version: 6.0.3(rollup@4.57.1)
+      '@rollup/plugin-terser':
+        specifier: ^0.4.4
+        version: 0.4.4(rollup@4.57.1)
       '@types/node':
         specifier: ^22.15.0
         version: 22.19.11
@@ -424,9 +427,6 @@ importers:
       rollup:
         specifier: ^4.53.3
         version: 4.57.1
-      rollup-plugin-terser:
-        specifier: ^7.0.2
-        version: 7.0.2(rollup@4.57.1)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -445,15 +445,15 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.1
         version: 16.0.3(rollup@4.57.1)
+      '@rollup/plugin-terser':
+        specifier: ^0.4.4
+        version: 0.4.4(rollup@4.57.1)
       '@rollup/plugin-typescript':
         specifier: ^12.1.2
         version: 12.3.0(rollup@4.57.1)(tslib@2.8.1)(typescript@5.9.3)
       rollup:
         specifier: ^4.40.2
         version: 4.57.1
-      rollup-plugin-terser:
-        specifier: ^7.0.2
-        version: 7.0.2(rollup@4.57.1)
       ts-dual-module:
         specifier: ^0.6.3
         version: 0.6.3
@@ -818,6 +818,9 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.1
         version: 16.0.3(rollup@4.57.1)
+      '@rollup/plugin-terser':
+        specifier: ^0.4.4
+        version: 0.4.4(rollup@4.57.1)
       '@types/hast':
         specifier: ^3.0.4
         version: 3.0.4
@@ -857,9 +860,6 @@ importers:
       rollup:
         specifier: ^4.53.3
         version: 4.57.1
-      rollup-plugin-terser:
-        specifier: ^7.0.2
-        version: 7.0.2(rollup@4.57.1)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -979,20 +979,20 @@ importers:
         specifier: ^1.19.5
         version: 1.19.9(hono@4.11.10)
       '@llumiverse/common':
-        specifier: workspace:*
-        version: link:../../llumiverse/common
+        specifier: dev
+        version: 1.0.0-dev.20260224.234313Z
       '@vertesia/client':
-        specifier: workspace:*
-        version: link:../../packages/client
+        specifier: dev
+        version: 1.0.0-dev.20260225.024852Z
       '@vertesia/common':
-        specifier: workspace:*
-        version: link:../../packages/common
+        specifier: dev
+        version: 1.0.0-dev.20260225.024852Z
       '@vertesia/tools-sdk':
-        specifier: workspace:*
-        version: link:../../packages/tools-sdk
+        specifier: dev
+        version: 1.0.0-dev.20260225.024852Z(hono@4.11.10)
       '@vertesia/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
+        specifier: dev
+        version: 1.0.0-dev.20260225.024852Z(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)
       dotenv:
         specifier: ^17.2.3
         version: 17.3.1
@@ -1012,6 +1012,9 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.3
         version: 16.0.3(rollup@4.57.1)
+      '@rollup/plugin-terser':
+        specifier: ^0.4.4
+        version: 0.4.4(rollup@4.57.1)
       '@rollup/plugin-typescript':
         specifier: ^12.1.2
         version: 12.3.0(rollup@4.57.1)(tslib@2.8.1)(typescript@5.9.3)
@@ -1031,11 +1034,11 @@ importers:
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.3)
       '@vertesia/build-tools':
-        specifier: workspace:*
-        version: link:../../packages/build-tools
+        specifier: dev
+        version: 1.0.0-dev.20260225.024852Z(rollup@4.57.1)
       '@vertesia/plugin-builder':
-        specifier: workspace:*
-        version: link:../../packages/plugin-builder
+        specifier: dev
+        version: 1.0.0-dev.20260225.024852Z(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2))
       '@vitejs/plugin-basic-ssl':
         specifier: ^2.1.0
         version: 2.1.4(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2))
@@ -1066,9 +1069,6 @@ importers:
       rollup:
         specifier: ^4.52.5
         version: 4.57.1
-      rollup-plugin-terser:
-        specifier: ^7.0.2
-        version: 7.0.2(rollup@4.57.1)
       tailwindcss:
         specifier: ^4.1.18
         version: 4.2.0
@@ -1127,6 +1127,9 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.3
         version: 16.0.3(rollup@4.57.1)
+      '@rollup/plugin-terser':
+        specifier: ^0.4.4
+        version: 0.4.4(rollup@4.57.1)
       '@rollup/plugin-typescript':
         specifier: ^12.1.2
         version: 12.3.0(rollup@4.57.1)(tslib@2.8.1)(typescript@5.9.3)
@@ -1148,9 +1151,6 @@ importers:
       rollup:
         specifier: ^4.52.5
         version: 4.57.1
-      rollup-plugin-terser:
-        specifier: ^7.0.2
-        version: 7.0.2(rollup@4.57.1)
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -2283,6 +2283,9 @@ packages:
   '@koa-stack/server@0.24.0':
     resolution: {integrity: sha512-ecVuJUKVRmkA/UQaQkB/GP5xv4O0QLLiKQ7YCfiL6byB+1vc/aYYXsDKh/b5HD9or8g6VJnyqL6oAwcmT9BTjg==}
 
+  '@llumiverse/common@1.0.0-dev.20260224.234313Z':
+    resolution: {integrity: sha512-/4T60KYwqe4Vt45itZmj9Wbni9t4raDONk5d2glN9g1kQQ/9CEBCUV3IXyK1kETwDa90/PKlOe6GaGzWvH9j6A==}
+
   '@mermaid-js/parser@1.0.0':
     resolution: {integrity: sha512-vvK0Hi/VWndxoh03Mmz6wa1KDriSPjS2XMZL/1l19HFwygiObEEoEwSDxOqyLzzAI6J2PU3261JjTMTO7x+BPw==}
 
@@ -2857,6 +2860,15 @@ packages:
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+
+  '@rollup/plugin-terser@0.4.4':
+    resolution: {integrity: sha512-XHeJC5Bgvs8LfukDwWZp7yeqin6ns8RTl2B9avbejt6tZqsqvVoWI7ZTQrcNsfKEDWBTnTxM8nMDkO2IFFbd0A==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^2.0.0||^3.0.0||^4.0.0
     peerDependenciesMeta:
       rollup:
         optional: true
@@ -3880,6 +3892,40 @@ packages:
     resolution: {integrity: sha512-lrW200hZdbfRtztbygyaq/6jP6AKE8qQN2KvPcJ+x7wiD038YtnYtZ82IMNJ69GJibV7bwL3y9FgK+5w/pYt6g==}
     cpu: [x64]
     os: [win32]
+
+  '@vertesia/api-fetch-client@1.0.0-dev.20260225.024852Z':
+    resolution: {integrity: sha512-QSWYpLvmBl+LCSR4hf0TDk/Co4vduZo/63Z2xmlgKDISIws1jFtK7DEQEMevm/RV9TkKdc+ccvsCStKcr1kGbQ==}
+
+  '@vertesia/build-tools@1.0.0-dev.20260225.024852Z':
+    resolution: {integrity: sha512-X+ftbpNRVEiq7Yp/jcy0NIALS+8GJW78TiOMf+mOa4nOGhQ8I/58w3gHaif4yFUJoz6e/QuWjFaF09Q3jbOYaA==}
+    peerDependencies:
+      rollup: ^4.0.0
+
+  '@vertesia/client@1.0.0-dev.20260225.024852Z':
+    resolution: {integrity: sha512-ekLxUjlD15cVEBOye0g1x4oUnVJkUwElKlVb5ERXl4hxhVATGwuazovBp0mmilmOgmgIy7C+L09ZQ7ITfftf2g==}
+
+  '@vertesia/common@1.0.0-dev.20260225.024852Z':
+    resolution: {integrity: sha512-hsmxVANh9ol4Ea4YSpIN0ZFv5V09KuuTobLWQwvVeXSFZ6t6Ia20MFURL9TfsSw6YX/cO9dTjX8foisDgYQCnA==}
+
+  '@vertesia/fusion-ux@1.0.0-dev.20260225.024852Z':
+    resolution: {integrity: sha512-3gpE4ilnGSSLGSjxKZesrJ9BNKHTWFZD00zpRxYONjvN3JG+a6xMmA9N3P+YUJ8IGlggLB7V/ttgHH1pD/JmMw==}
+
+  '@vertesia/json@1.0.0-dev.20260225.024852Z':
+    resolution: {integrity: sha512-RiCW239GIERMt2f5MAHtvdtVJLVNitPzPY5BZXW/jE06Zfd+Mmj+9iqyA2P4mN2Ps9wKN4uJp9F1fCB9mMICfg==}
+
+  '@vertesia/plugin-builder@1.0.0-dev.20260225.024852Z':
+    resolution: {integrity: sha512-85+4CPaD14aL2Ul5F/HQ+nJzMpNIESBxM1c8v3gpkNH+OTsD3hfptwr5dTMUeNKnFLeHjZRnvwoGaBbRF5PNvg==}
+    peerDependencies:
+      vite: ^7.3.0
+
+  '@vertesia/tools-sdk@1.0.0-dev.20260225.024852Z':
+    resolution: {integrity: sha512-Jm8WWbB7mTHXcswIynri8SRnkY+nwQ9jBiJy5GNypD77qHQky0ZzSnIiyLCHI7Il6z5LpHogO6JK0GqpN0rCdQ==}
+    hasBin: true
+    peerDependencies:
+      hono: ^4.11.7
+
+  '@vertesia/ui@1.0.0-dev.20260225.024852Z':
+    resolution: {integrity: sha512-ewigT/m6L0BSw0owNRaMIP4d1/35dkf3mRB3ZMrgNFmA2FTJ1HiU0YbqtNE7yUIg8noNLEIowDKKeXd3aYIaDQ==}
 
   '@vitejs/plugin-basic-ssl@2.1.4':
     resolution: {integrity: sha512-HXciTXN/sDBYWgeAD4V4s0DN0g72x5mlxQhHxtYu3Tt8BLa6MzcJZUyDVFCdtjNs3bfENVHVzOsmooTVuNgAAw==}
@@ -5569,10 +5615,6 @@ packages:
     resolution: {integrity: sha512-ykkVRwrYvFm1nb2AJfKKYPr0emF6IiXDYUaFx4Zn9ZuIH7MrzEZ3sD5RlqGXNRpHtvUHJyOnCEFxOlNDtGo7wg==}
     engines: {node: 20 || >=22}
 
-  jest-worker@26.6.2:
-    resolution: {integrity: sha512-KWYVV1c4i+jbMpaBC+U++4Va0cp8OisU185o73T1vo99hqi7w8tSJfUXYswwqqrjzwxa6KpRK54WhPvwf5w6PQ==}
-    engines: {node: '>= 10.13.0'}
-
   jest-worker@27.5.1:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
@@ -6588,12 +6630,6 @@ packages:
   robust-predicates@3.0.2:
     resolution: {integrity: sha512-IXgzBWvWQwE6PrDI05OvmXUIruQTcoMDzRsOd5CDvHCVLcLHMTSYvOK5Cm46kWqlV3yAbuSpBZdJ5oP5OUoStg==}
 
-  rollup-plugin-terser@7.0.2:
-    resolution: {integrity: sha512-w3iIaU4OxcF52UUXiZNsNeuXIMDvFrr+ZXK6bFZ0Q60qyVfq4uLptoS4bbq3paG3x216eQllFZX7zt6TIImguQ==}
-    deprecated: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-terser
-    peerDependencies:
-      rollup: ^2.0.0
-
   rollup@4.57.1:
     resolution: {integrity: sha512-oQL6lgK3e2QZeQ7gcgIkS2YZPg5slw37hYufJ3edKlfQSGGm8ICoxswK15ntSzF/a8+h7ekRy7k7oWc3BQ7y8A==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
@@ -6652,9 +6688,6 @@ packages:
     resolution: {integrity: sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==}
     engines: {node: '>=10'}
     hasBin: true
-
-  serialize-javascript@4.0.0:
-    resolution: {integrity: sha512-GaNA54380uFefWghODBWEGisLZFj00nS5ACs6yHa9nLqlLpVLO8ChDGeKRjZnV4Nh4n0Qi7nhYZD/9fCPzEqkw==}
 
   serialize-javascript@6.0.2:
     resolution: {integrity: sha512-Saa1xPByTTq2gdeFZYLLo+RFE35NHZkAbqZeWNd3BpzppeVisAqpDjcp8dyf6uIvEqJRd46jemmyA4iFIeVk8g==}
@@ -6725,6 +6758,10 @@ packages:
   slice-ansi@7.1.2:
     resolution: {integrity: sha512-iOBWFgUX7caIZiuutICxVgX1SdxwAVFFKwt1EvMYYec/NWO5meOJ6K5uQxhrYBdQJne4KxiqZc+KptFOWFSI9w==}
     engines: {node: '>=18'}
+
+  smob@1.6.1:
+    resolution: {integrity: sha512-KAkBqZl3c2GvNgNhcoyJae1aKldDW0LO279wF9bk1PnluRTETKBq0WyzRXxEhoQLk56yHaOY4JCBEKDuJIET5g==}
+    engines: {node: '>=20.0.0'}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -9196,6 +9233,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@llumiverse/common@1.0.0-dev.20260224.234313Z': {}
+
   '@mermaid-js/parser@1.0.0':
     dependencies:
       langium: 4.2.1
@@ -9726,6 +9765,14 @@ snapshots:
     dependencies:
       '@rollup/pluginutils': 5.3.0(rollup@4.57.1)
       magic-string: 0.30.21
+    optionalDependencies:
+      rollup: 4.57.1
+
+  '@rollup/plugin-terser@0.4.4(rollup@4.57.1)':
+    dependencies:
+      serialize-javascript: 6.0.2
+      smob: 1.6.1
+      terser: 5.46.0
     optionalDependencies:
       rollup: 4.57.1
 
@@ -10879,6 +10926,119 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
+
+  '@vertesia/api-fetch-client@1.0.0-dev.20260225.024852Z':
+    dependencies:
+      eventsource-parser: 1.1.2
+
+  '@vertesia/build-tools@1.0.0-dev.20260225.024852Z(rollup@4.57.1)':
+    dependencies:
+      '@llumiverse/common': 1.0.0-dev.20260224.234313Z
+      '@vertesia/common': 1.0.0-dev.20260225.024852Z
+      gray-matter: 4.0.3
+      rollup: 4.57.1
+      zod: 3.25.76
+
+  '@vertesia/client@1.0.0-dev.20260225.024852Z':
+    dependencies:
+      '@llumiverse/common': 1.0.0-dev.20260224.234313Z
+      '@vertesia/api-fetch-client': 1.0.0-dev.20260225.024852Z
+      '@vertesia/common': 1.0.0-dev.20260225.024852Z
+      eventsource: 3.0.7
+
+  '@vertesia/common@1.0.0-dev.20260225.024852Z':
+    dependencies:
+      '@llumiverse/common': 1.0.0-dev.20260224.234313Z
+      ajv: 8.18.0
+
+  '@vertesia/fusion-ux@1.0.0-dev.20260225.024852Z':
+    dependencies:
+      '@vertesia/common': 1.0.0-dev.20260225.024852Z
+      ajv: 8.18.0
+      react: 19.2.3
+
+  '@vertesia/json@1.0.0-dev.20260225.024852Z': {}
+
+  '@vertesia/plugin-builder@1.0.0-dev.20260225.024852Z(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2))':
+    dependencies:
+      '@adobe/css-tools': 4.4.4
+      '@types/node': 22.19.11
+      vite: 7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2)
+
+  '@vertesia/tools-sdk@1.0.0-dev.20260225.024852Z(hono@4.11.10)':
+    dependencies:
+      '@llumiverse/common': 1.0.0-dev.20260224.234313Z
+      '@vertesia/client': 1.0.0-dev.20260225.024852Z
+      '@vertesia/common': 1.0.0-dev.20260225.024852Z
+      hono: 4.11.10
+      jose: 6.1.3
+      zod: 4.3.6
+
+  '@vertesia/ui@1.0.0-dev.20260225.024852Z(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)':
+    dependencies:
+      '@floating-ui/dom': 1.7.5
+      '@floating-ui/react': 0.27.18(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@headlessui/react': 2.2.9(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@monaco-editor/react': 4.7.0(monaco-editor@0.52.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@radix-ui/react-checkbox': 1.3.3(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@radix-ui/react-label': 2.1.8(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@radix-ui/react-popover': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@radix-ui/react-separator': 1.1.8(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@radix-ui/react-slot': 1.2.4(@types/react@19.2.3)(react@19.2.3)
+      '@radix-ui/react-tabs': 1.1.13(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@radix-ui/react-tooltip': 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@vertesia/client': 1.0.0-dev.20260225.024852Z
+      '@vertesia/common': 1.0.0-dev.20260225.024852Z
+      '@vertesia/fusion-ux': 1.0.0-dev.20260225.024852Z
+      '@vertesia/json': 1.0.0-dev.20260225.024852Z
+      ajv: 8.18.0
+      ajv-formats: 3.0.1(ajv@8.18.0)
+      class-variance-authority: 0.7.1
+      clsx: 2.1.1
+      cmdk: 1.1.1(@types/react-dom@19.2.3(@types/react@19.2.3))(@types/react@19.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      dayjs: 1.11.19
+      debounce: 2.2.0
+      dompurify: 3.3.1
+      fast-xml-parser: 5.3.6
+      firebase: 10.14.1
+      framer-motion: 12.34.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      jwt-decode: 4.0.0
+      katex: 0.16.28
+      lodash-es: 4.17.23
+      lucide-react: 0.562.0(react@19.2.3)
+      mermaid: 11.12.3
+      monaco-editor: 0.52.2
+      motion: 12.34.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      papaparse: 5.5.3
+      react: 19.2.3
+      react-calendar: 6.0.0(@types/react@19.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react-date-picker: 12.0.1(@types/react@19.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react-dom: 19.2.3(react@19.2.3)
+      react-error-boundary: 6.1.1(react@19.2.3)
+      react-markdown: 10.1.0(@types/react@19.2.3)(react@19.2.3)
+      react-pdf: 10.3.0(@types/react@19.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react-resizable-panels: 3.0.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react-vega: 8.0.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vega-embed@7.1.0(vega-lite@6.4.2(vega@6.2.0))(vega@6.2.0))
+      rehype-katex: 7.0.1
+      remark-definition-list: 2.0.0
+      remark-directive: 4.0.0
+      remark-gfm: 4.0.1
+      remark-github-blockquote-alert: 2.0.1
+      remark-math: 6.0.0
+      remark-supersub: 1.0.0
+      tailwind-merge: 3.5.0
+      ts-md5: 1.3.1
+      unist-util-visit: 5.1.0
+      vega: 6.2.0
+      vega-embed: 7.1.0(vega-lite@6.4.2(vega@6.2.0))(vega@6.2.0)
+      vega-lite: 6.4.2(vega@6.2.0)
+    transitivePeerDependencies:
+      - '@emotion/is-prop-valid'
+      - '@react-native-async-storage/async-storage'
+      - '@types/react'
+      - '@types/react-dom'
+      - supports-color
 
   '@vitejs/plugin-basic-ssl@2.1.4(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2))':
     dependencies:
@@ -12838,12 +12998,6 @@ snapshots:
     dependencies:
       '@isaacs/cliui': 9.0.0
 
-  jest-worker@26.6.2:
-    dependencies:
-      '@types/node': 22.19.11
-      merge-stream: 2.0.0
-      supports-color: 7.2.0
-
   jest-worker@27.5.1:
     dependencies:
       '@types/node': 22.19.11
@@ -14238,14 +14392,6 @@ snapshots:
 
   robust-predicates@3.0.2: {}
 
-  rollup-plugin-terser@7.0.2(rollup@4.57.1):
-    dependencies:
-      '@babel/code-frame': 7.29.0
-      jest-worker: 26.6.2
-      rollup: 4.57.1
-      serialize-javascript: 4.0.0
-      terser: 5.46.0
-
   rollup@4.57.1:
     dependencies:
       '@types/estree': 1.0.8
@@ -14334,10 +14480,6 @@ snapshots:
   semver@6.3.1: {}
 
   semver@7.7.4: {}
-
-  serialize-javascript@4.0.0:
-    dependencies:
-      randombytes: 2.1.0
 
   serialize-javascript@6.0.2:
     dependencies:
@@ -14445,6 +14587,8 @@ snapshots:
     dependencies:
       ansi-styles: 6.2.3
       is-fullwidth-code-point: 5.1.0
+
+  smob@1.6.1: {}
 
   source-map-js@1.2.1: {}
 
