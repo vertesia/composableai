@@ -72,3 +72,11 @@ FullHeightLayout.HR = function HDivider({ }: HDividerProps) {
         <div className="w-full h-1 border-b border-red-200"></div>
     );
 }
+
+FullHeightLayout.Tab = function Tab({ children }: { children: React.ReactNode }) {
+    return (
+        <div className="flex flex-col h-full">
+            {children}
+        </div>
+    );
+}
