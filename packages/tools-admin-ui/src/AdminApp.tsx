@@ -1,7 +1,8 @@
 import type { Route } from '@vertesia/ui/router';
 import { NestedRouterProvider, RouteComponent } from '@vertesia/ui/router';
-import { useServerInfo, useResourceData } from './hooks.js';
+import { useServerInfo, useResourceData, useVtaTheme } from './hooks.js';
 import { AdminContext } from './AdminContext.js';
+import { ThemeToggle } from './components/ThemeToggle.js';
 import { HomePage } from './pages/HomePage.js';
 import { InteractionCollection } from './pages/InteractionCollection.js';
 import { InteractionDetail } from './pages/InteractionDetail.js';
@@ -40,6 +41,7 @@ export interface AdminAppProps {
  * CSS is inlined into the JS bundle via Vite's `?inline` import.
  */
 export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
+    const { theme, isDark, setTheme } = useVtaTheme();
     const { data: serverInfo, isLoading: loadingInfo, error: infoError } = useServerInfo(baseUrl);
     const { data: resourceData, isLoading: loadingData, error: dataError } = useResourceData(
         baseUrl,
@@ -49,29 +51,32 @@ export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
     const isLoading = loadingInfo || loadingData;
     const error = infoError || dataError;
 
+    const wrapClass = isDark ? 'vta-dark' : 'vta-light';
+
     if (isLoading) {
         return (
-            <>
+            <div className={wrapClass}>
                 <style>{adminStyles}</style>
                 <div className="vta-loading">Loading...</div>
-            </>
+            </div>
         );
     }
 
     if (error) {
         return (
-            <>
+            <div className={wrapClass}>
                 <style>{adminStyles}</style>
                 <div className="vta-error">Failed to load server info. Is the API running?</div>
-            </>
+            </div>
         );
     }
 
     if (!serverInfo || !resourceData) return null;
 
     return (
-        <>
+        <div className={wrapClass}>
             <style>{adminStyles}</style>
+            <ThemeToggle theme={theme} isDark={isDark} onChange={setTheme} />
             <AdminContext.Provider value={{
                 serverInfo,
                 collections: resourceData.collections,
@@ -82,6 +87,6 @@ export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
                     <RouteComponent />
                 </NestedRouterProvider>
             </AdminContext.Provider>
-        </>
+        </div>
     );
 }

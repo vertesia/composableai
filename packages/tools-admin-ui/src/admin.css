@@ -4,6 +4,16 @@
  * polluting the plugin app CSS or the host page.
  */
 
+/* ── Theme wrapper ──────────────────────────────────────────────── */
+
+.vta-light,
+.vta-dark {
+    min-height: 100%;
+}
+
+.vta-light { background: #f8fafc; }
+.vta-dark  { background: #0f172a; }
+
 /* ── Root container ─────────────────────────────────────────────── */
 
 .vta-root {
@@ -497,6 +507,44 @@
     color: #065f46;
 }
 
+/* ── Theme toggle ──────────────────────────────────────────────── */
+
+.vta-theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #6b7280;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.vta-theme-toggle:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+:is(.vta-dark) .vta-theme-toggle {
+    background: rgba(31, 41, 55, 0.95);
+    border-color: rgba(148, 163, 184, 0.45);
+    color: #e5e7eb;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.5);
+}
+
+:is(.vta-dark) .vta-theme-toggle:hover {
+    background: rgba(55, 65, 81, 0.95);
+    color: #f9fafb;
+}
+
 /* ── Loading / error states ─────────────────────────────────────── */
 
 .vta-loading {
@@ -523,128 +571,128 @@
 }
 
 /* ── Dark mode ──────────────────────────────────────────────────── */
+/* Scoped dark mode: triggered by .vta-dark wrapper set by useVtaTheme */
 
-@media (prefers-color-scheme: dark) {
-    .vta-root { color: #e5e7eb; }
+:is(.vta-dark) .vta-root { color: #e5e7eb; }
 
-    .vta-hero {
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
-        border-color: rgba(148, 163, 184, 0.45);
-        box-shadow:
-            0 24px 60px rgba(15, 23, 42, 0.85),
-            0 0 0 1px rgba(15, 23, 42, 0.75);
-    }
-
-    .vta-hero-eyebrow { color: #9ca3af; }
-    .vta-hero-title { color: #f9fafb; }
-    .vta-hero-tagline { color: #cbd5f5; }
-    .vta-hero-summary { color: #9ca3af; }
-
-    .vta-badge {
-        background: rgba(15, 23, 42, 0.95);
-        border-color: rgba(148, 163, 184, 0.45);
-    }
-
-    .vta-endpoint-label { color: #93c5fd; }
-
-    .vta-endpoint-box {
-        background: rgba(31, 41, 55, 0.95);
-        border-color: rgba(148, 163, 184, 0.6);
-    }
-
-    .vta-endpoint-code { color: #e5e7eb; }
-
-    .vta-copy-btn {
-        background: rgba(55, 65, 81, 0.95);
-        color: #e5e7eb;
-    }
-    .vta-copy-btn:hover {
-        background: rgba(75, 85, 99, 0.98);
-        color: #f9fafb;
-    }
-
-    .vta-hero-hint { color: #9ca3af; }
-    .vta-hero-hint strong { color: #e5e7eb; }
-
-    .vta-search-input {
-        background: rgba(15, 23, 42, 0.96);
-        border-color: rgba(55, 65, 81, 0.9);
-        color: #e5e7eb;
-        box-shadow:
-            0 6px 16px rgba(15, 23, 42, 0.9),
-            0 0 0 1px rgba(15, 23, 42, 0.9);
-    }
-    .vta-search-input::placeholder { color: #6b7280; }
-    .vta-search-input:focus {
-        border-color: #60a5fa;
-        box-shadow:
-            0 0 0 1px rgba(59, 130, 246, 0.7),
-            0 10px 26px rgba(30, 64, 175, 0.7);
-    }
-
-    .vta-search-hint { color: #9ca3af; }
-    .vta-divider { border-top-color: rgba(148, 163, 184, 0.4); }
-    .vta-section-title { color: #e5e7eb; }
-
-    .vta-card {
-        background: radial-gradient(circle at 0 0, rgba(56, 189, 248, 0.12), transparent 75%),
-            rgba(15, 23, 42, 0.9);
-        box-shadow:
-            0 14px 30px rgba(15, 23, 42, 0.8),
-            0 0 0 1px rgba(15, 23, 42, 0.85);
-        border-color: rgba(148, 163, 184, 0.5);
-    }
-    .vta-card:hover {
-        box-shadow:
-            0 18px 40px rgba(15, 23, 42, 0.9),
-            0 0 0 1px rgba(59, 130, 246, 0.8);
-    }
-
-    .vta-card-title { color: #e5e7eb; }
-    .vta-card-desc { color: #9ca3af; }
-    .vta-card-url { color: #6b7280; }
-
-    .vta-card-type--tool         { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
-    .vta-card-type--skill        { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
-    .vta-card-type--interaction  { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
-    .vta-card-type--type         { background: rgba(107, 114, 128, 0.2); color: #d1d5db; }
-    .vta-card-type--template     { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
-    .vta-card-type--mcp          { background: rgba(236, 72, 153, 0.15); color: #f9a8d4; }
-
-    .vta-tag {
-        background: rgba(250, 204, 21, 0.12);
-        color: #facc15;
-    }
-
-    /* Detail page dark mode */
-    .vta-detail-back { color: #60a5fa; }
-
-    .vta-detail-title { color: #f9fafb; }
-    .vta-detail-desc { color: #cbd5e1; }
-
-    .vta-detail-section h2 { color: #e5e7eb; }
-
-    .vta-detail-card {
-        background: rgba(15, 23, 42, 0.9);
-        border-color: rgba(148, 163, 184, 0.5);
-    }
-
-    .vta-detail-role--system    { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
-    .vta-detail-role--user      { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
-    .vta-detail-role--assistant { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
-    .vta-detail-role--safety    { background: rgba(236, 72, 153, 0.15); color: #f9a8d4; }
-    .vta-detail-role--tool      { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
-
-    .vta-detail-prompt-name { color: #9ca3af; }
-
-    .vta-detail-code {
-        background: rgba(15, 23, 42, 0.95);
-        border-color: rgba(148, 163, 184, 0.4);
-        color: #e5e7eb;
-    }
-
-    .vta-detail-flag {
-        background: rgba(16, 185, 129, 0.15);
-        color: #6ee7b7;
-    }
+:is(.vta-dark) .vta-hero {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+    border-color: rgba(148, 163, 184, 0.45);
+    box-shadow:
+        0 24px 60px rgba(15, 23, 42, 0.85),
+        0 0 0 1px rgba(15, 23, 42, 0.75);
 }
+
+:is(.vta-dark) .vta-hero-eyebrow { color: #9ca3af; }
+:is(.vta-dark) .vta-hero-title { color: #f9fafb; }
+:is(.vta-dark) .vta-hero-tagline { color: #cbd5f5; }
+:is(.vta-dark) .vta-hero-summary { color: #9ca3af; }
+
+:is(.vta-dark) .vta-badge {
+    background: rgba(15, 23, 42, 0.95);
+    border-color: rgba(148, 163, 184, 0.45);
+}
+
+:is(.vta-dark) .vta-endpoint-label { color: #93c5fd; }
+
+:is(.vta-dark) .vta-endpoint-box {
+    background: rgba(31, 41, 55, 0.95);
+    border-color: rgba(148, 163, 184, 0.6);
+}
+
+:is(.vta-dark) .vta-endpoint-code { color: #e5e7eb; }
+
+:is(.vta-dark) .vta-copy-btn {
+    background: rgba(55, 65, 81, 0.95);
+    color: #e5e7eb;
+}
+:is(.vta-dark) .vta-copy-btn:hover {
+    background: rgba(75, 85, 99, 0.98);
+    color: #f9fafb;
+}
+
+:is(.vta-dark) .vta-hero-hint { color: #9ca3af; }
+:is(.vta-dark) .vta-hero-hint strong { color: #e5e7eb; }
+
+:is(.vta-dark) .vta-search-input {
+    background: rgba(15, 23, 42, 0.96);
+    border-color: rgba(55, 65, 81, 0.9);
+    color: #e5e7eb;
+    box-shadow:
+        0 6px 16px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(15, 23, 42, 0.9);
+}
+:is(.vta-dark) .vta-search-input::placeholder { color: #6b7280; }
+:is(.vta-dark) .vta-search-input:focus {
+    border-color: #60a5fa;
+    box-shadow:
+        0 0 0 1px rgba(59, 130, 246, 0.7),
+        0 10px 26px rgba(30, 64, 175, 0.7);
+}
+
+:is(.vta-dark) .vta-search-hint { color: #9ca3af; }
+:is(.vta-dark) .vta-divider { border-top-color: rgba(148, 163, 184, 0.4); }
+:is(.vta-dark) .vta-section-title { color: #e5e7eb; }
+
+:is(.vta-dark) .vta-card {
+    background: radial-gradient(circle at 0 0, rgba(56, 189, 248, 0.12), transparent 75%),
+        rgba(15, 23, 42, 0.9);
+    box-shadow:
+        0 14px 30px rgba(15, 23, 42, 0.8),
+        0 0 0 1px rgba(15, 23, 42, 0.85);
+    border-color: rgba(148, 163, 184, 0.5);
+}
+:is(.vta-dark) .vta-card:hover {
+    box-shadow:
+        0 18px 40px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(59, 130, 246, 0.8);
+}
+
+:is(.vta-dark) .vta-card-title { color: #e5e7eb; }
+:is(.vta-dark) .vta-card-desc { color: #9ca3af; }
+:is(.vta-dark) .vta-card-url { color: #6b7280; }
+
+:is(.vta-dark) .vta-card-type--tool         { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+:is(.vta-dark) .vta-card-type--skill        { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+:is(.vta-dark) .vta-card-type--interaction  { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
+:is(.vta-dark) .vta-card-type--type         { background: rgba(107, 114, 128, 0.2); color: #d1d5db; }
+:is(.vta-dark) .vta-card-type--template     { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
+:is(.vta-dark) .vta-card-type--mcp          { background: rgba(236, 72, 153, 0.15); color: #f9a8d4; }
+
+:is(.vta-dark) .vta-tag {
+    background: rgba(250, 204, 21, 0.12);
+    color: #facc15;
+}
+
+/* Detail page - class-based dark mode */
+:is(.vta-dark) .vta-detail-back { color: #60a5fa; }
+
+:is(.vta-dark) .vta-detail-title { color: #f9fafb; }
+:is(.vta-dark) .vta-detail-desc { color: #cbd5e1; }
+
+:is(.vta-dark) .vta-detail-section h2 { color: #e5e7eb; }
+
+:is(.vta-dark) .vta-detail-card {
+    background: rgba(15, 23, 42, 0.9);
+    border-color: rgba(148, 163, 184, 0.5);
+}
+
+:is(.vta-dark) .vta-detail-role--system    { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+:is(.vta-dark) .vta-detail-role--user      { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+:is(.vta-dark) .vta-detail-role--assistant { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; }
+:is(.vta-dark) .vta-detail-role--safety    { background: rgba(236, 72, 153, 0.15); color: #f9a8d4; }
+:is(.vta-dark) .vta-detail-role--tool      { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
+
+:is(.vta-dark) .vta-detail-prompt-name { color: #9ca3af; }
+
+:is(.vta-dark) .vta-detail-code {
+    background: rgba(15, 23, 42, 0.95);
+    border-color: rgba(148, 163, 184, 0.4);
+    color: #e5e7eb;
+}
+
+:is(.vta-dark) .vta-detail-flag {
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+}
+
