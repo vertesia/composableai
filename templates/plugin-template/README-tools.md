@@ -525,6 +525,24 @@ GITHUB_APP_PRIVATE_KEY_FILE=path/to/key.pem
 const githubAppId = process.env.GITHUB_APP_ID;
 ```
 
+#### Organization Access Restriction
+
+To restrict the tool server to specific Vertesia organizations, set the `VERTESIA_ALLOWED_ORGS` environment variable:
+
+```bash
+VERTESIA_ALLOWED_ORGS=org_abc123,org_def456
+```
+
+| Behavior | Description |
+|----------|-------------|
+| **Set** | Only listed organization IDs can access the server. Others receive `403 Forbidden`. |
+| **Not set** | All authenticated organizations are allowed (default). |
+
+The check is handled automatically by the `authorize()` middleware in `@vertesia/tools-sdk`. The organization ID is extracted from the JWT token's `account.id` field. No code changes are needed in your plugin.
+
+**Setting on Vercel:** Use Project Settings > Environment Variables, or `vercel env add VERTESIA_ALLOWED_ORGS`.
+**Setting on Docker/Node.js:** Pass as a standard environment variable (e.g., in `.env` or `docker run -e`).
+
 ## Browser Bundles
 
 After building, browser-ready bundles are available at:

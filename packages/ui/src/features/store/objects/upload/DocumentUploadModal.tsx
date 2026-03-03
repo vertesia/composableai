@@ -1,6 +1,7 @@
 import { Collection, ContentObjectTypeItem, DynamicCollection } from "@vertesia/common";
 import { Button, MessageBox, Modal, ModalBody, ModalFooter, ModalTitle, SelectBox, Spinner, useToast, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
+import { useTypeRegistry } from "../../types/TypeRegistryProvider.js";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
 import { ReactNode, useEffect, useMemo, useState } from "react";
@@ -69,7 +70,8 @@ export function DocumentUploadModal({
     showTypeSelectionOnly = false,
     allowFolders = true,
 }: DocumentUploadModalProps) {
-    const { client, typeRegistry } = useUserSession();
+    const { client } = useUserSession();
+    const { registry: typeRegistry } = useTypeRegistry();
     const toast = useToast();
     const [files, setFiles] = useState<File[]>([]);
     const [processedFiles, setProcessedFiles] = useState<FileWithMetadata[]>([]);
