@@ -9,19 +9,26 @@ import "./env"
 import { setUsePluginAssets } from './assets'
 import { AdminApp } from '@vertesia/tools-admin-ui'
 import { OrgGate } from './OrgGate'
+import { PluginLayout } from './PluginLayout'
 
 setUsePluginAssets(false);
 
 const routes: Route[] = [
-    { path: "*", Component: AdminApp },
-    { path: "app/*", Component: AppWrapper },
+    { path: "*", Component: AdminAppPage },
+    { path: "app/*", Component: AppPage },
 ]
 
-function AppWrapper() {
+function AdminAppPage() {
+    return <AdminApp />
+}
+
+function AppPage() {
     return (
-        <StandaloneApp name={import.meta.env.VITE_APP_NAME}> {/* <---- define VITE_APP_NAME en var in .env.local */}
-            <App />
-        </StandaloneApp>
+        <PluginLayout>
+            <StandaloneApp name={import.meta.env.VITE_APP_NAME}> {/* <---- define VITE_APP_NAME en var in .env.local */}
+                <App />
+            </StandaloneApp>
+        </PluginLayout>
     )
 }
 
