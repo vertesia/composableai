@@ -15,23 +15,18 @@ import { PluginAccessDenied } from './PluginAccessDenied'
 setUsePluginAssets(false);
 
 const routes: Route[] = [
-    { path: "*", Component: AdminAppPage },
-    { path: "app/*", Component: AppPage },
+    { path: "*", Component: () => <AdminApp /> },
+    {
+        path: "app/*", Component: () => (
+            // define VITE_APP_NAME as env var in .env.local
+            <StandaloneApp name={import.meta.env.VITE_APP_NAME} AccessDenied={PluginAccessDenied}>
+                <PluginLayout>
+                    <App />
+                </PluginLayout>
+            </StandaloneApp>
+        )
+    },
 ]
-
-function AdminAppPage() {
-    return <AdminApp />
-}
-
-function AppPage() {
-    return (
-        <StandaloneApp name={import.meta.env.VITE_APP_NAME} AccessDenied={PluginAccessDenied}> {/* <---- define VITE_APP_NAME en var in .env.local */}
-            <PluginLayout>
-                <App />
-            </PluginLayout>
-        </StandaloneApp>
-    )
-}
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
