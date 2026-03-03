@@ -420,6 +420,21 @@ The UI uses React 19, Tailwind CSS 4, and `@vertesia/ui` components.
 - Use Tailwind semantic classes: `text-success`, `bg-attention`, `border-destructive`, `text-muted`, `bg-info`, `text-done`
 - Use `@vertesia/ui/core` components (Button, Input, SelectBox, Modal, Spinner, etc.)
 - Never hardcode colors — always use theme variables
+- **Customizing colors**: override CSS custom properties **after** the shared import in `index.css`:
+  ```css
+  @layer base {
+    :root {
+      --primary: oklch(55% 0.2 145);            /* light mode */
+      --primary-background: oklch(97% 0.02 145);
+    }
+    .dark {
+      --primary: oklch(75% 0.18 145);            /* dark mode */
+      --primary-background: oklch(75% 0.18 145 / 0.2);
+    }
+  }
+  ```
+  Available tokens: `--primary`, `--success`, `--attention`, `--destructive`, `--done`, `--info`, `--muted` (each with a `-background` variant), plus `--background`, `--foreground`, `--card-*`, `--sidebar-*`, `--topnav-*`, `--border`, `--input`, `--ring`. See `@vertesia/ui/src/css/color.css` for all values.
+- For full CSS/component/styling guidance, see the `vertesia-app-ui` skill
 
 ### Assets
 - Use `useAsset(path)` from `./assets.ts` for URLs relative to the plugin bundle
