@@ -1,51 +1,9 @@
 @import "tailwindcss";
+@import "@vertesia/ui/styles.css";
 
-/**
- * Import tools-admin-ui theme CSS (provides CSS variables for shadcn components)
- */
-@import "@vertesia/tools-admin-ui/theme.css";
-
-/**
- * Vertesia semantic bg-* override: bg-muted resolves to --color-muted-background
- */
-@utility bg-* {
-  background-color: --value(--color-*-background, [*])
-}
-
-@custom-variant dark (&:is(.dark *));
-
-@layer base {
-  * {
-    @apply border-border;
-    box-sizing: border-box;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-/**
- * The login form use this for inputs
- */
 @plugin '@tailwindcss/forms';
 
-/**
- * Scan typescript sources
- */
 @source "./";
-
-/**
- * Scan the index.html for tailwind CSS
- */
 @source "../../index.html";
-
-/**
- * Scan @vertesia/ui dependency for tailwind classes
- */
 @source "../../node_modules/@vertesia/ui/src";
-
-/**
- * Scan @vertesia/tools-admin-ui for tailwind classes
- */
 @source "../../node_modules/@vertesia/tools-admin-ui/src";
