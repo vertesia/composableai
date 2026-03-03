@@ -1,7 +1,7 @@
 import { ModeToggle } from '@vertesia/ui/core';
 import { SidebarItem, SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
 import { useLocation } from '@vertesia/ui/router';
-import { FileText, HomeIcon } from 'lucide-react';
+import { Bot, HomeIcon } from 'lucide-react';
 
 export function PluginSidebar() {
     const path = useLocation().pathname;
@@ -21,12 +21,12 @@ export function PluginSidebar() {
                             Home
                         </SidebarItem>
                         <SidebarItem
-                            id="menu-next"
-                            current={path === '/app/next'}
-                            icon={FileText}
-                            href="/app/next"
+                            id="menu-chat"
+                            current={path === '/app/chat'}
+                            icon={Bot}
+                            href="/app/chat"
                         >
-                            Next Page
+                            Agent Chat
                         </SidebarItem>
                     </SidebarSection>
                 </nav>
