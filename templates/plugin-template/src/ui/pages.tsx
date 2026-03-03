@@ -1,13 +1,11 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Bot } from "lucide-react";
 import { ModernAgentConversation } from "@vertesia/ui/features";
 import { Button } from "@vertesia/ui/core";
-import { useNavigate } from "@vertesia/ui/router";
+import { useNavigate, useParams } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import type { AsyncConversationExecutionPayload } from "@vertesia/common";
-
-// Format: app:<plugin-name>:<collection-name>:<interaction-name>
-const ASSISTANT_INTERACTION = "app:my-app:examples:assistant";
+import { ASSISTANT_INTERACTION } from "./constants";
 
 export function HomePage() {
     const { user } = useUserSession();
@@ -29,7 +27,11 @@ export function HomePage() {
 
 export function ChatPage() {
     const { client } = useUserSession();
-    const [run, setRun] = useState<{ run_id: string; workflow_id: string } | null>(null);
+    const navigate = useNavigate();
+    const params = useParams();
+    const { runId, workflowId } = params as { runId?: string; workflowId?: string };
+
+    const run = runId && workflowId ? { run_id: runId, workflow_id: workflowId } : null;
 
     const startWorkflow = useCallback(async (initialMessage?: string) => {
         const payload: AsyncConversationExecutionPayload = {
@@ -41,13 +43,13 @@ export function ChatPage() {
         const result = await client.interactions.executeAsync(payload);
         if (result) {
             const runData = { run_id: result.runId, workflow_id: result.workflowId };
-            setRun(runData);
+            navigate(`/chat/${result.runId}/${result.workflowId}`);
             return runData;
         }
         return undefined;
-    }, [client]);
+    }, [client, navigate]);
 
-    const handleReset = useCallback(() => setRun(null), []);
+    const handleReset = useCallback(() => navigate('/chat'), [navigate]);
 
     return (
         <div className="flex flex-col h-full">
