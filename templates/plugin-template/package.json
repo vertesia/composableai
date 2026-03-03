@@ -12,6 +12,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "vite dev",
+    "prebuild": "npm run lint",
     "build": "npm run build:server && npm run build:ui",
     "build:server": "rollup -c",
     "build:ui": "npm run build:ui:app && npm run build:ui:lib",
