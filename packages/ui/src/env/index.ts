@@ -100,7 +100,7 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
     }
 
     get region() {
-        return this._props?.region ?? 'us';
+        return this._props?.region;
     }
 
     get datadog() {
