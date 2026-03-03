@@ -1,21 +1,31 @@
 @import "tailwindcss";
 
 /**
+ * Import tools-admin-ui theme CSS (provides CSS variables for shadcn components)
+ */
+@import "@vertesia/tools-admin-ui/theme.css";
+
+/**
  * The login form use this for inputs
  */
 @plugin '@tailwindcss/forms';
 
 /**
- * Scan typescript sources 
+ * Scan typescript sources
  */
 @source "./";
 
 /**
  * Scan the index.html for tailwind CSS
  */
-@source "../index.html";
+@source "../../index.html";
 
 /**
- * Scan @vertesia/ui dependency for tailwind classes 
+ * Scan @vertesia/ui dependency for tailwind classes
  */
-@source "../node_modules/@vertesia/ui/src";
+@source "../../node_modules/@vertesia/ui/src";
+
+/**
+ * Scan @vertesia/tools-admin-ui for tailwind classes
+ */
+@source "../../node_modules/@vertesia/tools-admin-ui/src";

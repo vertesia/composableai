@@ -1,5 +1,6 @@
-import { useFetch } from '@vertesia/ui/core';
+import { Badge, Spinner, useFetch } from '@vertesia/ui/core';
 import { useParams } from '@vertesia/ui/router';
+
 import { useAdminContext } from '../AdminContext.js';
 import { DetailPage } from '../components/DetailPage.js';
 
@@ -33,8 +34,8 @@ export function SkillDetail() {
         [baseUrl, collection, name]
     );
 
-    if (isLoading) return <div className="vta-loading">Loading skill...</div>;
-    if (error || !skill) return <div className="vta-error">Failed to load skill &ldquo;{name}&rdquo;.</div>;
+    if (isLoading) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
+    if (error || !skill) return <div className="p-6 text-destructive">Failed to load skill &ldquo;{name}&rdquo;.</div>;
 
     return (
         <DetailPage
@@ -43,66 +44,55 @@ export function SkillDetail() {
             description={skill.description}
             backHref={`/skills/${collection}`}
         >
-            {/* Widgets */}
             {skill.widgets && skill.widgets.length > 0 && (
-                <div className="vta-detail-section">
-                    <h2>Widgets</h2>
-                    <div className="vta-detail-flags">
-                        {skill.widgets.map(w => (
-                            <span key={w} className="vta-detail-flag">{w}</span>
-                        ))}
+                <div className="mb-8">
+                    <h2 className="mb-3 text-lg font-semibold text-foreground">Widgets</h2>
+                    <div className="flex flex-wrap gap-2">
+                        {skill.widgets.map(w => <Badge key={w} variant="success">{w}</Badge>)}
                     </div>
                 </div>
             )}
 
-            {/* Scripts */}
             {skill.scripts && skill.scripts.length > 0 && (
-                <div className="vta-detail-section">
-                    <h2>Scripts</h2>
-                    <div className="vta-detail-flags">
-                        {skill.scripts.map(s => (
-                            <span key={s} className="vta-detail-flag">{s}</span>
-                        ))}
+                <div className="mb-8">
+                    <h2 className="mb-3 text-lg font-semibold text-foreground">Scripts</h2>
+                    <div className="flex flex-wrap gap-2">
+                        {skill.scripts.map(s => <Badge key={s} variant="success">{s}</Badge>)}
                     </div>
                 </div>
             )}
 
-            {/* Related tools */}
             {skill.related_tools && skill.related_tools.length > 0 && (
-                <div className="vta-detail-section">
-                    <h2>Related Tools</h2>
-                    <div className="vta-detail-flags">
-                        {skill.related_tools.map(t => (
-                            <span key={t} className="vta-detail-flag">{t}</span>
-                        ))}
+                <div className="mb-8">
+                    <h2 className="mb-3 text-lg font-semibold text-foreground">Related Tools</h2>
+                    <div className="flex flex-wrap gap-2">
+                        {skill.related_tools.map(t => <Badge key={t} variant="success">{t}</Badge>)}
                     </div>
                 </div>
             )}
 
-            {/* Execution environment */}
             {skill.execution && (
-                <div className="vta-detail-section">
-                    <h2>Execution</h2>
-                    <div className="vta-detail-flags">
-                        <span className="vta-detail-flag">{skill.execution.language}</span>
-                        {skill.execution.packages?.map(p => (
-                            <span key={p} className="vta-detail-flag">{p}</span>
-                        ))}
+                <div className="mb-8">
+                    <h2 className="mb-3 text-lg font-semibold text-foreground">Execution</h2>
+                    <div className="flex flex-wrap gap-2">
+                        <Badge variant="success">{skill.execution.language}</Badge>
+                        {skill.execution.packages?.map(p => <Badge key={p} variant="success">{p}</Badge>)}
                     </div>
                 </div>
             )}
 
-            {/* Instructions */}
-            <div className="vta-detail-section">
-                <h2>Instructions {skill.content_type === 'jst' && <span className="vta-tag">JST template</span>}</h2>
-                <pre className="vta-detail-code">{skill.instructions}</pre>
+            <div className="mb-8">
+                <h2 className="mb-3 text-lg font-semibold text-foreground">
+                    Instructions
+                    {skill.content_type === 'jst' && <Badge className="ml-2">JST template</Badge>}
+                </h2>
+                <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">{skill.instructions}</pre>
             </div>
 
-            {/* Input schema */}
             {skill.input_schema && (
-                <div className="vta-detail-section">
-                    <h2>Input Schema</h2>
-                    <pre className="vta-detail-code">
+                <div className="mb-8">
+                    <h2 className="mb-3 text-lg font-semibold text-foreground">Input Schema</h2>
+                    <pre className="whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
                         {JSON.stringify(skill.input_schema, null, 2)}
                     </pre>
                 </div>

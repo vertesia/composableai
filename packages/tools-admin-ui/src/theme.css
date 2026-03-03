@@ -1,0 +1,172 @@
+/**
+ * Default theme for @vertesia/tools-admin-ui.
+ *
+ * Consumers should import this file (or provide their own equivalent)
+ * so that @vertesia/ui shadcn components resolve their CSS custom properties.
+ *
+ *   @import '@vertesia/tools-admin-ui/theme.css';
+ */
+
+/**
+ * Tailwind v4 theme bindings — maps CSS custom properties to Tailwind utility
+ * classes (e.g. bg-background → var(--background)).
+ */
+@theme static {
+  --radius: 0.625rem;
+  --radius-xs: calc(var(--radius) - 8px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-background: var(--secondary-background);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted-background: var(--muted-background);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-background: var(--destructive-background);
+
+  --color-success: var(--success);
+  --color-success-background: var(--success-background);
+
+  --color-attention: var(--attention);
+  --color-attention-background: var(--attention-background);
+
+  --color-done: var(--done);
+  --color-done-background: var(--done-background);
+
+  --color-info: var(--info);
+  --color-info-background: var(--info-background);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-tooltips: oklch(0.205 0 0);
+
+  --font-sans:
+    Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+
+  --primary: oklch(44.72% 0.193316 261.0044);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.205 0 0);
+  --secondary-background: oklch(0.97 0 0);
+
+  --muted: oklch(0.556 0 0);
+  --muted-background: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+
+  --destructive: oklch(50.5% 0.213 27.518);
+  --destructive-background: oklch(97.1% 0.013 17.38);
+
+  --success: oklch(52.7% 0.154 150.069);
+  --success-background: oklch(98.2% 0.018 155.826);
+
+  --attention: oklch(55.48% 0.12708 62.5245);
+  --attention-background: oklch(98.7% 0.026 102.212);
+
+  --done: oklch(49.6% 0.265 301.924);
+  --done-background: oklch(97.7% 0.014 308.299);
+
+  --info: oklch(48.8% 0.243 264.376);
+  --info-background: oklch(97% 0.014 254.604);
+
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+
+  --primary: oklch(60.05% 0.1735 260.17);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.985 0 0);
+  --secondary-background: oklch(0.269 0 0);
+
+  --muted: oklch(0.708 0 0);
+  --muted-background: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+
+  --destructive: oklch(70.4% 0.191 22.216);
+  --destructive-background: oklch(70.4% 0.191 22.216 / 0.2);
+
+  --success: oklch(79.2% 0.209 151.711);
+  --success-background: oklch(79.2% 0.209 151.711 / 0.2);
+
+  --attention: oklch(85.2% 0.199 91.936);
+  --attention-background: oklch(85.2% 0.199 91.936 / 0.2);
+
+  --done: oklch(71.4% 0.203 305.504);
+  --done-background: oklch(71.4% 0.203 305.504 / 0.2);
+
+  --info: oklch(70.7% 0.165 254.624);
+  --info-background: oklch(70.7% 0.165 254.624 / 0.2);
+
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}

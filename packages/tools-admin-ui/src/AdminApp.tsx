@@ -1,19 +1,20 @@
+import { Spinner } from '@vertesia/ui/core';
 import type { Route } from '@vertesia/ui/router';
 import { NestedRouterProvider, RouteComponent } from '@vertesia/ui/router';
-import { useServerInfo, useResourceData, useVtaTheme } from './hooks.js';
+
 import { AdminContext } from './AdminContext.js';
-import { ThemeToggle } from './components/ThemeToggle.js';
+import { AdminTopBar } from './components/AdminTopBar.js';
+import { useResourceData, useServerInfo } from './hooks.js';
 import { HomePage } from './pages/HomePage.js';
 import { InteractionCollection } from './pages/InteractionCollection.js';
 import { InteractionDetail } from './pages/InteractionDetail.js';
-import { ToolCollection } from './pages/ToolCollection.js';
 import { SkillCollection } from './pages/SkillCollection.js';
 import { SkillDetail } from './pages/SkillDetail.js';
-import { TypeCollection } from './pages/TypeCollection.js';
-import { TypeDetail } from './pages/TypeDetail.js';
 import { TemplateCollection } from './pages/TemplateCollection.js';
 import { TemplateDetail } from './pages/TemplateDetail.js';
-import adminStyles from './admin.css?inline';
+import { ToolCollection } from './pages/ToolCollection.js';
+import { TypeCollection } from './pages/TypeCollection.js';
+import { TypeDetail } from './pages/TypeDetail.js';
 
 const routes: Route[] = [
     { path: '/', Component: HomePage },
@@ -38,10 +39,11 @@ export interface AdminAppProps {
 
 /**
  * Admin app shell — loads data, provides context, and renders nested routes.
- * CSS is inlined into the JS bundle via Vite's `?inline` import.
+ *
+ * Requires a parent VertesiaShell (or equivalent providers for ThemeProvider,
+ * UserSessionProvider, ToastProvider).
  */
 export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
-    const { theme, isDark, setTheme } = useVtaTheme();
     const { data: serverInfo, isLoading: loadingInfo, error: infoError } = useServerInfo(baseUrl);
     const { data: resourceData, isLoading: loadingData, error: dataError } = useResourceData(
         baseUrl,
@@ -51,32 +53,29 @@ export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
     const isLoading = loadingInfo || loadingData;
     const error = infoError || dataError;
 
-    const wrapClass = isDark ? 'vta-dark' : 'vta-light';
-
     if (isLoading) {
         return (
-            <div className={wrapClass}>
-                <style>{adminStyles}</style>
-                <div className="vta-loading">Loading...</div>
+            <div className="flex h-64 items-center justify-center text-muted-foreground">
+                <Spinner />
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className={wrapClass}>
-                <style>{adminStyles}</style>
-                <div className="vta-error">Failed to load server info. Is the API running?</div>
+            <div className="p-6 text-destructive">
+                Failed to load server info. Is the API running?
             </div>
         );
     }
 
     if (!serverInfo || !resourceData) return null;
 
+    const title = serverInfo.message.replace('Vertesia Tools API', 'Tools Server');
+
     return (
-        <div className={wrapClass}>
-            <style>{adminStyles}</style>
-            <ThemeToggle theme={theme} isDark={isDark} onChange={setTheme} />
+        <div className="min-h-screen bg-background text-foreground">
+            <AdminTopBar title={title} />
             <AdminContext.Provider value={{
                 serverInfo,
                 collections: resourceData.collections,

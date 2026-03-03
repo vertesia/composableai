@@ -1,8 +1,10 @@
+import { Badge, Card, CardContent, Spinner, useFetch } from '@vertesia/ui/core';
+import { NavLink, useParams } from '@vertesia/ui/router';
 import { useMemo } from 'react';
-import { useFetch } from '@vertesia/ui/core';
-import { useParams, NavLink } from '@vertesia/ui/router';
+
 import { useAdminContext } from '../AdminContext.js';
 import { DetailPage } from '../components/DetailPage.js';
+import { TYPE_VARIANTS } from '../components/typeVariants.js';
 
 interface SkillToolDef {
     name: string;
@@ -55,8 +57,8 @@ export function SkillCollection() {
             .map(([name, w]) => ({ name, ...w }));
     }, [widgetsData, collection]);
 
-    if (isLoading) return <div className="vta-loading">Loading collection...</div>;
-    if (error || !data) return <div className="vta-error">Failed to load skill collection &ldquo;{collection}&rdquo;.</div>;
+    if (isLoading) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
+    if (error || !data) return <div className="p-6 text-destructive">Failed to load skill collection &ldquo;{collection}&rdquo;.</div>;
 
     return (
         <DetailPage
@@ -64,44 +66,39 @@ export function SkillCollection() {
             title={data.title || collection}
             description={data.description || `${data.tools.length} skill${data.tools.length !== 1 ? 's' : ''} in this collection.`}
         >
-            {/* Widgets provided by this collection */}
             {collectionWidgets.length > 0 && (
-                <div className="vta-detail-section">
-                    <h2>Widgets</h2>
-                    <div className="vta-detail-flags">
+                <div className="mb-8">
+                    <h2 className="mb-3 text-lg font-semibold text-foreground">Widgets</h2>
+                    <div className="flex flex-wrap gap-2">
                         {collectionWidgets.map(w => (
-                            <span key={w.name} className="vta-detail-flag">
+                            <Badge key={w.name} variant="success">
                                 {w.name}
-                                <span className="vta-card-url" style={{ marginLeft: '0.5rem' }}>
-                                    (skill: {w.skill})
-                                </span>
-                            </span>
+                                <span className="ml-2 font-mono text-xs opacity-70">(skill: {w.skill})</span>
+                            </Badge>
                         ))}
                     </div>
                 </div>
             )}
 
-            <div className="vta-card-grid">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {data.tools.map(skill => {
                     const displayName = skillDisplayName(skill.name);
                     return (
-                        <NavLink
-                            key={skill.name}
-                            href={`/skills/${collection}/${displayName}`}
-                            className="vta-card-link"
-                        >
-                            <div className="vta-card vta-card--link">
-                                <span className="vta-card-type vta-card-type--skill">skill</span>
-                                <div className="vta-card-title">{displayName}</div>
-                                <div className="vta-card-desc">{skill.description || 'No description'}</div>
-                                {skill.related_tools && skill.related_tools.length > 0 && (
-                                    <div className="vta-card-tags">
-                                        {skill.related_tools.map(t => (
-                                            <span key={t} className="vta-tag">{t}</span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                        <NavLink key={skill.name} href={`/skills/${collection}/${displayName}`} className="block no-underline">
+                            <Card className="cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md">
+                                <CardContent className="p-5">
+                                    <span className={`mb-2 inline-block rounded-full px-2 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide ${TYPE_VARIANTS.skill}`}>
+                                        skill
+                                    </span>
+                                    <div className="font-semibold text-card-foreground">{displayName}</div>
+                                    <div className="mt-1 text-sm text-muted-foreground">{skill.description || 'No description'}</div>
+                                    {skill.related_tools && skill.related_tools.length > 0 && (
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                            {skill.related_tools.map(t => <Badge key={t}>{t}</Badge>)}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
                         </NavLink>
                     );
                 })}

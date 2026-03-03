@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@import "../theme.css";
+
+/**
+ * Scan local sources for Tailwind classes
+ */
+@source "../";
+
+/**
+ * Scan @vertesia/ui sources for Tailwind classes
+ */
+@source "../../../ui/src";

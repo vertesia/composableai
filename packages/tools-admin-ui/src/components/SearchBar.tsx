@@ -1,3 +1,5 @@
+import { Input } from '@vertesia/ui/core';
+
 interface SearchBarProps {
     value: string;
     onChange: (value: string) => void;
@@ -11,22 +13,22 @@ export function SearchBar({ value, onChange, placeholder, resultCount, totalCoun
     const noResults = hasQuery && resultCount === 0;
 
     return (
-        <div className="vta-search">
-            <input
+        <div className="mb-7">
+            <Input
                 type="search"
                 value={value}
-                onChange={e => onChange(e.target.value)}
+                onChange={onChange}
                 placeholder={placeholder || 'Search collections...'}
-                className="vta-search-input"
+                className="max-w-sm rounded-full"
                 autoComplete="off"
             />
             {hasQuery && !noResults && (
-                <p className="vta-search-hint">
+                <p className="mt-1.5 text-xs text-muted-foreground">
                     Showing {resultCount} of {totalCount} resources
                 </p>
             )}
             {noResults && (
-                <p className="vta-search-empty">
+                <p className="mt-2 text-sm text-destructive">
                     No resources match this search.
                 </p>
             )}

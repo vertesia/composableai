@@ -1,3 +1,5 @@
+import { Separator } from '@vertesia/ui/core';
+
 import type { ResourceItem } from '../types.js';
 import { ResourceCard } from './ResourceCard.js';
 
@@ -13,15 +15,15 @@ export function ResourceSection({ title, subtitle, resources, showDivider }: Res
 
     return (
         <section>
-            {showDivider && <hr className="vta-divider" />}
+            {showDivider && <Separator className="my-8" />}
             <div>
-                <h2 className="vta-section-title">
+                <h2 className="text-xl font-semibold text-foreground">
                     {title}
-                    <span className="vta-section-count">({resources.length})</span>
+                    <span className="ml-2 text-sm font-normal text-muted-foreground">({resources.length})</span>
                 </h2>
-                <p className="vta-section-subtitle">{subtitle}</p>
+                <p className="mb-4 text-sm text-muted-foreground">{subtitle}</p>
             </div>
-            <div className="vta-card-grid">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {resources.map(r => (
                     <ResourceCard key={`${r.type}:${r.name}`} resource={r} />
                 ))}
