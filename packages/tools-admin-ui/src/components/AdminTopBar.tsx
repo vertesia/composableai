@@ -1,35 +1,9 @@
-import { Avatar, Button, useTheme } from '@vertesia/ui/core';
+import { Avatar, Button, ModeToggle } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
-import { Computer, LogOut, Moon, Sun } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 interface AdminTopBarProps {
     title: string;
-}
-
-function ThemeToggle() {
-    const { theme, setTheme } = useTheme();
-    const options = [
-        { value: 'system' as const, icon: <Computer className="text-muted" /> },
-        { value: 'light' as const, icon: <Sun className="text-muted" /> },
-        { value: 'dark' as const, icon: <Moon className="text-muted" /> },
-    ];
-
-    return (
-        <div className="flex items-center gap-1">
-            {options.map(opt => (
-                <Button
-                    key={opt.value}
-                    variant={theme === opt.value ? 'secondary' : 'outline'}
-                    size="sm"
-                    onClick={() => setTheme(opt.value)}
-                    aria-label={opt.value}
-                    className={theme !== opt.value ? 'hover:bg-secondary-background!' : undefined}
-                >
-                    {opt.icon}
-                </Button>
-            ))}
-        </div>
-    );
 }
 
 export function AdminTopBar({ title }: AdminTopBarProps) {
@@ -45,15 +19,15 @@ export function AdminTopBar({ title }: AdminTopBarProps) {
             </div>
 
             <div className="flex items-center gap-3">
-                <ThemeToggle />
+                <ModeToggle label={false} />
                 {user && (
                     <>
                         <Avatar size="sm" name={user.name} color="bg-primary" />
                         <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => logout()}
-                            aria-label="Sign out"
+                            alt="Sign out"
                         >
                             <LogOut className="size-4" />
                         </Button>

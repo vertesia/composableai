@@ -18,17 +18,22 @@ export function ModeOption({ option, current, setTheme, icon }: ModeOptionProps)
   );
 }
 
-export function ModeToggle() {
-  const { setTheme } = useTheme()
-  const theme = useTheme().theme
+interface ModeToggleProps {
+  /** Label shown to the left of the buttons. Defaults to "Theme". Pass `false` to hide. */
+  label?: string | false;
+  className?: string;
+}
+
+export function ModeToggle({ label = "Theme", className }: ModeToggleProps = {}) {
+  const { setTheme, theme } = useTheme()
 
   return (
-    <div className="flex justify-between px-2 items-center">
-      <p className="text-sm font-semibold">Theme</p>
+    <div className={className ?? (label ? "flex justify-between px-2 items-center" : "flex items-center gap-1")}>
+      {label && <p className="text-sm font-semibold">{label}</p>}
       <div className="flex gap-2">
-        <ModeOption current={theme} option="system" setTheme={setTheme} icon={<Computer className="text-muted" />} />
-        <ModeOption current={theme} option="light" setTheme={setTheme} icon={<Sun className="text-muted" />} />
-        <ModeOption current={theme} option="dark" setTheme={setTheme} icon={<Moon className="text-muted" />} />
+        <ModeOption current={theme} option="system" setTheme={setTheme} icon={<Computer />} />
+        <ModeOption current={theme} option="light" setTheme={setTheme} icon={<Sun />} />
+        <ModeOption current={theme} option="dark" setTheme={setTheme} icon={<Moon />} />
       </div>
     </div>
   )

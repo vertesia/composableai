@@ -6,6 +6,26 @@
 @import "@vertesia/tools-admin-ui/theme.css";
 
 /**
+ * Vertesia semantic bg-* override: bg-muted resolves to --color-muted-background
+ */
+@utility bg-* {
+  background-color: --value(--color-*-background, [*])
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/**
  * The login form use this for inputs
  */
 @plugin '@tailwindcss/forms';

@@ -8,6 +8,33 @@
  */
 
 /**
+ * Vertesia semantic utility overrides.
+ *
+ * In the Vertesia design system, semantic colors use `--color-<name>` for text
+ * and `--color-<name>-background` for backgrounds. These @utility directives
+ * ensure that `bg-<name>` resolves to the `-background` variant, matching the
+ * behaviour of admin-ui / composable-ui.
+ */
+:root {
+  --mixer: oklch(1 0 0);
+}
+.dark {
+  --mixer: oklch(0 0 0);
+}
+
+@utility bg-* {
+  background-color: --value(--color-*-background, [*])
+}
+
+@utility bg-mixer-* {
+  background-color: color-mix(in oklab, --value(--color-*-background, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+}
+
+@utility border-* {
+  border-color: --value(--color-*, [*])
+}
+
+/**
  * Tailwind v4 theme bindings — maps CSS custom properties to Tailwind utility
  * classes (e.g. bg-background → var(--background)).
  */
@@ -66,7 +93,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --color-tooltips: oklch(0.205 0 0);
+  --color-tooltips: var(--tooltips);
 
   --font-sans:
     Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
@@ -108,6 +135,8 @@
 
   --info: oklch(48.8% 0.243 264.376);
   --info-background: oklch(97% 0.014 254.604);
+
+  --tooltips: oklch(97% 0.014 254.604);
 
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -156,6 +185,8 @@
 
   --info: oklch(70.7% 0.165 254.624);
   --info-background: oklch(70.7% 0.165 254.624 / 0.2);
+
+  --tooltips: oklch(70.7% 0.165 254.624);
 
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
