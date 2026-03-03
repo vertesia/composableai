@@ -10,7 +10,7 @@ export function TemplateCollection() {
     const collection = useParams('collection');
     const { baseUrl } = useAdminContext();
 
-    const { data: templates, isLoading, error } = useFetch<RenderingTemplateDefinitionRef[]>(
+    const { data: templates, error } = useFetch<RenderingTemplateDefinitionRef[]>(
         () => fetch(`${baseUrl}/templates/${collection}`).then(r => {
             if (!r.ok) throw new Error(`Failed to load collection: ${r.statusText}`);
             return r.json();
@@ -18,8 +18,8 @@ export function TemplateCollection() {
         [baseUrl, collection]
     );
 
-    if (isLoading) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
-    if (error || !templates) return <div className="p-6 text-destructive">Failed to load template collection &ldquo;{collection}&rdquo;.</div>;
+    if (error) return <div className="p-6 text-destructive">Failed to load template collection &ldquo;{collection}&rdquo;.</div>;
+    if (!templates) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
 
     return (
         <DetailPage

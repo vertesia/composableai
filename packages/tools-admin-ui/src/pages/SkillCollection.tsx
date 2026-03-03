@@ -37,7 +37,7 @@ export function SkillCollection() {
     const collection = useParams('collection');
     const { baseUrl } = useAdminContext();
 
-    const { data, isLoading, error } = useFetch<SkillCollectionResponse>(
+    const { data, error } = useFetch<SkillCollectionResponse>(
         () => fetch(`${baseUrl}/skills/${collection}`).then(r => {
             if (!r.ok) throw new Error(`Failed to load collection: ${r.statusText}`);
             return r.json();
@@ -57,8 +57,8 @@ export function SkillCollection() {
             .map(([name, w]) => ({ name, ...w }));
     }, [widgetsData, collection]);
 
-    if (isLoading) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
-    if (error || !data) return <div className="p-6 text-destructive">Failed to load skill collection &ldquo;{collection}&rdquo;.</div>;
+    if (error) return <div className="p-6 text-destructive">Failed to load skill collection &ldquo;{collection}&rdquo;.</div>;
+    if (!data) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
 
     return (
         <DetailPage

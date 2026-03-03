@@ -20,7 +20,7 @@ export function TemplateDetail() {
     const name = params.name;
     const { baseUrl } = useAdminContext();
 
-    const { data: template, isLoading, error } = useFetch<TemplateDefinitionResponse>(
+    const { data: template, error } = useFetch<TemplateDefinitionResponse>(
         () => fetch(`${baseUrl}/templates/${collection}/${name}`).then(r => {
             if (!r.ok) throw new Error(`Failed to load template: ${r.statusText}`);
             return r.json();
@@ -28,8 +28,8 @@ export function TemplateDetail() {
         [baseUrl, collection, name]
     );
 
-    if (isLoading) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
-    if (error || !template) return <div className="p-6 text-destructive">Failed to load template &ldquo;{name}&rdquo;.</div>;
+    if (error) return <div className="p-6 text-destructive">Failed to load template &ldquo;{name}&rdquo;.</div>;
+    if (!template) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
 
     return (
         <DetailPage

@@ -26,7 +26,7 @@ export function SkillDetail() {
     const name = params.name;
     const { baseUrl } = useAdminContext();
 
-    const { data: skill, isLoading, error } = useFetch<SkillDefinitionResponse>(
+    const { data: skill, error } = useFetch<SkillDefinitionResponse>(
         () => fetch(`${baseUrl}/skills/${collection}/${name}`).then(r => {
             if (!r.ok) throw new Error(`Failed to load skill: ${r.statusText}`);
             return r.json();
@@ -34,8 +34,8 @@ export function SkillDetail() {
         [baseUrl, collection, name]
     );
 
-    if (isLoading) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
-    if (error || !skill) return <div className="p-6 text-destructive">Failed to load skill &ldquo;{name}&rdquo;.</div>;
+    if (error) return <div className="p-6 text-destructive">Failed to load skill &ldquo;{name}&rdquo;.</div>;
+    if (!skill) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
 
     return (
         <DetailPage

@@ -11,7 +11,7 @@ export function TypeDetail() {
     const name = params.name;
     const { baseUrl } = useAdminContext();
 
-    const { data: typeDef, isLoading, error } = useFetch<InCodeTypeDefinition>(
+    const { data: typeDef, error } = useFetch<InCodeTypeDefinition>(
         () => fetch(`${baseUrl}/types/${collection}/${name}`).then(r => {
             if (!r.ok) throw new Error(`Failed to load type: ${r.statusText}`);
             return r.json();
@@ -19,8 +19,8 @@ export function TypeDetail() {
         [baseUrl, collection, name]
     );
 
-    if (isLoading) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
-    if (error || !typeDef) return <div className="p-6 text-destructive">Failed to load type &ldquo;{name}&rdquo;.</div>;
+    if (error) return <div className="p-6 text-destructive">Failed to load type &ldquo;{name}&rdquo;.</div>;
+    if (!typeDef) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
 
     return (
         <DetailPage

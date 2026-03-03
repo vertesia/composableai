@@ -10,7 +10,7 @@ export function TypeCollection() {
     const collection = useParams('collection');
     const { baseUrl } = useAdminContext();
 
-    const { data: types, isLoading, error } = useFetch<InCodeTypeDefinition[]>(
+    const { data: types, error } = useFetch<InCodeTypeDefinition[]>(
         () => fetch(`${baseUrl}/types/${collection}`).then(r => {
             if (!r.ok) throw new Error(`Failed to load collection: ${r.statusText}`);
             return r.json();
@@ -18,8 +18,8 @@ export function TypeCollection() {
         [baseUrl, collection]
     );
 
-    if (isLoading) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
-    if (error || !types) return <div className="p-6 text-destructive">Failed to load type collection &ldquo;{collection}&rdquo;.</div>;
+    if (error) return <div className="p-6 text-destructive">Failed to load type collection &ldquo;{collection}&rdquo;.</div>;
+    if (!types) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
 
     return (
         <DetailPage

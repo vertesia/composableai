@@ -16,7 +16,7 @@ export function InteractionDetail() {
     const name = params.name;
     const { baseUrl } = useAdminContext();
 
-    const { data: interaction, isLoading, error } = useFetch<InteractionResponse>(
+    const { data: interaction, error } = useFetch<InteractionResponse>(
         () => client.getRawJWT().then(token => fetch(`${baseUrl}/interactions/${collection}/${name}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -28,12 +28,12 @@ export function InteractionDetail() {
         [baseUrl, collection, name]
     );
 
-    if (isLoading) {
-        return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
+    if (error) {
+        return <div className="p-6 text-destructive">Failed to load interaction &ldquo;{name}&rdquo;.</div>;
     }
 
-    if (error || !interaction) {
-        return <div className="p-6 text-destructive">Failed to load interaction &ldquo;{name}&rdquo;.</div>;
+    if (!interaction) {
+        return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
     }
 
     const { agent_runner_options } = interaction;

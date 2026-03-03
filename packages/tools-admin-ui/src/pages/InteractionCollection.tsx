@@ -10,7 +10,7 @@ export function InteractionCollection() {
     const collection = useParams('collection');
     const { baseUrl } = useAdminContext();
 
-    const { data: interactions, isLoading, error } = useFetch<CatalogInteractionRef[]>(
+    const { data: interactions, error } = useFetch<CatalogInteractionRef[]>(
         () => fetch(`${baseUrl}/interactions/${collection}`).then(r => {
             if (!r.ok) throw new Error(`Failed to load collection: ${r.statusText}`);
             return r.json();
@@ -18,12 +18,12 @@ export function InteractionCollection() {
         [baseUrl, collection]
     );
 
-    if (isLoading) {
-        return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
+    if (error) {
+        return <div className="p-6 text-destructive">Failed to load collection &ldquo;{collection}&rdquo;.</div>;
     }
 
-    if (error || !interactions) {
-        return <div className="p-6 text-destructive">Failed to load collection &ldquo;{collection}&rdquo;.</div>;
+    if (!interactions) {
+        return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
     }
 
     return (
