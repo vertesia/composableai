@@ -9,7 +9,7 @@ const optionLabel = (t: ContentObjectTypeItem | null) => {
     return (
         <div>
             <div className="text-sm">{t.name}</div>
-            <div className="text-xs text-gray-500">{t.description}</div>
+            <div className="text-xs text-muted truncate">{t.description}</div>
         </div>
     );
 };
