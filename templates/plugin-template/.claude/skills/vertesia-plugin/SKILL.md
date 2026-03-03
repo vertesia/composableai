@@ -1,6 +1,6 @@
 ---
 name: vertesia-plugin
-description: Guides development of this Vertesia plugin project. Covers the dual build system (Rollup for Hono tool server, Vite for React UI plugin), creating tools/skills/interactions/types, build-tools import hooks (?skill, ?raw, ?prompt), deployment to Vercel, and plugin architecture. Use when creating or modifying tools, skills, interactions, content types, UI pages, or build configuration.
+description: Reference for plugin architecture, dual build system, import hooks, and deployment. Use when understanding plugin structure or build configuration. For creating resources use write-tool-server-resource; for UI use vertesia-ui; for client API use vertesia-api.
 ---
 
 # Vertesia Plugin Development
@@ -113,109 +113,23 @@ These Rollup import transformations only work in `src/tool-server/` code:
 
 ## Creating Resources
 
-Each resource type follows the same pattern: create files in the appropriate directory, register in collection `index.ts`, add collection to `config.ts`.
+To create tools, skills, interactions, content types, or templates, use the **write-tool-server-resource** skill. It provides step-by-step scaffolding with full code examples.
 
-### Tool
+Each resource follows the same pattern: create files → export from collection → register in `config.ts`.
 
-1. Create `src/tool-server/tools/<collection>/<tool-name>/` with `schema.ts` (params interface + JSON Schema) and `index.ts` (tool definition with `satisfies Tool<ParamsT>`)
-2. Access authenticated client via `const client = await context.getClient()` in `run()`
-3. Register in collection, add collection to `config.ts`
+## UI Plugin
 
-### Skill
+For UI component APIs, routing, layout, styling, and agent conversation patterns, use the **vertesia-ui** skill.
 
-1. Create `src/tool-server/skills/<collection>/<skill-name>/SKILL.md` with YAML frontmatter (`name`, `description` required; optional: `title`, `keywords`, `tools`, `language`, `packages`, `widgets`)
-2. Optional: `properties.ts` for `isEnabled()`, `.tsx` widgets, `.py`/`.js` scripts
-3. Auto-discovered via `import skills from './all?skills'`
-
-### Interaction
-
-1. Create `src/tool-server/interactions/<collection>/<name>/` with prompt template (`.hbs` with YAML frontmatter) and `index.ts` (`satisfies InteractionSpec`)
-2. Use `?prompt` import for templates, define `result_schema` for structured output
-3. Register in collection, add to `config.ts`
-
-### Content Type
-
-1. Create `src/tool-server/types/<collection>/<type-name>.ts` with `satisfies InCodeTypeSpec`
-2. Define `object_schema` (JSON Schema) and `table_layout` (column definitions)
-3. Register in collection, add to `config.ts`
-
-### Template
-
-1. Create `src/tool-server/templates/<collection>/<template-name>/TEMPLATE.md` with YAML frontmatter (`description`, `type: 'document' | 'presentation'` required)
-2. Add asset files (SVG, LaTeX, images) in same directory — auto-discovered
-3. Auto-discovered via `import templates from './all?templates'`
-
-For full code examples of each resource type, see REFERENCE.md.
-
-## UI Plugin Development
-
-The UI uses React 19, Tailwind CSS 4, and `@vertesia/ui` components. For the full component API reference, see `composableai/packages/ui/llms.txt` (also shipped with the `@vertesia/ui` npm package).
-
-### Plugin Entry (`plugin.tsx`)
-- Exports a default component receiving `{ slot: string }`
-- `slot === "page"` renders the app wrapped in `PortalContainerProvider`
-- This component is loaded by the Vertesia host application
-
-### Standalone Dev Mode (`main.tsx`)
-- Wraps the app in `VertesiaShell` from `@vertesia/ui/shell` with `RouterProvider`
-- Mounts `AdminApp` at root (`/`) and the plugin app at `/app/`
-- Requires `VITE_APP_NAME` env var (set in `.env.local`)
-- Access at `https://localhost:5173` (HTTPS required for Firebase auth)
-
-### Routing
-- Use `NestedRouterProvider` from `@vertesia/ui/router` for nested routing
-- Define routes in `routes.tsx` as `Route[]` array
-- `useParams()` returns `Record<string, string>` — use with parameterized routes like `/chat/:runId/:workflowId`
-- `useNavigate()` returns a navigate function for programmatic navigation
-- `useLocation()` returns `{ pathname }` for current path matching
-
-### Agent Conversation UI
-
-Use `ModernAgentConversation` from `@vertesia/ui/features` for agent chat interfaces.
-
-**Key props:**
-- `run` — `{ runId, workflowId } | undefined` — pass to show/stream an active conversation
-- `startWorkflow` — `(initialMessage?: string) => Promise<{ run_id, workflow_id } | undefined>` — called to start a new conversation
-- `resetWorkflow` — `() => void` — called when user wants a new conversation
-- `title`, `placeholder`, `startButtonText` — UI text customization
-- `hideObjectLinking` — hide document linking UI
-- `interactive` — enable user input during conversation
-
-**Persisting conversations in URL:**
-- Use parameterized routes: `/chat/:runId/:workflowId`
-- Derive `run` from URL params instead of React state
-- After `startWorkflow`, navigate to `/chat/${result.runId}/${result.workflowId}`
-- `resetWorkflow` navigates back to `/chat`
-
-**Listing past conversations (sidebar):**
-- Use `client.store.workflows.listConversations({ interaction, page_size })` from `@vertesia/client`
-- Returns `{ runs: WorkflowRun[] }` — each has `run_id`, `workflow_id`, `started_at`, `status`, `topic`
-- **Important:** `listConversations` does NOT return the `input` field. Only `topic` is available for labeling. Fall back to date/time if no topic.
-- `client.store.workflows.getRunDetails(runId, workflowId)` returns full details including `input` and history
-- Use `SidebarSection` and `SidebarItem` from `@vertesia/ui/layout` for the conversation list
-- Wrap long labels in `<span className="truncate">` with `className="overflow-hidden"` on `SidebarItem`
-
-### Styling
-- Shared styles: `@import "@vertesia/ui/styles.css"` in `index.css`
-- Use Tailwind semantic classes: `text-success`, `bg-attention`, `border-destructive`, `text-muted`, `bg-info`, `text-done`
-- Use `@vertesia/ui/core` components (Button, Input, SelectBox, Modal, Spinner, etc.)
-- Never hardcode colors — always use theme variables
-- For CSS customization and available tokens, see REFERENCE.md
-- For full CSS/component/styling guidance, see the `vertesia-app-ui` skill
-
-### Assets
-- Use `useAsset(path)` from `./assets.ts` for URLs relative to the plugin bundle
+Key entry points:
+- `src/ui/plugin.tsx` — Library entry for Vertesia host (exports default component receiving `{ slot }`)
+- `src/ui/main.tsx` — Standalone dev entry (VertesiaShell + AdminApp at `/`, plugin at `/app/`)
+- `src/ui/routes.tsx` — Route definitions
+- `src/ui/assets.ts` — `useAsset(path)` for URLs relative to the plugin bundle
 
 ## Authentication
 
-Tool endpoints receive JWT tokens via `Authorization: Bearer {token}`. The SDK validates them automatically:
-
-```typescript
-async run(payload, context) {
-    const client = await context.getClient();
-    // client.store.objects.list(), client.store.collections.retrieve(), etc.
-}
-```
+Tool endpoints receive JWT tokens via `Authorization: Bearer {token}`. The SDK validates automatically. Access the client via `const client = await context.getClient()` in tool `run()`. For full client API reference, use the **vertesia-api** skill.
 
 For organization access restriction and deployment details, see REFERENCE.md.
 
