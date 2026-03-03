@@ -1,4 +1,5 @@
 import { Avatar, Button } from '@vertesia/ui/core';
+import { Env } from '@vertesia/ui/env';
 import { HamburgerButton } from '@vertesia/ui/layout';
 import { useUserSession } from '@vertesia/ui/session';
 import { LogOut } from 'lucide-react';
@@ -13,7 +14,7 @@ export function PluginTopNav() {
                     <HamburgerButton />
                 </li>
                 <li className="text-sm font-semibold">
-                    Plugin Server
+                    {Env.name}
                 </li>
             </ul>
             <ul className="flex items-center justify-end mx-3 gap-2">
