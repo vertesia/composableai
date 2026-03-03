@@ -1,4 +1,4 @@
-import { Avatar, useTheme } from '@vertesia/ui/core';
+import { Avatar, Button, useTheme } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { Computer, LogOut, Moon, Sun } from 'lucide-react';
 
@@ -9,27 +9,24 @@ interface AdminTopBarProps {
 function ThemeToggle() {
     const { theme, setTheme } = useTheme();
     const options = [
-        { value: 'system' as const, icon: <Computer className="size-3.5 text-muted-foreground" /> },
-        { value: 'light' as const, icon: <Sun className="size-3.5 text-muted-foreground" /> },
-        { value: 'dark' as const, icon: <Moon className="size-3.5 text-muted-foreground" /> },
+        { value: 'system' as const, icon: <Computer className="text-muted" /> },
+        { value: 'light' as const, icon: <Sun className="text-muted" /> },
+        { value: 'dark' as const, icon: <Moon className="text-muted" /> },
     ];
 
     return (
         <div className="flex items-center gap-1">
             {options.map(opt => (
-                <button
+                <Button
                     key={opt.value}
-                    type="button"
+                    variant={theme === opt.value ? 'secondary' : 'outline'}
+                    size="sm"
                     onClick={() => setTheme(opt.value)}
                     aria-label={opt.value}
-                    className={`inline-flex h-8 items-center justify-center rounded px-2.5 text-xs font-medium ${
-                        theme === opt.value
-                            ? 'bg-primary/5 text-primary shadow-xs dark:bg-primary/10'
-                            : 'border border-input bg-background shadow-xs hover:bg-muted'
-                    }`}
+                    className={theme !== opt.value ? 'hover:bg-secondary-background!' : undefined}
                 >
                     {opt.icon}
-                </button>
+                </Button>
             ))}
         </div>
     );
@@ -52,14 +49,14 @@ export function AdminTopBar({ title }: AdminTopBarProps) {
                 {user && (
                     <>
                         <Avatar size="sm" name={user.name} color="bg-primary" />
-                        <button
-                            type="button"
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => logout()}
                             aria-label="Sign out"
-                            className="inline-flex h-8 items-center justify-center rounded-md px-3 text-xs font-medium hover:bg-muted/50"
                         >
                             <LogOut className="size-4" />
-                        </button>
+                        </Button>
                     </>
                 )}
             </div>
