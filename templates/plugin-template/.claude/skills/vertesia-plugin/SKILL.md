@@ -415,6 +415,8 @@ The UI uses React 19, Tailwind CSS 4, and `@vertesia/ui` components.
 - Define routes in `routes.tsx`
 
 ### Styling
+- Shared styles come from `@vertesia/ui`: `@import "@vertesia/ui/styles.css"` in `index.css`
+- This provides color tokens, Tailwind theme bindings, `@custom-variant dark`, base layer rules, and utility overrides
 - Use Tailwind semantic classes: `text-success`, `bg-attention`, `border-destructive`, `text-muted`, `bg-info`, `text-done`
 - Use `@vertesia/ui/core` components (Button, Input, SelectBox, Modal, Spinner, etc.)
 - Never hardcode colors — always use theme variables
