@@ -412,7 +412,36 @@ The UI uses React 19, Tailwind CSS 4, and `@vertesia/ui` components.
 
 ### Routing
 - Use `NestedRouterProvider` from `@vertesia/ui/router` for nested routing
-- Define routes in `routes.tsx`
+- Define routes in `routes.tsx` as `Route[]` array
+- `useParams()` returns `Record<string, string>` — use with parameterized routes like `/chat/:runId/:workflowId`
+- `useNavigate()` returns a navigate function for programmatic navigation
+- `useLocation()` returns `{ pathname }` for current path matching
+
+### Agent Conversation UI
+
+Use `ModernAgentConversation` from `@vertesia/ui/features` for agent chat interfaces.
+
+**Key props:**
+- `run` — `{ runId, workflowId } | undefined` — pass to show/stream an active conversation
+- `startWorkflow` — `(initialMessage?: string) => Promise<{ run_id, workflow_id } | undefined>` — called to start a new conversation
+- `resetWorkflow` — `() => void` — called when user wants a new conversation
+- `title`, `placeholder`, `startButtonText` — UI text customization
+- `hideObjectLinking` — hide document linking UI
+- `interactive` — enable user input during conversation
+
+**Persisting conversations in URL:**
+- Use parameterized routes: `/chat/:runId/:workflowId`
+- Derive `run` from URL params instead of React state
+- After `startWorkflow`, navigate to `/chat/${result.runId}/${result.workflowId}`
+- `resetWorkflow` navigates back to `/chat`
+
+**Listing past conversations (sidebar):**
+- Use `client.store.workflows.listConversations({ interaction, page_size })` from `@vertesia/client`
+- Returns `{ runs: WorkflowRun[] }` — each has `run_id`, `workflow_id`, `started_at`, `status`, `topic`
+- **Important:** `listConversations` does NOT return the `input` field (workflow input). Only `topic` (from Temporal search attributes) is available for labeling. Fall back to date/time if no topic.
+- `client.store.workflows.getRunDetails(runId, workflowId)` returns full details including `input` and history
+- Use `SidebarSection` and `SidebarItem` from `@vertesia/ui/layout` for the conversation list
+- Wrap long labels in `<span className="truncate">` with `className="overflow-hidden"` on `SidebarItem`
 
 ### Styling
 - Shared styles come from `@vertesia/ui`: `@import "@vertesia/ui/styles.css"` in `index.css`
