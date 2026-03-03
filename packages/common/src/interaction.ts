@@ -188,6 +188,12 @@ export interface InCodeInteraction {
     storage?: RunDataStorageLevel;
 
     /**
+     * When true, media generated during executions defaults to being persisted in blob storage.
+     * Individual execution payloads can override this with their own `store_media_results` flag.
+     */
+    store_media_results?: boolean;
+
+    /**
      * Optional tags for the interaction.
      */
     tags?: string[];
@@ -405,6 +411,11 @@ export interface InteractionData {
     model?: string;
     model_options?: ModelOptions;
     restriction?: RunDataStorageLevel;
+
+    /**
+     * Default media storage behavior for executions of this interaction.
+     */
+    store_media_results?: boolean;
     /**
      * @deprecated This is deprecated. Use CompletionResult.type information instead.
      */
