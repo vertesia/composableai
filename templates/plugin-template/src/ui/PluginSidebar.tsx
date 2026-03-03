@@ -1,9 +1,7 @@
 import { ModeToggle } from '@vertesia/ui/core';
 import { SidebarItem, SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
-import { Path, useLocation } from '@vertesia/ui/router';
+import { useLocation } from '@vertesia/ui/router';
 import { FileText, HomeIcon } from 'lucide-react';
-
-const { isRootPath } = Path;
 
 export function PluginSidebar() {
     const path = useLocation().pathname;
@@ -16,17 +14,17 @@ export function PluginSidebar() {
                     <SidebarSection>
                         <SidebarItem
                             id="menu-home"
-                            current={isRootPath(path)}
+                            current={path === '/app' || path === '/app/'}
                             icon={HomeIcon}
-                            href="/"
+                            href="/app/"
                         >
                             Home
                         </SidebarItem>
                         <SidebarItem
                             id="menu-next"
-                            current={path === '/next'}
+                            current={path === '/app/next'}
                             icon={FileText}
-                            href="/next"
+                            href="/app/next"
                         >
                             Next Page
                         </SidebarItem>
