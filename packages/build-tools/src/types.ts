@@ -16,7 +16,7 @@ export interface AssetFile {
     destPath: string;
 
     /** Asset type for categorization */
-    type: 'script';
+    type: 'script' | 'template';
 }
 
 /**
