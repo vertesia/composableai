@@ -1007,8 +1007,8 @@ importers:
   templates/plugin-template:
     dependencies:
       '@hono/node-server':
-        specifier: ^1.19.5
-        version: 1.19.9(hono@4.11.10)
+        specifier: ^1.19.10
+        version: 1.19.10(hono@4.11.10)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -1125,8 +1125,8 @@ importers:
   templates/tool-server-template:
     dependencies:
       '@hono/node-server':
-        specifier: ^1.19.5
-        version: 1.19.9(hono@4.11.10)
+        specifier: ^1.19.10
+        version: 1.19.10(hono@4.11.10)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -2019,8 +2019,8 @@ packages:
       react: 19.2.3
       react-dom: 19.2.3
 
-  '@hono/node-server@1.19.9':
-    resolution: {integrity: sha512-vHL6w3ecZsky+8P5MD+eFfaGTyCeOHUIFYMGpQGbrBTSmNNoxv0if69rEZ5giu36weC5saFuznL411gRX7bJDw==}
+  '@hono/node-server@1.19.10':
+    resolution: {integrity: sha512-hZ7nOssGqRgyV3FVVQdfi+U4q02uB23bpnYpdvNXkYTRRyWx84b7yf1ans+dnJ/7h41sGL3CeQTfO+ZGxuO+Iw==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
@@ -8986,7 +8986,7 @@ snapshots:
       react-dom: 19.2.3(react@19.2.3)
       use-sync-external-store: 1.6.0(react@19.2.3)
 
-  '@hono/node-server@1.19.9(hono@4.11.10)':
+  '@hono/node-server@1.19.10(hono@4.11.10)':
     dependencies:
       hono: 4.11.10
 
