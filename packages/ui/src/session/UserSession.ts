@@ -144,6 +144,7 @@ class UserSession {
         } else {
             // Use Firebase logout directly
             console.log('Using Firebase logout');
+            const wasLoggedIn = !!this.authToken;
             if (this.authToken) {
                 getFirebaseAuth().signOut();
             }
@@ -153,6 +154,13 @@ class UserSession {
             this.typeRegistry = undefined;
             this.setSession = undefined;
             this.client.withAuthCallback(undefined);
+            // Navigate to root to avoid React rendering errors when
+            // unmounting deeply nested route components during logout.
+            // Only navigate if user was actually logged in to avoid
+            // infinite reload loop on fresh/incognito sessions.
+            if (wasLoggedIn) {
+                location.replace("/");
+            }
         }
     }
 
