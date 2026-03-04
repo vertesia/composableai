@@ -9,6 +9,7 @@ import { createSkillsRoute } from "./server/skills.js";
 import { createToolsRoute } from "./server/tools.js";
 import { ToolContext, ToolServerConfig } from "./server/types.js";
 import { ToolExecutionPayload } from "./types.js";
+import { createTemplatesRoute } from "./server/templates.js";
 import { createWidgetsRoute } from "./server/widgets.js";
 import { createPackageRoute } from "./server/app-package.js";
 import { createContentTypesRoute } from "./server/content-types.js";
@@ -46,6 +47,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
         tools = [],
         interactions = [],
         skills = [],
+        templates = [],
         mcpProviders = [],
         disableHtml = false,
     } = config;
@@ -95,6 +97,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
             endpoints: {
                 tools: allToolEndpoints,
                 interactions: interactions.map(col => `${prefix}/interactions/${col.name}`),
+                templates: templates.map(col => `${prefix}/templates/${col.name}`),
                 mcp: mcpProviders.map(p => `${prefix}/mcp/${p.name}`),
             }
         });
@@ -106,6 +109,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
     createSkillsRoute(app, `${prefix}/skills`, config);
     createWidgetsRoute(app, `${prefix}/widgets`, config);
     createInteractionsRoute(app, `${prefix}/interactions`, config);
+    createTemplatesRoute(app, `${prefix}/templates`, config);
     createContentTypesRoute(app, `${prefix}/types`, config);
     createMcpRoute(app, `${prefix}/mcp`, config);
 

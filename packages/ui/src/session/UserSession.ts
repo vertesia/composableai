@@ -7,7 +7,6 @@ import { Env } from '@vertesia/ui/env';
 
 import { getComposableToken } from './auth/composable';
 import { getFirebaseAuth } from './auth/firebase';
-import { TypeRegistry } from './TypeRegistry';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
 export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
@@ -21,7 +20,6 @@ class UserSession {
     client: VertesiaClient;
     authError?: Error;
     authToken?: AuthTokenPayload;
-    typeRegistry?: TypeRegistry;
     setSession?: (session: UserSession) => void;
     lastSelectedAccount?: string | null;
     lastSelectedProject?: string | null;
@@ -102,11 +100,7 @@ class UserSession {
         // notify the host app of the login
         Env.onLogin?.(this.authToken);
 
-        // Independent async calls
-        await Promise.all([
-            this._loadTypes(),
-            this.fetchOnboardingStatus(),
-        ]);
+        await this.fetchOnboardingStatus();
 
         return Promise.resolve();
 
@@ -131,7 +125,6 @@ class UserSession {
             this.authError = undefined;
             this.isLoading = false;
             this.authToken = undefined;
-            this.typeRegistry = undefined;
             this.setSession = undefined;
             this.client.withAuthCallback(undefined);
 
@@ -150,7 +143,6 @@ class UserSession {
             this.authError = undefined;
             this.isLoading = false;
             this.authToken = undefined;
-            this.typeRegistry = undefined;
             this.setSession = undefined;
             this.client.withAuthCallback(undefined);
         }
@@ -175,24 +167,6 @@ class UserSession {
         }
 
         window.location.replace('/?a=' + this.account?.id + '&p=' + targetProjectId);
-    }
-
-    async _loadTypes() {
-        if (this.project) {
-            return this.store.types.catalog.list({ layout: true }).then(types => this.typeRegistry = new TypeRegistry(types)).catch(err => {
-                //return this.store.types.list({}, { layout: true }).then(types => this.typeRegistry = new TypeRegistry(types)).catch(err => {
-                console.error('Failed to fetch object types', err);
-                throw err;
-            })
-        } else {
-            console.log('No project selected');
-        }
-    }
-
-    async reloadTypes() {
-        return this._loadTypes().then(() => {
-            this.setSession?.(this.clone());
-        });
     }
 
     async fetchAccounts() {
@@ -237,7 +211,6 @@ class UserSession {
         session.setSession = this.setSession;
         session.lastSelectedAccount = this.lastSelectedAccount;
         session.switchAccount = this.switchAccount;
-        session.typeRegistry = this.typeRegistry;
         session.onboardingComplete = this.onboardingComplete;
         return session;
     }

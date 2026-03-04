@@ -363,7 +363,13 @@ export function groupMessagesWithStreaming(
     for (const message of messages) {
         const activityGroupId = getActivityGroupId(message);
 
-        if (activityGroupId) {
+        // Certain message types have dedicated renderers (AskUserWidget for
+        // REQUEST_INPUT, BatchProgressPanel for BATCH_PROGRESS) and must stay
+        // standalone so MessageItem / AllMessagesMixed can route them correctly.
+        if (message.type === AgentMessageType.REQUEST_INPUT
+            || message.type === AgentMessageType.BATCH_PROGRESS) {
+            standaloneMessages.push(message);
+        } else if (activityGroupId) {
             if (!activityGroups.has(activityGroupId)) {
                 activityGroups.set(activityGroupId, {
                     messages: [],

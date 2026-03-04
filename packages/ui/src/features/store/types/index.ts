@@ -6,3 +6,5 @@ export * from "./search";
 export * from "./SelectContentType";
 export * from "./SelectContentTypeModal";
 export * from "./TableLayoutEditor";
+export * from "./TypeRegistry";
+export * from "./TypeRegistryProvider";
