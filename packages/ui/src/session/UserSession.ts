@@ -153,6 +153,9 @@ class UserSession {
             this.typeRegistry = undefined;
             this.setSession = undefined;
             this.client.withAuthCallback(undefined);
+            // Navigate to root to avoid React rendering errors when
+            // unmounting deeply nested route components during logout
+            location.replace("/");
         }
     }
 
