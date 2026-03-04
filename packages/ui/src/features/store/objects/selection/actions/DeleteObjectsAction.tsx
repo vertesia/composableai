@@ -28,23 +28,20 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
             return Promise.resolve(false);
         }
 
-        function limitFilesName(names: string, maxLength: number) {
-            if (names.length <= maxLength) return names;
-            const extIndex = names.lastIndexOf('.');
-            const ext = extIndex !== -1 ? names.substring(extIndex) : '';
-            const baseName = extIndex !== -1 ? names.substring(0, extIndex) : names;
-            const limitedBaseName = baseName.substring(0, maxLength - ext.length - 3);
-            return `${limitedBaseName}...${ext}`;
-        }
-
-        return Promise.all(objectIds.map(id => client.store.objects.delete(id))).then((res) => {
-            const plural = res.length > 1 ? 's' : '';
+        return client.store.objects.delete(objectIds).then((result) => {
+            const plural = result.deleted > 1 ? 's' : '';
             toast({
                 status: 'success',
-                title: `${res.length} object${plural} deleted`,
-                description: `Objects ${(limitFilesName(res.map(d => d.id).join(", "), 100))} have been deleted`,
+                title: `${result.deleted} object${plural} deleted`,
                 duration: 2000
             });
+            if (result.failed.length > 0) {
+                toast({
+                    status: 'warning',
+                    title: `${result.failed.length} object(s) could not be deleted`,
+                    duration: 3000
+                });
+            }
 
             if (search) { // we are in the objects table view
                 ctx.params?.selection?.removeAll();
