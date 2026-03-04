@@ -1,18 +1,19 @@
 import { AsyncExecutionResult } from "@vertesia/client";
-import { Button, Command, CommandGroup, CommandItem, CommandList, Popover, PopoverContent, PopoverTrigger, useToast } from "@vertesia/ui/core";
+import { Button, Command, CommandGroup, CommandItem, CommandList, cn, Popover, PopoverContent, PopoverTrigger, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, MoreVertical, XIcon } from "lucide-react";
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
+import { type AgentConversationViewMode } from "./AllMessagesMixed";
 import { getConversationUrl } from "./utils";
 
-interface HeaderProps {
+export interface HeaderProps {
     title: string;
     isCompleted: boolean;
     onClose?: () => void;
     isModal: boolean;
     run: AsyncExecutionResult;
-    viewMode: "stacked" | "sliding";
-    onViewModeChange: (mode: "stacked" | "sliding") => void;
+    viewMode: AgentConversationViewMode;
+    onViewModeChange: (mode: AgentConversationViewMode) => void;
     showPlanPanel: boolean;
     hasPlan?: boolean;
     onTogglePlanPanel: () => void;
@@ -20,6 +21,10 @@ interface HeaderProps {
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
+    /** Show green indicator when receiving streaming chunks */
+    isReceivingChunks?: boolean;
+    /** Additional className for the outer container */
+    className?: string;
 }
 
 export default function Header({
@@ -36,27 +41,36 @@ export default function Header({
     onCopyRunId,
     resetWorkflow,
     onExportPdf,
+    isReceivingChunks = false,
+    className,
 }: HeaderProps) {
     return (
         <PayloadBuilderProvider>
-            <div className="flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0">
+            <div className={cn("flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0", className)}>
                 <div className="flex flex-wrap items-center space-x-2">
                     <div className="flex items-center space-x-1">
                         <Bot className="size-5 text-muted" />
                         <span className="font-medium">{title}</span>
                     </div>
-                    <span className="text-xs text-muted ml-1">
+                    <span className="text-xs text-muted ml-1 flex items-center gap-1.5">
                         (Run ID: {run.runId.substring(0, 8)}...)
+                        {/* Streaming chunk indicator - gray when idle, purple when receiving */}
+                        <span className={cn(
+                            "w-2 h-2 rounded-full transition-colors duration-200",
+                            isReceivingChunks
+                                ? "bg-purple-500 shadow-[0_0_6px_2px_rgba(168,85,247,0.6)]"
+                                : "bg-gray-400",
+                        )} />
                     </span>
                 </div>
                 <div className="flex justify-end items-center space-x-2 ml-auto">
                     {/* View Mode Toggle */}
-                    <div className="flex items-center space-x-1 bg-muted rounded p-0.5">
+                    <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
                         <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("stacked")}>
                             Details
                         </Button>
-                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("sliding")}>
-                            Most Important
+                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" className="rounded-r-md" onClick={() => onViewModeChange("sliding")}>
+                            Summary
                         </Button>
                     </div>
 
@@ -70,7 +84,7 @@ export default function Header({
                             size="sm"
                             variant={showPlanPanel ? "primary" : "secondary"}
                             onClick={onTogglePlanPanel}
-                            className={`transition-all duration-200 rounded-md`}
+                            className="transition-all duration-200 rounded-md"
                             title="Toggle plan panel"
                         >
                             <ClipboardList className="size-4 mr-1.5" />

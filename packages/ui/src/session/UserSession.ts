@@ -12,6 +12,8 @@ import { TypeRegistry } from './TypeRegistry';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
 export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
+const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
+
 
 class UserSession {
 
@@ -117,15 +119,41 @@ class UserSession {
 
     logout() {
         console.log('Logging out');
-        if (this.authToken) {
-            getFirebaseAuth().signOut();
+
+        // Check if we should use central auth for logout
+        const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app"];
+        const shouldUseCentralAuth = Env.isDocker || devDomains.some((domain) => window.location.hostname.endsWith(domain));
+
+        if (shouldUseCentralAuth) {
+            // Redirect to central auth for logout
+            // Central auth will handle Firebase logout
+            console.log('Using central auth logout');
+            this.authError = undefined;
+            this.isLoading = false;
+            this.authToken = undefined;
+            this.typeRegistry = undefined;
+            this.setSession = undefined;
+            this.client.withAuthCallback(undefined);
+
+            const logoutUrl = new URL(CENTRAL_AUTH_REDIRECT);
+            const currentUrl = new URL(window.location.href);
+            currentUrl.hash = "";
+            logoutUrl.pathname = "/logout";
+            logoutUrl.searchParams.set("redirect_uri", currentUrl.toString());
+            location.replace(logoutUrl.toString());
+        } else {
+            // Use Firebase logout directly
+            console.log('Using Firebase logout');
+            if (this.authToken) {
+                getFirebaseAuth().signOut();
+            }
+            this.authError = undefined;
+            this.isLoading = false;
+            this.authToken = undefined;
+            this.typeRegistry = undefined;
+            this.setSession = undefined;
+            this.client.withAuthCallback(undefined);
         }
-        this.authError = undefined;
-        this.isLoading = false;
-        this.authToken = undefined;
-        this.typeRegistry = undefined;
-        this.setSession = undefined;
-        this.client.withAuthCallback(undefined);
     }
 
     async switchAccount(targetAccountId: string) {
@@ -151,7 +179,8 @@ class UserSession {
 
     async _loadTypes() {
         if (this.project) {
-            return this.store.types.list({}, { layout: true }).then(types => this.typeRegistry = new TypeRegistry(types)).catch(err => {
+            return this.store.types.catalog.list({ layout: true }).then(types => this.typeRegistry = new TypeRegistry(types)).catch(err => {
+                //return this.store.types.list({}, { layout: true }).then(types => this.typeRegistry = new TypeRegistry(types)).catch(err => {
                 console.error('Failed to fetch object types', err);
                 throw err;
             })

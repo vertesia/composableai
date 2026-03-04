@@ -15,7 +15,6 @@ dist/
 *.pem
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo

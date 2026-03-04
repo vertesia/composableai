@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React, { useState } from 'react';
 
-import { Badge } from './Badge';
+import { Badge } from './shadcn/badge';
 import { Input } from './shadcn/input';
 import { VTooltip } from '@vertesia/ui/core';
 

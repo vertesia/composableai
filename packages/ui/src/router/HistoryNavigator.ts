@@ -213,7 +213,15 @@ export class HistoryNavigator {
             this.fireLocationChange(new AfterLocationChangeEvent(type, to, state));
         }
         const _linkNavListener = (ev: MouseEvent) => {
-            const url = getElementHrefAsUrl(ev.target as HTMLElement)
+            const target = ev.target as HTMLElement;
+            // Skip anchors with download attribute or blob: URLs - they are file downloads, not navigation
+            if (target.tagName.toLowerCase() === 'a' && (
+                (target as HTMLAnchorElement).hasAttribute('download') ||
+                (target as HTMLAnchorElement).href?.startsWith('blob:')
+            )) {
+                return;
+            }
+            const url = getElementHrefAsUrl(target)
             if (url && url.origin === window.location.origin) {
                 ev.preventDefault();
                 const to = new URL(this.addStickyParams(url.href));

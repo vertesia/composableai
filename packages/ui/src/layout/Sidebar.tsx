@@ -21,7 +21,7 @@ export function Sidebar({ children, logo, className }: SidebarProps) {
                     {logo}
                 </div>
             }
-            <div className="flex-1 min-h-0 overflow-hidden px-2">
+            <div className="flex-1 min-h-0 overflow-hidden px-0 lg:px-2">
                 <nav className="h-full flex flex-col">
                     <ul role="list" className="flex flex-col gap-y-2 overflow-y-auto h-full">
                         {children}
@@ -37,8 +37,9 @@ interface SidebarSectionProps {
     title?: React.ReactNode
     action?: React.ReactNode
     isFooter?: boolean
+    className?: string
 }
-export function SidebarSection({ children, title, action, isFooter = false }: SidebarSectionProps) {
+export function SidebarSection({ children, title, action, isFooter = false, className }: SidebarSectionProps) {
     const { isOpen } = useSidebarToggle();
 
     let header = isOpen ? <>
@@ -51,7 +52,7 @@ export function SidebarSection({ children, title, action, isFooter = false }: Si
             {title && <div className="text-xs font-medium h-8 flex items-center gap-x-2 px-2 text-sidebar-foreground/70">
                 {header}
             </div>}
-            <ul data-sidebar="menu" className="flex w-full min-w-0 flex-col gap-1">
+            <ul data-sidebar="menu" className={clsx("flex w-full min-w-0 flex-col gap-1", className)}>
                 {children}
             </ul>
         </li>
@@ -85,8 +86,9 @@ export interface SidebarItemProps {
     className?: string;
     id?: string; //HTML ID of the element
     external?: boolean; //If true, the link will open in a new tab
+    replace?: boolean; //If true, navigation replaces the current history entry instead of pushing
 }
-export function SidebarItem({ external, className, tools, children, icon: Icon, href, current, onClick }: SidebarItemProps) {
+export function SidebarItem({ external, className, tools, children, icon: Icon, href, current, onClick, replace }: SidebarItemProps) {
     const { toggleMobile } = useSidebarToggle();
     const _closeSideBar = () => {
         setTimeout(() => {
@@ -104,7 +106,7 @@ export function SidebarItem({ external, className, tools, children, icon: Icon, 
     }
     return (
         <li>
-            <Nav onClick={_closeSideBar}>
+            <Nav onClick={_closeSideBar} replace={replace}>
                 <SidebarTooltip text={children as string}>
                     <a
                         href={href}

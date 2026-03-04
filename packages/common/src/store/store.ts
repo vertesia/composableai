@@ -8,6 +8,17 @@ export enum ContentObjectApiHeaders {
     PROCESSING_PRIORITY = 'x-processing-priority',
     CREATE_REVISION = 'x-create-revision',
     REVISION_LABEL = 'x-revision-label',
+    /** When set to 'true', prevents this update from triggering workflow rules */
+    SUPPRESS_WORKFLOWS = 'x-suppress-workflows',
+}
+
+/**
+ * Headers for Data Store API calls.
+ * Used for Cloud Run session affinity to route requests to the same instance.
+ */
+export enum DataStoreApiHeaders {
+    /** Data store ID for session affinity - routes requests for same store to same instance */
+    DATA_STORE_ID = 'x-data-store-id',
 }
 
 export enum ContentObjectStatus {
@@ -291,8 +302,30 @@ export interface CreateContentObjectPayload<T = any>
     generation_run_info?: GenerationRunMetadata;
 }
 
-export interface ContentObjectTypeRef {
+export function getContentTypeRefId(type: ContentObjectTypeRef) {
+    return (type as StoredTypeRef).id || (type as InCodeTypeRef).code;
+}
+
+/**
+ * Reference to a content object type. Either `id` (stored type) or `code` (in-code type) must be set.
+ */
+export type ContentObjectTypeRef = StoredTypeRef | InCodeTypeRef;
+
+interface StoredTypeRef {
+    /**
+     * MongoDB ObjectId string for stored types
+     */
     id: string;
+    code?: never;
+    name: string;
+}
+
+interface InCodeTypeRef {
+    id?: never;
+    /**
+     * Namespaced identifier for in-code types (e.g. "sys:Invoice", "app:myapp:Contract")
+     */
+    code: string;
     name: string;
 }
 
@@ -341,6 +374,20 @@ export interface ContentObjectTypeItem extends BaseObject {
      * Determines if the content will be validated against the object schema a generation time and save/update time.
      */
     strict_mode?: boolean;
+}
+export type InCodeTypeDefinition = Pick<ContentObjectTypeItem, 'id' | 'name' | 'description' | 'tags' | 'object_schema' | 'table_layout' | 'is_chunkable' | 'strict_mode'>;
+/**
+ * The itnerface to be used whend efining types in a plugin app.
+ */
+export type InCodeTypeSpec = Omit<InCodeTypeDefinition, 'id'>;
+
+/**
+ * Returns true if the type id represents an in-code type (system or app-contributed).
+ * In-code types use colon-separated ids like "sys:Invoice" or "app:myapp:Article".
+ * These types are read-only and cannot be edited through the UI.
+ */
+export function isInCodeType(typeId: string): boolean {
+    return typeId.includes(':');
 }
 
 export interface CreateContentObjectTypePayload
@@ -421,6 +468,118 @@ export interface GetRenditionResponse {
     workflow_run_id?: string;
 }
 
+// ============================================================================
+// Rendition Format Compatibility Utilities
+// ============================================================================
+
+export type RenditionFormat = ImageRenditionFormat | MarkdownRenditionFormat;
+
+/**
+ * Matrix of supported content type → format conversions.
+ * This is the authoritative source of truth for what renditions can be generated.
+ *
+ * Key patterns:
+ * - Exact MIME types (e.g., 'application/pdf')
+ * - Wildcard patterns (e.g., 'image/*', 'video/*')
+ */
+const RENDITION_COMPATIBILITY: Record<string, RenditionFormat[]> = {
+    // Image formats can generate: jpeg, png, webp
+    'image/*': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png, ImageRenditionFormat.webp],
+    // Video formats can generate: jpeg, png (thumbnails)
+    'video/*': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png],
+    // PDF can generate: jpeg, png, webp (page images)
+    'application/pdf': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png, ImageRenditionFormat.webp],
+    // Markdown can generate: pdf, docx (NOT jpeg/png)
+    'text/markdown': [MarkdownRenditionFormat.pdf, MarkdownRenditionFormat.docx],
+    // Any text/* can generate: docx (editable export)
+    'text/*': [MarkdownRenditionFormat.docx],
+    // Office documents can generate: pdf
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [MarkdownRenditionFormat.pdf],
+    'application/msword': [MarkdownRenditionFormat.pdf],
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': [MarkdownRenditionFormat.pdf],
+    'application/vnd.ms-powerpoint': [MarkdownRenditionFormat.pdf],
+};
+
+/**
+ * Check if a specific rendition format can be generated from a content type.
+ *
+ * @param contentType - The MIME type of the source content (e.g., 'image/png', 'text/markdown')
+ * @param format - The desired rendition format (e.g., ImageRenditionFormat.jpeg)
+ * @returns true if the format can be generated from the content type
+ *
+ * @example
+ * canGenerateRendition('image/png', ImageRenditionFormat.jpeg) // true
+ * canGenerateRendition('text/markdown', ImageRenditionFormat.jpeg) // false
+ * canGenerateRendition('text/markdown', MarkdownRenditionFormat.pdf) // true
+ */
+export function canGenerateRendition(contentType: string | undefined, format: RenditionFormat | string): boolean {
+    if (!contentType) return false;
+
+    const formatStr = typeof format === 'string' ? format : format;
+
+    // Check exact match first
+    const exactMatch = RENDITION_COMPATIBILITY[contentType];
+    if (exactMatch && exactMatch.some(f => f === formatStr)) {
+        return true;
+    }
+
+    // Check wildcard patterns (e.g., 'image/*', 'video/*')
+    const [category] = contentType.split('/');
+    const wildcardKey = `${category}/*`;
+    const wildcardMatch = RENDITION_COMPATIBILITY[wildcardKey];
+    if (wildcardMatch && wildcardMatch.some(f => f === formatStr)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Get the list of rendition formats supported for a given content type.
+ *
+ * @param contentType - The MIME type of the source content
+ * @returns Array of supported rendition formats, or empty array if none
+ *
+ * @example
+ * getSupportedRenditionFormats('image/png') // [jpeg, png, webp]
+ * getSupportedRenditionFormats('text/markdown') // [pdf, docx]
+ * getSupportedRenditionFormats('text/html') // []
+ */
+export function getSupportedRenditionFormats(contentType: string | undefined): RenditionFormat[] {
+    if (!contentType) return [];
+
+    // Check exact match first
+    if (RENDITION_COMPATIBILITY[contentType]) {
+        return [...RENDITION_COMPATIBILITY[contentType]];
+    }
+
+    // Check wildcard patterns
+    const [category] = contentType.split('/');
+    const wildcardKey = `${category}/*`;
+    const wildcardMatch = RENDITION_COMPATIBILITY[wildcardKey];
+    if (wildcardMatch) {
+        return [...wildcardMatch];
+    }
+
+    return [];
+}
+
+/**
+ * Check if a content type supports visual (image) renditions.
+ * This is useful for determining if a document can have thumbnails/previews.
+ *
+ * @param contentType - The MIME type of the source content
+ * @returns true if the content type can generate JPEG renditions
+ *
+ * @example
+ * supportsVisualRendition('image/png') // true
+ * supportsVisualRendition('application/pdf') // true
+ * supportsVisualRendition('text/markdown') // false
+ */
+export function supportsVisualRendition(contentType: string | undefined): boolean {
+    return canGenerateRendition(contentType, ImageRenditionFormat.jpeg);
+}
+
 export interface GetUploadUrlPayload {
     name: string;
     id?: string;
@@ -439,7 +598,7 @@ export interface GetFileUrlPayload {
 export interface GetFileUrlResponse {
     url: string;
     id: string;
-    mime_type: string;
+    mime_type?: string;
     path: string;
 }
 

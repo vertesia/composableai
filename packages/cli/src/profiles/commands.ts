@@ -133,6 +133,23 @@ export async function createProfile(name?: string, options: CreateProfileOptions
         process.exit(1);
     }
 
+    // If custom target, prompt for URL
+    if (target === 'custom') {
+        const customResponse: any = await prompt({
+            type: 'input',
+            name: 'url',
+            message: 'Enter the custom URL (e.g., https://your-deployment.vercel.app/cli)',
+            validate: (value: string) => {
+                const v = value.trim();
+                if (!v.startsWith('http://') && !v.startsWith('https://')) {
+                    return 'URL must start with http:// or https://';
+                }
+                return true;
+            }
+        });
+        target = customResponse.url.trim();
+    }
+
     if (options.apikey) {
         if (!options.account || !options.project) {
             console.error("When using --apikey you must provide the project and account IDs");
@@ -142,9 +159,9 @@ export async function createProfile(name?: string, options: CreateProfileOptions
             account: options.account,
             project: options.project,
             name,
-            config_url: getConfigUrl(target),
+            config_url: getConfigUrl(target!),
             apikey: options.apikey,
-            ...getServerUrls(target),
+            ...getServerUrls(target!),
         });
         config.use(name!).save();
     } else {

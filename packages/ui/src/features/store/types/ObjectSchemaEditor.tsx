@@ -1,22 +1,20 @@
-import { basicSetup } from 'codemirror';
 import { useMemo, useRef, useState } from 'react';
 
 import { useUserSession } from '@vertesia/ui/session';
-import { json } from '@codemirror/lang-json';
-import { CodeMirrorEditor, EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
-import { Button, useToast } from '@vertesia/ui/core';
+import { MonacoEditor, EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
+import { Button, useToast, useTheme, Panel } from '@vertesia/ui/core';
 import { ContentObjectType } from '@vertesia/common';
 import { Ajv } from "ajv";
-
-const CODE_MIRROR_EXTENSIONS = [basicSetup, json()];
 
 interface ObjectSchemaEditorProps {
     objectType: ContentObjectType;
     onSchemaUpdate: (jsonSchema: any) => void;
+    readonly?: boolean;
 }
-export function ObjectSchemaEditor({ objectType, onSchemaUpdate }: ObjectSchemaEditorProps) {
+export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = false }: ObjectSchemaEditorProps) {
     const { store } = useUserSession();
     const toast = useToast();
+    const { theme } = useTheme();
 
     const [isUpdating, setUpdating] = useState(false);
     const schema = useSchema(objectType.object_schema);
@@ -85,29 +83,36 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate }: ObjectSchemaE
         return true;
     };
 
-    return (
-        <div className="mx-2 my-2 rounded-2xl border border-solid shadow-md border-spacing-2">
-            <div className="flex items-center rounded-t-md border-b gap-x-2 py-2 pl-4 pr-2">
-                <div className="text-base font-semibold">Schema Editor</div>
-                <div>
-                    <Button variant="outline" size="sm" onClick={handleOnSave}>
-                        {
-                            displayJson ? "Edit Schema" : "Edit Json"
-                        }
-                    </Button>
-                </div>
-                <div className="ml-auto flex gap-x-2">
-                    <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>Save Changes</Button>
-                </div>
-            </div>
-            <div className="px-4 py-2">
-                {
-                    displayJson
-                        ? <CodeMirrorEditor value={value} extensions={CODE_MIRROR_EXTENSIONS} editorRef={editorRef} />
-                        : <SchemaEditor schema={schema} />
-                }
-            </div>
+    const title = (
+        <div className='flex gap-2 items-center'><div className="text-base font-semibold">Schema Editor</div>
+            {!readonly && <div>
+                <Button variant="outline" size="sm" onClick={handleOnSave}>
+                    {
+                        displayJson ? "Edit Schema" : "Edit Json"
+                    }
+                </Button>
+            </div>}
         </div>
+    );
+
+    return (
+        <Panel title={title} className="bg-background! h-[calc(100vh-197px)]"
+            action={!readonly ? <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>Save Changes</Button> : undefined}
+        >
+            {
+                displayJson
+                    ? <MonacoEditor
+                        value={value}
+                        language="json"
+                        editorRef={editorRef}
+                        theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+                        options={{ readOnly: readonly }}
+                    />
+                    : <SchemaEditor schema={schema} readonly={readonly} />
+            }
+
+
+        </ Panel>
     );
 }
 

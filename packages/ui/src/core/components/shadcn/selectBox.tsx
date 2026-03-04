@@ -1,15 +1,15 @@
 import clsx from 'clsx';
 import { isEqual } from 'lodash-es';
-import { AlertTriangle, Check, ChevronsUpDown, SearchIcon, SquarePlus, X } from 'lucide-react';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { AlertTriangle, Check, ChevronsUpDown, LoaderCircle, SearchIcon, SquarePlus, X } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo, ReactNode } from 'react';
 
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from './popover';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from './command';
 import { Input } from './input';
-import { Button } from '@vertesia/ui/core';
+import { Button } from './button';
 import { VTooltip } from './tooltip';
 
-export interface VSelectBoxBaseProps<T> {
+export interface SelectBoxBaseProps<T> {
     options: T[] | undefined;
     optionLabel?: (option: T) => React.ReactNode;
     onBlur?: () => void;
@@ -26,27 +26,30 @@ export interface VSelectBoxBaseProps<T> {
     isClearable?: boolean;
     border?: boolean;
     inline?: boolean;
+    clearIcon?: ReactNode;
+    clearTitle?: string;
+    isLoading?: boolean;
     /** Show warning when value is not in options list (default: true) */
     warnOnMissingValue?: boolean;
     /** Custom warning message when value is not in options */
     missingValueWarning?: string;
 }
 
-interface VSelectBoxSingleProps<T> extends VSelectBoxBaseProps<T> {
+interface SelectBoxSingleProps<T> extends SelectBoxBaseProps<T> {
     multiple?: false;
     value?: T;
     onChange: (option: T) => void;
 }
 
-interface VSelectBoxMultipleProps<T> extends VSelectBoxBaseProps<T> {
+interface SelectBoxMultipleProps<T> extends SelectBoxBaseProps<T> {
     multiple: true;
     value?: T[];
     onChange: (options: T[]) => void;
 }
 
-type VSelectBoxProps<T> = VSelectBoxSingleProps<T> | VSelectBoxMultipleProps<T>;
+type SelectBoxProps<T> = SelectBoxSingleProps<T> | SelectBoxMultipleProps<T>;
 
-export function VSelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false, warnOnMissingValue = true, missingValueWarning = "Value not in options list, may not be valid" }: Readonly<VSelectBoxProps<T>>) {
+export function SelectBox<T = any>({ options, optionLabel, value, onChange, addNew, addNewLabel, disabled, filterBy, label, placeholder, className, popupClass, isClearable, border = true, multiple = false, by, inline = false, isLoading = false, warnOnMissingValue = true, missingValueWarning = "Value not in options list, may not be valid", clearIcon, clearTitle }: Readonly<SelectBoxProps<T>>) {
     const triggerRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [width, setWidth] = useState<number>(0);
@@ -91,7 +94,7 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
     }, []);
 
     const handleTriggerClick = (e: React.MouseEvent) => {
-        if (disabled) {
+        if (disabled || isLoading) {
             e.preventDefault();
             return;
         }
@@ -203,7 +206,10 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                 </div>
             )}
             <Command className="overflow-hidden">
-                <CommandList className={inline ? "max-h-full overflow-y-auto" : "max-h-[200px] overflow-y-auto"}>
+                <CommandList
+                    className={inline ? "max-h-full overflow-y-auto" : "max-h-[200px] overflow-y-auto"}
+                    onWheel={(e) => { e.currentTarget.scrollTop += e.deltaY; }}
+                >
                     <CommandEmpty>No result found.</CommandEmpty>
                     <CommandGroup>
                         {filteredOptions?.map((opt, index) => {
@@ -262,7 +268,10 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                 "bg-popover p-1",
                 popupClass
             )}>
-                {renderOptionsContent()}
+                {isLoading
+                    ? <div className="flex justify-center items-center p-2 text-muted text-sm"><LoaderCircle className="size-4 animate-spin" /></div>
+                    : renderOptionsContent()
+                }
             </div>
         );
     }
@@ -275,50 +284,60 @@ export function VSelectBox<T = any>({ options, optionLabel, value, onChange, add
                     onClick={handleTriggerClick}
                     className={clsx(
                         className,
-                        border && (isMissingValue ? 'border border-destructive' : 'border border-border'),
-                        'flex flex-row gap-2 items-center justify-between p-2 rounded-md group relative [&:hover_.clear-button]:opacity-100',
-                        !disabled ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed text-muted",
+                        isLoading
+                            ? 'flex justify-center items-center gap-2 border border-border rounded-md p-2 text-muted text-sm'
+                            : clsx(
+                                border && (isMissingValue ? 'border border-destructive' : 'border border-border'),
+                                'flex flex-row gap-2 items-center justify-between p-2 rounded-md group relative [&:hover_.clear-button]:opacity-100',
+                                !disabled ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed text-muted",
+                            ),
                     )}
                 >
-                    <div
-                        className={clsx(
-                            "flex flex-col w-full rounded-md text-sm items-center justify-center truncate",
-                            !disabled && "",
-                            isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && "pr-6"
-                        )}
-                    >
-                        {label && <div className='w-full text-left text-xs font-semibold'>{label}</div>}
-                        <div className={clsx('w-full text-left min-h-6', !disabled && '', isMissingValue && 'text-destructive')}>
-                            {isMissingValue && (
-                                <VTooltip description={missingValueWarning} placement="top" asChild>
-                                    <AlertTriangle className="inline-block size-4 mr-1 -mt-0.5 cursor-help" />
-                                </VTooltip>
-                            )}
-                            {multiple ? renderMultipleValue() : renderSingleValue()}
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-1 group">
-                        {isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && (
-                            <Button variant={"link"} size={"icon"}
-                                disabled={disabled}
-                                alt="Clear selection"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (multiple) {
-                                        (onChange as (options: T[]) => void)([] as T[]);
-                                    } else {
-                                        (onChange as (option: T) => void)(undefined as any);
-                                    }
-                                }}
-                                className="cursor-pointer hover:bg-muted/20 clear-button opacity-0 transition-opacity duration-200 rounded p-1"
+                    {isLoading ? (
+                        <LoaderCircle className="size-4 animate-spin" />
+                    ) : (
+                        <>
+                            <div
+                                className={clsx(
+                                    "flex flex-col w-full rounded-md text-sm min-h-6 items-center justify-center truncate",
+                                    !disabled && "",
+                                    isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && "pr-2"
+                                )}
                             >
-                                <X className="size-4" />
-                            </Button>
-                        )}
-                        {!disabled && (
-                            <ChevronsUpDown className="size-4 opacity-50" />
-                        )}
-                    </div>
+                                {label && <div className='w-full text-left text-xs font-semibold'>{label}</div>}
+                                <div className={clsx('w-full text-left ', !disabled && '', isMissingValue && 'text-destructive')}>
+                                    {isMissingValue && (
+                                        <VTooltip description={missingValueWarning} placement="top" asChild>
+                                            <AlertTriangle className="inline-block size-4 mr-1 -mt-0.5 cursor-help" />
+                                        </VTooltip>
+                                    )}
+                                    {multiple ? renderMultipleValue() : renderSingleValue()}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1 group">
+                                {isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && (
+                                    <Button variant={"link"} size={"icon"}
+                                        disabled={disabled}
+                                        alt={clearTitle || "Clear selection"}
+                                        onClick={(e: { stopPropagation: () => void; }) => {
+                                            e.stopPropagation();
+                                            if (multiple) {
+                                                (onChange as (options: T[]) => void)([] as T[]);
+                                            } else {
+                                                (onChange as (option: T) => void)(undefined as any);
+                                            }
+                                        }}
+                                        className="cursor-pointer hover:bg-muted/20 clear-button opacity-0 transition-opacity duration-200 rounded p-1"
+                                    >
+                                        {clearIcon ? clearIcon : <X className="size-4" />}
+                                    </Button>
+                                )}
+                                {!disabled && (
+                                    <ChevronsUpDown className="size-4 opacity-50" />
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
             </PopoverTrigger>
 

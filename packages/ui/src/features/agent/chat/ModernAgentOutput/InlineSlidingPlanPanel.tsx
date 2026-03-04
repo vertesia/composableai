@@ -1,5 +1,5 @@
 import { Plan } from "@vertesia/common";
-import { Badge, Button } from "@vertesia/ui/core";
+import { Badge, Button, cn } from "@vertesia/ui/core";
 import { AlertCircle, CheckCircle, Circle, Clock, X } from "lucide-react";
 import React from "react";
 
@@ -83,13 +83,13 @@ function InlineSlidingPlanPanelComponent({
 
               return (
                 <>
-                  <div className="w-full bg-muted rounded-full h-2">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                     <div
-                      className="bg-background h-2 rounded-full"
+                      className="bg-info h-2.5 rounded-full transition-all duration-300"
                       style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
-                  <span className="text-xs text-muted">
+                  <span className="text-xs text-foreground font-medium whitespace-nowrap">
                     {totalTasks > 0 ? `${completedTasks}/${totalTasks}` : "0/0"}
                   </span>
                 </>
@@ -161,7 +161,7 @@ function InlineSlidingPlanPanelComponent({
                 }
 
                 return (
-                  <div key={index} className={`flex p-3 my-1`}>
+                  <div key={index} className="flex p-3 my-1">
                     <div className={`mr-2 mt-0.5 flex-shrink-0 text-muted`}>
                       {taskId}
                     </div>
@@ -240,7 +240,7 @@ function InlineSlidingPlanPanelComponent({
                     return (
                       <div
                         key={id}
-                        className={`flex items-center p-1.5 rounded ${statusBg}`}
+                        className={cn("flex items-center p-1.5 rounded", statusBg)}
                       >
                         <div className={`mr-1.5 ${statusColor}`}>
                           <StatusIcon className="h-3.5 w-3.5" />

@@ -1,5 +1,6 @@
 import { JSONSchema, JSONSchemaType, JSONSchemaTypeName } from "@vertesia/common";
 import Ajv, { ErrorObject, ValidateFunction } from "ajv";
+import addFormats from "ajv-formats";
 
 function createSchemaFromType(type: JSONSchemaTypeName): JSONSchema {
     if (type === 'object') {
@@ -23,6 +24,7 @@ export class Schema {
     get validator() {
         if (!this._validator) {
             const ajv = new Ajv({ allErrors: true, strict: false });
+            addFormats(ajv);
             this._validator = ajv.compile(this.schema);
         }
         return this._validator;

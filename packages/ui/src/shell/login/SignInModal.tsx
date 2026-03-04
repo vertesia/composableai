@@ -19,7 +19,7 @@ export default function SignInModal({ isOpen, onClose }: SignInModalProps) {
                 <GitHubSignInButton />
                 <MicrosoftSignInButton />
             </ModalBody>
-            <ModalFooter justify="end">
+            <ModalFooter align="right">
                 <Button variant="ghost" onClick={onClose}>Cancel</Button>
             </ModalFooter>
         </Modal>

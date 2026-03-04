@@ -6,14 +6,14 @@ import {
     ModalBody,
     ModalFooter,
     ModalTitle,
-    useToast
+    useToast,
+    useTheme
 } from '@vertesia/ui/core';
 import { ContentObject } from '@vertesia/common';
 import { useNavigate } from "@vertesia/ui/router";
 
-// Import Monaco Editor
-import Editor, { Monaco } from '@monaco-editor/react';
-import { editor } from 'monaco-editor';
+// Import Monaco Editor wrapper
+import { MonacoEditor, IEditorApi } from '@vertesia/ui/widgets';
 
 // Import SaveVersionConfirmModal
 import { SaveVersionConfirmModal } from './SaveVersionConfirmModal';
@@ -28,13 +28,13 @@ export interface PropertiesEditorModalProps {
 export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: PropertiesEditorModalProps) {
     const { client, store } = useUserSession();
     const toast = useToast();
+    const { theme } = useTheme();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [propertiesJson, setPropertiesJson] = useState('');
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [parsedProperties, setParsedProperties] = useState<any>(null);
-    const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-    const monacoRef = useRef<Monaco | null>(null);
+    const editorRef = useRef<IEditorApi | undefined>(undefined);
     const [jsonSchema, setJsonSchema] = useState<any>(null);
     //TODO  state not used
     const [_newVersionId, setNewVersionId] = useState<string | null>(null);
@@ -51,47 +51,33 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
         }
     }, [isOpen, object]);
 
-    // Handle editor mounting
-    function handleEditorDidMount(editor: editor.IStandaloneCodeEditor, monaco: Monaco) {
-        editorRef.current = editor;
-        monacoRef.current = monaco;
-
-        // Apply JSON schema validation if available
-        if (jsonSchema) {
-            setMonacoJsonSchema(monaco, jsonSchema);
-        }
-    }
-
     // Fetch JSON schema for the object type
     async function fetchJsonSchema(typeId: string) {
         try {
             const typeDetails = await store.types.retrieve(typeId);
             if (typeDetails.object_schema) {
                 setJsonSchema(typeDetails.object_schema);
-
-                // Apply schema if Monaco is already mounted
-                if (monacoRef.current) {
-                    setMonacoJsonSchema(monacoRef.current, typeDetails.object_schema);
-                }
             }
         } catch (error) {
             console.error('Failed to fetch JSON schema:', error);
         }
     }
 
-    // Configure Monaco editor with JSON schema
-    function setMonacoJsonSchema(monaco: Monaco, schema: any) {
-        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
-            validate: true,
-            schemas: [
-                {
-                    uri: 'http://myserver/object-schema.json',
-                    fileMatch: ['*'],
-                    schema
-                }
-            ]
-        });
-    }
+    // Configure Monaco editor with JSON schema validation
+    const beforeMount = (monaco: typeof import('monaco-editor')) => {
+        if (jsonSchema) {
+            monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+                validate: true,
+                schemas: [
+                    {
+                        uri: 'http://myserver/object-schema.json',
+                        fileMatch: ['*'],
+                        schema: jsonSchema
+                    }
+                ]
+            });
+        }
+    };
 
     // Validate JSON and open confirmation modal
     function handleSave() {
@@ -112,6 +98,11 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
             });
         }
     }
+
+    // Handle editor changes
+    const handleEditorChange = (value: string) => {
+        setPropertiesJson(value);
+    };
 
     // Save properties
     async function saveProperties(createVersion: boolean, versionLabel?: string) {
@@ -170,11 +161,11 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                     description: 'The object properties have been updated successfully.',
                     duration: 2000
                 });
-                
+
                 if (refetch) {
                     await refetch();
                 }
-                
+
                 setShowConfirmation(false);
                 onClose();
             }
@@ -214,21 +205,14 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                             <span className="ml-2 text-green-600">(JSON schema validation enabled)</span>
                         )}
                     </div>
-                    <div className="h-[75vh] border border-gray-300 dark:border-gray-700 rounded-md">
-                        <Editor
-                            height="100%"
-                            language="json"
+                    <div className="h-[75vh] border rounded-md overflow-hidden">
+                        <MonacoEditor
                             value={propertiesJson}
-                            onChange={(value) => setPropertiesJson(value || '')}
-                            onMount={handleEditorDidMount}
-                            options={{
-                                minimap: { enabled: false },
-                                scrollBeyondLastLine: false,
-                                formatOnPaste: true,
-                                formatOnType: true,
-                                automaticLayout: true,
-                                wordWrap: 'on'
-                            }}
+                            language="json"
+                            editorRef={editorRef}
+                            onChange={(update) => handleEditorChange(update.state.doc.toString())}
+                            beforeMount={beforeMount}
+                            theme={theme === 'dark' ? 'vs-dark' : 'vs'}
                         />
                     </div>
                 </ModalBody>

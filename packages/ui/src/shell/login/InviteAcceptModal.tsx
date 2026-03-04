@@ -1,5 +1,5 @@
 import { TransientToken, UserInviteTokenData } from "@vertesia/common"
-import { Button, VModal, VModalBody, VModalTitle } from "@vertesia/ui/core"
+import { Button, Modal, ModalBody, ModalTitle } from "@vertesia/ui/core"
 import { useEffect, useState } from "react"
 import { useUserSession } from "@vertesia/ui/session"
 
@@ -78,16 +78,16 @@ export function InviteAcceptModal() {
 
     return (
         <div>
-            <VModal isOpen={showModal} onClose={closeModal}>
-                <VModalTitle>Review Invites</VModalTitle>
-                <VModalBody>
+            <Modal isOpen={showModal} onClose={closeModal}>
+                <ModalTitle>Review Invites</ModalTitle>
+                <ModalBody>
                     <div className="text-sm pb-4">
                         You have received the following invites to join other accounts.
                         Please review and accept or declined them.
                     </div>
                     {inviteList}
-                </VModalBody>
-            </VModal>
+                </ModalBody>
+            </Modal>
         </div>
     )
 

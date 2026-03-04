@@ -1,8 +1,7 @@
-import { useUserSession, TypeRegistry } from "@vertesia/ui/session";
-import { Collection } from "@vertesia/common";
-import { DocumentSearchResultsWithDropZone, DocumentSearchResults } from "../objects/DocumentSearchResults";
+import { Collection, getContentTypeRefId } from "@vertesia/common";
 import { useToast } from "@vertesia/ui/core";
-import { useDocumentSearch } from "../objects/search/DocumentSearchContext";
+import { TypeRegistry, useUserSession } from "@vertesia/ui/session";
+import { DocumentSearchResults, DocumentSearchResultsWithDropZone } from "../objects/DocumentSearchResults";
 
 
 interface BrowseCollectionViewProps {
@@ -11,9 +10,7 @@ interface BrowseCollectionViewProps {
 export function BrowseCollectionView({ collection }: BrowseCollectionViewProps) {
     const toast = useToast();
     const { client, typeRegistry } = useUserSession();
-    const search = useDocumentSearch();
-    search.query.all_revisions = true;
-    
+
     const onUploadDone = async (objectIds: string[]) => {
         if (objectIds.length > 0) {
             await client.store.collections.addMembers(collection.id, objectIds).catch(err => {
@@ -39,7 +36,7 @@ function getTableLayout(collection: Collection, typeRegistry?: TypeRegistry | un
         return table_layout;
     }
     if (collection.type && typeRegistry) {
-        table_layout = typeRegistry?.getTypeLayout(collection.type.id);
+        table_layout = typeRegistry?.getTypeLayout(getContentTypeRefId(collection.type));
     }
     if (table_layout && table_layout.length > 0) {
         return table_layout;

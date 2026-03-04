@@ -103,8 +103,8 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
     };
 
     return (
-        <div className="flex gap-1 items-center w-1/2">
-            <Input placeholder="Type what you are looking for, or select a filter" value={searchText} onChange={setSearchText} onKeyDown={handleKeyPress} />
+        <div className="flex gap-1 items-center">
+            <Input placeholder="Type what you are looking for, or select a filter" value={searchText} onChange={setSearchText} onKeyDown={handleKeyPress} className='min-w-[200px]' />
             <Button variant="ghost" onClick={() => setShowSettings(true)} alt="Semantic search settings" className="ml-1"><Settings size={18} /></Button>
             <Modal isOpen={showSettings} onClose={() => setShowSettings(false)}>
                 <ModalTitle>Search Types</ModalTitle>

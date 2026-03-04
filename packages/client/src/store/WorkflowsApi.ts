@@ -1,22 +1,41 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     ActivityCatalog,
+    AgentEvent,
     AgentMessage,
     AgentMessageType,
+    CompactMessage,
     CreateWorkflowRulePayload,
     DSLWorkflowDefinition,
     DSLWorkflowSpec,
+    ErrorAnalyticsResponse,
     ExecuteWorkflowPayload,
+    FirstResponseBehaviorAnalyticsResponse,
+    LatencyAnalyticsResponse,
     ListWorkflowInteractionsResponse,
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
+    parseMessage,
+    toAgentMessage,
+    PromptSizeAnalyticsResponse,
+    RunsByAgentAnalyticsResponse,
+    TimeToFirstResponseAnalyticsResponse,
+    TokenUsageAnalyticsResponse,
+    ToolAnalyticsResponse,
+    ToolParameterAnalyticsResponse,
+    TopPrincipalsAnalyticsResponse,
     WebSocketClientMessage,
     WebSocketServerMessage,
     WorkflowActionPayload,
+    WorkflowAnalyticsFilterOptionsResponse,
+    WorkflowAnalyticsSummaryQuery,
+    WorkflowAnalyticsSummaryResponse,
+    WorkflowAnalyticsTimeSeriesQuery,
     WorkflowDefinitionRef,
     WorkflowRule,
     WorkflowRuleItem,
     WorkflowRunWithDetails,
+    WorkflowToolParametersQuery,
 } from "@vertesia/common";
 import { VertesiaClient } from "../client.js";
 import { EventSourceProvider } from "../execute.js";
@@ -49,8 +68,26 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs/${workflowId}/${runId}/signal/${signal}`, { payload });
     }
 
-    getRunDetails(runId: string, workflowId: string, includeHistory: boolean = false): Promise<WorkflowRunWithDetails> {
-        const query = { include_history: includeHistory };
+    getRunDetails(
+        runId: string,
+        workflowId: string,
+        options?: {
+            includeHistory?: boolean;
+            historyFormat?: 'events' | 'tasks' | 'agent';
+        }
+    ): Promise<WorkflowRunWithDetails> {
+        const query: Record<string, any> = {};
+
+        // Support legacy includeHistory parameter
+        if (options?.includeHistory !== undefined) {
+            query.include_history = options.includeHistory;
+        }
+
+        // Support new historyFormat parameter
+        if (options?.historyFormat !== undefined) {
+            query.history_format = options.historyFormat;
+        }
+
         return this.get(`/runs/${workflowId}/${runId}`, { query });
     }
 
@@ -94,15 +131,29 @@ export class WorkflowsApi extends ApiTopic {
         return this.post(`/runs/${runId}/updates`, { payload: msg });
     }
 
-    retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
-        const query = {
-            since,
-        };
-        return this.get(`/runs/${workflowId}/${runId}/updates`, { query });
+    /**
+     * Retrieve historical messages for a workflow run.
+     * Returns messages in AgentMessage format for backward compatibility.
+     * This endpoint returns gzip-compressed responses for large payloads (> 3KB).
+     */
+    async retrieveMessages(workflowId: string, runId: string, since?: number): Promise<AgentMessage[]> {
+        const query = { since };
+        const response = await this.get(`/runs/${workflowId}/${runId}/updates`, { query }) as { messages: CompactMessage[] };
+        // Convert compact messages to AgentMessage for backward compatibility
+        return response.messages.map((m: CompactMessage) => toAgentMessage(m, runId));
     }
 
+    /**
+     * Stream workflow messages in real-time via SSE.
+     *
+     * This method fetches historical messages via GET /updates (gzip-compressed for large payloads)
+     * then connects to SSE for real-time updates only (skipHistory=true).
+     *
+     * This approach provides better performance for conversations with large historical messages
+     * since HTTP responses are compressed while SSE streams cannot be compressed.
+     */
     async streamMessages(workflowId: string, runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
-        return new Promise<unknown>((resolve, reject) => {
+        return new Promise<unknown>(async (resolve, reject) => {
             let reconnectAttempts = 0;
             let lastMessageTimestamp = since || 0;
             let isClosed = false;
@@ -139,6 +190,35 @@ export class WorkflowsApi extends ApiTopic {
                 }
             };
 
+            // 1. Fetch historical messages via GET /updates (gzip-compressed if > 3KB)
+            // This is more efficient than receiving historical over uncompressed SSE
+            try {
+                const historical = await this.retrieveMessages(workflowId, runId, since);
+                for (const msg of historical) {
+                    // Update timestamp for SSE connection
+                    lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
+
+                    // Deliver historical messages to consumer
+                    if (onMessage) {
+                        onMessage(msg, exit);
+                    }
+
+                    // Check if workflow already completed
+                    const workstreamId = msg.workstream_id || 'main';
+                    const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
+                        (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
+                    if (streamIsOver) {
+                        console.log("Workflow already completed in historical messages");
+                        resolve(null);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn("Failed to fetch historical messages, continuing with SSE:", err);
+                // Continue to SSE - it will send historical if skipHistory is not set
+            }
+
+            // 2. Connect to SSE for real-time updates only (skipHistory=true)
             const setupStream = async (isReconnect: boolean = false) => {
                 if (isClosed) return;
 
@@ -151,6 +231,9 @@ export class WorkflowsApi extends ApiTopic {
                     if (lastMessageTimestamp > 0) {
                         streamUrl.searchParams.set("since", lastMessageTimestamp.toString());
                     }
+
+                    // Skip historical messages - we already fetched them via GET /updates
+                    streamUrl.searchParams.set("skipHistory", "true");
 
                     const bearerToken = client._auth ? await client._auth() : undefined;
                     if (!bearerToken) {
@@ -186,18 +269,27 @@ export class WorkflowsApi extends ApiTopic {
                         }
 
                         try {
-                            const message = JSON.parse(ev.data) as AgentMessage;
+                            // Parse message using parseMessage() which handles both compact and legacy formats
+                            const compactMessage = parseMessage(ev.data);
 
-                            // Update last message timestamp for reconnection
-                            if (message.timestamp) {
-                                lastMessageTimestamp = Math.max(lastMessageTimestamp, message.timestamp);
+                            // Update last message timestamp for reconnection (use ts field or current time)
+                            if (compactMessage.ts) {
+                                lastMessageTimestamp = Math.max(lastMessageTimestamp, compactMessage.ts);
+                            } else {
+                                lastMessageTimestamp = Date.now();
                             }
 
-                            if (onMessage) onMessage(message, exit);
+                            // Convert to AgentMessage for consumers (they shouldn't need to know about compact format)
+                            if (onMessage) {
+                                const agentMessage = toAgentMessage(compactMessage, runId);
+                                onMessage(agentMessage, exit);
+                            }
 
-                            const streamIsOver = message.type === AgentMessageType.TERMINATED ||
-                                (message.type === AgentMessageType.COMPLETE &&
-                                    (!message.workstream_id || message.workstream_id === 'main'));
+                            // Get workstream ID (defaults to 'main' if not set)
+                            const workstreamId = compactMessage.w || 'main';
+
+                            const streamIsOver = compactMessage.t === AgentMessageType.TERMINATED ||
+                                (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
 
                             // Only close the stream when the main workstream completes or terminates
                             if (streamIsOver) {
@@ -207,8 +299,8 @@ export class WorkflowsApi extends ApiTopic {
                                     cleanup();
                                     resolve(null);
                                 }
-                            } else if (message.type === AgentMessageType.COMPLETE) {
-                                console.log(`Received COMPLETE message from non-main workstream: ${message.workstream_id || 'unknown'}, keeping stream open`);
+                            } else if (compactMessage.t === AgentMessageType.COMPLETE) {
+                                console.log(`Received COMPLETE message from non-main workstream: ${workstreamId}, keeping stream open`);
                             }
                         } catch (err) {
                             console.error("Failed to parse SSE message:", err, ev.data);
@@ -269,14 +361,14 @@ export class WorkflowsApi extends ApiTopic {
      * Stream workflow messages via WebSocket (for mobile/React Native clients)
      * @param workflowId The workflow ID
      * @param runId The run ID
-     * @param onMessage Callback for incoming messages
+     * @param onMessage Callback for incoming messages (CompactMessage format)
      * @param since Optional timestamp to resume from
      * @returns Promise that resolves with cleanup function and sendSignal helper
      */
     async streamMessagesWS(
         workflowId: string,
         runId: string,
-        onMessage?: (message: AgentMessage) => void,
+        onMessage?: (message: CompactMessage) => void,
         since?: number
     ): Promise<{ cleanup: () => void; sendSignal: (signalName: string, data: any) => void }> {
         return new Promise((resolve, reject) => {
@@ -359,40 +451,49 @@ export class WorkflowsApi extends ApiTopic {
 
                     ws.onmessage = (event: MessageEvent) => {
                         try {
-                            const message = JSON.parse(event.data) as WebSocketServerMessage;
+                            const rawMessage = JSON.parse(event.data) as WebSocketServerMessage;
 
-                            // Handle different message types
-                            if ('workflow_run_id' in message) {
-                                // This is an AgentMessage
-                                const agentMessage = message as AgentMessage;
-
-                                if (agentMessage.timestamp) {
-                                    lastMessageTimestamp = Math.max(lastMessageTimestamp, agentMessage.timestamp);
+                            // Handle control messages (pong, ack, error)
+                            if ('type' in rawMessage && typeof rawMessage.type === 'string') {
+                                if (rawMessage.type === 'pong') {
+                                    console.debug('Received pong');
+                                    return;
+                                } else if (rawMessage.type === 'ack') {
+                                    console.debug('Signal acknowledged', rawMessage);
+                                    return;
+                                } else if (rawMessage.type === 'error') {
+                                    console.error('WebSocket error message', rawMessage);
+                                    return;
                                 }
+                            }
 
-                                if (onMessage) onMessage(agentMessage);
+                            // Parse agent message (handles both compact and legacy formats)
+                            const message = parseMessage(rawMessage);
 
-                                // Check for stream completion
-                                const streamIsOver =
-                                    agentMessage.type === AgentMessageType.TERMINATED ||
-                                    (agentMessage.type === AgentMessageType.COMPLETE &&
-                                        (!agentMessage.workstream_id || agentMessage.workstream_id === 'main'));
+                            // Update timestamp for reconnection
+                            if (message.ts) {
+                                lastMessageTimestamp = Math.max(lastMessageTimestamp, message.ts);
+                            } else {
+                                lastMessageTimestamp = Date.now();
+                            }
 
-                                if (streamIsOver) {
-                                    console.log('Closing WebSocket due to workflow completion');
-                                    isClosed = true;
-                                    if (ws) {
-                                        ws.close();
-                                        ws = null;
-                                    }
+                            if (onMessage) onMessage(message);
+
+                            // Get workstream ID (defaults to 'main' if not set)
+                            const workstreamId = message.w || 'main';
+
+                            // Check for stream completion
+                            const streamIsOver =
+                                message.t === AgentMessageType.TERMINATED ||
+                                (message.t === AgentMessageType.COMPLETE && workstreamId === 'main');
+
+                            if (streamIsOver) {
+                                console.log('Closing WebSocket due to workflow completion');
+                                isClosed = true;
+                                if (ws) {
+                                    ws.close();
+                                    ws = null;
                                 }
-                            } else if (message.type === 'pong') {
-                                // Heartbeat response
-                                console.debug('Received pong');
-                            } else if (message.type === 'ack') {
-                                console.debug('Signal acknowledged', message);
-                            } else if (message.type === 'error') {
-                                console.error('WebSocket error message', message);
                             }
                         } catch (err) {
                             console.error('Failed to parse WebSocket message', err);
@@ -427,6 +528,167 @@ export class WorkflowsApi extends ApiTopic {
 
             connect();
         });
+    }
+
+    /**
+     * Ingest telemetry events for a workflow run.
+     * Workers use this to send telemetry to zeno-server for BigQuery storage.
+     */
+    ingestEvents(
+        workflowId: string,
+        runId: string,
+        events: AgentEvent[]
+    ): Promise<{ ingested: number; status?: string; error?: string }> {
+        return this.post(`/runs/${workflowId}/${runId}/events`, {
+            payload: { events },
+        });
+    }
+
+    // ========================================================================
+    // Analytics API
+    // ========================================================================
+
+    /**
+     * Get workflow analytics summary.
+     * Returns overall metrics including token usage, success rates, and run counts.
+     */
+    getAnalyticsSummary(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<WorkflowAnalyticsSummaryResponse> {
+        return this.post('/analytics/summary', { payload: query });
+    }
+
+    /**
+     * Get token usage analytics.
+     * Returns token consumption metrics by model, agent, tool, or over time.
+     */
+    getTokenUsageAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<TokenUsageAnalyticsResponse> {
+        return this.post('/analytics/tokens', { payload: query });
+    }
+
+    /**
+     * Get LLM latency analytics.
+     * Returns duration/latency metrics for LLM calls.
+     */
+    getLlmLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/llm', { payload: query });
+    }
+
+    /**
+     * Get tool latency analytics.
+     * Returns duration/latency metrics for tool calls.
+     */
+    getToolLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/tools', { payload: query });
+    }
+
+    /**
+     * Get agent/workflow latency analytics.
+     * Returns duration metrics for complete workflow runs.
+     */
+    getAgentLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/agents', { payload: query });
+    }
+
+    /**
+     * Get error analytics.
+     * Returns error rates, types, and trends.
+     */
+    getErrorAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<ErrorAnalyticsResponse> {
+        return this.post('/analytics/errors', { payload: query });
+    }
+
+    /**
+     * Get tool usage analytics.
+     * Returns tool invocation counts, success rates, and performance metrics.
+     */
+    getToolAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<ToolAnalyticsResponse> {
+        return this.post('/analytics/tools', { payload: query });
+    }
+
+    /**
+     * Get tool parameter analytics.
+     * Returns parameter value distributions for a specific tool.
+     */
+    getToolParameterAnalytics(
+        query: WorkflowToolParametersQuery
+    ): Promise<ToolParameterAnalyticsResponse> {
+        return this.post('/analytics/tools/parameters', { payload: query });
+    }
+
+    /**
+     * Get available filter options for analytics.
+     * Returns unique agents, environments, and models from telemetry data.
+     */
+    getAnalyticsFilterOptions(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<WorkflowAnalyticsFilterOptionsResponse> {
+        return this.post('/analytics/filter-options', { payload: query });
+    }
+
+    /**
+     * Get average prompt size (input tokens) by agent for startConversation calls.
+     * This represents the initial prompt + tools size.
+     */
+    getPromptSizeAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<PromptSizeAnalyticsResponse> {
+        return this.post('/analytics/prompt-size', { payload: query });
+    }
+
+    /**
+     * Get top principals (users/API keys) who started the most agent runs.
+     * Returns the top N principals sorted by run count descending.
+     */
+    getTopPrincipalsAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<TopPrincipalsAnalyticsResponse> {
+        return this.post('/analytics/top-principals', { payload: query });
+    }
+
+    /**
+     * Get agent run distribution - how many runs per agent/interaction type.
+     * Returns the top N agents sorted by run count descending.
+     */
+    getRunsByAgentAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<RunsByAgentAnalyticsResponse> {
+        return this.post('/analytics/runs-by-agent', { payload: query });
+    }
+
+    /**
+     * Get time to first response analytics.
+     * Measures the time from agent start to the completion of the first LLM call.
+     * Returns average, min, max, median, p95, and p99 metrics.
+     */
+    getTimeToFirstResponseAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<TimeToFirstResponseAnalyticsResponse> {
+        return this.post('/analytics/time-to-first-response', { payload: query });
+    }
+
+    /**
+     * Get first response behavior analytics.
+     * Analyzes the agent's first LLM response behavior:
+     * - Percentage of agents that start by making a plan
+     * - Percentage of agents that return no tool calls at start
+     */
+    getFirstResponseBehaviorAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<FirstResponseBehaviorAnalyticsResponse> {
+        return this.post('/analytics/first-response-behavior', { payload: query });
     }
 
     rules = new WorkflowsRulesApi(this);

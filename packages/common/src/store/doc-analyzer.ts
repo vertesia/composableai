@@ -1,7 +1,7 @@
 import { WorkflowExecutionPayload, WorkflowRunStatus } from "./workflow.js";
 
 export interface PdfToRichtextOptions {
-    features: string[];
+    features?: string[];
     debug?: boolean;
     [key: string]: any;
 }

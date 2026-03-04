@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
-import { Collection, CollectionItem, ComplexCollectionSearchQuery, ComplexSearchPayload, ComputeCollectionFacetPayload, ComputeObjectFacetPayload, ContentObjectItem, ContentObjectStatus, CreateCollectionPayload, DynamicCollection } from "@vertesia/common";
+import { Collection, ComplexCollectionSearchQuery, ComplexSearchPayload, ComputeCollectionFacetPayload, ComputeObjectFacetPayload, ContentObjectItem, ContentObjectStatus, CreateCollectionPayload, DynamicCollection } from "@vertesia/common";
 import { ComputeFacetsResponse, SearchResponse } from "./ObjectsApi.js";
 
 
@@ -12,9 +12,9 @@ export class CollectionsApi extends ApiTopic {
     /**
      * List collections
      * @param payload: CollectionSearchPayload
-     * @returns CollectionItem[] list of collections
+     * @returns Collection[] list of collections
     **/
-    search(payload: ComplexCollectionSearchQuery): Promise<CollectionItem[]> {
+    search(payload: ComplexCollectionSearchQuery): Promise<Collection[]> {
         return this.post("/search", { payload });
     }
 
@@ -109,7 +109,7 @@ export class CollectionsApi extends ApiTopic {
         });
     }
 
-    searchChildren(collectionId: string, query: ComplexCollectionSearchQuery = {}): Promise<CollectionItem[]> {
+    searchChildren(collectionId: string, query: ComplexCollectionSearchQuery = {}): Promise<Collection[]> {
         return this.post(`/${collectionId}/children/search`, {
             payload: query
         });

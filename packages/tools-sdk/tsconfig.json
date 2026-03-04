@@ -50,5 +50,7 @@
     {
       "path": "../common"
     }
+  ,
+    { "path": "../../llumiverse/common/tsconfig.json" }
   ]
 }

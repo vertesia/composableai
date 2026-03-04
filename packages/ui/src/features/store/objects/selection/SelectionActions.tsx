@@ -56,9 +56,6 @@ function ActionsWrapper({ }: ActionsWrapperProps) {
 export function UploadObjectsButton({ collectionId, allowFolders = true }: { collectionId?: string, allowFolders?: boolean }) {
     const [files, setFiles] = useState<File[]>([]);
     const [isOpen, setIsOpen] = useState(false);
-    const selection = useDocumentSelection();
-
-    const hasSelection = selection?.hasSelection();
 
     const onClose = () => {
         setIsOpen(false);
@@ -66,7 +63,6 @@ export function UploadObjectsButton({ collectionId, allowFolders = true }: { col
     }
 
     return (
-        !hasSelection &&
         <>
             <Button onClick={() => setIsOpen(true)}>Upload</Button>
             <DocumentUploadModal

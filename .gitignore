@@ -131,3 +131,6 @@ dist
 
 # Turbo
 .turbo/
+
+# Claude
+**/.claude/settings.local.json

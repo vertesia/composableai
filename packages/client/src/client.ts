@@ -3,12 +3,14 @@ import { AuthTokenPayload, AuthTokenResponse } from "@vertesia/common";
 import AccountApi from "./AccountApi.js";
 import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";
+import AuditTrailApi from "./AuditTrailApi.js";
 import { ApiKeysApi } from "./ApiKeysApi.js";
 import AppsApi from "./AppsApi.js";
 import CommandsApi from "./CommandsApi.js";
 import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
+import MCPOAuthApi from "./MCPOAuthApi.js";
 import ProjectsApi from "./ProjectsApi.js";
 import SkillsApi from "./SkillsApi.js";
 import PromptsApi from "./PromptsApi.js";
@@ -79,17 +81,22 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      *
      * @param token the raw JWT token
      * @param payload the decoded JWT token as an AuthTokenPayload - optional
+     * @param endpoints optional endpoints to override those in the payload
      */
-    static async fromAuthToken(token: string, payload?: AuthTokenPayload) {
+    static async fromAuthToken(
+        token: string,
+        payload?: AuthTokenPayload,
+        endpoints?: { studio: string; store: string; token?: string }
+    ) {
         if (!payload) {
             payload = decodeJWT(token);
         }
 
-        const endpoints = decodeEndpoints(payload.endpoints);
+        const resolvedEndpoints = endpoints || decodeEndpoints(payload.endpoints);
         return await new VertesiaClient({
-            serverUrl: endpoints.studio,
-            storeUrl: endpoints.store,
-            tokenServerUrl: payload.iss,
+            serverUrl: resolvedEndpoints.studio,
+            storeUrl: resolvedEndpoints.store,
+            tokenServerUrl: resolvedEndpoints.token || payload.iss,
         }).withApiKey(token);
     }
 
@@ -274,6 +281,13 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.types;
     }
 
+    /**
+     * Alias for store.data
+     */
+    get data() {
+        return this.store.data;
+    }
+
     get storeUrl() {
         return this.store.baseUrl;
     }
@@ -320,12 +334,14 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     accounts = new AccountsApi(this);
     apikeys = new ApiKeysApi(this);
     analytics = new AnalyticsApi(this);
+    auditTrail = new AuditTrailApi(this);
     training = new TrainingApi(this);
     users = new UsersApi(this);
     iam = new IamApi(this);
     refs = new RefsApi(this);
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
+    mcpOAuth = new MCPOAuthApi(this);
 }
 
 function isApiKey(apiKey: string) {

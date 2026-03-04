@@ -6,7 +6,7 @@ import {
     InteractionExecutionPayload, InteractionForkPayload,
     InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery,
     InteractionsExportPayload, InteractionTags, InteractionUpdatePayload,
-    RateLimitRequestPayload, RateLimitRequestResponse
+    RateLimitRequestPayload, RateLimitRequestResponse, ResolvedInteractionExecutionInfo
 } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
 import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from "./execute.js";
@@ -283,6 +283,26 @@ export default class InteractionsApi extends ApiTopic {
      */
     requestSlot(payload: RateLimitRequestPayload): Promise<RateLimitRequestResponse> {
         return checkRateLimit(this.client as VertesiaClient, payload);
+    }
+
+    /**
+     * Resolve an interaction by ID or name and return the resolved execution info.
+     * This includes the interaction ID, name, version, tags, and the resolved
+     * environment/model that would be used at execution time.
+     *
+     * The nameOrId parameter can be:
+     * - A MongoDB ObjectId (e.g., "66b9149c26dc74d6b5187d27")
+     * - An endpoint name (e.g., "ReviewContract")
+     * - An endpoint name with version/tag (e.g., "ReviewContract@1", "ReviewContract@draft")
+     *
+     * @param nameOrId The interaction ID or name (with optional @version/@tag)
+     * @param options Optional environment and/or model to resolve with
+     * @returns ResolvedInteractionExecutionInfo with the resolved environment and model
+     */
+    resolve(nameOrId: string, options?: { environment?: string; model?: string }): Promise<ResolvedInteractionExecutionInfo> {
+        return this.get(`/resolve/${encodeURIComponent(nameOrId)}`, {
+            query: options
+        });
     }
 
 }

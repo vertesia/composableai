@@ -1,9 +1,10 @@
 export * from './theme/ThemeSwitcher';
 export * from './theme/ThemeProvider';
 
+export * from "./badge"
 export * from './button';
 export * from './card';
-export * from './dialog';
+export * from './modal';
 export * from './input';
 export * from './separator';
 export * from './selectBox';
@@ -11,7 +12,6 @@ export * from './tabs';
 export * from './tooltip';
 export * from './label';
 export * from './breadcrumb';
-export * from './dialog';
 export * from './button';
 export * from './filters';
 export * from './popover';
@@ -21,3 +21,5 @@ export * from './heading';
 export * from './text';
 export * from './resizeable';
 export * from './textarea';
+export * from "./MessageBox"
+export * from "./Panel"

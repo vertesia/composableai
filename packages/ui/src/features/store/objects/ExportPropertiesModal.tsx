@@ -14,14 +14,16 @@ export function ExportPropertiesModal({ isExporting, isOpen, onClose }: ExportPr
     const title = "Export Object Properties";
 
     return (
-        <Modal onClose={() => onClose(undefined)} isOpen={isOpen} className="relative overflow-visible">
+        <Modal onClose={() => onClose(undefined)} isOpen={isOpen}>
             <ModalTitle>{title}</ModalTitle>
-            {!isExporting &&
-                <SelectPanel onClose={onClose} />
-            }
-            {isExporting &&
-                <WaitingPanel />
-            }
+            <ModalBody>
+                {!isExporting &&
+                    <SelectPanel onClose={onClose} />
+                }
+                {isExporting &&
+                    <WaitingPanel />
+                }
+            </ModalBody>
         </Modal>
     )
 }

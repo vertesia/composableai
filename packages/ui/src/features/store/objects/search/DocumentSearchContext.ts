@@ -61,7 +61,7 @@ export class DocumentSearch implements SearchInterface {
 
     clearFilters(autoSearch: boolean = true) {
         // Preserve search-related fields when clearing filters
-        const { parent, full_text, vector, weights, score_aggregation, dynamic_scaling, limit, all_revisions } = this.query;
+        const { parent, full_text, vector, weights, score_aggregation, dynamic_scaling, limit } = this.query;
         this.query = {
             parent,
             ...(full_text !== undefined && { full_text }),
@@ -69,7 +69,6 @@ export class DocumentSearch implements SearchInterface {
             ...(weights !== undefined && { weights }),
             ...(score_aggregation !== undefined && { score_aggregation }),
             ...(dynamic_scaling !== undefined && { dynamic_scaling }),
-            ...(all_revisions !== undefined && { all_revisions }),
             ...(limit !== undefined && { limit })
         };
 

@@ -1,12 +1,15 @@
 import type { InteractionCollection } from "../InteractionCollection.js";
+import { ToolServerConfig } from "../server/types.js";
 import type { SkillCollection } from "../SkillCollection.js";
 import type { ToolCollection } from "../ToolCollection.js";
+import type { ContentTypesCollection } from "../ContentTypesCollection.js";
 import type { ICollection, SkillDefinition, Tool } from "../types.js";
+import { join } from "../utils.js";
 import { baseStyles } from "./styles.js";
 
 type MCPProviderMeta = {
-  name: string;
-  description?: string;
+    name: string;
+    description?: string;
 };
 
 /**
@@ -228,43 +231,6 @@ ${baseStyles}
     white-space: pre-wrap;
 }
 
-.endpoint-box {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    background: #f3f4f6;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    margin-top: 0.5rem;
-}
-
-.endpoint-box code {
-    flex: 1;
-    font-family: ui-monospace, monospace;
-    font-size: 0.875rem;
-    color: #1f2937;
-}
-
-.copy-btn {
-    background: #e5e7eb;
-    border: none;
-    padding: 0.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    color: #6b7280;
-    transition: all 0.15s;
-}
-
-.copy-btn:hover {
-    background: #d1d5db;
-    color: #374151;
-}
-
-.copy-btn svg {
-    width: 16px;
-    height: 16px;
-}
-
 .empty-state {
     text-align: center;
     padding: 3rem;
@@ -345,24 +311,6 @@ ${baseStyles}
         color: #e5e7eb;
     }
 
-    .endpoint-box {
-        background: rgba(31, 41, 55, 0.95);
-    }
-
-    .endpoint-box code {
-        color: #e5e7eb;
-    }
-
-    .copy-btn {
-        background: rgba(55, 65, 81, 0.95);
-        color: #e5e7eb;
-    }
-
-    .copy-btn:hover {
-        background: rgba(75, 85, 99, 0.98);
-        color: #f9fafb;
-    }
-
     .empty-state {
         color: #9ca3af;
     }
@@ -439,7 +387,7 @@ export function toolCard(tool: Tool<Record<string, unknown>>): string {
  * Render an MCP provider card
  */
 export function mcpProviderCard(provider: MCPProviderMeta): string {
-  return /*html*/`
+    return /*html*/`
 <a class="card" href="/api/mcp/${provider.name}">
     <div class="card-title">${provider.name}</div>
     <div class="card-desc">${provider.description || ''}</div>
@@ -482,9 +430,9 @@ export function toolDetailCard(tool: Tool<Record<string, unknown>>, collectionNa
             ${properties ? /*html*/`
             <div class="info-grid" style="margin-bottom: 1rem;">
                 ${Object.entries(properties).map(([key, value]) => {
-                    const prop = value as Record<string, unknown>;
-                    const isRequired = required?.includes(key);
-                    return /*html*/`
+        const prop = value as Record<string, unknown>;
+        const isRequired = required?.includes(key);
+        return /*html*/`
                     <div class="info-item">
                         <div class="info-label">${key}${isRequired ? ' *' : ''}</div>
                         <div class="info-value">
@@ -492,7 +440,7 @@ export function toolDetailCard(tool: Tool<Record<string, unknown>>, collectionNa
                             ${prop.description ? `<br><span style="color: #6b7280; font-size: 0.85rem;">${prop.description}</span>` : ''}
                         </div>
                     </div>`;
-                }).join('')}
+    }).join('')}
             </div>
             ` : ''}
             <details>
@@ -525,13 +473,34 @@ export function skillCard(skill: SkillDefinition): string {
 </div>`;
 }
 
+function skillWidgetsTemplate(skillWidgets: string[] | undefined) {
+    if (!skillWidgets || skillWidgets.length === 0) {
+        return 'n/a';
+    }
+    return skillWidgets.map(w => `<div style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span>${w}</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '/widgets/${w}.js')" title="Copy endpoint URL">
+            ${copyIcon}
+        </button>
+    </div>`).join('');
+}
+
+function renderSkillUrl(skill: SkillDefinition, collectionName: string): string {
+    const skillPath = `/api/skills/${collectionName}/${skill.name}`;
+    return /*html*/`<div class="script-item" style='display: flex; align-items: center; gap: 0.5rem; width:100%;justify-content: space-between;'><span class="script-name">${skillPath}</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '${skillPath}')" title="Copy endpoint URL">
+            ${copyIcon}
+        </button>
+    </div>`;
+}
+
 /**
  * Render a detailed skill card
  */
-export function skillDetailCard(skill: SkillDefinition): string {
+export function skillDetailCard(skill: SkillDefinition, collection: SkillCollection): string {
     const hasKeywords = skill.context_triggers?.keywords?.length;
     const hasPackages = skill.execution?.packages?.length;
     const hasScripts = skill.scripts?.length;
+    const hasRelatedTools = skill.related_tools?.length;
 
     return /*html*/`
 <div class="detail-card">
@@ -539,10 +508,12 @@ export function skillDetailCard(skill: SkillDefinition): string {
         <div>
             <h3 class="detail-title">${skill.name}</h3>
             <p class="detail-desc">${skill.description || 'No description'}</p>
+            ${renderSkillUrl(skill, collection.name)}
         </div>
         <div class="detail-badges">
             <span class="badge skill-type-badge">Skill</span>
             ${skill.execution?.language ? `<span class="badge ${skill.execution.language}">${skill.execution.language}</span>` : ''}
+            ${hasRelatedTools ? `<span class="badge" style="background: #8b5cf6; color: white;">Unlocks ${skill.related_tools?.length} tool${skill.related_tools?.length !== 1 ? 's' : ''}</span>` : ''}
         </div>
     </div>
     <div class="detail-body">
@@ -557,7 +528,21 @@ export function skillDetailCard(skill: SkillDefinition): string {
                 <div class="info-value"><code>${skill.execution.language}</code></div>
             </div>
             ` : ''}
+            <div class="info-item">
+                <div class="info-label">Widgets</div>
+                <div class="info-value">${skillWidgetsTemplate(skill.widgets)}</div>
+            </div>
         </div>
+
+        ${hasRelatedTools ? /*html*/`
+        <div class="detail-section">
+            <h4 class="detail-section-title">Unlocks Tools</h4>
+            <p style="color: #6b7280; font-size: 0.85rem; margin: 0 0 0.75rem 0;">These tools become available when this skill is activated:</p>
+            <div class="package-list">
+                ${skill.related_tools?.map(tool => `<span class="package-tag" style="background: #ede9fe; color: #6d28d9;">${tool}</span>`).join('')}
+            </div>
+        </div>
+        ` : ''}
 
         ${hasKeywords ? /*html*/`
         <div class="detail-section">
@@ -584,7 +569,7 @@ export function skillDetailCard(skill: SkillDefinition): string {
                 ${skill.scripts?.map(script => /*html*/`
                 <div class="script-item">
                     ${fileIcon}
-                    <span class="script-name">${script.name}</span>
+                    <span class="script-name">${join("/scripts", script)}</span>
                 </div>
                 `).join('')}
             </div>
@@ -624,6 +609,47 @@ function getInitials(title: string): string {
     return initials || "TS";
 }
 
+function renderUILinks() {
+    const copyIconSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+
+    return /*html*/`
+<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(156, 163, 175, 0.2); display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+    <a target="_blank" href="/ui/" class="plugin-link-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: background 0.15s;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+        </svg>
+        UI Plugin Dev
+    </a>
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+        <a href="/lib/plugin.js" class="plugin-link-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #10b981; color: white; text-decoration: none; border-radius: 6px; font-size: 0.875rem; font-weight: 500; transition: background 0.15s;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Plugin Bundle
+        </a>
+        <button id="copy-plugin-btn" class="copy-btn" onclick="copyPluginUrl(this)" title="Copy plugin URL" style="background: #e5e7eb; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; color: #6b7280; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+            ${copyIconSvg}
+        </button>
+    </div>
+</div>
+<script>
+function copyPluginUrl(btn) {
+    navigator.clipboard.writeText(window.location.origin + '/lib/plugin.js');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '✓';
+    btn.style.color = '#10b981';
+    setTimeout(function() {
+        btn.innerHTML = originalHtml;
+        btn.style.color = '#6b7280';
+    }, 1500);
+}
+</script>
+`;
+}
+
 /**
  * Render the main index page
  *
@@ -632,25 +658,18 @@ function getInitials(title: string): string {
  * - If an array is passed, it is treated as MCP providers and the fifth argument (if any) is the title.
  */
 export function indexPage(
-    tools: ToolCollection[],
-    skills: SkillCollection[],
-    interactions: InteractionCollection[],
-    mcpProvidersOrTitle?: MCPProviderMeta[] | string,
-    titleParam?: string
+    config: ToolServerConfig
 ): string {
-    let mcpProviders: MCPProviderMeta[] = [];
-    let title = "Tools Server";
+    const {
+        title = 'Tools Server',
+        tools = [],
+        interactions = [],
+        skills = [],
+        types = [],
+        mcpProviders = [],
+        hideUILinks = false,
+    } = config;
 
-    if (Array.isArray(mcpProvidersOrTitle)) {
-        mcpProviders = mcpProvidersOrTitle;
-        if (typeof titleParam === "string" && titleParam.length > 0) {
-            title = titleParam;
-        }
-    } else if (typeof mcpProvidersOrTitle === "string" && mcpProvidersOrTitle.length > 0) {
-        title = mcpProvidersOrTitle;
-    } else if (typeof titleParam === "string" && titleParam.length > 0) {
-        title = titleParam;
-    }
 
     return /*html*/`
 <!DOCTYPE html>
@@ -672,19 +691,28 @@ export function indexPage(
                     <p class="hero-eyebrow">Tools Server</p>
                     <h1 class="hero-title">${title}</h1>
                     <p class="hero-tagline">
-                        Discover the tools, skills, and interactions exposed by this server.
+                        Discover the tools, skills, interactions, and content types exposed by this server.
                     </p>
                     <div class="hero-summary">
                         ${tools.length ? /*html*/`<span><dot></dot> ${tools.length} tool collection${tools.length !== 1 ? 's' : ''}</span>` : ''}
                         ${skills.length ? /*html*/`<span><dot></dot> ${skills.length} skill collection${skills.length !== 1 ? 's' : ''}</span>` : ''}
                         ${interactions.length ? /*html*/`<span><dot></dot> ${interactions.length} interaction collection${interactions.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${types.length ? /*html*/`<span><dot></dot> ${types.length} content type collection${types.length !== 1 ? 's' : ''}</span>` : ''}
                         ${mcpProviders.length ? /*html*/`<span><dot></dot> ${mcpProviders.length} MCP provider${mcpProviders.length !== 1 ? 's' : ''}</span>` : ''}
                     </div>
+                    ${hideUILinks ? '' : renderUILinks()}
                 </div>
             </div>
             <aside class="hero-panel">
                 <div class="hero-panel-label">Base endpoint</div>
                 <div class="hero-panel-endpoint"><code>/api</code></div>
+                <div class="hero-panel-label" style="margin-top: 1rem;">Package endpoint</div>
+                <div class="endpoint-box" style="margin-top: 0.5rem;">
+                    <code id="package-endpoint-url">/api/package</code>
+                    <button class="copy-btn" onclick="copyPackageUrl(this)" title="Copy package endpoint URL">
+                        ${copyIcon}
+                    </button>
+                </div>
                 <p class="hero-panel-hint">
                     Use <strong>POST /api/tools/&lt;collection&gt;</strong> or
                     <strong>POST /api/skills/&lt;collection&gt;</strong> to call these from your apps or agents.
@@ -697,7 +725,7 @@ export function indexPage(
                 type="search"
                 id="collection-search"
                 class="search-input"
-                placeholder="Search tools, skills, interactions..."
+                placeholder="Search tools, skills, interactions, types..."
                 aria-label="Search collections"
                 autocomplete="off"
             />
@@ -730,9 +758,9 @@ export function indexPage(
             </div>
             <div class="card-grid">
                 ${skills.map(s => {
-                    const count = Array.from(s).length;
-                    return collectionCard(s, 'skills', `${count} skill${count !== 1 ? 's' : ''}`);
-                }).join('')}
+        const count = Array.from(s).length;
+        return collectionCard(s, 'skills', `${count} skill${count !== 1 ? 's' : ''}`);
+    }).join('')}
             </div>
         </section>
         ` : ''}
@@ -746,6 +774,22 @@ export function indexPage(
             </div>
             <div class="card-grid">
                 ${interactions.map(i => collectionCard(i, 'interactions')).join('')}
+            </div>
+        </section>
+        ` : ''}
+
+        ${types.length > 0 ? /*html*/`
+        <section data-section="types">
+            <hr>
+            <div class="section-header">
+                <h2>Content Type Collections</h2>
+                <p class="section-subtitle">Schema definitions for structured content in the data store.</p>
+            </div>
+            <div class="card-grid">
+                ${types.map((t: ContentTypesCollection) => {
+        const count = t.getContentTypes().length;
+        return collectionCard(t, 'types', `${count} type${count !== 1 ? 's' : ''}`);
+    }).join('')}
             </div>
         </section>
         ` : ''}
@@ -811,6 +855,18 @@ export function indexPage(
             update(input.value);
         });
     }());
+
+    function copyPackageUrl(btn) {
+        var url = window.location.origin + '/api/package';
+        navigator.clipboard.writeText(url);
+        var originalHtml = btn.innerHTML;
+        btn.innerHTML = '✓';
+        btn.style.color = '#10b981';
+        setTimeout(function() {
+            btn.innerHTML = originalHtml;
+            btn.style.color = '#6b7280';
+        }, 1500);
+    }
     </script>
 </body>
 </html>`;
@@ -852,9 +908,9 @@ export function toolCollectionPage(collection: ToolCollection): string {
     <h2>${toolsArray.length} Tool${toolsArray.length !== 1 ? 's' : ''}</h2>
 
     ${toolsArray.length > 0 ?
-        toolsArray.map(tool => toolDetailCard(tool, collection.name)).join('') :
-        '<div class="empty-state">No tools in this collection</div>'
-    }
+            toolsArray.map(tool => toolDetailCard(tool, collection.name)).join('') :
+            '<div class="empty-state">No tools in this collection</div>'
+        }
 </body>
 </html>`;
 }
@@ -895,11 +951,53 @@ export function skillCollectionPage(collection: SkillCollection): string {
     <h2>${skillsArray.length} Skill${skillsArray.length !== 1 ? 's' : ''}</h2>
 
     ${skillsArray.length > 0 ?
-        skillsArray.map(skill => skillDetailCard(skill)).join('') :
-        '<div class="empty-state">No skills in this collection</div>'
-    }
+            skillsArray.map(skill => skillDetailCard(skill, collection)).join('') :
+            '<div class="empty-state">No skills in this collection</div>'
+        }
 </body>
 </html>`;
+}
+
+/**
+ * Render a collection header with icon, title, description, and endpoint
+ */
+function collectionDetailHeader(collection: ICollection, pathPrefix: string): string {
+    return /*html*/`
+    <nav class="nav">
+        <a href="/">${backArrow} Back to all collections</a>
+    </nav>
+
+    <div class="header">
+        <div class="header-icon">${collection.icon || defaultIcon}</div>
+        <div>
+            <h1>${collection.title || collection.name}</h1>
+            <p style="color: #6b7280; margin: 0.25rem 0 0 0;">${collection.description || ''}</p>
+            <div class="endpoint-box">
+                <code>/api/${pathPrefix}/${collection.name}</code>
+                <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '/api/${pathPrefix}/${collection.name}')" title="Copy endpoint URL">
+                    ${copyIcon}
+                </button>
+            </div>
+        </div>
+    </div>`;
+}
+
+/**
+ * Render a simple item card with name, description, and tags
+ */
+function simpleItemCard(item: { name: string; description?: string; tags?: string[] }): string {
+    return /*html*/`
+    <div class="detail-card">
+        <div class="detail-header">
+            <div>
+                <h3 class="detail-title">${item.name}</h3>
+                <p class="detail-desc">${item.description || 'No description'}</p>
+            </div>
+            <div class="detail-badges">
+                ${item.tags?.map(tag => `<span class="badge">${tag}</span>`).join('') || ''}
+            </div>
+        </div>
+    </div>`;
 }
 
 /**
@@ -916,40 +1014,38 @@ export function interactionCollectionPage(collection: InteractionCollection): st
     <style>${detailStyles}</style>
 </head>
 <body>
-    <nav class="nav">
-        <a href="/">${backArrow} Back to all collections</a>
-    </nav>
-
-    <div class="header">
-        <div class="header-icon">${collection.icon || defaultIcon}</div>
-        <div>
-            <h1>${collection.title || collection.name}</h1>
-            <p style="color: #6b7280; margin: 0.25rem 0 0 0;">${collection.description || ''}</p>
-            <div class="endpoint-box">
-                <code>/api/interactions/${collection.name}</code>
-                <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '/api/interactions/${collection.name}')" title="Copy endpoint URL">
-                    ${copyIcon}
-                </button>
-            </div>
-        </div>
-    </div>
+    ${collectionDetailHeader(collection, 'interactions')}
 
     <h2>${collection.interactions.length} Interaction${collection.interactions.length !== 1 ? 's' : ''}</h2>
 
     <div class="item-list">
-        ${collection.interactions.map(inter => /*html*/`
-        <div class="detail-card">
-            <div class="detail-header">
-                <div>
-                    <h3 class="detail-title">${inter.name}</h3>
-                    <p class="detail-desc">${inter.description || 'No description'}</p>
-                </div>
-                <div class="detail-badges">
-                    ${inter.tags?.map(tag => `<span class="badge">${tag}</span>`).join('') || ''}
-                </div>
-            </div>
-        </div>
-        `).join('')}
+        ${collection.interactions.map(inter => simpleItemCard(inter)).join('')}
+    </div>
+</body>
+</html>`;
+}
+
+/**
+ * Render a content type collection detail page
+ */
+export function contentTypeCollectionPage(collection: ContentTypesCollection): string {
+    const typesArray = collection.getContentTypes();
+    return /*html*/`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${collection.title || collection.name} - Content Types</title>
+    <style>${detailStyles}</style>
+</head>
+<body>
+    ${collectionDetailHeader(collection, 'types')}
+
+    <h2>${typesArray.length} Content Type${typesArray.length !== 1 ? 's' : ''}</h2>
+
+    <div class="item-list">
+        ${typesArray.map(type => simpleItemCard(type)).join('')}
     </div>
 </body>
 </html>`;

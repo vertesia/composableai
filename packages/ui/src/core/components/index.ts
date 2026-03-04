@@ -1,10 +1,7 @@
 
 export * from "./Avatar.js";
-export * from "./Badge.js";
 export * from "./Center.js";
 export * from "./ComboBox.js";
-export * from "./ConfirmModal.js";
-export * from "./DeleteModal.js";
 export * from "./Divider.js";
 export * from "./Dropdown.js";
 export * from "./DropdownList.js";
@@ -14,15 +11,11 @@ export * from "./FormItem.js";
 export * from "./InputList.js";
 export * from "./Link.js";
 export * from "./MenuList.js";
-export * from "./MessageBox.js";
-export * from "./Modal.js";
 export * from "./NumberInput.js";
 export * from "./Overlay.js";
-export * from "./Panel.js";
 export * from "./popup/index.js";
 export * from "./Portal.js";
 export * from "./RadioGroup.js";
-export * from "./SelectBox.js";
 export * from "./SelectList.js";
 export * from "./SelectStack.js";
 export * from "./shadcn/index.js";
@@ -31,7 +24,6 @@ export * from "./Spinner.js";
 export * from "./styles.js";
 export * from "./Switch.js";
 export * from "./table/index.js";
-export * from "./tabs/index.js";
 export * from "./TagsInput.js";
 export * from "./toast/index.js";
 

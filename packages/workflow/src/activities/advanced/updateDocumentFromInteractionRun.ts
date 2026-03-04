@@ -29,7 +29,7 @@ export async function updateDocumentFromInteractionRun(payload: DSLActivityExecu
         return { status: "failed", error: "no-props" };
     }
 
-    await client.objects.update(objectId, docProps);
+    await client.objects.update(objectId, docProps, { suppressWorkflows: true });
 
     return { status: "success" };
 }

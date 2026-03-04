@@ -1,5 +1,5 @@
 import { cn } from "@vertesia/ui/core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface AnimatedThinkingDotsProps {
     className?: string;
@@ -162,6 +162,23 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
     const [progress, setProgress] = useState(15);
     const [direction, setDirection] = useState<'increasing' | 'decreasing'>('increasing');
     const [speed, setSpeed] = useState(0.4); // Lower initial speed for smoother motion
+    const containerRef = useRef<HTMLDivElement>(null);
+    const isVisibleRef = useRef(true);
+
+    // Track visibility to pause animation when off-screen
+    useEffect(() => {
+        const element = containerRef.current;
+        if (!element) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                isVisibleRef.current = entry.isIntersecting;
+            },
+            { threshold: 0 }
+        );
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, []);
 
     // Width classes
     const widthClasses = {
@@ -203,6 +220,12 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
         let lastUpdateTime = Date.now();
 
         const updateProgressBar = () => {
+            // Skip updates when not visible to save CPU
+            if (!isVisibleRef.current) {
+                animationFrameId = requestAnimationFrame(updateProgressBar);
+                return;
+            }
+
             const now = Date.now();
             const deltaTime = now - lastUpdateTime;
             lastUpdateTime = now;
@@ -249,7 +272,7 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
     }, [direction, speed]);
 
     return (
-        <div className={cn("flex flex-col gap-1", className)}>
+        <div ref={containerRef} className={cn("flex flex-col gap-1", className)}>
             {message && (
                 <div className={`text-xs font-medium ${textColorClasses[color]} mb-1`}>
                     {message}
@@ -277,6 +300,23 @@ interface WavyThinkingProps {
 export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThinkingProps) {
     // State to store and update heights of bars
     const [barHeights, setBarHeights] = useState<number[]>(Array(7).fill(50));
+    const containerRef = useRef<HTMLDivElement>(null);
+    const isVisibleRef = useRef(true);
+
+    // Track visibility to pause animation when off-screen
+    useEffect(() => {
+        const element = containerRef.current;
+        if (!element) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                isVisibleRef.current = entry.isIntersecting;
+            },
+            { threshold: 0 }
+        );
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, []);
 
     // Size classes
     const sizeClasses = {
@@ -302,10 +342,16 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
         let time = 0;
 
         const animateBars = () => {
+            // Skip updates when not visible to save CPU
+            if (!isVisibleRef.current) {
+                animationFrameId = requestAnimationFrame(animateBars);
+                return;
+            }
+
             time += 0.02; // Increment time for animation
 
             // Update each bar's height with smooth sine wave
-            const newHeights = barHeights.map((_, index) => {
+            const newHeights = Array(7).fill(0).map((_, index) => {
                 // Calculate height using smooth sine wave with individual phase and speed
                 // Scale to make sure it stays within 10% to 90% range
                 return 10 + (Math.sin(time * speeds[index] + phases[index]) + 1) * 40;
@@ -323,13 +369,16 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
     }, []); // Empty dependency array means this runs once on mount
 
     return (
-        <div className={cn(
-            "flex items-end justify-center",
-            sizeClasses[size].width,
-            sizeClasses[size].height,
-            sizeClasses[size].gap,
-            className
-        )}>
+        <div
+            ref={containerRef}
+            className={cn(
+                "flex items-end justify-center",
+                sizeClasses[size].width,
+                sizeClasses[size].height,
+                sizeClasses[size].gap,
+                className
+            )}
+        >
             {barHeights.map((height, i) => (
                 <div
                     key={i}

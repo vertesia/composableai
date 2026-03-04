@@ -2,6 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   // Clone composableai and llumiverse, otherwise dependencies cannot be analyzed correctly
   "cloneSubmodules": true,
+  "automerge": false,
   // "auto": we use this by default.
   //
   //     We want to allow Renovate to choose the most adapted rangeStrategy based on its
