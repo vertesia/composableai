@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
 # Script to test template integration using a local verdaccio registry.
 # Publishes all built packages to verdaccio, bootstraps a template, and builds it.
@@ -92,6 +92,9 @@ packages:
   '**':
     access: $all
     proxy: npmjs
+max_body_size: 20mb
+server:
+  keepAliveTimeout: 180
 listen: 0.0.0.0:4873
 log:
   type: stdout
@@ -131,7 +134,7 @@ publish_to_verdaccio() {
       cd "$pkg_dir"
       pkg_version=$(pnpm pkg get version | tr -d '"')
       echo "  Publishing @vertesia/${pkg_name}@${pkg_version}..."
-      pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" 2>&1 | sed 's/^/    /'
+      pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" > /dev/null 2>&1
       count=$((count + 1))
       cd ../..
     fi
@@ -185,6 +188,11 @@ TEMPLATES_PATH="$(cd "${SCRIPT_DIR}/../.." && pwd)/templates"
 EXTRA_CREATE_ARGS="--local-templates ${TEMPLATES_PATH}"
 
 bootstrap_template "integration-test-plugin"
+
+echo ""
+echo "=== Bootstrapped package.json ==="
+cat "${TEST_PROJECT_DIR}/package.json"
+
 build_project
 
 echo ""

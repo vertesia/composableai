@@ -1,8 +1,8 @@
 /**
  * Template selection when multiple templates are available
  */
-import prompts from 'prompts';
 import chalk from 'chalk';
+import prompts from 'prompts';
 import { config, TemplateDefinition } from './configuration.js';
 import { getCliVersion } from './version.js';
 
@@ -21,7 +21,7 @@ function resolveTemplateRef(branchOverride?: string): string {
 
   const version = getCliVersion();
   if (!version.includes('-dev.')) {
-    return `templates@${version}`;
+    return `v${version}`;
   }
 
   return 'main';

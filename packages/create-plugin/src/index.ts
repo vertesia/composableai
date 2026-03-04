@@ -11,19 +11,19 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import fs from 'fs';
 import { config, validation } from './configuration.js';
-import { selectTemplate } from './template-selector.js';
-import { selectPackageManager, installDependencies } from './package-manager.js';
 import { downloadTemplate } from './download-template.js';
-import { readTemplateConfig } from './template-config.js';
-import { promptUser } from './prompts.js';
+import { installDependencies, selectPackageManager } from './package-manager.js';
+import { runPostInstallHooks, runPreInstallHooks } from './post-install.js';
 import {
-  replaceVariables,
   adjustPackageJson,
   handleConditionalRemoves,
+  removeMetaFiles,
   renameFiles,
-  removeMetaFiles
+  replaceVariables
 } from './process-template.js';
-import { runPreInstallHooks, runPostInstallHooks } from './post-install.js';
+import { promptUser } from './prompts.js';
+import { readTemplateConfig } from './template-config.js';
+import { selectTemplate } from './template-selector.js';
 
 /**
  * Main entry point

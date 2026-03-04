@@ -300,6 +300,8 @@ export class ObjectsApi extends ApiTopic {
             revisionLabel?: string;
             processing_priority?: ContentObjectProcessingPriority;
             suppressWorkflows?: boolean;
+            /** If provided, the server will reject the update with 412 if the document's content etag no longer matches. */
+            ifMatch?: string;
         },
     ): Promise<ContentObject> {
         const updatePayload: Partial<CreateContentObjectPayload> = {
@@ -315,6 +317,9 @@ export class ObjectsApi extends ApiTopic {
         }
 
         const headers: Record<string, string> = {};
+        if (options?.ifMatch) {
+            headers['if-match'] = options.ifMatch;
+        }
         if (options?.processing_priority) {
             headers[ContentObjectApiHeaders.PROCESSING_PRIORITY] = options.processing_priority;
         }

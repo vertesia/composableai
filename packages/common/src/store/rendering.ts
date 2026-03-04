@@ -28,11 +28,11 @@ export interface ImageRenditionVars extends BaseRenditionVars {
 /** Metadata for PDF rendering (displayed in header/footer) */
 export interface PdfRenderingMetadata {
     /** Document ID to display in footer */
-    documentId?: string;
+    document_id?: string;
     /** Agent name that generated the document */
-    agentName?: string;
+    agent_name?: string;
     /** Agent run ID to display in footer */
-    agentRunId?: string;
+    agent_run_id?: string;
     /** Document subtitle */
     subtitle?: string;
     /** Document author(s) */
@@ -54,6 +54,10 @@ export interface MarkdownRenditionVars extends BaseRenditionVars {
     templateUrl?: string;
     /** Optional logo URL for template variable `logo-path` (studio-hosted URL) */
     templateLogoUrl?: string;
+    /** Template file via artifact:/store: protocol (takes precedence over templateUrl) */
+    templatePath?: string;
+    /** Logo file via artifact:/store: protocol (takes precedence over templateLogoUrl) */
+    logoPath?: string;
     /** Use Vertesia default template if no templateUrl provided (default: true for pdf) */
     useDefaultTemplate?: boolean;
     /** Additional pandoc command-line options */
@@ -62,6 +66,8 @@ export interface MarkdownRenditionVars extends BaseRenditionVars {
     artifactRunId?: string;
     /** Document metadata for PDF footer/header */
     metadata?: PdfRenderingMetadata;
+    /** Source reference for auto-wired template data: `store:<objectId>` or `artifact:<path-to-json>` */
+    templateDataSource?: string;
 }
 
 /** Discriminated union of all rendition workflow vars */
@@ -80,31 +86,37 @@ export function isMarkdownRenditionVars(
 
 /**
  * Payload for rendering markdown to PDF or DOCX.
- * Either objectId OR content must be provided.
+ * Either object_id OR content must be provided.
  */
 export interface RenderMarkdownPayload {
     /** Output format */
     format: MarkdownRenditionFormat;
     /** Object ID to render (mutually exclusive with content) */
-    objectId?: string;
-    /** Inline markdown content to render (mutually exclusive with objectId) */
+    object_id?: string;
+    /** Inline markdown content to render (mutually exclusive with object_id) */
     content?: string;
     /** Document title (used for filename when using inline content) */
     title?: string;
     /** URL to a template file for pandoc (DOCX reference doc or LaTeX template) */
-    templateUrl?: string;
+    template_url?: string;
     /** Optional logo URL for template variable `logo-path` (studio-hosted URL) */
-    templateLogoUrl?: string;
-    /** Use Vertesia default template if no templateUrl provided (default: true for pdf) */
-    useDefaultTemplate?: boolean;
+    template_logo_url?: string;
+    /** Template file via artifact:/store: protocol (takes precedence over template_url) */
+    template_path?: string;
+    /** Logo file via artifact:/store: protocol (takes precedence over template_logo_url) */
+    logo_path?: string;
+    /** Use Vertesia default template if no template_url provided (default: true for pdf) */
+    use_default_template?: boolean;
     /** Additional pandoc command-line options */
-    pandocOptions?: string[];
+    pandoc_options?: string[];
     /** Run ID for resolving artifact: and image: URLs */
-    artifactRunId?: string;
+    artifact_run_id?: string;
     /** Document metadata for PDF footer/header */
     metadata?: PdfRenderingMetadata;
+    /** Source reference for auto-wired template data: `store:<objectId>` or `artifact:<path-to-json>` */
+    template_data_source?: string;
     /** Custom upload path for the rendered output */
-    outputPath?: string;
+    output_path?: string;
 }
 
 /**
@@ -123,9 +135,9 @@ export interface RenderMarkdownStatusResponse extends WorkflowRunStatus {
     /** Requested output format (if known) */
     format?: MarkdownRenditionFormat;
     /** Download URL for completed output */
-    downloadUrl?: string;
+    download_url?: string;
     /** File URI in storage for completed output */
-    fileUri?: string;
+    file_uri?: string;
     /** Error details for failed/terminated runs */
     error?: string;
 }
@@ -149,6 +161,8 @@ export interface GenerateRenditionsResult {
     format: string;
     status: string;
     fileUri?: string;
+    /** Warnings about rich content blocks that failed to render (document was still produced) */
+    warnings?: string[];
 }
 
 /**
@@ -160,9 +174,54 @@ export interface RenderMarkdownResponse {
     /** Output format */
     format: MarkdownRenditionFormat;
     /** Download URL for the rendered document */
-    downloadUrl?: string;
+    download_url?: string;
     /** File URI in storage */
-    fileUri?: string;
+    file_uri?: string;
+}
+
+// ============================================================================
+// Slide Deck Types
+// ============================================================================
+
+/** A slide rendered from a named SVG template with structured content */
+export interface TemplateSlide {
+    type: 'template';
+    /** Template name: 'title' | 'section' | 'bullets' | 'two-column' | 'image-text' */
+    template: string;
+    /** Key-value content for the template (values can be strings or string arrays) */
+    content: Record<string, string | string[]>;
+}
+
+/** A slide with raw SVG markup */
+export interface RawSvgSlide {
+    type: 'svg';
+    /** Complete SVG markup (should use 1920x1080 viewBox) */
+    svg: string;
+}
+
+/** A single slide specification — either template-based or raw SVG */
+export type SlideSpec = TemplateSlide | RawSvgSlide;
+
+/** Options for rendering a slide deck to PDF */
+export interface RenderSlidesDeckOptions {
+    /** Canvas scale factor for higher resolution (default: 2) */
+    scale?: number;
+    /** Background color for each slide (default: '#ffffff') */
+    backgroundColor?: string;
+    /** Slide theme — replaces default colors in SVG templates */
+    theme?: Record<string, string>;
+}
+
+/** Result of rendering a slide deck to PDF */
+export interface RenderSlidesDeckResult {
+    /** PDF file as a Uint8Array (use Buffer.from() in Node.js) */
+    buffer: Uint8Array;
+    /** Number of slides rendered */
+    slideCount: number;
+    /** PDF page width in points (720 = 10") */
+    pageWidth: number;
+    /** PDF page height in points (540 = 7.5") */
+    pageHeight: number;
 }
 
 export function isWorkflowTerminalStatus(status: WorkflowExecutionStatus): boolean {

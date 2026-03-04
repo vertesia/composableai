@@ -59,11 +59,11 @@ export default function WorkstreamTabs({
 
   // If there are no multiple workstreams, return an empty div to maintain layout
   if (!hasMultipleWorkstreams) {
-    return <div className="py-1"></div>;
+    return <div className="py-0.5"></div>;
   }
 
   return (
-    <div className="flex overflow-x-auto space-x-1 mb-2 bg-muted border-b-2 border-muted/20 sticky top-0 z-10">
+    <div className="flex overflow-x-auto space-x-1 mb-1 bg-muted border-b border-muted/20 sticky top-0 z-10">
       {sortedWorkstreams.map(([id, name]) => (
         <button
           key={id}

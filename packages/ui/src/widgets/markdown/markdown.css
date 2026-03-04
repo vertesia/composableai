@@ -1,0 +1,192 @@
+/*
+ * Markdown extension styles for MarkdownRenderer.
+ *
+ * Uses CSS custom properties from the Tailwind theme so colours
+ * adapt automatically to light/dark mode.
+ *
+ * Consumers must import this file in their app entry point:
+ *   import '@vertesia/ui/src/widgets/markdown/markdown.css';
+ */
+
+/* ------------------------------------------------------------------ */
+/* Page break (:::pagebreak)                                          */
+/* Rendered as a subtle divider on the web (actual break in PDF)      */
+/* ------------------------------------------------------------------ */
+
+.md-pagebreak {
+    border: none;
+    border-top: 2px dashed var(--color-border);
+    margin: 2rem 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Columns layout (:::columns / :::column)                            */
+/* ------------------------------------------------------------------ */
+
+.md-columns {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.md-columns > .md-column {
+    flex: 1 1 0%;
+    min-width: 0;
+}
+
+/* Stack on narrow viewports */
+@media (max-width: 640px) {
+    .md-columns {
+        flex-direction: column;
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Callout containers (:::note, :::tip, :::warning, etc.)             */
+/* ------------------------------------------------------------------ */
+
+.md-callout {
+    border-left: 4px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    background: var(--color-muted-background, oklch(0.97 0 0));
+}
+
+.md-callout .md-callout-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+/* Semantic variants */
+.md-callout-info {
+    border-left-color: var(--color-info);
+    background: color-mix(in oklch, var(--color-info) 8%, var(--color-background));
+}
+
+.md-callout-info > .md-callout-title {
+    color: var(--color-info);
+}
+
+.md-callout-attention {
+    border-left-color: var(--color-attention);
+    background: color-mix(in oklch, var(--color-attention) 8%, var(--color-background));
+}
+
+.md-callout-attention > .md-callout-title {
+    color: var(--color-attention);
+}
+
+.md-callout-destructive {
+    border-left-color: var(--color-destructive);
+    background: color-mix(in oklch, var(--color-destructive) 8%, var(--color-background));
+}
+
+.md-callout-destructive > .md-callout-title {
+    color: var(--color-destructive);
+}
+
+/* ------------------------------------------------------------------ */
+/* GitHub-style blockquote alerts (> [!NOTE], > [!WARNING], etc.)      */
+/* Uses classes from remark-github-blockquote-alert                   */
+/* ------------------------------------------------------------------ */
+
+.markdown-alert {
+    border-left: 4px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    background: var(--color-muted-background, oklch(0.97 0 0));
+}
+
+.markdown-alert .markdown-alert-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.markdown-alert .markdown-alert-title svg {
+    width: 1em;
+    height: 1em;
+    flex-shrink: 0;
+}
+
+/* NOTE, TIP → info */
+.markdown-alert-note,
+.markdown-alert-tip {
+    border-left-color: var(--color-info);
+    background: color-mix(in oklch, var(--color-info) 8%, var(--color-background));
+}
+
+.markdown-alert-note > .markdown-alert-title,
+.markdown-alert-tip > .markdown-alert-title {
+    color: var(--color-info);
+}
+
+/* WARNING, IMPORTANT → attention */
+.markdown-alert-warning,
+.markdown-alert-important {
+    border-left-color: var(--color-attention);
+    background: color-mix(in oklch, var(--color-attention) 8%, var(--color-background));
+}
+
+.markdown-alert-warning > .markdown-alert-title,
+.markdown-alert-important > .markdown-alert-title {
+    color: var(--color-attention);
+}
+
+/* CAUTION → destructive */
+.markdown-alert-caution {
+    border-left-color: var(--color-destructive);
+    background: color-mix(in oklch, var(--color-destructive) 8%, var(--color-background));
+}
+
+.markdown-alert-caution > .markdown-alert-title {
+    color: var(--color-destructive);
+}
+
+/* ------------------------------------------------------------------ */
+/* Definition lists (<dl>, <dt>, <dd>)                                */
+/* ------------------------------------------------------------------ */
+
+.md-content dl {
+    margin: 1rem 0;
+}
+
+.md-content dt {
+    font-weight: 600;
+    margin-top: 0.75rem;
+}
+
+.md-content dt:first-child {
+    margin-top: 0;
+}
+
+.md-content dd {
+    margin-left: 1.5rem;
+    margin-top: 0.25rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Figures (<figure> / <figcaption>)                                  */
+/* ------------------------------------------------------------------ */
+
+.md-content figure {
+    margin: 1.5rem 0;
+    text-align: center;
+}
+
+.md-content figure img {
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+}
+
+.md-content figcaption {
+    font-size: 0.875rem;
+    color: var(--color-muted);
+    margin-top: 0.5rem;
+    font-style: italic;
+}

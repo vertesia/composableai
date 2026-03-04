@@ -389,12 +389,8 @@ function MessageItemComponent({
                     outputFiles.map(async (name: unknown) => {
                         if (typeof name !== "string" || !name.trim()) return null;
                         const trimmed = name.trim();
-                        // execute_shell returns relative paths like "result.csv" or "plots/chart.png"
-                        // canonical artifact name is under out/
-                        const artifactPath =
-                            trimmed.startsWith("out/") || trimmed.startsWith("files/") || trimmed.startsWith("scripts/")
-                                ? trimmed
-                                : `out/${trimmed}`;
+                        // Strip artifact: protocol prefix to get the artifact-relative path
+                        const artifactPath = trimmed.startsWith("artifact:") ? trimmed.slice(9) : trimmed;
 
                         const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                         const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
@@ -588,7 +584,7 @@ function MessageItemComponent({
                     <div className={cn("mt-2 print:hidden", resolvedStyle.detailsClassName)}>
                         <button
                             onClick={() => setShowDetails(!showDetails)}
-                            className="text-xs text-muted flex items-center"
+                            className="text-[11px] text-muted flex items-center"
                         >
                             {showDetails ? "Hide" : "Show"} details
                             <svg
@@ -603,7 +599,7 @@ function MessageItemComponent({
                         </button>
 
                         {showDetails && (
-                            <div className="mt-2 p-2 bg-muted border border-mixer-muted/40 rounded text-sm">
+                            <div className="mt-1 p-1.5 bg-muted border border-mixer-muted/40 rounded text-sm">
                                 {typeof message.details === "string" ? (
                                     renderContent(message.details)
                                 ) : (

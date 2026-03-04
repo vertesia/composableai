@@ -127,6 +127,15 @@ export interface ConversationState {
      * When a skill is called, its related tools are added to unlocked_tools.
      */
     skill_tool_map?: Record<string, string[]>;
+
+    /**
+     * Current activity group ID for internal tool-execution progress messages.
+     * All updates emitted during one tool-execution cycle should share this ID.
+     */
+    active_activity_group_id?: string;
+
+    /** LLM stop reason from the latest call (e.g., "stop", "length", "tool_use") */
+    finish_reason?: string;
 }
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */

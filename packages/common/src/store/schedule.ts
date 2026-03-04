@@ -107,6 +107,9 @@ export interface CreateSchedulePayload {
 
     /** Whether the schedule should be enabled immediately (defaults to true) */
     enabled?: boolean;
+
+    /** Visibility of the conversation (defaults to "project") */
+    visibility?: 'project' | 'private';
 }
 
 /**

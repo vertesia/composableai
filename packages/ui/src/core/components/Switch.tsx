@@ -17,7 +17,7 @@ interface SwitchProps {
 export function Switch({ value, onChange, size = 'md', children, className, disabled }: SwitchProps) {
     const sizeClass = sizes[size];
     return (
-        <UISwitch checked={value} onChange={() => onChange(!value)} className={`flex items-center ${className} ${disabled ? 'cursor-not-allowed opacity-50' : 'hover:cursor-pointer'}`}>
+        <UISwitch checked={value} onChange={() => onChange(!value)} disabled={disabled} className={`flex items-center ${className} ${disabled ? 'cursor-not-allowed opacity-50' : 'hover:cursor-pointer'}`}>
             <div className={`${value ? 'bg-primary' : 'bg-muted/50'} relative inline-flex ${sizeClass[0]} items-center rounded-full border-1`}>
                 <span
                     className={`${value ? sizeClass[2] : 'translate-x-1'

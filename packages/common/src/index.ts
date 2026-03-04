@@ -1,5 +1,6 @@
 export * from './access-control.js';
 export * from './analytics.js';
+export * from './audit-trail.js';
 export * from './apikey.js';
 export * from './apps.js';
 export * from './ask-user.js';

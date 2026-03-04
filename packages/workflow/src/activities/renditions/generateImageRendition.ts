@@ -31,7 +31,7 @@ export async function generateImageRendition(
         format: originParams.format || (originParams as any).format_output || "png", // Default to png if format is missing
     };
 
-    log.info(`Generating image rendition for ${objectId}`, {
+    log.debug(`Generating image rendition for ${objectId}`, {
         originParams,
         params,
     });
@@ -79,7 +79,7 @@ export async function generateImageRendition(
         client,
         inputObject.content.source,
     );
-    log.info(`Image ${objectId} copied to ${imageFile}`);
+    log.debug(`Image ${objectId} copied to ${imageFile}`);
     renditionPages.push(imageFile);
 
 

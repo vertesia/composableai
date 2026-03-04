@@ -479,6 +479,7 @@ export function createDefaultCodeBlockHandlers(): Record<
 
         // Mockup handler (inline SVG)
         mockup: MockupCodeBlockHandler,
+        svg: MockupCodeBlockHandler,
 
         // Proposal handlers
         proposal: ProposalCodeBlockHandler,

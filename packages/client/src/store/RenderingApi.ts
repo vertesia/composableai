@@ -21,16 +21,16 @@ export class RenderingApi extends ApiTopic {
     /**
      * Render markdown content to PDF or DOCX.
      *
-     * @param payload - Rendering options including format and either objectId or inline content
+     * @param payload - Rendering options including format and either object_id or inline content
      * @returns Rendering result with download URL
      *
      * @example
      * // Render an existing markdown document
      * const result = await client.rendering.render({
      *     format: MarkdownRenditionFormat.pdf,
-     *     objectId: "doc-123"
+     *     object_id: "doc-123"
      * });
-     * // Download from result.downloadUrl
+     * // Download from result.download_url
      *
      * @example
      * // Render inline markdown content
@@ -75,14 +75,14 @@ export class RenderingApi extends ApiTopic {
             const status = await this.getStatus(started.workflow_id, started.workflow_run_id);
 
             if (status.status === WorkflowExecutionStatus.COMPLETED) {
-                if (!status.downloadUrl && !status.fileUri) {
+                if (!status.download_url && !status.file_uri) {
                     throw new Error(status.error || "Rendering completed but no output file was produced");
                 }
                 return {
                     status: "success",
                     format: payload.format,
-                    downloadUrl: status.downloadUrl,
-                    fileUri: status.fileUri,
+                    download_url: status.download_url,
+                    file_uri: status.file_uri,
                 };
             }
 

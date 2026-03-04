@@ -40,8 +40,8 @@ export interface InteractionExecutionError {
 export interface ConversationStripOptions {
     /**
      * Number of turns to keep images before stripping them.
-     * - 0: Strip images immediately after each turn (default)
-     * - N > 0: Keep images for N turns before stripping
+     * - 0: Strip images immediately after each turn
+     * - N > 0: Keep images for N turns before stripping (default: 5)
      * - Infinity: Never strip images
      */
     images_after_turns?: number;
@@ -704,7 +704,7 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /**
      * The token threshold in thousands (K) for creating checkpoints.
      * If total tokens exceed this value, a checkpoint will be created.
-     * If not specified, default value of 150K tokens will be used.
+     * If not specified, the default is computed from the selected model context window (75%).
      */
     checkpoint_tokens?: number;
 

@@ -113,4 +113,5 @@ export enum PrincipalType {
     ApiKey = "apikey",
     ServiceAccount = "service_account",
     Agent = "agent",
+    Schedule = "schedule",
 }

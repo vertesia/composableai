@@ -1,8 +1,8 @@
 /**
  * Install hooks for running commands before/after project creation
  */
-import { spawn, spawnSync } from 'child_process';
 import chalk from 'chalk';
+import { spawn, spawnSync } from 'child_process';
 import prompts from 'prompts';
 import { PostInstallConfig, PreInstallConfig } from './template-config.js';
 

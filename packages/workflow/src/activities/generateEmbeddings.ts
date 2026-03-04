@@ -72,7 +72,7 @@ export async function generateEmbeddings(
     }
 
     if (!projectData?.configuration.embeddings[type]?.enabled) {
-        log.info(
+        log.debug(
             `Embeddings generation disabled for type ${type} on project: ${projectData.name} (${projectData.namespace})`,
             { config },
         );
@@ -83,7 +83,7 @@ export async function generateEmbeddings(
         };
     }
 
-    log.info(`${type} embedding generation starting for object ${objectId}`, {
+    log.debug(`${type} embedding generation starting for object ${objectId}`, {
         force,
         config,
     });
@@ -203,7 +203,7 @@ async function generateTextEmbeddings(
     // Skip if embeddings already exist with matching etag (unless force=true)
     const existingEmbedding = document.embeddings?.[type];
     if (!force && existingEmbedding?.etag && textEtag && existingEmbedding.etag === textEtag) {
-        log.info(`Skipping ${type} embeddings for document ${document.id} - etag unchanged`);
+        log.debug(`Skipping ${type} embeddings for document ${document.id} - etag unchanged`);
         return {
             id: document.id,
             type,
@@ -221,7 +221,7 @@ async function generateTextEmbeddings(
     const maxTokens = config.max_tokens ?? 8000;
 
     //generate embeddings for the main doc if document isn't too large
-    log.info(`Generating ${type} embeddings for document ${document.id}`);
+    log.debug(`Generating ${type} embeddings for document ${document.id}`);
     if (
         type === SupportedEmbeddingTypes.text &&
         tokenCount !== undefined &&
@@ -237,7 +237,7 @@ async function generateTextEmbeddings(
             message: `${type} embeddings generation, skipped for large document (${tokenCount} tokens)`,
         }
     } else {
-        log.info(`Generating ${type} embeddings for document`);
+        log.debug(`Generating ${type} embeddings for document`);
 
         const res = await generateEmbeddingsFromStudio(
             JSON.stringify(document[type]),
@@ -252,7 +252,7 @@ async function generateTextEmbeddings(
             };
         }
 
-        log.info(`${type} embeddings generated for document ${document.id}`, {
+        log.debug(`${type} embeddings generated for document ${document.id}`, {
             len: res.values.length,
         });
         await client.objects.setEmbedding(document.id, type, {
@@ -277,7 +277,7 @@ async function generateImageEmbeddings({
     config,
     force,
 }: ExecuteGenerateEmbeddingsParams) {
-    log.info("Generating image embeddings for document " + document.id, {
+    log.debug("Generating image embeddings for document " + document.id, {
         content: document.content,
     });
     if (
@@ -298,7 +298,7 @@ async function generateImageEmbeddings({
     // Skip if embeddings already exist with matching etag (unless force=true)
     const existingEmbedding = document.embeddings?.[type];
     if (!force && existingEmbedding?.etag && contentEtag && existingEmbedding.etag === contentEtag) {
-        log.info(`Skipping ${type} embeddings for document ${document.id} - content etag unchanged`);
+        log.debug(`Skipping ${type} embeddings for document ${document.id} - content etag unchanged`);
         return {
             id: document.id,
             type,
@@ -378,7 +378,7 @@ async function generateEmbeddingsFromStudio(
     client: VertesiaClient,
     model?: string,
 ): Promise<EmbeddingsResult> {
-    log.info(
+    log.debug(
         `Generating embeddings for text of ${text.length} chars with environment ${env}`,
     );
 

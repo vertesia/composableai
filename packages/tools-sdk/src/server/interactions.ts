@@ -49,12 +49,17 @@ export function createInteractionsRoute(app: Hono, basePath: string, config: Too
         await authorize(c);
         const name = c.req.param('name');
 
-        // Search across all collections for the interaction
-        for (const coll of interactions) {
-            const inter = coll.getInteractionByName(name);
-            if (inter) {
-                return c.json(inter);
-            }
+        const parts = name.split(':');
+        if (parts.length !== 2) {
+            throw new HTTPException(400, {
+                message: "Invalid interaction name. Expected format 'collection:interaction'"
+            });
+        }
+        const collName = parts[0];
+        const interName = parts[1];
+        const inter = interactions.find(t => t.name === collName)?.getInteractionByName(interName);
+        if (inter) {
+            return c.json({ ...inter, id: collName + ":" + interName });
         }
 
         throw new HTTPException(404, {

@@ -1,4 +1,4 @@
-import { AgentMessage } from "@vertesia/common";
+import { AgentMessage, AgentMessageType } from "@vertesia/common";
 import { Button, cn, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
@@ -9,6 +9,47 @@ import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { useImageLightbox } from "../ImageLightbox";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
 import { ToolExecutionStatus } from "./utils";
+
+/** Keys that are internal metadata and not interesting to display */
+const META_KEYS = new Set([
+    'tool', 'tool_run_id', 'activity_group_id', 'event_class',
+    'tool_iteration', 'tool_status', 'tools', 'streamed',
+    'files', 'outputFiles',
+]);
+
+/** Filter out internal metadata keys, return user-facing detail entries */
+function extractInterestingDetails(
+    details: Record<string, unknown> | undefined
+): Array<[string, unknown]> {
+    if (!details) return [];
+    return Object.entries(details).filter(
+        ([key, value]) => !META_KEYS.has(key) && value !== undefined && value !== null && value !== ''
+    );
+}
+
+/** Convert snake_case or camelCase key to a readable label */
+function formatDetailKey(key: string): string {
+    return key
+        .replace(/_/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/^./, c => c.toUpperCase());
+}
+
+/** Badge color per status */
+function statusBadgeClass(status?: ToolExecutionStatus): string {
+    switch (status) {
+        case 'completed':
+            return 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
+        case 'running':
+            return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+        case 'error':
+            return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800';
+        case 'warning':
+            return 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
+        default:
+            return '';
+    }
+}
 
 export interface ToolCallGroupProps {
     messages: AgentMessage[];
@@ -105,6 +146,24 @@ const getFilesFromDetails = (details: { files?: string[]; outputFiles?: string[]
     return Array.isArray(files) ? files : undefined;
 };
 
+const getMessageActivityLabel = (message: AgentMessage): string => {
+    const details = message.details as { tool?: string } | undefined;
+    if (details?.tool) return details.tool;
+
+    switch (message.type) {
+        case AgentMessageType.UPDATE:
+            return "update";
+        case AgentMessageType.WARNING:
+            return "warning";
+        case AgentMessageType.ERROR:
+            return "error";
+        case AgentMessageType.SYSTEM:
+            return "system";
+        default:
+            return "activity";
+    }
+};
+
 function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames = {} }: ToolCallItemProps) {
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const toast = useToast();
@@ -117,7 +176,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
     urlCacheRef.current = urlCache;
 
     const details = message.details as { tool?: string; files?: string[]; outputFiles?: string[]; [key: string]: unknown } | undefined;
-    const toolName = details?.tool || "Tool";
+    const toolName = getMessageActivityLabel(message);
     const files = getFilesFromDetails(details);
     const messageContent = typeof message.message === "string" ? message.message : "";
 
@@ -139,10 +198,8 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                     if (file.startsWith("http://") || file.startsWith("https://")) {
                         return file;
                     }
-                    // Resolve artifact path to signed URL
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
+                    // Strip artifact: protocol prefix to get the artifact-relative path
+                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
                     const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     const isImage = imageExtensions.has(ext);
@@ -214,7 +271,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                                 {messageContent}
                             </span>
                         ) : (
-                            <span className="text-xs text-muted italic">Tool: {toolName}</span>
+                            <span className="text-xs text-muted italic">Activity: {toolName}</span>
                         )}
                     </div>
                 </div>
@@ -242,43 +299,65 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
 
             {/* Always show images inline, regardless of expanded state */}
             {imageFiles.length > 0 && (
-                <div className="px-4 pb-2">
+                <div className="px-3 pb-1.5">
                     <FileDisplay files={imageFiles} />
                 </div>
             )}
 
-            {/* Expanded content */}
-            {isExpanded && (
-                <div className={cn("px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30", classNames.itemContentClassName)}>
-                    {/* Tool name badge shown when expanded */}
-                    <div className="mb-2">
-                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", classNames.toolBadgeClassName)}>
-                            {toolName}
-                        </span>
-                    </div>
-
-                    {messageContent && (
-                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
-                            <MarkdownRenderer artifactRunId={artifactRunId}>{messageContent}</MarkdownRenderer>
+            {/* Expanded content — shows tool metadata, key params, then raw details */}
+            {isExpanded && (() => {
+                const toolStatusValue = (details as Record<string, unknown> | undefined)?.tool_status as ToolExecutionStatus | undefined;
+                const interestingDetails = extractInterestingDetails(details as Record<string, unknown> | undefined);
+                return (
+                    <div className={cn("px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30", classNames.itemContentClassName)}>
+                        {/* Badges row: tool name + status + timestamp */}
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", classNames.toolBadgeClassName)}>
+                                {toolName}
+                            </span>
+                            {toolStatusValue && (
+                                <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md border font-medium", statusBadgeClass(toolStatusValue))}>
+                                    {toolStatusValue}
+                                </span>
+                            )}
+                            <span className="text-[10px] text-muted/70">{dayjs(message.timestamp).format("HH:mm:ss")}</span>
                         </div>
-                    )}
 
-                    {/* Non-image files display */}
-                    {nonImageFiles.length > 0 && <FileDisplay files={nonImageFiles} />}
+                        {/* Key parameters */}
+                        {interestingDetails.length > 0 && (
+                            <div className="mb-2 space-y-0.5">
+                                {interestingDetails.map(([key, value]) => (
+                                    <div key={key} className="flex gap-1.5 text-xs">
+                                        <span className="text-muted font-medium flex-shrink-0">{formatDetailKey(key)}:</span>
+                                        <span className="text-foreground break-all">
+                                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
-                    {/* Technical details - collapsible */}
-                    {details && Object.keys(details).length > 1 && (
-                        <details className="mt-3 text-xs border rounded p-2 bg-muted/30" onClick={(e) => e.stopPropagation()}>
-                            <summary className="cursor-pointer text-muted">
-                                Technical Details
-                            </summary>
-                            <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto font-mono whitespace-pre-wrap">
-                                {JSON.stringify(details, null, 2)}
-                            </pre>
-                        </details>
-                    )}
-                </div>
-            )}
+                        {messageContent && (
+                            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
+                                <MarkdownRenderer artifactRunId={artifactRunId}>{messageContent}</MarkdownRenderer>
+                            </div>
+                        )}
+
+                        {/* Non-image files display */}
+                        {nonImageFiles.length > 0 && <FileDisplay files={nonImageFiles} />}
+
+                        {/* Raw details — demoted to collapsible */}
+                        {details && Object.keys(details).length > 1 && (
+                            <details className="mt-2 text-xs border rounded p-1.5 bg-muted/30" onClick={(e) => e.stopPropagation()}>
+                                <summary className="cursor-pointer text-muted">Raw details</summary>
+                                <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto font-mono whitespace-pre-wrap">
+                                    {JSON.stringify(details, null, 2)}
+                                </pre>
+                            </details>
+                        )}
+                    </div>
+                );
+            })()}
         </div>
     );
 }
@@ -308,17 +387,17 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
 
+                    // Strip artifact: protocol prefix to get the artifact-relative path
+                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
+
                     // Skip image files - they're shown at the group level
-                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     if (imageExtensions.has(ext)) return null;
 
-                    if (file.startsWith("http://") || file.startsWith("https://")) {
-                        return file;
+                    if (artifactPath.startsWith("http://") || artifactPath.startsWith("https://")) {
+                        return artifactPath;
                     }
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "attachment");
@@ -349,7 +428,7 @@ function CollapsedItemFiles({ files, artifactRunId }: { files: string[] | undefi
     if (resolvedFiles.length === 0) return null;
 
     return (
-        <div className="pl-5 pr-3 pb-2">
+        <div className="pl-4 pr-2 pb-1.5">
             <FileDisplay files={resolvedFiles} />
         </div>
     );
@@ -390,20 +469,18 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
                 files.map(async (file) => {
                     if (!file || typeof file !== "string") return null;
 
+                    // Strip artifact: protocol prefix to get the artifact-relative path
+                    const artifactPath = file.startsWith("artifact:") ? file.slice(9) : file;
+
                     // Check if it's an image file
-                    const ext = file.split(".").pop()?.toLowerCase() || "";
+                    const ext = artifactPath.split(".").pop()?.toLowerCase() || "";
                     const imageExtensions = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);
                     if (!imageExtensions.has(ext)) return null;
 
                     // If it's already a full URL, return as-is
-                    if (file.startsWith("http://") || file.startsWith("https://")) {
-                        return file;
+                    if (artifactPath.startsWith("http://") || artifactPath.startsWith("https://")) {
+                        return artifactPath;
                     }
-
-                    // Resolve artifact path to signed URL
-                    const artifactPath = file.startsWith("out/") || file.startsWith("files/") || file.startsWith("scripts/")
-                        ? file
-                        : `out/${file}`;
 
                     try {
                         const cacheKey = getArtifactCacheKey(artifactRunId, artifactPath, "inline");
@@ -433,7 +510,7 @@ function GroupImageDisplay({ messages, artifactRunId }: { messages: AgentMessage
     if (resolvedImages.length === 0) return null;
 
     return (
-        <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">
+        <div className="px-3 py-1.5 border-b border-gray-100 dark:border-gray-800">
             <FileDisplay files={resolvedImages} />
         </div>
     );
@@ -465,8 +542,12 @@ function ToolCallGroupComponent({
 
     // Render status indicator based on tool execution status
     const renderStatusIndicator = () => {
-        if (showPulsatingCircle || toolStatus === "running") {
+        // Only pulse for the currently active/latest group
+        if (showPulsatingCircle) {
             return <PulsatingCircle size="sm" color="blue" />;
+        }
+        if (toolStatus === "running") {
+            return <span className="size-2 rounded-full bg-blue-500 inline-block" />;
         }
         if (toolStatus === "completed") {
             return <CheckCircle className="size-4 text-success" />;
@@ -519,15 +600,12 @@ function ToolCallGroupComponent({
     const lastTimestamp = lastMessage.timestamp;
 
     // Get tool names for summary
-    const toolNames = messages.map(m => {
-        const details = m.details as { tool?: string } | undefined;
-        return details?.tool || "tool";
-    });
+    const toolNames = messages.map((m) => getMessageActivityLabel(m));
 
     const uniqueToolCount = new Set(toolNames).size;
     const toolSummary = uniqueToolCount === 1
         ? `${messages.length}× ${toolNames[0]}`
-        : `${messages.length} tool calls`;
+        : `${messages.length} activity updates`;
 
     const toggleItem = (index: number) => {
         setExpandedItems(prev => {
@@ -544,7 +622,7 @@ function ToolCallGroupComponent({
     const copyAllToClipboard = () => {
         const allContent = messages.map(m => {
             const details = m.details as { tool?: string; [key: string]: unknown } | undefined;
-            return `[${details?.tool || "tool"}] ${m.message || ""}\n${details ? JSON.stringify(details, null, 2) : ""}`;
+            return `[${getMessageActivityLabel(m)}] ${m.message || ""}\n${details ? JSON.stringify(details, null, 2) : ""}`;
         }).join("\n\n---\n\n");
 
         navigator.clipboard.writeText(allContent).then(() => {
@@ -565,7 +643,7 @@ function ToolCallGroupComponent({
                 className={cn("flex items-center justify-between px-4 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors", headerClassName)}
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                     {renderStatusIndicator()}
                     <span className={cn("text-xs font-medium text-muted", senderClassName)}>Agent</span>
                     <span className={cn("text-xs text-purple-600 dark:text-purple-400 font-medium", toolSummaryClassName)}>
@@ -578,7 +656,7 @@ function ToolCallGroupComponent({
                     )}
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                     <span className="text-[11px] text-muted/70">
                         {dayjs(firstTimestamp).format("HH:mm:ss")}
                         {messages.length > 1 && ` - ${dayjs(lastTimestamp).format("HH:mm:ss")}`}
@@ -603,10 +681,10 @@ function ToolCallGroupComponent({
 
             {/* Collapsed summary - show tool calls as single-line rows with expand option */}
             {isCollapsed && (
-                <div className="px-4 py-1 space-y-0">
+                <div className="px-3 py-0.5 space-y-0">
                     {messages.map((m, idx) => {
                         const details = m.details as { tool?: string; files?: string[]; outputFiles?: string[] } | undefined;
-                        const toolName = details?.tool || "tool";
+                        const toolName = getMessageActivityLabel(m);
                         const fullMessage = typeof m.message === "string" ? m.message : "";
                         const isAnimating = animatingIndices.has(idx);
                         const isItemExpanded = expandedItems.has(idx);
@@ -627,7 +705,7 @@ function ToolCallGroupComponent({
                             >
                                 {/* Row header - clickable to expand */}
                                 <div
-                                    className={cn("flex items-start gap-2 py-2 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50", itemHeaderClassName)}
+                                    className={cn("flex items-start gap-2 py-1.5 text-xs cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50", itemHeaderClassName)}
                                     onClick={() => toggleItem(idx)}
                                     title={fullMessage}
                                 >
@@ -645,7 +723,7 @@ function ToolCallGroupComponent({
                                                 {fullMessage}
                                             </span>
                                         ) : (
-                                            <span className="text-muted italic">Tool: {toolName}</span>
+                                            <span className="text-muted italic">Activity: {toolName}</span>
                                         )}
                                     </div>
                                     {/* Tool name badge on the right */}
@@ -657,23 +735,57 @@ function ToolCallGroupComponent({
                                 </div>
                                 {/* Always show images inline with resolved URLs */}
                                 <CollapsedItemFiles files={files} artifactRunId={artifactRunId} />
-                                {/* Expanded content - show full message */}
-                                {isItemExpanded && (
-                                    <div className={cn("pl-5 pr-3 pb-2 text-sm", itemContentClassName)}>
-                                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
-                                            <MarkdownRenderer artifactRunId={artifactRunId}>{fullMessage}</MarkdownRenderer>
+                                {/* Expanded content — tool metadata + key params + raw details */}
+                                {isItemExpanded && (() => {
+                                    const toolStatusValue = (details as Record<string, unknown> | undefined)?.tool_status as ToolExecutionStatus | undefined;
+                                    const interestingDetails = extractInterestingDetails(details as Record<string, unknown> | undefined);
+                                    return (
+                                        <div className={cn("pl-5 pr-3 pb-2 text-sm", itemContentClassName)}>
+                                            {/* Badges row: tool name + status + timestamp */}
+                                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                                <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-medium", toolBadgeClassName)}>
+                                                    {toolName}
+                                                </span>
+                                                {toolStatusValue && (
+                                                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md border font-medium", statusBadgeClass(toolStatusValue))}>
+                                                        {toolStatusValue}
+                                                    </span>
+                                                )}
+                                                <span className="text-[10px] text-muted/70">{dayjs(m.timestamp).format("HH:mm:ss")}</span>
+                                            </div>
+
+                                            {/* Key parameters */}
+                                            {interestingDetails.length > 0 && (
+                                                <div className="mb-1.5 space-y-0.5">
+                                                    {interestingDetails.map(([key, value]) => (
+                                                        <div key={key} className="flex gap-1.5 text-xs">
+                                                            <span className="text-muted font-medium flex-shrink-0">{formatDetailKey(key)}:</span>
+                                                            <span className="text-foreground break-all">
+                                                                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {fullMessage && (
+                                                <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
+                                                    <MarkdownRenderer artifactRunId={artifactRunId}>{fullMessage}</MarkdownRenderer>
+                                                </div>
+                                            )}
+
+                                            {/* Raw details — demoted to collapsible */}
+                                            {details && Object.keys(details).length > 1 && (
+                                                <details className="mt-1.5 text-xs">
+                                                    <summary className="text-muted cursor-pointer">Raw details</summary>
+                                                    <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto">
+                                                        {JSON.stringify(details, null, 2)}
+                                                    </pre>
+                                                </details>
+                                            )}
                                         </div>
-                                        {/* Show details if available */}
-                                        {details && Object.keys(details).length > 1 && (
-                                            <details className="mt-2 text-xs">
-                                                <summary className="text-muted cursor-pointer">Show details</summary>
-                                                <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-x-auto">
-                                                    {JSON.stringify(details, null, 2)}
-                                                </pre>
-                                            </details>
-                                        )}
-                                    </div>
-                                )}
+                                    );
+                                })()}
                             </div>
                         );
                     })}

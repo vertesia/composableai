@@ -52,7 +52,7 @@ export async function generateOrAssignContentType(
   const interactionName =
     params.interactionNames?.selectDocumentType ?? INT_SELECT_DOCUMENT_TYPE;
 
-  log.info("SelectDocumentType for object: " + objectId, { payload });
+  log.debug("SelectDocumentType for object: " + objectId, { payload });
 
   const object = await client.objects.retrieve(objectId, "+text");
 
@@ -80,7 +80,7 @@ export async function generateOrAssignContentType(
     return { status: "failed", error: "no-text" };
   }
 
-  const types = await client.types.list(undefined, {
+  const types = await client.types.catalog.list({
     schema: true,
   });
 
