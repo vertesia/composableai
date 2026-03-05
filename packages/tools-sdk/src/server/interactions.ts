@@ -89,6 +89,11 @@ function createInteractionEndpoints(coll: InteractionCollection): Hono {
     endpoint.get('/:name', async (c: Context) => {
         await authorize(c);
         const name = c.req.param('name');
+        if (!name) {
+            throw new HTTPException(400, {
+                message: 'Interaction name is required'
+            });
+        }
         const inter = coll.getInteractionByName(name);
         if (!inter) {
             throw new HTTPException(404, {
