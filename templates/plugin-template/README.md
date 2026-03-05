@@ -12,6 +12,36 @@ A unified template for building Vertesia plugins with a **Hono tool server** (ba
 - **MCP Providers** -- Model Context Protocol integrations
 - **UI Plugin** -- custom React pages integrated into the Vertesia platform
 
+## Prerequisites
+
+Your plugin must be registered as an app in Vertesia and installed in a project before users can access it. Use the CLI to create and install in one step:
+
+```bash
+vertesia apps create --install -f manifest.json
+```
+
+Where `manifest.json` describes your app:
+
+```json
+{
+  "name": "my-plugin",
+  "title": "My Plugin",
+  "description": "What this plugin does",
+  "publisher": "your-org",
+  "visibility": "private",
+  "status": "beta",
+  "endpoint": "https://your-plugin.vercel.app/api"
+}
+```
+
+The `--install` flag installs the app in the current project and grants permissions to the creator. The `endpoint` URL points to your deployed tool server — update it after deploying (see [Deployment](#deployment)).
+
+Once created, set the app name in `.env.local` for local development:
+
+```bash
+VITE_APP_NAME=my-plugin
+```
+
 ## Quick Start
 
 ```bash
@@ -20,12 +50,6 @@ pnpm dev          # Vite dev server with API middleware
 ```
 
 Open <https://localhost:5173> -- the UI loads with HMR, and the tool server API is available at `/api` on the same port.
-
-Set your app ID in `.env.local`:
-
-```bash
-VITE_APP_NAME=your-app-id
-```
 
 ## Scripts
 
