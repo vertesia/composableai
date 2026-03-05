@@ -7,3 +7,27 @@
 @source "../../index.html";
 @source "../../node_modules/@vertesia/ui/src";
 @source "../../node_modules/@vertesia/tools-admin-ui/src";
+
+/*
+ * Theme Customization
+ *
+ * Override the default Vertesia theme colors below. Values use oklch(lightness chroma hue).
+ * See https://oklch.com for a color picker.
+ * These apply globally — plugin pages and the admin UI will both use the custom theme.
+ * Uncomment and adjust to match your brand.
+ */
+
+/* :root {
+  --primary: oklch(55% 0.200 145);
+  --primary-background: oklch(97% 0.020 145);
+  --secondary: oklch(35% 0.050 280);
+  --secondary-background: oklch(95% 0.010 280);
+}
+
+.dark {
+  --primary: oklch(72% 0.190 145);
+  --primary-background: oklch(25% 0.030 145);
+  --secondary: oklch(80% 0.040 280);
+  --secondary-background: oklch(22% 0.015 280);
+} */
+
