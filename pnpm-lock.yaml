@@ -1017,7 +1017,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.19.5
-        version: 1.19.9(hono@4.11.10)
+        version: 1.19.9(hono@4.12.4)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -1040,8 +1040,8 @@ importers:
         specifier: ^17.2.3
         version: 17.3.1
       hono:
-        specifier: ^4.10.3
-        version: 4.11.10
+        specifier: ^4.12.4
+        version: 4.12.4
       lucide-react:
         specifier: ^0.562.0
         version: 0.562.0(react@19.2.3)
@@ -1138,7 +1138,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.19.5
-        version: 1.19.9(hono@4.11.10)
+        version: 1.19.9(hono@4.12.4)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -1155,8 +1155,8 @@ importers:
         specifier: ^17.2.3
         version: 17.3.1
       hono:
-        specifier: ^4.10.3
-        version: 4.11.10
+        specifier: ^4.12.4
+        version: 4.12.4
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -1709,12 +1709,6 @@ packages:
     resolution: {integrity: sha512-AIcMP77AvirGbRl/UZFTq5hjXK+2wC7qFRGoHSDrZ5v5b8DK/GYpXW3CPRL53NkvDqb9D+alBiC/dV0Fb7eJcw==}
     engines: {node: '>=18'}
     cpu: [arm64]
-    os: [openbsd]
-
-  '@esbuild/openbsd-x64@0.27.3':
-    resolution: {integrity: sha512-DnW2sRrBzA+YnE70LKqnM3P+z8vehfJWHXECbwBmH/CU51z6FiqTQTHFenPlHmo3a8UgpLyH3PT+87OViOh1AQ==}
-    engines: {node: '>=18'}
-    cpu: [x64]
     os: [openbsd]
 
   '@esbuild/openharmony-arm64@0.27.3':
@@ -5391,6 +5385,10 @@ packages:
     resolution: {integrity: sha512-kyWP5PAiMooEvGrA9jcD3IXF7ATu8+o7B3KCbPXid5se52NPqnOpM/r9qeW2heMnOekF4kqR1fXJqCYeCLKrZg==}
     engines: {node: '>=16.9.0'}
 
+  hono@4.12.4:
+    resolution: {integrity: sha512-ooiZW1Xy8rQ4oELQ++otI2T9DsKpV0M6c6cO6JGx4RTfav9poFFLlet9UMXHZnoM1yG0HWGlQLswBGX3RZmHtg==}
+    engines: {node: '>=16.9.0'}
+
   html-url-attributes@3.0.1:
     resolution: {integrity: sha512-ol6UPyBWqsrO6EJySPz2O7ZSr856WDrEzM5zMqp+FJJLGMW35cLYmmZnl0vztAZxRUoNZJFTCohfjuIJ8I4QBQ==}
 
@@ -8545,9 +8543,6 @@ snapshots:
   '@esbuild/openbsd-arm64@0.27.3':
     optional: true
 
-  '@esbuild/openbsd-x64@0.27.3':
-    optional: true
-
   '@esbuild/openharmony-arm64@0.27.3':
     optional: true
 
@@ -8998,9 +8993,9 @@ snapshots:
       react-dom: 19.2.3(react@19.2.3)
       use-sync-external-store: 1.6.0(react@19.2.3)
 
-  '@hono/node-server@1.19.9(hono@4.11.10)':
+  '@hono/node-server@1.19.9(hono@4.12.4)':
     dependencies:
-      hono: 4.11.10
+      hono: 4.12.4
 
   '@humanfs/core@0.19.1': {}
 
@@ -12051,7 +12046,6 @@ snapshots:
       '@esbuild/netbsd-arm64': 0.27.3
       '@esbuild/netbsd-x64': 0.27.3
       '@esbuild/openbsd-arm64': 0.27.3
-      '@esbuild/openbsd-x64': 0.27.3
       '@esbuild/openharmony-arm64': 0.27.3
       '@esbuild/sunos-x64': 0.27.3
       '@esbuild/win32-arm64': 0.27.3
@@ -12696,6 +12690,8 @@ snapshots:
   heap-js@2.7.1: {}
 
   hono@4.11.10: {}
+
+  hono@4.12.4: {}
 
   html-url-attributes@3.0.1: {}
 
