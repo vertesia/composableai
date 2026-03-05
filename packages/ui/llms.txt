@@ -26,11 +26,14 @@ import { useNavigate, useParams, NavLink, NestedRouterProvider } from '@vertesia
 // Session (authentication, Vertesia client access)
 import { useUserSession } from '@vertesia/ui/session';
 
-// Layout components
-import { FullHeightLayout } from '@vertesia/ui/layout';
+// Layout components (sidebar, full-height containers)
+import { Sidebar, SidebarSection, SidebarItem, useSidebarToggle, FullHeightLayout } from '@vertesia/ui/layout';
 
-// Feature components (headers, navigation)
-import { GenericPageNavHeader } from '@vertesia/ui/features';
+// Feature components (headers, navigation, agent conversation)
+import { GenericPageNavHeader, ModernAgentConversation } from '@vertesia/ui/features';
+
+// Shell (app wrapper with auth, routing, sidebar)
+import { VertesiaShell, StandaloneApp } from '@vertesia/ui/shell';
 ```
 
 ---
@@ -360,6 +363,123 @@ import { FullHeightLayout } from '@vertesia/ui/layout';
   <div>Content fills available height</div>
 </FullHeightLayout>
 ```
+
+## Sidebar Components
+
+Collapsible sidebar with sections and navigation items.
+
+```tsx
+import { Sidebar, SidebarSection, SidebarItem, useSidebarToggle } from '@vertesia/ui/layout';
+```
+
+### SidebarSection
+
+Groups sidebar items with an optional title header.
+
+```tsx
+interface SidebarSectionProps {
+  title?: React.ReactNode;     // Section header (hidden when sidebar collapsed)
+  action?: React.ReactNode;    // Action element next to title
+  isFooter?: boolean;          // Pushes section to bottom (mt-auto)
+  className?: string;
+}
+
+<SidebarSection title="Navigation">
+  <SidebarItem ...>Home</SidebarItem>
+  <SidebarItem ...>Settings</SidebarItem>
+</SidebarSection>
+
+// Footer section (theme toggle, user menu, etc.)
+<SidebarSection isFooter>
+  <ModeToggle label={isOpen ? 'Theme' : false} />
+</SidebarSection>
+```
+
+### SidebarItem
+
+Navigation link within a sidebar section.
+
+```tsx
+interface SidebarItemProps {
+  href: string;
+  icon?: React.ComponentType;   // Lucide icon or similar
+  current?: boolean;            // Active/selected state
+  id?: string;
+  external?: boolean;           // Opens in new tab
+  replace?: boolean;            // Replace history entry
+  tools?: React.ReactNode;      // Right-side actions
+  className?: string;
+}
+
+<SidebarItem
+  href="/app/settings"
+  icon={SettingsIcon}
+  current={path === '/app/settings'}
+>
+  Settings
+</SidebarItem>
+
+// For long text, wrap children to truncate
+<SidebarItem href={href} icon={MessageSquare} className="overflow-hidden">
+  <span className="truncate">{longLabel}</span>
+</SidebarItem>
+```
+
+### useSidebarToggle
+
+Access sidebar open/collapsed state.
+
+```tsx
+const { isOpen, toggleMobile } = useSidebarToggle();
+// isOpen: boolean — true when sidebar is expanded
+// toggleMobile(open?: boolean) — toggle mobile sidebar
+```
+
+## ModeToggle (Dark/Light Theme)
+
+```tsx
+import { ModeToggle } from '@vertesia/ui/core';
+
+<ModeToggle />                           // Icon only
+<ModeToggle label="Theme" />             // With label text
+<ModeToggle label={isOpen ? 'Theme' : false} />  // Label when sidebar open
+```
+
+## ModernAgentConversation
+
+Full-featured agent chat interface with streaming messages, plan visualization, and workstream management.
+
+```tsx
+import { ModernAgentConversation } from '@vertesia/ui/features';
+
+interface ModernAgentConversationProps {
+  run?: { runId: string; workflowId: string };  // Active conversation (undefined = start view)
+  startWorkflow: (initialMessage?: string) => Promise<{ run_id: string; workflow_id: string } | undefined>;
+  resetWorkflow?: () => void;          // Called when user clicks "New conversation"
+  title?: string;                       // Header title (default: "Agent")
+  placeholder?: string;                 // Input placeholder text
+  startButtonText?: string;             // Start button label
+  hideObjectLinking?: boolean;          // Hide document linking UI
+  interactive?: boolean;                // Enable user input during conversation
+  fullWidth?: boolean;                  // Disable max-width constraint
+}
+
+// Basic usage
+<ModernAgentConversation
+  run={run ? { runId: run.run_id, workflowId: run.workflow_id } : undefined}
+  startWorkflow={startWorkflow}
+  resetWorkflow={handleReset}
+  title="My Assistant"
+  placeholder="Ask me anything..."
+  startButtonText="Start Conversation"
+  hideObjectLinking
+  interactive
+/>
+```
+
+**Two states:**
+- No `run` prop → shows start view with title, description area, and input to begin a conversation
+- With `run` prop → streams messages and shows the active conversation with real-time updates
 
 ---
 

@@ -1,0 +1,27 @@
+/**
+ * Vertesia shared styles
+ *
+ * Import this file to get the full set of design tokens, theme bindings,
+ * utility overrides, tooltips, and base layer rules.
+ *
+ * Usage (apps with Vite alias @vertesia/ui → src/):
+ *   @import "@vertesia/ui/css/index.css";
+ *
+ * Usage (packages via exports):
+ *   @import "@vertesia/ui/styles.css";
+ *
+ * Granular imports:
+ *   @import "@vertesia/ui/css/color.css";
+ *   @import "@vertesia/ui/css/theme.css";
+ *
+ * Typography (.vprose) is opt-in since it requires @tailwindcss/typography:
+ *   @import "@vertesia/ui/css/typography.css" layer(base);
+ */
+
+@import "./color.css" layer(base);
+@import "./theme.css" layer(theme);
+@import "./custom-tooltips.css" layer(utilities);
+@import "./utilities.css";
+@import "./base.css";
+
+@custom-variant dark (&:is(.dark *));

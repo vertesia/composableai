@@ -1,10 +1,13 @@
 /// <reference types="vite/client" />
+import './index.css';
 import "./env.js"
+
+import { VertesiaShell } from '@vertesia/ui/shell';
+import { RouterProvider } from '@vertesia/ui/router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { RouterProvider } from '@vertesia/ui/router';
+
 import { AdminApp } from '../AdminApp.js';
-import { VertesiaShell } from '@vertesia/ui/shell';
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 

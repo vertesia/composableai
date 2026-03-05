@@ -1,0 +1,64 @@
+/* Custom styling for title attribute tooltips */
+button[title], a[title] {
+  position: relative !important;
+}
+
+button[title]::before, a[title]::before {
+  content: "";
+  display: none;
+}
+
+button[title]:hover::before, a[title]:hover::before {
+  content: attr(title);
+  display: block;
+  position: absolute;
+  top: -42px; /* Position tooltip above the element */
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 80px;
+  max-width: 200px;
+  padding: 6px 8px;
+  background-color: rgba(15, 23, 42, 0.95); /* slate-900 with opacity */
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.4;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(100, 116, 139, 0.2); /* slate-400 with opacity */
+}
+
+/* Arrow for the tooltip */
+button[title]:hover::after, a[title]:hover::after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: -6px; /* Position arrow at the bottom of tooltip */
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent rgba(15, 23, 42, 0.95) transparent; /* Arrow pointing down */
+  z-index: 1000;
+}
+
+/* Light mode specific styles */
+button[title]:hover::before, a[title]:hover::before {
+  background-color: rgba(15, 23, 42, 0.95); /* slate-900 with opacity */
+  color: rgba(248, 250, 252, 1); /* slate-50 */
+}
+
+/* Dark mode adjustment */
+.dark button[title]:hover::before, .dark a[title]:hover::before {
+  background-color: rgba(30, 41, 59, 0.95); /* slate-800 with opacity */
+  color: rgba(248, 250, 252, 1); /* slate-50 */
+  border: 1px solid rgba(71, 85, 105, 0.4); /* slate-600 */
+}
+
+.dark button[title]:hover::after, .dark a[title]:hover::after {
+  border-color: transparent transparent rgba(30, 41, 59, 0.95) transparent;
+}

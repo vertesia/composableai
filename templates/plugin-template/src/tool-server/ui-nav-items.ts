@@ -9,6 +9,6 @@ import { AppUINavItem } from "@vertesia/common";
  * Note: this does not create the actual UI routes -- it is a map of existing routes you wish to expose as subitems in the Composite App.
  */
 export default [
-    { label: "Home Page", icon: "Star", route: "/" },
-    { label: "Next Page", icon: "Square", route: "/next" },
+    { label: "Home", icon: "Home", route: "/" },
+    { label: "Chat", icon: "MessageSquare", route: "/chat" },
 ] satisfies AppUINavItem[];

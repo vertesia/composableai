@@ -1,7 +1,9 @@
-import { useFetch } from '@vertesia/ui/core';
+import { Card, CardContent, Spinner, useFetch } from '@vertesia/ui/core';
 import { useParams } from '@vertesia/ui/router';
+
 import { useAdminContext } from '../AdminContext.js';
 import { DetailPage } from '../components/DetailPage.js';
+import { TYPE_VARIANTS } from '../components/typeVariants.js';
 
 interface ToolDef {
     name: string;
@@ -19,7 +21,7 @@ export function ToolCollection() {
     const collection = useParams('collection');
     const { baseUrl } = useAdminContext();
 
-    const { data, isLoading, error } = useFetch<ToolCollectionResponse>(
+    const { data, error } = useFetch<ToolCollectionResponse>(
         () => fetch(`${baseUrl}/tools/${collection}`).then(r => {
             if (!r.ok) throw new Error(`Failed to load collection: ${r.statusText}`);
             return r.json();
@@ -27,8 +29,8 @@ export function ToolCollection() {
         [baseUrl, collection]
     );
 
-    if (isLoading) return <div className="vta-loading">Loading collection...</div>;
-    if (error || !data) return <div className="vta-error">Failed to load tool collection &ldquo;{collection}&rdquo;.</div>;
+    if (error) return <div className="p-6 text-destructive">Failed to load tool collection &ldquo;{collection}&rdquo;.</div>;
+    if (!data) return <div className="flex h-64 items-center justify-center text-muted-foreground"><Spinner /></div>;
 
     return (
         <DetailPage
@@ -37,18 +39,22 @@ export function ToolCollection() {
             description={data.description || `${data.tools.length} tool${data.tools.length !== 1 ? 's' : ''} in this collection.`}
         >
             {data.tools.map(tool => (
-                <div key={tool.name} className="vta-detail-card">
-                    <div className="vta-detail-card-header">
-                        <span className="vta-card-type vta-card-type--tool">tool</span>
-                        <div className="vta-card-title">{tool.name}</div>
-                    </div>
-                    <div className="vta-card-desc">{tool.description || 'No description'}</div>
-                    {tool.input_schema && (
-                        <pre className="vta-detail-code">
-                            {JSON.stringify(tool.input_schema, null, 2)}
-                        </pre>
-                    )}
-                </div>
+                <Card key={tool.name} className="mb-4">
+                    <CardContent className="p-5">
+                        <div className="mb-2 flex items-center gap-2">
+                            <span className={`inline-block rounded-full px-2 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide ${TYPE_VARIANTS.tool}`}>
+                                tool
+                            </span>
+                            <span className="font-semibold text-card-foreground">{tool.name}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">{tool.description || 'No description'}</div>
+                        {tool.input_schema && (
+                            <pre className="mt-3 whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
+                                {JSON.stringify(tool.input_schema, null, 2)}
+                            </pre>
+                        )}
+                    </CardContent>
+                </Card>
             ))}
         </DetailPage>
     );

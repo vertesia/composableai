@@ -115,6 +115,20 @@
     "vitest": "^4.0.16"
   },
   "exports": {
+    "./styles.css": "./src/css/index.css",
+    "./styles/color.css": "./src/css/color.css",
+    "./styles/theme.css": "./src/css/theme.css",
+    "./styles/utilities.css": "./src/css/utilities.css",
+    "./styles/typography.css": "./src/css/typography.css",
+    "./styles/tooltips.css": "./src/css/custom-tooltips.css",
+    "./styles/base.css": "./src/css/base.css",
+    "./css/index.css": "./src/css/index.css",
+    "./css/color.css": "./src/css/color.css",
+    "./css/theme.css": "./src/css/theme.css",
+    "./css/utilities.css": "./src/css/utilities.css",
+    "./css/typography.css": "./src/css/typography.css",
+    "./css/custom-tooltips.css": "./src/css/custom-tooltips.css",
+    "./css/base.css": "./src/css/base.css",
     "./router": {
       "types": "./lib/types/router/index.d.ts",
       "default": "./lib/esm/router/index.js"

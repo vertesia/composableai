@@ -3,7 +3,8 @@
  */
 
 import { useFetch } from '@vertesia/ui/core';
-import type { ServerInfo, ResourceData } from './types.js';
+
+import type { ResourceData, ServerInfo } from './types.js';
 import { buildResourceData } from './types.js';
 
 /**
