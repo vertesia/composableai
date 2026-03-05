@@ -95,6 +95,14 @@ const shouldDedupeAdjacentMessage = (previous: AgentMessage, current: AgentMessa
     return currTs - prevTs < 2000;
 };
 
+const toTimestampMs = (timestamp: number | string): number => {
+    if (typeof timestamp === "number") return timestamp;
+    const numeric = Number(timestamp);
+    if (Number.isFinite(numeric)) return numeric;
+    const parsed = new Date(timestamp).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+
 // Error boundary to catch and isolate errors in individual message components
 // Note: Markdown parsing errors are handled internally by MarkdownRenderer,
 // so this mainly catches other component errors (e.g., artifact loading, charts)
@@ -361,6 +369,10 @@ function AllMessagesMixedComponent({
     // Pre-compute important messages and recent thinking for sliding view (avoid IIFE in render)
     const { importantMessages, recentThinking } = React.useMemo(() => {
         const hasStreaming = streamingMessages.size > 0;
+        const latestUserQuestionTimestamp = displayMessages.reduce((max, msg) => {
+            if (msg.type !== AgentMessageType.QUESTION) return max;
+            return Math.max(max, toTimestampMs(msg.timestamp));
+        }, -Infinity);
 
         // Important messages include answers, questions, completion states, AND tool progress thoughts
         const important = displayMessages.filter(msg =>
@@ -387,6 +399,11 @@ function AllMessagesMixedComponent({
                         !msg.details?.tools &&
                         !msg.details?.streamed &&
                         msg.details?.display_role !== "tool_preamble"))
+                .filter(msg => {
+                    // Keep "recent thinking" scoped to the active turn.
+                    if (!Number.isFinite(latestUserQuestionTimestamp)) return true;
+                    return toTimestampMs(msg.timestamp) >= latestUserQuestionTimestamp;
+                })
                 .slice(-1) // Show only the latest thinking message
             : [];
 
