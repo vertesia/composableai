@@ -91,7 +91,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
 function defineAppConfig(): UserConfig {
 
     return {
-        base: './', // Use relative paths for assets
+        base: '/', // Absolute paths — required for SPA routing under /app/*
         plugins: [
             tailwindcss(),
             react(),

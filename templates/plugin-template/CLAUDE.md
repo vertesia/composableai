@@ -10,9 +10,8 @@ pnpm build:server          # Rollup: tool server only → lib/
 pnpm build:ui:lib          # Vite: plugin library → dist/lib/plugin.js
 pnpm build:ui:app          # Vite: standalone app → dist/ui/
 
-pnpm dev                   # Build server + start on port 3000
-pnpm start                 # Run compiled server
-pnpm start:watch           # Auto-restart on lib/ changes
+pnpm dev                   # Vite dev server with API middleware (https://localhost:5173)
+pnpm start                 # Preview production build (build:server + vite preview)
 ```
 
 ## Dual Build System
@@ -78,9 +77,3 @@ pnpm start:watch           # Auto-restart on lib/ changes
 | `vertesia-plugin` | Understanding plugin architecture, build system, or configuration |
 | `vertesia-api` | Working with the Vertesia client API (objects, workflows, interactions, auth) |
 | `vertesia-ui` | Building UI pages and components (routing, layout, styling, agent conversation) |
-
-## Further Reading
-
-- `README-tools.md` — Tool server architecture and resource creation
-- `README-ui.md` — UI plugin development and deployment
-- `TESTING-tools.md` — Testing guide for tool server
