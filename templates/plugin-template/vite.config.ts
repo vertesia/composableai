@@ -89,14 +89,16 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
  * @returns
  */
 function defineAppConfig(): UserConfig {
+    // Vercel dev proxies to the framework dev server over HTTP — HTTPS would break that.
+    const useHttps = !process.env.VERCEL;
 
     return {
         base: '/', // Absolute paths — required for SPA routing under /app/*
         plugins: [
             tailwindcss(),
             react(),
-            // we need to use https for the firebase authentication to work
-            basicSsl(),
+            // HTTPS is required for Firebase auth but must be disabled under vercel dev
+            ...(useHttps ? [basicSsl()] : []),
             // serve lib/plugin.js content in dev mode
             serveStatic([
                 {
