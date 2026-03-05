@@ -116,6 +116,7 @@ function createDevListener(server: ViteDevServer, entry: string) {
  */
 function createPreviewListener(compiledEntry: string) {
     // Cache the app — no hot reload in preview mode
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let appPromise: Promise<any> | null = null;
 
     return async (
@@ -141,10 +142,12 @@ function createPreviewListener(compiledEntry: string) {
 }
 
 // Connect types from Vite's internals
+// eslint-disable-next-line @typescript-eslint/no-namespace
 declare namespace Connect {
     type NextHandleFunction = (
         req: import('node:http').IncomingMessage,
         res: import('node:http').ServerResponse,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         next: (err?: any) => void,
     ) => void;
 }

@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/tools-admin-ui",
-    "version": "1.0.0-dev.20260227.112605Z",
+    "version": "1.0.0-dev.20260305.083323Z",
     "description": "Shared admin UI for Vertesia tool servers",
     "type": "module",
     "license": "Apache-2.0",
@@ -12,7 +12,8 @@
         ".": {
             "types": "./lib/index.d.ts",
             "import": "./lib/tools-admin-ui.js"
-        }
+        },
+        "./theme.css": "./src/theme.css"
     },
     "scripts": {
         "build": "rm -rf lib tsconfig.tsbuildinfo && tsc --build && vite build --mode lib",
@@ -23,17 +24,20 @@
         "react-dom": "^19.0.0"
     },
     "devDependencies": {
+        "@tailwindcss/vite": "^4.1.17",
         "@types/react": "^19.2.3",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.2",
         "react": "^19.2.3",
         "react-dom": "^19.2.3",
+        "tailwindcss": "^4.1.17",
         "typescript": "^5.9.3",
         "vite": "^7.3.0"
     },
     "dependencies": {
         "@vertesia/common": "workspace:*",
-        "@vertesia/ui": "workspace:*"
+        "@vertesia/ui": "workspace:*",
+        "lucide-react": "^0.562.0"
     },
     "repository": {
         "type": "git",

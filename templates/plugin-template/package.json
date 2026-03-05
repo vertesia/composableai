@@ -12,6 +12,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "vite dev",
+    "prebuild": "npm run lint",
     "build": "npm run build:server && npm run build:ui",
     "build:server": "rollup -c",
     "build:ui": "npm run build:ui:app && npm run build:ui:lib",
@@ -80,6 +81,7 @@
     "@vertesia/tools-sdk": "workspace:*",
     "@vertesia/ui": "workspace:*",
     "dotenv": "^17.2.3",
-    "hono": "^4.10.3"
+    "hono": "^4.10.3",
+    "lucide-react": "^0.562.0"
   }
 }

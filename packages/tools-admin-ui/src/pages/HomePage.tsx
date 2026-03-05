@@ -1,8 +1,11 @@
+import { Separator } from '@vertesia/ui/core';
 import { useMemo, useState } from 'react';
+
+import { useAdminContext } from '../AdminContext.js';
+import { CollectionCard, HeroSection, ResourceSection, SearchBar } from '../components/index.js';
+import { TYPE_VARIANTS } from '../components/typeVariants.js';
 import type { ResourceType } from '../types.js';
 import { filterResources } from '../types.js';
-import { HeroSection, SearchBar, ResourceSection, CollectionCard } from '../components/index.js';
-import { useAdminContext } from '../AdminContext.js';
 
 const sections: { type: ResourceType; title: string; subtitle: string }[] = [
     { type: 'tool', title: 'Tools', subtitle: 'Remote tools available to agents via Vertesia.' },
@@ -25,7 +28,7 @@ export function HomePage() {
     const isSearching = search.trim().length > 0;
 
     return (
-        <div className="vta-root">
+        <div className="mx-auto max-w-5xl px-7 py-10">
             <HeroSection
                 title={serverInfo.message.replace('Vertesia Tools API', 'Tools Server')}
                 version={serverInfo.version}
@@ -41,7 +44,6 @@ export function HomePage() {
             />
 
             {isSearching ? (
-                /* Search mode: show individual resource cards */
                 sections.map((section, i) => {
                     const sectionItems = filtered.filter(r => r.type === section.type);
                     return (
@@ -55,7 +57,6 @@ export function HomePage() {
                     );
                 })
             ) : (
-                /* Browse mode: show collection cards grouped by type */
                 sections.map((section, i) => {
                     const sectionCollections = collections.filter(c => c.type === section.type);
                     const mcpResources = section.type === 'mcp'
@@ -66,27 +67,29 @@ export function HomePage() {
 
                     return (
                         <section key={section.type}>
-                            {i > 0 && <hr className="vta-divider" />}
+                            {i > 0 && <Separator className="my-8" />}
                             <div>
-                                <h2 className="vta-section-title">
+                                <h2 className="text-xl font-semibold text-foreground">
                                     {section.title}
-                                    <span className="vta-section-count">
+                                    <span className="ml-2 text-sm font-normal text-muted-foreground">
                                         ({sectionCollections.length}{sectionCollections.length === 1
                                             ? ' collection' : ' collections'})
                                     </span>
                                 </h2>
-                                <p className="vta-section-subtitle">{section.subtitle}</p>
+                                <p className="mb-4 text-sm text-muted-foreground">{section.subtitle}</p>
                             </div>
-                            <div className="vta-card-grid">
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                                 {sectionCollections.map(col => (
                                     <CollectionCard key={`${col.type}:${col.name}`} collection={col} />
                                 ))}
                                 {mcpResources.map(r => (
-                                    <div key={r.name} className="vta-card">
-                                        <span className="vta-card-type vta-card-type--mcp">mcp</span>
-                                        <div className="vta-card-title">{r.title}</div>
-                                        <div className="vta-card-desc">{r.description || 'No description'}</div>
-                                        {r.url && <div className="vta-card-url">{r.url}</div>}
+                                    <div key={r.name} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                                        <span className={`mb-2 inline-block rounded-full px-2 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide ${TYPE_VARIANTS.mcp}`}>
+                                            mcp
+                                        </span>
+                                        <div className="font-semibold text-card-foreground">{r.title}</div>
+                                        <div className="mt-1 text-sm text-muted-foreground">{r.description || 'No description'}</div>
+                                        {r.url && <div className="mt-2 truncate font-mono text-xs text-muted-foreground">{r.url}</div>}
                                     </div>
                                 ))}
                             </div>

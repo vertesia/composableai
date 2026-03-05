@@ -1198,6 +1198,23 @@ export interface BuiltinToolDefinition {
 }
 
 /**
+ * A system skill entry in the tools catalog.
+ * System skills are built into the platform and unlock hidden tools.
+ */
+export interface SystemSkillCatalogEntry {
+    /** Skill name without the learn_ prefix, e.g. "document_search" */
+    name: string;
+    /** Tool name used in agent selection, i.e. "learn_document_search" */
+    tool_name: string;
+    /** Human-readable display title */
+    title: string;
+    /** Description of what the skill unlocks */
+    description: string;
+    /** Builtin tools that become available when this skill is called */
+    related_tools: string[];
+}
+
+/**
  * Response from the builtin tools catalog endpoint
  */
 export interface BuiltinToolsCatalogResponse {
@@ -1215,4 +1232,9 @@ export interface BuiltinToolsCatalogResponse {
      * Total number of tools in the catalog
      */
     total_tools: number;
+
+    /**
+     * System skills bundled in the platform, available without app installation
+     */
+    skills?: SystemSkillCatalogEntry[];
 }

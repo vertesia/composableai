@@ -21,3 +21,4 @@ lib
 *.njsproj
 *.sln
 *.sw?
+.vercel

@@ -1,6 +1,10 @@
-import type { ReactNode } from 'react';
-import type { ResourceType } from '../types.js';
+import { Badge } from '@vertesia/ui/core';
 import { NavLink } from '@vertesia/ui/router';
+import { ArrowLeft } from 'lucide-react';
+import type { ReactNode } from 'react';
+
+import type { ResourceType } from '../types.js';
+import { TYPE_VARIANTS } from './typeVariants.js';
 
 interface DetailPageProps {
     type: ResourceType;
@@ -13,22 +17,27 @@ interface DetailPageProps {
 
 export function DetailPage({ type, title, description, tags, backHref = '/', children }: DetailPageProps) {
     return (
-        <div className="vta-root">
-            <nav className="vta-detail-nav">
+        <div className="mx-auto max-w-5xl px-7 py-10">
+            <nav className="mb-5 flex items-center gap-4">
                 {backHref !== '/' && (
-                    <NavLink href="/" className="vta-detail-back">Home</NavLink>
+                    <NavLink href="/" className="text-sm text-primary hover:opacity-75">Home</NavLink>
                 )}
-                <NavLink href={backHref} className="vta-detail-back">&larr; Back</NavLink>
+                <NavLink href={backHref} className="flex items-center gap-1 text-sm text-primary hover:opacity-75">
+                    <ArrowLeft className="size-3.5" />
+                    Back
+                </NavLink>
             </nav>
 
-            <div className="vta-detail-header">
-                <span className={`vta-card-type vta-card-type--${type}`}>{type}</span>
-                <h1 className="vta-detail-title">{title}</h1>
-                {description && <p className="vta-detail-desc">{description}</p>}
+            <div className="mb-8">
+                <span className={`mb-2 inline-block rounded-full px-2 py-0.5 text-[0.7rem] font-semibold uppercase tracking-wide ${TYPE_VARIANTS[type] ?? ''}`}>
+                    {type}
+                </span>
+                <h1 className="-tracking-wide text-3xl font-bold text-foreground">{title}</h1>
+                {description && <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>}
                 {tags && tags.length > 0 && (
-                    <div className="vta-card-tags">
+                    <div className="mt-3 flex flex-wrap gap-1.5">
                         {tags.map(tag => (
-                            <span key={tag} className="vta-tag">{tag}</span>
+                            <Badge key={tag} variant="default">{tag}</Badge>
                         ))}
                     </div>
                 )}
