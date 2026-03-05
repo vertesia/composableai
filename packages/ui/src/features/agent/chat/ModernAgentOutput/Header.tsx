@@ -1,7 +1,7 @@
 import { AsyncExecutionResult } from "@vertesia/client";
 import { Button, Command, CommandGroup, CommandItem, CommandList, cn, Popover, PopoverContent, PopoverTrigger, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, MoreVertical, XIcon } from "lucide-react";
+import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
 import { type AgentConversationViewMode } from "./AllMessagesMixed";
 import { getConversationUrl } from "./utils";
@@ -16,11 +16,16 @@ export interface HeaderProps {
     onViewModeChange: (mode: AgentConversationViewMode) => void;
     showPlanPanel: boolean;
     hasPlan?: boolean;
+    showPlanButton?: boolean;
     onTogglePlanPanel: () => void;
     onDownload?: () => void;
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
+    /** Called after a restart/fork succeeds with the new run info */
+    onRestart?: (newRun: { runId: string; workflowId: string }) => void;
+    /** Called after a fork succeeds with the new run info */
+    onFork?: (newRun: { runId: string; workflowId: string }) => void;
     /** Show green indicator when receiving streaming chunks */
     isReceivingChunks?: boolean;
     /** Additional className for the outer container */
@@ -36,11 +41,14 @@ export default function Header({
     onViewModeChange,
     showPlanPanel,
     hasPlan = false,
+    showPlanButton = true,
     onTogglePlanPanel,
     onDownload,
     onCopyRunId,
     resetWorkflow,
     onExportPdf,
+    onRestart,
+    onFork,
     isReceivingChunks = false,
     className,
 }: HeaderProps) {
@@ -74,23 +82,24 @@ export default function Header({
                         </Button>
                     </div>
 
-                    {/* Plan Panel Toggle - Nicer styled button */}
-                    <div className="relative">
-                        {/* Notification badge when plan is available but hidden */}
-                        {hasPlan && !showPlanPanel && (
-                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-border z-10"></span>
-                        )}
-                        <Button
-                            size="sm"
-                            variant={showPlanPanel ? "primary" : "secondary"}
-                            onClick={onTogglePlanPanel}
-                            className="transition-all duration-200 rounded-md"
-                            title="Toggle plan panel"
-                        >
-                            <ClipboardList className="size-4 mr-1.5" />
-                            <span className="font-medium text-xs">{showPlanPanel ? "Hide Plan" : "Show Plan"}</span>
-                        </Button>
-                    </div>
+                    {showPlanButton && (
+                        <div className="relative">
+                            {/* Notification badge when plan is available but hidden */}
+                            {hasPlan && !showPlanPanel && (
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-border z-10"></span>
+                            )}
+                            <Button
+                                size="sm"
+                                variant={showPlanPanel ? "primary" : "secondary"}
+                                onClick={onTogglePlanPanel}
+                                className="transition-all duration-200 rounded-md"
+                                title="Toggle right sidebar"
+                            >
+                                <ClipboardList className="size-4 mr-1.5" />
+                                <span className="font-medium text-xs">{showPlanPanel ? "Hide Sidebar" : "Show Sidebar"}</span>
+                            </Button>
+                        </div>
+                    )}
 
                     {/* More actions */}
                     <MoreDropdown
@@ -101,6 +110,8 @@ export default function Header({
                         onCopyRunId={onCopyRunId}
                         resetWorkflow={resetWorkflow}
                         onExportPdf={onExportPdf}
+                        onRestart={onRestart}
+                        onFork={onFork}
                     />
                     {onClose && !isModal && (
                         <Button size="xs" variant="ghost" onClick={onClose}>
@@ -121,6 +132,8 @@ function MoreDropdown({
     onCopyRunId,
     resetWorkflow,
     onExportPdf,
+    onRestart,
+    onFork,
 }: {
     run: AsyncExecutionResult;
     isModal: boolean;
@@ -129,6 +142,8 @@ function MoreDropdown({
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
+    onRestart?: (newRun: { runId: string; workflowId: string }) => void;
+    onFork?: (newRun: { runId: string; workflowId: string }) => void;
 }) {
     const toast = useToast();
     const { client } = useUserSession();
@@ -155,6 +170,42 @@ function MoreDropdown({
                 duration: 2000,
             });
             return false;
+        }
+    };
+
+    const restartWorkflow = async () => {
+        try {
+            const newRun = await client.runs.restart(run.runId);
+            toast({
+                status: "success",
+                title: "Conversation restarted",
+                duration: 2000,
+            });
+            onRestart?.(newRun);
+        } catch (error) {
+            toast({
+                status: "error",
+                title: "Failed to restart conversation",
+                duration: 2000,
+            });
+        }
+    };
+
+    const forkWorkflow = async () => {
+        try {
+            const newRun = await client.runs.fork(run.runId);
+            toast({
+                status: "success",
+                title: "Conversation forked",
+                duration: 2000,
+            });
+            onFork?.(newRun);
+        } catch (error) {
+            toast({
+                status: "error",
+                title: "Failed to fork conversation",
+                duration: 2000,
+            });
         }
     };
 
@@ -218,6 +269,16 @@ function MoreDropdown({
                                     {onClose && isModal && (
                                         <CommandItem className="text-xs" onSelect={onClose}>
                                             <XIcon className="size-3.5 mr-2 text-muted" /> Close
+                                        </CommandItem>
+                                    )}
+                                    {onRestart && (
+                                        <CommandItem className="text-xs" onSelect={restartWorkflow}>
+                                            <RefreshCcw className="size-3.5 mr-2 text-muted" /> Restart Conversation
+                                        </CommandItem>
+                                    )}
+                                    {onFork && (
+                                        <CommandItem className="text-xs" onSelect={forkWorkflow}>
+                                            <GitFork className="size-3.5 mr-2 text-muted" /> Fork Conversation
                                         </CommandItem>
                                     )}
                                     <CommandItem className="text-xs text-destructive" onSelect={() => {

@@ -42,11 +42,12 @@ export function useAgentPlans(
             setPlans([]);
             setActivePlanIndex(0);
             setWorkstreamStatusMap(new Map());
-            setShowSlidingPanel(false);
+            // Keep right panel open by default on desktop sessions.
+            setShowSlidingPanel(!isModal);
             lastProcessedIndex.current = -1;
             knownPlanTimestamps.current.clear();
         }
-    }, [messages.length === 0]);
+    }, [messages.length === 0, isModal]);
 
     // Process new messages incrementally
     useEffect(() => {
@@ -156,13 +157,6 @@ export function useAgentPlans(
             return () => clearTimeout(notificationTimeout);
         }
     }, [plans.length, showSlidingPanel]);
-
-    // Hide panel when there are no plans
-    useEffect(() => {
-        if (plans.length === 0) {
-            setShowSlidingPanel(false);
-        }
-    }, [plans.length]);
 
     // Helper to determine showInput from the latest message
     const updateShowInput = useCallback((msgs: AgentMessage[]) => {

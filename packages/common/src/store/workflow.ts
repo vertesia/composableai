@@ -228,6 +228,8 @@ export interface ExecuteWorkflowPayload {
     run_at?: string;
 }
 
+export type ConversationActivityState = 'working' | 'idle';
+
 export interface ListWorkflowRunsPayload {
     /**
      * The document ID passed to a workflow run.
@@ -297,6 +299,16 @@ export interface ListWorkflowRunsPayload {
      * Filter by whether the workflow has reported errors (TemporalReportedProblems).
      */
     has_reported_errors?: boolean;
+
+    /**
+     * Filter by the activity state of the conversation (running or idle).
+     */
+    activity_state?: ConversationActivityState;
+
+    /**
+     * Filter by whether the conversation is interactive.
+     */
+    interactive?: boolean;
 }
 
 /**
@@ -538,6 +550,16 @@ export interface WorkflowRun {
      * A brief summary of the conversation workflow.
      */
     topic?: string;
+    /**
+     * The current activity state of the conversation.
+     * - 'working': The agent is actively processing
+     * - 'idle': The agent is waiting for user input
+     */
+    activity_state?: ConversationActivityState;
+    /**
+     * Whether this conversation is interactive (accepts user input).
+     */
+    interactive?: boolean;
 }
 
 export interface PendingActivity {
@@ -573,6 +595,7 @@ export interface WorkflowInteractionVars {
     interaction: string,
     interactive: boolean,
     debug_mode?: boolean,
+    non_blocking_subagents?: boolean,
     /**
      * Array of channels to use for user communication.
      * Multiple channels can be active simultaneously.
@@ -664,6 +687,7 @@ export enum AgentMessageType {
     TERMINATED = 11,
     STREAMING_CHUNK = 12,
     BATCH_PROGRESS = 13,
+    RESTARTING = 14,
 }
 
 // ============================================
@@ -1254,4 +1278,40 @@ export interface AgentIntakeWorkflowResult {
     collectionIds?: string[];
     /** Whether embeddings were generated */
     hasEmbeddings: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Workstream query types (used by client helpers)
+// ---------------------------------------------------------------------------
+
+/** Progress reported by a child workstream */
+export interface WorkstreamProgressInfo {
+    launch_id: string;
+    workstream_id: string;
+    phase: 'planning' | 'executing_tool' | 'synthesizing' | 'blocked' | 'done';
+    current_step?: string;
+    current_tool?: string;
+    percent?: number;
+    updated_at: number;
+}
+
+/** Entry returned by the ActiveWorkstreams query */
+export interface ActiveWorkstreamEntry {
+    launch_id: string;
+    workstream_id: string;
+    interaction: string;
+    started_at: number;
+    elapsed_ms: number;
+    deadline_ms: number;
+    status: 'running' | 'canceling';
+    latest_progress?: WorkstreamProgressInfo;
+    /** Child workflow ID — use to fetch per-workstream messages */
+    child_workflow_id: string;
+    /** Child workflow run ID — use with retrieveMessages / streamMessages */
+    child_workflow_run_id?: string;
+}
+
+/** Result of the ActiveWorkstreams Temporal query */
+export interface ActiveWorkstreamsQueryResult {
+    running: ActiveWorkstreamEntry[];
 }

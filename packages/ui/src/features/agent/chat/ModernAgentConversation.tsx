@@ -3,6 +3,7 @@ import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from "lucide-reac
 import { useUserSession } from "@vertesia/ui/session";
 import { AsyncExecutionResult, VertesiaClient } from "@vertesia/client";
 import {
+    ActiveWorkstreamEntry,
     AgentMessage,
     AgentMessageType,
     ConversationFile,
@@ -25,11 +26,10 @@ import Header from "./ModernAgentOutput/Header";
 import MessageInput, { UploadedFile, SelectedDocument } from "./ModernAgentOutput/MessageInput";
 import { getWorkstreamId } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
-import InlineSlidingPlanPanel from "./ModernAgentOutput/InlineSlidingPlanPanel";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
 import { VegaLiteChart } from "./VegaLiteChart";
-import { DocumentPanel } from "./DocumentPanel.js";
+import { AgentRightPanel, type WorkstreamInfo } from "./AgentRightPanel.js";
 import { useAgentStream } from "./hooks/useAgentStream.js";
 import { useAgentPlans } from "./hooks/useAgentPlans.js";
 import { useDocumentPanel } from "./hooks/useDocumentPanel.js";
@@ -96,6 +96,10 @@ interface ModernAgentConversationProps {
     placeholder?: string;
     hideUserInput?: boolean;
     resetWorkflow?: () => void;
+    /** Called after a restart succeeds — receives the new run info for navigation */
+    onRestart?: (newRun: { runId: string; workflowId: string }) => void;
+    /** Called after a fork succeeds — receives the new run info for navigation */
+    onFork?: (newRun: { runId: string; workflowId: string }) => void;
 
     // File upload props - passed through to MessageInput
     /** Called when files are dropped/pasted/selected */
@@ -113,6 +117,8 @@ interface ModernAgentConversationProps {
     fileUploadRef?: React.MutableRefObject<((files: File[]) => void) | null>;
     /** Called when processingFiles state changes (for external progress display) */
     onProcessingFilesChange?: (files: Map<string, ConversationFile>) => void;
+    /** Processing files to display in the right panel Uploads tab */
+    processingFiles?: Map<string, ConversationFile>;
     /** Called when plans change (for external plan panel) */
     onPlansChange?: (plans: Array<{ plan: Plan; timestamp: number }>, activePlanIndex: number) => void;
     /** Called when workstream status changes (for external plan panel) */
@@ -151,8 +157,12 @@ interface ModernAgentConversationProps {
     hidePlanPanel?: boolean;
     /** Hide workstream tabs */
     hideWorkstreamTabs?: boolean;
+    /** Enable or disable the internal right panel (plan/workstreams/documents/uploads) */
+    showRightPanel?: boolean;
     /** Hide the default file upload */
     hideFileUpload?: boolean;
+    /** Show the Artifacts tab in the right panel (default false) */
+    showArtifacts?: boolean;
     /** Hide the document preview panel that auto-opens on create_document */
     hideDocumentPanel?: boolean;
 
@@ -268,7 +278,7 @@ function StartWorkflowView({
     getAttachedDocs,
     onAttachmentsSent,
     // File upload props
-    acceptedFileTypes = ".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp",
+    acceptedFileTypes,
     maxFiles = 5,
 }: ModernAgentConversationProps) {
     const { client } = useUserSession();
@@ -658,6 +668,8 @@ function ModernAgentConversationInner({
     fullWidth = false,
     placeholder = "Type your message...",
     resetWorkflow,
+    onRestart,
+    onFork,
     // File upload props (onFilesSelected handled internally by handleFileUpload)
     uploadedFiles,
     onRemoveFile,
@@ -674,8 +686,10 @@ function ModernAgentConversationInner({
     hideMessageInput,
     hidePlanPanel,
     hideWorkstreamTabs,
+    showRightPanel: showRightPanelProp = true,
     hideFileUpload,
-    hideDocumentPanel,
+    showArtifacts = false,
+    hideDocumentPanel: _hideDocumentPanel,
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
@@ -692,6 +706,7 @@ function ModernAgentConversationInner({
     // External file upload API
     fileUploadRef,
     onProcessingFilesChange,
+    processingFiles: processingFilesProp,
     // External plan panel API
     onPlansChange,
     onWorkstreamStatusChange,
@@ -768,6 +783,7 @@ function ModernAgentConversationInner({
     // ────────────────────────────────────────────
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const conversationRef = useRef<HTMLDivElement | null>(null);
+    const conversationLayoutRef = useRef<HTMLDivElement | null>(null);
     const [isSending, setIsSending] = useState(false);
     const [internalViewMode, setInternalViewMode] = useState<AgentConversationViewMode>("sliding");
     const viewMode = controlledViewMode ?? internalViewMode;
@@ -781,6 +797,8 @@ function ModernAgentConversationInner({
     const [isStopping, setIsStopping] = useState(false);
     const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [activeWorkstreams, setActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
+    const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
 
     // PERFORMANCE: Refs for values used inside useCallback to avoid re-creating the callback
@@ -812,6 +830,20 @@ function ModernAgentConversationInner({
         };
     }, [plans, activePlanIndex, workstreamStatusMap]);
 
+    const panelWorkstreams = useMemo<WorkstreamInfo[]>(() => {
+        return activeWorkstreams.map((ws) => ({
+            workstream_id: ws.workstream_id,
+            launch_id: ws.launch_id,
+            elapsed_ms: ws.elapsed_ms,
+            deadline_ms: ws.deadline_ms,
+            remaining_ms: Math.max(0, ws.deadline_ms - ws.elapsed_ms),
+            status: ws.status,
+            phase: ws.latest_progress?.phase,
+            child_workflow_id: ws.child_workflow_id,
+            child_workflow_run_id: ws.child_workflow_run_id,
+        }));
+    }, [activeWorkstreams]);
+
     // ────────────────────────────────────────────
     // Stable callbacks
     // ────────────────────────────────────────────
@@ -828,19 +860,98 @@ function ModernAgentConversationInner({
         setActivePlanIndex(index);
     }, [setActivePlanIndex]);
 
-    const handleClosePlanPanel = useCallback(() => {
+    // ────────────────────────────────────────────
+    // Unified right panel state
+    // ────────────────────────────────────────────
+    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts';
+    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('plan');
+    const [rightPanelWidth, setRightPanelWidth] = useState(400);
+    const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
+
+    const isRightPanelVisible = showRightPanelProp && (showSlidingPanel
+        || isDocPanelOpen
+        || (!hideWorkstreamTabs && panelWorkstreams.length > 0));
+
+    useEffect(() => {
+        if (!isRightPanelVisible && isRightPanelResizing) {
+            setIsRightPanelResizing(false);
+        }
+    }, [isRightPanelVisible, isRightPanelResizing]);
+
+    useEffect(() => {
+        if (!isRightPanelResizing) return;
+
+        const minRightPanelWidth = 300;
+        const minConversationWidth = 420;
+
+        const handleMouseMove = (event: MouseEvent) => {
+            const container = conversationLayoutRef.current;
+            if (!container) return;
+
+            const containerRect = container.getBoundingClientRect();
+            const maxRightPanelWidth = Math.max(minRightPanelWidth, containerRect.width - minConversationWidth);
+            const nextWidth = containerRect.right - event.clientX;
+            const clampedWidth = Math.min(Math.max(nextWidth, minRightPanelWidth), maxRightPanelWidth);
+            setRightPanelWidth(clampedWidth);
+        };
+
+        const handleMouseUp = () => {
+            setIsRightPanelResizing(false);
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        };
+    }, [isRightPanelResizing]);
+
+    // Auto-switch tab when plan panel opens
+    useEffect(() => {
+        if (showSlidingPanel) {
+            setRightPanelTab('plan');
+        }
+    }, [showSlidingPanel]);
+
+    // Auto-switch tab when document panel opens
+    useEffect(() => {
+        if (isDocPanelOpen) {
+            setRightPanelTab('documents');
+        }
+    }, [isDocPanelOpen]);
+
+    // Auto-switch tab when active workstreams appear and no other panel is focused.
+    useEffect(() => {
+        if (!hideWorkstreamTabs && panelWorkstreams.length > 0 && !showSlidingPanel && !isDocPanelOpen) {
+            setRightPanelTab('workstreams');
+        }
+    }, [hideWorkstreamTabs, panelWorkstreams.length, showSlidingPanel, isDocPanelOpen]);
+
+    const handleCloseRightPanel = useCallback(() => {
         setShowSlidingPanel(false);
-    }, [setShowSlidingPanel]);
+        handleCloseDocPanel();
+    }, [setShowSlidingPanel, handleCloseDocPanel]);
 
     // Default StoreLinkComponent that opens documents in the panel
     const internalStoreLinkComponent = useCallback(
-        ({ documentId, children }: { href: string; documentId: string; children: React.ReactNode }) => (
-            <button
+        ({ href, documentId, children }: { href: string; documentId: string; children: React.ReactNode }) => (
+            <a
+                href={href}
                 className="text-info underline cursor-pointer hover:text-info/80"
-                onClick={() => openDocInPanel(documentId)}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openDocInPanel(documentId);
+                }}
             >
                 {children}
-            </button>
+            </a>
         ),
         [openDocInPanel]
     );
@@ -883,6 +994,41 @@ function ModernAgentConversationInner({
     useEffect(() => {
         onWorkstreamStatusChange?.(workstreamStatusMap);
     }, [workstreamStatusMap, onWorkstreamStatusChange]);
+
+    // Poll active workstreams from backend query for right-panel visibility and details.
+    useEffect(() => {
+        const shouldPoll = !isCompleted || activeWorkstreams.length > 0;
+        if (!shouldPoll) {
+            setActiveWorkstreams((prev) => (prev.length === 0 ? prev : []));
+            return;
+        }
+
+        let isCancelled = false;
+
+        const fetchActiveWorkstreams = async () => {
+            try {
+                const result = await client.store.workflows.getActiveWorkstreams(run.workflowId, run.runId);
+                if (isCancelled) return;
+                setActiveWorkstreams(result.running ?? []);
+                workstreamFetchFailedRef.current = false;
+            } catch (error) {
+                if (isCancelled) return;
+                setActiveWorkstreams([]);
+                if (!workstreamFetchFailedRef.current) {
+                    console.warn("Failed to fetch active workstreams:", error);
+                    workstreamFetchFailedRef.current = true;
+                }
+            }
+        };
+
+        fetchActiveWorkstreams();
+        const pollHandle = window.setInterval(fetchActiveWorkstreams, 10000);
+
+        return () => {
+            isCancelled = true;
+            window.clearInterval(pollHandle);
+        };
+    }, [client.store.workflows, run.workflowId, run.runId, isCompleted, activeWorkstreams.length]);
 
     // Notify parent when input availability is determined
     useEffect(() => {
@@ -1051,6 +1197,10 @@ function ModernAgentConversationInner({
 
     // Calculate number of active tasks for the status indicator
     const getActiveTaskCount = (): number => {
+        if (activeWorkstreams.length > 0) {
+            return activeWorkstreams.filter((ws) => ws.status === "running").length;
+        }
+
         if (!messages.length) return 0;
 
         // Group messages by workstream
@@ -1162,6 +1312,19 @@ function ModernAgentConversationInner({
         setIsPdfModalOpen(false);
     };
 
+    // Artifact refresh key — bumps when tool calls complete or conversation finishes,
+    // which is when new artifacts are most likely to appear.
+    const artifactRefreshKey = useMemo(() => {
+        return messages.filter((m) => {
+            if (m.type === AgentMessageType.COMPLETE) return true;
+            if (m.type === AgentMessageType.THOUGHT) {
+                const details = m.details as Record<string, unknown> | undefined;
+                return details?.tool_status === 'completed';
+            }
+            return false;
+        }).length;
+    }, [messages]);
+
     // PERFORMANCE: Memoize taskLabels to prevent AllMessagesMixed re-renders
     const taskLabels = useMemo(() =>
         getActivePlan.plan.plan?.reduce((acc, task) => {
@@ -1175,6 +1338,7 @@ function ModernAgentConversationInner({
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
         <div
+            ref={conversationLayoutRef}
             className={cn("flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden", isDragOver && "ring-2 ring-blue-400 ring-inset", className)}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
@@ -1194,9 +1358,9 @@ function ModernAgentConversationInner({
             <div
                 ref={conversationRef}
                 className={cn(
-                    "flex flex-col min-h-0 border-0",
-                    (showSlidingPanel || isDocPanelOpen)
-                        ? "w-full lg:w-3/5 flex-1 min-h-[50vh]"
+                    "flex flex-col min-h-0 min-w-0 border-0",
+                    isRightPanelVisible
+                        ? "w-full flex-1 min-h-[50vh]"
                         : fullWidth
                             ? "flex-1 w-full"
                             : `flex-1 mx-auto ${!isModal ? "max-w-4xl" : ""}`
@@ -1215,12 +1379,15 @@ function ModernAgentConversationInner({
                             run={run}
                             viewMode={viewMode}
                             onViewModeChange={handleViewModeChange}
-                            showPlanPanel={showSlidingPanel}
-                            hasPlan={plans.length > 0}
+                            showPlanPanel={showRightPanelProp && showSlidingPanel}
+                            hasPlan={showRightPanelProp && plans.length > 0}
+                            showPlanButton={showRightPanelProp}
                             onTogglePlanPanel={handleTogglePlanPanel}
                             onDownload={downloadConversation}
                             onCopyRunId={copyRunId}
                             resetWorkflow={resetWorkflow}
+                            onRestart={onRestart}
+                            onFork={onFork}
                             onExportPdf={exportConversationPdf}
                             isReceivingChunks={debugChunkFlash}
                         />
@@ -1248,7 +1415,7 @@ function ModernAgentConversationInner({
                         isCompleted={isCompleted}
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
-                        showPlanPanel={showSlidingPanel}
+                        showPlanPanel={showRightPanelProp && showSlidingPanel}
                         onTogglePlanPanel={handleTogglePlanPanel}
                         plans={plans}
                         activePlanIndex={activePlanIndex}
@@ -1263,6 +1430,7 @@ function ModernAgentConversationInner({
                         hideToolCallsInViewMode={hideToolCallsInViewMode}
                         streamingMessageClassNames={streamingMessageClassNames}
                         batchProgressPanelClassNames={batchProgressPanelClassNames}
+                        artifactRunId={run.runId}
                         viewMode={viewMode}
                         hideWorkstreamTabs={hideWorkstreamTabs}
                         workingIndicatorClassName={workingIndicatorClassName}
@@ -1322,38 +1490,51 @@ function ModernAgentConversationInner({
                 )}
             </div>
 
-            {/* Plan Panel Area - only rendered when panel should be shown */}
-            {!hidePlanPanel && showSlidingPanel && (
-                <div className="w-full lg:w-1/3 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l">
-                    <InlineSlidingPlanPanel
+            {/* Unified Right Panel — Plan | Workstreams | Documents | Uploads */}
+            {isRightPanelVisible && (
+                <>
+                    <div
+                        className="hidden lg:block lg:w-1 lg:shrink-0 cursor-col-resize bg-border/70 hover:bg-border transition-colors"
+                        onMouseDown={() => setIsRightPanelResizing(true)}
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label="Resize right panel"
+                    />
+                    <div
+                        className="w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l"
+                        style={{ ['--agent-right-panel-width' as string]: `${rightPanelWidth}px` } as React.CSSProperties}
+                    >
+                    <AgentRightPanel
+                        // Plan
                         plan={getActivePlan.plan}
                         workstreamStatus={getActivePlan.workstreamStatus}
-                        isOpen={showSlidingPanel}
-                        onClose={handleClosePlanPanel}
                         plans={plans}
                         activePlanIndex={activePlanIndex}
                         onChangePlan={handleChangePlan}
-                    />
-                </div>
-            )}
-
-            {/* Document Panel Area - slides in when documents are created/edited */}
-            {!hideDocumentPanel && isDocPanelOpen && openDocuments.length > 0 && (
-                <div className={cn(
-                    "w-full lg:w-2/5 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l",
-                    showSlidingPanel && "lg:w-1/3"
-                )}>
-                    <DocumentPanel
-                        isOpen={isDocPanelOpen}
-                        onClose={handleCloseDocPanel}
-                        documents={openDocuments}
+                        showPlan={!hidePlanPanel && showSlidingPanel}
+                        // Workstreams
+                        activeWorkstreams={panelWorkstreams}
+                        hideWorkstreams={hideWorkstreamTabs}
+                        // Documents
+                        openDocuments={openDocuments}
                         activeDocumentId={activeDocumentId}
                         onSelectDocument={selectDocument}
                         onCloseDocument={handleCloseDocument}
-                        refreshKey={docRefreshKey}
+                        docRefreshKey={docRefreshKey}
                         runId={run.runId}
+                        // Uploads
+                        processingFiles={processingFilesProp ?? processingFiles}
+                        // Artifacts
+                        showArtifacts={showArtifacts}
+                        artifactRefreshKey={artifactRefreshKey}
+                        // Messages (for workstreams tab context)
+                        messages={messages}
+                        // Panel control
+                        onClose={handleCloseRightPanel}
+                        defaultTab={rightPanelTab}
                     />
-                </div>
+                    </div>
+                </>
             )}
             <Modal isOpen={isPdfModalOpen} onClose={() => setIsPdfModalOpen(false)}>
                 <ModalTitle>Export conversation as PDF</ModalTitle>

@@ -8,8 +8,66 @@ import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "
 import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
 import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, StreamingData } from "./utils";
+import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
+
+/** Extended group that may carry preamble info (text from a preceding single/streaming message) */
+type RenderableGroupWithPreamble = RenderableGroup & {
+    preambleText?: string;
+    preambleMessage?: AgentMessage;
+    /** When true, this group was consumed as a preamble and should not render */
+    _consumed?: boolean;
+};
+
+/** Message types that must never be consumed as preamble text */
+const NON_PREAMBLE_TYPES = new Set([
+    AgentMessageType.QUESTION,
+    AgentMessageType.COMPLETE,
+    AgentMessageType.IDLE,
+    AgentMessageType.TERMINATED,
+    AgentMessageType.ERROR,
+    AgentMessageType.REQUEST_INPUT,
+    AgentMessageType.BATCH_PROGRESS,
+]);
+
+/**
+ * Scan grouped messages and attach preamble text to tool_groups.
+ * When a single message (THOUGHT, UPDATE, ANSWER, etc.) immediately precedes
+ * a tool_group, the text is attached as preamble and the single message is marked
+ * as consumed so it doesn't render as a separate "Agent" box.
+ */
+function attachPreambles(groups: RenderableGroup[]): RenderableGroupWithPreamble[] {
+    const result: RenderableGroupWithPreamble[] = groups.map(g => ({ ...g }));
+
+    for (let i = 1; i < result.length; i++) {
+        const current = result[i];
+        const prev = result[i - 1];
+
+        // Only attach preamble to tool_groups
+        if (current.type !== 'tool_group') continue;
+        // Previous must be a single message with text content
+        if (prev.type !== 'single' || prev._consumed) continue;
+
+        const msg = prev.message;
+        const text = typeof msg.message === 'string' ? msg.message.trim() : '';
+        if (!text) continue;
+
+        // Skip messages that are tool activity themselves (already part of tool groups)
+        const isToolActivity = msg.details?.tool || msg.details?.tools;
+        if (isToolActivity) continue;
+
+        // Skip terminal/interactive message types that should always render independently
+        if (NON_PREAMBLE_TYPES.has(msg.type)) continue;
+
+        // Attach as preamble
+        current.preambleText = text;
+        current.preambleMessage = msg;
+        prev._consumed = true;
+    }
+
+    // Filter out consumed groups
+    return result.filter(g => !g._consumed);
+}
 
 // Replace %thinking_message% placeholder with actual thinking message
 const processThinkingPlaceholder = (text: string, thinkingMessageIndex: number): string => {
@@ -35,6 +93,14 @@ const shouldDedupeAdjacentMessage = (previous: AgentMessage, current: AgentMessa
     const prevTs = typeof previous.timestamp === "number" ? previous.timestamp : new Date(previous.timestamp).getTime();
     const currTs = typeof current.timestamp === "number" ? current.timestamp : new Date(current.timestamp).getTime();
     return currTs - prevTs < 2000;
+};
+
+const toTimestampMs = (timestamp: number | string): number => {
+    if (typeof timestamp === "number") return timestamp;
+    const numeric = Number(timestamp);
+    if (Number.isFinite(numeric)) return numeric;
+    const parsed = new Date(timestamp).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
 };
 
 // Error boundary to catch and isolate errors in individual message components
@@ -104,6 +170,8 @@ interface AllMessagesMixedProps {
     hideToolCallsInViewMode?: AgentConversationViewMode[];
     streamingMessageClassNames?: StreamingMessageClassNames;
     batchProgressPanelClassNames?: BatchProgressPanelClassNames;
+    /** Run ID used to resolve artifact references in streaming chart specs */
+    artifactRunId?: string;
     /** Hide the workstream tabs entirely */
     hideWorkstreamTabs?: boolean;
     /** className override for the working indicator container */
@@ -136,6 +204,7 @@ function AllMessagesMixedComponent({
     hideToolCallsInViewMode,
     streamingMessageClassNames,
     batchProgressPanelClassNames,
+    artifactRunId,
     hideWorkstreamTabs,
     workingIndicatorClassName,
     messageListClassName,
@@ -143,6 +212,10 @@ function AllMessagesMixedComponent({
     CollectionLinkComponent,
     prependFriendlyMessage,
 }: AllMessagesMixedProps) {
+    if (!artifactRunId) {
+        console.warn('[AllMessagesMixed] artifactRunId prop is missing!');
+    }
+
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
 
@@ -150,8 +223,34 @@ function AllMessagesMixedComponent({
     // During streaming, scrollIntoView was being called 30+ times/sec
     const lastScrollTimeRef = useRef<number>(0);
     const scrollScheduledRef = useRef<number | null>(null);
+    // Track whether the user has manually scrolled away from the bottom.
+    // When true, auto-scroll is suppressed so the user can read earlier content.
+    const userScrolledUpRef = useRef<boolean>(false);
+    // Guard to distinguish programmatic scrolls from user-initiated ones
+    const programmaticScrollRef = useRef<boolean>(false);
 
     const isStreaming = streamingMessages.size > 0;
+
+    // Detect user scroll: if they scroll away from the bottom, stop auto-scrolling.
+    // Re-enable auto-scroll when they scroll back near the bottom.
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const NEAR_BOTTOM_THRESHOLD = 80; // px from bottom to consider "at bottom"
+
+        const handleScroll = () => {
+            // Ignore scrolls triggered by our own performScroll
+            if (programmaticScrollRef.current) return;
+
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+            userScrolledUpRef.current = distanceFromBottom > NEAR_BOTTOM_THRESHOLD;
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, []);
 
     // Compute bucketed streaming content length for scroll dependency
     // Changes every ~200 chars to trigger scroll without excessive updates
@@ -166,15 +265,24 @@ function AllMessagesMixedComponent({
     // Throttled scroll function
     const performScroll = useCallback(() => {
         if (bottomRef.current) {
+            programmaticScrollRef.current = true;
             bottomRef.current.scrollIntoView({ behavior: isStreaming ? "instant" : "smooth" });
             lastScrollTimeRef.current = Date.now();
+            // Reset the programmatic flag after the browser processes the scroll
+            requestAnimationFrame(() => {
+                programmaticScrollRef.current = false;
+            });
         }
         scrollScheduledRef.current = null;
     }, [bottomRef, isStreaming]);
 
     // Auto-scroll to bottom when messages or streaming messages change
     // Throttled to max 10 scrolls/sec to prevent layout thrashing
+    // Skipped when the user has manually scrolled up to read earlier content
     useEffect(() => {
+        // Respect user's scroll position — don't yank them back to the bottom
+        if (userScrolledUpRef.current) return;
+
         const now = Date.now();
         const timeSinceLastScroll = now - lastScrollTimeRef.current;
 
@@ -261,6 +369,10 @@ function AllMessagesMixedComponent({
     // Pre-compute important messages and recent thinking for sliding view (avoid IIFE in render)
     const { importantMessages, recentThinking } = React.useMemo(() => {
         const hasStreaming = streamingMessages.size > 0;
+        const latestUserQuestionTimestamp = displayMessages.reduce((max, msg) => {
+            if (msg.type !== AgentMessageType.QUESTION) return max;
+            return Math.max(max, toTimestampMs(msg.timestamp));
+        }, -Infinity);
 
         // Important messages include answers, questions, completion states, AND tool progress thoughts
         const important = displayMessages.filter(msg =>
@@ -272,7 +384,7 @@ function AllMessagesMixedComponent({
             msg.type === AgentMessageType.TERMINATED ||
             msg.type === AgentMessageType.ERROR ||
             // Include THOUGHT messages that have tool details (progress from message_to_human or streamed content)
-            (msg.type === AgentMessageType.THOUGHT && (msg.details?.tool || msg.details?.tools || msg.details?.streamed))
+            (msg.type === AgentMessageType.THOUGHT && (msg.details?.tool || msg.details?.tools || msg.details?.streamed || msg.details?.display_role === "tool_preamble"))
         );
 
         // Latest thinking: show only the most recent generic thinking message (UPDATE/PLAN or THOUGHT without tool)
@@ -282,7 +394,16 @@ function AllMessagesMixedComponent({
                 .filter(msg =>
                     msg.type === AgentMessageType.UPDATE ||
                     msg.type === AgentMessageType.PLAN ||
-                    (msg.type === AgentMessageType.THOUGHT && !msg.details?.tool && !msg.details?.tools && !msg.details?.streamed))
+                    (msg.type === AgentMessageType.THOUGHT &&
+                        !msg.details?.tool &&
+                        !msg.details?.tools &&
+                        !msg.details?.streamed &&
+                        msg.details?.display_role !== "tool_preamble"))
+                .filter(msg => {
+                    // Keep "recent thinking" scoped to the active turn.
+                    if (!Number.isFinite(latestUserQuestionTimestamp)) return true;
+                    return toTimestampMs(msg.timestamp) >= latestUserQuestionTimestamp;
+                })
                 .slice(-1) // Show only the latest thinking message
             : [];
 
@@ -325,14 +446,15 @@ function AllMessagesMixedComponent({
 
     // Group messages with ONLY complete streaming interleaved for stacked view
     // Incomplete streaming is rendered separately at the end (avoids re-grouping on every chunk)
+    // Then attach preamble text from preceding reasoning messages to tool_groups
     const groupedMessages = React.useMemo(
-        () => mergeConsecutiveToolGroups(groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream)),
+        () => attachPreambles(mergeConsecutiveToolGroups(groupMessagesWithStreaming(displayMessages, completeStreaming, activeWorkstream))),
         [displayMessages, completeStreaming, activeWorkstream]
     );
 
     // Group important messages with ONLY complete streaming interleaved for sliding view
     const groupedImportantMessages = React.useMemo(
-        () => mergeConsecutiveToolGroups(groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream)),
+        () => attachPreambles(mergeConsecutiveToolGroups(groupMessagesWithStreaming(importantMessages, completeStreaming, activeWorkstream))),
         [importantMessages, completeStreaming, activeWorkstream]
     );
 
@@ -528,6 +650,8 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatest}
                                                 toolRunId={group.toolRunId}
                                                 toolStatus={group.toolStatus}
+                                                preambleText={group.preambleText}
+                                                preambleMessage={group.preambleMessage}
                                                 {...toolCallGroupClassNames}
                                             />
                                         </MessageErrorBoundary>
@@ -541,6 +665,7 @@ function AllMessagesMixedComponent({
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
+                                            artifactRunId={artifactRunId}
                                             {...streamingMessageClassNames}
                                         />
                                     );
@@ -588,6 +713,7 @@ function AllMessagesMixedComponent({
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
+                                    artifactRunId={artifactRunId}
                                     {...streamingMessageClassNames}
                                 />
                             ))}
@@ -626,6 +752,8 @@ function AllMessagesMixedComponent({
                                                 showPulsatingCircle={isLatest}
                                                 toolRunId={group.toolRunId}
                                                 toolStatus={group.toolStatus}
+                                                preambleText={group.preambleText}
+                                                preambleMessage={group.preambleMessage}
                                                 {...toolCallGroupClassNames}
                                             />
                                         </MessageErrorBoundary>
@@ -639,6 +767,7 @@ function AllMessagesMixedComponent({
                                             workstreamId={group.workstreamId}
                                             isComplete={group.isComplete}
                                             timestamp={group.startTimestamp}
+                                            artifactRunId={artifactRunId}
                                             {...streamingMessageClassNames}
                                         />
                                     );
@@ -687,6 +816,7 @@ function AllMessagesMixedComponent({
                                     workstreamId={getWorkstreamId(thinking)}
                                     isComplete={idx < recentThinking.length - 1} // Only latest is still "streaming"
                                     timestamp={thinking.timestamp}
+                                    artifactRunId={artifactRunId}
                                     {...streamingMessageClassNames}
                                 />
                             ))}
@@ -698,6 +828,7 @@ function AllMessagesMixedComponent({
                                     workstreamId={data.workstreamId}
                                     isComplete={false}
                                     timestamp={data.startTimestamp}
+                                    artifactRunId={artifactRunId}
                                     {...streamingMessageClassNames}
                                 />
                             ))}
