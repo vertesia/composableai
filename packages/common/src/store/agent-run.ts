@@ -12,7 +12,8 @@
  * (workflowId, runId) are internal server concerns.
  */
 
-import { ConversationVisibility, RunSource } from "../interaction.js";
+import { AgentSearchScope, ConversationVisibility, RunSource } from "../interaction.js";
+import { UserChannel } from "../email.js";
 import { ContentObjectTypeRef } from "./store.js";
 
 /**
@@ -38,6 +39,14 @@ export interface AgentRun<TData = Record<string, any>> {
 
     /** Project ID */
     project: string;
+
+    // --- Temporal workflow references ---
+
+    /** Temporal workflow ID (stable across continueAsNew) */
+    workflow_id?: string;
+
+    /** First Temporal workflow run ID (used for Redis channel and artifact resolution) */
+    first_workflow_run_id?: string;
 
     // --- Interaction info ---
 
@@ -161,6 +170,18 @@ export interface CreateAgentRunPayload<TData = Record<string, any>> {
 
     /** How the run was started */
     source?: RunSource;
+
+    /** Search scope for RAG queries */
+    search_scope?: AgentSearchScope;
+
+    /** User communication channels (email, interactive) */
+    user_channels?: UserChannel[];
+
+    /** Token budget for checkpointing */
+    checkpoint_tokens?: number;
+
+    /** Enable debug mode for verbose logging */
+    debug_mode?: boolean;
 }
 
 /**
