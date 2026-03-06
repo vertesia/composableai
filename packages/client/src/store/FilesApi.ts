@@ -104,7 +104,7 @@ export class FilesApi extends ApiTopic {
         await fetch(url, {
             method: "PUT",
             body: isStream ? source.stream : source,
-            //@ts-ignore: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
+            //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
             duplex: isStream ? "half" : undefined,
             headers: {
                 "Content-Type": source.type || "application/gzip",
@@ -188,7 +188,7 @@ export class FilesApi extends ApiTopic {
             ? source.name
             : source.name + ".tar.gz";
         if (source instanceof File) {
-            let file = source as File;
+            const file = source as File;
             return this.uploadFile(
                 new StreamSource(file.stream(), nameWithExt, file.type, fileId),
             );
