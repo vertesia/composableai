@@ -53,6 +53,17 @@ export interface ConversationStripOptions {
      * Uses ~4 characters per token estimate.
      */
     text_max_tokens?: number;
+
+    /**
+     * Number of turns to keep heartbeat messages before stripping them.
+     * Heartbeat messages are periodic workstream status updates wrapped in
+     * `<heartbeat>...</heartbeat>` tags that clutter conversation history.
+     * - 0: Strip heartbeats immediately after each turn
+     * - 1 (default): Keep only the most recent heartbeat
+     * - N > 0: Keep heartbeats for N turns before stripping
+     * - Infinity: Never strip heartbeats
+     */
+    heartbeats_after_turns?: number;
 }
 
 
@@ -718,6 +729,10 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     /** In child execution workflow, this is the curent task_id */
     task_id?: string;
 
+    /** Parent-assigned launch ID for non-blocking workstreams.
+     *  The child uses this when signaling progress/completion back to the parent. */
+    launch_id?: string;
+
     /** Whether to enable debug mode */
     debug_mode?: boolean;
 
@@ -731,6 +746,20 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      * child tools can access it via metadata.parent_metadata.
      */
     parent_metadata?: Record<string, any>;
+
+    /**
+     * When true, subagent/workstream tool calls use fire-and-forget `startChild()`
+     * instead of blocking `executeChild()`. The parent continues reasoning while
+     * children run, receiving progress/completion via Temporal signals.
+     */
+    non_blocking_subagents?: boolean;
+
+    /**
+     * Temporal runId of a previous workflow to restart/fork from.
+     * When set, conversation history is loaded from the old run's GCS storage
+     * instead of calling startConversation fresh.
+     */
+    restart_from_workflow_run_id?: string;
 
 }
 
@@ -1169,6 +1198,23 @@ export interface BuiltinToolDefinition {
 }
 
 /**
+ * A system skill entry in the tools catalog.
+ * System skills are built into the platform and unlock hidden tools.
+ */
+export interface SystemSkillCatalogEntry {
+    /** Skill name without the learn_ prefix, e.g. "document_search" */
+    name: string;
+    /** Tool name used in agent selection, i.e. "learn_document_search" */
+    tool_name: string;
+    /** Human-readable display title */
+    title: string;
+    /** Description of what the skill unlocks */
+    description: string;
+    /** Builtin tools that become available when this skill is called */
+    related_tools: string[];
+}
+
+/**
  * Response from the builtin tools catalog endpoint
  */
 export interface BuiltinToolsCatalogResponse {
@@ -1186,4 +1232,9 @@ export interface BuiltinToolsCatalogResponse {
      * Total number of tools in the catalog
      */
     total_tools: number;
+
+    /**
+     * System skills bundled in the platform, available without app installation
+     */
+    skills?: SystemSkillCatalogEntry[];
 }

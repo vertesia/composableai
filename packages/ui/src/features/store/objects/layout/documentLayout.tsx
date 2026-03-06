@@ -1,5 +1,6 @@
 import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
 import { Table, TBody } from "@vertesia/ui/core";
+import { CheckIcon } from "lucide-react";
 import { ChangeEvent } from "react";
 import { DocumentIcon, DocumentIconSkeleton } from "../components/DocumentIcon";
 import { DocumentSelection } from "../DocumentSelectionProvider";
@@ -10,6 +11,7 @@ interface ViewProps {
     isLoading: boolean;
     layout?: ColumnLayout[];
     onRowClick?: (object: ContentObjectItem) => void;
+    highlightRow?: (item: ContentObjectItem) => boolean;
     previewObject?: (objectId: string) => void;
     selectedObject?: ContentObjectItem | null;
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
@@ -18,7 +20,7 @@ interface ViewProps {
     columns: DocumentTableColumn[];
 }
 
-export function DocumentTableView({ objects, selection, isLoading, columns, onRowClick, selectedObject, toggleAll, onSelectionChange }: ViewProps) {
+export function DocumentTableView({ objects, selection, isLoading, columns, onRowClick, highlightRow, selectedObject, toggleAll, onSelectionChange }: ViewProps) {
     return (
         <Table className="w-full border-t">
             <thead>
@@ -32,8 +34,9 @@ export function DocumentTableView({ objects, selection, isLoading, columns, onRo
             <TBody isLoading={isLoading} columns={columns.length + 1}>
                 {
                     objects?.map((obj: ContentObjectItem) => {
+                        const isHighlighted = highlightRow?.(obj);
                         return (
-                            <tr key={obj.id} className={`cursor-pointer hover:bg-muted group ${selectedObject?.id === obj.id ? 'bg-muted' : ''}`} onClick={() => {
+                            <tr key={obj.id} className={`cursor-pointer hover:bg-muted group ${selectedObject?.id === obj.id ? 'bg-muted' : ''} ${isHighlighted ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`} onClick={() => {
                                 onRowClick && onRowClick(obj)
                             }}>
                                 {selection &&
@@ -43,6 +46,11 @@ export function DocumentTableView({ objects, selection, isLoading, columns, onRo
                                     </td>
                                 }
                                 {columns.map((col, index) => col.render(obj, index))}
+                                {isHighlighted && (
+                                    <td className="w-8 text-center">
+                                        <CheckIcon className="size-4 text-blue-600 dark:text-blue-400 inline-block" />
+                                    </td>
+                                )}
                             </tr>
                         )
                     })
@@ -53,14 +61,14 @@ export function DocumentTableView({ objects, selection, isLoading, columns, onRo
     )
 }
 
-export function DocumentGridView({ objects, selection, isLoading, onSelectionChange, onRowClick, previewObject, selectedObject }: ViewProps) {
+export function DocumentGridView({ objects, selection, isLoading, onSelectionChange, onRowClick, highlightRow, previewObject, selectedObject }: ViewProps) {
     return (
         <>
             <DocumentIconSkeleton isLoading={isLoading} />
             <div className="w-full gap-2 grid xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 @xs:grid-cols-1 @sm:grid-cols-2 @md:grid-cols-3 @lg:grid-cols-4">
                 {
                     objects.map((document) => (
-                        <DocumentIcon key={document.id} document={document} selection={selection} onSelectionChange={onSelectionChange} onRowClick={onRowClick} previewObject={previewObject} selectedObject={selectedObject} />
+                        <DocumentIcon key={document.id} document={document} selection={selection} onSelectionChange={onSelectionChange} onRowClick={onRowClick} highlightRow={highlightRow} previewObject={previewObject} selectedObject={selectedObject} />
                     ))
                 }
             </div>

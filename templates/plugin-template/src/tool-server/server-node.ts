@@ -10,7 +10,6 @@
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import server from './server.js';
-import type { Context, Next } from 'hono';
 
 const port = parseInt(process.env.PORT || '3000', 10);
 
@@ -20,7 +19,7 @@ console.log(`Web UI: http://localhost:${port}/`);
 
 // Add static file serving for widgets, scripts, and other assets
 const staticFile = serveStatic({ root: './dist' });
-server.all("*", async (c: Context, next: Next) => {
+server.all("*", async (c, next) => {
     // Serve static resources from dist/
     return staticFile(c, next);
 });

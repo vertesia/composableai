@@ -113,6 +113,10 @@ export function isInProgress(messages: AgentMessage[]) {
 export const formatRelative = (ts: number | string) =>
     typeof ts === "number" ? dayjs(ts).fromNow() : dayjs(new Date(ts)).fromNow();
 
+function getTimestampMs(timestamp: number | string): number {
+    return typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
+}
+
 /**
  * Extract the workstream ID from a message
  * @param message The agent message to analyze
@@ -135,6 +139,65 @@ export function getWorkstreamId(message: AgentMessage): string {
 
     // Default to 'main' workstream
     return "main";
+}
+
+/**
+ * Returns the message buckets used by the sliding conversation view.
+ * Generic thinking should only appear when it is still the newest relevant activity.
+ */
+export function getSlidingViewMessageBuckets(
+    messages: AgentMessage[],
+    isCompleted: boolean,
+    hasStreaming: boolean,
+): { importantMessages: AgentMessage[]; recentThinking: AgentMessage[] } {
+    const latestUserQuestionTimestamp = messages.reduce((max, msg) => {
+        if (msg.type !== AgentMessageType.QUESTION) return max;
+        return Math.max(max, getTimestampMs(msg.timestamp));
+    }, -Infinity);
+
+    const importantMessages = messages.filter((msg) =>
+        msg.type === AgentMessageType.ANSWER ||
+        msg.type === AgentMessageType.QUESTION ||
+        msg.type === AgentMessageType.COMPLETE ||
+        msg.type === AgentMessageType.IDLE ||
+        msg.type === AgentMessageType.REQUEST_INPUT ||
+        msg.type === AgentMessageType.TERMINATED ||
+        msg.type === AgentMessageType.ERROR ||
+        (msg.type === AgentMessageType.THOUGHT &&
+            (msg.details?.tool || msg.details?.tools || msg.details?.streamed || msg.details?.display_role === "tool_preamble"))
+    );
+
+    const latestImportantTimestamp = importantMessages.reduce((max, msg) => {
+        return Math.max(max, getTimestampMs(msg.timestamp));
+    }, -Infinity);
+
+    const recentThinking = !isCompleted && !hasStreaming
+        ? messages
+            .filter((msg) =>
+                msg.type === AgentMessageType.UPDATE ||
+                msg.type === AgentMessageType.PLAN ||
+                (msg.type === AgentMessageType.THOUGHT &&
+                    !msg.details?.tool &&
+                    !msg.details?.tools &&
+                    !msg.details?.streamed &&
+                    msg.details?.display_role !== "tool_preamble"))
+            .filter((msg) => {
+                const timestamp = getTimestampMs(msg.timestamp);
+
+                if (Number.isFinite(latestUserQuestionTimestamp) && timestamp < latestUserQuestionTimestamp) {
+                    return false;
+                }
+
+                if (Number.isFinite(latestImportantTimestamp) && timestamp < latestImportantTimestamp) {
+                    return false;
+                }
+
+                return true;
+            })
+            .slice(-1)
+        : [];
+
+    return { importantMessages, recentThinking };
 }
 
 /**
@@ -240,6 +303,26 @@ export function isToolCallMessage(message: AgentMessage): boolean {
     return message.type === AgentMessageType.THOUGHT && !!message.details?.tool;
 }
 
+function isToolPreambleMessage(message: AgentMessage): boolean {
+    const details = message.details as { display_role?: string } | undefined;
+    return message.type === AgentMessageType.THOUGHT && details?.display_role === "tool_preamble";
+}
+
+/**
+ * Check if a message should be rendered as part of tool activity.
+ * Includes concrete tool calls plus tool preambles emitted before tool_use.
+ */
+export function isToolActivityMessage(message: AgentMessage): boolean {
+    if (isToolCallMessage(message)) return true;
+    if (message.type !== AgentMessageType.THOUGHT) return false;
+
+    const details = message.details as { display_role?: string; tools?: unknown } | undefined;
+    if (isToolPreambleMessage(message)) return true;
+    if (Array.isArray(details?.tools) && details.tools.length > 0) return true;
+
+    return false;
+}
+
 /**
  * Get the tool_run_id from a message's details, if present
  */
@@ -285,7 +368,7 @@ export function groupConsecutiveToolCalls(messages: AgentMessage[]): MessageGrou
 
     const flushToolGroup = () => {
         if (currentToolGroup.length > 0) {
-            if (currentToolGroup.length === 1) {
+            if (currentToolGroup.length === 1 && !isToolPreambleMessage(currentToolGroup[0])) {
                 // Single tool call - no need to group
                 groups.push({ type: 'single', message: currentToolGroup[0] });
             } else {
@@ -301,7 +384,7 @@ export function groupConsecutiveToolCalls(messages: AgentMessage[]): MessageGrou
     };
 
     for (const message of messages) {
-        if (isToolCallMessage(message)) {
+        if (isToolActivityMessage(message)) {
             currentToolGroup.push(message);
         } else {
             // Flush any pending tool group before adding non-tool message
@@ -314,13 +397,6 @@ export function groupConsecutiveToolCalls(messages: AgentMessage[]): MessageGrou
     flushToolGroup();
 
     return groups;
-}
-
-/**
- * Helper to get timestamp as number
- */
-function getTimestampMs(timestamp: number | string): number {
-    return typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
 }
 
 /**
@@ -377,7 +453,7 @@ export function groupMessagesWithStreaming(
                 });
             }
             activityGroups.get(activityGroupId)!.messages.push(message);
-        } else if (isToolCallMessage(message)) {
+        } else if (isToolActivityMessage(message)) {
             const toolIteration = getToolIteration(message);
             const toolRunId = getToolRunId(message);
 
@@ -496,7 +572,7 @@ export function groupMessagesWithStreaming(
 
     const flushToolGroup = () => {
         if (currentToolGroup.length > 0) {
-            if (currentToolGroup.length === 1) {
+            if (currentToolGroup.length === 1 && !isToolPreambleMessage(currentToolGroup[0])) {
                 groups.push({ type: 'single', message: currentToolGroup[0] });
             } else {
                 groups.push({
@@ -575,7 +651,7 @@ export function groupMessagesWithStreaming(
                 toolRunId: item.toolRunId,
                 toolStatus: latestStatus
             });
-        } else if (isToolCallMessage(item.message)) {
+        } else if (isToolActivityMessage(item.message)) {
             // Standalone tool message - use consecutive grouping
             currentToolGroup.push(item.message);
         } else {
