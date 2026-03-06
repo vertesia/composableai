@@ -218,7 +218,7 @@ async function createObjectFromExternalSource(client: VertesiaClient, uri: strin
 
 export async function updateObject(program: Command, objectId: string, type: string, _options: Record<string, any>) {
     const types: any[] = await listTypes(program);
-    var searchedType = findTypeValue(types, type);
+    let searchedType = findTypeValue(types, type);
     if (searchedType === TYPE_SELECTION_ERROR) {
         console.error(`${type} is not an existing type`);
         process.exit(2);

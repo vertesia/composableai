@@ -5,36 +5,36 @@ import * as ts from "typescript";
 import { ValidationError, validateWorkflow } from "./validation.js";
 
 function compile(fileNames: string[], options: ts.CompilerOptions): { errors: number, emittedFiles: string[] | undefined } {
-    let program = ts.createProgram(fileNames, {
+    const program = ts.createProgram(fileNames, {
         ...options,
         listEmittedFiles: true,
     } satisfies ts.CompilerOptions);
-    let emitResult = program.emit();
+    const emitResult = program.emit();
 
-    let allDiagnostics = ts
+    const allDiagnostics = ts
         .getPreEmitDiagnostics(program)
         .concat(emitResult.diagnostics);
 
     let errors = 0;
     allDiagnostics.forEach(diagnostic => {
-        let prefix = '';
+        const prefix = '';
         const categories = new Set<ts.DiagnosticCategory>();
         if (diagnostic.relatedInformation && diagnostic.relatedInformation.length > 0) {
             for (const ri of diagnostic.relatedInformation) {
                 categories.add(ri.category);
             }
             if (categories.has(ts.DiagnosticCategory.Error)) {
-                prefix: 'Error: ';
+                'Error: ';
                 errors++;
             } else if (categories.has(ts.DiagnosticCategory.Warning)) {
-                prefix: 'Warning: ';
+                'Warning: ';
             } else if (categories.has(ts.DiagnosticCategory.Suggestion)) {
-                prefix: 'Suggestion: ';
+                'Suggestion: ';
             }
         }
         if (diagnostic.file) {
-            let { line, character } = ts.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!);
-            let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+            const { line, character } = ts.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!);
+            const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
             console.log(`${prefix}${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
         } else {
             console.log(prefix + ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));

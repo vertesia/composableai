@@ -390,7 +390,7 @@ function formatDetails(details: any): void {
 
                 Object.entries(details).forEach(([key, value]) => {
                     let displayValue: string;
-                    let paddedKey = key.padEnd(padding);
+                    const paddedKey = key.padEnd(padding);
 
                     // Format the value based on its type
                     if (typeof value === "object" && value !== null) {

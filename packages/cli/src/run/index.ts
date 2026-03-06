@@ -79,7 +79,7 @@ export default async function runInteraction(program: Command, interactionSpec: 
             // Exit loop if aborted
             if (signal.aborted) break;
             
-            let runNumber = count > 1 ? 0 : i + 1;
+            const runNumber = count > 1 ? 0 : i + 1;
             if (Array.isArray(data)) {
                 for (const d of data) {
                     // Exit loop if aborted

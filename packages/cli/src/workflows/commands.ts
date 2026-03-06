@@ -79,7 +79,7 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
     const { objectId, vars, file, stream, interactive, output: outputFile } = options;
     console.debug("Executing interaction in workflow", workflowName, "with options", options);
 
-    let mergedConfig = {
+    const mergedConfig = {
         objectIds: objectId ? objectId : [],
         vars: JSON.parse(vars || "{}") || {},
     } as ExecuteWorkflowPayload;
