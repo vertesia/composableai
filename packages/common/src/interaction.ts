@@ -761,6 +761,13 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      */
     restart_from_workflow_run_id?: string;
 
+    /**
+     * The AgentRun MongoDB _id. Used for artifact storage paths: agents/{agent_run_id}/
+     * Flows into ConversationState and down to workstreams.
+     * Undefined for legacy workflows started before the AgentRun system.
+     */
+    agent_run_id?: string;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {

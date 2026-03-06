@@ -136,6 +136,20 @@ export interface ConversationState {
 
     /** LLM stop reason from the latest call (e.g., "stop", "length", "tool_use") */
     finish_reason?: string;
+
+    /**
+     * The AgentRun ID (MongoDB _id) that owns this conversation.
+     * Used for artifact storage paths: agents/{agent_run_id}/
+     * Undefined for legacy workflows started before the AgentRun system.
+     */
+    agent_run_id?: string;
+
+    /**
+     * For workstreams: the launch ID assigned by the parent workflow.
+     * When set, artifacts are stored under agents/{agent_run_id}/workstreams/{launch_id}/
+     * to consolidate all artifacts under the parent agent run.
+     */
+    launch_id?: string;
 }
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */

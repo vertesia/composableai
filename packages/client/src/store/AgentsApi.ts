@@ -360,4 +360,58 @@ export class AgentsApi extends ApiTopic {
         if (disposition) query.disposition = disposition;
         return this.get(`/${id}/artifacts/${path}`, { query });
     }
+
+    /**
+     * Upload an artifact to an agent run.
+     * Works even before the workflow has started (pre-upload).
+     *
+     * 1. Gets a signed upload URL from the server
+     * 2. Uploads the content directly to cloud storage
+     *
+     * @returns The full storage path of the uploaded artifact.
+     */
+    async uploadArtifact(
+        id: string,
+        path: string,
+        content: Blob | ReadableStream | ArrayBuffer | string,
+        contentType?: string,
+    ): Promise<{ url: string; path: string }> {
+        const mimeType = contentType || 'application/octet-stream';
+
+        // 1. Get signed upload URL from the agents API
+        const result = await this.put(`/${id}/artifacts/${path}`, {
+            headers: { 'Content-Type': mimeType },
+        }) as { url: string; path: string };
+
+        // 2. Upload directly to cloud storage
+        const res = await fetch(result.url, {
+            method: 'PUT',
+            body: content,
+            headers: { 'Content-Type': mimeType },
+        });
+
+        if (!res.ok) {
+            throw new Error(`Failed to upload artifact: ${res.statusText}`);
+        }
+
+        return result;
+    }
+
+    /**
+     * Download an artifact from an agent run.
+     */
+    async downloadArtifact(
+        id: string,
+        path: string,
+    ): Promise<ReadableStream<Uint8Array>> {
+        const { url } = await this.getArtifactUrl(id, path, 'attachment');
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`Failed to download artifact: ${res.statusText}`);
+        }
+        if (!res.body) {
+            throw new Error('No body in artifact download response');
+        }
+        return res.body;
+    }
 }
