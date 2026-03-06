@@ -42,4 +42,4 @@ export function useUITranslation() {
     return useTranslation(NAMESPACE, { i18n: i18nInstance });
 }
 
-export { NAMESPACE } from './instance.js';
+export { i18nInstance, NAMESPACE } from './instance.js';

@@ -4,28 +4,31 @@ import { ModernAgentConversation } from "@vertesia/ui/features";
 import { Button } from "@vertesia/ui/core";
 import { useNavigate, useParams } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
+import { useUITranslation } from "@vertesia/ui/i18n";
 import type { AsyncConversationExecutionPayload } from "@vertesia/common";
 import { ASSISTANT_INTERACTION } from "./constants";
 
 export function HomePage() {
     const { user } = useUserSession();
+    const { t } = useUITranslation();
     const navigate = useNavigate();
 
     return (
         <div className="p-6 space-y-4">
-            <h1 className="text-2xl font-semibold">Welcome, {user?.name || user?.email}!</h1>
+            <h1 className="text-2xl font-semibold">{t('nav.welcome', { name: user?.name || user?.email })}</h1>
             <p className="text-muted">
-                This is the plugin template. Use it as a starting point to build your own plugin UI.
+                {t('nav.templateDescription')}
             </p>
             <Button variant="outline" onClick={() => navigate('/chat')}>
                 <Bot className="size-4 mr-2" />
-                Try the Agent Chat
+                {t('nav.tryAgentChat')}
             </Button>
         </div>
     );
 }
 
 export function ChatPage() {
+    const { t } = useUITranslation();
     const { client } = useUserSession();
     const navigate = useNavigate();
     const params = useParams();
@@ -56,7 +59,7 @@ export function ChatPage() {
             <ModernAgentConversation
                 run={run ? { runId: run.run_id, workflowId: run.workflow_id } : undefined}
                 startWorkflow={startWorkflow}
-                title="Plugin Assistant"
+                title={t('nav.pluginAssistant')}
                 resetWorkflow={handleReset}
                 hideObjectLinking
                 interactive

@@ -2,6 +2,7 @@ import { AsyncExecutionResult } from "@vertesia/client";
 import { Button, Command, CommandGroup, CommandItem, CommandList, cn, Popover, PopoverContent, PopoverTrigger, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
+import { useUITranslation } from '../../../../i18n/index.js';
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
 import { type AgentConversationViewMode } from "./AllMessagesMixed";
 import { getConversationUrl } from "./utils";
@@ -52,6 +53,7 @@ export default function Header({
     isReceivingChunks = false,
     className,
 }: HeaderProps) {
+    const { t } = useUITranslation();
     return (
         <PayloadBuilderProvider>
             <div className={cn("flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0", className)}>
@@ -75,10 +77,10 @@ export default function Header({
                     {/* View Mode Toggle */}
                     <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
                         <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("stacked")}>
-                            Details
+                            {t('agent.details')}
                         </Button>
                         <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" className="rounded-r-md" onClick={() => onViewModeChange("sliding")}>
-                            Summary
+                            {t('agent.summary')}
                         </Button>
                     </div>
 
@@ -93,10 +95,10 @@ export default function Header({
                                 variant={showPlanPanel ? "primary" : "secondary"}
                                 onClick={onTogglePlanPanel}
                                 className="transition-all duration-200 rounded-md"
-                                title="Toggle right sidebar"
+                                title={t('agent.toggleRightSidebar')}
                             >
                                 <ClipboardList className="size-4 mr-1.5" />
-                                <span className="font-medium text-xs">{showPlanPanel ? "Hide Sidebar" : "Show Sidebar"}</span>
+                                <span className="font-medium text-xs">{showPlanPanel ? t('agent.hideSidebar') : t('agent.showSidebar')}</span>
                             </Button>
                         </div>
                     )}
@@ -145,6 +147,7 @@ function MoreDropdown({
     onRestart?: (newRun: { runId: string; workflowId: string }) => void;
     onFork?: (newRun: { runId: string; workflowId: string }) => void;
 }) {
+    const { t } = useUITranslation();
     const toast = useToast();
     const { client } = useUserSession();
     const builder = usePayloadBuilder();
@@ -155,7 +158,7 @@ function MoreDropdown({
 
             toast({
                 status: "success",
-                title: "Workflow cancelled",
+                title: t('agent.workflowCancelled'),
                 duration: 2000,
             });
 
@@ -166,7 +169,7 @@ function MoreDropdown({
         } catch (error) {
             toast({
                 status: "error",
-                title: "Failed to cancel workflow",
+                title: t('agent.failedToCancelWorkflow'),
                 duration: 2000,
             });
             return false;
@@ -178,14 +181,14 @@ function MoreDropdown({
             const newRun = await client.runs.restart(run.runId);
             toast({
                 status: "success",
-                title: "Conversation restarted",
+                title: t('agent.conversationRestarted'),
                 duration: 2000,
             });
             onRestart?.(newRun);
         } catch (error) {
             toast({
                 status: "error",
-                title: "Failed to restart conversation",
+                title: t('agent.failedToRestartConversation'),
                 duration: 2000,
             });
         }
@@ -196,14 +199,14 @@ function MoreDropdown({
             const newRun = await client.runs.fork(run.runId);
             toast({
                 status: "success",
-                title: "Conversation forked",
+                title: t('agent.conversationForked'),
                 duration: 2000,
             });
             onFork?.(newRun);
         } catch (error) {
             toast({
                 status: "error",
-                title: "Failed to fork conversation",
+                title: t('agent.failedToForkConversation'),
                 duration: 2000,
             });
         }
@@ -217,7 +220,7 @@ function MoreDropdown({
     return (
         <Popover hover>
             <PopoverTrigger>
-                <Button size="xs" variant="ghost" title="More actions">
+                <Button size="xs" variant="ghost" title={t('agent.moreActions')}>
                     <MoreVertical className="size-4" />
                 </Button>
             </PopoverTrigger>
@@ -228,12 +231,12 @@ function MoreDropdown({
                             <CommandList>
                                 <CommandGroup>
                                     <div className="flex items-center px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300">
-                                        <span className="text-muted">Actions</span>
+                                        <span className="text-muted">{t('agent.actions')}</span>
                                     </div>
                                     {
                                         isModal && (
                                             <CommandItem className="text-xs" onSelect={() => openUrl(`/store/agent-runner?agentId=${run.runId}__${run.workflowId}`)}>
-                                                <ExternalLink className="size-3.5 mr-2 text-muted" /> Open in new tab
+                                                <ExternalLink className="size-3.5 mr-2 text-muted" /> {t('agent.openInNewTab')}
                                             </CommandItem>
                                         )
                                     }
@@ -244,12 +247,12 @@ function MoreDropdown({
                                             navigator.clipboard.writeText(run.runId);
                                             toast({
                                                 status: "success",
-                                                title: "Run ID copied",
+                                                title: t('agent.runIdCopied'),
                                                 duration: 2000,
                                             });
                                         }
                                     }}>
-                                        <CopyIcon className="size-3.5 mr-2 text-muted" /> Copy Run ID
+                                        <CopyIcon className="size-3.5 mr-2 text-muted" /> {t('agent.copyRunId')}
                                     </CommandItem>
                                     <CommandItem className="text-xs" onSelect={() => {
                                         if (onDownload) {
@@ -258,33 +261,32 @@ function MoreDropdown({
                                             getConversationUrl(client, run.runId).then((r) => window.open(r, "_blank"));
                                         }
                                     }}>
-                                        <DownloadCloudIcon className="size-3.5 mr-2 text-muted" /> Download
-                                        Conversation
+                                        <DownloadCloudIcon className="size-3.5 mr-2 text-muted" /> {t('agent.downloadConversation')}
                                     </CommandItem>
                                     {onExportPdf && (
                                         <CommandItem className="text-xs" onSelect={onExportPdf}>
-                                            <DownloadCloudIcon className="size-3.5 mr-2 text-muted" /> Export as PDF
+                                            <DownloadCloudIcon className="size-3.5 mr-2 text-muted" /> {t('agent.exportAsPdf')}
                                         </CommandItem>
                                     )}
                                     {onClose && isModal && (
                                         <CommandItem className="text-xs" onSelect={onClose}>
-                                            <XIcon className="size-3.5 mr-2 text-muted" /> Close
+                                            <XIcon className="size-3.5 mr-2 text-muted" /> {t('agent.close')}
                                         </CommandItem>
                                     )}
                                     {onRestart && (
                                         <CommandItem className="text-xs" onSelect={restartWorkflow}>
-                                            <RefreshCcw className="size-3.5 mr-2 text-muted" /> Restart Conversation
+                                            <RefreshCcw className="size-3.5 mr-2 text-muted" /> {t('agent.restartConversation')}
                                         </CommandItem>
                                     )}
                                     {onFork && (
                                         <CommandItem className="text-xs" onSelect={forkWorkflow}>
-                                            <GitFork className="size-3.5 mr-2 text-muted" /> Fork Conversation
+                                            <GitFork className="size-3.5 mr-2 text-muted" /> {t('agent.forkConversation')}
                                         </CommandItem>
                                     )}
                                     <CommandItem className="text-xs text-destructive" onSelect={() => {
                                         cancelWorkflow(run);
                                     }}>
-                                        <XIcon className="size-3.5 mr-2 text-destructive" /> Cancel Workflow
+                                        <XIcon className="size-3.5 mr-2 text-destructive" /> {t('agent.cancelWorkflow')}
                                     </CommandItem>
                                 </CommandGroup>
                             </CommandList>

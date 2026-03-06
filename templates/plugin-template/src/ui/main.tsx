@@ -1,4 +1,5 @@
 import { I18nProvider } from '@vertesia/ui/i18n'
+import './i18n' // register plugin-specific translations
 import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'

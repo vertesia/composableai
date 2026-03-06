@@ -1,5 +1,6 @@
 import { Plan } from "@vertesia/common";
 import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
+import { useUITranslation } from '../../../../i18n/index.js';
 
 interface PlanPanelProps {
     plan: Plan;
@@ -9,11 +10,12 @@ interface PlanPanelProps {
 
 // todo: remove this file
 export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPanelProps) {
+    const { t } = useUITranslation();
     if (!isVisible) return null;
 
     return (
         <div className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-3 shadow-sm transition-all duration-300 ease-in-out transform">
-            <div className="text-xs font-medium mb-2 text-gray-800 dark:text-gray-200">Agent Plan</div>
+            <div className="text-xs font-medium mb-2 text-gray-800 dark:text-gray-200">{t('agent.agentPlan')}</div>
 
             {/* Plan Steps */}
             {plan.plan && plan.plan.length > 0 ? (
@@ -59,14 +61,14 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
             ) : (
                 <div className="text-xs text-gray-500 dark:text-gray-400 italic flex items-center">
                     <AlertCircle className="h-3.5 w-3.5 mr-1.5 text-amber-500" />
-                    No plan detected yet
+                    {t('agent.noPlanDetected')}
                 </div>
             )}
 
             {/* Workstream Status Summary */}
             {workstreamStatus.size > 1 && (
                 <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <div className="text-xs font-medium mb-1.5 text-gray-800 dark:text-gray-200">Workstreams</div>
+                    <div className="text-xs font-medium mb-1.5 text-gray-800 dark:text-gray-200">{t('agent.workstreams')}</div>
                     <div className="grid grid-cols-2 gap-1.5">
                         {Array.from(workstreamStatus.entries())
                             // Filter to only show real workstreams (main or those with valid names - not numeric IDs)

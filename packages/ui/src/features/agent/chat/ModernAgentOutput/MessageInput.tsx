@@ -311,7 +311,7 @@ export default function MessageInput({
                 <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 rounded-lg z-10 pointer-events-none">
                     <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2">
                         <UploadIcon className="size-5" />
-                        Drop files to upload
+                        {t('agent.dropFilesToUpload')}
                     </div>
                 </div>
             )}
@@ -334,7 +334,7 @@ export default function MessageInput({
                     <div>
                         <div className="flex items-center gap-1 mb-1">
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                Uploaded Files
+                                {t('agent.uploadedFiles')}
                             </span>
                             <VTooltip
                                 description="Files uploaded to this conversation remain available throughout. The agent can access them anytime."
@@ -364,10 +364,10 @@ export default function MessageInput({
                                     )} />
                                     <span className="max-w-[120px] truncate">{file.name}</span>
                                     <span className="text-xs opacity-70">
-                                        {file.status === FileProcessingStatus.UPLOADING ? 'Uploading...'
-                                            : file.status === FileProcessingStatus.PROCESSING ? 'Processing...'
-                                            : file.status === FileProcessingStatus.ERROR ? 'Error'
-                                            : file.status === FileProcessingStatus.READY ? 'Ready' : file.status}
+                                        {file.status === FileProcessingStatus.UPLOADING ? t('agent.uploading')
+                                            : file.status === FileProcessingStatus.PROCESSING ? t('agent.processing')
+                                            : file.status === FileProcessingStatus.ERROR ? t('agent.error')
+                                            : file.status === FileProcessingStatus.READY ? t('agent.ready') : file.status}
                                     </span>
                                 </div>
                             ))}
@@ -399,7 +399,7 @@ export default function MessageInput({
                 <div className="mb-3">
                     <div className="flex items-center gap-1 mb-1">
                         <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                            Document Attachments
+                            {t('agent.documentAttachments')}
                         </span>
                         <VTooltip
                             description="Documents from the store attached to this message. The agent can re-fetch them by ID anytime, or re-attach to include content directly."
@@ -443,7 +443,7 @@ export default function MessageInput({
                             className="text-xs"
                         >
                             <UploadIcon className="size-3.5 mr-1.5" />
-                            Upload
+                            {t('agent.upload')}
                         </Button>
                     )}
                     {renderDocumentSearch && (
@@ -455,7 +455,7 @@ export default function MessageInput({
                             className="text-xs"
                         >
                             <FileTextIcon className="size-3.5 mr-1.5" />
-                            Search Documents
+                            {t('agent.searchDocuments')}
                             {selectedDocuments.length > 0 && (
                                 <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-blue-600 text-white">
                                     {selectedDocuments.length}
