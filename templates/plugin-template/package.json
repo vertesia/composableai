@@ -20,7 +20,7 @@
     "build:ui:lib": "vite build --mode lib",
     "start": "npm run preview",
     "start:vercel": "vercel dev",
-    "eslint": "eslint .",
+    "lint": "eslint .",
     "preview": "npm run build:server && vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
