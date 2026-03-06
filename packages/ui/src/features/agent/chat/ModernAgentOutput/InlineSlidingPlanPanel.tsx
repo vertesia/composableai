@@ -1,6 +1,6 @@
 import { Plan } from "@vertesia/common";
 import { Badge, Button, cn } from "@vertesia/ui/core";
-import { AlertCircle, CheckCircle, Circle, Clock, X } from "lucide-react";
+import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
 import React from "react";
 import { useUITranslation } from '../../../../i18n/index.js';
 
@@ -18,7 +18,7 @@ function InlineSlidingPlanPanelComponent({
   plan,
   workstreamStatus,
   isOpen,
-  onClose,
+  onClose: _onClose,
   plans = [],
   activePlanIndex = 0,
   onChangePlan = () => { },
@@ -32,22 +32,9 @@ function InlineSlidingPlanPanelComponent({
 
   // Render the normal panel
   return (
-    <div className="h-full shadow-xl border border-muted/20 overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b border-muted/20">
-        <h3 className="font-bold text-base">
-          {t('agent.plan')}
-        </h3>
-        <Button variant={"ghost"} onClick={onClose} >
-          <X className="size-4" />
-          <span className="sr-only">Close</span>
-        </Button>
-      </div>
+    <div className="h-full overflow-hidden">
       <div
-        className="p-3 overflow-y-auto"
-        style={{
-          height: "calc(100% - 44px)",
-          maxHeight: "calc(100vh - 150px)",
-        }}
+        className="p-3 overflow-y-auto h-full"
       >
         {/* Plan Summary - count only tasks, excluding main workstream */}
         <div className="mb-3 p-2 bg-info rounded-md border border-info">
