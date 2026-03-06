@@ -3,6 +3,7 @@ import { Activity, FileTextIcon, HelpCircleIcon, PaperclipIcon, SendIcon, StopCi
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ConversationFile, FileProcessingStatus } from "@vertesia/common";
 import { SelectDocument } from "../../../store";
+import { useUITranslation } from "../../../../i18n/index.js";
 
 /** Represents an uploaded file attachment */
 export interface UploadedFile {
@@ -82,7 +83,7 @@ export default function MessageInput({
     isStreaming = false,
     isCompleted = false,
     activeTaskCount = 0,
-    placeholder = "Type your message...",
+    placeholder,
     // File upload props
     onFilesSelected,
     uploadedFiles = [],
@@ -102,6 +103,8 @@ export default function MessageInput({
     // Styling props
     className,
 }: MessageInputProps) {
+    const { t } = useUITranslation();
+    const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
     const ref = useRef<HTMLTextAreaElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [value, setValue] = useState("");
@@ -473,7 +476,7 @@ export default function MessageInput({
                         onChange={(e) => setValue(e.target.value)}
                         onPaste={handlePaste}
                         disabled={disabled}
-                        placeholder={isStreaming ? "Agent is working... (Esc Esc to stop)" : (onFilesSelected ? "Ask anything... (drop or paste files)" : placeholder)}
+                        placeholder={isStreaming ? t('agent.agentWorking') : (onFilesSelected ? t('agent.askAnything') : resolvedPlaceholder)}
                         rows={2}
                         style={{ minHeight: '60px', maxHeight: '200px' }}
                     />
@@ -483,7 +486,7 @@ export default function MessageInput({
                             className="rounded-full"
                             disabled={!isCompleted}
                             onClick={() => setIsObjectModalOpen(true)}
-                            alt="Link Object"
+                            alt={t('agent.linkObject')}
                         >
                             <PaperclipIcon className="size-4" />
                         </Button>
@@ -496,19 +499,19 @@ export default function MessageInput({
                         onClick={handleStop}
                         disabled={isStopping}
                         className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white"
-                        title="Stop the agent"
+                        title={t('agent.stopAgent')}
                     >
-                        {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className="size-4 mr-2" />} <span>Stop</span>
+                        {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className="size-4 mr-2" />} <span>{t('agent.stop')}</span>
                     </Button>
                 ) : (
                     <Button
                         onClick={handleSend}
                         disabled={disabled || isSending || !value.trim() || hasProcessingFiles}
                         className="px-4 py-2.5"
-                        title={hasProcessingFiles ? "Wait for files to finish processing" : undefined}
+                        title={hasProcessingFiles ? t('agent.waitForFiles') : undefined}
                     >
                         {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className="size-4 mr-2" />}
-                        <span>{hasProcessingFiles ? "Processing..." : "Send"}</span>
+                        <span>{hasProcessingFiles ? t('agent.processing') : t('agent.send')}</span>
                     </Button>
                 )}
             </div>
@@ -517,13 +520,13 @@ export default function MessageInput({
                 {activeTaskCount > 0 ? (
                     <div className="flex items-center justify-center">
                         <Activity className="h-3 w-3 mr-1 text-attention" />
-                        <span>Agent has {activeTaskCount} active workstream{activeTaskCount !== 1 ? 's' : ''} running</span>
+                        <span>{t('agent.activeWorkstreams', { count: activeTaskCount })}</span>
                     </div>
                 ) : isStreaming
-                    ? "Agent is working... Press Esc twice or click Stop to interrupt"
+                    ? t('agent.agentWorkingStop')
                     : disabled
-                        ? "Agent is processing, you can continue once it completes..."
-                        : "Enter to send • Shift+Enter for new line"}
+                        ? t('agent.agentProcessing')
+                        : t('agent.enterToSend')}
             </div>
 
             {/* Object Selection Modal */}
@@ -532,7 +535,7 @@ export default function MessageInput({
                 onClose={() => setIsObjectModalOpen(false)}
                 className='min-w-[60vw]'
             >
-                <ModalTitle>Link Object</ModalTitle>
+                <ModalTitle>{t('agent.linkObject')}</ModalTitle>
                 <ModalBody className="pb-6">
                     <SelectDocument onChange={handleObjectSelect} />
                 </ModalBody>

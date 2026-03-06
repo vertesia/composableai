@@ -8,11 +8,22 @@ export interface I18nProviderProps {
     children: ReactNode;
 }
 
+function detectLanguage(lng?: string): string {
+    return lng ?? navigator.language?.split('-')[0] ?? 'en';
+}
+
 export function I18nProvider({ lng, children }: I18nProviderProps) {
+    // Set language synchronously on first render to avoid flash of wrong language
+    const language = detectLanguage(lng);
+    if (i18nInstance.language !== language) {
+        void i18nInstance.changeLanguage(language);
+    }
+
+    // Also react to prop changes
     useEffect(() => {
-        const language = lng ?? navigator.language?.split('-')[0] ?? 'en';
-        if (i18nInstance.language !== language) {
-            void i18nInstance.changeLanguage(language);
+        const lang = detectLanguage(lng);
+        if (i18nInstance.language !== lang) {
+            void i18nInstance.changeLanguage(lang);
         }
     }, [lng]);
 

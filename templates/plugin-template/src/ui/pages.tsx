@@ -57,8 +57,6 @@ export function ChatPage() {
                 run={run ? { runId: run.run_id, workflowId: run.workflow_id } : undefined}
                 startWorkflow={startWorkflow}
                 title="Plugin Assistant"
-                placeholder="Ask me anything..."
-                startButtonText="Start Conversation"
                 resetWorkflow={handleReset}
                 hideObjectLinking
                 interactive
