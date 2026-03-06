@@ -1,7 +1,7 @@
 {
   "extends": "@tsconfig/node-lts/tsconfig.json",
   "compilerOptions": {
-    "target": "es2022",
+    "target": "ES2024",
     "outDir": "./lib"
   }
 ,
