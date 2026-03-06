@@ -1,6 +1,7 @@
 import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { cn } from "@vertesia/ui/core";
+import { useUITranslation } from '../../../../i18n/index.js';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 export type AgentConversationViewMode = "stacked" | "sliding";
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
@@ -208,6 +209,7 @@ function AllMessagesMixedComponent({
         console.warn('[AllMessagesMixed] artifactRunId prop is missing!');
     }
 
+    const { t } = useUITranslation();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
 
@@ -556,8 +558,8 @@ function AllMessagesMixedComponent({
                 <div className="flex items-center justify-center h-full text-center py-8">
                     <div className="flex items-center px-3 py-2 text-sm text-muted">
                         {activeWorkstream === "all"
-                            ? "Waiting for agent response..."
-                            : "No messages in this workstream yet..."}
+                            ? t('agent.waitingForAgentResponse')
+                            : t('agent.noMessagesInWorkstream')}
                     </div>
                 </div>
             ) : (

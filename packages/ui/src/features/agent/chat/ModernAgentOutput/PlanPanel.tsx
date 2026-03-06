@@ -89,20 +89,20 @@ export default function PlanPanel({ plan, workstreamStatus, isVisible }: PlanPan
                             .map(([id, status]) => {
                                 let StatusIcon = Circle;
                                 let statusColor = "text-gray-400";
-                                let statusText = "Pending";
+                                let statusText = t('agent.pending');
 
                                 if (status === "in_progress") {
                                     StatusIcon = Clock;
                                     statusColor = "text-blue-500";
-                                    statusText = "In Progress";
+                                    statusText = t('agent.inProgress');
                                 } else if (status === "completed") {
                                     StatusIcon = CheckCircle;
                                     statusColor = "text-green-500";
-                                    statusText = "Completed";
+                                    statusText = t('agent.completed');
                                 }
 
                                 // Format workstream IDs for better display
-                                const displayId = id === "main" ? "Main" : id;
+                                const displayId = id === "main" ? t('agent.main') : id;
 
                                 return (
                                     <div key={id} className="flex items-center">

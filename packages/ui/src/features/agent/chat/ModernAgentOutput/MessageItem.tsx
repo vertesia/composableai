@@ -261,7 +261,7 @@ function MessageItemComponent({
         navigator.clipboard.writeText(textToCopy).then(() => {
             toast({
                 status: "success",
-                title: "Copied to clipboard",
+                title: t('agent.copiedToClipboard'),
                 duration: 2000,
             });
         });
@@ -274,7 +274,7 @@ function MessageItemComponent({
         if (!content.trim()) {
             toast({
                 status: "error",
-                title: "No content to export",
+                title: t('agent.noContentToExport'),
                 duration: 2000,
             });
             return;
@@ -494,7 +494,7 @@ function MessageItemComponent({
                             variant="ghost" size="xs"
                             onClick={copyToClipboard}
                             className="text-muted/50 hover:text-muted h-5 w-5 p-0"
-                            title="Copy message"
+                            title={t('agent.copyMessage')}
                         >
                             <CopyIcon className="size-3" />
                         </Button>
@@ -504,7 +504,7 @@ function MessageItemComponent({
                                     <Button
                                         variant="ghost" size="xs"
                                         className="text-muted/50 hover:text-muted h-5 w-5 p-0"
-                                        title="Export message"
+                                        title={t('agent.exportMessage')}
                                         disabled={isExportingFile}
                                     >
                                         <Download className={`size-3 ${isExportingFile ? 'animate-pulse' : ''}`} />
@@ -512,10 +512,10 @@ function MessageItemComponent({
                                 }
                             >
                                 <MenuItem onClick={() => exportToFormat(MarkdownRenditionFormat.pdf)}>
-                                    Export as PDF
+                                    {t('agent.exportAsPdf')}
                                 </MenuItem>
                                 <MenuItem onClick={() => exportToFormat(MarkdownRenditionFormat.docx)}>
-                                    Export as Word
+                                    {t('agent.exportAsWord')}
                                 </MenuItem>
                             </Dropdown>
                         )}

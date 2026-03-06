@@ -377,7 +377,7 @@ function StartWorkflowView({
             sessionStorage.removeItem("plan-panel-shown");
 
             toast({
-                title: stagedFiles.length > 0 ? "Starting agent and uploading files..." : "Starting agent...",
+                title: stagedFiles.length > 0 ? t('agent.startingAgentUploading') : t('agent.startingAgent'),
                 status: "info",
                 duration: 3000,
             });
@@ -561,7 +561,7 @@ function StartWorkflowView({
                             size="xs"
                             variant="ghost"
                             onClick={onClose}
-                            title="Close"
+                            title={t('agent.close')}
                             className="text-muted hover:text-foreground"
                         >
                             <XIcon className="size-4" />
@@ -1312,7 +1312,7 @@ function ModernAgentConversationInner({
         toast({
             status: "success",
             title: t('agent.pdfExportReady'),
-            description: "Use your browser's Print dialog to save as PDF",
+            description: t('agent.printDialogDescription'),
             duration: 4000,
         });
         setIsPdfModalOpen(false);
@@ -1504,7 +1504,7 @@ function ModernAgentConversationInner({
                         onMouseDown={() => setIsRightPanelResizing(true)}
                         role="separator"
                         aria-orientation="vertical"
-                        aria-label="Resize right panel"
+                        aria-label={t('agent.resizeRightPanel')}
                     />
                     <div
                         className="w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l"

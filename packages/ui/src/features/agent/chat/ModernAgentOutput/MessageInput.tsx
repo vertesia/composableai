@@ -337,7 +337,7 @@ export default function MessageInput({
                                 {t('agent.uploadedFiles')}
                             </span>
                             <VTooltip
-                                description="Files uploaded to this conversation remain available throughout. The agent can access them anytime."
+                                description={t('agent.filesUploadedDescription')}
                                 placement="top"
                                 size="md"
                             >
@@ -402,7 +402,7 @@ export default function MessageInput({
                             {t('agent.documentAttachments')}
                         </span>
                         <VTooltip
-                            description="Documents from the store attached to this message. The agent can re-fetch them by ID anytime, or re-attach to include content directly."
+                            description={t('agent.documentAttachmentsDescription')}
                             placement="top"
                             size="md"
                         >
