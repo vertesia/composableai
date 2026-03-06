@@ -74,42 +74,44 @@ export async function executeInteractionByName<P = any>(client: VertesiaClient,
 }
 
 function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk: string) => void) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const EventSourceImpl = await EventSourceProvider();
-            const streamUrl = new URL(client.runs.baseUrl + '/' + runId + '/stream');
-            const bearerToken = client._auth ? await client._auth() : undefined;
+    return new Promise((resolve, reject) => {
+        (async () => {
+            try {
+                const EventSourceImpl = await EventSourceProvider();
+                const streamUrl = new URL(client.runs.baseUrl + '/' + runId + '/stream');
+                const bearerToken = client._auth ? await client._auth() : undefined;
 
-            if (bearerToken) {
-                const token = bearerToken.split(' ')[1];
-                streamUrl.searchParams.set('access_token', token);
-            } else {
-                throw new Error('No auth token available');
-            }
+                if (bearerToken) {
+                    const token = bearerToken.split(' ')[1];
+                    streamUrl.searchParams.set('access_token', token);
+                } else {
+                    throw new Error('No auth token available');
+                }
 
-            const sse = new EventSourceImpl(streamUrl.href);
-            sse.addEventListener("message", ev => {
-                try {
-                    const data = JSON.parse(ev.data);
-                    if (data) {
-                        onChunk && onChunk(data);
+                const sse = new EventSourceImpl(streamUrl.href);
+                sse.addEventListener("message", ev => {
+                    try {
+                        const data = JSON.parse(ev.data);
+                        if (data) {
+                            onChunk && onChunk(data);
+                        }
+                    } catch (err) {
+                        reject(err);
                     }
-                } catch (err) {
-                    reject(err);
-                }
-            });
-            sse.addEventListener("close", (ev) => {
-                try {
-                    sse.close();
-                    const msg = JSON.parse(ev.data)
-                    resolve(msg);
-                } catch (err) {
-                    reject(err);
-                }
-            });
-        } catch (err) {
-            reject(err);
-        }
+                });
+                sse.addEventListener("close", (ev) => {
+                    try {
+                        sse.close();
+                        const msg = JSON.parse(ev.data)
+                        resolve(msg);
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
+            } catch (err) {
+                reject(err);
+            }
+        })();
     });
 }
 

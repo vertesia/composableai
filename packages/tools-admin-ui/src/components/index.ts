@@ -1,8 +1,9 @@
-export { HeroSection } from './HeroSection.js';
-export { SearchBar } from './SearchBar.js';
-export { ResourceSection } from './ResourceSection.js';
-export { ResourceCard } from './ResourceCard.js';
+export { AdminTopBar } from './AdminTopBar.js';
 export { CollectionCard } from './CollectionCard.js';
-export { EndpointPanel } from './EndpointPanel.js';
-export { SummaryBadge } from './SummaryBadge.js';
 export { DetailPage } from './DetailPage.js';
+export { EndpointPanel } from './EndpointPanel.js';
+export { HeroSection } from './HeroSection.js';
+export { ResourceCard } from './ResourceCard.js';
+export { ResourceSection } from './ResourceSection.js';
+export { SearchBar } from './SearchBar.js';
+export { SummaryBadge } from './SummaryBadge.js';

@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
@@ -19,16 +20,15 @@ export default defineConfig(({ mode }) => {
                     external: (id: string) =>
                         !id.startsWith('.') &&
                         !id.startsWith('/') &&
-                        !id.startsWith('virtual:') &&
-                        !id.endsWith('?inline'),
+                        !id.startsWith('virtual:'),
                 },
             },
         };
     }
 
-    // Dev mode — standalone admin UI
+    // Dev mode — standalone admin UI with Tailwind
     return {
-        plugins: [react()],
+        plugins: [react(), tailwindcss()],
         server: {
             port: 5174,
         },

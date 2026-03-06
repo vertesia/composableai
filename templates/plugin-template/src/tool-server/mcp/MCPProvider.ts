@@ -16,7 +16,7 @@ export abstract class MCPProvider {
      * @param session 
      * @param config 
      */
-    abstract createMCPConnection(session: AuthSession, config: Record<string, any>): Promise<MCPConnectionDetails>;
+    abstract createMCPConnection(session: AuthSession, config: Record<string, unknown>): Promise<MCPConnectionDetails>;
 
 }
 

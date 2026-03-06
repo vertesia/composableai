@@ -1,5 +1,6 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
+    BulkObjectDeleteResult,
     canGenerateRendition,
     ComplexSearchPayload,
     ComputeObjectFacetPayload,
@@ -359,8 +360,17 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${id}/collections`);
     }
 
-    delete(id: string): Promise<{ id: string }> {
-        return this.del(`/${id}`);
+    delete(id: string): Promise<{ id: string }>;
+    delete(ids: string[]): Promise<BulkObjectDeleteResult>;
+    delete(idOrIds: string | string[]): Promise<{ id: string } | BulkObjectDeleteResult> {
+        if (Array.isArray(idOrIds)) {
+            return (this.client as ZenoClient).runOperation({
+                name: 'delete',
+                ids: idOrIds,
+                params: {}
+            }) as Promise<BulkObjectDeleteResult>;
+        }
+        return this.del(`/${idOrIds}`);
     }
 
     listWorkflowRuns(documentId: string): Promise<ListWorkflowRunsResponse> {

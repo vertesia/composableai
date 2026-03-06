@@ -391,7 +391,7 @@ export interface AppToolCollection {
     /**
      * the tools provided by this collection
      */
-    tools: { name: string, description?: string }[]
+    tools: { name: string, description?: string, related_tools?: string[] }[]
 }
 
 /**

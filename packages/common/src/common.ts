@@ -35,3 +35,10 @@ export interface BulkOperationPayload {
 export interface BulkOperationResult {
     status: "in_progress" | "completed" | "failed";
 }
+
+export interface BulkObjectDeleteResult extends BulkOperationResult {
+    /** Number of documents deleted (including revisions) */
+    deleted: number;
+    /** IDs that were not found or user had no permission to delete */
+    failed: string[];
+}

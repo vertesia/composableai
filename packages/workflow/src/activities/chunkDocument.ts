@@ -157,9 +157,7 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
         //delete previous parts
         if (document.parts && document.parts.length > 0) {
             log.info('Deleting previous parts for object ID: ' + objectId, { parts: document.parts });
-            await Promise.all(document.parts.map(async (partId) => {
-                await client.objects.delete(partId);
-            }));
+            await client.objects.delete(document.parts);
         }
 
         await client.objects.update(objectId, {
