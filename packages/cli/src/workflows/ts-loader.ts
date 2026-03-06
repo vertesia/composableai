@@ -17,19 +17,19 @@ function compile(fileNames: string[], options: ts.CompilerOptions): { errors: nu
 
     let errors = 0;
     allDiagnostics.forEach(diagnostic => {
-        const prefix = '';
+        let prefix = '';
         const categories = new Set<ts.DiagnosticCategory>();
         if (diagnostic.relatedInformation && diagnostic.relatedInformation.length > 0) {
             for (const ri of diagnostic.relatedInformation) {
                 categories.add(ri.category);
             }
             if (categories.has(ts.DiagnosticCategory.Error)) {
-                'Error: ';
+                prefix = 'Error: ';
                 errors++;
             } else if (categories.has(ts.DiagnosticCategory.Warning)) {
-                'Warning: ';
+                prefix = 'Warning: ';
             } else if (categories.has(ts.DiagnosticCategory.Suggestion)) {
-                'Suggestion: ';
+                prefix = 'Suggestion: ';
             }
         }
         if (diagnostic.file) {
@@ -60,7 +60,7 @@ function transpileFile(source: string, target: string, options: ts.CompilerOptio
 function tryDeleteFile(file: string) {
     try {
         rmSync(file)
-    } catch (_er: any) {
+    } catch {
         // ignore
     }
 }

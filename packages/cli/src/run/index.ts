@@ -72,8 +72,6 @@ export default async function runInteraction(program: Command, interactionSpec: 
             if (spinner) spinner.done(false);
             return;
         }
-
-        let result: ExecutionRun[]
         
         for (let i = 0; i < count; i++) {
             // Exit loop if aborted
@@ -106,7 +104,7 @@ export default async function runInteraction(program: Command, interactionSpec: 
             return;
         }
 
-        result = await queue.run((completed) => {
+        const result: ExecutionRun[] = await queue.run((completed) => {
             // Skip updating if aborted
             if (signal.aborted) return;
             

@@ -242,8 +242,7 @@ export async function getObject(program: Command, objectId: string, _options: Re
     console.log(object);
 }
 
-//@ts-ignore
-export async function listObjects(program: Command, folderPath: string | undefined, _options: Record<string, any>) {
+export async function listObjects(program: Command, _folderPath: string | undefined, _options: Record<string, any>) {
     const client = await getClient(program);
     const objects = await client.objects.list();
     console.log(objects.map(o => `${o.id}\t ${o.name}`).join('\n'));
