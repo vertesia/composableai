@@ -281,6 +281,100 @@ export interface StreamingData {
     workstreamId?: string;
     isComplete?: boolean;
     startTimestamp: number;
+    activityId?: string;
+}
+
+function normalizeComparableText(text: unknown): string | undefined {
+    if (typeof text !== "string") return undefined;
+    const normalized = text.replace(/\r\n/g, "\n").trim();
+    return normalized || undefined;
+}
+
+function getMessageComparableText(message: AgentMessage): string | undefined {
+    return normalizeComparableText(message.message);
+}
+
+function isStreamReplacedByMessage(
+    streaming: StreamingData,
+    messages: AgentMessage[],
+): boolean {
+    const streamingText = normalizeComparableText(streaming.text);
+    if (!streamingText) return false;
+
+    const streamWorkstreamId = streaming.workstreamId || "main";
+
+    return messages.some((message) => {
+        const messageTimestamp = getTimestampMs(message.timestamp);
+        if (messageTimestamp < streaming.startTimestamp) return false;
+        if (getWorkstreamId(message) !== streamWorkstreamId) return false;
+
+        if (
+            streaming.activityId &&
+            message.details?.activity_id === streaming.activityId
+        ) {
+            return true;
+        }
+
+        if (
+            message.type !== AgentMessageType.THOUGHT &&
+            message.type !== AgentMessageType.ANSWER &&
+            message.type !== AgentMessageType.COMPLETE &&
+            message.type !== AgentMessageType.IDLE
+        ) {
+            return false;
+        }
+
+        if (!message.details?.streamed) return false;
+
+        return getMessageComparableText(message) === streamingText;
+    });
+}
+
+export function shouldCollapseAdjacentRenderedMessage(
+    previous: AgentMessage,
+    current: AgentMessage,
+): boolean {
+    if (getWorkstreamId(previous) !== getWorkstreamId(current)) return false;
+
+    const previousText = getMessageComparableText(previous);
+    const currentText = getMessageComparableText(current);
+    if (!previousText || previousText !== currentText) return false;
+
+    const previousTimestamp = getTimestampMs(previous.timestamp);
+    const currentTimestamp = getTimestampMs(current.timestamp);
+    if (currentTimestamp - previousTimestamp > 10_000) return false;
+
+    if (
+        previous.type === AgentMessageType.ANSWER &&
+        (current.type === AgentMessageType.COMPLETE || current.type === AgentMessageType.IDLE)
+    ) {
+        return true;
+    }
+
+    if (
+        previous.type === AgentMessageType.THOUGHT &&
+        (current.type === AgentMessageType.ANSWER ||
+            current.type === AgentMessageType.COMPLETE ||
+            current.type === AgentMessageType.IDLE) &&
+        (previous.details?.streamed || current.details?.streamed)
+    ) {
+        return true;
+    }
+
+    if (
+        previous.type === current.type &&
+        (previous.details?.streamed || current.details?.streamed) &&
+        (
+            current.type === AgentMessageType.THOUGHT ||
+            current.type === AgentMessageType.ANSWER ||
+            current.type === AgentMessageType.COMPLETE ||
+            current.type === AgentMessageType.IDLE
+        )
+    ) {
+        return true;
+    }
+
+    return false;
 }
 
 /**
@@ -537,6 +631,7 @@ export function groupMessagesWithStreaming(
     streamingMessages.forEach((data, streamingId) => {
         // Skip empty streaming messages
         if (!data.text) return;
+        if (isStreamReplacedByMessage(data, messages)) return;
 
         // Filter by workstream if specified
         if (activeWorkstream && activeWorkstream !== "all") {

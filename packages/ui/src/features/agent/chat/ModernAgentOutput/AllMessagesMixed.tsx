@@ -8,7 +8,7 @@ import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "
 import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
 import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getSlidingViewMessageBuckets, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, StreamingData } from "./utils";
+import { DONE_STATES, getSlidingViewMessageBuckets, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, shouldCollapseAdjacentRenderedMessage, StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
 
 /** Extended group that may carry preamble info (text from a preceding single/streaming message) */
@@ -80,19 +80,6 @@ const processThinkingPlaceholder = (text: string, thinkingMessageIndex: number):
 // Check if message is a batch progress message
 const isBatchProgressMessage = (message: AgentMessage): message is AgentMessage & { details: BatchProgressDetails } => {
     return message.type === AgentMessageType.BATCH_PROGRESS && !!message.details?.batch_id;
-};
-
-const shouldDedupeAdjacentMessage = (previous: AgentMessage, current: AgentMessage): boolean => {
-    if (previous.type !== current.type) return false;
-    if (previous.message !== current.message) return false;
-
-    const prevDetails = previous.details as { tool_status?: string } | undefined;
-    const currDetails = current.details as { tool_status?: string } | undefined;
-    if (prevDetails?.tool_status !== "completed" || currDetails?.tool_status !== "completed") return false;
-
-    const prevTs = typeof previous.timestamp === "number" ? previous.timestamp : new Date(previous.timestamp).getTime();
-    const currTs = typeof current.timestamp === "number" ? current.timestamp : new Date(current.timestamp).getTime();
-    return currTs - prevTs < 2000;
 };
 
 // Error boundary to catch and isolate errors in individual message components
@@ -309,7 +296,11 @@ function AllMessagesMixedComponent({
             const deduped: AgentMessage[] = [];
             for (const msg of sorted) {
                 const previous = deduped[deduped.length - 1];
-                if (previous && shouldDedupeAdjacentMessage(previous, msg)) {
+                if (previous && shouldCollapseAdjacentRenderedMessage(previous, msg)) {
+                    continue;
+                }
+
+                if (previous && shouldDedupeAdjacentCompletedToolMessage(previous, msg)) {
                     continue;
                 }
                 deduped.push(msg);
@@ -801,6 +792,19 @@ function AllMessagesMixedComponent({
         </div>
     );
 }
+
+const shouldDedupeAdjacentCompletedToolMessage = (previous: AgentMessage, current: AgentMessage): boolean => {
+    if (previous.type !== current.type) return false;
+    if (previous.message !== current.message) return false;
+
+    const prevDetails = previous.details as { tool_status?: string } | undefined;
+    const currDetails = current.details as { tool_status?: string } | undefined;
+    if (prevDetails?.tool_status !== "completed" || currDetails?.tool_status !== "completed") return false;
+
+    const prevTs = typeof previous.timestamp === "number" ? previous.timestamp : new Date(previous.timestamp).getTime();
+    const currTs = typeof current.timestamp === "number" ? current.timestamp : new Date(current.timestamp).getTime();
+    return currTs - prevTs < 2000;
+};
 
 const AllMessagesMixed = React.memo(AllMessagesMixedComponent);
 
