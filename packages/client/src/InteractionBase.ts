@@ -21,9 +21,9 @@ export class InteractionBase<P = any> {
         return this.client.interactions.update(this.id, payload);
     }
 
-    render(data: P) {
-        data;
-        //TODO
+    //TODO - Not implemented
+    render(_data: P) {
+        throw new Error("Not implemented");
     }
 
     /**

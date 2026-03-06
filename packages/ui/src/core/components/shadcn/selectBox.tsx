@@ -301,7 +301,7 @@ export function SelectBox<T = any>({ options, optionLabel, value, onChange, addN
                                 className={clsx(
                                     "flex flex-col w-full rounded-md text-sm min-h-6 items-center justify-center truncate",
                                     !disabled && "",
-                                    isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && "pr-6"
+                                    isClearable && value && (Array.isArray(value) ? value.length > 0 : true) && "pr-2"
                                 )}
                             >
                                 {label && <div className='w-full text-left text-xs font-semibold'>{label}</div>}

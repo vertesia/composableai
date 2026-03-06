@@ -5,12 +5,15 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default [
-  { ignores: ['dist', 'node_modules', 'lib', '*.config.js', '*.config.widgets.js'] },
+  { ignores: ['dist', 'node_modules', 'lib', '*.config.js', '*.config.widgets.js', 'lib'] },
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
       parser: tseslint.parser,
       parserOptions: {
         projectService: true,
@@ -39,6 +42,10 @@ export default [
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
       }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
 ]

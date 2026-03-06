@@ -4,6 +4,7 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type ConfigEnv, type UserConfig } from 'vite';
 import serveStatic from "vite-plugin-serve-static";
+import { apiServerPlugin } from './vite-api-server.js';
 
 
 /**
@@ -64,7 +65,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
         plugins: [
             tailwindcss(),
             react(),
-            vertesiaPluginBuilder({ inlineCss: CONFIG__inlineCss }),
+            vertesiaPluginBuilder({ inlineCss: CONFIG__inlineCss, input: 'src/ui/index.css' }),
         ],
         build: {
             outDir: 'dist/lib', // the plugin will be generated in the `dist/lib` directory
@@ -88,14 +89,16 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
  * @returns
  */
 function defineAppConfig(): UserConfig {
+    // Vercel dev proxies to the framework dev server over HTTP — HTTPS would break that.
+    const useHttps = !process.env.VERCEL;
 
     return {
-        base: './', // Use relative paths for assets
+        base: '/', // Absolute paths — required for SPA routing under /app/*
         plugins: [
             tailwindcss(),
             react(),
-            // we need to use https for the firebase authentication to work
-            basicSsl(),
+            // HTTPS is required for Firebase auth but must be disabled under vercel dev
+            ...(useHttps ? [basicSsl()] : []),
             // serve lib/plugin.js content in dev mode
             serveStatic([
                 {
@@ -103,9 +106,11 @@ function defineAppConfig(): UserConfig {
                     resolve: (groups: string[]) => `./dist/lib/plugin.${groups[1]}`
                 },
             ]),
+            // Mount the Hono tool server API as middleware (includes import transformers)
+            ...apiServerPlugin(),
         ],
         build: {
-            outDir: 'dist/ui', // UI app build goes to dist/ui/
+            outDir: 'dist/app', // App build goes to dist/app/
         },
         // for authentication with Firebase
         server: {

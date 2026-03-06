@@ -813,6 +813,8 @@ function copyPluginUrl(btn) {
  * Note: The fourth argument is backward compatible:
  * - If a string is passed, it is treated as the title.
  * - If an array is passed, it is treated as MCP providers and the fifth argument (if any) is the title.
+ * @deprecated Static templates were replaced by a React site. Do not use them anymore. 
+ * Will be removed.
  */
 export function indexPage(
     config: ToolServerConfig
