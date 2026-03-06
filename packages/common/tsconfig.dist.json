@@ -4,7 +4,7 @@
         "declaration": true,
         "declarationMap": true,
         "jsx": "react-jsx",
-        "target": "ES2022",
+        "target": "ES2024",
         "module": "ESNext",
         "moduleResolution": "Bundler",
         "rootDir": "./src",
