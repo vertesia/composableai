@@ -10,6 +10,7 @@ import {
     RadioOptionAdapter,
     FormItem
 } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export interface SaveVersionConfirmModalProps {
     isOpen: boolean;
@@ -48,20 +49,21 @@ class SaveOptionAdapter extends RadioOptionAdapter<SaveOptionType> {
 }
 
 export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading, uploadedFileName }: SaveVersionConfirmModalProps) {
+    const { t } = useUITranslation();
     const saveOptions: SaveOptionType[] = [
         {
             id: "update",
-            label: "Update current version",
+            label: t('modal.saveVersion.updateCurrent'),
             description: uploadedFileName
-                ? "Replace the content file and modify properties directly in the current revision."
-                : "Modify the properties directly in the current revision."
+                ? t('modal.saveVersion.updateWithFileDescription')
+                : t('modal.saveVersion.updateDescription')
         },
         {
             id: "new-version",
-            label: "Create new version",
+            label: t('modal.saveVersion.createNew'),
             description: uploadedFileName
-                ? "Create a new revision with the replacement file while preserving the original."
-                : "Create a new revision with these property changes while preserving the original."
+                ? t('modal.saveVersion.createWithFileDescription')
+                : t('modal.saveVersion.createDescription')
         }
     ];
 
@@ -91,18 +93,18 @@ export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading,
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="sm:max-w-md">
-            <ModalTitle>Save Changes</ModalTitle>
+            <ModalTitle>{t('modal.saveChanges')}</ModalTitle>
             <ModalBody>
                 <div className="space-y-4">
                     {uploadedFileName && (
                         <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
                             <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
-                                You&apos;re about to replace the content file with: <span className="font-bold">{uploadedFileName}</span>
+                                {t('modal.saveVersion.replaceFile')} <span className="font-bold">{uploadedFileName}</span>
                             </p>
                         </div>
                     )}
                     <p className="text-sm text-mixer-muted/5">
-                        How would you like to save these changes?
+                        {t('modal.saveVersion.howToSave')}
                     </p>
 
                     <RadioGroup
@@ -115,14 +117,14 @@ export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading,
 
                     {createVersion && (
                         <FormItem
-                            label="Version Label (Optional)"
-                            description="Optional label for the new version."
+                            label={t('modal.saveVersion.versionLabel')}
+                            description={t('modal.saveVersion.versionLabelDescription')}
                             className="mt-3 pl-8"
                         >
                             <Input
                                 value={versionLabel}
                                 onChange={setVersionLabel}
-                                placeholder="e.g., v1.2, approved, post-review"
+                                placeholder={t('modal.saveVersion.versionLabelPlaceholder')}
                                 className="w-full"
                             />
                         </FormItem>
@@ -131,14 +133,14 @@ export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading,
             </ModalBody>
             <ModalFooter>
                 <Button variant="secondary" onClick={onClose} disabled={isLoading}>
-                    Cancel
+                    {t('modal.cancel')}
                 </Button>
                 <Button
                     variant="primary"
                     onClick={handleConfirm}
                     isLoading={isLoading}
                 >
-                    Save
+                    {t('modal.save')}
                 </Button>
             </ModalFooter>
         </Modal>

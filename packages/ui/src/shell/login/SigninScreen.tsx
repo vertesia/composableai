@@ -1,6 +1,7 @@
 import { SignupData, SignupPayload } from "@vertesia/common";
 import { Button, useSafeLayoutEffect } from "@vertesia/ui/core";
 import { Env } from "@vertesia/ui/env";
+import { useUITranslation } from "@vertesia/ui/i18n";
 import { UserNotFoundError, useUserSession, useUXTracking } from "@vertesia/ui/session";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
@@ -25,6 +26,7 @@ export function SigninScreen({ allowedPrefix, isNested = false, lightLogo, darkL
 }
 
 function SigninScreenImpl({ isNested = false, lightLogo, darkLogo }: SigninScreenProps) {
+    const { t } = useUITranslation();
     const { isLoading, user, authError } = useUserSession();
 
     return !isLoading && !user ? (
@@ -41,10 +43,10 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo }: SigninScree
                 <StandardSigninPanel authError={authError} lightLogo={lightLogo} darkLogo={darkLogo} />
                 <div className="flex gap-x-6 mt-10 justify-center text-muted">
                     <a href="https://vertesiahq.com/privacy" className="text-sm">
-                        Privacy Policy
+                        {t('auth.privacyPolicy')}
                     </a>
                     <a href="https://vertesiahq.com/terms" className="text-sm">
-                        Terms of Service
+                        {t('auth.termsOfService')}
                     </a>
                 </div>
             </div>
@@ -57,6 +59,7 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo }: {
     darkLogo?: string,
     lightLogo?: string
 }) {
+    const { t } = useUITranslation();
     const [signupData, setSignupData] = useState<SignupData | undefined>(undefined);
     const [collectSignupData, setCollectSignupData] = useState(false);
     const { signOut } = useUserSession();
@@ -109,8 +112,8 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo }: {
 
             {signupData && (
                 <div className="my-6">
-                    Need to make a change?{" "}
-                    <Button onClick={goToSignup}> Go back</Button>
+                    {t('auth.needToMakeChange')}{" "}
+                    <Button onClick={goToSignup}> {t('auth.goBack')}</Button>
                 </div>
             )}
             <div className="flex flex-col space-y-2">
@@ -120,12 +123,12 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo }: {
 
                     <div className="flex flex-col">
                         <div className="my-4">
-                            <h2 className="text-2xl font-bold text-center">Log in or Sign up</h2>
+                            <h2 className="text-2xl font-bold text-center">{t('auth.logInOrSignUp')}</h2>
                         </div>
                         <div className="max-w-2xl text-center my-2 px-2">
-                            First time here? No problem, it&apos;s free to try!
+                            {t('auth.firstTimeMessage')}
                             <br />
-                            We&apos;ll just ask you a couple of questions next and you&apos;ll be on your way.
+                            {t('auth.firstTimeDetails')}
                         </div>
                         <div className="flex items-center flex-col">
                             <div className="py-4 w-70">
@@ -135,7 +138,7 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo }: {
                             </div>
                             <div className="flex items-center flex-row w-70 text-muted">
                                 <hr className="w-full" />
-                                <div className="px-2 text-xs">OR</div>
+                                <div className="px-2 text-xs">{t('auth.or')}</div>
                                 <hr className="w-full" />
                             </div>
                             <div className="py-4 w-70">
@@ -145,12 +148,12 @@ function StandardSigninPanel({ authError, darkLogo, lightLogo }: {
                         {authError && !(authError instanceof UserNotFoundError) && (
                             <div className="text-center">
                                 <div className="">
-                                    Sorry, we have not been able to sign you in.
+                                    {t('auth.signInError')}
                                     <br />
-                                    Please try again or contact
+                                    {t('auth.signInErrorContact')}
                                     <a className='text-info mx-1' href="mailto:support@vertesiahq.com">support@vertesiahq.com</a>
-                                    if it persists.
-                                    <pre className="mt-2">Error: {authError.message}</pre>
+                                    {t('auth.signInErrorPersists')}
+                                    <pre className="mt-2">{t('auth.error', { message: authError.message })}</pre>
                                 </div>
                             </div>
                         )}

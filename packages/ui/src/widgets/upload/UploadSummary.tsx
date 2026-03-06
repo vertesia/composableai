@@ -1,4 +1,5 @@
 import { CheckCircleIcon, AlertCircleIcon, XCircleIcon } from "lucide-react";
+import { useUITranslation } from "@vertesia/ui/i18n";
 import { UploadResultCategory } from "./UploadResultCategory";
 
 /**
@@ -40,6 +41,7 @@ export interface UploadSummaryProps {
  * />
  */
 export function UploadSummary({ files, className = "", location, collection }: UploadSummaryProps) {
+    const { t } = useUITranslation();
     // Group files by status
     const successFiles = files.filter(f => f.status === 'success');
     const updatedFiles = files.filter(f => f.status === 'updated');
@@ -61,9 +63,9 @@ export function UploadSummary({ files, className = "", location, collection }: U
                 </div>
                 <div>
                     <p className="text-muted">
-                        {totalCount} file{totalCount !== 1 ? "s" : ""} processed
-                        {collection ? ` in collection '${collection}'` : ""}
-                        {location ? ` in folder '${location}'` : ""}
+                        {t('upload.filesProcessed', { count: totalCount })}
+                        {collection ? t('upload.inCollection', { collection }) : ""}
+                        {location ? t('upload.inFolder', { location }) : ""}
                     </p>
                 </div>
             </div>
@@ -72,8 +74,8 @@ export function UploadSummary({ files, className = "", location, collection }: U
             <div className="space-y-3 mt-2">
                 {/* Successful uploads */}
                 {successCount > 0 && (
-                    <UploadResultCategory 
-                        title="Successfully Uploaded"
+                    <UploadResultCategory
+                        title={t('upload.successfullyUploaded')}
                         count={successCount}
                         icon={<CheckCircleIcon className="h-4 w-4 text-green-500" />}
                         items={successFiles.map(f => f.name)}
@@ -82,8 +84,8 @@ export function UploadSummary({ files, className = "", location, collection }: U
                 
                 {/* Updated files */}
                 {updatedCount > 0 && (
-                    <UploadResultCategory 
-                        title="Successfully Updated"
+                    <UploadResultCategory
+                        title={t('upload.successfullyUpdated')}
                         count={updatedCount}
                         icon={<CheckCircleIcon className="h-4 w-4 text-blue-500" />}
                         items={updatedFiles.map(f => f.name)}
@@ -92,8 +94,8 @@ export function UploadSummary({ files, className = "", location, collection }: U
                 
                 {/* Skipped files */}
                 {skippedCount > 0 && (
-                    <UploadResultCategory 
-                        title="Skipped (Already Existed)"
+                    <UploadResultCategory
+                        title={t('upload.skippedAlreadyExisted')}
                         count={skippedCount}
                         icon={<AlertCircleIcon className="h-4 w-4 text-amber-500" />}
                         items={skippedFiles.map(f => f.name)}
@@ -102,8 +104,8 @@ export function UploadSummary({ files, className = "", location, collection }: U
                 
                 {/* Failed uploads */}
                 {failedCount > 0 && (
-                    <UploadResultCategory 
-                        title="Failed to Upload"
+                    <UploadResultCategory
+                        title={t('upload.failedToUpload')}
                         count={failedCount}
                         icon={<XCircleIcon className="h-4 w-4 text-red-500" />}
                         items={failedFiles.map(f => f.name)}
