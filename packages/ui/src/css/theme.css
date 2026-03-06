@@ -1,0 +1,86 @@
+@theme static {
+
+  --radius: 0.625rem;
+  --radius-xs: calc(var(--radius) - 8px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-tooltips: var(--tooltips);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-link: var(--primary);
+  --color-link-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-background: var(--secondary-background);
+
+  --color-muted: var(--muted);
+  --color-muted-background: var(--muted-background);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-background: var(--destructive-background);
+
+  --color-success: var(--success);
+  --color-success-background: var(--success-background);
+
+  --color-attention: var(--attention);
+  --color-attention-background: var(--attention-background);
+
+  --color-done: var(--done);
+  --color-done-background: var(--done-background);
+
+  --color-info: var(--info);
+  --color-info-background: var(--info-background);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-topnav: var(--topnav-background);
+  --color-topnav-foreground: var(--topnav-foreground);
+  --color-topnav-primary: var(--topnav-primary);
+  --color-topnav-primary-foreground: var(--topnav-primary-foreground);
+  --color-topnav-accent: var(--topnav-accent);
+  --color-topnav-accent-foreground: var(--topnav-accent-foreground);
+  --color-topnav-border: var(--topnav-border);
+  --color-topnav-ring: var(--topnav-ring);
+
+  --color-preview: var(--preview);
+  --color-staging: var(--staging);
+  --color-development: var(--development);
+
+  --font-sans:
+    Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-mono:
+    Fira mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+}

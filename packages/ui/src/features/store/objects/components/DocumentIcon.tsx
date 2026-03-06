@@ -6,13 +6,14 @@ import { ContentObjectItem } from '@vertesia/common'
 import { Button, Card, CardContent, Separator, VTooltip } from "@vertesia/ui/core"
 import { useUserSession } from "@vertesia/ui/session"
 import { DocumentSelection } from '../DocumentSelectionProvider'
-import { Eye } from 'lucide-react'
+import { CheckIcon, Eye } from 'lucide-react'
 
 interface DocumentIconProps {
     document: ContentObjectItem
     onSelectionChange: ((object: ContentObjectItem, ev: ChangeEvent<HTMLInputElement>) => void);
     selection: DocumentSelection;
     onRowClick?: (object: ContentObjectItem) => void;
+    highlightRow?: (item: ContentObjectItem) => boolean;
     previewObject?: (objectId: string) => void;
     selectedObject?: ContentObjectItem | null;
 }
@@ -46,7 +47,7 @@ export function DocumentIconSkeleton({ isLoading = false, counts = 6 }: { isLoad
     )
 }
 
-export function DocumentIcon({ selection, document, onSelectionChange, onRowClick, previewObject, selectedObject }: Readonly<DocumentIconProps>) {
+export function DocumentIcon({ selection, document, onSelectionChange, onRowClick, highlightRow, previewObject, selectedObject }: Readonly<DocumentIconProps>) {
     const { client } = useUserSession()
 
     const [renditionUrl, setRenditionUrl] = useState<string | undefined>(undefined)
@@ -67,8 +68,15 @@ export function DocumentIcon({ selection, document, onSelectionChange, onRowClic
         retrieveRendition(client, document, setRenditionUrl, setRenditionAlt, setRenditionStatus)
     }, [document])
 
+    const isHighlighted = highlightRow?.(document);
+
     return (
-        <Card className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''}`} onClick={() => (onRowClick && onRowClick(document))}>
+        <Card className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''} ${isHighlighted ? 'border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : ''}`} onClick={() => (onRowClick && onRowClick(document))}>
+            {isHighlighted && (
+                <div className="absolute top-2 right-8 z-10">
+                    <CheckIcon className="size-4 text-blue-600 dark:text-blue-400" />
+                </div>
+            )}
             {
                 selection && (
                     <div

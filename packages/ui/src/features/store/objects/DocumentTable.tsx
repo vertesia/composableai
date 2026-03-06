@@ -315,6 +315,7 @@ function DocumentTableImpl({
     isLoading,
     onRowClick,
     onSelectionChange,
+    highlightRow,
     previewObject,
     selectedObject,
     isGridView,
@@ -378,6 +379,7 @@ function DocumentTableImpl({
             isLoading={isLoading}
             columns={columns}
             onRowClick={onRowClick}
+            highlightRow={highlightRow}
             previewObject={previewObject}
             selectedObject={selectedObject}
             selection={selection}
@@ -390,6 +392,7 @@ function DocumentTableImpl({
             isLoading={isLoading}
             columns={columns}
             onRowClick={onRowClick}
+            highlightRow={highlightRow}
             previewObject={previewObject}
             selectedObject={selectedObject}
             selection={selection}

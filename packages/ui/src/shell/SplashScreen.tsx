@@ -30,8 +30,8 @@ export function SplashScreen({ icon: Icon }: SplashScreenProps) {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
         >
-            <div style={{ zIndex: 999999 }} className='fixed inset-x-0 inset-y-0'>
-                <div className="flex w-full h-full items-center justify-center">
+            <div style={{ zIndex: 999999, position: 'fixed', inset: 0 }} className='fixed inset-x-0 inset-y-0'>
+                <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }} className="flex w-full h-full items-center justify-center">
                     <div className="animate-[spin_4s_linear_infinite]">
                         <div className='animate-pulse rounded-full bg-transparent'>
                             {Icon || <LoadingIcon />}
@@ -50,6 +50,8 @@ function LoadingIcon() {
     // const stopColor2 = "#4F46E5";
     return (
         <svg
+            width="32"
+            height="32"
             className="w-8 h-8 text-indigo-600"
             viewBox="0 0 50 50"
             xmlns="http://www.w3.org/2000/svg"

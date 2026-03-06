@@ -1,6 +1,6 @@
 import * as protos from '@temporalio/proto';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
-import { Worker } from '@temporalio/worker';
+import { Worker, bundleWorkflowCode, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
 import { ContentEventName, DSLActivityExecutionPayload, DSLWorkflowExecutionPayload, DSLWorkflowStep } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { dslWorkflow } from './dsl-workflow.js';
@@ -119,6 +119,7 @@ const steps3: DSLWorkflowStep[] = [
 describe('DSL Workflow with child workflows', () => {
 
     let testEnv: TestWorkflowEnvironment;
+    let workflowBundle: WorkflowBundleWithSourceMap;
 
     beforeAll(async () => {
         testEnv = await TestWorkflowEnvironment.createLocal();
@@ -133,7 +134,10 @@ describe('DSL Workflow with child workflows', () => {
                 InitiatedBy: protos.temporal.api.enums.v1.IndexedValueType.INDEXED_VALUE_TYPE_KEYWORD,
             },
         });
-    });
+        workflowBundle = await bundleWorkflowCode({
+            workflowsPath: new URL('./test/test-child-workflow.ts', import.meta.url).pathname,
+        });
+    }, 60_000);
 
     afterAll(async () => {
         await testEnv?.teardown();
@@ -148,7 +152,7 @@ describe('DSL Workflow with child workflows', () => {
         const worker = await Worker.create({
             connection: nativeConnection,
             taskQueue,
-            workflowsPath: new URL("./test/test-child-workflow.ts", import.meta.url).pathname,
+            workflowBundle,
             activities: { sayHelloFromParent, prepareResult },
         });
 
@@ -173,7 +177,7 @@ describe('DSL Workflow with child workflows', () => {
             }
         }
 
-        let result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
+        const result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
             args: [payload],
             workflowId: 'test',
             taskQueue,
@@ -192,7 +196,7 @@ describe('DSL Workflow with child workflows', () => {
         const worker = await Worker.create({
             connection: nativeConnection,
             taskQueue,
-            workflowsPath: new URL("./test/test-child-workflow.ts", import.meta.url).pathname,
+            workflowBundle,
             activities: { sayHelloFromParent, prepareResult, sayHelloFromDSLChild },
         });
 
@@ -217,7 +221,7 @@ describe('DSL Workflow with child workflows', () => {
             }
         }
 
-        let result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
+        const result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
             args: [payload],
             workflowId: 'test',
             taskQueue,
@@ -236,7 +240,7 @@ describe('DSL Workflow with child workflows', () => {
         const worker = await Worker.create({
             connection: nativeConnection,
             taskQueue,
-            workflowsPath: new URL("./test/test-child-workflow.ts", import.meta.url).pathname,
+            workflowBundle,
             activities: { sayHelloFromParent, prepareResult, sayHelloFromDSLChild },
         });
 
@@ -261,7 +265,7 @@ describe('DSL Workflow with child workflows', () => {
             }
         }
 
-        let result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
+        const result = await worker.runUntil(client.workflow.execute(dslWorkflow, {
             args: [payload],
             workflowId: 'test-vars',
             taskQueue,
