@@ -1,0 +1,72 @@
+:root {
+    --mixer: oklch(1 0 0);
+  }
+  .dark {
+    --mixer: oklch(0 0 0);
+  }
+  @utility text-mixer-* {
+    color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 0.7%));
+  }
+
+  @utility text-disabled-* {
+    color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(50 * 0.7%));
+  }
+
+  @utility bg-* {
+    background-color: --value(--color-*-background, [*])
+  }
+
+  @utility bg-mixer-* {
+    background-color: color-mix(in oklab, --value(--color-*-background, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }
+
+  @utility border-* {
+    border-color: --value(--color-*, [*])
+  }
+
+  @utility border-mixer-* {
+    border-color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }
+  @utility border-disabled-* {
+    border-color: color-mix(in oklab, --value(--color-*-background, [*]), var(--mixer) calc(50 * 0.7%));
+  }
+
+  @utility decoration-mixer-* {
+    text-decoration-color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }
+
+  @utility outline-mixer-* {
+    outline-color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }
+
+  @utility shadow-mixer-* {
+    --tw-shadow-color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }
+
+  @utility inset-shadow-mixer-* {
+    --tw-inset-shadow-color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }
+
+  @utility ring-mixer-* {
+    --tw-ring-color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }
+
+  @utility inset-ring-mixer-* {
+    --tw-inset-ring-color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }
+
+  @utility accent-mixer-* {
+    accent-color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }
+
+  @utility caret-mixer-* {
+    caret-color: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }
+
+  @utility fill-mixer-* {
+    fill: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }
+
+  @utility stroke-mixer-* {
+    stroke: color-mix(in oklab, --value(--color-*, [*]), var(--mixer) calc(( (--modifier(integer, var(--modifier-default))) ) * 1%));
+  }

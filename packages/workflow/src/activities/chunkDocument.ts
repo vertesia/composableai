@@ -1,4 +1,4 @@
-import { log } from "@temporalio/activity";
+import { ApplicationFailure, log } from "@temporalio/activity";
 import { DSLActivityExecutionPayload, DSLActivitySpec } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocPart } from "../utils/chunks.js";
@@ -79,10 +79,37 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
     const lines = document.text.split('\n')
     const instrumented = lines.map((l, i) => `{%${i}%}${l}`).join('\n')
 
-    const res = await executeInteractionFromActivity(client, interactionName, params, {
-        objectId: objectId,
-        content: instrumented
-    });
+    let res;
+    try {
+        res = await executeInteractionFromActivity(client, interactionName, params, {
+            objectId: objectId,
+            content: instrumented
+        });
+    } catch (error: any) {
+        log.error(`Failed to chunk document ${objectId}`, { error, retryable: error.retryable });
+        
+        // Check retryability and convert to ApplicationFailure for Temporal
+        const isRetryable = error.retryable !== undefined 
+            ? error.retryable !== false
+            : undefined;
+        
+        if (isRetryable !== undefined) {
+            if (isRetryable) {
+                throw ApplicationFailure.create({
+                    message: `Document chunking failed for ${objectId}: ${error.message}`,
+                    nonRetryable: false,
+                });
+            } else {
+                throw ApplicationFailure.create({
+                    message: `Non-retryable document chunking failed for ${objectId}: ${error.message}`,
+                    nonRetryable: true,
+                });
+            }
+        }
+        
+        // Unknown retryability - rethrow
+        throw error;
+    }
 
     const jsonResult = res.result.object();
 
@@ -130,9 +157,7 @@ export async function chunkDocument(payload: DSLActivityExecutionPayload<ChunkDo
         //delete previous parts
         if (document.parts && document.parts.length > 0) {
             log.info('Deleting previous parts for object ID: ' + objectId, { parts: document.parts });
-            await Promise.all(document.parts.map(async (partId) => {
-                await client.objects.delete(partId);
-            }));
+            await client.objects.delete(document.parts);
         }
 
         await client.objects.update(objectId, {

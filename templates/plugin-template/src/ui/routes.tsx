@@ -1,4 +1,4 @@
-import { HomePage, NextPage } from "./pages";
+import { ChatPage, HomePage } from "./pages";
 
 export const routes = [
     {
@@ -6,12 +6,15 @@ export const routes = [
         Component: HomePage,
     },
     {
-        path: '/next',
-        Component: NextPage,
+        path: '/chat',
+        Component: ChatPage,
+    },
+    {
+        path: '/chat/:runId/:workflowId',
+        Component: ChatPage,
     },
     {
         path: '*',
         Component: () => <div className="text-red-800 p-4">Not found</div>,
     }
-
 ];

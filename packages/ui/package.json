@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/ui",
-  "version": "1.0.0-dev.20260225.024852Z",
+  "version": "1.0.0-dev.20260305.083323Z",
   "description": "Vertesia UI components and and hooks",
   "type": "module",
   "main": "./lib/index.js",
@@ -56,8 +56,8 @@
     "cmdk": "^1.1.1",
     "dayjs": "^1.11.19",
     "debounce": "^2.2.0",
-    "dompurify": "^3.3.1",
-    "fast-xml-parser": "^5.3.6",
+    "dompurify": "^3.3.2",
+    "fast-xml-parser": "^5.3.8",
     "firebase": "^10.12.2",
     "framer-motion": "^12.23.12",
     "jwt-decode": "^4.0.0",
@@ -115,6 +115,20 @@
     "vitest": "^4.0.16"
   },
   "exports": {
+    "./styles.css": "./src/css/index.css",
+    "./styles/color.css": "./src/css/color.css",
+    "./styles/theme.css": "./src/css/theme.css",
+    "./styles/utilities.css": "./src/css/utilities.css",
+    "./styles/typography.css": "./src/css/typography.css",
+    "./styles/tooltips.css": "./src/css/custom-tooltips.css",
+    "./styles/base.css": "./src/css/base.css",
+    "./css/index.css": "./src/css/index.css",
+    "./css/color.css": "./src/css/color.css",
+    "./css/theme.css": "./src/css/theme.css",
+    "./css/utilities.css": "./src/css/utilities.css",
+    "./css/typography.css": "./src/css/typography.css",
+    "./css/custom-tooltips.css": "./src/css/custom-tooltips.css",
+    "./css/base.css": "./src/css/base.css",
     "./router": {
       "types": "./lib/types/router/index.d.ts",
       "default": "./lib/esm/router/index.js"
