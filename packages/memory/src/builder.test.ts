@@ -1,7 +1,6 @@
 import { mkdtempSync, rmSync, statSync } from "fs";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { afterAll, describe, expect, test } from "vitest";
 import { Builder } from "./Builder";
-import { loadTarIndex } from "./utils/tar";
 import { loadMemoryPack, MEMORY_METADATA_ENTRY } from "./MemoryPack";
 
 const memoryBaseFile = 'test-base-memory.tar';

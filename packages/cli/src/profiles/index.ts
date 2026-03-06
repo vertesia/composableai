@@ -224,7 +224,7 @@ export class Config {
     }
 
     createProfile(name: string, target: ConfigUrlRef) {
-        let config_url = getConfigUrl(target);
+        const config_url = getConfigUrl(target);
         return new ConfigureProfile(this, { name, config_url }, true);
     }
 
@@ -237,7 +237,7 @@ export class Config {
     }
 
     createOrUpdateProfile(name: string, target?: ConfigUrlRef): ConfigureProfile {
-        let config_url = target && getConfigUrl(target);
+        const config_url = target && getConfigUrl(target);
         const data = this.getProfile(name);
         if (config_url) { // create a new profile on config_url
             if (data) {
