@@ -113,6 +113,10 @@ export function isInProgress(messages: AgentMessage[]) {
 export const formatRelative = (ts: number | string) =>
     typeof ts === "number" ? dayjs(ts).fromNow() : dayjs(new Date(ts)).fromNow();
 
+function getTimestampMs(timestamp: number | string): number {
+    return typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
+}
+
 /**
  * Extract the workstream ID from a message
  * @param message The agent message to analyze
@@ -135,6 +139,65 @@ export function getWorkstreamId(message: AgentMessage): string {
 
     // Default to 'main' workstream
     return "main";
+}
+
+/**
+ * Returns the message buckets used by the sliding conversation view.
+ * Generic thinking should only appear when it is still the newest relevant activity.
+ */
+export function getSlidingViewMessageBuckets(
+    messages: AgentMessage[],
+    isCompleted: boolean,
+    hasStreaming: boolean,
+): { importantMessages: AgentMessage[]; recentThinking: AgentMessage[] } {
+    const latestUserQuestionTimestamp = messages.reduce((max, msg) => {
+        if (msg.type !== AgentMessageType.QUESTION) return max;
+        return Math.max(max, getTimestampMs(msg.timestamp));
+    }, -Infinity);
+
+    const importantMessages = messages.filter((msg) =>
+        msg.type === AgentMessageType.ANSWER ||
+        msg.type === AgentMessageType.QUESTION ||
+        msg.type === AgentMessageType.COMPLETE ||
+        msg.type === AgentMessageType.IDLE ||
+        msg.type === AgentMessageType.REQUEST_INPUT ||
+        msg.type === AgentMessageType.TERMINATED ||
+        msg.type === AgentMessageType.ERROR ||
+        (msg.type === AgentMessageType.THOUGHT &&
+            (msg.details?.tool || msg.details?.tools || msg.details?.streamed || msg.details?.display_role === "tool_preamble"))
+    );
+
+    const latestImportantTimestamp = importantMessages.reduce((max, msg) => {
+        return Math.max(max, getTimestampMs(msg.timestamp));
+    }, -Infinity);
+
+    const recentThinking = !isCompleted && !hasStreaming
+        ? messages
+            .filter((msg) =>
+                msg.type === AgentMessageType.UPDATE ||
+                msg.type === AgentMessageType.PLAN ||
+                (msg.type === AgentMessageType.THOUGHT &&
+                    !msg.details?.tool &&
+                    !msg.details?.tools &&
+                    !msg.details?.streamed &&
+                    msg.details?.display_role !== "tool_preamble"))
+            .filter((msg) => {
+                const timestamp = getTimestampMs(msg.timestamp);
+
+                if (Number.isFinite(latestUserQuestionTimestamp) && timestamp < latestUserQuestionTimestamp) {
+                    return false;
+                }
+
+                if (Number.isFinite(latestImportantTimestamp) && timestamp < latestImportantTimestamp) {
+                    return false;
+                }
+
+                return true;
+            })
+            .slice(-1)
+        : [];
+
+    return { importantMessages, recentThinking };
 }
 
 /**
@@ -334,13 +397,6 @@ export function groupConsecutiveToolCalls(messages: AgentMessage[]): MessageGrou
     flushToolGroup();
 
     return groups;
-}
-
-/**
- * Helper to get timestamp as number
- */
-function getTimestampMs(timestamp: number | string): number {
-    return typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
 }
 
 /**

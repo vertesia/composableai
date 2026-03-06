@@ -1,6 +1,6 @@
 import { AgentMessage, AgentMessageType } from "@vertesia/common";
 import { describe, expect, it } from "vitest";
-import { groupMessagesWithStreaming, isToolActivityMessage, mergeConsecutiveToolGroups } from "./utils";
+import { getSlidingViewMessageBuckets, groupMessagesWithStreaming, isToolActivityMessage, mergeConsecutiveToolGroups } from "./utils";
 
 function makeMessage(overrides: Partial<AgentMessage>): AgentMessage {
     return {
@@ -75,5 +75,43 @@ describe("ModernAgentOutput utils - tool preamble behavior", () => {
             expect(grouped[0].messages[0].details?.display_role).toBe("tool_preamble");
             expect(grouped[0].messages[1].details?.tool).toBe("list-assistant-knowledge");
         }
+    });
+});
+
+describe("ModernAgentOutput utils - sliding view thinking", () => {
+    it("does not surface stale thinking after newer important messages", () => {
+        const thinking = makeMessage({
+            timestamp: 1000,
+            message: "Now let me update the benchmark doc, then launch all workstreams.",
+            type: AgentMessageType.THOUGHT,
+        });
+        const answer = makeMessage({
+            timestamp: 2000,
+            message: "All 10 workstreams are now running.",
+            type: AgentMessageType.ANSWER,
+        });
+
+        const result = getSlidingViewMessageBuckets([thinking, answer], false, false);
+
+        expect(result.importantMessages).toEqual([answer]);
+        expect(result.recentThinking).toEqual([]);
+    });
+
+    it("keeps the newest thinking when nothing more important has happened yet", () => {
+        const question = makeMessage({
+            timestamp: 1000,
+            message: "Start the benchmark.",
+            type: AgentMessageType.QUESTION,
+        });
+        const thinking = makeMessage({
+            timestamp: 2000,
+            message: "Launching the workstreams now.",
+            type: AgentMessageType.THOUGHT,
+        });
+
+        const result = getSlidingViewMessageBuckets([question, thinking], false, false);
+
+        expect(result.importantMessages).toEqual([question]);
+        expect(result.recentThinking).toEqual([thinking]);
     });
 });

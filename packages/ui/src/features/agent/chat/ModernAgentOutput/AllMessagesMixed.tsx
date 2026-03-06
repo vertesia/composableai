@@ -8,7 +8,7 @@ import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "
 import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
 import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, StreamingData } from "./utils";
+import { DONE_STATES, getSlidingViewMessageBuckets, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
 
 /** Extended group that may carry preamble info (text from a preceding single/streaming message) */
@@ -93,14 +93,6 @@ const shouldDedupeAdjacentMessage = (previous: AgentMessage, current: AgentMessa
     const prevTs = typeof previous.timestamp === "number" ? previous.timestamp : new Date(previous.timestamp).getTime();
     const currTs = typeof current.timestamp === "number" ? current.timestamp : new Date(current.timestamp).getTime();
     return currTs - prevTs < 2000;
-};
-
-const toTimestampMs = (timestamp: number | string): number => {
-    if (typeof timestamp === "number") return timestamp;
-    const numeric = Number(timestamp);
-    if (Number.isFinite(numeric)) return numeric;
-    const parsed = new Date(timestamp).getTime();
-    return Number.isFinite(parsed) ? parsed : 0;
 };
 
 // Error boundary to catch and isolate errors in individual message components
@@ -367,48 +359,10 @@ function AllMessagesMixedComponent({
     }, [sortedMessages, activeWorkstream]);
 
     // Pre-compute important messages and recent thinking for sliding view (avoid IIFE in render)
-    const { importantMessages, recentThinking } = React.useMemo(() => {
-        const hasStreaming = streamingMessages.size > 0;
-        const latestUserQuestionTimestamp = displayMessages.reduce((max, msg) => {
-            if (msg.type !== AgentMessageType.QUESTION) return max;
-            return Math.max(max, toTimestampMs(msg.timestamp));
-        }, -Infinity);
-
-        // Important messages include answers, questions, completion states, AND tool progress thoughts
-        const important = displayMessages.filter(msg =>
-            msg.type === AgentMessageType.ANSWER ||
-            msg.type === AgentMessageType.QUESTION ||
-            msg.type === AgentMessageType.COMPLETE ||
-            msg.type === AgentMessageType.IDLE ||
-            msg.type === AgentMessageType.REQUEST_INPUT ||
-            msg.type === AgentMessageType.TERMINATED ||
-            msg.type === AgentMessageType.ERROR ||
-            // Include THOUGHT messages that have tool details (progress from message_to_human or streamed content)
-            (msg.type === AgentMessageType.THOUGHT && (msg.details?.tool || msg.details?.tools || msg.details?.streamed || msg.details?.display_role === "tool_preamble"))
-        );
-
-        // Latest thinking: show only the most recent generic thinking message (UPDATE/PLAN or THOUGHT without tool)
-        // Tool progress is already in important messages
-        const thinkingMessages = !isCompleted && !hasStreaming
-            ? displayMessages
-                .filter(msg =>
-                    msg.type === AgentMessageType.UPDATE ||
-                    msg.type === AgentMessageType.PLAN ||
-                    (msg.type === AgentMessageType.THOUGHT &&
-                        !msg.details?.tool &&
-                        !msg.details?.tools &&
-                        !msg.details?.streamed &&
-                        msg.details?.display_role !== "tool_preamble"))
-                .filter(msg => {
-                    // Keep "recent thinking" scoped to the active turn.
-                    if (!Number.isFinite(latestUserQuestionTimestamp)) return true;
-                    return toTimestampMs(msg.timestamp) >= latestUserQuestionTimestamp;
-                })
-                .slice(-1) // Show only the latest thinking message
-            : [];
-
-        return { importantMessages: important, recentThinking: thinkingMessages };
-    }, [displayMessages, isCompleted, streamingMessages.size]);
+    const { importantMessages, recentThinking } = React.useMemo(
+        () => getSlidingViewMessageBuckets(displayMessages, isCompleted, streamingMessages.size > 0),
+        [displayMessages, isCompleted, streamingMessages.size],
+    );
 
     // Split streaming messages:
     // - complete (or stale incomplete) ones are interleaved chronologically
