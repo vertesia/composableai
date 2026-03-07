@@ -2,6 +2,7 @@ import { Button, Center, VTooltip } from "@vertesia/ui/core";
 import clsx from "clsx";
 import { ChevronsDown, ChevronsUp, Image, Loader2, Maximize, Minus, Plus, ScanSearch } from "lucide-react";
 import { useRef, KeyboardEvent, useState, useEffect, useCallback } from "react";
+import { useUITranslation } from '../../i18n/index.js';
 import { ImageType, useMagicPdfContext } from "./MagicPdfProvider";
 
 // Zoom levels as percentages (100 = fit to width)
@@ -42,6 +43,7 @@ interface AnnotatedImageSliderProps {
  * Loads first image immediately to determine aspect ratio for stable layout.
  */
 export function AnnotatedImageSlider({ className, currentPage, onChange }: AnnotatedImageSliderProps) {
+    const { t } = useUITranslation();
     const [imageType, setImageType] = useState<ImageType>(ImageType.instrumented);
     const [aspectRatio, setAspectRatio] = useState<number>(DEFAULT_ASPECT_RATIO);
     const [loadedUrls, setLoadedUrls] = useState<Map<number, string>>(new Map());
@@ -250,7 +252,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
     return (
         <div ref={ref} className={clsx('flex flex-col items-stretch gap-y-2', className)}>
             <div className="relative flex items-center justify-center px-2 h-9">
-                <Button variant="ghost" size="xs" onClick={goPrev} alt="Previous page">
+                <Button variant="ghost" size="xs" onClick={goPrev} alt={t('pdf.previousPage')}>
                     <ChevronsUp className='size-4' />
                 </Button>
                 <div className="absolute left-2 flex items-center gap-x-1">
@@ -259,14 +261,14 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                         currentType={imageType}
                         onClick={() => setImageType(ImageType.original)}
                         icon={<Image className="size-4" />}
-                        tooltip="Original images"
+                        tooltip={t('pdf.originalImages')}
                     />
                     <ImageTypeButton
                         type={ImageType.instrumented}
                         currentType={imageType}
                         onClick={() => setImageType(ImageType.instrumented)}
                         icon={<ScanSearch className="size-4" />}
-                        tooltip="Instrumented images"
+                        tooltip={t('pdf.instrumentedImages')}
                     />
                     <div className="w-px h-4 bg-border mx-1" />
                     <ZoomControls
@@ -296,7 +298,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                 ))}
             </div>
             <div className="flex items-center justify-center h-9">
-                <Button variant="ghost" size="xs" onClick={goNext} alt="Next page">
+                <Button variant="ghost" size="xs" onClick={goNext} alt={t('pdf.nextPage')}>
                     <ChevronsDown className='size-4' />
                 </Button>
             </div>
@@ -339,9 +341,10 @@ interface ZoomControlsProps {
     canZoomOut: boolean;
 }
 function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZoomOut }: ZoomControlsProps) {
+    const { t } = useUITranslation();
     return (
         <div className="flex items-center gap-x-0.5">
-            <VTooltip description="Zoom out" placement="bottom" size="xs">
+            <VTooltip description={t('pdf.zoomOut')} placement="bottom" size="xs">
                 <button
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
@@ -358,7 +361,7 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
             <span className="text-xs text-muted-foreground min-w-[32px] text-center">
                 {zoom}%
             </span>
-            <VTooltip description="Zoom in" placement="bottom" size="xs">
+            <VTooltip description={t('pdf.zoomIn')} placement="bottom" size="xs">
                 <button
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
@@ -372,7 +375,7 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                     <Plus className="size-4" />
                 </button>
             </VTooltip>
-            <VTooltip description="Fit to width" placement="bottom" size="xs">
+            <VTooltip description={t('pdf.fitToWidth')} placement="bottom" size="xs">
                 <button
                     className={clsx(
                         "p-1 rounded cursor-pointer transition-colors",
@@ -432,6 +435,7 @@ interface PageNavigatorProps {
     onChange: (page: number) => void;
 }
 function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps) {
+    const { t } = useUITranslation();
     const inputRef = useRef<HTMLInputElement>(null);
     const [inputValue, setInputValue] = useState(String(currentPage));
 
@@ -466,7 +470,7 @@ function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps
 
     return (
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <span>Page</span>
+            <span>{t('pdf.page')}</span>
             <input
                 ref={inputRef}
                 type="text"

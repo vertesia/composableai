@@ -2,6 +2,7 @@ import { Collection, ContentObjectType } from "@vertesia/common";
 import { Button, Panel, TagsInput, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useEffect, useState } from "react";
+import { useUITranslation } from '../../../i18n/index.js';
 
 interface SharedPropsEditorProps {
     collection: Collection;
@@ -9,6 +10,7 @@ interface SharedPropsEditorProps {
 export function SharedPropsEditor({ collection }: SharedPropsEditorProps) {
 
     const { client } = useUserSession();
+    const { t } = useUITranslation();
     const [colType, setColType] = useState<ContentObjectType | undefined>(undefined);
     const [sharedProps, setSharedProps] = useState<string[]>(collection.shared_properties || []);
     const toast = useToast();
@@ -31,12 +33,12 @@ export function SharedPropsEditor({ collection }: SharedPropsEditorProps) {
         }).then(() => {
             // Handle success
             toast({
-                title: "Updated shared properties",
+                title: t('store.updatedSharedProperties'),
                 status: "success"
             })
         }).catch((error) => {
             toast({
-                title: "Failed to update shared properties",
+                title: t('store.failedToUpdateSharedProperties'),
                 description: error.message,
                 status: "error"
             })
@@ -45,14 +47,14 @@ export function SharedPropsEditor({ collection }: SharedPropsEditorProps) {
     }
 
     return (
-        <Panel title="Shared Properties" description="Add properties to share across all members in the collection. This feature requires to enable shared property synchronization on the project."
+        <Panel title={t('store.sharedProperties')} description={t('store.sharedPropertiesDescription')}
             action={
                 <Button size="lg" isLoading={false} onClick={onSave}>
-                    Save
+                    {t('modal.save')}
                 </Button>}
         >
             <div className=''>
-                <TagsInput value={sharedProps} onChange={onSelect} options={options} placeholder="Select properties to share" />
+                <TagsInput value={sharedProps} onChange={onSelect} options={options} placeholder={t('store.selectPropertiesToShare')} />
             </div>
         </Panel>
     )

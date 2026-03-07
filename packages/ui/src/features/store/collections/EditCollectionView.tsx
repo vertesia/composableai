@@ -5,6 +5,7 @@ import { useUserSession } from "@vertesia/ui/session";
 import { MonacoEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { useMemo, useRef, useState } from "react";
+import { useUITranslation } from '../../../i18n/index.js';
 import { SelectContentType, stringifyTableLayout } from "../types";
 
 interface UpdateData {
@@ -21,6 +22,7 @@ interface EditCollectionViewProps {
     refetch: () => void;
 }
 export function EditCollectionView({ refetch, collection }: EditCollectionViewProps) {
+    const { t } = useUITranslation();
     const typeId = collection.type?.id;
     const tableLayoutRef = useRef<EditorApi | undefined>(undefined);
     const toast = useToast();
@@ -46,7 +48,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             query = metadata.query ? JSON.parse(metadata.query) : undefined;
         } catch (err: any) {
             toast({
-                title: "Invalid Query JSON",
+                title: t('store.invalidQueryJson'),
                 description: err.message,
                 status: "error",
                 duration: 5000,
@@ -64,14 +66,14 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
         };
         let error: string | undefined;
         if (!payload.name) {
-            error = "Name is required";
+            error = t('type.nameRequired');
         }
         if (!payload.type) {
             (payload as any).type = null;
         }
         if (error) {
             toast({
-                title: "Validation failed",
+                title: t('store.validationFailed'),
                 description: error,
                 status: "error",
                 duration: 5000,
@@ -85,7 +87,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                     payload.table_layout = JSON.parse(layout);
                 } catch (err: any) {
                     toast({
-                        title: "Invalid Table Layout",
+                        title: t('store.invalidTableLayout'),
                         description: err.message,
                         status: "error",
                         duration: 5000,
@@ -102,15 +104,15 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             .then(() => {
                 refetch();
                 toast({
-                    title: "Collection updated",
-                    description: "Collection has been updated successfully",
+                    title: t('store.collectionUpdated'),
+                    description: t('store.collectionUpdatedSuccess'),
                     status: "success",
                     duration: 3000,
                 });
             })
             .catch((err) => {
                 toast({
-                    title: "Failed to update collection",
+                    title: t('store.failedToUpdateCollection'),
                     description: err.message,
                     status: "error",
                     duration: 5000,
@@ -130,32 +132,32 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
 
     return (
         <div className="flex flex-col gap-4 py-2">
-            <Panel title="Configuration"
+            <Panel title={t('store.configuration')}
                 action={
                     <Button size="lg" isDisabled={isUpdating} onClick={onSubmit}>
-                        Save
+                        {t('modal.save')}
                     </Button>
                 }>
                 <div className="flex justify-between mb-2">
                     <div className="w-1/2 gap-2 flex flex-col">
-                        <div className="text-sm font-medium mb-1">Created By</div>
+                        <div className="text-sm font-medium mb-1">{t('store.createdBy')}</div>
                         <div className="gap-2 flex items-center">
                             <UserInfo userRef={collection.created_by} showTitle />
                             <span>at {dayjs(collection.created_at).format("YYYY-MM-DD HH:mm:ss")}</span>
                         </div>
                     </div>
                     <div className="w-1/2 gap-2 flex flex-col">
-                        <div className="text-sm font-medium mb-1">Updated By</div>
+                        <div className="text-sm font-medium mb-1">{t('store.updatedBy')}</div>
                         <div className="gap-2 flex items-center">
                             <UserInfo userRef={collection.updated_by} showTitle />
                             <span>at {dayjs(collection.updated_at).format("YYYY-MM-DD HH:mm:ss")}</span>
                         </div>
                     </div>
                 </div>
-                <FormItem label="Name" required>
+                <FormItem label={t('type.name')} required>
                     <Input value={metadata.name} onChange={(v) => setField("name", v)} />
                 </FormItem>
-                <FormItem label="Description">
+                <FormItem label={t('type.description')}>
                     <Textarea
                         value={metadata.description}
                         onChange={(e) => setField("description", e.target.value)}
@@ -163,7 +165,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                 </FormItem>
                 {
                     !collection.dynamic &&
-                    <FormItem label="Allowed Content Types" description="Select which content types can be added to the collection. If not set, then all content types are allowed.">
+                    <FormItem label={t('store.allowedContentTypes')} description={t('store.allowedContentTypesSelectDescription')}>
                         <SelectContentType
                             defaultValue={metadata.allowed_types || null}
                             onChange={(v) => {
@@ -179,7 +181,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                 }
                 {
                     collection.dynamic && (
-                        <FormItem label="Query" description="Define the query to dynamically fetch content for the collection.">
+                        <FormItem label={t('store.query')} description={t('store.queryDescription')}>
                             <Textarea
                                 className={Styles.INPUT}
                                 value={metadata.query}
@@ -188,7 +190,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                         </FormItem>
                     )
                 }
-                <FormItem label="Table Layout" description="Define a custom layout for displaying the collection in tables." className="h-[200px]">
+                <FormItem label={t('store.tableLayout')} description={t('store.tableLayoutDescription')} className="h-[200px]">
                     <MonacoEditor
                         className="border-1 rounded-md border-border"
                         value={tableLayoutValue}
@@ -197,7 +199,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                         theme={theme === 'dark' ? 'vs-dark' : 'vs'}
                     />
                 </FormItem>
-                <FormItem label="Type" description="Select a content type to assign custom properties and data to the collection.">
+                <FormItem label={t('store.contentType')} description={t('store.typeSelectDescription')}>
                     <SelectContentType
                         defaultValue={metadata.type || null}
                         onChange={(v) => {
@@ -231,6 +233,7 @@ interface PropertiesEditorProps {
     collection: Collection;
 }
 function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
+    const { t } = useUITranslation();
     const [formData, setFormData] = useState<JSONSchemaObject>({});
     const toast = useToast();
     const { client } = useUserSession();
@@ -241,7 +244,7 @@ function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
     const object = useMemo(() => new ManagedObject(schema, collection.properties || {}), [schema, collection.properties]);
 
     if (error) {
-        return <ErrorBox title="Failed to load type">{error.message}</ErrorBox>;
+        return <ErrorBox title={t('store.failedToLoadType')}>{error.message}</ErrorBox>;
     }
 
     if (!type) {
@@ -259,15 +262,15 @@ function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
             .update(collection.id, payload)
             .then(() => {
                 toast({
-                    title: "Collection properties updated",
-                    description: "Collection has been updated successfully",
+                    title: t('store.collectionPropertiesUpdated'),
+                    description: t('store.collectionUpdatedSuccess'),
                     status: "success",
                     duration: 3000,
                 });
             })
             .catch((err) => {
                 toast({
-                    title: "Failed to update collection properties",
+                    title: t('store.failedToUpdateCollectionProperties'),
                     description: err.message,
                     status: "error",
                     duration: 5000,
@@ -285,9 +288,9 @@ function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
     }
 
     return (
-        <Panel title="Properties" action={
+        <Panel title={t('store.properties')} action={
             <Button size="lg" isLoading={isUpdating} type="submit" onClick={() => _onSave(formData)}>
-                Save
+                {t('modal.save')}
             </Button>}
         >
             <GeneratedForm object={object} onChange={onDataChanged} />
