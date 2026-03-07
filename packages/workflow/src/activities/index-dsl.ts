@@ -3,7 +3,6 @@ export { createDocumentTypeFromInteractionRun } from "./advanced/createDocumentT
 export { createOrUpdateDocumentFromInteractionRun } from "./advanced/createOrUpdateDocumentFromInteractionRun.js";
 export { updateDocumentFromInteractionRun } from "./advanced/updateDocumentFromInteractionRun.js";
 export { chunkDocument } from "./chunkDocument.js";
-export { copyParentArtifacts } from "./copyParentArtifacts.js";
 export { createPdfDocumentFromSource } from "./createDocumentFromOther.js";
 export { executeInteraction } from "./executeInteraction.js";
 export { extractDocumentText } from "./extractDocumentText.js";
