@@ -12,7 +12,7 @@
  * (workflowId, runId) are internal server concerns.
  */
 
-import { AgentSearchScope, ConversationVisibility, RunSource } from "../interaction.js";
+import { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, RunSource } from "../interaction.js";
 import { UserChannel } from "../email.js";
 import { ContentObjectTypeRef } from "./store.js";
 
@@ -22,15 +22,59 @@ import { ContentObjectTypeRef } from "./store.js";
 export type AgentRunStatus = 'created' | 'running' | 'completed' | 'failed' | 'cancelled';
 
 /**
+ * Shared fields between CreateAgentRunPayload and AgentRun.
+ *
+ * @typeParam TData - The interaction's expected input data type.
+ * @typeParam TProperties - The content type's property schema.
+ */
+export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<string, any>> {
+    /** Interaction ID or code (e.g. "sys:generic_question") */
+    interaction: string;
+
+    /** Input parameters, typed per interaction */
+    data?: TData;
+
+    /** Execution configuration (environment, model, model_options, etc.) */
+    config?: InteractionExecutionConfiguration;
+
+    /** Whether the agent accepts user input */
+    interactive?: boolean;
+
+    /** Tools configured for this run (+/- syntax supported) */
+    tool_names?: string[];
+
+    /** Scoped collection (if any) */
+    collection_id?: string;
+
+    /** Content type linked to this run — defines the schema for `properties` */
+    content_type?: ContentObjectTypeRef;
+
+    /** Conversation visibility */
+    visibility?: ConversationVisibility;
+
+    /** User-defined or system tags for categorization */
+    tags?: string[];
+
+    /** Categories for organizing runs (e.g. "support", "analysis", "generation") */
+    categories?: string[];
+
+    /** Business metadata — typed by the linked content_type schema */
+    properties?: TProperties;
+
+    /** How the run was started */
+    source?: RunSource;
+}
+
+/**
  * AgentRun — the client-facing stable identity for a running or completed agent.
  *
  * All operations use `id` as the sole identifier.
  * Temporal workflow internals are never exposed to clients.
  *
  * @typeParam TData - The interaction's expected input data type.
- * Defaults to Record<string, any> for untyped interactions.
+ * @typeParam TProperties - The content type's property schema.
  */
-export interface AgentRun<TData = Record<string, any>> {
+export interface AgentRun<TData = Record<string, any>, TProperties = Record<string, any>> extends AgentRunBase<TData, TProperties> {
     /** The stable identifier used by all client code */
     id: string;
 
@@ -50,34 +94,8 @@ export interface AgentRun<TData = Record<string, any>> {
 
     // --- Interaction info ---
 
-    /** Interaction ID or code (e.g. "sys:generic_question") */
-    interaction: string;
-
     /** Human-readable interaction name */
     interaction_name?: string;
-
-    /** Input parameters, typed per interaction */
-    data?: TData;
-
-    // --- Configuration ---
-
-    /** LLM environment ID */
-    environment: string;
-
-    /** Model used */
-    model?: string;
-
-    /** Whether the agent accepts user input */
-    interactive: boolean;
-
-    /** Tools configured for this run */
-    tool_names?: string[];
-
-    /** Scoped collection (if any) */
-    collection_id?: string;
-
-    /** Content type linked to this run (e.g. the document type being processed) */
-    content_type?: ContentObjectTypeRef;
 
     // --- Lifecycle ---
 
@@ -104,21 +122,6 @@ export interface AgentRun<TData = Record<string, any>> {
     /** Conversation topic (longer description from topic analysis) */
     topic?: string;
 
-    /** User-defined or system tags for categorization */
-    tags?: string[];
-
-    /** Categories for organizing runs (e.g. "support", "analysis", "generation") */
-    categories?: string[];
-
-    /** Business metadata — arbitrary key/value pairs for domain-specific data */
-    properties?: Record<string, any>;
-
-    /** How the run was started */
-    source?: RunSource;
-
-    /** Visibility of the conversation */
-    visibility?: ConversationVisibility;
-
     /** Timestamp when the document was created */
     created_at: Date;
 
@@ -130,47 +133,9 @@ export interface AgentRun<TData = Record<string, any>> {
  * Payload to create and start a new agent run.
  *
  * @typeParam TData - The interaction's expected input data type.
+ * @typeParam TProperties - The content type's property schema.
  */
-export interface CreateAgentRunPayload<TData = Record<string, any>> {
-    /** Interaction ID or name */
-    interaction: string;
-
-    /** Input parameters */
-    data?: TData;
-
-    /** Override default environment */
-    environment?: string;
-
-    /** Override default model */
-    model?: string;
-
-    /** Whether the agent accepts user input (default: true) */
-    interactive?: boolean;
-
-    /** Override interaction default tools (+/- syntax supported) */
-    tool_names?: string[];
-
-    /** Scope to a collection */
-    collection_id?: string;
-
-    /** Content type linked to this run */
-    content_type?: ContentObjectTypeRef;
-
-    /** Conversation visibility */
-    visibility?: ConversationVisibility;
-
-    /** Tags for categorization */
-    tags?: string[];
-
-    /** Categories for organizing runs */
-    categories?: string[];
-
-    /** Business metadata */
-    properties?: Record<string, any>;
-
-    /** How the run was started */
-    source?: RunSource;
-
+export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties = Record<string, any>> extends AgentRunBase<TData, TProperties> {
     /** Search scope for RAG queries */
     search_scope?: AgentSearchScope;
 
@@ -179,6 +144,12 @@ export interface CreateAgentRunPayload<TData = Record<string, any>> {
 
     /** Token budget for checkpointing */
     checkpoint_tokens?: number;
+
+    /** Maximum conversation iterations (default: 20) */
+    max_iterations?: number;
+
+    /** Webhook URLs to notify on completion */
+    notify_endpoints?: string[];
 
     /** Enable debug mode for verbose logging */
     debug_mode?: boolean;
@@ -226,8 +197,7 @@ export interface AgentRunInternals {
     status: AgentRunStatus;
     interaction: string;
     interaction_name?: string;
-    environment: string;
-    model?: string;
+    config?: InteractionExecutionConfiguration;
     interactive: boolean;
     started_at: Date;
     completed_at?: Date;
