@@ -1,5 +1,6 @@
 import { useUserSession } from '@vertesia/ui/session';
 import { useState, useRef, useEffect } from 'react';
+import { useUITranslation } from '../../../../i18n/index.js';
 import {
     Button,
     Modal,
@@ -28,6 +29,7 @@ export interface PropertiesEditorModalProps {
 export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: PropertiesEditorModalProps) {
     const { client, store } = useUserSession();
     const toast = useToast();
+    const { t } = useUITranslation();
     const { theme } = useTheme();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
@@ -92,8 +94,8 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
         } catch (err) {
             toast({
                 status: 'error',
-                title: 'Invalid JSON',
-                description: 'Please fix the JSON syntax errors before saving.',
+                title: t('store.invalidJson'),
+                description: t('store.pleaseFixJsonSyntax'),
                 duration: 5000
             });
         }
@@ -127,8 +129,8 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
 
                 toast({
                     status: 'success',
-                    title: 'New version created',
-                    description: 'A new version with updated properties has been created.',
+                    title: t('store.newVersionCreated'),
+                    description: t('store.newVersionCreatedDesc'),
                     duration: 2000
                 });
 
@@ -143,8 +145,8 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                         navigate(`/objects/${response.id}`);
                         toast({
                             status: 'info',
-                            title: 'Viewing New Version',
-                            description: versionLabel ? `Now viewing version '${versionLabel}'` : 'Now viewing the new version',
+                            title: t('store.viewingNewVersion'),
+                            description: versionLabel ? t('store.viewingVersionLabel', { label: versionLabel }) : t('store.viewingNewVersionDefault'),
                             duration: 3000
                         });
                     }, 100);
@@ -157,8 +159,8 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
 
                 toast({
                     status: 'success',
-                    title: 'Properties updated',
-                    description: 'The object properties have been updated successfully.',
+                    title: t('store.propertiesUpdated'),
+                    description: t('store.propertiesUpdatedDesc'),
                     duration: 2000
                 });
 
@@ -172,8 +174,8 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
         } catch (error: any) {
             toast({
                 status: 'error',
-                title: 'Error updating properties',
-                description: error.message || 'An error occurred while updating the properties.',
+                title: t('store.errorUpdatingProperties'),
+                description: error.message || t('store.errorUpdatingPropertiesDefault'),
                 duration: 5000
             });
             setIsLoading(false);
@@ -193,13 +195,13 @@ export function PropertiesEditorModal({ isOpen, onClose, object, refetch }: Prop
                 onClose={onClose}
                 className="sm:max-w-[90%] md:max-w-[80%] lg:max-w-[75%] xl:max-w-[70%]"
             >
-                <ModalTitle>Edit Properties</ModalTitle>
+                <ModalTitle>{t('store.editProperties')}</ModalTitle>
                 <ModalBody>
                     <div className="mb-2 text-sm text-gray-500">
                         {object.type?.name ? (
                             <span>Editing properties for object type: <strong>{object.type.name}</strong></span>
                         ) : (
-                            <span>Editing properties for generic document</span>
+                            <span>{t('store.editingGenericDocument')}</span>
                         )}
                         {jsonSchema && (
                             <span className="ml-2 text-green-600">(JSON schema validation enabled)</span>

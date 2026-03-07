@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalTitle, useToast, Textarea } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 
 export interface CreateOrUpdateTypePayload {
     name: string;
@@ -15,6 +16,7 @@ interface CreateOrUpdateTypeModalProps {
     initialPayload?: CreateOrUpdateTypePayload;
 }
 export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initialPayload }: CreateOrUpdateTypeModalProps) {
+    const { t } = useUITranslation();
     const toast = useToast();
     const [name, setName] = useState<string | undefined>(initialPayload?.name);
     const [description, setDescription] = useState<string | undefined>(initialPayload?.description);
@@ -24,7 +26,7 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
         if (!name) {
             toast({
                 status: 'error',
-                title: 'Name is required',
+                title: t('type.nameRequired'),
                 duration: 5000
             })
             return;
@@ -43,18 +45,18 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
             <ModalBody className="pt-0">
                 <div className='h-full flex flex-col gap-4 content-between'>
                     <div>
-                        <label className="block text-sm font-medium text-muted">Name</label>
+                        <label className="block text-sm font-medium text-muted">{t('type.name')}</label>
                         <Input value={name} onChange={setName} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-muted">Description</label>
+                        <label className="block text-sm font-medium text-muted">{t('type.description')}</label>
                         <Textarea value={description} onChange={e => setDescription(e.target.value)} />
                     </div>
                 </div>
             </ModalBody>
             <ModalFooter>
                 <div className='flex justify-end gap-4'>
-                    <Button variant="secondary" onClick={() => onClose()}>Cancel</Button>
+                    <Button variant="secondary" onClick={() => onClose()}>{t('modal.cancel')}</Button>
                     <Button variant="primary" onClick={() => onSave()}>{okLabel}</Button>
                 </div>
             </ModalFooter>

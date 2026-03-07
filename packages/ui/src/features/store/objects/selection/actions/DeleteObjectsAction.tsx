@@ -4,12 +4,15 @@ import { useToast } from '@vertesia/ui/core';
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from '@vertesia/ui/session';
 
+import { useUITranslation } from '../../../../../i18n/index.js';
+import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
 import { useDocumentSearch } from '../../search/DocumentSearchContext';
 import { useObjectsActionContext } from '../ObjectsActionContext';
 import { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
 import ConfirmAction from './ConfirmAction';
 
 export function DeleteObjectsActionComponent({ action, objectIds, children }: ActionComponentTypeProps) {
+    const { t } = useUITranslation();
     const ctx = useObjectsActionContext();
 
     const toast = useToast();
@@ -21,8 +24,8 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
         if (!objectIds || !objectIds.length) {
             toast({
                 status: 'error',
-                title: 'No objects selected',
-                description: 'Please select objects to delete',
+                title: t('store.actions.noObjectsSelected'),
+                description: t('store.actions.pleaseSelectObjectsToDelete'),
                 duration: 3000
             });
             return Promise.resolve(false);
@@ -58,7 +61,7 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
         }).catch(err => {
             toast({
                 status: 'error',
-                title: 'Error deleting objects',
+                title: t('store.actions.errorDeletingObjects'),
                 description: err.message,
                 duration: 5000
             });
@@ -72,12 +75,13 @@ export function DeleteObjectsActionComponent({ action, objectIds, children }: Ac
     )
 }
 
+const t = i18nInstance.getFixedT(null, NAMESPACE);
 export const DeleteObjectsAction: ObjectsActionSpec = {
     id: 'delete',
-    name: 'Delete',
-    description: 'Delete the selected objects',
+    name: t('store.actions.delete'),
+    description: t('store.actions.deleteTheSelectedObjects'),
     confirm: true,
-    confirmationText: 'Are you sure you want to delete all the selected objects? This action cannot be undone.',
+    confirmationText: t('store.actions.confirmDeleteAll'),
     component: DeleteObjectsActionComponent,
     destructive: true
 }
@@ -85,10 +89,10 @@ export const DeleteObjectsAction: ObjectsActionSpec = {
 
 export const DeleteObjectsFromCollectionsAction: ObjectsActionSpec = {
     id: 'deleteFromCollections',
-    name: 'Delete Objects',
-    description: 'Delete the selected objects',
+    name: t('store.actions.deleteObjects'),
+    description: t('store.actions.deleteTheSelectedObjects'),
     confirm: true,
-    confirmationText: 'Are you sure you want to delete the selected objects?\nThis is not removable from collections.',
+    confirmationText: t('store.actions.confirmDeleteSelected'),
     component: DeleteObjectsActionComponent,
     destructive: true
 }

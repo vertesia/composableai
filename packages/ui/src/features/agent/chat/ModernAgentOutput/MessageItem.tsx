@@ -6,6 +6,7 @@ import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { AlertCircle, Bot, CheckCircle, Clock, CopyIcon, Download, Info, Layers, type LucideIcon, MessageSquare, RefreshCcw, User } from "lucide-react";
 import React, { useEffect, useState, useMemo, memo, useRef } from "react";
+import { useUITranslation } from '../../../../i18n/index.js';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { AskUserWidget } from "../AskUserWidget";
 import { useImageLightbox } from "../ImageLightbox";
@@ -110,6 +111,12 @@ function mergeClassNames(
     return result as MessageItemClassNames;
 }
 
+/** Map sender labels from MESSAGE_STYLES to i18n keys where applicable. */
+const SENDER_I18N_KEYS: Record<string, string> = {
+    Ready: 'agent.ready',
+    Error: 'agent.error',
+};
+
 /** Per-message-type visual config (border, bg, icon color, sender label, icon component, optional className overrides). */
 export interface MessageStyleConfig extends MessageItemClassNames {
     borderColor: string;
@@ -170,6 +177,7 @@ function MessageItemComponent({
     CollectionLinkComponent,
 }: MessageItemProps) {
     const [showDetails, setShowDetails] = useState(false);
+    const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
     const urlCache = useArtifactUrlCache();
@@ -253,7 +261,7 @@ function MessageItemComponent({
         navigator.clipboard.writeText(textToCopy).then(() => {
             toast({
                 status: "success",
-                title: "Copied to clipboard",
+                title: t('agent.copiedToClipboard'),
                 duration: 2000,
             });
         });
@@ -266,7 +274,7 @@ function MessageItemComponent({
         if (!content.trim()) {
             toast({
                 status: "error",
-                title: "No content to export",
+                title: t('agent.noContentToExport'),
                 duration: 2000,
             });
             return;
@@ -471,7 +479,7 @@ function MessageItemComponent({
                         <div className={cn(showPulsatingCircle ? "animate-fadeIn" : "", resolvedStyle.iconClassName)}>
                             {renderIcon()}
                         </div>
-                        <span className={cn("text-xs font-medium text-muted", resolvedStyle.senderClassName)}>{resolvedStyle.sender}</span>
+                        <span className={cn("text-xs font-medium text-muted", resolvedStyle.senderClassName)}>{SENDER_I18N_KEYS[resolvedStyle.sender] ? t(SENDER_I18N_KEYS[resolvedStyle.sender]) : resolvedStyle.sender}</span>
                         {workstreamId !== "main" && workstreamId !== "all" && (
                             <Badge variant="default" className="text-xs text-muted ml-1">
                                 {workstreamId}
@@ -486,7 +494,7 @@ function MessageItemComponent({
                             variant="ghost" size="xs"
                             onClick={copyToClipboard}
                             className="text-muted/50 hover:text-muted h-5 w-5 p-0"
-                            title="Copy message"
+                            title={t('agent.copyMessage')}
                         >
                             <CopyIcon className="size-3" />
                         </Button>
@@ -496,7 +504,7 @@ function MessageItemComponent({
                                     <Button
                                         variant="ghost" size="xs"
                                         className="text-muted/50 hover:text-muted h-5 w-5 p-0"
-                                        title="Export message"
+                                        title={t('agent.exportMessage')}
                                         disabled={isExportingFile}
                                     >
                                         <Download className={`size-3 ${isExportingFile ? 'animate-pulse' : ''}`} />
@@ -504,10 +512,10 @@ function MessageItemComponent({
                                 }
                             >
                                 <MenuItem onClick={() => exportToFormat(MarkdownRenditionFormat.pdf)}>
-                                    Export as PDF
+                                    {t('agent.exportAsPdf')}
                                 </MenuItem>
                                 <MenuItem onClick={() => exportToFormat(MarkdownRenditionFormat.docx)}>
-                                    Export as Word
+                                    {t('agent.exportAsWord')}
                                 </MenuItem>
                             </Dropdown>
                         )}
@@ -595,7 +603,7 @@ function MessageItemComponent({
                             onClick={() => setShowDetails(!showDetails)}
                             className="text-[11px] text-muted flex items-center"
                         >
-                            {showDetails ? "Hide" : "Show"} details
+                            {showDetails ? t('agent.hideDetails') : t('agent.showDetails')}
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className={`h-3 w-3 ml-1 transition-transform ${showDetails ? "rotate-180" : ""}`}

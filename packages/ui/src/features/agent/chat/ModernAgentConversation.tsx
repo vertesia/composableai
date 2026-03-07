@@ -28,6 +28,7 @@ import { getWorkstreamId } from "./ModernAgentOutput/utils";
 import { ThinkingMessages } from "./WaitingMessages";
 import { SkillWidgetProvider } from "./SkillWidgetProvider";
 import { ArtifactUrlCacheProvider } from "./useArtifactUrlCache.js";
+import { useUITranslation } from "../../../i18n/index.js";
 import { VegaLiteChart } from "./VegaLiteChart";
 import { AgentRightPanel, type WorkstreamInfo } from "./AgentRightPanel.js";
 import { useAgentStream } from "./hooks/useAgentStream.js";
@@ -248,16 +249,17 @@ export function ModernAgentConversation(
 
 // Empty state when no agent is running
 function EmptyState() {
+    const { t } = useUITranslation();
     return (
         <MessageBox
             status="info"
             icon={<Bot className="size-16 text-muted mb-4" />}
         >
             <div className="text-base font-medium text-muted">
-                No agent currently running
+                {t('agent.noAgentRunning')}
             </div>
             <div className="mt-3 text-sm text-muted">
-                Select an interaction and click Start to start an agent
+                {t('agent.selectInteraction')}
             </div>
         </MessageBox>
     );
@@ -271,9 +273,9 @@ function StartWorkflowView({
     onClose,
     isModal = false,
     fullWidth = false,
-    placeholder = "Type your message...",
-    startButtonText = "Start Agent",
-    title = "Start New Conversation",
+    placeholder,
+    startButtonText,
+    title,
     // Attachment callback - used to include existing document attachments in the first message
     getAttachedDocs,
     onAttachmentsSent,
@@ -281,6 +283,10 @@ function StartWorkflowView({
     acceptedFileTypes,
     maxFiles = 5,
 }: ModernAgentConversationProps) {
+    const { t } = useUITranslation();
+    const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
+    const resolvedStartButtonText = startButtonText ?? t('agent.startAgent');
+    const resolvedTitle = title ?? t('agent.startNewConversation');
     const { client } = useUserSession();
     const [inputValue, setInputValue] = useState<string>("");
     const [isSending, setIsSending] = useState(false);
@@ -371,7 +377,7 @@ function StartWorkflowView({
             sessionStorage.removeItem("plan-panel-shown");
 
             toast({
-                title: stagedFiles.length > 0 ? "Starting agent and uploading files..." : "Starting agent...",
+                title: stagedFiles.length > 0 ? t('agent.startingAgentUploading') : t('agent.startingAgent'),
                 status: "info",
                 duration: 3000,
             });
@@ -457,17 +463,17 @@ function StartWorkflowView({
                 });
                 setInputValue("");
                 toast({
-                    title: "Agent started",
+                    title: t('agent.agentStarted'),
                     status: "success",
                     duration: 3000,
                 });
             }
         } catch (err: any) {
             toast({
-                title: "Error starting workflow",
+                title: t('agent.errorStarting'),
                 status: "error",
                 duration: 3000,
-                description: err instanceof Error ? err.message : "Unknown error",
+                description: err instanceof Error ? err.message : t('agent.unknownError'),
             });
         } finally {
             setIsSending(false);
@@ -545,7 +551,7 @@ function StartWorkflowView({
                             <Cpu className="size-3.5 text-muted" />
                         </div>
                         <span className="font-medium text-sm text-foreground">
-                            {title}
+                            {resolvedTitle}
                         </span>
                     </div>
 
@@ -555,7 +561,7 @@ function StartWorkflowView({
                             size="xs"
                             variant="ghost"
                             onClick={onClose}
-                            title="Close"
+                            title={t('agent.close')}
                             className="text-muted hover:text-foreground"
                         >
                             <XIcon className="size-4" />
@@ -574,11 +580,10 @@ function StartWorkflowView({
 
                         <div className="bg-card p-4 border-l-2 border-info">
                             <div className="text-base text-foreground font-medium">
-                                Enter a message to start a conversation
+                                {t('agent.enterMessage')}
                             </div>
                             <div className="mt-3 text-sm text-muted">
-                                Type your question below and press Enter or click {startButtonText}{" "}
-                                to begin
+                                {t('agent.typeQuestionBelow', { buttonText: resolvedStartButtonText })}
                             </div>
                         </div>
                     </div>
@@ -596,7 +601,7 @@ function StartWorkflowView({
                             >
                                 <FileTextIcon className="size-3.5" />
                                 <span className="max-w-[120px] truncate">{file.name}</span>
-                                <span className="text-xs opacity-70">Staged</span>
+                                <span className="text-xs opacity-70">{t('agent.staged')}</span>
                                 <button
                                     onClick={() => removeStagedFile(index)}
                                     className="ml-1 p-0.5 hover:bg-attention/20 rounded"
@@ -618,7 +623,7 @@ function StartWorkflowView({
                         className="text-xs"
                     >
                         <UploadIcon className="size-3.5 mr-1.5" />
-                        Upload
+                        {t('agent.upload')}
                     </Button>
                 </div>
 
@@ -628,7 +633,7 @@ function StartWorkflowView({
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={placeholder}
+                        placeholder={resolvedPlaceholder}
                         disabled={isSending}
                         rows={2}
                         className="flex-1 py-2.5 px-3 text-sm border border-border bg-background text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring rounded-md resize-none overflow-hidden"
@@ -644,13 +649,13 @@ function StartWorkflowView({
                         ) : (
                             <SendIcon className="size-3.5 mr-1.5" />
                         )}
-                        {startButtonText}
+                        {resolvedStartButtonText}
                     </Button>
                 </div>
                 <div className="text-xs text-muted mt-2 text-center">
                     {stagedFiles.length > 0
-                        ? `${stagedFiles.length} file${stagedFiles.length > 1 ? 's' : ''} staged - will upload when conversation starts`
-                        : 'Enter to send • Shift+Enter for new line'}
+                        ? t('agent.filesStagedCount', { count: stagedFiles.length })
+                        : t('agent.enterToSend')}
                 </div>
             </div>
         </div>
@@ -666,7 +671,7 @@ function ModernAgentConversationInner({
     onClose,
     isModal = false,
     fullWidth = false,
-    placeholder = "Type your message...",
+    placeholder,
     resetWorkflow,
     onRestart,
     onFork,
@@ -734,6 +739,7 @@ function ModernAgentConversationInner({
     CollectionLinkComponent,
     prependFriendlyMessage,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
+    const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
 
@@ -1059,8 +1065,8 @@ function ModernAgentConversationInner({
         if (hasProcessingFilesRef.current) {
             toast({
                 status: "warning",
-                title: "Files Still Processing",
-                description: "Please wait for all files to finish processing before sending",
+                title: t('agent.filesProcessing'),
+                description: t('agent.waitForFilesProcessing'),
                 duration: 3000,
             });
             return;
@@ -1110,8 +1116,8 @@ function ModernAgentConversationInner({
                 );
                 toast({
                     status: "error",
-                    title: "Failed to Send Message",
-                    description: err instanceof Error ? err.message : "Unknown error",
+                    title: t('agent.failedToSend'),
+                    description: err instanceof Error ? err.message : t('agent.unknownError'),
                     duration: 3000,
                 });
             })
@@ -1168,15 +1174,15 @@ function ModernAgentConversationInner({
 
             toast({
                 status: "info",
-                title: "Agent Interrupted",
-                description: "Type your message to give new instructions",
+                title: t('agent.agentInterrupted'),
+                description: t('agent.typeNewInstructions'),
                 duration: 3000,
             });
         } catch (err) {
             toast({
                 status: "error",
-                title: "Failed to Interrupt",
-                description: err instanceof Error ? err.message : "Unknown error",
+                title: t('agent.failedToInterrupt'),
+                description: err instanceof Error ? err.message : t('agent.unknownError'),
                 duration: 3000,
             });
         } finally {
@@ -1237,7 +1243,7 @@ function ModernAgentConversationInner({
     };
 
     const actualTitle =
-        title || run.workflowId.split(":")[2] || "Agent Conversation";
+        title || run.workflowId.split(":")[2] || t('agent.agentConversation');
 
     // Handle downloading conversation
     const downloadConversation = async () => {
@@ -1248,7 +1254,7 @@ function ModernAgentConversationInner({
             console.error("Failed to download conversation", err);
             toast({
                 status: "error",
-                title: "Failed to download conversation",
+                title: t('agent.failedToDownload'),
                 duration: 3000,
             });
         }
@@ -1259,7 +1265,7 @@ function ModernAgentConversationInner({
         navigator.clipboard.writeText(run.runId);
         toast({
             status: "success",
-            title: "Run ID copied",
+            title: t('agent.runIdCopied'),
             duration: 2000,
         });
     };
@@ -1270,8 +1276,8 @@ function ModernAgentConversationInner({
         if (!conversationRef.current) {
             toast({
                 status: "error",
-                title: "PDF export failed",
-                description: "No conversation content available to export",
+                title: t('agent.pdfExportFailed'),
+                description: t('agent.noConversationContent'),
                 duration: 3000,
             });
             return;
@@ -1283,8 +1289,8 @@ function ModernAgentConversationInner({
         if (!conversationRef.current) {
             toast({
                 status: "error",
-                title: "PDF export failed",
-                description: "No conversation content available to export",
+                title: t('agent.pdfExportFailed'),
+                description: t('agent.noConversationContent'),
                 duration: 3000,
             });
             return;
@@ -1296,8 +1302,8 @@ function ModernAgentConversationInner({
         if (!success) {
             toast({
                 status: "error",
-                title: "PDF export failed",
-                description: "Unable to open print preview",
+                title: t('agent.pdfExportFailed'),
+                description: t('agent.unableToOpenPrint'),
                 duration: 4000,
             });
             return;
@@ -1305,8 +1311,8 @@ function ModernAgentConversationInner({
 
         toast({
             status: "success",
-            title: "PDF export ready",
-            description: "Use your browser's Print dialog to save as PDF",
+            title: t('agent.pdfExportReady'),
+            description: t('agent.printDialogDescription'),
             duration: 4000,
         });
         setIsPdfModalOpen(false);
@@ -1463,7 +1469,7 @@ function ModernAgentConversationInner({
                                 isStreaming={!isCompleted}
                                 isCompleted={isCompleted}
                                 activeTaskCount={getActiveTaskCount()}
-                                placeholder={placeholder}
+                                placeholder={placeholder ?? t('agent.typeYourMessage')}
                                 // File upload props - use internal handler that signals workflow
                                 onFilesSelected={handleFileUpload}
                                 uploadedFiles={uploadedFiles}
@@ -1498,7 +1504,7 @@ function ModernAgentConversationInner({
                         onMouseDown={() => setIsRightPanelResizing(true)}
                         role="separator"
                         aria-orientation="vertical"
-                        aria-label="Resize right panel"
+                        aria-label={t('agent.resizeRightPanel')}
                     />
                     <div
                         className="w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l"
