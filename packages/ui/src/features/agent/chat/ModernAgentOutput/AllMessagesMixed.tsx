@@ -379,9 +379,13 @@ function AllMessagesMixedComponent({
             // If a newer persisted message exists, this stream is stale and should be
             // treated as complete for ordering purposes.
             const isStale = data.startTimestamp <= newestMessageTimestamp;
-            if (data.isComplete || isStale) {
+            if (isStale) {
+                // Only interleave chronologically when a newer persisted message
+                // already exists — the streaming message is truly historical.
                 complete.set(id, data);
             } else if (data.text) {
+                // Keep at the bottom (including isComplete streams) until
+                // the persisted ANSWER/THOUGHT arrives and replaces it.
                 incomplete.push({ id, data });
             }
         });
@@ -656,7 +660,7 @@ function AllMessagesMixedComponent({
                                     key={`streaming-incomplete-${id}`}
                                     text={data.text}
                                     workstreamId={data.workstreamId}
-                                    isComplete={false}
+                                    isComplete={data.isComplete}
                                     timestamp={data.startTimestamp}
                                     artifactRunId={artifactRunId}
                                     {...streamingMessageClassNames}
@@ -771,7 +775,7 @@ function AllMessagesMixedComponent({
                                     key={`streaming-incomplete-${id}`}
                                     text={data.text}
                                     workstreamId={data.workstreamId}
-                                    isComplete={false}
+                                    isComplete={data.isComplete}
                                     timestamp={data.startTimestamp}
                                     artifactRunId={artifactRunId}
                                     {...streamingMessageClassNames}
