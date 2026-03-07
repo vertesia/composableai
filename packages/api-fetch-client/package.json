@@ -50,7 +50,7 @@
         "@types/koa": "^2.15.0",
         "@types/mocha": "^10.0.10",
         "koa": "^2.16.3",
-        "mocha": "^10.2.0",
+        "mocha": "^10.8.2",
         "ts-dual-module": "^0.6.3",
         "ts-node": "^10.9.2",
         "tsx": "^3.14.0",
@@ -58,6 +58,6 @@
         "vitest": "^4.0.16"
     },
     "dependencies": {
-        "eventsource-parser": "^1.1.1"
+        "eventsource-parser": "^1.1.2"
     }
 }
