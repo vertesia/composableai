@@ -4,6 +4,7 @@ import {
     AgentMessage,
     AgentMessageType,
     AgentRun,
+    AgentRunInternals,
     AgentRunStatus,
     CompactMessage,
     CreateAgentRunPayload,
@@ -342,6 +343,14 @@ export class AgentsApi extends ApiTopic {
     // ========================================================================
     // Observability
     // ========================================================================
+
+    /**
+     * Get internal/Temporal details for an agent run.
+     * Returns fields normally stripped from client responses (workflow IDs, artifacts path).
+     */
+    getInternals(id: string): Promise<AgentRunInternals> {
+        return this.get(`/${id}/internals`);
+    }
 
     /**
      * Get detailed workflow run information for an agent run.

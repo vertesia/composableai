@@ -212,3 +212,26 @@ export interface ListAgentRunsQuery {
     /** Sort order */
     order?: 'asc' | 'desc';
 }
+
+/**
+ * Internal/Temporal details for an AgentRun.
+ * Includes fields normally stripped from client responses.
+ */
+export interface AgentRunInternals {
+    id: string;
+    workflow_id?: string;
+    current_workflow_run_id?: string;
+    first_workflow_run_id?: string;
+    artifacts_path?: string;
+    status: AgentRunStatus;
+    interaction: string;
+    interaction_name?: string;
+    environment: string;
+    model?: string;
+    interactive: boolean;
+    started_at: Date;
+    completed_at?: Date;
+    started_by: string;
+    created_at: Date;
+    updated_at: Date;
+}
