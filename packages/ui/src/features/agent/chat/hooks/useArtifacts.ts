@@ -104,7 +104,7 @@ export function useArtifacts(
         setError(null);
 
         try {
-            const paths = await client.files.listArtifacts(runId);
+            const paths = await client.agents.listArtifacts(runId);
             if (fetchId !== fetchIdRef.current) return; // stale
 
             const prefix = `agents/${runId}/`;

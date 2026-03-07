@@ -258,10 +258,10 @@ export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, "p
 // Helper function to get conversation URL - used by other components
 export async function getConversationUrl(
     vertesia: VertesiaClient,
-    workflowRunId: string,
+    agentRunId: string,
 ): Promise<string> {
-    return vertesia.files
-        .getDownloadUrl(`agents/${workflowRunId}/conversation.json`)
+    return vertesia.agents
+        .getArtifactUrl(agentRunId, 'conversation.json')
         .then((r) => r.url);
 }
 

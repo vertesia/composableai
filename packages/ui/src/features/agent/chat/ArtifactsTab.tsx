@@ -94,7 +94,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
         if (!runId) return;
         setDownloadingPath(relativePath);
         try {
-            const { url } = await client.files.getArtifactDownloadUrl(runId, relativePath, 'attachment');
+            const { url } = await client.agents.getArtifactUrl(runId, relativePath, 'attachment');
             window.open(url, '_blank');
         } catch (err) {
             console.error('Failed to get artifact download URL:', err);

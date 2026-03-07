@@ -29,9 +29,7 @@ export function ChatPage() {
     const { store } = useUserSession();
     const navigate = useNavigate();
     const params = useParams();
-    const { runId, workflowId } = params as { runId?: string; workflowId?: string };
-
-    const run = runId && workflowId ? { run_id: runId, workflow_id: workflowId } : null;
+    const { agentRunId } = params as { agentRunId?: string };
 
     const startWorkflow = useCallback(async (initialMessage?: string) => {
         const payload: CreateAgentRunPayload = {
@@ -41,9 +39,8 @@ export function ChatPage() {
         };
         const result = await store.agents.start(payload);
         if (result) {
-            const runData = { run_id: result.first_workflow_run_id!, workflow_id: result.workflow_id! };
-            navigate(`/chat/${result.first_workflow_run_id}/${result.workflow_id}`);
-            return runData;
+            navigate(`/chat/${result.id}`);
+            return { agent_run_id: result.id! };
         }
         return undefined;
     }, [store, navigate]);
@@ -53,7 +50,7 @@ export function ChatPage() {
     return (
         <div className="flex flex-col h-full">
             <ModernAgentConversation
-                run={run ? { runId: run.run_id, workflowId: run.workflow_id } : undefined}
+                agentRunId={agentRunId}
                 startWorkflow={startWorkflow}
                 title="Plugin Assistant"
                 placeholder="Ask me anything..."

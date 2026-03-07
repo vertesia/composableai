@@ -1,4 +1,4 @@
-import { AsyncExecutionResult } from "@vertesia/client";
+import { AgentRun } from "@vertesia/common";
 import { Button, Command, CommandGroup, CommandItem, CommandList, cn, Popover, PopoverContent, PopoverTrigger, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
@@ -11,7 +11,7 @@ export interface HeaderProps {
     isCompleted: boolean;
     onClose?: () => void;
     isModal: boolean;
-    run: AsyncExecutionResult;
+    agentRunId: string;
     viewMode: AgentConversationViewMode;
     onViewModeChange: (mode: AgentConversationViewMode) => void;
     showPlanPanel: boolean;
@@ -22,10 +22,10 @@ export interface HeaderProps {
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
-    /** Called after a restart/fork succeeds with the new run info */
-    onRestart?: (newRun: { runId: string; workflowId: string }) => void;
-    /** Called after a fork succeeds with the new run info */
-    onFork?: (newRun: { runId: string; workflowId: string }) => void;
+    /** Called after a restart succeeds — receives the new AgentRun */
+    onRestart?: (newRun: AgentRun) => void;
+    /** Called after a fork succeeds — receives the new AgentRun */
+    onFork?: (newRun: AgentRun) => void;
     /** Show green indicator when receiving streaming chunks */
     isReceivingChunks?: boolean;
     /** Additional className for the outer container */
@@ -36,7 +36,7 @@ export default function Header({
     title,
     onClose,
     isModal,
-    run,
+    agentRunId,
     viewMode,
     onViewModeChange,
     showPlanPanel,
@@ -61,7 +61,7 @@ export default function Header({
                         <span className="font-medium">{title}</span>
                     </div>
                     <span className="text-xs text-muted ml-1 flex items-center gap-1.5">
-                        (Run ID: {run.runId.substring(0, 8)}...)
+                        (Run ID: {agentRunId.substring(0, 8)}...)
                         {/* Streaming chunk indicator - gray when idle, purple when receiving */}
                         <span className={cn(
                             "w-2 h-2 rounded-full transition-colors duration-200",
@@ -103,7 +103,7 @@ export default function Header({
 
                     {/* More actions */}
                     <MoreDropdown
-                        run={run}
+                        agentRunId={agentRunId}
                         isModal={isModal}
                         onClose={onClose}
                         onDownload={onDownload}
@@ -125,7 +125,7 @@ export default function Header({
 }
 
 function MoreDropdown({
-    run,
+    agentRunId,
     isModal,
     onClose,
     onDownload,
@@ -135,27 +135,27 @@ function MoreDropdown({
     onRestart,
     onFork,
 }: {
-    run: AsyncExecutionResult;
+    agentRunId: string;
     isModal: boolean;
     onClose?: () => void;
     onDownload?: () => void;
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
-    onRestart?: (newRun: { runId: string; workflowId: string }) => void;
-    onFork?: (newRun: { runId: string; workflowId: string }) => void;
+    onRestart?: (newRun: AgentRun) => void;
+    onFork?: (newRun: AgentRun) => void;
 }) {
     const toast = useToast();
     const { client } = useUserSession();
     const builder = usePayloadBuilder();
 
-    const cancelWorkflow = async (run: AsyncExecutionResult) => {
+    const cancelWorkflow = async () => {
         try {
-            await client.store.workflows.terminate(run.workflowId, run.runId, "cancel");
+            await client.agents.terminate(agentRunId, "cancel");
 
             toast({
                 status: "success",
-                title: "Workflow cancelled",
+                title: "Agent cancelled",
                 duration: 2000,
             });
 
@@ -163,10 +163,10 @@ function MoreDropdown({
             resetWorkflow?.();
 
             return true;
-        } catch (error) {
+        } catch (_error) {
             toast({
                 status: "error",
-                title: "Failed to cancel workflow",
+                title: "Failed to cancel agent",
                 duration: 2000,
             });
             return false;
@@ -175,14 +175,14 @@ function MoreDropdown({
 
     const restartWorkflow = async () => {
         try {
-            const newRun = await client.runs.restart(run.runId);
+            const newRun = await client.agents.restart(agentRunId);
             toast({
                 status: "success",
                 title: "Conversation restarted",
                 duration: 2000,
             });
             onRestart?.(newRun);
-        } catch (error) {
+        } catch (_error) {
             toast({
                 status: "error",
                 title: "Failed to restart conversation",
@@ -193,14 +193,14 @@ function MoreDropdown({
 
     const forkWorkflow = async () => {
         try {
-            const newRun = await client.runs.fork(run.runId);
+            const newRun = await client.agents.fork(agentRunId);
             toast({
                 status: "success",
                 title: "Conversation forked",
                 duration: 2000,
             });
             onFork?.(newRun);
-        } catch (error) {
+        } catch (_error) {
             toast({
                 status: "error",
                 title: "Failed to fork conversation",
@@ -232,7 +232,7 @@ function MoreDropdown({
                                     </div>
                                     {
                                         isModal && (
-                                            <CommandItem className="text-xs" onSelect={() => openUrl(`/store/agent-runner?agentId=${run.runId}__${run.workflowId}`)}>
+                                            <CommandItem className="text-xs" onSelect={() => openUrl(`/store/agent-runner/${agentRunId}`)}>
                                                 <ExternalLink className="size-3.5 mr-2 text-muted" /> Open in new tab
                                             </CommandItem>
                                         )
@@ -241,7 +241,7 @@ function MoreDropdown({
                                         if (onCopyRunId) {
                                             onCopyRunId();
                                         } else {
-                                            navigator.clipboard.writeText(run.runId);
+                                            navigator.clipboard.writeText(agentRunId);
                                             toast({
                                                 status: "success",
                                                 title: "Run ID copied",
@@ -255,7 +255,7 @@ function MoreDropdown({
                                         if (onDownload) {
                                             onDownload();
                                         } else {
-                                            getConversationUrl(client, run.runId).then((r) => window.open(r, "_blank"));
+                                            getConversationUrl(client, agentRunId).then((r) => window.open(r, "_blank"));
                                         }
                                     }}>
                                         <DownloadCloudIcon className="size-3.5 mr-2 text-muted" /> Download
@@ -282,9 +282,9 @@ function MoreDropdown({
                                         </CommandItem>
                                     )}
                                     <CommandItem className="text-xs text-destructive" onSelect={() => {
-                                        cancelWorkflow(run);
+                                        cancelWorkflow();
                                     }}>
-                                        <XIcon className="size-3.5 mr-2 text-destructive" /> Cancel Workflow
+                                        <XIcon className="size-3.5 mr-2 text-destructive" /> Cancel Agent
                                     </CommandItem>
                                 </CommandGroup>
                             </CommandList>
