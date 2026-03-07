@@ -40,7 +40,7 @@
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.46.3",
         "vite": "^7.3.0",
-        "vite-plugin-serve-static": "^1.2.0"
+        "vite-plugin-serve-static": "^2.1.0"
     },
     "dependencies": {
         "@vertesia/common": "workspace:*",
