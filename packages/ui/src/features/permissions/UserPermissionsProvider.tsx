@@ -2,6 +2,7 @@ import { Permission, ProjectRoles } from "@vertesia/common"
 import { ErrorBox, useFetch } from "@vertesia/ui/core"
 import { UserSession, useUserSession } from "@vertesia/ui/session"
 import { createContext, useContext, useMemo } from "react"
+import { useUITranslation } from '../../i18n/index.js';
 import { isAnyOf } from "./helpers"
 
 type ListRolesResponse = {
@@ -76,6 +77,7 @@ interface UserPermissionProviderProps {
     children: React.ReactNode
 }
 export function UserPermissionProvider({ children }: UserPermissionProviderProps) {
+    const { t } = useUITranslation();
     const session = useUserSession();
     const { data, error, isLoading } = useFetch<ListRolesResponse | undefined>(() => {
         if (session.user) {
@@ -94,7 +96,7 @@ export function UserPermissionProvider({ children }: UserPermissionProviderProps
     }, [session, data, isLoading]);
 
     if (error) {
-        return <ErrorBox title="Failed to fetch role mappings">{error.message}</ErrorBox>
+        return <ErrorBox title={t('store.failedToFetchRoleMappings')}>{error.message}</ErrorBox>
     }
 
     return perms && (

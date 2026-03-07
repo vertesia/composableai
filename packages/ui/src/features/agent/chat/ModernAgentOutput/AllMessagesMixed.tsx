@@ -2,6 +2,7 @@ import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@ver
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { cn } from "@vertesia/ui/core";
 import { useUITranslation } from '../../../../i18n/index.js';
+import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 export type AgentConversationViewMode = "stacked" | "sliding";
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
@@ -125,7 +126,7 @@ class MessageErrorBoundary extends Component<
         if (this.state.hasError) {
             return (
                 <div className="border-l-4 border-l-destructive bg-destructive/10 px-4 py-2 my-2 rounded-r">
-                    <p className="text-sm text-destructive font-medium">Failed to render message</p>
+                    <p className="text-sm text-destructive font-medium">{i18nInstance.getFixedT(null, NAMESPACE)('agent.failedToRenderMessage')}</p>
                     <p className="text-xs text-muted mt-1 truncate">
                         {this.state.error?.message || 'Unknown error'}
                     </p>
@@ -677,7 +678,7 @@ function AllMessagesMixedComponent({
                             {isAgentWorking && incompleteStreaming.length === 0 && (
                                 <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-xs text-muted">Working...</span>
+                                    <span className="text-xs text-muted">{t('agent.working')}</span>
                                 </div>
                             )}
                         </>
@@ -792,7 +793,7 @@ function AllMessagesMixedComponent({
                             {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
                                 <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-xs text-muted">Working...</span>
+                                    <span className="text-xs text-muted">{t('agent.working')}</span>
                                 </div>
                             )}
                         </>

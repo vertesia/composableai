@@ -2,6 +2,7 @@ import { VertesiaClient, ZenoClient } from "@vertesia/client";
 import { MarkdownRenditionFormat, RenderMarkdownPayload } from "@vertesia/common";
 import { useCallback, useState } from "react";
 import { ToastFn } from "@vertesia/ui/core";
+import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 
 export interface UseDownloadFileOptions {
     client: VertesiaClient | ZenoClient;
@@ -37,6 +38,7 @@ export interface UseDownloadFileResult {
  * Handles GCS URIs (via client.files API), direct URLs, and markdown rendering.
  */
 export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseDownloadFileResult {
+    const t = i18nInstance.getFixedT(null, NAMESPACE);
     const [isDownloading, setIsDownloading] = useState(false);
 
     /**
@@ -57,8 +59,8 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
         } catch (err) {
             toast({
                 status: "error",
-                title: "Download failed",
-                description: err instanceof Error ? err.message : "Failed to get download URL",
+                title: t('store.downloadFailed'),
+                description: err instanceof Error ? err.message : t('store.failedToGetDownloadUrl'),
                 duration: 5000,
             });
         } finally {
@@ -120,15 +122,15 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
 
             toast({
                 status: "success",
-                title: "Document exported",
-                description: `Successfully exported to ${options.format.toUpperCase()}`,
+                title: t('store.documentExported'),
+                description: t('store.successfullyExportedTo', { format: options.format.toUpperCase() }),
                 duration: 2000,
             });
         } catch (err) {
             toast({
                 status: "error",
-                title: "Export failed",
-                description: err instanceof Error ? err.message : "Failed to export document",
+                title: t('store.exportFailed'),
+                description: err instanceof Error ? err.message : t('store.failedToExportDocument'),
                 duration: 5000,
             });
         } finally {
@@ -157,15 +159,15 @@ export function useDownloadFile({ client, toast }: UseDownloadFileOptions): UseD
 
             toast({
                 status: "success",
-                title: "Content exported",
-                description: `Successfully exported to ${options.format.toUpperCase()}`,
+                title: t('store.contentExported'),
+                description: t('store.successfullyExportedTo', { format: options.format.toUpperCase() }),
                 duration: 2000,
             });
         } catch (err) {
             toast({
                 status: "error",
-                title: "Export failed",
-                description: err instanceof Error ? err.message : "Failed to export content",
+                title: t('store.exportFailed'),
+                description: err instanceof Error ? err.message : t('store.failedToExportContent'),
                 duration: 5000,
             });
         } finally {
