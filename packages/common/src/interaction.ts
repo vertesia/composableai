@@ -858,13 +858,6 @@ export interface AsyncCompletionOptions {
      */
     telemetry?: StreamingTelemetryContext;
     /**
-     * Artifact storage ID for conversation file storage.
-     * When provided, Studio stores conversations at `agents/{artifact_storage_id}/conversation.json`.
-     * Falls back to `run_id` (Temporal run ID) when not set.
-     * Should be set to the agent_run_id for proper conversation continuity.
-     */
-    artifact_storage_id?: string;
-    /**
      * Storage options for inference result.
      * When provided, Studio will store the result to the specified path
      * after inference completes (before completing the Temporal activity).
