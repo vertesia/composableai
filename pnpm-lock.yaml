@@ -1149,8 +1149,8 @@ importers:
         specifier: ^7.3.0
         version: 7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2)
       vite-plugin-serve-static:
-        specifier: ^1.2.0
-        version: 1.2.0(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2))
+        specifier: ^2.1.0
+        version: 2.1.0(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2))
 
   templates/tool-server-template:
     dependencies:
@@ -1289,8 +1289,8 @@ importers:
         specifier: ^7.3.0
         version: 7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2)
       vite-plugin-serve-static:
-        specifier: ^1.2.0
-        version: 1.2.0(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2))
+        specifier: ^2.1.0
+        version: 2.1.0(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2))
 
 packages:
 
@@ -7941,8 +7941,9 @@ packages:
     resolution: {integrity: sha512-0QwqXteBNXgnLCdWdvPQBX6FXRHtIH3VhJPTd5Lwn28tJXc34YqSCWUmkOvtJHBmB3gGoPtrOKk3Ts8/kEZ9aA==}
     engines: {node: '>=10.13.0'}
 
-  vite-plugin-serve-static@1.2.0:
-    resolution: {integrity: sha512-v3nDHcY5Hp+aYPMOrbmx+MRphlM54fBkldu77KJ8gCfcmZKtH49FaUPyXI0IcKoejY60iz0sUV55RbUjL4lSsg==}
+  vite-plugin-serve-static@2.1.0:
+    resolution: {integrity: sha512-sClXYdjfUlOA4H19zMyRaLKpnPgUFTO8hFEWkAVAMNCCJw6GinnvZrS0fs+SAPA+3a5Nyqx+2Kiut0y7+yZ3cw==}
+    engines: {node: '>=20'}
     peerDependencies:
       vite: ^7.3.0
 
@@ -16471,7 +16472,7 @@ snapshots:
       - bare-abort-controller
       - react-native-b4a
 
-  vite-plugin-serve-static@1.2.0(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2)):
+  vite-plugin-serve-static@2.1.0(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(terser@5.46.0)(yaml@2.8.2)):
     dependencies:
       cors: 2.8.6
       mime-types: 2.1.35
