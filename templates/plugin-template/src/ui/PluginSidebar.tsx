@@ -59,10 +59,18 @@ export function PluginSidebar() {
     const [conversations, setConversations] = useState<WorkflowRun[]>([]);
 
     useEffect(() => {
-        client.store.workflows.listConversations({
+        client.agents.list({
             interaction: ASSISTANT_INTERACTION,
-            page_size: 20,
-        }).then(res => setConversations(res.runs));
+            limit: 20,
+            sort: 'started_at',
+            order: 'desc',
+        }).then(runs => setConversations(runs.map(r => ({
+            run_id: r.id,
+            workflow_id: r.workflow_id,
+            started_at: r.started_at ? new Date(r.started_at).toISOString() : null,
+            topic: r.topic,
+            input: r.data ? { data: r.data } : undefined,
+        } as WorkflowRun))));
     }, [client]);
 
     const grouped = useMemo(() => groupByDate(conversations), [conversations]);
@@ -92,7 +100,7 @@ export function PluginSidebar() {
                     {grouped.map(group => (
                         <SidebarSection key={group.dateLabel} title={group.dateLabel}>
                             {group.conversations.map(conv => {
-                                const convPath = `/app/chat/${conv.run_id}/${conv.workflow_id}`;
+                                const convPath = `/app/chat/${conv.run_id}`;
                                 return (
                                     <SidebarItem
                                         key={conv.run_id}

@@ -8,6 +8,8 @@ import {
     CompactMessage,
     CreateAgentRunPayload,
     ListAgentRunsQuery,
+    ListWorkflowRunsResponse,
+    WorkflowRunWithDetails,
     parseMessage,
     toAgentMessage,
 } from '@vertesia/common';
@@ -335,6 +337,34 @@ export class AgentsApi extends ApiTopic {
 
             setupStream(false);
         });
+    }
+
+    // ========================================================================
+    // Observability
+    // ========================================================================
+
+    /**
+     * Get detailed workflow run information for an agent run.
+     * The server resolves Temporal IDs internally.
+     */
+    getRunDetails(
+        id: string,
+        options?: {
+            includeHistory?: boolean;
+            historyFormat?: 'events' | 'tasks' | 'agent';
+        },
+    ): Promise<WorkflowRunWithDetails> {
+        const query: Record<string, string> = {};
+        if (options?.includeHistory) query.include_history = 'true';
+        if (options?.historyFormat) query.history_format = options.historyFormat;
+        return this.get(`/${id}/details`, { query });
+    }
+
+    /**
+     * List child workflows (sub-agents) for an agent run.
+     */
+    listChildren(id: string): Promise<ListWorkflowRunsResponse> {
+        return this.get(`/${id}/children`);
     }
 
     // ========================================================================
