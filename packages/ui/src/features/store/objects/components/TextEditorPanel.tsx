@@ -109,10 +109,10 @@ export function TextEditorPanel({ object, text, onClose, onSaved }: TextEditorPa
                     <span className="text-xs text-attention">{t('store.unsavedChanges')}</span>
                 )}
                 <div className="flex-1" />
-                <Button variant="secondary" size="sm" onClick={onClose} disabled={isSaving}>
+                <Button variant="ghost" size="sm" onClick={onClose} disabled={isSaving}>
                     {t('store.cancelEdit')}
                 </Button>
-                <Button variant="primary" size="sm" onClick={handleSave} disabled={!isDirty} isLoading={isSaving}>
+                <Button variant="outline" size="sm" onClick={handleSave} disabled={!isDirty} isLoading={isSaving}>
                     {t('store.saveText')}
                 </Button>
             </div>
