@@ -34,6 +34,7 @@ export interface HeaderProps {
 
 export default function Header({
     title,
+    isCompleted,
     onClose,
     isModal,
     agentRunId,
@@ -105,6 +106,7 @@ export default function Header({
                     <MoreDropdown
                         agentRunId={agentRunId}
                         isModal={isModal}
+                        isCompleted={isCompleted}
                         onClose={onClose}
                         onDownload={onDownload}
                         onCopyRunId={onCopyRunId}
@@ -127,6 +129,7 @@ export default function Header({
 function MoreDropdown({
     agentRunId,
     isModal,
+    isCompleted,
     onClose,
     onDownload,
     onCopyRunId,
@@ -137,6 +140,7 @@ function MoreDropdown({
 }: {
     agentRunId: string;
     isModal: boolean;
+    isCompleted: boolean;
     onClose?: () => void;
     onDownload?: () => void;
     onCopyRunId?: () => void;
@@ -271,12 +275,12 @@ function MoreDropdown({
                                             <XIcon className="size-3.5 mr-2 text-muted" /> Close
                                         </CommandItem>
                                     )}
-                                    {onRestart && (
+                                    {onRestart && isCompleted && (
                                         <CommandItem className="text-xs" onSelect={restartWorkflow}>
                                             <RefreshCcw className="size-3.5 mr-2 text-muted" /> Restart Conversation
                                         </CommandItem>
                                     )}
-                                    {onFork && (
+                                    {onFork && isCompleted && (
                                         <CommandItem className="text-xs" onSelect={forkWorkflow}>
                                             <GitFork className="size-3.5 mr-2 text-muted" /> Fork Conversation
                                         </CommandItem>
