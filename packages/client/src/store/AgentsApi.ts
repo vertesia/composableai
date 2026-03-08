@@ -47,6 +47,7 @@ export class AgentsApi extends ApiTopic {
         first_workflow_run_id: string;
         visibility?: string;
         data?: Record<string, any>;
+        type?: string;
     }): Promise<AgentRun> {
         return this.post('/record', { payload });
     }
@@ -70,6 +71,7 @@ export class AgentsApi extends ApiTopic {
         if (query?.started_by) params.started_by = query.started_by;
         if (query?.since) params.since = query.since.toISOString();
         if (query?.schedule_id) params.schedule_id = query.schedule_id;
+        if (query?.type) params.type = query.type;
         if (query?.limit) params.limit = String(query.limit);
         if (query?.offset) params.offset = String(query.offset);
         if (query?.sort) params.sort = query.sort;

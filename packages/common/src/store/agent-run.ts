@@ -22,6 +22,11 @@ import { ContentObjectTypeRef } from "./store.js";
 export type AgentRunStatus = 'created' | 'running' | 'completed' | 'failed' | 'cancelled';
 
 /**
+ * How the agent run was created.
+ */
+export type AgentRunType = 'api' | 'schedule';
+
+/**
  * Shared fields between CreateAgentRunPayload and AgentRun.
  *
  * @typeParam TData - The interaction's expected input data type.
@@ -66,6 +71,9 @@ export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<
 
     /** Schedule ID — set when this run was triggered by a Temporal schedule */
     schedule_id?: string;
+
+    /** How the run was created */
+    type?: AgentRunType;
 }
 
 /**
@@ -182,6 +190,9 @@ export interface ListAgentRunsQuery {
 
     /** Filter by schedule ID */
     schedule_id?: string;
+
+    /** Filter by run type */
+    type?: AgentRunType;
 
     /** Field to sort by */
     sort?: 'started_at' | 'updated_at';
