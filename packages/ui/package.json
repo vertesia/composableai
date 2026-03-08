@@ -76,7 +76,7 @@
     "react-pdf": "^10.2.0",
     "react-remove-scroll": "^2.7.1",
     "react-remove-scroll-bar": "^2.3.8",
-    "react-resizable-panels": "^3.0.6",
+    "react-resizable-panels": "^4.7.2",
     "react-style-singleton": "^2.2.3",
     "react-vega": "^8.0.0",
     "rehype-katex": "^7.0.1",
