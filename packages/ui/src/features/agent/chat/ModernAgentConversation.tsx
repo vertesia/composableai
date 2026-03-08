@@ -800,10 +800,11 @@ function ModernAgentConversationInner({
     const hasProcessingFilesRef = useRef(hasProcessingFiles);
     hasProcessingFilesRef.current = hasProcessingFiles;
 
-    // Derive effective workflow status (API status + TERMINATED from messages)
+    // Derive effective workflow status — only main workstream TERMINATED overrides API status.
     const effectiveWorkflowStatus = useMemo(() => {
-        const lastMsg = messages[messages.length - 1];
-        if (lastMsg?.type === AgentMessageType.TERMINATED) return "TERMINATED";
+        const mainMessages = messages.filter(m => (m.workstream_id || 'main') === 'main');
+        const lastMain = mainMessages[mainMessages.length - 1];
+        if (lastMain?.type === AgentMessageType.TERMINATED) return "TERMINATED";
         return workflowStatus;
     }, [messages, workflowStatus]);
 

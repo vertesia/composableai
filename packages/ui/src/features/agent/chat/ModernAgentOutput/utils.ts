@@ -28,86 +28,19 @@ export const DONE_STATES = [
 export function isInProgress(messages: AgentMessage[]) {
     if (!messages.length) return true;
 
-    // First, group messages by workstream
-    const workstreamMessages = new Map<string, AgentMessage[]>();
+    // Only the main workstream determines whether the conversation is in progress.
+    // Child workstream COMPLETE/IDLE messages must not flip this flag.
+    const mainMessages = messages.filter(m => getWorkstreamId(m) === 'main');
 
-    messages.forEach((message) => {
-        const workstreamId = getWorkstreamId(message);
-        if (!workstreamMessages.has(workstreamId)) {
-            workstreamMessages.set(workstreamId, []);
-        }
-        workstreamMessages.get(workstreamId)!.push(message);
-    });
-
-    // Log all workstreams we found for debugging
-    console.log("[isInProgress] Workstreams found:", Array.from(workstreamMessages.keys()));
-
-    // If there's only one workstream and it's not "main", we should treat it as the main one
-    // This handles cases where a conversation might not have an explicit main workstream
-    if (workstreamMessages.size === 1 && !workstreamMessages.has("main")) {
-        const onlyWorkstreamId = workstreamMessages.keys().next().value || "unknown";
-        console.log(`[isInProgress] Only one workstream found (${onlyWorkstreamId}), treating as main`);
-
-        const onlyWorkstreamMsgs = workstreamMessages.get(onlyWorkstreamId)!;
-        const lastMessage = onlyWorkstreamMsgs[onlyWorkstreamMsgs.length - 1];
-
-        console.log(`[isInProgress] Last message type in only workstream: ${lastMessage.type}`);
-
-        // Check if this single workstream is completed
-        if (!DONE_STATES.includes(
-            lastMessage.type
-        )) {
-            console.log("[isInProgress] Only workstream is still in progress");
-            return true;
-        }
-
-        console.log("[isInProgress] Only workstream is completed");
-        return false;
+    // If there are no main workstream messages yet, check if there's exactly one
+    // workstream — treat it as main (handles single-workstream conversations).
+    if (mainMessages.length === 0) {
+        const lastMessage = messages[messages.length - 1];
+        return !DONE_STATES.includes(lastMessage.type);
     }
 
-    // Check the main workstream if it exists
-    if (workstreamMessages.has("main")) {
-        const mainWorkstreamMsgs = workstreamMessages.get("main")!;
-
-        // If there are no messages in the main workstream, the conversation is still in progress
-        if (mainWorkstreamMsgs.length === 0) {
-            console.log("[isInProgress] Main workstream exists but has no messages, still in progress");
-            return true;
-        }
-
-        // Check if the main workstream is completed
-        const lastMainMessage = mainWorkstreamMsgs[mainWorkstreamMsgs.length - 1];
-        console.log(`[isInProgress] Last message type in main workstream: ${lastMainMessage.type}`);
-
-        if (!DONE_STATES.includes(
-            lastMainMessage.type
-        )) {
-            console.log("[isInProgress] Main workstream is still in progress");
-            return true;
-        }
-
-        console.log("[isInProgress] Main workstream is completed");
-        return false;
-    }
-
-    // If we get here, there are multiple workstreams but no "main" workstream
-    // We'll keep the conversation active if any workstream is still active
-    console.log("[isInProgress] Multiple workstreams but no main, checking if any are still active");
-
-    for (const [workstreamId, msgs] of workstreamMessages.entries()) {
-        if (msgs.length > 0) {
-            const lastMessage = msgs[msgs.length - 1];
-            if (!DONE_STATES.includes(
-                lastMessage.type
-            )) {
-                console.log(`[isInProgress] Workstream ${workstreamId} is still active`);
-                return true;
-            }
-        }
-    }
-
-    console.log("[isInProgress] All workstreams are completed");
-    return false;
+    const lastMainMessage = mainMessages[mainMessages.length - 1];
+    return !DONE_STATES.includes(lastMainMessage.type);
 }
 
 export const formatRelative = (ts: number | string) =>
