@@ -101,6 +101,8 @@ interface ModernAgentConversationProps {
     onRestart?: (newRun: AgentRun) => void;
     /** Called after a fork succeeds — receives the new AgentRun for navigation */
     onFork?: (newRun: AgentRun) => void;
+    /** Called to show run details/internals modal */
+    onShowDetails?: () => void;
 
     // File upload props - passed through to MessageInput
     /** Called when files are dropped/pasted/selected */
@@ -660,6 +662,7 @@ function ModernAgentConversationInner({
     resetWorkflow,
     onRestart,
     onFork,
+    onShowDetails,
     // File upload props (onFilesSelected handled internally by handleFileUpload)
     uploadedFiles,
     onRemoveFile,
@@ -1363,6 +1366,7 @@ function ModernAgentConversationInner({
                         <Header
                             title={actualTitle}
                             isCompleted={isCompleted}
+                            isTerminal={['COMPLETED', 'FAILED', 'CANCELLED', 'TERMINATED'].includes(effectiveWorkflowStatus ?? '')}
                             onClose={onClose}
                             isModal={isModal}
                             agentRunId={agentRunId}
@@ -1377,6 +1381,7 @@ function ModernAgentConversationInner({
                             resetWorkflow={resetWorkflow}
                             onRestart={onRestart}
                             onFork={onFork}
+                            onShowDetails={onShowDetails}
                             onExportPdf={exportConversationPdf}
                             isReceivingChunks={debugChunkFlash}
                         />

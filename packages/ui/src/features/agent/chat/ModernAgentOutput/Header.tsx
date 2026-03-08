@@ -1,7 +1,7 @@
 import { AgentRun } from "@vertesia/common";
 import { Button, Command, CommandGroup, CommandItem, CommandList, cn, Popover, PopoverContent, PopoverTrigger, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
+import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, InfoIcon, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
 import { PayloadBuilderProvider, usePayloadBuilder } from "../../PayloadBuilder";
 import { type AgentConversationViewMode } from "./AllMessagesMixed";
 import { getConversationUrl } from "./utils";
@@ -9,6 +9,8 @@ import { getConversationUrl } from "./utils";
 export interface HeaderProps {
     title: string;
     isCompleted: boolean;
+    /** Workflow is in a terminal state (completed/failed/cancelled) — not just idle */
+    isTerminal?: boolean;
     onClose?: () => void;
     isModal: boolean;
     agentRunId: string;
@@ -22,6 +24,8 @@ export interface HeaderProps {
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
+    /** Called to show run details/internals modal */
+    onShowDetails?: () => void;
     /** Called after a restart succeeds — receives the new AgentRun */
     onRestart?: (newRun: AgentRun) => void;
     /** Called after a fork succeeds — receives the new AgentRun */
@@ -34,7 +38,7 @@ export interface HeaderProps {
 
 export default function Header({
     title,
-    isCompleted,
+    isTerminal = false,
     onClose,
     isModal,
     agentRunId,
@@ -48,6 +52,7 @@ export default function Header({
     onCopyRunId,
     resetWorkflow,
     onExportPdf,
+    onShowDetails,
     onRestart,
     onFork,
     isReceivingChunks = false,
@@ -62,7 +67,7 @@ export default function Header({
                         <span className="font-medium">{title}</span>
                     </div>
                     <span className="text-xs text-muted ml-1 flex items-center gap-1.5">
-                        (Run ID: {agentRunId.substring(0, 8)}...)
+                        (Run ID: {agentRunId})
                         {/* Streaming chunk indicator - gray when idle, purple when receiving */}
                         <span className={cn(
                             "w-2 h-2 rounded-full transition-colors duration-200",
@@ -106,12 +111,13 @@ export default function Header({
                     <MoreDropdown
                         agentRunId={agentRunId}
                         isModal={isModal}
-                        isCompleted={isCompleted}
+                        isTerminal={isTerminal}
                         onClose={onClose}
                         onDownload={onDownload}
                         onCopyRunId={onCopyRunId}
                         resetWorkflow={resetWorkflow}
                         onExportPdf={onExportPdf}
+                        onShowDetails={onShowDetails}
                         onRestart={onRestart}
                         onFork={onFork}
                     />
@@ -129,23 +135,25 @@ export default function Header({
 function MoreDropdown({
     agentRunId,
     isModal,
-    isCompleted,
+    isTerminal,
     onClose,
     onDownload,
     onCopyRunId,
     resetWorkflow,
     onExportPdf,
+    onShowDetails,
     onRestart,
     onFork,
 }: {
     agentRunId: string;
     isModal: boolean;
-    isCompleted: boolean;
+    isTerminal: boolean;
     onClose?: () => void;
     onDownload?: () => void;
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
+    onShowDetails?: () => void;
     onRestart?: (newRun: AgentRun) => void;
     onFork?: (newRun: AgentRun) => void;
 }) {
@@ -255,6 +263,11 @@ function MoreDropdown({
                                     }}>
                                         <CopyIcon className="size-3.5 mr-2 text-muted" /> Copy Run ID
                                     </CommandItem>
+                                    {onShowDetails && (
+                                        <CommandItem className="text-xs" onSelect={onShowDetails}>
+                                            <InfoIcon className="size-3.5 mr-2 text-muted" /> Show Details
+                                        </CommandItem>
+                                    )}
                                     <CommandItem className="text-xs" onSelect={() => {
                                         if (onDownload) {
                                             onDownload();
@@ -275,12 +288,12 @@ function MoreDropdown({
                                             <XIcon className="size-3.5 mr-2 text-muted" /> Close
                                         </CommandItem>
                                     )}
-                                    {onRestart && isCompleted && (
+                                    {onRestart && isTerminal && (
                                         <CommandItem className="text-xs" onSelect={restartWorkflow}>
                                             <RefreshCcw className="size-3.5 mr-2 text-muted" /> Restart Conversation
                                         </CommandItem>
                                     )}
-                                    {onFork && isCompleted && (
+                                    {onFork && (
                                         <CommandItem className="text-xs" onSelect={forkWorkflow}>
                                             <GitFork className="size-3.5 mr-2 text-muted" /> Fork Conversation
                                         </CommandItem>
