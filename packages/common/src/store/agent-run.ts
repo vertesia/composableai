@@ -63,6 +63,9 @@ export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<
 
     /** How the run was started */
     source?: RunSource;
+
+    /** Schedule ID — set when this run was triggered by a Temporal schedule */
+    schedule_id?: string;
 }
 
 /**
@@ -176,6 +179,9 @@ export interface ListAgentRunsQuery {
 
     /** Offset for pagination */
     offset?: number;
+
+    /** Filter by schedule ID */
+    schedule_id?: string;
 
     /** Field to sort by */
     sort?: 'started_at' | 'updated_at';

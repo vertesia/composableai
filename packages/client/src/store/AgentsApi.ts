@@ -37,6 +37,21 @@ export class AgentsApi extends ApiTopic {
     }
 
     /**
+     * Record an AgentRun for an already-running workflow (e.g. schedule-triggered).
+     * Only creates the MongoDB document — the workflow passes its own Temporal IDs.
+     */
+    createRecord(payload: {
+        interaction: string;
+        schedule_id?: string;
+        workflow_id: string;
+        first_workflow_run_id: string;
+        visibility?: string;
+        data?: Record<string, any>;
+    }): Promise<AgentRun> {
+        return this.post('/record', { payload });
+    }
+
+    /**
      * Get agent run by id.
      */
     retrieve<TData = Record<string, any>>(id: string): Promise<AgentRun<TData>> {
@@ -54,6 +69,7 @@ export class AgentsApi extends ApiTopic {
         if (query?.interaction) params.interaction = query.interaction;
         if (query?.started_by) params.started_by = query.started_by;
         if (query?.since) params.since = query.since.toISOString();
+        if (query?.schedule_id) params.schedule_id = query.schedule_id;
         if (query?.limit) params.limit = String(query.limit);
         if (query?.offset) params.offset = String(query.offset);
         if (query?.sort) params.sort = query.sort;

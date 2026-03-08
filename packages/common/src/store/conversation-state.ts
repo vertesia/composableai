@@ -160,6 +160,25 @@ export interface AvailableSkill {
     src: string;
 }
 
+/**
+ * Compute the storage ID for a conversation's artifacts.
+ * - Root workflows:   `{agent_run_id}`  (or fallbackRunId if no agent_run_id)
+ * - Workstreams:      `{agent_run_id}/workstreams/{launch_id}`
+ *
+ * Both studio-server and workflow activities must use the same logic so
+ * parent and child conversations don't overwrite each other.
+ */
+export function getConversationStorageId(
+    state: Pick<ConversationState, 'agent_run_id' | 'launch_id'> | undefined,
+    fallbackRunId: string,
+): string {
+    const baseId = state?.agent_run_id || fallbackRunId;
+    if (state?.launch_id && state?.agent_run_id) {
+        return `${baseId}/workstreams/${state.launch_id}`;
+    }
+    return baseId;
+}
+
 /** Skill metadata tracked when a skill is used */
 export interface UsedSkill {
     /** Skill name (e.g., "analyze_data") */
