@@ -1,5 +1,6 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
+    BulkObjectDeleteResult,
     canGenerateRendition,
     ComplexSearchPayload,
     ComputeObjectFacetPayload,
@@ -106,8 +107,8 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    listFolders(path: string = "/") {
-        path; //TODO
+    listFolders(_path: string = "/") {
+        throw new Error("Not implemented yet");
     }
 
     /** Find object based on query */
@@ -174,7 +175,7 @@ export class ObjectsApi extends ApiTopic {
         const res = await fetch(url, {
             method: "PUT",
             body: isStream ? source.stream : source,
-            //@ts-ignore: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
+            //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
             duplex: isStream ? "half" : undefined,
             headers: sourceMimeType ? { "Content-Type": sourceMimeType } : undefined,
         })
@@ -359,8 +360,17 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${id}/collections`);
     }
 
-    delete(id: string): Promise<{ id: string }> {
-        return this.del(`/${id}`);
+    delete(id: string): Promise<{ id: string }>;
+    delete(ids: string[]): Promise<BulkObjectDeleteResult>;
+    delete(idOrIds: string | string[]): Promise<{ id: string } | BulkObjectDeleteResult> {
+        if (Array.isArray(idOrIds)) {
+            return (this.client as ZenoClient).runOperation({
+                name: 'delete',
+                ids: idOrIds,
+                params: {}
+            }) as Promise<BulkObjectDeleteResult>;
+        }
+        return this.del(`/${idOrIds}`);
     }
 
     listWorkflowRuns(documentId: string): Promise<ListWorkflowRunsResponse> {

@@ -1,7 +1,6 @@
 import { mkdtempSync, rmSync, statSync } from "fs";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { afterAll, describe, expect, test } from "vitest";
 import { Builder } from "./Builder";
-import { loadTarIndex } from "./utils/tar";
 import { loadMemoryPack, MEMORY_METADATA_ENTRY } from "./MemoryPack";
 
 const memoryBaseFile = 'test-base-memory.tar';
@@ -187,7 +186,7 @@ describe("Builder", () => {
 
     test("MemoryPack.exportObject with nested props", async () => {
         const memory = await loadMemoryPack(memoryFile);
-        let obj = await memory.exportObject({
+        const obj = await memory.exportObject({
             "child": "@parent.child",
         });
         expect(obj).toStrictEqual({
@@ -197,7 +196,7 @@ describe("Builder", () => {
 
     test("MemoryPack.exportObject with runtime values", async () => {
         const memory = await loadMemoryPack(memoryFile);
-        let obj = await memory.exportObject({
+        const obj = await memory.exportObject({
             "father": "@parent",
             "instruction": "Use this runtime instruction",
             someNullValue: null,

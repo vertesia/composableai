@@ -95,6 +95,11 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
     // Returns all scripts bundled with the skill
     endpoint.get('/:name/scripts', (c: Context) => {
         const name = c.req.param('name');
+        if (!name) {
+            throw new HTTPException(400, {
+                message: 'Skill name is required'
+            });
+        }
         const skillName = name.startsWith('learn_') ? name.slice(6) : name;
         const skill = coll.getSkill(skillName);
         if (!skill) {
@@ -113,6 +118,11 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
     // Get a specific skill by name
     endpoint.get('/:name', (c: Context) => {
         const name = c.req.param('name');
+        if (!name) {
+            throw new HTTPException(400, {
+                message: 'Skill name is required'
+            });
+        }
         // Handle both "learn_name" and "name" formats
         const skillName = name.startsWith('learn_') ? name.slice(6) : name;
         const skill = coll.getSkill(skillName);

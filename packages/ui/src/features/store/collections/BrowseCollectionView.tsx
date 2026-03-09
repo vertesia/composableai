@@ -1,6 +1,8 @@
 import { Collection, getContentTypeRefId } from "@vertesia/common";
 import { useToast } from "@vertesia/ui/core";
-import { TypeRegistry, useUserSession } from "@vertesia/ui/session";
+import { useUserSession } from "@vertesia/ui/session";
+import { TypeRegistry } from "../types/TypeRegistry.js";
+import { useTypeRegistry } from "../types/TypeRegistryProvider.js";
 import { DocumentSearchResults, DocumentSearchResultsWithDropZone } from "../objects/DocumentSearchResults";
 
 
@@ -9,7 +11,8 @@ interface BrowseCollectionViewProps {
 }
 export function BrowseCollectionView({ collection }: BrowseCollectionViewProps) {
     const toast = useToast();
-    const { client, typeRegistry } = useUserSession();
+    const { client } = useUserSession();
+    const { registry: typeRegistry } = useTypeRegistry();
 
     const onUploadDone = async (objectIds: string[]) => {
         if (objectIds.length > 0) {

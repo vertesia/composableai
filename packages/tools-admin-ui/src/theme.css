@@ -1,0 +1,12 @@
+/**
+ * Default theme for @vertesia/tools-admin-ui.
+ *
+ * Consumers should import this file (or provide their own equivalent)
+ * so that @vertesia/ui shadcn components resolve their CSS custom properties.
+ *
+ *   @import '@vertesia/tools-admin-ui/theme.css';
+ */
+
+@import "@vertesia/ui/styles/color.css";
+@import "@vertesia/ui/styles/theme.css";
+@import "@vertesia/ui/styles/utilities.css";

@@ -1,7 +1,7 @@
 {
     "name": "@vertesia/memory-commands",
     "description": "Memory commands for memory recipe scripts",
-    "version": "1.0.0-dev.20260225.024852Z",
+    "version": "1.0.0-dev.20260305.083323Z",
     "type": "module",
     "types": "./lib/types/index.d.ts",
     "files": [
@@ -10,13 +10,16 @@
     ],
     "license": "Apache-2.0",
     "scripts": {
-        "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+        "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
         "build": "pnpm exec tsmod build",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "devDependencies": {
+        "@eslint/js": "^10.0.1",
         "@types/node": "^22.19.2",
+        "eslint": "^10.0.2",
         "ts-dual-module": "^0.6.3",
+        "typescript-eslint": "^8.56.1",
         "vitest": "^4.0.16"
     },
     "dependencies": {
