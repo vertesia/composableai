@@ -96,8 +96,8 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
     );
 
     return (
-        <Panel title={title} className="bg-background! h-[calc(100vh-197px)]"
-            action={!readonly ? <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>Save Changes</Button> : undefined}
+        <Panel title={title} className="bg-background! h-full"
+            action={!readonly ? <Button isLoading={isUpdating} size="sm" onClick={onSave}>Save</Button> : undefined}
         >
             {
                 displayJson
