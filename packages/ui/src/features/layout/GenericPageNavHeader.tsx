@@ -17,6 +17,13 @@ interface GenericPageNavHeaderProps {
     useDynamicBreadcrumbs?: boolean;
 }
 
+// Matches MongoDB ObjectId (24 hex), UUID (36 chars with dashes), or any segment containing digits mixed with letters
+const ID_SEGMENT_PATTERN = /^[a-f0-9]{24}$|^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$|^(?=.*\d)(?=.*[a-zA-Z])[a-zA-Z0-9_-]{8,}$/i;
+
+function isIdSegment(segment: string): boolean {
+    return ID_SEGMENT_PATTERN.test(segment);
+}
+
 export function GenericPageNavHeader({ className, children, title, description, actions, breadcrumbs, useDynamicBreadcrumbs = true }: GenericPageNavHeaderProps) {
     const navigate = useNavigate();
 
@@ -50,17 +57,33 @@ export function GenericPageNavHeader({ className, children, title, description, 
     const buildBreadcrumbItems = (): Array<{ label: string | ReactNode, href?: string, onClick?: () => void }> => {
         const items: Array<{ label: string | ReactNode, href?: string, onClick?: () => void, clearHistory?: boolean }> = [];
 
-        // Add items from history chain
-        if (useDynamicBreadcrumbs && typeof window !== 'undefined' && window.history.state?.historyChain) {
-            const historyChain = window.history.state.historyChain;
-            historyChain.forEach((entry: any, index: number) => {
-                const stepsBack = historyChain.length - index;
-                items.push({
-                    label: buildBreadcrumbLabel(entry),
-                    href: entry.href,
-                    onClick: () => navigate(entry.href, { stepsBack: stepsBack })
+        if (useDynamicBreadcrumbs && typeof window !== 'undefined') {
+            const historyChain = window.history.state?.historyChain;
+
+            if (historyChain) {
+                // Use existing history chain
+                historyChain.forEach((entry: any, index: number) => {
+                    const stepsBack = historyChain.length - index;
+                    items.push({
+                        label: buildBreadcrumbLabel(entry),
+                        href: entry.href,
+                        onClick: () => navigate(entry.href, { stepsBack: stepsBack })
+                    });
                 });
-            });
+            } else {
+                // Infer parents from URL when navigating directly to a detail page
+                const segments = window.location.pathname.split('/').filter(s => s.length > 0);
+                for (let i = 0; i < segments.length; i++) {
+                    if (isIdSegment(segments[i])) {
+                        const parentPath = '/' + segments.slice(0, i).join('/');
+                        items.push({
+                            label: formatTitle(segments[i - 1] || parentPath),
+                            href: parentPath,
+                            onClick: () => navigate(parentPath, { isBasePathNested: false}),
+                        });
+                    }
+                }
+            }
         }
 
         // Add current page breadcrumbs
