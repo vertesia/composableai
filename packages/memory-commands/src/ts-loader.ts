@@ -3,13 +3,13 @@ import { basename, resolve } from "path";
 import * as ts from "typescript";
 
 function compile(fileNames: string[], options: ts.CompilerOptions): { errors: number, emittedFiles: string[] | undefined } {
-    let program = ts.createProgram(fileNames, {
+    const program = ts.createProgram(fileNames, {
         ...options,
         listEmittedFiles: true,
     } satisfies ts.CompilerOptions);
-    let emitResult = program.emit();
+    const emitResult = program.emit();
 
-    let allDiagnostics = ts
+    const allDiagnostics = ts
         .getPreEmitDiagnostics(program)
         .concat(emitResult.diagnostics);
 
@@ -22,17 +22,17 @@ function compile(fileNames: string[], options: ts.CompilerOptions): { errors: nu
                 categories.add(ri.category);
             }
             if (categories.has(ts.DiagnosticCategory.Error)) {
-                prefix: 'Error: ';
+                prefix = 'Error: ';
                 errors++;
             } else if (categories.has(ts.DiagnosticCategory.Warning)) {
-                prefix: 'Warning: ';
+                prefix = 'Warning: ';
             } else if (categories.has(ts.DiagnosticCategory.Suggestion)) {
-                prefix: 'Suggestion: ';
+                prefix = 'Suggestion: ';
             }
         }
         if (diagnostic.file) {
-            let { line, character } = ts.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!);
-            let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+            const { line, character } = ts.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!);
+            const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
             console.log(`${prefix}${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
         } else {
             console.log(prefix + ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));

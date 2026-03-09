@@ -3,6 +3,7 @@ import { Button, cn, useToast } from "@vertesia/ui/core";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { Bot, CopyIcon } from "lucide-react";
 import dayjs from "dayjs";
+import { useUITranslation } from '../../../../i18n/index.js';
 
 // PERFORMANCE: Unicode cursor character - rendered inline with text
 // This avoids expensive DOM manipulation with TreeWalker on every update
@@ -61,6 +62,7 @@ function StreamingMessageComponent({
     senderClassName,
     iconClassName,
 }: StreamingMessageProps) {
+    const { t } = useUITranslation();
     const [displayedLength, setDisplayedLength] = useState(0);
     const [throttledText, setThrottledText] = useState("");
     const animationRef = useRef<number | null>(null);
@@ -257,7 +259,7 @@ function StreamingMessageComponent({
         navigator.clipboard.writeText(text).then(() => {
             toast({
                 status: "success",
-                title: "Copied to clipboard",
+                title: t('agent.copiedToClipboard'),
                 duration: 2000,
             });
         });
@@ -292,7 +294,7 @@ function StreamingMessageComponent({
                             size="xs"
                             onClick={copyToClipboard}
                             className="size-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-                            title="Copy message"
+                            title={t('agent.copyMessage')}
                         >
                             <CopyIcon className="size-3" />
                         </Button>

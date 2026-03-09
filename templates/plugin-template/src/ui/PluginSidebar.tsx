@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ModeToggle } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { SidebarItem, SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
 import { useLocation } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
@@ -7,7 +8,7 @@ import { HomeIcon, MessageSquare, PlusCircle } from 'lucide-react';
 import type { WorkflowRun } from '@vertesia/common';
 import { ASSISTANT_INTERACTION } from './constants';
 
-function getConversationLabel(conv: WorkflowRun): string {
+function getConversationLabel(conv: WorkflowRun, t: (key: string) => string): string {
     if (conv.topic) return conv.topic;
     // input is not populated by listConversations, but check anyway for forward compat
     const prompt = conv.input?.data?.user_prompt;
@@ -16,18 +17,18 @@ function getConversationLabel(conv: WorkflowRun): string {
     if (conv.started_at) {
         return new Date(conv.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
-    return 'Conversation';
+    return t('nav.conversation');
 }
 
-function getDateLabel(date: Date): string {
+function getDateLabel(date: Date, t: (key: string) => string): string {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-    if (target.getTime() === today.getTime()) return 'Today';
-    if (target.getTime() === yesterday.getTime()) return 'Yesterday';
+    if (target.getTime() === today.getTime()) return t('nav.today');
+    if (target.getTime() === yesterday.getTime()) return t('nav.yesterday');
     return date.toLocaleDateString();
 }
 
@@ -36,12 +37,12 @@ interface GroupedConversations {
     conversations: WorkflowRun[];
 }
 
-function groupByDate(conversations: WorkflowRun[]): GroupedConversations[] {
+function groupByDate(conversations: WorkflowRun[], t: (key: string) => string): GroupedConversations[] {
     const groups: GroupedConversations[] = [];
     let currentLabel = '';
     for (const conv of conversations) {
         const date = conv.started_at ? new Date(conv.started_at) : new Date();
-        const label = getDateLabel(date);
+        const label = getDateLabel(date, t);
         if (label !== currentLabel) {
             currentLabel = label;
             groups.push({ dateLabel: label, conversations: [conv] });
@@ -53,6 +54,7 @@ function groupByDate(conversations: WorkflowRun[]): GroupedConversations[] {
 }
 
 export function PluginSidebar() {
+    const { t } = useUITranslation();
     const path = useLocation().pathname;
     const { isOpen } = useSidebarToggle();
     const { client } = useUserSession();
@@ -73,7 +75,7 @@ export function PluginSidebar() {
         } as WorkflowRun))));
     }, [client]);
 
-    const grouped = useMemo(() => groupByDate(conversations), [conversations]);
+    const grouped = useMemo(() => groupByDate(conversations, t), [conversations, t]);
 
     return (
         <div className="flex flex-col h-full gap-2 py-2">
@@ -86,7 +88,7 @@ export function PluginSidebar() {
                             icon={HomeIcon}
                             href="/app/"
                         >
-                            Home
+                            {t('nav.home')}
                         </SidebarItem>
                         <SidebarItem
                             id="menu-chat"
@@ -94,7 +96,7 @@ export function PluginSidebar() {
                             icon={PlusCircle}
                             href="/app/chat"
                         >
-                            New Chat
+                            {t('nav.newChat')}
                         </SidebarItem>
                     </SidebarSection>
                     {grouped.map(group => (
@@ -109,7 +111,7 @@ export function PluginSidebar() {
                                         icon={MessageSquare}
                                         className="overflow-hidden"
                                     >
-                                        <span className="truncate">{getConversationLabel(conv)}</span>
+                                        <span className="truncate">{getConversationLabel(conv, t)}</span>
                                     </SidebarItem>
                                 );
                             })}
@@ -120,7 +122,7 @@ export function PluginSidebar() {
             <div className="shrink-0 border-t border-sidebar-border pt-2">
                 <SidebarSection isFooter>
                     <div>
-                        <ModeToggle label={isOpen ? 'Theme' : false} />
+                        <ModeToggle label={isOpen ? undefined : false} />
                     </div>
                 </SidebarSection>
             </div>

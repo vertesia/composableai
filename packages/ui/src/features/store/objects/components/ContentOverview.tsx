@@ -1,15 +1,18 @@
 import { memo, useEffect, useRef, useState, type RefObject } from "react";
 
-import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, MarkdownRenditionFormat, PDF_RENDITION_NAME, POSTER_RENDITION_NAME, VideoMetadata, WorkflowExecutionStatus } from "@vertesia/common";
+import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, POSTER_RENDITION_NAME, VideoMetadata, WorkflowExecutionStatus } from "@vertesia/common";
 import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { JSONDisplay, MarkdownRenderer, Progress, XMLViewer } from "@vertesia/ui/widgets";
 import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from "lucide-react";
+import { useUITranslation } from '../../../../i18n/index.js';
 import { MagicPdfView } from "../../../magic-pdf";
 import { SimplePdfViewer } from "../../../pdf-viewer";
+import { SecureButton } from "../../../permissions/SecureButton.js";
 import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from "../../../utils/index.js";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
+import { TextEditorPanel } from "./TextEditorPanel.js";
 import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from "./useContentPanelHooks.js";
 import { useDownloadFile } from "./useDownloadFile.js";
 
@@ -50,6 +53,9 @@ interface TextActionsProps {
     fullText: string | undefined;
     handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>;
     textContainerRef: RefObject<HTMLDivElement | null>;
+    isEditing?: boolean;
+    onToggleEdit?: () => void;
+    canEdit?: boolean;
 }
 
 interface TextPanelProps {
@@ -186,6 +192,7 @@ export function ContentOverview({
     refetch,
 }: ContentOverviewProps) {
     const toast = useToast();
+    const { t } = useUITranslation();
 
     const handleCopyContent = async (
         content: string,
@@ -195,16 +202,16 @@ export function ContentOverview({
             await navigator.clipboard.writeText(content);
             toast({
                 status: "success",
-                title: `${type === "text" ? "Content" : "Properties"} copied`,
-                description: `Successfully copied ${type} to clipboard`,
+                title: t('store.contentCopied', { type: type === "text" ? t('store.contentType') : t('store.properties') }),
+                description: t('store.successfullyCopied', { type }),
                 duration: 2000,
             });
         } catch (err) {
             console.error(`Failed to copy ${type}:`, err);
             toast({
                 status: "error",
-                title: "Copy failed",
-                description: `Failed to copy ${type} to clipboard`,
+                title: t('store.copyFailed'),
+                description: t('store.failedToCopy', { type }),
                 duration: 5000,
             });
         }
@@ -228,6 +235,7 @@ export function ContentOverview({
 }
 
 function PropertiesPanel({ object, refetch, handleCopyContent }: { object: ContentObject, refetch: () => Promise<unknown>, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
+    const { t } = useUITranslation();
     const [viewCode, setViewCode] = useState(false);
     const [isPropertiesModalOpen, setPropertiesModalOpen] = useState(false);
 
@@ -246,7 +254,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
                     <Button
                         variant={`${viewCode ? "ghost" : "primary"}`}
                         size="sm"
-                        alt="Preview properties"
+                        alt={t('store.previewProperties')}
                         onClick={() => setViewCode(!viewCode)}
                     >
                         Properties
@@ -254,7 +262,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
                     <Button
                         variant={`${viewCode ? "primary" : "ghost"}`}
                         size="sm"
-                        alt="View in JSON format"
+                        alt={t('store.viewInJsonFormat')}
                         onClick={() => setViewCode(!viewCode)}
                     >
                         JSON
@@ -303,7 +311,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
                     </div>
                 ) : (
                     <div className={`${PANEL_HEIGHTS.properties} overflow-auto px-2`}>
-                        <div>No properties defined</div>
+                        <div>{t('store.noPropertiesDefined')}</div>
                     </div>
                 )
             }
@@ -319,6 +327,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 }
 
 function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: ContentObject, loadText: boolean, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>, refetch?: () => Promise<unknown> }) {
+    const { t } = useUITranslation();
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
     const isAudio = object?.metadata?.type === ContentNature.Audio;
@@ -341,12 +350,24 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
 
     const [currentPanel, setCurrentPanel] = useState<PanelView>(getInitialView());
 
+    // Text editing state
+    const [isEditing, setIsEditing] = useState(false);
+    const canEdit = !!(
+        object.content?.source &&
+        object.content?.type &&
+        !isCreatedOrProcessing &&
+        !object.is_locked &&
+        object.user_permissions?.can_write !== false &&
+        (object.content.type.startsWith('text/') || object.content.type === 'application/json' || object.content.type === 'application/xml')
+    );
+
     // Use custom hooks for text loading, PDF processing, and Office conversion
     const {
         fullText,
         displayText,
         isLoading: isLoadingText,
         isCropped: isTextCropped,
+        loadText: reloadText,
     } = useObjectText(object.id, object.text, loadText);
 
     // Poll for PDF/document processing status when object is created or processing
@@ -380,14 +401,14 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex justify-between items-center px-2 shrink-0">
+            {!isEditing && <div className="flex justify-between items-center px-2 shrink-0">
                 <div className="flex items-center gap-2 mb-2">
                     <div className="flex items-center gap-1 bg-muted p-1 rounded">
                         {isImage &&
                             <Button
                                 variant={currentPanel === PanelView.Image ? "primary" : "ghost"}
                                 size="sm"
-                                alt="View Image"
+                                alt={t('store.viewImage')}
                                 onClick={() => setCurrentPanel(PanelView.Image)}
                             >
                                 Image
@@ -397,7 +418,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                             <Button
                                 variant={currentPanel === PanelView.Video ? "primary" : "ghost"}
                                 size="sm"
-                                alt="View Video"
+                                alt={t('store.viewVideo')}
                                 onClick={() => setCurrentPanel(PanelView.Video)}
                             >
                                 Video
@@ -407,7 +428,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                             <Button
                                 variant={currentPanel === PanelView.Audio ? "primary" : "ghost"}
                                 size="sm"
-                                alt="View Audio"
+                                alt={t('store.viewAudio')}
                                 onClick={() => setCurrentPanel(PanelView.Audio)}
                             >
                                 Audio
@@ -417,7 +438,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                             <Button
                                 variant={currentPanel === PanelView.Transcript ? "primary" : "ghost"}
                                 size="sm"
-                                alt="View Transcript"
+                                alt={t('store.viewTranscript')}
                                 onClick={() => setCurrentPanel(PanelView.Transcript)}
                             >
                                 Transcript
@@ -426,7 +447,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                         <Button
                             variant={currentPanel === PanelView.Text ? "primary" : "ghost"}
                             size="sm"
-                            alt="View Text"
+                            alt={t('store.viewText')}
                             onClick={() => setCurrentPanel(PanelView.Text)}
                         >
                             Text
@@ -435,7 +456,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                             <Button
                                 variant={currentPanel === PanelView.Pdf ? "primary" : "ghost"}
                                 size="sm"
-                                alt="View PDF"
+                                alt={t('store.viewPdf')}
                                 onClick={() => setCurrentPanel(PanelView.Pdf)}
                             >
                                 PDF
@@ -445,7 +466,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                             <Button
                                 variant={currentPanel === PanelView.Pdf ? "primary" : "ghost"}
                                 size="sm"
-                                alt="View as PDF"
+                                alt={t('store.viewAsPdf')}
                                 onClick={() => {
                                     setCurrentPanel(PanelView.Pdf);
                                     if (!pdfRendition && !officePdfUrl && !officePdfConverting) {
@@ -460,13 +481,16 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     </div>
                     <PdfActions object={object} />
                 </div>
-                {currentPanel === PanelView.Text && !showProcessingPanel && (
+                {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && (
                     <TextActions
                         object={object}
                         text={displayText}
                         fullText={fullText}
                         handleCopyContent={handleCopyContent}
                         textContainerRef={textContainerRef}
+                        isEditing={isEditing}
+                        onToggleEdit={() => setIsEditing(true)}
+                        canEdit={canEdit}
                     />
                 )}
                 {currentPanel === PanelView.Pdf && isPreviewableAsPdfDoc && (pdfRendition || officePdfUrl) && (
@@ -476,7 +500,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                         officePdfUrl={officePdfUrl}
                     />
                 )}
-            </div>
+            </div>}
             <div className={getPanelVisibility(currentPanel === PanelView.Image)}>
                 <ImagePanel object={object} />
             </div>
@@ -512,12 +536,12 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
                 </div>
             )}
-            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText)}>
+            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText && !isEditing)}>
                 <div className="flex justify-center items-center flex-1">
                     <Spinner size="lg" />
                 </div>
             </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText)}>
+            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText && !isEditing)}>
                 <TextPanel
                     object={object}
                     text={displayText}
@@ -525,6 +549,18 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     textContainerRef={textContainerRef}
                 />
             </div>
+            {isEditing && currentPanel === PanelView.Text && fullText != null && (
+                <TextEditorPanel
+                    object={object}
+                    text={fullText}
+                    onClose={() => setIsEditing(false)}
+                    onSaved={() => {
+                        setIsEditing(false);
+                        reloadText();
+                        refetch?.();
+                    }}
+                />
+            )}
         </div>
     );
 }
@@ -534,9 +570,12 @@ function TextActions({
     text,
     fullText,
     handleCopyContent,
+    onToggleEdit,
+    canEdit,
 }: TextActionsProps) {
     const { client } = useUserSession();
     const toast = useToast();
+    const { t } = useUITranslation();
     const content = object.content;
     const { renderDocument, isDownloading } = useDownloadFile({ client, toast });
 
@@ -556,7 +595,7 @@ function TextActions({
         toast({
             status: "info",
             title: `Preparing ${format.toUpperCase()}`,
-            description: "Rendering your document...",
+            description: t('store.renderingDocument'),
             duration: 2000,
         });
 
@@ -608,6 +647,18 @@ function TextActions({
                             <Button variant="ghost" size="sm" title="Copy text" onClick={() => handleCopyContent(fullText, "text")}>
                                 <Copy className="size-4" />
                             </Button>
+                            {canEdit && onToggleEdit && (
+                                <SecureButton
+                                    permission={Permission.content_write}
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={onToggleEdit}
+                                    title={t('store.editText')}
+                                    className="flex items-center gap-2"
+                                >
+                                    <SquarePen className="size-4" />
+                                </SecureButton>
+                            )}
                             <Button variant="ghost" size="sm" title="Download text" onClick={handleDownloadText}>
                                 <Download className="size-4" />
                             </Button>
@@ -657,6 +708,7 @@ const TextPanel = memo(({
     isTextCropped,
     textContainerRef,
 }: TextPanelProps) => {
+    const { t } = useUITranslation();
     const content = object.content;
     const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
 
@@ -680,7 +732,7 @@ const TextPanel = memo(({
                     <div className="px-2 py-2 bg-attention/10 border-l-4 border-attention mx-2 mb-2 rounded">
                         <div className="flex items-center gap-2 text-attention">
                             <AlertTriangle className="size-4" />
-                            <span className="text-sm font-semibold">Showing first 128K characters only</span>
+                            <span className="text-sm font-semibold">{t('store.showingFirst128K')}</span>
                         </div>
                     </div>
                 )}
@@ -771,6 +823,7 @@ function ImagePanel({ object }: { object: ContentObject }) {
 }
 
 function VideoPanel({ object }: { object: ContentObject }) {
+    const { t } = useUITranslation();
     const { client } = useUserSession();
     const [videoUrl, setVideoUrl] = useState<string>();
     const [posterUrl, setPosterUrl] = useState<string>();
@@ -846,8 +899,8 @@ function VideoPanel({ object }: { object: ContentObject }) {
             {!webRendition && !isOriginalWebSupported ? (
                 <div className="flex justify-center items-center h-[400px] text-muted">
                     <div className="text-center">
-                        <p>No web-compatible video rendition available</p>
-                        <p className="text-sm mt-2">MP4 or WebM format required</p>
+                        <p>{t('store.noVideoRendition')}</p>
+                        <p className="text-sm mt-2">{t('store.videoFormatRequired')}</p>
                     </div>
                 </div>
             ) : isLoading ? (
@@ -873,6 +926,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
 }
 
 function AudioPanel({ object }: { object: ContentObject }) {
+    const { t } = useUITranslation();
     const { client } = useUserSession();
     const [audioUrl, setAudioUrl] = useState<string>();
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -928,8 +982,8 @@ function AudioPanel({ object }: { object: ContentObject }) {
             {!audioRendition && !isOriginalWebSupported ? (
                 <div className="flex justify-center items-center h-[200px] text-muted">
                     <div className="text-center">
-                        <p>No web-compatible audio rendition available</p>
-                        <p className="text-sm mt-2">MP3, M4A, OGG, WAV, or WebM format required</p>
+                        <p>{t('store.noAudioRendition')}</p>
+                        <p className="text-sm mt-2">{t('store.audioFormatRequired')}</p>
                     </div>
                 </div>
             ) : isLoading ? (
@@ -972,6 +1026,7 @@ function formatDuration(seconds: number): string {
 }
 
 function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject, handleCopyContent: (content: string, type: "text" | "properties") => Promise<void> }) {
+    const { t } = useUITranslation();
     const transcript = object.transcript;
     const transcriptText = transcript?.text;
     const segments = transcript?.segments;
@@ -1022,7 +1077,7 @@ function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject,
                         {transcriptText}
                     </pre>
                 ) : (
-                    <div className="text-muted">No transcript available</div>
+                    <div className="text-muted">{t('store.noTranscriptAvailable')}</div>
                 )}
             </div>
         </div>
@@ -1064,6 +1119,7 @@ function OfficePdfActions({
 }: OfficePdfActionsProps) {
     const { client } = useUserSession();
     const toast = useToast();
+    const { t } = useUITranslation();
     const [isDownloading, setIsDownloading] = useState(false);
 
     const handleDownloadPdf = async () => {
@@ -1089,8 +1145,8 @@ function OfficePdfActions({
             console.error('Failed to download PDF:', err);
             toast({
                 status: 'error',
-                title: 'Download failed',
-                description: 'Failed to download the PDF file',
+                title: t('store.downloadFailed'),
+                description: t('store.failedToDownloadPdf'),
                 duration: 5000,
             });
         } finally {
@@ -1135,11 +1191,12 @@ function OfficePdfPreviewPanel({
     officePdfError,
     onConvert,
 }: OfficePdfPreviewPanelProps) {
+    const { t } = useUITranslation();
     if (officePdfConverting) {
         return (
             <div className="flex flex-col justify-center items-center flex-1 gap-2">
                 <Spinner size="lg" />
-                <span className="text-muted">Converting to PDF...</span>
+                <span className="text-muted">{t('store.convertingToPdf')}</span>
             </div>
         );
     }
@@ -1179,6 +1236,7 @@ function OfficePdfPreviewPanel({
 }
 
 function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: DocAnalyzerProgress, status?: WorkflowExecutionStatus, outputFormat?: DocProcessorOutputFormat }) {
+    const { t } = useUITranslation();
     const statusColor = getWorkflowStatusColor(status);
     const statusName = getWorkflowStatusName(status);
 
@@ -1219,7 +1277,7 @@ function PdfProcessingPanel({ progress, status, outputFormat }: { progress?: Doc
             {!progress && (
                 <div className="flex items-center gap-2 text-muted">
                     <Spinner size="sm" />
-                    <span>Loading processing status...</span>
+                    <span>{t('store.loadingProcessingStatus')}</span>
                 </div>
             )}
         </div>

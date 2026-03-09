@@ -3,6 +3,7 @@ import { Button, Spinner, VTooltip } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Maximize2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useUITranslation } from '../../i18n/index.js';
 import { PdfPageSlider } from "./PdfPageSlider";
 
 interface SimplePdfViewerProps {
@@ -22,6 +23,7 @@ interface SimplePdfViewerProps {
  * Does not depend on any magic-pdf context.
  */
 export function SimplePdfViewer({ object, url, source, className }: SimplePdfViewerProps) {
+    const { t } = useUITranslation();
     const { client } = useUserSession();
     const [currentPage, setCurrentPage] = useState(1);
     const [pdfUrl, setPdfUrl] = useState<string>(url || "");
@@ -86,7 +88,7 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
     if (!pdfUrl) {
         return (
             <div className="flex items-center justify-center h-full text-muted">
-                No PDF available
+                {t('pdf.noPdfAvailable')}
             </div>
         );
     }
@@ -97,7 +99,7 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
             <div className="fixed inset-0 bg-background z-50 flex flex-col overflow-hidden">
                 {/* Header with close button */}
                 <div className="flex h-9 items-center justify-end shrink-0 bg-sidebar px-2 border-b border-sidebar-border">
-                    <Button variant="ghost" size="xs" onClick={() => setIsFullscreen(false)} alt="Close fullscreen">
+                    <Button variant="ghost" size="xs" onClick={() => setIsFullscreen(false)} alt={t('pdf.closeFullscreen')}>
                         <X className="size-4" />
                     </Button>
                 </div>
@@ -127,7 +129,7 @@ export function SimplePdfViewer({ object, url, source, className }: SimplePdfVie
                 className={className}
                 compact
                 headerExtra={
-                    <VTooltip description="Fullscreen" placement="bottom" size="xs">
+                    <VTooltip description={t('pdf.fullscreen')} placement="bottom" size="xs">
                         <button
                             className="p-1 rounded cursor-pointer transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
                             onClick={() => setIsFullscreen(true)}

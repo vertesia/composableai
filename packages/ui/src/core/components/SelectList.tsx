@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import clsx from "clsx";
 import { ReactNode, useMemo, useState } from "react";
+import { useUITranslation } from "@vertesia/ui/i18n";
 import { Input } from "./shadcn";
 
 const Default_Option_Style = "flex-1 px-2 py-2 hover:bg-accent nowrap";
@@ -32,6 +33,7 @@ export interface SelectListProps<T> {
     filterBy?: (filterValue: string) => (opt: T) => boolean;
 }
 export function SelectList<T>({ value, options, onChange, className, optionLayout, by, noCheck, filterBy }: SelectListProps<T>) {
+    const { t } = useUITranslation();
     const [selected, setSelected] = useState(value);
     const [filterValue, setFilterValue] = useState("");
 
@@ -51,7 +53,7 @@ export function SelectList<T>({ value, options, onChange, className, optionLayou
     return (
         <div className={clsx("", className)}>
             {filterBy && (
-                <Input type="text" placeholder="Filter..." value={filterValue} onChange={(value) => setFilterValue(value)} />
+                <Input type="text" placeholder={t('form.filter')} value={filterValue} onChange={(value) => setFilterValue(value)} />
             )}
             {options.map((option, i) => {
                 if (filterBy && !filterBy(filterValue)(option)) {

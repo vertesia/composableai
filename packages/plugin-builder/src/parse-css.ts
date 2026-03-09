@@ -2,7 +2,7 @@
 import { CssStylesheetAST, parse, stringify } from '@adobe/css-tools';
 
 export function extractTailwindUtilitiesLayer(content: string) {
-    let obj = parse(content, {});
+    const obj = parse(content, {});
     let result = '';
     for (const rule of obj.stylesheet.rules) {
         if (rule.type === 'layer' && rule.layer === 'utilities') {

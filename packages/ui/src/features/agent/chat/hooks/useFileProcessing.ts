@@ -5,6 +5,7 @@ import {
     ConversationFileRef,
     FileProcessingStatus,
 } from '@vertesia/common';
+import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 
 export interface UseFileProcessingResult {
     processingFiles: Map<string, ConversationFile>;
@@ -31,6 +32,7 @@ export function useFileProcessing(
     serverFileUpdates: Map<string, ConversationFile>,
     toast: ToastFn,
 ): UseFileProcessingResult {
+    const t = i18nInstance.getFixedT(null, NAMESPACE);
     // Local optimistic file state (uploads initiated from the UI)
     const [localFiles, setLocalFiles] = useState<Map<string, ConversationFile>>(new Map());
 
@@ -113,7 +115,7 @@ export function useFileProcessing(
 
                 toast({
                     status: 'error',
-                    title: 'Upload Failed',
+                    title: t('agent.uploadFailed'),
                     description: error instanceof Error ? error.message : 'Failed to upload file',
                     duration: 3000,
                 });

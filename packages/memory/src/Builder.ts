@@ -159,7 +159,9 @@ export class Builder implements Commands {
 
     async build(object: Record<string, any>) {
         try {
-            let { fileName, publishName } = this._getOutputNames();
+            const outputNames = this._getOutputNames();
+            const publishName = outputNames.publishName;
+            let fileName = outputNames.fileName;
             // resolve all content objects values from the context object
             object = await resolveContextObject(object);
             // write the memory to a file

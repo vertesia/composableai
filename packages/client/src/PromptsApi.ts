@@ -97,6 +97,7 @@ export default class PromptsApi extends ApiTopic {
         });
     }
 
+    //TODO - Does this exist?
     /**
      * Render a prompt template
      * @param id of the prompt template to render
@@ -107,12 +108,13 @@ export default class PromptsApi extends ApiTopic {
      * @throws 400 if payload is invalid
      * @throws 500 if render fails
      **/
-    render(id: string, payload: {}): Promise<PromptTemplate> {
+    render(id: string, payload: object): Promise<PromptTemplate> {
         return this.post(`/${id}/render`, {
             payload
         });
     }
 
+    //TODO - Does this exist?
     /**
      * Get options for a field
      * @param field name to get options for
