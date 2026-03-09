@@ -576,6 +576,8 @@ export interface CompositeAppConfig {
     switchers?: CompositeAppSwitchersOverrides;
     /** Optional sidebar display overrides */
     sidebar?: CompositeAppSidebarOverrides;
+    /** Optional app name to use as the home page instead of the dashboard */
+    homePlugin?: string;
     /** List of apps to include in the CompositeApp */
     apps: CompositeAppEntry[];
 }
