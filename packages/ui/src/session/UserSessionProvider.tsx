@@ -15,6 +15,9 @@ export function shouldRedirectToCentralAuth() {
     if (Env.isDocker) {
         return true;
     }
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        return true;
+    }
     return devDomains.some((domain) => window.location.hostname.endsWith(domain));
 }
 

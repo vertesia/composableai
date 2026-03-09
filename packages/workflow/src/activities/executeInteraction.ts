@@ -1,5 +1,5 @@
-import { CompletionResult, ModelOptions } from "@llumiverse/common";
-import { activityInfo, log } from "@temporalio/activity";
+import { CompletionResult, ModelOptions, LlumiverseError } from "@llumiverse/common";
+import { activityInfo, ApplicationFailure, log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
 import {
@@ -202,15 +202,46 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         log.error(`Failed to execute interaction ${interactionName}`, { error });
         if (error.statusCode === 429 && params.exit_on_resource_exhaustion) {
             throw new ResourceExhaustedError(error.statusCode, "Resource exhausted - rate limit exceeded");
+        } else if (is4xxNonRetryable(error.status) || is4xxNonRetryable(error.statusCode) || is4xxNonRetryable(error.code) || error.retryable === false) {
+            // 4xx HTTP errors (except 429 rate-limit) are permanent client errors (e.g. model not found, invalid request).
+            // Errors explicitly marked as non-retryable (e.g. LlumiverseError) also fall here.
+            // They will not be resolved by retrying.
+            throw ApplicationFailure.create({
+                message: `Interaction Execution failed ${interactionName}: ${error.message}`,
+                nonRetryable: true,
+            });
         } else if (error.message.includes("Failed to validate merged prompt schema")) {
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError("prompt_data", payload.activity, error.message);
         } else if (error.message.includes("modelId: Path `modelId` is required")) {
             //issue with the input data, don't retry
             throw new ActivityParamInvalidError("model", payload.activity, error.message);
-        } else {
-            throw new Error(`Interaction Execution failed ${interactionName}: ${error.message}`);
         }
+        
+        // Check retryability from error object (set by executeInteractionFromActivity)
+        // or from LlumiverseError instance (direct driver errors in some paths)
+        const isRetryable = error.retryable !== undefined 
+            ? error.retryable !== false  // Treat undefined as retryable
+            : (error instanceof LlumiverseError ? error.retryable !== false : undefined);
+        
+        if (isRetryable !== undefined) {
+            if (isRetryable) {
+                log.debug('Marking error as retryable', { interactionName, errorCode: error.errorCode });
+                throw ApplicationFailure.create({
+                    message: `Interaction Execution failed ${interactionName}: ${error.message}`,
+                    nonRetryable: false,
+                });
+            } else {
+                log.debug('Marking error as non-retryable', { interactionName, errorCode: error.errorCode });
+                throw ApplicationFailure.create({
+                    message: `Non-retryable Interaction Execution failed ${interactionName}: ${error.message}`,
+                    nonRetryable: true,
+                });
+            }
+        }
+        
+        // Unknown retryability - rethrow as generic error (Temporal will use default retry policy)
+        throw new Error(`Interaction Execution failed ${interactionName}: ${error.message}`);
     }
 }
 
@@ -293,8 +324,26 @@ export async function executeInteractionFromActivity(
 
     if (res.error || res.status === ExecutionRunStatus.failed) {
         log.error(`Error executing interaction ${interactionName}`, { error: res.error });
-        throw new Error(`Interaction Execution failed ${interactionName}: ${res.error}`);
+        
+        // Create error with retryability information
+        const errorMessage = `Interaction Execution failed ${interactionName}: ${res.error?.message || 'Unknown error'}`;
+        const error = new Error(errorMessage);
+        
+        // Attach retryable property so the catch block can access it
+        (error as any).retryable = res.error?.retryable;
+        (error as any).errorCode = res.error?.code;
+        
+        throw error;
     }
 
     return res;
+}
+
+/**
+ * Returns true for 4xx status codes that indicate permanent client errors.
+ * 429 (Too Many Requests) is excluded because it is retryable.
+ */
+function is4xxNonRetryable(code: number | undefined): boolean {
+    if (code === undefined || typeof code !== 'number') return false;
+    return code >= 400 && code < 500 && code !== 429;
 }

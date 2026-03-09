@@ -1,4 +1,4 @@
-import { Tool, ToolExecutionContext, ToolExecutionPayload } from "@vertesia/tools-sdk";
+import { ToolExecutionContext, ToolExecutionPayload } from "@vertesia/tools-sdk";
 import { type CalculatorParams } from "./schema.js";
 import { ToolResultContent } from "@vertesia/common";
 
@@ -27,7 +27,7 @@ function evaluateExpression(expr: string): number {
         }
         return result;
     } catch (error) {
-        throw new Error(`Failed to evaluate expression: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(`Failed to evaluate expression: ${error instanceof Error ? error.message : 'Unknown error'}`, { cause: error });
     }
 }
 

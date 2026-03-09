@@ -24,7 +24,9 @@ export function sanitizeToolDefinitions(tools: ToolDefinition[] | undefined): To
     return tools.map(sanitizeToolDefinition);
 }
 
-// Remove custom properties from the JSON before sending further down execution pipeline
+// Remove custom properties from the JSON before sending further down execution pipeline.
+// Before stripping UI-only fields (editor, format), translate them into LLM-friendly
+// schema hints so the model knows the expected value format.
 export function removeExtraProperties<T>(schema: T): T {
     if (!schema) return schema;
     if (Array.isArray(schema)) {
@@ -33,6 +35,13 @@ export function removeExtraProperties<T>(schema: T): T {
         }
     } else if (typeof schema === 'object') {
         const obj = schema as Record<string, any>;
+
+        // If this looks like a property definition (has editor/format for document/media),
+        // enrich it with type and description hints before stripping.
+        if (isDocumentProperty(obj)) {
+            enrichDocumentProperty(obj);
+        }
+
         for (const [key, value] of Object.entries(obj)) {
             if (key === 'editor' && (value === 'textarea' || value === 'document' || value === 'media')) {
                 delete obj[key];
@@ -44,6 +53,45 @@ export function removeExtraProperties<T>(schema: T): T {
         }
     }
     return schema;
+}
+
+/**
+ * Returns true if the schema property represents a document reference
+ * (identified by editor: "document" or format: "document" / "media").
+ */
+function isDocumentProperty(obj: Record<string, any>): boolean {
+    return obj.editor === 'document' ||
+        obj.format === 'document' ||
+        obj.format === 'media';
+}
+
+/**
+ * Canonical hint string appended to document property descriptions.
+ * Used by ensureDocumentStorePrefix (in @dglabs/workflows) to detect document
+ * properties after serialization, when editor/format fields have been stripped.
+ * Exported so both packages use the exact same string — do NOT duplicate.
+ */
+export const DOCUMENT_STORE_HINT = "Use 'store:<document_id>' format to reference a document from the content store.";
+
+/**
+ * Enriches a document property schema with LLM-friendly hints:
+ * - Sets type to "string" if not already set
+ * - Appends a store: prefix hint to the description
+ */
+function enrichDocumentProperty(obj: Record<string, any>): void {
+    // Set type to string if missing (document references are string IDs)
+    if (!obj.type) {
+        obj.type = 'string';
+    }
+
+    // Always ensure the canonical hint is present in the description.
+    // Check for the exact hint string (not just 'store:') to avoid missing detection
+    // after serialization when only the description survives.
+    if (!obj.description) {
+        obj.description = DOCUMENT_STORE_HINT;
+    } else if (!obj.description.includes(DOCUMENT_STORE_HINT)) {
+        obj.description = `${obj.description} ${DOCUMENT_STORE_HINT}`;
+    }
 }
 
 export function mergeJSONSchemas(schemas: JSONSchema[]) {

@@ -1,0 +1,88 @@
+.vprose {
+    @apply prose text-foreground max-w-none;
+}
+
+.vprose p {
+    @apply bg-transparent my-2;
+}
+
+.vprose a {
+    @apply text-info hover:text-info/80;
+}
+
+.vprose pre, .vprose code {
+    @apply !bg-muted text-muted my-2;
+}
+
+.vprose h1,
+.vprose h2,
+.vprose h3,
+.vprose h4,
+.vprose h5,
+.vprose h6 {
+    @apply text-foreground;
+}
+
+.vprose strong {
+    @apply text-foreground font-bold;
+}
+
+.vprose em {
+    @apply italic;
+}
+
+.vprose ul {
+    @apply my-3 pl-6 list-disc space-y-1;
+}
+
+.vprose ol {
+    @apply my-3 pl-6 list-decimal space-y-1;
+}
+
+.vprose li {
+    @apply text-mixer-foreground/50 my-2 pl-1;
+}
+
+.vprose blockquote {
+    @apply border-l-4 border-muted/30 dark:border-muted pl-4 italic text-muted my-3;
+}
+
+.vprose hr {
+    @apply border-muted/30 dark:border-muted my-4;
+}
+
+.vprose h1 {
+    @apply font-bold text-2xl my-2;
+}
+
+.vprose h2 {
+    @apply font-bold text-xl my-2;
+}
+
+.vprose h3 {
+    @apply font-bold text-lg my-2;
+}
+
+.vprose table {
+    @apply min-w-full border-collapse border border-muted/30 my-4;
+}
+
+.vprose th {
+    @apply border border-muted/30 bg-mixer-muted/50 px-4 py-2 text-left text-muted font-bold;
+}
+
+.vprose td {
+    @apply border border-muted/30 px-4 py-2 text-muted;
+}
+
+.vprose code {
+    @apply font-mono text-sm;
+}
+
+.vprose :not(pre) > code {
+    @apply px-1.5 py-0.5 rounded text-muted bg-muted/20 dark:bg-muted/30;
+}
+
+.vprose .code-language-indicator {
+    @apply text-xs px-3 py-1 rounded-t-md font-mono border-t border-l border-r -mb-2;
+}

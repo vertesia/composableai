@@ -8,7 +8,7 @@ export type PathMapperFn = ((path: string, index: number) => string);
 export function createPathRewrite(path: string): PathMapperFn {
     let truncPath: (path: string) => string;
     let basePath: string = '';
-    let index = path.indexOf('!');
+    const index = path.indexOf('!');
     if (index > -1) {
         basePath = path.substring(0, index);
         if (!basePath.endsWith('/')) {
@@ -40,11 +40,10 @@ export function createPathRewrite(path: string): PathMapperFn {
 
 const RX_PARTS = /(%d\/)|(\.?%e)|(%[fnip])/g;
 function buildPathRewrite(path: string, truncPath: (path: string) => string): PathMapperFn {
-    let parts: ((path: Path, index: number) => string)[] = [];
-    let m: RegExpExecArray | null;
+    const parts: ((path: Path, index: number) => string)[] = [];
     let lastIndex = 0;
-    while (m = RX_PARTS.exec(path)) {
-        if (m.index > lastIndex) {
+    for (const m of path.matchAll(RX_PARTS)) {
+        if (m.index! > lastIndex) {
             const literal = path.substring(lastIndex, m.index);
             parts.push(() => literal);
         }
@@ -79,7 +78,7 @@ function buildPathRewrite(path: string, truncPath: (path: string) => string): Pa
                 default: throw new Error(`Bug: should never happen`);
             }
         }
-        lastIndex = m.index + m[0].length;
+        lastIndex = m.index! + m[0].length;
     }
     if (!parts.length) {
         return () => path;

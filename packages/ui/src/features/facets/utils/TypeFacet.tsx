@@ -1,7 +1,7 @@
-import { useUserSession } from "@vertesia/ui/session";
 import { FacetBucket } from "@vertesia/common";
 import { SelectBox } from "@vertesia/ui/core";
 import { useEffect, useState } from "react";
+import { useTypeRegistry } from "../../store/types/TypeRegistryProvider.js";
 
 interface TypeFacetBucket {
     name: string;
@@ -21,7 +21,7 @@ interface TypeFacetProps {
 }
 export function TypeFacet({ search, buckets, placeholder = "Filter by Type", className }: TypeFacetProps) {
     const [options, setOptions] = useState<TypeFacetBucket[]>([]);
-    const { typeRegistry } = useUserSession();
+    const { registry: typeRegistry } = useTypeRegistry();
     const filterValue = search.getFilterValue("type") as string;
     const onChange = (option: FacetBucket | undefined) => {
         search.setFilterValue("type", option?._id);

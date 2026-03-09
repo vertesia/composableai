@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeAll, afterAll } from "vitest";
+import { describe, test, expect, afterAll } from "vitest";
 import { loadTarIndex, TarBuilder, TarIndex } from "./tar";
-import { readFileSync, stat, statSync, unlinkSync } from "fs";
+import { readFileSync, statSync, unlinkSync } from "fs";
 
 const tarFile = `test-${Date.now()}.tar`;
 afterAll(() => {

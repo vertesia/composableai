@@ -218,7 +218,7 @@ async function createObjectFromExternalSource(client: VertesiaClient, uri: strin
 
 export async function updateObject(program: Command, objectId: string, type: string, _options: Record<string, any>) {
     const types: any[] = await listTypes(program);
-    var searchedType = findTypeValue(types, type);
+    let searchedType = findTypeValue(types, type);
     if (searchedType === TYPE_SELECTION_ERROR) {
         console.error(`${type} is not an existing type`);
         process.exit(2);
@@ -242,8 +242,7 @@ export async function getObject(program: Command, objectId: string, _options: Re
     console.log(object);
 }
 
-//@ts-ignore
-export async function listObjects(program: Command, folderPath: string | undefined, _options: Record<string, any>) {
+export async function listObjects(program: Command, _folderPath: string | undefined, _options: Record<string, any>) {
     const client = await getClient(program);
     const objects = await client.objects.list();
     console.log(objects.map(o => `${o.id}\t ${o.name}`).join('\n'));

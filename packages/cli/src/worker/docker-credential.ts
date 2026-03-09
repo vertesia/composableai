@@ -1,5 +1,5 @@
-import { getDockerCredentials } from "./docker.js";
 import fs from "node:fs";
+import { getDockerCredentials } from "./docker.js";
 
 // Function to handle other commands (`store`, `erase`, `list`)
 function handleNoOp() {
@@ -37,10 +37,11 @@ function main() {
     }
 
     switch (command) {
-        case "get":
+        case "get": {
             const stdin = fs.readFileSync(0, "utf-8");
             handleGet(stdin.trim());
             break;
+        }
 
         case "store":
         case "erase":

@@ -11,7 +11,7 @@
  */
 import json from '@rollup/plugin-json';
 import typescript from '@rollup/plugin-typescript';
-import { vertesiaImportPlugin, skillTransformer, rawTransformer, skillCollectionTransformer, promptTransformer } from '@vertesia/build-tools';
+import { vertesiaImportPlugin, skillTransformer, rawTransformer, skillCollectionTransformer, templateTransformer, templateCollectionTransformer, promptTransformer } from '@vertesia/build-tools';
 
 // ============================================================================
 // Exit Plugin - Forces process exit after build completes
@@ -35,7 +35,6 @@ const serverBuild = {
     input: {
         server: './src/tool-server/server.ts',
         'server-node': './src/tool-server/server-node.ts',
-        'build-site': './src/tool-server/build-site.ts'
     },
     output: {
         dir: 'lib',
@@ -56,10 +55,12 @@ const serverBuild = {
     plugins: [
         vertesiaImportPlugin({
             transformers: [
-                skillTransformer,  // Handles .md?skill imports
-                skillCollectionTransformer, // Handles .?skills imports
-                promptTransformer, // Handles ?prompt imports
-                rawTransformer     // Handles ?raw imports
+                skillTransformer,              // Handles .md?skill imports
+                skillCollectionTransformer,    // Handles ?skills imports
+                templateTransformer,           // Handles TEMPLATE.md imports
+                templateCollectionTransformer, // Handles ?templates imports
+                promptTransformer,             // Handles ?prompt imports
+                rawTransformer                 // Handles ?raw imports
             ],
             assetsDir: './dist',
             widgetConfig: {
