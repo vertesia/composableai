@@ -208,7 +208,6 @@ export interface ListAgentRunsQuery {
 export interface AgentRunInternals {
     id: string;
     workflow_id?: string;
-    current_workflow_run_id?: string;
     first_workflow_run_id?: string;
     artifacts_path?: string;
     status: AgentRunStatus;
