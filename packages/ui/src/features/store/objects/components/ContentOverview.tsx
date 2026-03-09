@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState, type RefObject } from "react";
 
-import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, MarkdownRenditionFormat, PDF_RENDITION_NAME, POSTER_RENDITION_NAME, VideoMetadata, WorkflowExecutionStatus } from "@vertesia/common";
+import { AUDIO_RENDITION_NAME, AudioMetadata, ContentNature, ContentObject, ContentObjectStatus, DocAnalyzerProgress, DocProcessorOutputFormat, DocumentMetadata, ImageRenditionFormat, MarkdownRenditionFormat, PDF_RENDITION_NAME, Permission, POSTER_RENDITION_NAME, VideoMetadata, WorkflowExecutionStatus } from "@vertesia/common";
 import { Button, Portal, ResizableHandle, ResizablePanel, ResizablePanelGroup, Spinner, useToast } from "@vertesia/ui/core";
 import { NavLink } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
@@ -9,8 +9,10 @@ import { AlertTriangle, Copy, Download, FileSearch, SquarePen } from "lucide-rea
 import { useUITranslation } from '../../../../i18n/index.js';
 import { MagicPdfView } from "../../../magic-pdf";
 import { SimplePdfViewer } from "../../../pdf-viewer";
+import { SecureButton } from "../../../permissions/SecureButton.js";
 import { getWorkflowStatusColor, getWorkflowStatusName, isPreviewableAsPdf } from "../../../utils/index.js";
 import { PropertiesEditorModal } from "./PropertiesEditorModal";
+import { TextEditorPanel } from "./TextEditorPanel.js";
 import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from "./useContentPanelHooks.js";
 import { useDownloadFile } from "./useDownloadFile.js";
 
@@ -51,6 +53,9 @@ interface TextActionsProps {
     fullText: string | undefined;
     handleCopyContent: (content: string, type: "text" | "properties") => Promise<void>;
     textContainerRef: RefObject<HTMLDivElement | null>;
+    isEditing?: boolean;
+    onToggleEdit?: () => void;
+    canEdit?: boolean;
 }
 
 interface TextPanelProps {
@@ -345,12 +350,24 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
 
     const [currentPanel, setCurrentPanel] = useState<PanelView>(getInitialView());
 
+    // Text editing state
+    const [isEditing, setIsEditing] = useState(false);
+    const canEdit = !!(
+        object.content?.source &&
+        object.content?.type &&
+        !isCreatedOrProcessing &&
+        !object.is_locked &&
+        object.user_permissions?.can_write !== false &&
+        (object.content.type.startsWith('text/') || object.content.type === 'application/json' || object.content.type === 'application/xml')
+    );
+
     // Use custom hooks for text loading, PDF processing, and Office conversion
     const {
         fullText,
         displayText,
         isLoading: isLoadingText,
         isCropped: isTextCropped,
+        loadText: reloadText,
     } = useObjectText(object.id, object.text, loadText);
 
     // Poll for PDF/document processing status when object is created or processing
@@ -384,7 +401,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex justify-between items-center px-2 shrink-0">
+            {!isEditing && <div className="flex justify-between items-center px-2 shrink-0">
                 <div className="flex items-center gap-2 mb-2">
                     <div className="flex items-center gap-1 bg-muted p-1 rounded">
                         {isImage &&
@@ -464,13 +481,16 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     </div>
                     <PdfActions object={object} />
                 </div>
-                {currentPanel === PanelView.Text && !showProcessingPanel && (
+                {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && (
                     <TextActions
                         object={object}
                         text={displayText}
                         fullText={fullText}
                         handleCopyContent={handleCopyContent}
                         textContainerRef={textContainerRef}
+                        isEditing={isEditing}
+                        onToggleEdit={() => setIsEditing(true)}
+                        canEdit={canEdit}
                     />
                 )}
                 {currentPanel === PanelView.Pdf && isPreviewableAsPdfDoc && (pdfRendition || officePdfUrl) && (
@@ -480,7 +500,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                         officePdfUrl={officePdfUrl}
                     />
                 )}
-            </div>
+            </div>}
             <div className={getPanelVisibility(currentPanel === PanelView.Image)}>
                 <ImagePanel object={object} />
             </div>
@@ -516,12 +536,12 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
                 </div>
             )}
-            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText)}>
+            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText && !isEditing)}>
                 <div className="flex justify-center items-center flex-1">
                     <Spinner size="lg" />
                 </div>
             </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText)}>
+            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText && !isEditing)}>
                 <TextPanel
                     object={object}
                     text={displayText}
@@ -529,6 +549,18 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     textContainerRef={textContainerRef}
                 />
             </div>
+            {isEditing && currentPanel === PanelView.Text && fullText != null && (
+                <TextEditorPanel
+                    object={object}
+                    text={fullText}
+                    onClose={() => setIsEditing(false)}
+                    onSaved={() => {
+                        setIsEditing(false);
+                        reloadText();
+                        refetch?.();
+                    }}
+                />
+            )}
         </div>
     );
 }
@@ -538,6 +570,8 @@ function TextActions({
     text,
     fullText,
     handleCopyContent,
+    onToggleEdit,
+    canEdit,
 }: TextActionsProps) {
     const { client } = useUserSession();
     const toast = useToast();
@@ -613,6 +647,18 @@ function TextActions({
                             <Button variant="ghost" size="sm" title="Copy text" onClick={() => handleCopyContent(fullText, "text")}>
                                 <Copy className="size-4" />
                             </Button>
+                            {canEdit && onToggleEdit && (
+                                <SecureButton
+                                    permission={Permission.content_write}
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={onToggleEdit}
+                                    title={t('store.editText')}
+                                    className="flex items-center gap-2"
+                                >
+                                    <SquarePen className="size-4" />
+                                </SecureButton>
+                            )}
                             <Button variant="ghost" size="sm" title="Download text" onClick={handleDownloadText}>
                                 <Download className="size-4" />
                             </Button>
