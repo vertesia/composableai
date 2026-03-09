@@ -30,6 +30,21 @@ import { RateLimitParams } from "../activities/rateLimiter.js";
 import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from "../errors.js";
 import { Vars } from "./vars.js";
 
+const NS_PREFIX_SEP = "__";
+
+/**
+ * Minimal type for remote activity info used in the workflow.
+ * Must stay compatible with RemoteActivityInfo from resolveRemoteActivities.
+ * Defined inline to avoid importing from activity files in workflow code.
+ */
+interface RemoteActivityEntry {
+    url: string;
+    activity_name: string;
+    app_install_id: string;
+    app_name: string;
+    app_settings?: Record<string, any>;
+}
+type RemoteActivityMap = Record<string, RemoteActivityEntry>;
 
 interface BaseActivityPayload extends WorkflowExecutionPayload {
     workflow_name: string;
@@ -122,6 +137,25 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
 
     log.info("Executing workflow", { payload });
 
+    // Resolve remote activities from installed apps only if the workflow uses prefixed activity names
+    let remoteActivities: RemoteActivityMap = {};
+    if (patched('dsl-remote-activities') && hasRemoteActivitySteps(definition)) {
+        try {
+            const resolvePayload = dslActivityPayload(
+                basePayload, { name: 'resolveRemoteActivities' } as DSLActivitySpec, {},
+            );
+            remoteActivities = await defaultProxy.resolveRemoteActivities(resolvePayload) as RemoteActivityMap;
+            if (Object.keys(remoteActivities).length > 0) {
+                log.info("Resolved remote activities", {
+                    count: Object.keys(remoteActivities).length,
+                    names: Object.keys(remoteActivities),
+                });
+            }
+        } catch (e: any) {
+            log.warn("Failed to resolve remote activities, continuing without them", { error: e.message });
+        }
+    }
+
     // TODO(mhuang): remove patch when all workflows are migrated to v2
     //   It avoids breaking the ongoing workflow execution running in v1 and also allows us to
     //   deploy the new error handler in production.
@@ -129,19 +163,19 @@ export async function dslWorkflow(payload: DSLWorkflowExecutionPayload) {
     if (patched('dsl-workflow-error-handling')) {
         // v2: new version with error handler
         try {
-            await executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions);
+            await executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions, remoteActivities);
         } catch (e) {
             await handleError(e, basePayload, defaultOptions);
         }
     } else {
         // v1: old version without error handler, deprecated since v0.52.0
-        await executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions);
+        await executeSteps(definition, payload, basePayload, vars, defaultProxy, defaultOptions, remoteActivities);
     }
 
     return vars.getValue(definition.result || 'result');
 }
 
-async function executeSteps(definition: DSLWorkflowSpec, payload: DSLWorkflowExecutionPayload, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
+async function executeSteps(definition: DSLWorkflowSpec, payload: DSLWorkflowExecutionPayload, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions, remoteActivities: RemoteActivityMap = {}) {
     if (definition.steps) {
         for (const step of definition.steps) {
             const stepType = step.type;
@@ -153,16 +187,33 @@ async function executeSteps(definition: DSLWorkflowSpec, payload: DSLWorkflowExe
                     await executeChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode);
                 }
             } else { // activity
-                await runActivity(step as DSLActivitySpec, basePayload, vars, defaultProxy, defaultOptions);
+                await runActivity(step as DSLActivitySpec, basePayload, vars, defaultProxy, defaultOptions, remoteActivities);
             }
         }
     } else if (definition.activities) { // legacy support
         for (const activity of definition.activities) {
-            await runActivity(activity, basePayload, vars, defaultProxy, defaultOptions);
+            await runActivity(activity, basePayload, vars, defaultProxy, defaultOptions, remoteActivities);
         }
     } else {
         throw new Error("No steps or activities found in the workflow definition");
     }
+}
+
+/**
+ * Check whether any activity step in the workflow definition uses a prefixed name (contains `__`),
+ * indicating it may reference a remote activity. Avoids resolving remote activities when not needed.
+ */
+/**
+ * Normalize a prefixed activity name by replacing hyphens with underscores,
+ * matching the normalization done in resolveRemoteActivities.
+ */
+function normalizeActivityName(name: string): string {
+    return name.replace(/-/g, '_');
+}
+
+function hasRemoteActivitySteps(definition: DSLWorkflowSpec): boolean {
+    const steps = definition.steps || definition.activities || [];
+    return steps.some(step => 'name' in step && step.name?.includes(NS_PREFIX_SEP));
 }
 
 async function handleError(originalError: any, basePayload: BaseActivityPayload, defaultOptions: ActivityOptions) {
@@ -321,7 +372,7 @@ function buildRateLimitParams(activity: DSLActivitySpec, executionPayload: DSLAc
     };
 }
 
-async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions) {
+async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityPayload, vars: Vars, defaultProxy: ActivityInterfaceFor<UntypedActivities>, defaultOptions: ActivityOptions, remoteActivities: RemoteActivityMap = {}) {
     if (basePayload.debug_mode) {
         log.debug(`Workflow vars before executing activity ${activity.name}`, { vars: vars.resolve() });
     }
@@ -354,6 +405,38 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         // https://github.com/vertesia/composableai/pull/544/files
     }
 
+    // Check if this is a remote activity (prefixed name with __)
+    // Normalize hyphens to underscores to match the keys in the remote activity map
+    const normalizedName = normalizeActivityName(activity.name);
+    if (normalizedName.includes(NS_PREFIX_SEP) && remoteActivities[normalizedName]) {
+        const remote = remoteActivities[normalizedName];
+        log.info("Executing remote activity", {
+            activityName: activity.name,
+            normalizedName,
+            remoteName: remote.activity_name,
+            app: remote.app_name,
+            url: remote.url,
+        });
+        const remotePayload = dslActivityPayload(basePayload, activity, {
+            url: remote.url,
+            activity_name: remote.activity_name,
+            // Merge imported vars with static activity params, then resolve expressions
+            // (same merge pattern used by local activities — see buildRateLimitParams)
+            params: new Vars({ ...importParams, ...activity.params }).resolve(),
+            app_install_id: remote.app_install_id,
+            app_name: remote.app_name,
+            app_settings: remote.app_settings,
+        });
+        const result = await proxy.executeRemoteActivity(remotePayload);
+        if (activity.output) {
+            vars.setValue(activity.output, result);
+        }
+        if (basePayload.debug_mode) {
+            log.debug(`Workflow vars after executing remote activity ${activity.name}`, { vars: vars.resolve() });
+        }
+        return;
+    }
+
     // call rate limiter depending on the activity type
     const rateLimitedActivities = [
         "chunkDocument",
@@ -371,7 +454,7 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
 
         const rateLimitPayload = dslActivityPayload(basePayload, activity, rateLimitParams);
         let rateLimitResult = await proxy.checkRateLimit(rateLimitPayload);
-    
+
         while (rateLimitResult.delayMs > 0) {
             log.debug(`Rate limit delay applied: ${rateLimitResult.delayMs}ms`);
             await sleep(rateLimitResult.delayMs);

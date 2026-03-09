@@ -312,3 +312,42 @@ export interface WorkflowDefinitionRef {
 }
 
 export const WorkflowDefinitionRefPopulate = "id name description tags created_at updated_at"
+
+/**
+ * Payload sent to a remote activity endpoint on a tool server.
+ * This is POSTed by the `executeRemoteActivity` bridge activity.
+ */
+export interface RemoteActivityExecutionPayload {
+    /** The activity name (unprefixed, as known by the tool server) */
+    activity_name: string;
+    /** The resolved activity parameters */
+    params: Record<string, any>;
+    /** Auth token for the calling context */
+    auth_token: string;
+    /** Workflow execution metadata */
+    metadata: {
+        workflow_name: string;
+        account_id: string;
+        project_id: string;
+        run_id?: string;
+        app_install_id: string;
+        app_settings?: Record<string, any>;
+        /** Studio/Store endpoint overrides */
+        endpoints?: {
+            studio?: string;
+            store?: string;
+        };
+    };
+}
+
+/**
+ * Response from a remote activity endpoint on a tool server.
+ */
+export interface RemoteActivityExecutionResponse {
+    /** The result data (stored into workflow vars via the step's `output` field) */
+    result: any;
+    /** Whether the execution failed */
+    is_error?: boolean;
+    /** Error message if is_error is true */
+    error?: string;
+}

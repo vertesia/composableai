@@ -1,6 +1,6 @@
 import { JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { CatalogInteractionRef } from "./interaction.js";
-import { InCodeTypeDefinition } from "./store/index.js";
+import { DSLActivityOptions, InCodeTypeDefinition } from "./store/index.js";
 
 /**
  * Additional navigation item for an app's UI configuration.
@@ -190,6 +190,30 @@ export interface AgentToolDefinition extends ToolDefinition {
     related_tools?: string[];
 }
 
+/**
+ * Definition of a remote activity exposed by a tool server for use in DSL workflows.
+ * Remote activities are identified in workflow steps by a prefixed name: `appname__activity_name`.
+ */
+export interface RemoteActivityDefinition {
+    /** Activity name (snake_case, unique within the app) */
+    name: string;
+    /** Display title */
+    title?: string;
+    /** Description of what the activity does */
+    description?: string;
+    /** JSON Schema for the activity input parameters */
+    input_schema?: Record<string, any>;
+    /** JSON Schema for the activity output */
+    output_schema?: Record<string, any>;
+    /**
+     * The activity execution URL. Can be absolute or relative to the tool server base URL.
+     * If not provided, the default activities endpoint of the tool server is used.
+     */
+    url?: string;
+    /** Suggested timeout and retry configuration */
+    options?: DSLActivityOptions;
+}
+
 export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 export interface AppManifestData {
@@ -279,7 +303,7 @@ export interface AppManifestData {
      */
     endpoint?: string;
 }
-export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'templates' | 'settings' | 'widgets' | 'all';
+export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'templates' | 'settings' | 'widgets' | 'activities' | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
@@ -310,6 +334,13 @@ export interface AppPackage {
      * Widgets provided by the app.
      */
     widgets?: Record<string, AppWidgetInfo>;
+
+    /**
+     * Remote activities exposed by the app for use in DSL workflows.
+     * Activities are discovered via `?scope=activities` and referenced in workflow steps
+     * using prefixed names: `appname__activity_name`.
+     */
+    activities?: RemoteActivityDefinition[];
 
     /**
      * A JSON chema for the app installation settings.

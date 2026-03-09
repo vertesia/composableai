@@ -1,0 +1,139 @@
+import { RemoteActivityDefinition, RemoteActivityExecutionPayload, RemoteActivityExecutionResponse } from "@vertesia/common";
+import { Context } from "hono";
+import { HTTPException } from "hono/http-exception";
+import { authorize } from "./auth.js";
+import { CollectionProperties, ICollection } from "./types.js";
+import { kebabCaseToTitle } from "./utils.js";
+
+/**
+ * Function signature for a remote activity handler.
+ */
+export type ActivityFn = (
+    payload: RemoteActivityExecutionPayload,
+    context: ActivityExecutionContext
+) => Promise<any>;
+
+/**
+ * Context provided to activity handlers during execution.
+ */
+export interface ActivityExecutionContext {
+    /** The raw JWT token from the execution request */
+    token: string;
+}
+
+/**
+ * An activity definition within an ActivityCollection.
+ */
+export interface ActivityDefinition {
+    /** Activity name (snake_case) */
+    name: string;
+    /** Display title */
+    title?: string;
+    /** Description of what the activity does */
+    description?: string;
+    /** JSON Schema for the activity input parameters */
+    input_schema?: Record<string, any>;
+    /** JSON Schema for the activity output */
+    output_schema?: Record<string, any>;
+    /** The activity handler function */
+    run: ActivityFn;
+}
+
+export interface ActivityCollectionProperties extends CollectionProperties {
+    activities: ActivityDefinition[];
+}
+
+/**
+ * A collection of remote activities exposed by a tool server for DSL workflows.
+ * Follows the same collection pattern as ToolCollection and SkillCollection.
+ */
+export class ActivityCollection implements ICollection<ActivityDefinition> {
+    name: string;
+    title?: string;
+    icon?: string;
+    description?: string;
+    private registry: Record<string, ActivityDefinition> = {};
+
+    constructor({ name, title, icon, description, activities }: ActivityCollectionProperties) {
+        this.name = name;
+        this.title = title || kebabCaseToTitle(name);
+        this.icon = icon;
+        this.description = description;
+        for (const activity of activities) {
+            this.registry[activity.name] = activity;
+        }
+    }
+
+    [Symbol.iterator](): Iterator<ActivityDefinition> {
+        let index = 0;
+        const activities = Object.values(this.registry);
+        return {
+            next(): IteratorResult<ActivityDefinition> {
+                if (index < activities.length) {
+                    return { value: activities[index++], done: false };
+                }
+                return { done: true, value: undefined };
+            }
+        };
+    }
+
+    /**
+     * Get activity definitions for discovery (metadata only, no run function).
+     */
+    getActivityDefinitions(): RemoteActivityDefinition[] {
+        return Object.values(this.registry).map(activity => ({
+            name: activity.name,
+            title: activity.title,
+            description: activity.description,
+            input_schema: activity.input_schema,
+            output_schema: activity.output_schema,
+        }));
+    }
+
+    getActivity(name: string): ActivityDefinition {
+        const activity = this.registry[name];
+        if (!activity) {
+            throw new HTTPException(404, {
+                message: `Activity not found: ${name}. Available: ${Object.keys(this.registry).join(', ')}`
+            });
+        }
+        return activity;
+    }
+
+    /**
+     * Execute an activity from an HTTP POST request.
+     */
+    async execute(ctx: Context, payload: RemoteActivityExecutionPayload): Promise<Response> {
+        const activityName = payload.activity_name;
+
+        console.log(`[ActivityCollection] Activity call received: ${activityName}`, {
+            collection: this.name,
+        });
+
+        const activity = this.getActivity(activityName);
+
+        const session = await authorize(ctx, payload.metadata?.endpoints);
+        const context: ActivityExecutionContext = {
+            token: session.token,
+        };
+
+        try {
+            const result = await activity.run(payload, context);
+            return ctx.json({
+                result,
+                is_error: false,
+            } satisfies RemoteActivityExecutionResponse);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.error(`[ActivityCollection] Activity execution failed: ${activityName}`, {
+                collection: this.name,
+                error: message,
+            });
+            return ctx.json({
+                result: null,
+                is_error: true,
+                error: message,
+            } satisfies RemoteActivityExecutionResponse, 500);
+        }
+    }
+}

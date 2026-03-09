@@ -6,6 +6,7 @@ import type {
     AgentToolDefinition,
     CatalogInteractionRef,
     InCodeTypeDefinition,
+    RemoteActivityDefinition,
     RenderingTemplateDefinitionRef,
 } from '@vertesia/common';
 
@@ -18,12 +19,13 @@ export interface ServerInfo {
     endpoints: {
         tools: string[];
         interactions: string[];
+        activities: string[];
         templates: string[];
         mcp: string[];
     };
 }
 
-export type ResourceType = 'tool' | 'skill' | 'interaction' | 'type' | 'template' | 'mcp';
+export type ResourceType = 'tool' | 'activity' | 'skill' | 'interaction' | 'type' | 'template' | 'mcp';
 
 /**
  * A normalized resource entry for display and search.
@@ -82,6 +84,11 @@ interface TypesResponse {
     collections: CollectionMeta[];
 }
 
+interface ActivitiesResponse {
+    activities: RemoteActivityDefinition[];
+    collections: CollectionMeta[];
+}
+
 interface TemplatesResponse {
     templates: RenderingTemplateDefinitionRef[];
     collections: CollectionMeta[];
@@ -136,6 +143,7 @@ export function buildResourceData(
     interactionsResp: InteractionsResponse,
     toolsResp: ToolsResponse,
     skillsResp: SkillsResponse,
+    activitiesResp: ActivitiesResponse,
     typesResp: TypesResponse,
     templatesResp: TemplatesResponse,
     mcpEndpoints?: string[],
@@ -216,6 +224,31 @@ export function buildResourceData(
             description: skill.description || '',
             type: 'skill',
             url: skill.url,
+        });
+    }
+
+    // --- Activities (url format: "activities/{collection}") ---
+    const actCounts = countPerCollection(
+        activitiesResp.activities,
+        activitiesResp.collections,
+        (a) => a.url?.split('/').pop(),
+    );
+    for (const col of activitiesResp.collections) {
+        collections.push({
+            name: col.name,
+            title: col.title || formatTitle(col.name),
+            description: col.description || '',
+            type: 'activity',
+            count: actCounts.get(col.name) || 0,
+        });
+    }
+    for (const act of activitiesResp.activities) {
+        resources.push({
+            name: act.name,
+            title: act.title || formatTitle(act.name),
+            description: act.description || '',
+            type: 'activity',
+            url: act.url,
         });
     }
 

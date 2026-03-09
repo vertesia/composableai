@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import {
+    activityCollectionPage,
     contentTypeCollectionPage,
     indexPage,
     interactionCollectionPage,
@@ -13,6 +14,7 @@ import { ToolServerConfig } from "./types.js";
 export function createSiteRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const {
         tools = [],
+        activities = [],
         interactions = [],
         types = [],
         skills = [],
@@ -28,6 +30,13 @@ export function createSiteRoute(app: Hono, basePath: string, config: ToolServerC
     for (const coll of tools) {
         app.get(`${basePath}/tools/${coll.name}`, (c) => {
             return c.html(toolCollectionPage(coll));
+        });
+    }
+
+    // Activity collection pages
+    for (const coll of activities) {
+        app.get(`${basePath}/activities/${coll.name}`, (c) => {
+            return c.html(activityCollectionPage(coll));
         });
     }
 
