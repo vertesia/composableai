@@ -774,6 +774,13 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      */
     schedule_id?: string;
 
+    /**
+     * @internal Stable Temporal run ID for Redis channels and message posting.
+     * Set to firstExecutionRunId by the workflow on first run; survives continueAsNew
+     * so that activities always publish to the same channel the client subscribes to.
+     */
+    _channel_run_id?: string;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {

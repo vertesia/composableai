@@ -388,6 +388,76 @@ export class AgentsApi extends ApiTopic {
     }
 
     /**
+     * Stream Temporal history events via SSE (handles continueAsNew).
+     * Returns an EventSource that emits 'history' and 'control' events.
+     */
+    async streamRunDetails(
+        id: string,
+        onEvent?: (event: { type: string; data: unknown }) => void,
+        signal?: AbortSignal,
+    ): Promise<void> {
+        const EventSourceImpl = await EventSourceProvider();
+        const client = this.client as VertesiaClient;
+        const streamUrl = new URL(client.agents.baseUrl + `/${id}/details/stream`);
+
+        const bearerToken = client._auth ? await client._auth() : undefined;
+        if (!bearerToken) {
+            throw new Error('No auth token available');
+        }
+        const token = bearerToken.split(' ')[1];
+        streamUrl.searchParams.set('access_token', token);
+
+        return new Promise<void>((resolve, reject) => {
+            const sse = new EventSourceImpl(streamUrl.href);
+            let abortHandler: (() => void) | null = null;
+
+            const cleanup = () => {
+                sse.close();
+                if (signal && abortHandler) {
+                    signal.removeEventListener('abort', abortHandler);
+                    abortHandler = null;
+                }
+            };
+
+            if (signal) {
+                if (signal.aborted) { cleanup(); resolve(); return; }
+                abortHandler = () => { cleanup(); resolve(); };
+                signal.addEventListener('abort', abortHandler, { once: true });
+            }
+
+            sse.addEventListener('history', (ev: MessageEvent) => {
+                try {
+                    const data = JSON.parse(ev.data);
+                    if (onEvent) onEvent({ type: 'history', data });
+                } catch (_err) { /* ignore parse errors */ }
+            });
+
+            sse.addEventListener('control', (ev: MessageEvent) => {
+                try {
+                    const data = JSON.parse(ev.data);
+                    if (onEvent) onEvent({ type: 'control', data });
+                    if (data.type === 'done') {
+                        cleanup();
+                        resolve();
+                    }
+                } catch (_err) { /* ignore parse errors */ }
+            });
+
+            sse.addEventListener('error', (ev: MessageEvent) => {
+                try {
+                    const data = JSON.parse(ev.data);
+                    if (onEvent) onEvent({ type: 'error', data });
+                } catch (_err) { /* ignore parse errors */ }
+            });
+
+            sse.onerror = (_err: unknown) => {
+                cleanup();
+                reject(new Error('SSE connection failed for details stream'));
+            };
+        });
+    }
+
+    /**
      * List child workflows (sub-agents) for an agent run.
      */
     listChildren(id: string): Promise<ListWorkflowRunsResponse> {
