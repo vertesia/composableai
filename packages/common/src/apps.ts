@@ -527,6 +527,14 @@ export interface CompositeAppSwitchersOverrides {
 }
 
 /**
+ * Sidebar display overrides for the CompositeApp.
+ */
+export interface CompositeAppSidebarOverrides {
+    /** Whether to show section title headers in the sidebar (defaults to true) */
+    showSectionHeaders?: boolean;
+}
+
+/**
  * Card display overrides for the CompositeApp in the App Portal.
  * Similar to AppManifest display properties, but specific to the CompositeApp card.
  * Allows customers to customize the app portal card (not otherwise possible if using a
@@ -566,6 +574,8 @@ export interface CompositeAppConfig {
     message?: CompositeAppMessageOverrides;
     /** Optional switcher visibility overrides */
     switchers?: CompositeAppSwitchersOverrides;
+    /** Optional sidebar display overrides */
+    sidebar?: CompositeAppSidebarOverrides;
     /** List of apps to include in the CompositeApp */
     apps: CompositeAppEntry[];
 }
