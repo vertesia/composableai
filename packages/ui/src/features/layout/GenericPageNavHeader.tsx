@@ -29,22 +29,18 @@ export function GenericPageNavHeader({ className, children, title, description, 
     }
 
     const buildBreadcrumbLabel = (entry: any): string => {
+        if (entry?.title) {
+            return entry.title;
+        }
+
         const href = entry?.href || '';
         if (!href) return 'Page';
 
         const cleanHref = href.split('#')[0].split('?')[0];
         const pathSegments: string[] = (cleanHref as string).split('/').filter((segment: string) => segment.length > 0);
 
-        if (pathSegments.length === 3) {
-            if (entry.title !== document.title && entry.title) {
-                return entry.title;
-            }
-            const secondSegment = pathSegments[1];
-            return `${formatTitle(secondSegment)} Detail (...${pathSegments[2].slice(-6)})`;
-        } else if (pathSegments.length >= 2) {
+        if (pathSegments.length >= 1) {
             return formatTitle(pathSegments[pathSegments.length - 1]);
-        } else if (pathSegments.length === 1) {
-            return formatTitle(pathSegments[0]);
         }
 
         return 'Page';

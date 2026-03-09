@@ -18,13 +18,17 @@ interface BreadcrumbItemProps {
 export function Breadcrumbs({ path, maxItems = 3, className, separator }: BreadcrumbItemProps) {
   const items = path || [];
 
+
   const renderBreadcrumbItem = (item: BreadcrumbProps) => {
+    const shortenedLabel = typeof item.label === "string" && item.label.length > 20
+      ? item.label.slice(0, 17) + "..."
+      : item.label;
     if (item.onClick) {
-      return <BreadcrumbButton onClick={item.onClick} href={item.href}>{item.label}</BreadcrumbButton>;
+      return <BreadcrumbButton onClick={item.onClick} href={item.href} title={typeof item.label === 'string' ? item.label : undefined}>{shortenedLabel}</BreadcrumbButton>;
     } else if (item.href) {
-      return <BreadcrumbButton href={item.href}>{item.label}</BreadcrumbButton>;
+      return <BreadcrumbButton href={item.href} title={typeof item.label === 'string' ? item.label : undefined}>{shortenedLabel}</BreadcrumbButton>;
     } else {
-      return <BreadcrumbPage>{item.label}</BreadcrumbPage>;
+      return <BreadcrumbPage>{shortenedLabel}</BreadcrumbPage>;
     }
   };
 
@@ -140,7 +144,7 @@ const BreadcrumbButton = React.forwardRef<
       variant="ghost"
       size={"md"}
       ref={ref}
-      className={cn("p-0!", className)}
+      className={cn("p-0! hover:underline! hover:bg-background!", className)}
       onClick={handleClick}
       {...props}
     />
