@@ -71,10 +71,10 @@ describe("executeRemoteActivity", () => {
         const body = JSON.parse(opts?.body as string);
         expect(body.activity_name).toBe("analyze_sentiment");
         expect(body.params).toEqual({ text: "Hello world" });
-        expect(body.metadata.workflow_name).toBe("TestWorkflow");
-        expect(body.metadata.account_id).toBe("acc-123");
-        expect(body.metadata.project_id).toBe("proj-456");
         expect(body.metadata.app_install_id).toBe("install-123");
+        expect(body.metadata.endpoints).toEqual({ studio: "http://mock-studio", store: "http://mock-store" });
+        // auth_token should NOT be in the payload (it's in the Authorization header)
+        expect(body.auth_token).toBeUndefined();
     });
 
     it("throws on HTTP error (4xx/5xx)", async () => {

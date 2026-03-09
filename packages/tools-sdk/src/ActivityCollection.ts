@@ -2,29 +2,27 @@ import { RemoteActivityDefinition, RemoteActivityExecutionPayload, RemoteActivit
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { authorize } from "./auth.js";
-import { CollectionProperties, ICollection } from "./types.js";
+import { CollectionProperties, ICollection, ToolExecutionContext } from "./types.js";
 import { kebabCaseToTitle } from "./utils.js";
+
+/**
+ * Context provided to activity handlers during execution.
+ * Same interface as ToolExecutionContext: includes token, decoded payload, and getClient().
+ */
+export type ActivityExecutionContext = ToolExecutionContext;
 
 /**
  * Function signature for a remote activity handler.
  */
-export type ActivityFn = (
-    payload: RemoteActivityExecutionPayload,
+export type ActivityFn<ParamsT extends Record<string, any> = Record<string, any>> = (
+    payload: RemoteActivityExecutionPayload<ParamsT>,
     context: ActivityExecutionContext
 ) => Promise<any>;
 
 /**
- * Context provided to activity handlers during execution.
- */
-export interface ActivityExecutionContext {
-    /** The raw JWT token from the execution request */
-    token: string;
-}
-
-/**
  * An activity definition within an ActivityCollection.
  */
-export interface ActivityDefinition {
+export interface ActivityDefinition<ParamsT extends Record<string, any> = Record<string, any>> {
     /** Activity name (snake_case) */
     name: string;
     /** Display title */
@@ -36,7 +34,7 @@ export interface ActivityDefinition {
     /** JSON Schema for the activity output */
     output_schema?: Record<string, any>;
     /** The activity handler function */
-    run: ActivityFn;
+    run: ActivityFn<ParamsT>;
 }
 
 export interface ActivityCollectionProperties extends CollectionProperties {
@@ -112,10 +110,7 @@ export class ActivityCollection implements ICollection<ActivityDefinition> {
 
         const activity = this.getActivity(activityName);
 
-        const session = await authorize(ctx, payload.metadata?.endpoints);
-        const context: ActivityExecutionContext = {
-            token: session.token,
-        };
+        const context = await authorize(ctx, payload.metadata?.endpoints);
 
         try {
             const result = await activity.run(payload, context);

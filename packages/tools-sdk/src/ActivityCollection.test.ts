@@ -108,11 +108,7 @@ describe("ActivityCollection", () => {
         const payload: RemoteActivityExecutionPayload = {
             activity_name: "analyze_sentiment",
             params: { text: "Hello world" },
-            auth_token: "test-token",
             metadata: {
-                workflow_name: "test-workflow",
-                account_id: "acc-123",
-                project_id: "proj-456",
                 app_install_id: "install-1",
             },
         };

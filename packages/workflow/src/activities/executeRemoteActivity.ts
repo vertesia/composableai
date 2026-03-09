@@ -43,11 +43,7 @@ export async function executeRemoteActivity(
     const executionPayload: RemoteActivityExecutionPayload = {
         activity_name,
         params: activityParams,
-        auth_token: payload.auth_token,
         metadata: {
-            workflow_name: payload.workflow_name,
-            account_id: payload.account_id,
-            project_id: payload.project_id,
             run_id: runId,
             app_install_id,
             app_settings,

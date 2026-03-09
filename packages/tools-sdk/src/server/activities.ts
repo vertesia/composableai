@@ -23,7 +23,6 @@ function parseActivityPayload(body: unknown): RemoteActivityExecutionPayload {
     return {
         activity_name: obj.activity_name,
         params: obj.params || {},
-        auth_token: obj.auth_token || '',
         metadata: obj.metadata || {},
     };
 }

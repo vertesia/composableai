@@ -15,10 +15,10 @@ export interface WordCountResult {
  * This is a simple example of a remote activity that can be invoked from DSL workflows.
  */
 export async function wordCount(
-    payload: RemoteActivityExecutionPayload,
+    payload: RemoteActivityExecutionPayload<WordCountParams>,
     _context: ActivityExecutionContext
 ): Promise<WordCountResult> {
-    const { text } = payload.params as WordCountParams;
+    const { text } = payload.params;
     if (!text || typeof text !== 'string') {
         throw new Error('Missing or invalid "text" parameter');
     }

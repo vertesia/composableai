@@ -94,7 +94,6 @@ describe("Activities server routes", () => {
                 body: JSON.stringify({
                     activity_name: "analyze_sentiment",
                     params: { text: "hello" },
-                    auth_token: "test-token",
                     metadata: {
                         workflow_name: "wf",
                         account_id: "acc",
@@ -120,7 +119,6 @@ describe("Activities server routes", () => {
                 body: JSON.stringify({
                     activity_name: "nonexistent",
                     params: {},
-                    auth_token: "test-token",
                     metadata: {},
                 }),
             });
@@ -155,7 +153,6 @@ describe("Activities server routes", () => {
                 body: JSON.stringify({
                     activity_name: "extract_entities",
                     params: {},
-                    auth_token: "test-token",
                     metadata: {},
                 }),
             });
