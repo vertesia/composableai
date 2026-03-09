@@ -1,9 +1,9 @@
+import { fixupPluginRules } from '@eslint/compat';
 import js from '@eslint/js';
 import pluginImport from 'eslint-plugin-import';
 import pluginReact from 'eslint-plugin-react';
 import pluginReactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
-import { fixupPluginRules } from '@eslint/compat';
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
@@ -18,15 +18,11 @@ export default [
 
     // TypeScript parser configuration
     {
+        files: ['src/**/*.{ts,tsx}'],
         languageOptions: {
             parserOptions: {
                 projectService: true,
                 tsconfigRootDir: import.meta.dirname,
-                allowDefaultProject: [
-                    '*.js',
-                    '*.mjs',
-                    'eslint.config.js'
-                ],
             },
         },
     },
