@@ -14,6 +14,10 @@ export interface AppUINavItem {
     icon: string;
     /** Route path relative to app base */
     route: string;
+    /** Nested sub-items displayed within this item's collapsible section */
+    children?: AppUINavItem[];
+    /** When true, this item appears as an independent entry in the sidebar (outside its parent app group) */
+    topLevel?: boolean;
 }
 
 export interface AppUIConfig {
@@ -473,6 +477,8 @@ export interface CompositeAppNavItemOverride {
     label?: string;
     /** Override the displayed nav item icon (Lucide icon name or SVG content string) */
     icon?: string;
+    /** Override whether this item appears as an independent sidebar entry (overrides manifest topLevel) */
+    topLevel?: boolean;
     //TODO: Set permissions for routes
 }
 
