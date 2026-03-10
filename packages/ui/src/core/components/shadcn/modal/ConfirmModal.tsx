@@ -10,9 +10,10 @@ interface ConfirmModalProps {
     onConfirm: () => void
     onCancel: () => void
     isOpen: boolean
+    isLoading?: boolean
 }
 
-export function ConfirmModal({ title, content, onConfirm, onCancel, isOpen }: ConfirmModalProps) {
+export function ConfirmModal({ title, content, onConfirm, onCancel, isOpen, isLoading }: ConfirmModalProps) {
     const { t } = useUITranslation()
     const cancelButtonRef = useRef(null)
 
@@ -37,6 +38,7 @@ export function ConfirmModal({ title, content, onConfirm, onCancel, isOpen }: Co
                 <Button
                     variant="destructive"
                     onClick={onConfirm}
+                    isLoading={isLoading}
                 >
                     {t('modal.confirm')}
                 </Button>

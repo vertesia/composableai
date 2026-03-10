@@ -22,6 +22,10 @@ export function NestedNavigationContext({ basePath, fixLinks = false, children }
         <ReactRouterContext.Provider value={{
             ...ctx,
             navigate: (to: string, options?: NavigateOptions) => {
+                if (options?.isBasePathNested === false) {
+                    // Navigate to an absolute path without adding this context's basePath
+                    return ctx.navigate(to, options);
+                }
                 const actualBasePath = options?.basePath ? joinPath(basePath, options.basePath) : basePath;
                 return ctx.navigate(to, { ...options, basePath: actualBasePath });
             }

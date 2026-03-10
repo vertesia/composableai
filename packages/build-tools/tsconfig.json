@@ -2,7 +2,7 @@
   "compilerOptions": {
     "composite": true,
     "lib": [
-      "ES2022"
+      "ES2024"
     ],
     "types": ["node"],
     "rootDir": "./src",
@@ -12,7 +12,7 @@
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "target": "ES2022",
+    "target": "ES2024",
     "useDefineForClassFields": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",

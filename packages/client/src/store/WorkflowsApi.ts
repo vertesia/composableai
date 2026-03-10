@@ -17,10 +17,10 @@ import {
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
     parseMessage,
-    toAgentMessage,
     PromptSizeAnalyticsResponse,
     RunsByAgentAnalyticsResponse,
     TimeToFirstResponseAnalyticsResponse,
+    toAgentMessage,
     TokenUsageAnalyticsResponse,
     ToolAnalyticsResponse,
     ToolParameterAnalyticsResponse,
@@ -213,201 +213,221 @@ export class WorkflowsApi extends ApiTopic {
         since?: number,
         signal?: AbortSignal,
     ): Promise<unknown> {
-        return new Promise<unknown>(async (resolve, reject) => {
-            let reconnectAttempts = 0;
-            let lastMessageTimestamp = since || 0;
-            let isClosed = false;
-            let currentSse: EventSource | null = null;
-            let interval: NodeJS.Timeout | null = null;
-            let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-            let abortHandler: (() => void) | null = null;
+        return new Promise<unknown>((resolve, reject) => {
+            const run = async () => {
+                let reconnectAttempts = 0;
+                let lastMessageTimestamp = since || 0;
+                let isClosed = false;
+                let currentSse: EventSource | null = null;
+                let interval: NodeJS.Timeout | null = null;
+                let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+                let abortHandler: (() => void) | null = null;
 
-            const maxReconnectAttempts = 10;
-            const baseDelay = 1000; // 1 second base delay
-            const maxDelay = 30000; // 30 seconds max delay
+                const maxReconnectAttempts = 10;
+                const baseDelay = 1000; // 1 second base delay
+                const maxDelay = 30000; // 30 seconds max delay
 
-            const calculateBackoffDelay = (attempts: number): number => {
-                const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
-                // Add jitter to prevent thundering herd
-                const jitter = Math.random() * 0.1 * exponentialDelay;
-                return exponentialDelay + jitter;
-            };
-
-            const cleanup = () => {
-                if (reconnectTimer) {
-                    clearTimeout(reconnectTimer);
-                    reconnectTimer = null;
-                }
-                if (interval) {
-                    clearInterval(interval);
-                    interval = null;
-                }
-                if (currentSse) {
-                    currentSse.close();
-                    currentSse = null;
-                }
-                if (signal && abortHandler) {
-                    signal.removeEventListener("abort", abortHandler);
-                    abortHandler = null;
-                }
-            };
-
-            const exit = (payload: unknown) => {
-                if (!isClosed) {
-                    isClosed = true;
-                    cleanup();
-                    resolve(payload);
-                }
-            };
-
-            // Allow callers to externally cancel the stream lifecycle.
-            if (signal) {
-                if (signal.aborted) {
-                    isClosed = true;
-                    cleanup();
-                    resolve(null);
-                    return;
-                }
-                abortHandler = () => {
-                    exit(null);
+                const calculateBackoffDelay = (attempts: number): number => {
+                    const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+                    // Add jitter to prevent thundering herd
+                    const jitter = Math.random() * 0.1 * exponentialDelay;
+                    return exponentialDelay + jitter;
                 };
-                signal.addEventListener("abort", abortHandler, { once: true });
-            }
 
-            // 1. Fetch historical messages via GET /updates (gzip-compressed if > 3KB)
-            // This is more efficient than receiving historical over uncompressed SSE
-            try {
-                if (isClosed) return;
-                const historical = await this.retrieveMessages(workflowId, runId, since);
-                if (isClosed) return;
-                for (const msg of historical) {
-                    if (isClosed) return;
-                    // Update timestamp for SSE connection
-                    lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
-
-                    // Deliver historical messages to consumer
-                    if (onMessage) {
-                        onMessage(msg, exit);
+                const cleanup = () => {
+                    if (reconnectTimer) {
+                        clearTimeout(reconnectTimer);
+                        reconnectTimer = null;
                     }
-                    if (isClosed) return;
-
-                    // Check if workflow already completed
-                    const workstreamId = msg.workstream_id || 'main';
-                    const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
-                        (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
-                    if (streamIsOver) {
-                        console.log("Workflow already completed in historical messages");
-                        exit(null);
-                        return;
+                    if (interval) {
+                        clearInterval(interval);
+                        interval = null;
                     }
-                }
-            } catch (err) {
-                if (isClosed) return;
-                console.warn("Failed to fetch historical messages, continuing with SSE:", err);
-                // Continue to SSE - it will send historical if skipHistory is not set
-            }
-
-            // 2. Connect to SSE for real-time updates only (skipHistory=true)
-            const setupStream = async (isReconnect: boolean = false) => {
-                if (isClosed) return;
-
-                try {
-                    const EventSourceImpl = await EventSourceProvider();
-                    if (isClosed) return;
-                    const client = this.client as VertesiaClient;
-                    const streamUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/stream`);
-
-                    // Use the timestamp of the last received message for reconnection
-                    if (lastMessageTimestamp > 0) {
-                        streamUrl.searchParams.set("since", lastMessageTimestamp.toString());
+                    if (currentSse) {
+                        currentSse.close();
+                        currentSse = null;
                     }
+                    if (signal && abortHandler) {
+                        signal.removeEventListener("abort", abortHandler);
+                        abortHandler = null;
+                    }
+                };
 
-                    // Skip historical messages - we already fetched them via GET /updates
-                    streamUrl.searchParams.set("skipHistory", "true");
-
-                    const bearerToken = client._auth ? await client._auth() : undefined;
-                    if (isClosed) return;
-                    if (!bearerToken) {
+                const exit = (payload: unknown) => {
+                    if (!isClosed) {
                         isClosed = true;
                         cleanup();
-                        reject(new Error("No auth token available"));
+                        resolve(payload);
+                    }
+                };
+
+                // Allow callers to externally cancel the stream lifecycle.
+                if (signal) {
+                    if (signal.aborted) {
+                        isClosed = true;
+                        cleanup();
+                        resolve(null);
                         return;
                     }
-
-                    const token = bearerToken.split(" ")[1];
-                    streamUrl.searchParams.set("access_token", token);
-
-                    if (isReconnect) {
-                        console.log(`Reconnecting to SSE stream for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
-                    }
-
-                    if (isClosed) return;
-                    const sse = new EventSourceImpl(streamUrl.href);
-                    currentSse = sse;
-
-                    // Prevent Node from exiting prematurely
-                    interval = setInterval(() => { }, 1000);
-
-                    sse.onopen = () => {
-                        if (isReconnect) {
-                            console.log(`Successfully reconnected to SSE stream for run ${runId}`);
-                        }
-                        // Reset reconnect attempts on successful connection
-                        reconnectAttempts = 0;
+                    abortHandler = () => {
+                        exit(null);
                     };
+                    signal.addEventListener("abort", abortHandler, { once: true });
+                }
 
-                    sse.onmessage = (ev: MessageEvent) => {
+                // 1. Fetch historical messages via GET /updates (gzip-compressed if > 3KB)
+                // This is more efficient than receiving historical over uncompressed SSE
+                try {
+                    if (isClosed) return;
+                    const historical = await this.retrieveMessages(workflowId, runId, since);
+                    if (isClosed) return;
+                    for (const msg of historical) {
                         if (isClosed) return;
-                        if (!ev.data || ev.data.startsWith(":")) {
+                        // Update timestamp for SSE connection
+                        lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
+
+                        // Deliver historical messages to consumer
+                        if (onMessage) {
+                            onMessage(msg, exit);
+                        }
+                        if (isClosed) return;
+
+                        // Check if workflow already completed
+                        const workstreamId = msg.workstream_id || 'main';
+                        const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
+                            (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
+                        if (streamIsOver) {
+                            console.log("Workflow already completed in historical messages");
+                            exit(null);
+                            return;
+                        }
+                    }
+                } catch (err) {
+                    if (isClosed) return;
+                    console.warn("Failed to fetch historical messages, continuing with SSE:", err);
+                    // Continue to SSE - it will send historical if skipHistory is not set
+                }
+
+                // 2. Connect to SSE for real-time updates only (skipHistory=true)
+                const setupStream = async (isReconnect: boolean = false) => {
+                    if (isClosed) return;
+
+                    try {
+                        const EventSourceImpl = await EventSourceProvider();
+                        if (isClosed) return;
+                        const client = this.client as VertesiaClient;
+                        const streamUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/stream`);
+
+                        // Use the timestamp of the last received message for reconnection
+                        if (lastMessageTimestamp > 0) {
+                            streamUrl.searchParams.set("since", lastMessageTimestamp.toString());
+                        }
+
+                        // Skip historical messages - we already fetched them via GET /updates
+                        streamUrl.searchParams.set("skipHistory", "true");
+
+                        const bearerToken = client._auth ? await client._auth() : undefined;
+                        if (isClosed) return;
+                        if (!bearerToken) {
+                            isClosed = true;
+                            cleanup();
+                            reject(new Error("No auth token available"));
                             return;
                         }
 
-                        try {
-                            // Parse message using parseMessage() which handles both compact and legacy formats
-                            const compactMessage = parseMessage(ev.data);
+                        const token = bearerToken.split(" ")[1];
+                        streamUrl.searchParams.set("access_token", token);
 
-                            // Update last message timestamp for reconnection (use ts field or current time)
-                            if (compactMessage.ts) {
-                                lastMessageTimestamp = Math.max(lastMessageTimestamp, compactMessage.ts);
-                            } else {
-                                lastMessageTimestamp = Date.now();
-                            }
-
-                            // Convert to AgentMessage for consumers (they shouldn't need to know about compact format)
-                            if (onMessage) {
-                                const agentMessage = toAgentMessage(compactMessage, runId);
-                                onMessage(agentMessage, exit);
-                            }
-
-                            // Get workstream ID (defaults to 'main' if not set)
-                            const workstreamId = compactMessage.w || 'main';
-
-                            const streamIsOver = compactMessage.t === AgentMessageType.TERMINATED ||
-                                (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
-
-                            // Only close the stream when the main workstream completes or terminates
-                            if (streamIsOver) {
-                                console.log("Closing stream due to COMPLETE message from main workstream");
-                                exit(null);
-                            } else if (compactMessage.t === AgentMessageType.COMPLETE) {
-                                console.log(`Received COMPLETE message from non-main workstream: ${workstreamId}, keeping stream open`);
-                            }
-                        } catch (err) {
-                            console.error("Failed to parse SSE message:", err, ev.data);
+                        if (isReconnect) {
+                            console.log(`Reconnecting to SSE stream for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
                         }
-                    };
 
-                    sse.onerror = (err: any) => {
                         if (isClosed) return;
+                        const sse = new EventSourceImpl(streamUrl.href);
+                        currentSse = sse;
 
-                        console.warn(`SSE stream error for run ${runId}:`, err);
-                        cleanup();
+                        // Prevent Node from exiting prematurely
+                        interval = setInterval(() => { }, 1000);
 
-                        // Check if we should attempt reconnection
+                        sse.onopen = () => {
+                            if (isReconnect) {
+                                console.log(`Successfully reconnected to SSE stream for run ${runId}`);
+                            }
+                            // Reset reconnect attempts on successful connection
+                            reconnectAttempts = 0;
+                        };
+
+                        sse.onmessage = (ev: MessageEvent) => {
+                            if (isClosed) return;
+                            if (!ev.data || ev.data.startsWith(":")) {
+                                return;
+                            }
+
+                            try {
+                                // Parse message using parseMessage() which handles both compact and legacy formats
+                                const compactMessage = parseMessage(ev.data);
+
+                                // Update last message timestamp for reconnection (use ts field or current time)
+                                if (compactMessage.ts) {
+                                    lastMessageTimestamp = Math.max(lastMessageTimestamp, compactMessage.ts);
+                                } else {
+                                    lastMessageTimestamp = Date.now();
+                                }
+
+                                // Convert to AgentMessage for consumers (they shouldn't need to know about compact format)
+                                if (onMessage) {
+                                    const agentMessage = toAgentMessage(compactMessage, runId);
+                                    onMessage(agentMessage, exit);
+                                }
+
+                                // Get workstream ID (defaults to 'main' if not set)
+                                const workstreamId = compactMessage.w || 'main';
+
+                                const streamIsOver = compactMessage.t === AgentMessageType.TERMINATED ||
+                                    (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
+
+                                // Only close the stream when the main workstream completes or terminates
+                                if (streamIsOver) {
+                                    console.log("Closing stream due to COMPLETE message from main workstream");
+                                    exit(null);
+                                } else if (compactMessage.t === AgentMessageType.COMPLETE) {
+                                    console.log(`Received COMPLETE message from non-main workstream: ${workstreamId}, keeping stream open`);
+                                }
+                            } catch (err) {
+                                console.error("Failed to parse SSE message:", err, ev.data);
+                            }
+                        };
+
+                        sse.onerror = (err: any) => {
+                            if (isClosed) return;
+
+                            console.warn(`SSE stream error for run ${runId}:`, err);
+                            cleanup();
+
+                            // Check if we should attempt reconnection
+                            if (reconnectAttempts < maxReconnectAttempts) {
+                                const delay = calculateBackoffDelay(reconnectAttempts);
+                                console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+
+                                reconnectAttempts++;
+                                reconnectTimer = setTimeout(() => {
+                                    reconnectTimer = null;
+                                    if (!isClosed) {
+                                        setupStream(true);
+                                    }
+                                }, delay);
+                            } else {
+                                console.error(`Failed to reconnect to SSE stream for run ${runId} after ${maxReconnectAttempts} attempts`);
+                                isClosed = true;
+                                cleanup();
+                                reject(new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`));
+                            }
+                        };
+                    } catch (err) {
+                        if (isClosed) return;
+                        console.error("Error setting up SSE stream:", err);
                         if (reconnectAttempts < maxReconnectAttempts) {
                             const delay = calculateBackoffDelay(reconnectAttempts);
-                            console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
-
                             reconnectAttempts++;
                             reconnectTimer = setTimeout(() => {
                                 reconnectTimer = null;
@@ -416,34 +436,17 @@ export class WorkflowsApi extends ApiTopic {
                                 }
                             }, delay);
                         } else {
-                            console.error(`Failed to reconnect to SSE stream for run ${runId} after ${maxReconnectAttempts} attempts`);
                             isClosed = true;
                             cleanup();
-                            reject(new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`));
+                            reject(err);
                         }
-                    };
-                } catch (err) {
-                    if (isClosed) return;
-                    console.error("Error setting up SSE stream:", err);
-                    if (reconnectAttempts < maxReconnectAttempts) {
-                        const delay = calculateBackoffDelay(reconnectAttempts);
-                        reconnectAttempts++;
-                        reconnectTimer = setTimeout(() => {
-                            reconnectTimer = null;
-                            if (!isClosed) {
-                                setupStream(true);
-                            }
-                        }, delay);
-                    } else {
-                        isClosed = true;
-                        cleanup();
-                        reject(err);
                     }
-                }
-            };
+                };
 
-            // Start the async setup process
-            setupStream(false);
+                // Start the async setup process
+                setupStream(false);
+            }
+            run().catch(reject);
         });
     }
 
