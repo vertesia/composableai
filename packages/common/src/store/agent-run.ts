@@ -15,6 +15,7 @@
 import { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, RunSource } from "../interaction.js";
 import { UserChannel } from "../email.js";
 import { ContentObjectTypeRef } from "./store.js";
+import { ConversationActivityState } from "./workflow.js";
 
 /**
  * Status of an agent run through its lifecycle.
@@ -112,6 +113,9 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
 
     /** Current status of the agent run */
     status: AgentRunStatus;
+
+    /** Whether the agent is currently working or idle (waiting for user input) */
+    activity_state?: ConversationActivityState;
 
     /** When the run started */
     started_at: Date;
@@ -255,6 +259,9 @@ export interface AgentRunSearchHit {
     /** Current status */
     status: AgentRunStatus;
 
+    /** Whether the agent is currently working or idle */
+    activity_state?: ConversationActivityState;
+
     /** When the run started */
     started_at: string;
 
@@ -287,6 +294,15 @@ export interface AgentRunSearchHit {
 
     /** Content type */
     content_type?: ContentObjectTypeRef;
+
+    /** Tools configured for this run */
+    tool_names?: string[];
+
+    /** Schedule ID (if schedule-triggered) */
+    schedule_id?: string;
+
+    /** How the run was created */
+    type?: AgentRunType;
 
     /** Created timestamp */
     created_at: string;

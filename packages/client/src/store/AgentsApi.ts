@@ -7,6 +7,7 @@ import {
     AgentRunInternals,
     AgentRunStatus,
     CompactMessage,
+    ConversationActivityState,
     CreateAgentRunPayload,
     ListAgentRunsQuery,
     SearchAgentRunsQuery,
@@ -134,6 +135,7 @@ export class AgentsApi extends ApiTopic {
         id: string,
         update: {
             status?: AgentRunStatus;
+            activity_state?: ConversationActivityState;
             title?: string;
             topic?: string;
             name?: string;
