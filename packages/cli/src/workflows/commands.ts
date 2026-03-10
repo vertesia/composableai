@@ -79,7 +79,7 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
     const { objectId, vars, file, stream, interactive, output: outputFile } = options;
     console.debug("Executing interaction in workflow", workflowName, "with options", options);
 
-    let mergedConfig = {
+    const mergedConfig = {
         objectIds: objectId ? objectId : [],
         vars: JSON.parse(vars || "{}") || {},
     } as ExecuteWorkflowPayload;
@@ -116,7 +116,7 @@ export async function executeWorkflowByName(program: Command, workflowName: stri
     if (outputFile && runId) {
         const runDetails = await client.workflows.getRunDetails(runId, workflowId);
         const output = runDetails.result?.output;
-        let outputContent: string = "";
+        let outputContent: string;
         if (!output) {
             console.error("No output found for workflow run", runId);
             process.exit(1);

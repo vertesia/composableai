@@ -1,10 +1,10 @@
-import { describe, test, expect } from "vitest";
+import { describe, expect, test } from "vitest";
 import { splitCommandLine, splitPipeCommands } from "./cmdline";
 
 describe("command line parser", () => {
 
     test("split command line", () => {
-        const args = splitCommandLine("cmd -m \"hello 'world'\" 'some \"file\"' 'nested \"dquote\"' \"nested \'squote\'\"");
+        const args = splitCommandLine("cmd -m \"hello 'world'\" 'some \"file\"' 'nested \"dquote\"' \"nested 'squote'\"");
         expect(args).toEqual(["cmd", "-m", "hello 'world'", "some \"file\"", 'nested "dquote"', "nested 'squote'"]);
 
     })

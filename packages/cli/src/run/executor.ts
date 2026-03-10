@@ -158,6 +158,8 @@ export class ExecutionRequest {
         } catch (error) {
             // Check if aborted
             if (signal?.aborted) {
+                //TODO: Maybe use error cause?
+                //eslint-disable-next-line preserve-caught-error
                 throw new Error("Operation aborted");
             }
             throw error;
