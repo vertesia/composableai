@@ -202,6 +202,111 @@ export interface ListAgentRunsQuery {
 }
 
 /**
+ * Query for searching agent runs via Elasticsearch.
+ */
+export interface SearchAgentRunsQuery {
+    /** Full-text search across name, title, topic, interaction_name, and content */
+    query?: string;
+
+    /** Filter by status (single or multiple) */
+    status?: AgentRunStatus | AgentRunStatus[];
+
+    /** Filter by interaction ID or code */
+    interaction?: string;
+
+    /** Filter by user who started the run */
+    started_by?: string;
+
+    /** Filter by categories */
+    categories?: string[];
+
+    /** Filter by tags */
+    tags?: string[];
+
+    /** Filter by content type name */
+    content_type_name?: string;
+
+    /** Only return runs started after this date */
+    since?: Date;
+
+    /** Maximum number of results (default: 50) */
+    limit?: number;
+
+    /** Offset for pagination */
+    offset?: number;
+}
+
+/**
+ * A single search hit from Elasticsearch.
+ */
+export interface AgentRunSearchHit {
+    /** Agent run ID */
+    id: string;
+
+    /** Relevance score */
+    score: number;
+
+    /** Interaction ID */
+    interaction: string;
+
+    /** Human-readable interaction name */
+    interaction_name?: string;
+
+    /** Current status */
+    status: AgentRunStatus;
+
+    /** When the run started */
+    started_at: string;
+
+    /** When the run completed */
+    completed_at?: string;
+
+    /** Who started the run */
+    started_by: string;
+
+    /** Short name/slug */
+    name?: string;
+
+    /** Conversation title */
+    title?: string;
+
+    /** Conversation topic */
+    topic?: string;
+
+    /** Tags */
+    tags?: string[];
+
+    /** Categories */
+    categories?: string[];
+
+    /** Whether the agent accepts user input */
+    interactive: boolean;
+
+    /** Collection ID */
+    collection_id?: string;
+
+    /** Content type */
+    content_type?: ContentObjectTypeRef;
+
+    /** Created timestamp */
+    created_at: string;
+
+    /** Updated timestamp */
+    updated_at: string;
+}
+
+/**
+ * Response from the agent runs search endpoint.
+ */
+export interface SearchAgentRunsResponse {
+    /** Search results */
+    hits: AgentRunSearchHit[];
+
+    /** Total matching results */
+    total: number;
+}
+
+/**
  * Internal/Temporal details for an AgentRun.
  * Includes fields normally stripped from client responses.
  */

@@ -9,6 +9,8 @@ import {
     CompactMessage,
     CreateAgentRunPayload,
     ListAgentRunsQuery,
+    SearchAgentRunsQuery,
+    SearchAgentRunsResponse,
     ListWorkflowRunsResponse,
     WorkflowRunWithDetails,
     parseMessage,
@@ -77,6 +79,26 @@ export class AgentsApi extends ApiTopic {
         if (query?.sort) params.sort = query.sort;
         if (query?.order) params.order = query.order;
         return this.get('/', { query: params });
+    }
+
+    /**
+     * Search agent runs via Elasticsearch (full-text + filters).
+     */
+    search(query?: SearchAgentRunsQuery): Promise<SearchAgentRunsResponse> {
+        const params: Record<string, string> = {};
+        if (query?.query) params.query = query.query;
+        if (query?.status) {
+            params.status = Array.isArray(query.status) ? query.status.join(',') : query.status;
+        }
+        if (query?.interaction) params.interaction = query.interaction;
+        if (query?.started_by) params.started_by = query.started_by;
+        if (query?.categories?.length) params.categories = query.categories.join(',');
+        if (query?.tags?.length) params.tags = query.tags.join(',');
+        if (query?.content_type_name) params.content_type_name = query.content_type_name;
+        if (query?.since) params.since = query.since.toISOString();
+        if (query?.limit) params.limit = String(query.limit);
+        if (query?.offset) params.offset = String(query.offset);
+        return this.get('/search', { query: params });
     }
 
     /**
