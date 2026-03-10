@@ -44,6 +44,7 @@ export interface SimpleSearchQuery {
 
 export interface ObjectSearchQuery extends SimpleSearchQuery {
     id?: string;
+    ids?: string[];
     createdFrom?: string;
     createdTo?: string;
     updatedFrom?: string;
