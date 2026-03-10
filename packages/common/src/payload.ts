@@ -34,6 +34,8 @@ export interface SearchPayload {
     from_root?: string;
     /** Sort criteria. Multiple entries enable multi-field sorting (first entry is primary). */
     sort?: SortOption[];
+    /** Arbitrary Elasticsearch aggregation definitions. Ignored when search falls back to MongoDB. */
+    aggs?: Record<string, unknown>;
 }
 
 export interface ComputeFacetPayload {

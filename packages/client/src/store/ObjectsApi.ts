@@ -44,6 +44,8 @@ export interface ComputeFacetsResponse {
 export interface SearchResponse {
     results: ContentObjectItem[];
     facets: ComputeFacetsResponse;
+    /** Raw ES aggregation results. Only present when aggs were requested and ES backend was used. */
+    aggregations?: Record<string, unknown>;
 }
 
 export class ObjectsApi extends ApiTopic {
