@@ -93,11 +93,17 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
     const handleDownload = useCallback(async (relativePath: string) => {
         if (!runId) return;
         setDownloadingPath(relativePath);
+        // Open the tab synchronously (before the await) so the browser treats it as
+        // a direct user action and doesn't block it as a popup.
+        const newTab = window.open('', '_blank');
         try {
             const { url } = await client.files.getArtifactDownloadUrl(runId, relativePath, 'attachment');
-            window.open(url, '_blank');
+            if (newTab) {
+                newTab.location.href = url;
+            }
         } catch (err) {
             console.error('Failed to get artifact download URL:', err);
+            newTab?.close();
         } finally {
             setDownloadingPath(null);
         }
