@@ -146,7 +146,7 @@ export class HistoryNavigator {
             data: options.state || undefined,
             title: options.title || document.title
         };
-        
+
         window.history['replaceState'](stateToStore, '', to.href);
         this.fireLocationChange(new AfterLocationChangeEvent('popState', to, options.state));
     }
@@ -157,19 +157,19 @@ export class HistoryNavigator {
         if (beforeEvent._canceled) {
             return;
         }
-        
+
         // Build navigation chain by preserving previous history
         const currentState = window.history.state;
         const currentTitle = options.title || document.title;
-        
+
         // Create new history chain entry
         const newChainEntry = {
             title: currentTitle,
             href: window.location.pathname + window.location.search + window.location.hash
         };
-        
+
         // Build the history chain - clear if using replace
-        let historyChain: Array<{title: string, href: string}> = [];
+        let historyChain: Array<{ title: string, href: string }> = [];
         if (!options.replace && currentState?.historyChain) {
             historyChain = [...currentState.historyChain];
         }
@@ -177,22 +177,22 @@ export class HistoryNavigator {
         // Only add to chain if not replacing
         if (!options.replace) {
             historyChain.push(newChainEntry);
-            
+
             // Limit chain length to prevent memory issues (keep last 10 entries)
             if (historyChain.length > 10) {
                 historyChain = historyChain.slice(-10);
             }
         }
-        
+
         const stateToStore = {
             from: window.location.href,
             historyChain: historyChain,
             data: options.state || undefined,
             title: options.title || document.title
         };
-        
+
         window.history[options.replace ? 'replaceState' : 'pushState'](stateToStore, '', to.href);
-        
+
         this.fireLocationChange(new AfterLocationChangeEvent(type, to, options.state));
     }
 

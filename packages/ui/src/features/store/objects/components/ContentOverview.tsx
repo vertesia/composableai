@@ -30,18 +30,6 @@ const WEB_SUPPORTED_AUDIO_FORMATS = [
     'audio/webm',   // WebM audio
 ];
 
-// Panel height constants for consistent layout
-const PANEL_HEIGHTS = {
-    /** Main resizable panel group */
-    main: "h-[calc(100vh-208px)]",
-    /** Properties panel content area */
-    properties: "h-[calc(100vh-228px)]",
-    /** Text/PDF content panel */
-    content: "h-[calc(100vh-218px)]",
-    /** Video max height */
-    video: "max-h-[calc(100vh-268px)]",
-} as const;
-
 // ----- Type Definitions -----
 
 interface TextActionsProps {
@@ -163,7 +151,7 @@ function looksLikeMarkdown(text: string | undefined): boolean {
  * Returns empty string if visible, 'hidden' if not visible.
  */
 function getPanelVisibility(isVisible: boolean): string {
-    return isVisible ? '' : 'hidden';
+    return isVisible ? 'h-full overflow-auto' : 'hidden';
 }
 
 enum PanelView {
@@ -212,7 +200,7 @@ export function ContentOverview({
 
     return (
         <>
-            <ResizablePanelGroup direction="horizontal" className={PANEL_HEIGHTS.main}>
+            <ResizablePanelGroup direction="horizontal" className='h-full'>
                 <ResizablePanel className="min-w-[100px]">
                     <PropertiesPanel object={object} refetch={refetch ?? (() => Promise.resolve())} handleCopyContent={handleCopyContent} />
                 </ResizablePanel>
@@ -294,7 +282,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 
             {
                 object.properties ? (
-                    <div className={`${PANEL_HEIGHTS.properties} overflow-auto px-2`}>
+                    <div className={`h-full px-2`}>
                         <JSONDisplay
                             value={object.properties}
                             viewCode={viewCode}
@@ -302,7 +290,7 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
                         />
                     </div>
                 ) : (
-                    <div className={`${PANEL_HEIGHTS.properties} overflow-auto px-2`}>
+                    <div className={`h-full px-2`}>
                         <div>No properties defined</div>
                     </div>
                 )
@@ -379,7 +367,7 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     const textContainerRef = useRef<HTMLDivElement | null>(null);
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full parrent">
             <div className="flex justify-between items-center px-2 shrink-0">
                 <div className="flex items-center gap-2 mb-2">
                     <div className="flex items-center gap-1 bg-muted p-1 rounded">
@@ -477,53 +465,55 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     />
                 )}
             </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Image)}>
-                <ImagePanel object={object} />
-            </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Video)}>
-                <VideoPanel object={object} />
-            </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Audio)}>
-                <AudioPanel object={object} />
-            </div>
-            {hasTranscript && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Transcript)}>
-                    <TranscriptPanel object={object} handleCopyContent={handleCopyContent} />
+            <div className="flex-1 min-h-0">
+                <div className={getPanelVisibility(currentPanel === PanelView.Image)}>
+                    <ImagePanel object={object} />
                 </div>
-            )}
-            {isPdf && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
-                    <PdfPreviewPanel object={object} />
+                <div className={getPanelVisibility(currentPanel === PanelView.Video)}>
+                    <VideoPanel object={object} />
                 </div>
-            )}
-            {isPreviewableAsPdfDoc && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
-                    <OfficePdfPreviewPanel
-                        pdfRendition={pdfRendition}
-                        officePdfUrl={officePdfUrl}
-                        officePdfConverting={officePdfConverting}
-                        officePdfError={officePdfError}
-                        onConvert={triggerOfficePdfConversion}
+                <div className={getPanelVisibility(currentPanel === PanelView.Audio)}>
+                    <AudioPanel object={object} />
+                </div>
+                {hasTranscript && (
+                    <div className={getPanelVisibility(currentPanel === PanelView.Transcript)}>
+                        <TranscriptPanel object={object} handleCopyContent={handleCopyContent} />
+                    </div>
+                )}
+                {isPdf && (
+                    <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
+                        <PdfPreviewPanel object={object} />
+                    </div>
+                )}
+                {isPreviewableAsPdfDoc && (
+                    <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
+                        <OfficePdfPreviewPanel
+                            pdfRendition={pdfRendition}
+                            officePdfUrl={officePdfUrl}
+                            officePdfConverting={officePdfConverting}
+                            officePdfError={officePdfError}
+                            onConvert={triggerOfficePdfConversion}
+                        />
+                    </div>
+                )}
+                {showProcessingPanel && (
+                    <div className={getPanelVisibility(currentPanel === PanelView.Text)}>
+                        <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
+                    </div>
+                )}
+                <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText)}>
+                    <div className="flex justify-center items-center flex-1">
+                        <Spinner size="lg" />
+                    </div>
+                </div>
+                <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText)}>
+                    <TextPanel
+                        object={object}
+                        text={displayText}
+                        isTextCropped={isTextCropped}
+                        textContainerRef={textContainerRef}
                     />
                 </div>
-            )}
-            {showProcessingPanel && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Text)}>
-                    <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
-                </div>
-            )}
-            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText)}>
-                <div className="flex justify-center items-center flex-1">
-                    <Spinner size="lg" />
-                </div>
-            </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText)}>
-                <TextPanel
-                    object={object}
-                    text={displayText}
-                    isTextCropped={isTextCropped}
-                    textContainerRef={textContainerRef}
-                />
             </div>
         </div>
     );
@@ -685,7 +675,7 @@ const TextPanel = memo(({
                     </div>
                 )}
                 <div
-                    className={`max-w-7xl px-2 ${PANEL_HEIGHTS.content} overflow-auto`}
+                    className={`max-w-7xl px-2 h-full overflow-auto`}
                     ref={textContainerRef}
                 >
                     {isXml ? (
@@ -842,7 +832,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
     }, [isVideo, webRendition, isOriginalWebSupported, content?.source, client]);
 
     return (
-        <div className="mb-4 px-2">
+        <div className="mb-4 px-2 w-full h-full">
             {!webRendition && !isOriginalWebSupported ? (
                 <div className="flex justify-center items-center h-[400px] text-muted">
                     <div className="text-center">
@@ -859,7 +849,7 @@ function VideoPanel({ object }: { object: ContentObject }) {
                     src={videoUrl}
                     poster={posterUrl}
                     controls
-                    className={`w-full ${PANEL_HEIGHTS.video} object-contain`}
+                    className={`w-full h-full object-contain`}
                 >
                     Your browser does not support the video tag.
                 </video>
@@ -1004,7 +994,7 @@ function TranscriptPanel({ object, handleCopyContent }: { object: ContentObject,
                     </Button>
                 )}
             </div>
-            <div className={`${PANEL_HEIGHTS.content} overflow-auto px-2`}>
+            <div className={`h-full} overflow-auto px-2`}>
                 {segments && segments.length > 0 ? (
                     <div className="space-y-2">
                         {segments.map((segment, idx) => (
@@ -1115,7 +1105,7 @@ function OfficePdfActions({
 
 function PdfPreviewPanel({ object }: { object: ContentObject }) {
     return (
-        <div className={PANEL_HEIGHTS.content}>
+        <div className='h-full'>
             <SimplePdfViewer
                 object={object}
                 className="h-full"
@@ -1155,7 +1145,7 @@ function OfficePdfPreviewPanel({
 
     if (pdfRendition?.content?.source) {
         return (
-            <div className={PANEL_HEIGHTS.content}>
+            <div className='h-full'>
                 <SimplePdfViewer source={pdfRendition.content.source} className="h-full" />
             </div>
         );
@@ -1163,7 +1153,7 @@ function OfficePdfPreviewPanel({
 
     if (officePdfUrl) {
         return (
-            <div className={PANEL_HEIGHTS.content}>
+            <div className='h-full'>
                 <SimplePdfViewer url={officePdfUrl} className="h-full" />
             </div>
         );
