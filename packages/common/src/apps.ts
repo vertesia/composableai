@@ -192,11 +192,14 @@ export interface AgentToolDefinition extends ToolDefinition {
 
 /**
  * Definition of a remote activity exposed by a tool server for use in DSL workflows.
- * Remote activities are identified in workflow steps by a prefixed name: `appname__activity_name`.
+ * Remote activities are identified in workflow steps using colon-separated names:
+ * `app:<app_name>:<collection>:<activity_name>` (e.g. `app:my-nlp-app:examples:word_count`).
  */
 export interface RemoteActivityDefinition {
-    /** Activity name (snake_case, unique within the app) */
+    /** Activity name (snake_case, unique within the collection) */
     name: string;
+    /** Collection name this activity belongs to */
+    collection?: string;
     /** Display title */
     title?: string;
     /** Description of what the activity does */
@@ -207,7 +210,7 @@ export interface RemoteActivityDefinition {
     output_schema?: Record<string, any>;
     /**
      * The activity execution URL. Can be absolute or relative to the tool server base URL.
-     * If not provided, the default activities endpoint of the tool server is used.
+     * If not provided, the collection-specific activities endpoint is used.
      */
     url?: string;
     /** Suggested timeout and retry configuration */
@@ -338,7 +341,7 @@ export interface AppPackage {
     /**
      * Remote activities exposed by the app for use in DSL workflows.
      * Activities are discovered via `?scope=activities` and referenced in workflow steps
-     * using prefixed names: `appname__activity_name`.
+     * using colon-separated names: `app:<app_name>:<collection>:<activity_name>`.
      */
     activities?: RemoteActivityDefinition[];
 

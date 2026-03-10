@@ -20,7 +20,7 @@ const createPayload = (
     overrides: Partial<ExecuteRemoteActivityParams> = {},
 ): DSLActivityExecutionPayload<ExecuteRemoteActivityParams> => {
     const params: ExecuteRemoteActivityParams = {
-        url: "https://tool-server.test/api/activities",
+        url: "https://tool-server.test/api/activities/nlp",
         activity_name: "analyze_sentiment",
         params: { text: "Hello world" },
         app_install_id: "install-123",
@@ -58,7 +58,7 @@ describe("executeRemoteActivity", () => {
 
         expect(mockFetch).toHaveBeenCalledOnce();
         const [url, opts] = mockFetch.mock.calls[0];
-        expect(url).toBe("https://tool-server.test/api/activities");
+        expect(url).toBe("https://tool-server.test/api/activities/nlp");
         expect(opts?.method).toBe("POST");
         expect(opts?.headers).toMatchObject({
             "Content-Type": "application/json",

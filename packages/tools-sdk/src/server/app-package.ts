@@ -106,7 +106,9 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
     async activities(pkg: AppPackage, config: ToolServerConfig) {
         const allActivities: RemoteActivityDefinition[] = [];
         for (const coll of config.activities || []) {
-            allActivities.push(...coll.getActivityDefinitions());
+            for (const def of coll.getActivityDefinitions()) {
+                allActivities.push({ ...def, collection: coll.name });
+            }
         }
         pkg.activities = allActivities;
     },

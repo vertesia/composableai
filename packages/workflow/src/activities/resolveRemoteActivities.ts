@@ -7,7 +7,8 @@ import {
 } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 
-const NS_PREFIX_SEP = "__";
+/** Prefix identifying a remote activity name in DSL workflow steps */
+const REMOTE_ACTIVITY_PREFIX = "app:";
 
 /**
  * Information about a resolved remote activity.
@@ -28,8 +29,8 @@ export interface RemoteActivityInfo {
 }
 
 /**
- * Map of prefixed activity names to their remote info.
- * Key format: `appname__activity_name`
+ * Map of remote activity qualified names to their remote info.
+ * Key format: `app:<app_name>:<collection>:<activity_name>`
  */
 export type RemoteActivityMap = Record<string, RemoteActivityInfo>;
 
@@ -39,7 +40,7 @@ export interface ResolveRemoteActivitiesParams {}
 /**
  * Resolves remote activities from all installed apps that have the `tools` capability.
  * For each app with an endpoint, fetches `?scope=activities` to discover available activities.
- * Returns a map keyed by prefixed names (`appname__activity_name`).
+ * Returns a map keyed by qualified names (`app:<app_name>:<collection>:<activity_name>`).
  */
 export async function resolveRemoteActivities(
     payload: DSLActivityExecutionPayload<ResolveRemoteActivitiesParams>,
@@ -70,25 +71,32 @@ export async function resolveRemoteActivities(
                 continue;
             }
 
-            // Normalize app name for use as prefix (replace dashes with underscores)
-            const appPrefix = manifest.name.replace(/-/g, '_');
-
             for (const activity of pkg.activities) {
-                const prefixedName = `${appPrefix}${NS_PREFIX_SEP}${activity.name}`;
+                const collection = activity.collection;
+                if (!collection) {
+                    log.warn("Remote activity missing collection, skipping", {
+                        app: manifest.name,
+                        activity: activity.name,
+                    });
+                    continue;
+                }
 
-                if (map[prefixedName]) {
+                // Build qualified name: app:<app_name>:<collection>:<activity_name>
+                const qualifiedName = `${REMOTE_ACTIVITY_PREFIX}${manifest.name}:${collection}:${activity.name}`;
+
+                if (map[qualifiedName]) {
                     log.warn("Duplicate remote activity name, skipping", {
-                        prefixedName,
-                        existingApp: map[prefixedName].app_name,
+                        qualifiedName,
+                        existingApp: map[qualifiedName].app_name,
                         newApp: manifest.name,
                     });
                     continue;
                 }
 
-                // Resolve the activity execution URL
-                const activityUrl = resolveActivityUrl(manifest.endpoint, activity);
+                // Resolve the activity execution URL (collection-specific endpoint)
+                const activityUrl = resolveActivityUrl(manifest.endpoint, activity, collection);
 
-                map[prefixedName] = {
+                map[qualifiedName] = {
                     url: activityUrl,
                     activity_name: activity.name,
                     app_install_id: install.id,
@@ -141,9 +149,9 @@ async function fetchActivitiesPackage(endpoint: string, authToken: string): Prom
 /**
  * Resolves the execution URL for a remote activity.
  * If the activity has a `url` field, resolve it relative to the endpoint base.
- * Otherwise, use the default activities endpoint.
+ * Otherwise, use the collection-specific activities endpoint: `/api/activities/{collection}`.
  */
-function resolveActivityUrl(endpoint: string, activity: RemoteActivityDefinition): string {
+function resolveActivityUrl(endpoint: string, activity: RemoteActivityDefinition, collection: string): string {
     if (activity.url) {
         // Resolve relative URLs against the endpoint origin
         if (activity.url.startsWith('http://') || activity.url.startsWith('https://')) {
@@ -152,9 +160,8 @@ function resolveActivityUrl(endpoint: string, activity: RemoteActivityDefinition
         const base = new URL(endpoint);
         return new URL(activity.url, base.origin).toString();
     }
-    // Default: POST to the base activities endpoint of the tool server
+    // Default: POST to the collection-specific activities endpoint
     const base = new URL(endpoint);
-    // Replace /package with /activities
-    const activitiesPath = base.pathname.replace(/\/package\/?$/, '/activities');
+    const activitiesPath = base.pathname.replace(/\/package\/?$/, `/activities/${collection}`);
     return new URL(activitiesPath, base.origin).toString();
 }

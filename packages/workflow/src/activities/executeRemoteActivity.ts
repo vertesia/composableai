@@ -28,7 +28,7 @@ export interface ExecuteRemoteActivityParams {
  * Bridge activity that executes a remote activity on a tool server via HTTP POST.
  *
  * This activity is called by the DSL workflow engine when a step's name matches
- * a remote activity (prefixed with `appname__`). It POSTs a
+ * a remote activity (qualified as `app:<app_name>:<collection>:<activity>`). It POSTs a
  * `RemoteActivityExecutionPayload` to the tool server and returns the result.
  *
  * Network errors throw (so Temporal retries). HTTP errors return the error.

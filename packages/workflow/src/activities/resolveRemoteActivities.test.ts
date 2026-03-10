@@ -51,7 +51,7 @@ describe("resolveRemoteActivities", () => {
         expect(mockGetInstalledApps).toHaveBeenCalledWith("tools");
     });
 
-    it("returns prefixed activity map from single app", async () => {
+    it("returns qualified activity map from single app", async () => {
         mockGetInstalledApps.mockResolvedValueOnce([{
             id: "install-1",
             manifest: {
@@ -65,8 +65,8 @@ describe("resolveRemoteActivities", () => {
             new Response(
                 JSON.stringify({
                     activities: [
-                        { name: "analyze_sentiment", description: "Analyze sentiment" },
-                        { name: "extract_entities", description: "Extract entities" },
+                        { name: "analyze_sentiment", description: "Analyze sentiment", collection: "nlp" },
+                        { name: "extract_entities", description: "Extract entities", collection: "nlp" },
                     ],
                 }),
                 { status: 200, headers: { "Content-Type": "application/json" } },
@@ -76,15 +76,16 @@ describe("resolveRemoteActivities", () => {
         const result = await testEnv.run(resolveRemoteActivities, createPayload());
 
         expect(Object.keys(result)).toHaveLength(2);
-        expect(result["my_nlp_app__analyze_sentiment"]).toBeDefined();
-        expect(result["my_nlp_app__extract_entities"]).toBeDefined();
+        expect(result["app:my-nlp-app:nlp:analyze_sentiment"]).toBeDefined();
+        expect(result["app:my-nlp-app:nlp:extract_entities"]).toBeDefined();
 
-        const entry = result["my_nlp_app__analyze_sentiment"];
+        const entry = result["app:my-nlp-app:nlp:analyze_sentiment"];
         expect(entry.activity_name).toBe("analyze_sentiment");
         expect(entry.app_name).toBe("my-nlp-app");
         expect(entry.app_install_id).toBe("install-1");
         expect(entry.app_settings).toEqual({ api_key: "test" });
-        expect(entry.url).toContain("/activities");
+        // URL should target the collection-specific endpoint
+        expect(entry.url).toBe("https://nlp-server.test/api/activities/nlp");
     });
 
     it("merges activities from multiple apps", async () => {
@@ -101,17 +102,17 @@ describe("resolveRemoteActivities", () => {
 
         mockFetch
             .mockResolvedValueOnce(
-                new Response(JSON.stringify({ activities: [{ name: "task_a" }] }), { status: 200 }),
+                new Response(JSON.stringify({ activities: [{ name: "task_a", collection: "main" }] }), { status: 200 }),
             )
             .mockResolvedValueOnce(
-                new Response(JSON.stringify({ activities: [{ name: "task_b" }] }), { status: 200 }),
+                new Response(JSON.stringify({ activities: [{ name: "task_b", collection: "main" }] }), { status: 200 }),
             );
 
         const result = await testEnv.run(resolveRemoteActivities, createPayload());
 
         expect(Object.keys(result)).toHaveLength(2);
-        expect(result["app_one__task_a"]).toBeDefined();
-        expect(result["app_two__task_b"]).toBeDefined();
+        expect(result["app:app-one:main:task_a"]).toBeDefined();
+        expect(result["app:app-two:main:task_b"]).toBeDefined();
     });
 
     it("skips app with no activities", async () => {
@@ -139,7 +140,7 @@ describe("resolveRemoteActivities", () => {
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it("handles duplicate prefixed names across apps (first wins)", async () => {
+    it("handles duplicate qualified names across apps (first wins)", async () => {
         mockGetInstalledApps.mockResolvedValueOnce([
             {
                 id: "install-1",
@@ -153,15 +154,15 @@ describe("resolveRemoteActivities", () => {
 
         mockFetch
             .mockResolvedValueOnce(
-                new Response(JSON.stringify({ activities: [{ name: "task" }] }), { status: 200 }),
+                new Response(JSON.stringify({ activities: [{ name: "task", collection: "main" }] }), { status: 200 }),
             )
             .mockResolvedValueOnce(
-                new Response(JSON.stringify({ activities: [{ name: "task" }] }), { status: 200 }),
+                new Response(JSON.stringify({ activities: [{ name: "task", collection: "main" }] }), { status: 200 }),
             );
 
         const result = await testEnv.run(resolveRemoteActivities, createPayload());
         expect(Object.keys(result)).toHaveLength(1);
-        expect(result["same_app__task"].app_install_id).toBe("install-1");
+        expect(result["app:same-app:main:task"].app_install_id).toBe("install-1");
     });
 
     it("continues with other apps when one fetch fails", async () => {
@@ -179,12 +180,12 @@ describe("resolveRemoteActivities", () => {
         mockFetch
             .mockRejectedValueOnce(new Error("Connection refused"))
             .mockResolvedValueOnce(
-                new Response(JSON.stringify({ activities: [{ name: "task" }] }), { status: 200 }),
+                new Response(JSON.stringify({ activities: [{ name: "task", collection: "main" }] }), { status: 200 }),
             );
 
         const result = await testEnv.run(resolveRemoteActivities, createPayload());
         expect(Object.keys(result)).toHaveLength(1);
-        expect(result["working_app__task"]).toBeDefined();
+        expect(result["app:working-app:main:task"]).toBeDefined();
     });
 
     it("returns empty map when getInstalledApps fails", async () => {
@@ -192,5 +193,28 @@ describe("resolveRemoteActivities", () => {
 
         const result = await testEnv.run(resolveRemoteActivities, createPayload());
         expect(result).toEqual({});
+    });
+
+    it("skips activities without collection", async () => {
+        mockGetInstalledApps.mockResolvedValueOnce([{
+            id: "install-1",
+            manifest: { name: "bad-app", endpoint: "https://bad.test/api/package" },
+        }]);
+
+        mockFetch.mockResolvedValueOnce(
+            new Response(
+                JSON.stringify({
+                    activities: [
+                        { name: "no_collection" },
+                        { name: "has_collection", collection: "main" },
+                    ],
+                }),
+                { status: 200 },
+            ),
+        );
+
+        const result = await testEnv.run(resolveRemoteActivities, createPayload()) as Record<string, unknown>;
+        expect(Object.keys(result)).toHaveLength(1);
+        expect(result["app:bad-app:main:has_collection"]).toBeDefined();
     });
 });

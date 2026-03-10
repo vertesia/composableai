@@ -106,6 +106,8 @@ export class ActivityCollection implements ICollection<ActivityDefinition> {
 
         console.log(`[ActivityCollection] Activity call received: ${activityName}`, {
             collection: this.name,
+            metadata: payload.metadata,
+            auth_header: ctx.req.header('Authorization')?.slice(0, 30) + '...',
         });
 
         const activity = this.getActivity(activityName);

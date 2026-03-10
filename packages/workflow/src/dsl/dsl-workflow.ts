@@ -30,7 +30,8 @@ import { RateLimitParams } from "../activities/rateLimiter.js";
 import { WF_NON_RETRYABLE_ERRORS, WorkflowParamNotFoundError } from "../errors.js";
 import { Vars } from "./vars.js";
 
-const NS_PREFIX_SEP = "__";
+/** Prefix identifying a remote activity name in DSL workflow steps */
+const REMOTE_ACTIVITY_PREFIX = "app:";
 
 /**
  * Minimal type for remote activity info used in the workflow.
@@ -200,20 +201,13 @@ async function executeSteps(definition: DSLWorkflowSpec, payload: DSLWorkflowExe
 }
 
 /**
- * Check whether any activity step in the workflow definition uses a prefixed name (contains `__`),
- * indicating it may reference a remote activity. Avoids resolving remote activities when not needed.
+ * Check whether any activity step in the workflow definition uses a remote activity name
+ * (starts with `app:`), indicating it may reference a remote activity.
+ * Avoids resolving remote activities when not needed.
  */
-/**
- * Normalize a prefixed activity name by replacing hyphens with underscores,
- * matching the normalization done in resolveRemoteActivities.
- */
-function normalizeActivityName(name: string): string {
-    return name.replace(/-/g, '_');
-}
-
 function hasRemoteActivitySteps(definition: DSLWorkflowSpec): boolean {
     const steps = definition.steps || definition.activities || [];
-    return steps.some(step => 'name' in step && step.name?.includes(NS_PREFIX_SEP));
+    return steps.some(step => 'name' in step && step.name?.startsWith(REMOTE_ACTIVITY_PREFIX));
 }
 
 async function handleError(originalError: any, basePayload: BaseActivityPayload, defaultOptions: ActivityOptions) {
@@ -405,14 +399,11 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
         // https://github.com/vertesia/composableai/pull/544/files
     }
 
-    // Check if this is a remote activity (prefixed name with __)
-    // Normalize hyphens to underscores to match the keys in the remote activity map
-    const normalizedName = normalizeActivityName(activity.name);
-    if (normalizedName.includes(NS_PREFIX_SEP) && remoteActivities[normalizedName]) {
-        const remote = remoteActivities[normalizedName];
+    // Check if this is a remote activity (name starts with "app:")
+    if (activity.name.startsWith(REMOTE_ACTIVITY_PREFIX) && remoteActivities[activity.name]) {
+        const remote = remoteActivities[activity.name];
         log.info("Executing remote activity", {
             activityName: activity.name,
-            normalizedName,
             remoteName: remote.activity_name,
             app: remote.app_name,
             url: remote.url,
