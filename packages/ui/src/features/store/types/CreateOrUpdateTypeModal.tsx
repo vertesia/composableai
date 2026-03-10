@@ -13,12 +13,13 @@ interface CreateOrUpdateTypeModalProps {
     onClose: (payload?: CreateOrUpdateTypePayload) => Promise<unknown>;
     okLabel: string;
     initialPayload?: CreateOrUpdateTypePayload;
+    isLoading?: boolean;
 }
-export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initialPayload }: CreateOrUpdateTypeModalProps) {
+export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initialPayload, isLoading }: CreateOrUpdateTypeModalProps) {
     const toast = useToast();
     const [name, setName] = useState<string | undefined>(initialPayload?.name);
     const [description, setDescription] = useState<string | undefined>(initialPayload?.description);
-    const [strictMode, setStrictMode] = useState<boolean>(initialPayload?.strict_mode ?? false);
+    const strictMode = initialPayload?.strict_mode ?? false;
 
     const onSave = () => {
         if (!name) {
@@ -31,10 +32,6 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
         }
         const payload = { name, description, strict_mode: strictMode };
         onClose(payload).then(() => onClose());
-
-        setName(undefined);
-        setDescription(undefined);
-        setStrictMode(false);
     };
 
     return (
@@ -48,14 +45,14 @@ export function CreateOrUpdateTypeModal({ title, isOpen, onClose, okLabel, initi
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-muted">Description</label>
-                        <Textarea value={description} onChange={e => setDescription(e.target.value)} />
+                        <Textarea value={description} onChange={e => setDescription(e.target.value)} minLines={5}/>
                     </div>
                 </div>
             </ModalBody>
             <ModalFooter>
                 <div className='flex justify-end gap-4'>
                     <Button variant="secondary" onClick={() => onClose()}>Cancel</Button>
-                    <Button variant="primary" onClick={() => onSave()}>{okLabel}</Button>
+                    <Button variant="primary" onClick={() => onSave()} isLoading={isLoading}>{okLabel}</Button>
                 </div>
             </ModalFooter>
         </Modal>
