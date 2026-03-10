@@ -104,10 +104,9 @@ export class ActivityCollection implements ICollection<ActivityDefinition> {
     async execute(ctx: Context, payload: RemoteActivityExecutionPayload): Promise<Response> {
         const activityName = payload.activity_name;
 
-        console.log(`[ActivityCollection] Activity call received: ${activityName}`, {
+        console.debug(`[ActivityCollection] Activity call received: ${activityName}`, {
             collection: this.name,
             metadata: payload.metadata,
-            auth_header: ctx.req.header('Authorization')?.slice(0, 30) + '...',
         });
 
         const activity = this.getActivity(activityName);
@@ -124,6 +123,7 @@ export class ActivityCollection implements ICollection<ActivityDefinition> {
             const message = err instanceof Error ? err.message : String(err);
             console.error(`[ActivityCollection] Activity execution failed: ${activityName}`, {
                 collection: this.name,
+                metadata: payload.metadata,
                 error: message,
             });
             return ctx.json({
