@@ -1,4 +1,4 @@
-import { log } from "@temporalio/activity";
+import { ApplicationFailure, log } from "@temporalio/activity";
 import {
     DSLActivityExecutionPayload,
     RemoteActivityExecutionPayload,
@@ -31,7 +31,9 @@ export interface ExecuteRemoteActivityParams {
  * a remote activity (qualified as `app:<app_name>:<collection>:<activity>`). It POSTs a
  * `RemoteActivityExecutionPayload` to the tool server and returns the result.
  *
- * Network errors throw (so Temporal retries). HTTP errors return the error.
+ * Network errors throw retryable errors (so Temporal retries).
+ * Client errors (4xx) and activity-level errors throw non-retryable ApplicationFailure.
+ * Server errors (5xx) throw retryable errors.
  */
 export async function executeRemoteActivity(
     payload: DSLActivityExecutionPayload<ExecuteRemoteActivityParams>,
@@ -90,7 +92,16 @@ export async function executeRemoteActivity(
             activity: activity_name, endpoint: url, status: response.status, runId, app_install_id,
             responsePreview: responseText.slice(0, 500),
         });
-        throw new Error(`Remote activity ${activity_name} failed: ${errorMessage}`);
+        const msg = `Remote activity ${activity_name} failed: ${errorMessage}`;
+        // 4xx errors are client/configuration errors — don't retry
+        if (response.status >= 400 && response.status < 500) {
+            throw ApplicationFailure.create({
+                message: msg,
+                nonRetryable: true,
+            });
+        }
+        // 5xx errors are server errors — let Temporal retry
+        throw new Error(msg);
     }
 
     let responseJson: RemoteActivityExecutionResponse;
@@ -102,14 +113,20 @@ export async function executeRemoteActivity(
             activity: activity_name, endpoint: url, runId, app_install_id,
             responsePreview: preview,
         });
-        throw new Error(`Remote activity ${activity_name} returned invalid JSON: ${preview}`);
+        throw ApplicationFailure.create({
+            message: `Remote activity ${activity_name} returned invalid JSON: ${preview}`,
+            nonRetryable: true,
+        });
     }
 
     if (responseJson.is_error) {
         log.warn("Remote activity returned error", {
             activity: activity_name, endpoint: url, error: responseJson.error, runId, app_install_id,
         });
-        throw new Error(`Remote activity ${activity_name}: ${responseJson.error}`);
+        throw ApplicationFailure.create({
+            message: `Remote activity ${activity_name}: ${responseJson.error}`,
+            nonRetryable: true,
+        });
     }
 
     return responseJson.result;

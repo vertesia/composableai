@@ -1276,8 +1276,8 @@ export function activityDetailCard(activity: RemoteActivityDefinition, collectio
         <div class="detail-section">
             <h4 class="detail-section-title">Endpoint</h4>
             <div class="endpoint-box">
-                <code>POST /api/activities/${collectionName}</code>
-                <button class="copy-btn" onclick="navigator.clipboard.writeText('/api/activities/${collectionName}')" title="Copy">
+                <code>POST ${activity.url || `/api/activities/${collectionName}`}</code>
+                <button class="copy-btn" onclick="navigator.clipboard.writeText('${activity.url || `/api/activities/${collectionName}`}')" title="Copy">
                     ${copyIcon}
                 </button>
             </div>

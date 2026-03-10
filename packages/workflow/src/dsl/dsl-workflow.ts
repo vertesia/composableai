@@ -400,7 +400,13 @@ async function runActivity(activity: DSLActivitySpec, basePayload: BaseActivityP
     }
 
     // Check if this is a remote activity (name starts with "app:")
-    if (activity.name.startsWith(REMOTE_ACTIVITY_PREFIX) && remoteActivities[activity.name]) {
+    if (activity.name.startsWith(REMOTE_ACTIVITY_PREFIX)) {
+        if (!remoteActivities[activity.name]) {
+            throw new Error(
+                `Remote activity "${activity.name}" not found. ` +
+                `Available: ${Object.keys(remoteActivities).join(', ') || '(none resolved)'}`
+            );
+        }
         const remote = remoteActivities[activity.name];
         log.info("Executing remote activity", {
             activityName: activity.name,

@@ -153,12 +153,12 @@ async function fetchActivitiesPackage(endpoint: string, authToken: string): Prom
  */
 function resolveActivityUrl(endpoint: string, activity: RemoteActivityDefinition, collection: string): string {
     if (activity.url) {
-        // Resolve relative URLs against the endpoint origin
+        // Absolute URLs are used as-is
         if (activity.url.startsWith('http://') || activity.url.startsWith('https://')) {
             return activity.url;
         }
-        const base = new URL(endpoint);
-        return new URL(activity.url, base.origin).toString();
+        // Resolve relative URLs against the endpoint's base path (not just origin)
+        return new URL(activity.url, endpoint).toString();
     }
     // Default: POST to the collection-specific activities endpoint
     const base = new URL(endpoint);

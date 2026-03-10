@@ -227,11 +227,11 @@ export function buildResourceData(
         });
     }
 
-    // --- Activities (url format: "activities/{collection}") ---
+    // --- Activities (use collection field from definition) ---
     const actCounts = countPerCollection(
         activitiesResp.activities,
         activitiesResp.collections,
-        (a) => a.url?.split('/').pop(),
+        (a) => a.collection,
     );
     for (const col of activitiesResp.collections) {
         collections.push({

@@ -5,8 +5,21 @@ import { ActivityCollection } from "../ActivityCollection.js";
 import { ToolServerConfig } from "./types.js";
 
 /**
- * Zod-like validation for RemoteActivityExecutionPayload.
- * Returns the parsed payload or throws HTTPException.
+ * Safely parse JSON from a request body. Throws HTTPException(400) on invalid JSON.
+ */
+async function safeParseJson(c: Context): Promise<unknown> {
+    try {
+        return await c.req.json();
+    } catch {
+        throw new HTTPException(400, {
+            message: 'Invalid JSON in request body.'
+        });
+    }
+}
+
+/**
+ * Validates the structure of a RemoteActivityExecutionPayload.
+ * Returns the parsed payload or throws HTTPException(400).
  */
 function parseActivityPayload(body: unknown): RemoteActivityExecutionPayload {
     if (!body || typeof body !== 'object') {
@@ -58,7 +71,7 @@ export function createActivitiesRoute(app: Hono, basePath: string, config: ToolS
 
     // POST /api/activities - Execute an activity by name (routes to correct collection)
     app.post(basePath, async (c) => {
-        const body = await c.req.json();
+        const body = await safeParseJson(c);
         const payload = parseActivityPayload(body);
 
         const collection = activityToCollection.get(payload.activity_name);
@@ -92,7 +105,7 @@ function createActivityEndpoints(coll: ActivityCollection): Hono {
 
     // POST /api/activities/{collection} - Execute activity in this collection
     endpoint.post('/', async (c: Context) => {
-        const body = await c.req.json();
+        const body = await safeParseJson(c);
         const payload = parseActivityPayload(body);
         return coll.execute(c, payload);
     });
