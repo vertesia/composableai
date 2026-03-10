@@ -1,7 +1,7 @@
 import { VertesiaClient } from "@vertesia/client";
 import { ToastFn } from "@vertesia/ui/core";
-import { DocumentSearch } from '../search/DocumentSearchContext';
 import { DocumentSelection } from '../DocumentSelectionProvider';
+import { DocumentSearch } from '../search/DocumentSearchContext';
 
 export interface ObjectsActionSpec {
     id: string;

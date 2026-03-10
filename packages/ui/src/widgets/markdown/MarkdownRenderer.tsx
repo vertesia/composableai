@@ -1,27 +1,27 @@
-import { useCodeBlockRendererRegistry } from './CodeBlockRendering';
 import type { Element } from 'hast';
 import React from 'react';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import remarkDirective from 'remark-directive';
-import remarkAlert from 'remark-github-blockquote-alert';
-import { remarkDefinitionList, defListHastHandlers } from 'remark-definition-list';
-import remarkSupersub from 'remark-supersub';
 import rehypeKatex from 'rehype-katex';
+import { defListHastHandlers, remarkDefinitionList } from 'remark-definition-list';
+import remarkDirective from 'remark-directive';
+import remarkGfm from 'remark-gfm';
+import remarkAlert from 'remark-github-blockquote-alert';
+import remarkMath from 'remark-math';
+import remarkSupersub from 'remark-supersub';
 import { SKIP, visit } from 'unist-util-visit';
-import { MarkdownLink } from './MarkdownLink';
-import { MarkdownImage } from './MarkdownImage';
-import { MarkdownFigure } from './MarkdownFigure';
-import { remarkDirectiveHandler } from './remarkDirectiveHandler';
-import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
-import { normalizeDirectives } from './normalizeDirectives';
+import { CodeBlockHandlerProvider } from './CodeBlockContext';
 import {
     createDefaultCodeBlockHandlers,
-    isExpandLanguage,
     ExpandCodeBlockHandler,
+    isExpandLanguage,
 } from './codeBlockHandlers';
-import { CodeBlockHandlerProvider } from './CodeBlockContext';
+import { useCodeBlockRendererRegistry } from './CodeBlockRendering';
+import { MarkdownFigure } from './MarkdownFigure';
+import { MarkdownImage } from './MarkdownImage';
+import { MarkdownLink } from './MarkdownLink';
+import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
+import { normalizeDirectives } from './normalizeDirectives';
+import { remarkDirectiveHandler } from './remarkDirectiveHandler';
 
 // Custom URL schemes that we handle in our components
 const ALLOWED_CUSTOM_SCHEMES = [

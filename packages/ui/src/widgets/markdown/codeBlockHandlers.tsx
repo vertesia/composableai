@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
-import type { CodeBlockRendererProps } from './CodeBlockRendering';
-import { CodeBlockPlaceholder, CodeBlockErrorBoundary } from './CodeBlockPlaceholder';
 import type { VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
-import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
-import { MermaidDiagram } from './MermaidDiagram';
 import { AskUserWidget, type AskUserWidgetProps } from '../../features/agent/chat/AskUserWidget';
-import { useArtifactContent } from './useArtifactContent';
-import { ArtifactContentRenderer, type ExpandRenderType, sanitizeSvg, makeSvgResponsive } from './ArtifactContentRenderer';
+import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
+import { ArtifactContentRenderer, type ExpandRenderType, makeSvgResponsive, sanitizeSvg } from './ArtifactContentRenderer';
 import { useCodeBlockContext } from './CodeBlockContext';
+import { CodeBlockErrorBoundary, CodeBlockPlaceholder } from './CodeBlockPlaceholder';
+import type { CodeBlockRendererProps } from './CodeBlockRendering';
+import { MermaidDiagram } from './MermaidDiagram';
+import { useArtifactContent } from './useArtifactContent';
 
 /**
  * Check if JSON parsing failed due to incomplete content (streaming)
@@ -266,10 +266,10 @@ export function ProposalCodeBlockHandler({ code }: CodeBlockRendererProps) {
                 description: spec.description,
                 options: Array.isArray(spec.options)
                     ? spec.options.map((opt: any) => ({
-                          id: opt.id || opt.value || '',
-                          label: opt.label || '',
-                          description: opt.description,
-                      }))
+                        id: opt.id || opt.value || '',
+                        label: opt.label || '',
+                        description: opt.description,
+                    }))
                     : undefined,
                 allowFreeResponse: spec.allowFreeResponse ?? spec.multiple,
                 variant: spec.variant,

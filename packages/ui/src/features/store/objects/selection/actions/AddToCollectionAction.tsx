@@ -1,4 +1,4 @@
-import { Button, DialogDescription, Heading, Portal, useToast, Modal, ModalBody, ModalFooter, ModalTitle, Tabs, TabsBar, TabsPanel } from "@vertesia/ui/core";
+import { Button, DialogDescription, Heading, Modal, ModalBody, ModalFooter, ModalTitle, Portal, Tabs, TabsBar, TabsPanel, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
 import { CreateCollectionForm, SelectCollection } from "../../../collections";

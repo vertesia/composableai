@@ -4,13 +4,13 @@
  * Supports rendering charts, tables, markdown, fusion fragments, and more.
  */
 
-import { useMemo, type ReactElement } from 'react';
+import { FusionFragmentHandler, FusionFragmentProvider } from '@vertesia/fusion-ux';
 import DOMPurify from 'dompurify';
-import { CodeBlockPlaceholder, CodeBlockErrorBoundary } from './CodeBlockPlaceholder';
+import { useMemo, type ReactElement } from 'react';
 import { type VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
-import { FusionFragmentHandler, FusionFragmentProvider } from '@vertesia/fusion-ux';
 import { useCodeBlockContext } from './CodeBlockContext';
+import { CodeBlockErrorBoundary, CodeBlockPlaceholder } from './CodeBlockPlaceholder';
 
 // Render type mapping
 export type ExpandRenderType =
