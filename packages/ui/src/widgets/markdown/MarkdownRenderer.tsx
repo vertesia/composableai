@@ -17,11 +17,11 @@ import { remarkDirectiveHandler } from './remarkDirectiveHandler';
 import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 import { normalizeDirectives } from './normalizeDirectives';
 import {
-    CodeBlockHandlerProvider,
     createDefaultCodeBlockHandlers,
     isExpandLanguage,
     ExpandCodeBlockHandler,
 } from './codeBlockHandlers';
+import { CodeBlockHandlerProvider } from './CodeBlockContext';
 
 // Custom URL schemes that we handle in our components
 const ALLOWED_CUSTOM_SCHEMES = [
@@ -280,6 +280,7 @@ export function MarkdownRenderer({
             artifactRunId={artifactRunId}
             onProposalSelect={onProposalSelect}
             onProposalSubmit={onProposalSubmit}
+            MarkdownRenderer={MarkdownRenderer}
         >
             <Markdown
                 remarkPlugins={remarkPluginsArray}

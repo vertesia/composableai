@@ -27,12 +27,14 @@ export {
     MermaidCodeBlockHandler,
     ProposalCodeBlockHandler,
     ExpandCodeBlockHandler,
-    CodeBlockHandlerProvider,
-    useCodeBlockContext,
     createDefaultCodeBlockHandlers,
     isExpandLanguage,
-    type CodeBlockHandlerContext,
 } from './codeBlockHandlers';
+export {
+    CodeBlockHandlerProvider,
+    useCodeBlockContext,
+    type CodeBlockHandlerContext,
+} from './CodeBlockContext';
 export { MermaidDiagram } from './MermaidDiagram';
 export {
     useArtifactContent,

@@ -2,7 +2,7 @@ import { Button, DialogDescription, Heading, Portal, useToast, Modal, ModalBody,
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
 import { CreateCollectionForm, SelectCollection } from "../../../collections";
-import { useObjectsActionCallback } from "../ObjectsActionContext";
+import { useObjectsActionCallback } from "../ObjectsActionHooks";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function AddToCollectionActionComponent({ action, objectIds }: ActionComponentTypeProps) {

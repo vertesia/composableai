@@ -1,6 +1,6 @@
 import { ConfirmModal } from "@vertesia/ui/core";
 import { useCallback, useState } from "react";
-import { ObjectsActionCallback, useObjectsActionCallback } from "../ObjectsActionContext";
+import { ObjectsActionCallback, useObjectsActionCallback } from "../ObjectsActionHooks";
 import { ObjectsActionParams, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 interface ObjectsActionComponentProps {

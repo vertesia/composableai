@@ -10,7 +10,7 @@ import { CodeBlockPlaceholder, CodeBlockErrorBoundary } from './CodeBlockPlaceho
 import { type VegaLiteChartSpec } from '../../features/agent/chat/AgentChart';
 import { VegaLiteChart } from '../../features/agent/chat/VegaLiteChart';
 import { FusionFragmentHandler, FusionFragmentProvider } from '@vertesia/fusion-ux';
-import { MarkdownRenderer } from './MarkdownRenderer';
+import { useCodeBlockContext } from './CodeBlockContext';
 
 // Render type mapping
 export type ExpandRenderType =
@@ -285,6 +285,8 @@ export function ArtifactContentRenderer({
     runId,
     contentType,
 }: ArtifactContentRendererProps): ReactElement {
+    const { MarkdownRenderer } = useCodeBlockContext();
+
     // Determine actual render type
     const actualType = useMemo(() => {
         if (renderType !== 'auto') {
@@ -374,9 +376,15 @@ export function ArtifactContentRenderer({
             const markdownContent = typeof content === 'string' ? content : String(content);
             return (
                 <CodeBlockErrorBoundary type="markdown" fallbackCode={markdownContent}>
-                    <MarkdownRenderer artifactRunId={runId}>
-                        {markdownContent}
-                    </MarkdownRenderer>
+                    {MarkdownRenderer ? (
+                        <MarkdownRenderer artifactRunId={runId}>
+                            {markdownContent}
+                        </MarkdownRenderer>
+                    ) : (
+                        <pre className="overflow-x-auto p-3 bg-muted/10 rounded text-sm">
+                            <code>{markdownContent}</code>
+                        </pre>
+                    )}
                 </CodeBlockErrorBoundary>
             );
         }

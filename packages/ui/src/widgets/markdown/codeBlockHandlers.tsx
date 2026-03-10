@@ -7,34 +7,7 @@ import { MermaidDiagram } from './MermaidDiagram';
 import { AskUserWidget, type AskUserWidgetProps } from '../../features/agent/chat/AskUserWidget';
 import { useArtifactContent } from './useArtifactContent';
 import { ArtifactContentRenderer, type ExpandRenderType, sanitizeSvg, makeSvgResponsive } from './ArtifactContentRenderer';
-
-/**
- * Context for passing artifact run ID and callbacks to code block handlers
- */
-export interface CodeBlockHandlerContext {
-    artifactRunId?: string;
-    onProposalSelect?: (optionId: string) => void;
-    onProposalSubmit?: (response: string) => void;
-}
-
-const CodeBlockContext = React.createContext<CodeBlockHandlerContext>({});
-
-export function CodeBlockHandlerProvider({
-    children,
-    artifactRunId,
-    onProposalSelect,
-    onProposalSubmit,
-}: CodeBlockHandlerContext & { children: React.ReactNode }) {
-    const value = useMemo(
-        () => ({ artifactRunId, onProposalSelect, onProposalSubmit }),
-        [artifactRunId, onProposalSelect, onProposalSubmit]
-    );
-    return <CodeBlockContext.Provider value={value}>{children}</CodeBlockContext.Provider>;
-}
-
-export function useCodeBlockContext() {
-    return React.useContext(CodeBlockContext);
-}
+import { useCodeBlockContext } from './CodeBlockContext';
 
 /**
  * Check if JSON parsing failed due to incomplete content (streaming)

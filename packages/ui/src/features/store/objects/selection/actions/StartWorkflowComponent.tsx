@@ -1,7 +1,7 @@
 import { useUserSession } from "@vertesia/ui/session";
 import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectList, useToast } from "@vertesia/ui/core";
 import { useCallback, useState } from "react";
-import { useObjectsActionCallback, useObjectsActionContext } from "../ObjectsActionContext";
+import { useObjectsActionCallback, useObjectsActionContext } from "../ObjectsActionHooks";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function StartWorkflowComponent({ action, objectIds, collectionId }: ActionComponentTypeProps) {
