@@ -14,7 +14,7 @@
         "lint": "pnpm -r lint"
     },
     "devDependencies": {
-        "eslint": "^10.0.2",
+        "eslint": "^10.0.3",
         "npm-ws-tools": "^0.3.0",
         "rimraf": "^5.0.5",
         "typescript": "^5.9.3",
