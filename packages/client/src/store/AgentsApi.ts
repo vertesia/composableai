@@ -212,56 +212,61 @@ export class AgentsApi extends ApiTopic {
         since?: number,
         signal?: AbortSignal,
     ): Promise<unknown> {
-        return new Promise<unknown>(async (resolve, reject) => {
-            let reconnectAttempts = 0;
-            let lastMessageTimestamp = since || 0;
-            let isClosed = false;
-            let currentSse: EventSource | null = null;
-            let interval: NodeJS.Timeout | null = null;
-            let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-            let abortHandler: (() => void) | null = null;
+        let resolveFn: (value: unknown) => void = () => {};
+        let rejectFn: (reason?: unknown) => void = () => {};
+        const promise = new Promise<unknown>((resolve, reject) => {
+            resolveFn = resolve;
+            rejectFn = reject;
+        });
 
-            const maxReconnectAttempts = 10;
-            const baseDelay = 1000;
-            const maxDelay = 30000;
+        let reconnectAttempts = 0;
+        let lastMessageTimestamp = since || 0;
+        let isClosed = false;
+        let currentSse: EventSource | null = null;
+        let interval: NodeJS.Timeout | null = null;
+        let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+        let abortHandler: (() => void) | null = null;
 
-            const calculateBackoffDelay = (attempts: number): number => {
-                const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
-                const jitter = Math.random() * 0.1 * exponentialDelay;
-                return exponentialDelay + jitter;
-            };
+        const maxReconnectAttempts = 10;
+        const baseDelay = 1000;
+        const maxDelay = 30000;
 
-            const cleanup = () => {
-                if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-                if (interval) { clearInterval(interval); interval = null; }
-                if (currentSse) { currentSse.close(); currentSse = null; }
-                if (signal && abortHandler) { signal.removeEventListener('abort', abortHandler); abortHandler = null; }
-            };
+        const calculateBackoffDelay = (attempts: number): number => {
+            const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+            const jitter = Math.random() * 0.1 * exponentialDelay;
+            return exponentialDelay + jitter;
+        };
 
-            const exit = (payload: unknown) => {
-                if (!isClosed) {
-                    isClosed = true;
-                    cleanup();
-                    resolve(payload);
-                }
-            };
+        const cleanup = () => {
+            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+            if (interval) { clearInterval(interval); interval = null; }
+            if (currentSse) { currentSse.close(); currentSse = null; }
+            if (signal && abortHandler) { signal.removeEventListener('abort', abortHandler); abortHandler = null; }
+        };
 
-            if (signal) {
-                if (signal.aborted) { isClosed = true; cleanup(); resolve(null); return; }
-                abortHandler = () => { exit(null); };
-                signal.addEventListener('abort', abortHandler, { once: true });
+        const exit = (payload: unknown) => {
+            if (!isClosed) {
+                isClosed = true;
+                cleanup();
+                resolveFn(payload);
             }
+        };
 
-            // 1. Fetch historical messages via GET /updates (gzip-compressed)
-            try {
-                if (isClosed) return;
+        if (signal) {
+            if (signal.aborted) { isClosed = true; cleanup(); resolveFn(null); return promise; }
+            abortHandler = () => { exit(null); };
+            signal.addEventListener('abort', abortHandler, { once: true });
+        }
+
+        // 1. Fetch historical messages via GET /updates (gzip-compressed)
+        try {
+            if (!isClosed) {
                 const historical = await this.retrieveMessages(id, since);
-                if (isClosed) return;
                 for (const msg of historical) {
-                    if (isClosed) return;
+                    if (isClosed) break;
                     lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
                     if (onMessage) onMessage(msg, exit);
-                    if (isClosed) return;
+                    if (isClosed) break;
 
                     const workstreamId = msg.workstream_id || 'main';
                     const streamIsOver =
@@ -269,102 +274,89 @@ export class AgentsApi extends ApiTopic {
                         (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
                     if (streamIsOver) {
                         exit(null);
-                        return;
+                        return promise;
                     }
                 }
-            } catch (err) {
-                if (isClosed) return;
+            }
+        } catch (err) {
+            if (!isClosed) {
                 console.warn('Failed to fetch historical messages, continuing with SSE:', err);
             }
+        }
 
-            // 2. Connect to SSE for real-time updates
-            const setupStream = async (isReconnect: boolean = false) => {
+        // 2. Connect to SSE for real-time updates
+        const setupStream = async (isReconnect: boolean = false) => {
+            if (isClosed) return;
+            try {
+                const EventSourceImpl = await EventSourceProvider();
                 if (isClosed) return;
-                try {
-                    const EventSourceImpl = await EventSourceProvider();
+                const client = this.client as VertesiaClient;
+                const streamUrl = new URL(client.agents.baseUrl + `/${id}/stream`);
+
+                if (lastMessageTimestamp > 0) {
+                    streamUrl.searchParams.set('since', lastMessageTimestamp.toString());
+                }
+                streamUrl.searchParams.set('skipHistory', 'true');
+
+                const bearerToken = client._auth ? await client._auth() : undefined;
+                if (isClosed) return;
+                if (!bearerToken) {
+                    isClosed = true;
+                    cleanup();
+                    rejectFn(new Error('No auth token available'));
+                    return;
+                }
+
+                const token = bearerToken.split(' ')[1];
+                streamUrl.searchParams.set('access_token', token);
+
+                if (isReconnect) {
+                    console.log(`Reconnecting to agent stream ${id} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                }
+
+                if (isClosed) return;
+                const sse = new EventSourceImpl(streamUrl.href);
+                currentSse = sse;
+                interval = setInterval(() => { }, 1000);
+
+                sse.onopen = () => {
+                    if (isReconnect) console.log(`Reconnected to agent stream ${id}`);
+                    reconnectAttempts = 0;
+                };
+
+                sse.onmessage = (ev: MessageEvent) => {
                     if (isClosed) return;
-                    const client = this.client as VertesiaClient;
-                    const streamUrl = new URL(client.agents.baseUrl + `/${id}/stream`);
+                    if (!ev.data || ev.data.startsWith(':')) return;
 
-                    if (lastMessageTimestamp > 0) {
-                        streamUrl.searchParams.set('since', lastMessageTimestamp.toString());
-                    }
-                    streamUrl.searchParams.set('skipHistory', 'true');
-
-                    const bearerToken = client._auth ? await client._auth() : undefined;
-                    if (isClosed) return;
-                    if (!bearerToken) {
-                        isClosed = true;
-                        cleanup();
-                        reject(new Error('No auth token available'));
-                        return;
-                    }
-
-                    const token = bearerToken.split(' ')[1];
-                    streamUrl.searchParams.set('access_token', token);
-
-                    if (isReconnect) {
-                        console.log(`Reconnecting to agent stream ${id} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
-                    }
-
-                    if (isClosed) return;
-                    const sse = new EventSourceImpl(streamUrl.href);
-                    currentSse = sse;
-                    interval = setInterval(() => { }, 1000);
-
-                    sse.onopen = () => {
-                        if (isReconnect) console.log(`Reconnected to agent stream ${id}`);
-                        reconnectAttempts = 0;
-                    };
-
-                    sse.onmessage = (ev: MessageEvent) => {
-                        if (isClosed) return;
-                        if (!ev.data || ev.data.startsWith(':')) return;
-
-                        try {
-                            const compactMessage = parseMessage(ev.data);
-                            if (compactMessage.ts) {
-                                lastMessageTimestamp = Math.max(lastMessageTimestamp, compactMessage.ts);
-                            } else {
-                                lastMessageTimestamp = Date.now();
-                            }
-
-                            if (onMessage) {
-                                const agentMessage = toAgentMessage(compactMessage, id);
-                                onMessage(agentMessage, exit);
-                            }
-
-                            const workstreamId = compactMessage.w || 'main';
-                            const streamIsOver =
-                                compactMessage.t === AgentMessageType.TERMINATED ||
-                                (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
-                            if (streamIsOver) {
-                                exit(null);
-                            }
-                        } catch (err) {
-                            console.error('Failed to parse SSE message:', err, ev.data);
-                        }
-                    };
-
-                    sse.onerror = (_err: any) => {
-                        if (isClosed) return;
-                        cleanup();
-
-                        if (reconnectAttempts < maxReconnectAttempts) {
-                            const delay = calculateBackoffDelay(reconnectAttempts);
-                            reconnectAttempts++;
-                            reconnectTimer = setTimeout(() => {
-                                reconnectTimer = null;
-                                if (!isClosed) setupStream(true);
-                            }, delay);
+                    try {
+                        const compactMessage = parseMessage(ev.data);
+                        if (compactMessage.ts) {
+                            lastMessageTimestamp = Math.max(lastMessageTimestamp, compactMessage.ts);
                         } else {
-                            isClosed = true;
-                            cleanup();
-                            reject(new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`));
+                            lastMessageTimestamp = Date.now();
                         }
-                    };
-                } catch (err) {
+
+                        if (onMessage) {
+                            const agentMessage = toAgentMessage(compactMessage, id);
+                            onMessage(agentMessage, exit);
+                        }
+
+                        const workstreamId = compactMessage.w || 'main';
+                        const streamIsOver =
+                            compactMessage.t === AgentMessageType.TERMINATED ||
+                            (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
+                        if (streamIsOver) {
+                            exit(null);
+                        }
+                    } catch (err) {
+                        console.error('Failed to parse SSE message:', err, ev.data);
+                    }
+                };
+
+                sse.onerror = (_err: any) => {
                     if (isClosed) return;
+                    cleanup();
+
                     if (reconnectAttempts < maxReconnectAttempts) {
                         const delay = calculateBackoffDelay(reconnectAttempts);
                         reconnectAttempts++;
@@ -375,13 +367,28 @@ export class AgentsApi extends ApiTopic {
                     } else {
                         isClosed = true;
                         cleanup();
-                        reject(err);
+                        rejectFn(new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`));
                     }
+                };
+            } catch (err) {
+                if (isClosed) return;
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    const delay = calculateBackoffDelay(reconnectAttempts);
+                    reconnectAttempts++;
+                    reconnectTimer = setTimeout(() => {
+                        reconnectTimer = null;
+                        if (!isClosed) setupStream(true);
+                    }, delay);
+                } else {
+                    isClosed = true;
+                    cleanup();
+                    rejectFn(err);
                 }
-            };
+            }
+        };
 
-            setupStream(false);
-        });
+        setupStream(false);
+        return promise;
     }
 
     // ========================================================================
