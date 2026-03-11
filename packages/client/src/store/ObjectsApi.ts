@@ -92,6 +92,7 @@ export class ObjectsApi extends ApiTopic {
             query: {
                 limit,
                 offset,
+                select: payload.select,
                 ...query,
                 all_revisions: payload.all_revisions,
                 from_root: payload.from_root || undefined,
