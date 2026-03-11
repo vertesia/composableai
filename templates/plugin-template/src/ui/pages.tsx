@@ -5,7 +5,7 @@ import { Button } from "@vertesia/ui/core";
 import { useNavigate, useParams } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { useUITranslation } from "@vertesia/ui/i18n";
-import type { AsyncConversationExecutionPayload } from "@vertesia/common";
+import type { CreateAgentRunPayload } from "@vertesia/common";
 import { ASSISTANT_INTERACTION } from "./constants";
 
 export function HomePage() {
@@ -29,35 +29,31 @@ export function HomePage() {
 
 export function ChatPage() {
     const { t } = useUITranslation();
-    const { client } = useUserSession();
+    const { store } = useUserSession();
     const navigate = useNavigate();
     const params = useParams();
-    const { runId, workflowId } = params as { runId?: string; workflowId?: string };
-
-    const run = runId && workflowId ? { run_id: runId, workflow_id: workflowId } : null;
+    const { agentRunId } = params as { agentRunId?: string };
 
     const startWorkflow = useCallback(async (initialMessage?: string) => {
-        const payload: AsyncConversationExecutionPayload = {
-            type: 'conversation',
+        const payload: CreateAgentRunPayload = {
             interaction: ASSISTANT_INTERACTION,
             interactive: true,
             data: { user_prompt: initialMessage || '' },
         };
-        const result = await client.interactions.executeAsync(payload);
+        const result = await store.agents.start(payload);
         if (result) {
-            const runData = { run_id: result.runId, workflow_id: result.workflowId };
-            navigate(`/chat/${result.runId}/${result.workflowId}`);
-            return runData;
+            navigate(`/chat/${result.id}`);
+            return { agent_run_id: result.id! };
         }
         return undefined;
-    }, [client, navigate]);
+    }, [store, navigate]);
 
     const handleReset = useCallback(() => navigate('/chat'), [navigate]);
 
     return (
         <div className="flex flex-col h-full">
             <ModernAgentConversation
-                run={run ? { runId: run.run_id, workflowId: run.workflow_id } : undefined}
+                agentRunId={agentRunId}
                 startWorkflow={startWorkflow}
                 title={t('nav.pluginAssistant')}
                 resetWorkflow={handleReset}

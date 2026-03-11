@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react';
+import { Button } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
 import {
     ChevronDownIcon,
     ChevronRightIcon,
@@ -9,9 +10,8 @@ import {
     PackageIcon,
     RefreshCwIcon,
 } from 'lucide-react';
-import { Button } from '@vertesia/ui/core';
+import React, { useCallback, useState } from 'react';
 import { useUITranslation } from '../../../i18n/index.js';
-import { useUserSession } from '@vertesia/ui/session';
 import { useArtifacts, type ArtifactTreeNode } from './hooks/useArtifacts.js';
 
 // ---------------------------------------------------------------------------

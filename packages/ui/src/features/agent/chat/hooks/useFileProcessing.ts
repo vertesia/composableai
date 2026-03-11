@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AsyncExecutionResult, VertesiaClient } from '@vertesia/client';
+import { VertesiaClient } from '@vertesia/client';
 import {
     ConversationFile,
     ConversationFileRef,
@@ -21,14 +21,14 @@ type ToastFn = (opts: { status: 'success' | 'error' | 'warning' | 'info'; title:
  * Combines local optimistic upload state with server-side processing
  * status updates (from `useAgentStream.serverFileUpdates`).
  *
- * @param client - Vertesia client for artifact uploads and workflow signals
- * @param run - Current workflow execution
+ * @param client - Vertesia client for artifact uploads and agent signals
+ * @param agentRunId - Stable AgentRun ID
  * @param serverFileUpdates - Server-side file processing updates from useAgentStream
  * @param toast - Toast notification function for error display
  */
 export function useFileProcessing(
     client: VertesiaClient,
-    run: AsyncExecutionResult,
+    agentRunId: string,
     serverFileUpdates: Map<string, ConversationFile>,
     toast: ToastFn,
 ): UseFileProcessingResult {
@@ -36,10 +36,10 @@ export function useFileProcessing(
     // Local optimistic file state (uploads initiated from the UI)
     const [localFiles, setLocalFiles] = useState<Map<string, ConversationFile>>(new Map());
 
-    // Reset when run changes
+    // Reset when agentRunId changes
     useEffect(() => {
         setLocalFiles(new Map());
-    }, [run.runId]);
+    }, [agentRunId]);
 
     // Merge local + server state (server takes precedence for same IDs)
     const processingFiles = useMemo(() => {
@@ -74,7 +74,7 @@ export function useFileProcessing(
 
             try {
                 // Upload to artifact storage
-                await client.files.uploadArtifact(run.runId, artifactPath, file);
+                await client.agents.uploadArtifact(agentRunId, artifactPath, file);
 
                 // Update local state to processing
                 setLocalFiles(prev => {
@@ -88,10 +88,9 @@ export function useFileProcessing(
                     return newMap;
                 });
 
-                // Signal workflow that file was uploaded
-                await client.store.workflows.sendSignal(
-                    run.workflowId,
-                    run.runId,
+                // Signal agent that file was uploaded
+                await client.agents.sendSignal(
+                    agentRunId,
                     'FileUploaded',
                     {
                         id: fileId,
@@ -122,7 +121,7 @@ export function useFileProcessing(
                 });
             }
         }
-    }, [client, run, toast]);
+    }, [client, agentRunId, toast]);
 
     return { processingFiles, hasProcessingFiles, handleFileUpload };
 }
