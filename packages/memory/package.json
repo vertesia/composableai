@@ -10,16 +10,19 @@
     ],
     "license": "Apache-2.0",
     "scripts": {
-        "eslint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+        "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
         "build": "pnpm exec tsmod build",
         "test": "vitest run",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "devDependencies": {
+        "@eslint/js": "^10.0.1",
         "@types/micromatch": "^4.0.9",
         "@types/node": "^22.19.2",
         "@types/tar-stream": "^3.1.3",
+        "eslint": "^10.0.2",
         "ts-dual-module": "^0.6.3",
+        "typescript-eslint": "^8.56.1",
         "vitest": "^4.0.16"
     },
     "dependencies": {

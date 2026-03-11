@@ -1,6 +1,7 @@
 
 function readWord(text: string, index: number): [string, number] {
-    let i = index, len = text.length;
+    let i = index;
+    const len = text.length;
     while (i < len && (text[i] !== ' ' || text[i] !== '\t')) {
         const c = text[i];
         if (c === ' ' || c === '\t') {
@@ -12,7 +13,8 @@ function readWord(text: string, index: number): [string, number] {
 }
 
 function readQuotedArg(text: string, index: number, quote: string): [string, number] {
-    let i = index, len = text.length;
+    let i = index;
+    const len = text.length;
     while (i < len) {
         const c = text[i];
         if (c === '\\') {
@@ -29,9 +31,10 @@ function readQuotedArg(text: string, index: number, quote: string): [string, num
 
 export function splitCommandLine(text: string) {
     const args = [];
-    let i = 0, len = text.length;
+    let i = 0;
+    const len = text.length;
     while (i < len) {
-        let c = text[i];
+        const c = text[i];
         if (c === ' ' || c === '\t') {
             i++; // skip whitespace
         } else if (c === '"' || c === "'") {

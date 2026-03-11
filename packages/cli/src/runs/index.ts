@@ -7,7 +7,9 @@ export async function runHistory(program: Command, interactionId: string | undef
 
     const page = options.page ? parseInt(options.page) : 0;
     let limit = options.limit ? parseInt(options.limit) : 100;
-    if (limit <= 0) limit === 100;
+    if (limit <= 0) {
+        limit = 100;
+    }
     const offset = page * limit;
 
     const response = await client.runs.search({

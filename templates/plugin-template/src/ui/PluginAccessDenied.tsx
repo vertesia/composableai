@@ -3,7 +3,7 @@ import { SelectBox, Spinner, useFetch } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from '@vertesia/ui/session';
 import { LockIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface PluginAccessDeniedProps {
     name: string;
@@ -14,21 +14,21 @@ export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
     const { client, user, accounts, account, project } = useUserSession();
     const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>(account?.id);
 
+    const effectiveAccountId = useMemo(() => {
+        if (selectedAccountId) return selectedAccountId;
+        if (accounts && accounts.length > 0) return accounts[0].id;
+        return undefined;
+    }, [selectedAccountId, accounts]);
+
     const { data: allProjects } = useFetch(
         () => user ? client.projects.list() : Promise.resolve([]),
         [user]
     );
 
     const filteredProjects = useMemo(() => {
-        if (!allProjects || !selectedAccountId) return [];
-        return allProjects.filter(p => p.account === selectedAccountId);
-    }, [allProjects, selectedAccountId]);
-
-    useEffect(() => {
-        if (!selectedAccountId && accounts && accounts.length > 0) {
-            setSelectedAccountId(accounts[0].id);
-        }
-    }, [accounts, selectedAccountId]);
+        if (!allProjects || !effectiveAccountId) return [];
+        return allProjects.filter(p => p.account === effectiveAccountId);
+    }, [allProjects, effectiveAccountId]);
 
     const onAccountChange = (selected: { id: string }) => {
         setSelectedAccountId(selected.id);
@@ -52,7 +52,7 @@ export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
         );
     }
 
-    const selectedOrg = accounts?.find(a => a.id === selectedAccountId);
+    const selectedOrg = accounts?.find(a => a.id === effectiveAccountId);
 
     return (
         <div className="w-full flex flex-col items-center gap-4 mt-24">
