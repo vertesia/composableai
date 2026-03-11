@@ -1,4 +1,5 @@
 import { StringValue } from "ms";
+import { ToolExecutionMetadata } from "../tool-execution.js";
 import { BaseObject } from "./common.js";
 import { WorkflowExecutionPayload } from "./index.js";
 import { ParentClosePolicyType } from "./temporalio.js";
@@ -312,3 +313,28 @@ export interface WorkflowDefinitionRef {
 }
 
 export const WorkflowDefinitionRefPopulate = "id name description tags created_at updated_at"
+
+/**
+ * Payload sent to a remote activity endpoint on a tool server.
+ * This is POSTed by the `executeRemoteActivity` bridge activity.
+ */
+export interface RemoteActivityExecutionPayload<ParamsT extends Record<string, any> = Record<string, any>> {
+    /** The activity name (unprefixed, as known by the tool server) */
+    activity_name: string;
+    /** The resolved activity parameters */
+    params: ParamsT;
+    /** Execution metadata (same shape as tool execution metadata) */
+    metadata?: ToolExecutionMetadata;
+}
+
+/**
+ * Response from a remote activity endpoint on a tool server.
+ */
+export interface RemoteActivityExecutionResponse {
+    /** The result data (stored into workflow vars via the step's `output` field) */
+    result: any;
+    /** Whether the execution failed */
+    is_error?: boolean;
+    /** Error message if is_error is true */
+    error?: string;
+}

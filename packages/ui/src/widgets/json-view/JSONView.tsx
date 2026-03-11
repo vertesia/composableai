@@ -9,7 +9,7 @@ interface JSONViewProps {
     value: JSONObject;
 }
 export function JSONView({ value }: JSONViewProps) {
-    return <div className="flex flex-col gap-4">
+    return <div className="flex flex-col gap-4 px-2 h-full overflow-auto">
         {
             Object.entries(value).map(([key, value]) =>
                 <PropertyElement key={key} name={key} value={value as JSONValue} />

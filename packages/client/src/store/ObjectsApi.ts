@@ -45,6 +45,8 @@ export interface ComputeFacetsResponse {
 export interface SearchResponse {
     results: ContentObjectItem[];
     facets: ComputeFacetsResponse;
+    /** Raw ES aggregation results. Only present when aggs were requested and ES backend was used. */
+    aggregations?: Record<string, unknown>;
 }
 
 export class ObjectsApi extends ApiTopic {
@@ -108,8 +110,8 @@ export class ObjectsApi extends ApiTopic {
         });
     }
 
-    listFolders(path: string = "/") {
-        path; //TODO
+    listFolders(_path: string = "/") {
+        throw new Error("Not implemented yet");
     }
 
     /** Find object based on query */
@@ -176,7 +178,7 @@ export class ObjectsApi extends ApiTopic {
         const res = await fetch(url, {
             method: "PUT",
             body: isStream ? source.stream : source,
-            //@ts-ignore: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
+            //@ts-expect-error: duplex is not in the types. See https://github.com/node-fetch/node-fetch/issues/1769
             duplex: isStream ? "half" : undefined,
             headers: sourceMimeType ? { "Content-Type": sourceMimeType } : undefined,
         })

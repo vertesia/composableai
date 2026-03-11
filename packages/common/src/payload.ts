@@ -10,6 +10,15 @@ import {
     SimpleSearchQuery
 } from "./query.js";
 
+export type SortOrder = 'asc' | 'desc';
+
+export interface SortOption {
+    /** Field path to sort by (e.g. 'updated_at', 'name', 'properties.title') */
+    field: string;
+    /** Sort direction. Defaults to 'desc'. */
+    order?: SortOrder;
+}
+
 export interface SearchPayload {
     facets?: FacetSpec[];
     /**
@@ -23,6 +32,10 @@ export interface SearchPayload {
     select?: string;
     all_revisions?: boolean;
     from_root?: string;
+    /** Sort criteria. Multiple entries enable multi-field sorting (first entry is primary). */
+    sort?: SortOption[];
+    /** Arbitrary Elasticsearch aggregation definitions. Ignored when search falls back to MongoDB. */
+    aggs?: Record<string, unknown>;
 }
 
 export interface ComputeFacetPayload {
