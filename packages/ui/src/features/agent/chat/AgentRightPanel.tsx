@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Button, cn, useToast } from '@vertesia/ui/core';
+import { Badge, Button, useToast, Tabs, TabsBar, TabsPanel, type Tab as TabDefinition } from '@vertesia/ui/core';
 import { useUITranslation } from '../../../i18n/index.js';
 import {
     CheckCircleIcon,
@@ -219,9 +219,11 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
 // Right panel tabs
 // ---------------------------------------------------------------------------
 
-type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts';
+type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload';
 
 export interface AgentRightPanelProps {
+    /** Optional payload content to show as a "Payload" tab */
+    payloadContent?: React.ReactNode;
     // Plan
     plan?: Plan;
     workstreamStatus?: Map<string, 'pending' | 'in_progress' | 'completed' | 'skipped'>;
@@ -286,6 +288,9 @@ function AgentRightPanelComponent({
     showArtifacts = false,
     artifactRefreshKey = 0,
 
+    // Payload
+    payloadContent,
+
     // Panel
     onClose,
     defaultTab,
@@ -306,118 +311,105 @@ function AgentRightPanelComponent({
     const hasUploads = processingFiles ? processingFiles.size > 0 : false;
     const hasPlan = showPlan && plan;
 
-    const baseTabs: { id: RightPanelTab; label: string; badge?: number | boolean }[] = [
-        { id: 'plan', label: t('agent.plan'), badge: hasPlan ? true : false },
-        { id: 'workstreams', label: t('agent.workstreams'), badge: hasWorkstreams ? activeWorkstreams.length : false },
-        { id: 'documents', label: t('agent.documents'), badge: hasDocuments ? openDocuments.length : false },
-        { id: 'uploads', label: t('agent.uploads'), badge: hasUploads },
-        { id: 'artifacts', label: t('agent.artifacts') },
-    ];
-
-    const tabs = baseTabs.filter(tab => {
-        if (tab.id === 'workstreams' && hideWorkstreams) return false;
-        if (tab.id === 'artifacts' && !showArtifacts) return false;
-        return true;
-    });
-
     const handleCloseDocPanel = useCallback(() => {
-        // Just switch away from documents tab
         setActiveTab('plan');
     }, []);
 
-    return (
-        <div className="flex flex-col h-full">
-            {/* Tab bar */}
-            <div className="flex items-center border-b px-1 shrink-0">
-                <div className="flex-1 flex overflow-x-auto">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.id}
-                            className={cn(
-                                'px-3 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors',
-                                activeTab === tab.id
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-muted hover:text-foreground',
-                            )}
-                            onClick={() => setActiveTab(tab.id)}
-                        >
-                            {tab.label}
-                            {tab.badge && tab.badge !== true && (
-                                <span className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">
-                                    {tab.badge}
-                                </span>
-                            )}
-                            {tab.badge === true && (
-                                <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-info" />
-                            )}
-                        </button>
-                    ))}
+    const tabs: TabDefinition[] = [
+        {
+            name: 'plan',
+            label: hasPlan
+                ? <span className="flex items-center gap-1">{t('agent.plan')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" /></span>
+                : t('agent.plan'),
+            content: plan ? (
+                <InlineSlidingPlanPanel
+                    plan={plan}
+                    workstreamStatus={workstreamStatus || new Map()}
+                    isOpen={true}
+                    onClose={onClose}
+                    plans={plans}
+                    activePlanIndex={activePlanIndex}
+                    onChangePlan={onChangePlan}
+                />
+            ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-muted">
+                    <span className="text-sm">{t('agent.noPlanAvailable')}</span>
                 </div>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="shrink-0 ml-1"
-                    onClick={onClose}
-                >
+            ),
+            is_allowed: true,
+        },
+        {
+            name: 'workstreams',
+            label: hasWorkstreams
+                ? <span className="flex items-center gap-1">{t('agent.workstreams')} <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">{activeWorkstreams.length}</span></span>
+                : t('agent.workstreams'),
+            content: <WorkstreamsTab workstreams={activeWorkstreams} messages={messages} runId={runId} />,
+            is_allowed: !hideWorkstreams,
+        },
+        {
+            name: 'documents',
+            label: hasDocuments
+                ? <span className="flex items-center gap-1">{t('agent.documents')} <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">{openDocuments.length}</span></span>
+                : t('agent.documents'),
+            content: openDocuments.length > 0 && onSelectDocument && onCloseDocument ? (
+                <DocumentPanel
+                    isOpen={true}
+                    onClose={handleCloseDocPanel}
+                    documents={openDocuments}
+                    activeDocumentId={activeDocumentId ?? null}
+                    onSelectDocument={onSelectDocument}
+                    onCloseDocument={onCloseDocument}
+                    refreshKey={docRefreshKey}
+                    runId={runId}
+                />
+            ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-muted">
+                    <FileTextIcon className="size-8 mb-2" />
+                    <span className="text-sm">{t('agent.noDocumentsOpen')}</span>
+                </div>
+            ),
+            is_allowed: true,
+        },
+        {
+            name: 'uploads',
+            label: hasUploads
+                ? <span className="flex items-center gap-1">{t('agent.uploads')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" /></span>
+                : t('agent.uploads'),
+            content: <UploadedDocumentsTab files={processingFiles} />,
+            is_allowed: true,
+        },
+        {
+            name: 'artifacts',
+            label: t('agent.artifacts'),
+            content: <ArtifactsTab runId={runId} refreshKey={artifactRefreshKey} />,
+            is_allowed: showArtifacts,
+        },
+        {
+            name: 'payload',
+            label: t('agent.payload'),
+            content: payloadContent ? <div className="overflow-y-auto">{payloadContent}</div> : null,
+            is_allowed: !!payloadContent,
+        },
+    ];
+
+    return (
+        <Tabs
+            tabs={tabs}
+            current={activeTab}
+            onTabChange={(name) => setActiveTab(name as RightPanelTab)}
+            fullHeight
+            className="px-0"
+        >
+            <div className="flex items-center border-b shrink-0 px-1">
+                <div className="flex-1 overflow-x-auto">
+                    <TabsBar className="border-b-0 mb-0" />
+                </div>
+                <Button variant="ghost" size="sm" className="shrink-0 ml-1" onClick={onClose}>
                     <XIcon className="size-4" />
                 </Button>
             </div>
-
-            {/* Tab content */}
-            <div className="flex-1 overflow-y-auto min-h-0">
-                {activeTab === 'plan' && plan && (
-                    <InlineSlidingPlanPanel
-                        plan={plan}
-                        workstreamStatus={workstreamStatus || new Map()}
-                        isOpen={true}
-                        onClose={onClose}
-                        plans={plans}
-                        activePlanIndex={activePlanIndex}
-                        onChangePlan={onChangePlan}
-                    />
-                )}
-                {activeTab === 'plan' && !plan && (
-                    <div className="flex flex-col items-center justify-center py-8 text-muted">
-                        <span className="text-sm">{t('agent.noPlanAvailable')}</span>
-                    </div>
-                )}
-
-                {activeTab === 'workstreams' && (
-                    <WorkstreamsTab
-                        workstreams={activeWorkstreams}
-                        messages={messages}
-                        runId={runId}
-                    />
-                )}
-
-                {activeTab === 'documents' && openDocuments.length > 0 && onSelectDocument && onCloseDocument && (
-                    <DocumentPanel
-                        isOpen={true}
-                        onClose={handleCloseDocPanel}
-                        documents={openDocuments}
-                        activeDocumentId={activeDocumentId ?? null}
-                        onSelectDocument={onSelectDocument}
-                        onCloseDocument={onCloseDocument}
-                        refreshKey={docRefreshKey}
-                        runId={runId}
-                    />
-                )}
-                {activeTab === 'documents' && openDocuments.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-8 text-muted">
-                        <FileTextIcon className="size-8 mb-2" />
-                        <span className="text-sm">{t('agent.noDocumentsOpen')}</span>
-                    </div>
-                )}
-
-                {activeTab === 'uploads' && (
-                    <UploadedDocumentsTab files={processingFiles} />
-                )}
-
-                {activeTab === 'artifacts' && (
-                    <ArtifactsTab runId={runId} refreshKey={artifactRefreshKey} />
-                )}
-            </div>
-        </div>
+            <TabsPanel className="pt-0" />
+        </Tabs>
     );
 }
 

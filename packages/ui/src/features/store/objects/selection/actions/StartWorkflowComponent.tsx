@@ -1,9 +1,9 @@
-import { useUserSession } from "@vertesia/ui/session";
 import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectList, useToast } from "@vertesia/ui/core";
+import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
 import { useUITranslation } from '../../../../../i18n/index.js';
 import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
-import { useObjectsActionCallback, useObjectsActionContext } from "../ObjectsActionContext";
+import { useObjectsActionContext, useObjectsActionCallback } from '../ObjectsActionHooks';
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function StartWorkflowComponent({ action, objectIds, collectionId }: ActionComponentTypeProps) {

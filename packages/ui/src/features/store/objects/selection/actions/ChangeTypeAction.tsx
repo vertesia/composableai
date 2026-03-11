@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { useUITranslation } from '../../../../../i18n/index.js';
 import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
 import { SelectContentTypeModal } from "../../../types";
-import { useObjectsActionCallback } from "../ObjectsActionContext";
+import { useObjectsActionCallback } from "../ObjectsActionHooks";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function ChangeTypeActionComponent({ action, objectIds, children }: ActionComponentTypeProps) {
