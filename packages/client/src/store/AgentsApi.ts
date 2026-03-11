@@ -138,7 +138,9 @@ export class AgentsApi extends ApiTopic {
             activity_state?: ConversationActivityState;
             title?: string;
             topic?: string;
-            name?: string;
+            lessons_learned?: string[];
+            /** ES-only: conversation content text (not stored in MongoDB) */
+            content?: string;
         },
     ): Promise<AgentRun> {
         return this.post(`/${id}/status`, { payload: update });

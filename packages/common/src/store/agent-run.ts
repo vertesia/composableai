@@ -128,14 +128,14 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
 
     // --- Metadata ---
 
-    /** Short slug or name for the run (calculated by the workflow via a model call) */
-    name?: string;
-
     /** Conversation title (short, human-readable) */
     title?: string;
 
     /** Conversation topic (longer description from topic analysis) */
     topic?: string;
+
+    /** Lessons learned from the conversation (extracted at completion) */
+    lessons_learned?: string[];
 
     /** Timestamp when the document was created */
     created_at: Date;
@@ -271,14 +271,14 @@ export interface AgentRunSearchHit {
     /** Who started the run */
     started_by: string;
 
-    /** Short name/slug */
-    name?: string;
-
     /** Conversation title */
     title?: string;
 
     /** Conversation topic */
     topic?: string;
+
+    /** Lessons learned from the conversation */
+    lessons_learned?: string[];
 
     /** Tags */
     tags?: string[];
