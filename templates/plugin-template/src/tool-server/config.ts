@@ -1,4 +1,5 @@
 import { ToolServerConfig } from "@vertesia/tools-sdk";
+import { activities } from "./activities/index.js";
 import { interactions } from "./interactions/index.js";
 import { mcpProviders } from "./mcp/index.js";
 import { skills } from "./skills/index.js";
@@ -14,6 +15,7 @@ export const ServerConfig = {
     title: CONFIG__SERVER_TITLE,
     prefix: '/api',
     tools,
+    activities,
     interactions,
     types,
     skills,

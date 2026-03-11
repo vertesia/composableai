@@ -190,12 +190,20 @@ export class PayloadBuilder {
         );
 
 
-        this.interactionParamsSchema = context.interactionParamsSchema ?? null;
-        // trigger the setter to update the corresponding interactionParamsSchema
+        // Set data BEFORE the interaction setter so that initializeBooleanDefaults (called
+        // inside the interactionParamsSchema setter) uses the real run values as its base
+        // rather than an empty object. This prevents an intermediate render where the schema
+        // is set but _data is still {} — which would cause Input to mount with empty state.
+        this._data = context.data;
+
+        // Set interaction (which recomputes interactionParamsSchema from prompts via setter)
         this.interaction = inter;
+        // Prefer the schema stored in context (persisted with the run) over the recomputed one
+        if (context.interactionParamsSchema != null) {
+            this.interactionParamsSchema = context.interactionParamsSchema;
+        }
 
         this._tool_names = context.tool_names || [];
-        this._data = context.data;
         this._interactive = context.interactive;
         this._debug_mode = context.debug_mode ?? false;
         this._non_blocking_subagents = context.non_blocking_subagents ?? true;

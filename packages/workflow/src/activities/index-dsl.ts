@@ -1,4 +1,7 @@
 // Export here DSL activities
+export { executeRemoteActivity } from "./executeRemoteActivity.js";
+export { resolveRemoteActivities } from "./resolveRemoteActivities.js";
+export type { RemoteActivityInfo, RemoteActivityMap } from "./resolveRemoteActivities.js";
 export { createDocumentTypeFromInteractionRun } from "./advanced/createDocumentTypeFromInteractionRun.js";
 export { createOrUpdateDocumentFromInteractionRun } from "./advanced/createOrUpdateDocumentFromInteractionRun.js";
 export { updateDocumentFromInteractionRun } from "./advanced/updateDocumentFromInteractionRun.js";

@@ -1,6 +1,7 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     BulkObjectDeleteResult,
+    BulkObjectUpdateResult,
     canGenerateRendition,
     ComplexSearchPayload,
     ComputeObjectFacetPayload,
@@ -44,6 +45,8 @@ export interface ComputeFacetsResponse {
 export interface SearchResponse {
     results: ContentObjectItem[];
     facets: ComputeFacetsResponse;
+    /** Raw ES aggregation results. Only present when aggs were requested and ES backend was used. */
+    aggregations?: Record<string, unknown>;
 }
 
 export class ObjectsApi extends ApiTopic {
@@ -371,6 +374,15 @@ export class ObjectsApi extends ApiTopic {
             }) as Promise<BulkObjectDeleteResult>;
         }
         return this.del(`/${idOrIds}`);
+    }
+
+    bulkUpdate(updates: Record<string, Record<string, any>>): Promise<BulkObjectUpdateResult> {
+        const ids = Object.keys(updates);
+        return (this.client as ZenoClient).runOperation({
+            name: 'update',
+            ids,
+            params: updates,
+        }) as Promise<BulkObjectUpdateResult>;
     }
 
     listWorkflowRuns(documentId: string): Promise<ListWorkflowRunsResponse> {

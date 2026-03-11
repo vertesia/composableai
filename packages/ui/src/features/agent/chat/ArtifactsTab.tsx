@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react';
+import { Button } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
 import {
     ChevronDownIcon,
     ChevronRightIcon,
@@ -9,9 +10,8 @@ import {
     PackageIcon,
     RefreshCwIcon,
 } from 'lucide-react';
-import { Button } from '@vertesia/ui/core';
+import React, { useCallback, useState } from 'react';
 import { useUITranslation } from '../../../i18n/index.js';
-import { useUserSession } from '@vertesia/ui/session';
 import { useArtifacts, type ArtifactTreeNode } from './hooks/useArtifacts.js';
 
 // ---------------------------------------------------------------------------
@@ -95,11 +95,17 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
     const handleDownload = useCallback(async (relativePath: string) => {
         if (!runId) return;
         setDownloadingPath(relativePath);
+        // Open the tab synchronously (before the await) so the browser treats it as
+        // a direct user action and doesn't block it as a popup.
+        const newTab = window.open('', '_blank');
         try {
-            const { url } = await client.agents.getArtifactUrl(runId, relativePath, 'attachment');
-            window.open(url, '_blank');
+            const { url } = await client.files.getArtifactDownloadUrl(runId, relativePath, 'attachment');
+            if (newTab) {
+                newTab.location.href = url;
+            }
         } catch (err) {
             console.error('Failed to get artifact download URL:', err);
+            newTab?.close();
         } finally {
             setDownloadingPath(null);
         }

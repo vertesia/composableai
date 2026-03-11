@@ -5,7 +5,8 @@ import type { CollectionInfo } from '../types.js';
 import { TYPE_VARIANTS } from './typeVariants.js';
 
 export function CollectionCard({ collection }: { collection: CollectionInfo }) {
-    const href = `/${collection.type}s/${collection.name}`;
+    const plural = collection.type === 'activity' ? 'activities' : `${collection.type}s`;
+    const href = `/${plural}/${collection.name}`;
 
     return (
         <NavLink href={href} className="block no-underline">

@@ -42,3 +42,10 @@ export interface BulkObjectDeleteResult extends BulkOperationResult {
     /** IDs that were not found or user had no permission to delete */
     failed: string[];
 }
+
+export interface BulkObjectUpdateResult extends BulkOperationResult {
+    /** Number of documents successfully updated */
+    updated: number;
+    /** IDs that were not found, not authorized, or failed to update */
+    failed: string[];
+}
