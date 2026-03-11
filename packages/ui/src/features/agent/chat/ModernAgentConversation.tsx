@@ -217,6 +217,9 @@ interface ModernAgentConversationProps {
      * @example { fundName: "Tech Growth IV", vintage: 2024, totalCommitments: 500000000 }
      */
     fusionData?: Record<string, unknown>;
+
+    /** Optional payload content to show as a "Payload" tab in the right panel */
+    payloadContent?: React.ReactNode;
 }
 
 export function ModernAgentConversation(
@@ -738,6 +741,7 @@ function ModernAgentConversationInner({
     StoreLinkComponent,
     CollectionLinkComponent,
     prependFriendlyMessage,
+    payloadContent,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
@@ -1535,6 +1539,8 @@ function ModernAgentConversationInner({
                         artifactRefreshKey={artifactRefreshKey}
                         // Messages (for workstreams tab context)
                         messages={messages}
+                        // Payload content
+                        payloadContent={payloadContent}
                         // Panel control
                         onClose={handleCloseRightPanel}
                         defaultTab={rightPanelTab}

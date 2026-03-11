@@ -6,7 +6,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { useUITranslation } from '../../../../../i18n/index.js';
 import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
 import { useDocumentSearch } from '../../search';
-import { useObjectsActionContext } from '../ObjectsActionContext';
+import { useObjectsActionContext } from '../ObjectsActionHooks';
 import { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
 import ConfirmAction from './ConfirmAction';
 

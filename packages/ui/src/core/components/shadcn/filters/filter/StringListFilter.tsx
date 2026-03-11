@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, useState } from "react";
-import { InputList } from "../../../index";
+import { InputList } from "../../../InputList";
 import { Button } from "../../button";
 import { Filter, FilterGroup } from "../types";
 

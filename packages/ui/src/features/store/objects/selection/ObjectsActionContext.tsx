@@ -1,108 +1,30 @@
-import { createContext, ReactNode, useContext, useEffect, useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 
 import { ErrorBox, useFetch, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { useUITranslation } from '../../../../i18n/index.js';
 
-import { useDocumentSearch, useDocumentSelection } from '../../../store';
+import { useDocumentSelection } from '../DocumentSelectionProvider';
+import { useDocumentSearch } from '../search/DocumentSearchContext';
 import { AddToCollectionAction } from './actions/AddToCollectionAction';
 import { ChangeTypeAction } from './actions/ChangeTypeAction';
 import { DeleteObjectsAction, DeleteObjectsFromCollectionsAction } from './actions/DeleteObjectsAction';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
 import { RemoveFromCollectionAction } from './actions/RemoveFromCollectionAction';
 import { StartWorkflowAction, StartWorkflowComponent } from './actions/StartWorkflowComponent';
-import { ObjectsActionParams, ObjectsActionSpec } from './ObjectsActionSpec';
+import { ObjectsActionContext } from './ObjectsActionContextClass';
+import { ObjectsActionContextReact, useObjectsActionContext } from './ObjectsActionHooks';
+import { ObjectsActionSpec } from './ObjectsActionSpec';
 
-export type ObjectsActionCallback = (params: ObjectsActionParams) => Promise<unknown>;
-
-export class ObjectsActionContext {
-    allActions: ObjectsActionSpec[] = [
-        ExportPropertiesAction,
-        ChangeTypeAction,
-        StartWorkflowAction,
-        AddToCollectionAction,
-        DeleteObjectsAction,
-        RemoveFromCollectionAction,
-        DeleteObjectsFromCollectionsAction
-    ];
-    wfRules: ObjectsActionSpec[] = [];
-    callbacks: Record<string, ObjectsActionCallback> = {};
-    startWorkflow?: ObjectsActionCallback;
-
-    constructor(public params: Omit<ObjectsActionParams, 'action'>) { }
-
-    get actions(): ObjectsActionSpec[] {
-        const isInCollection = !!this.params.selection?.collectionId;
-
-        if (isInCollection) {
-            return this.allActions.filter(action =>
-                action.id !== 'addToCollection' && action.id !== 'delete'
-            );
-        } else {
-            return this.allActions.filter(action =>
-                action.id !== 'removeFromCollection' && action.id !== 'deleteFromCollections'
-            );
-        }
-    }
-
-    async loadWorkflows() {
-        this.params.client.workflows.rules.list().then((rules) => {
-            this.wfRules = rules.map(rule => (
-                {
-                    id: rule.id,
-                    name: rule.name,
-                    description: rule.description,
-                    confirm: false,
-                    isWorkflow: true,
-                    component: StartWorkflowComponent
-                }
-            )).sort((a, b) => a.name.localeCompare(b.name));
-        });
-        return this.wfRules;
-    }
-
-    registerCallback(name: string, cb: (params: ObjectsActionParams) => Promise<unknown>) {
-        this.callbacks[name] = cb;
-        return () => {
-            delete this.callbacks[name];
-        }
-    }
-
-    unregisterCallback(name: string) {
-        delete this.callbacks[name];
-    }
-
-    findAction(actionId: string) {
-        let action = this.allActions.find(a => a.id === actionId);
-        if (!action) {
-            action = this.wfRules.find(a => a.id === actionId);
-        }
-        return action;
-    }
-
-    async run(actionId: string): Promise<unknown> {
-        const action = this.findAction(actionId);
-        if (!action) {
-            throw new Error(`Action ${actionId} not found`);
-        }
-        const params = { ...this.params, action };
-        // if (action.isWorkflow) {
-        //     if (!this.startWorkflow) {
-        //         throw new Error("No startWorkflow callback set");
-        //     }
-        //     return this.startWorkflow(params);
-        // } else {
-        const cb = this.callbacks[actionId];
-        if (cb) {
-            return cb(params);
-        } else {
-            throw new Error("No action callback set");
-        }
-        //        }
-    }
-}
-
-const ObjectsActionContextReact = createContext<ObjectsActionContext>(undefined as any);
+const DEFAULT_ACTIONS: ObjectsActionSpec[] = [
+    ExportPropertiesAction,
+    ChangeTypeAction,
+    StartWorkflowAction,
+    AddToCollectionAction,
+    DeleteObjectsAction,
+    RemoveFromCollectionAction,
+    DeleteObjectsFromCollectionsAction,
+];
 
 interface ObjectsActionContextProps {
     children: ReactNode;
@@ -133,6 +55,7 @@ export function ObjectsActionContextProvider({ children }: ObjectsActionContextP
         const context = new ObjectsActionContext({
             selection, toast, client, search
         });
+        context.allActions = DEFAULT_ACTIONS;
         context.wfRules = rules!;
         return context;
     }, [selection, rules]);
@@ -151,9 +74,7 @@ export function ObjectsActionContextProvider({ children }: ObjectsActionContextP
     )
 }
 
-interface ActionsProps {
-}
-function Actions({ }: ActionsProps) {
+function Actions() {
     const context = useObjectsActionContext();
 
     const selection = context.params.selection;
@@ -169,31 +90,4 @@ function Actions({ }: ActionsProps) {
             }
         </div>
     )
-}
-
-export function useObjectsActionContext() {
-    const ctx = useContext(ObjectsActionContextReact);
-    if (!ctx) {
-        throw new Error("You cannot use useActionContext outside an ActionProvider");
-    }
-    return ctx;
-}
-
-export function useObjectsActionCallback(name: string, cb: ObjectsActionCallback) {
-    const ctx = useObjectsActionContext();
-    useEffect(() => {
-        return ctx.registerCallback(name, cb);
-    }, [ctx, name, cb]);
-    return ctx;
-}
-
-export function useStartWorkflowCallback(cb: ObjectsActionCallback) {
-    const ctx = useObjectsActionContext();
-    useEffect(() => {
-        ctx.startWorkflow = cb;
-        return () => {
-            ctx.startWorkflow = undefined;
-        }
-    }, [cb, ctx]);
-    return ctx;
 }
