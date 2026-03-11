@@ -81,16 +81,18 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
 
 
     return (
-        <Panel title="Table Layout Editor" className="bg-background! h-[calc(100vh-197px)]" action={
+        <Panel title="Table Layout Editor" className="bg-background! h-full" action={
             !readonly ? <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>{t('store.saveChanges')}</Button> : undefined
         }>
-            <MonacoEditor
-                value={value}
-                language="json"
-                editorRef={editorRef}
-                theme={theme === 'dark' ? 'vs-dark' : 'vs'}
-                options={{ readOnly: readonly }}
-            />
+            <div className="h-full">
+                <MonacoEditor
+                    value={value}
+                    language="json"
+                    editorRef={editorRef}
+                    theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+                    options={{ readOnly: readonly }}
+                />
+            </div>
         </Panel>
     )
 }

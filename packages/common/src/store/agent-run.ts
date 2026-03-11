@@ -15,6 +15,7 @@
 import { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, RunSource } from "../interaction.js";
 import { UserChannel } from "../email.js";
 import { ContentObjectTypeRef } from "./store.js";
+import { ConversationActivityState } from "./workflow.js";
 
 /**
  * Status of an agent run through its lifecycle.
@@ -113,6 +114,9 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
     /** Current status of the agent run */
     status: AgentRunStatus;
 
+    /** Whether the agent is currently working or idle (waiting for user input) */
+    activity_state?: ConversationActivityState;
+
     /** When the run started */
     started_at: Date;
 
@@ -124,14 +128,14 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
 
     // --- Metadata ---
 
-    /** Short slug or name for the run (calculated by the workflow via a model call) */
-    name?: string;
-
     /** Conversation title (short, human-readable) */
     title?: string;
 
     /** Conversation topic (longer description from topic analysis) */
     topic?: string;
+
+    /** Lessons learned from the conversation (extracted at completion) */
+    lessons_learned?: string[];
 
     /** Timestamp when the document was created */
     created_at: Date;
@@ -199,6 +203,123 @@ export interface ListAgentRunsQuery {
 
     /** Sort order */
     order?: 'asc' | 'desc';
+}
+
+/**
+ * Query for searching agent runs via Elasticsearch.
+ */
+export interface SearchAgentRunsQuery {
+    /** Full-text search across name, title, topic, interaction_name, and content */
+    query?: string;
+
+    /** Filter by status (single or multiple) */
+    status?: AgentRunStatus | AgentRunStatus[];
+
+    /** Filter by interaction ID or code */
+    interaction?: string;
+
+    /** Filter by user who started the run */
+    started_by?: string;
+
+    /** Filter by categories */
+    categories?: string[];
+
+    /** Filter by tags */
+    tags?: string[];
+
+    /** Filter by content type name */
+    content_type_name?: string;
+
+    /** Only return runs started after this date */
+    since?: Date;
+
+    /** Maximum number of results (default: 50) */
+    limit?: number;
+
+    /** Offset for pagination */
+    offset?: number;
+}
+
+/**
+ * A single search hit from Elasticsearch.
+ */
+export interface AgentRunSearchHit {
+    /** Agent run ID */
+    id: string;
+
+    /** Relevance score */
+    score: number;
+
+    /** Interaction ID */
+    interaction: string;
+
+    /** Human-readable interaction name */
+    interaction_name?: string;
+
+    /** Current status */
+    status: AgentRunStatus;
+
+    /** Whether the agent is currently working or idle */
+    activity_state?: ConversationActivityState;
+
+    /** When the run started */
+    started_at: string;
+
+    /** When the run completed */
+    completed_at?: string;
+
+    /** Who started the run */
+    started_by: string;
+
+    /** Conversation title */
+    title?: string;
+
+    /** Conversation topic */
+    topic?: string;
+
+    /** Lessons learned from the conversation */
+    lessons_learned?: string[];
+
+    /** Tags */
+    tags?: string[];
+
+    /** Categories */
+    categories?: string[];
+
+    /** Whether the agent accepts user input */
+    interactive: boolean;
+
+    /** Collection ID */
+    collection_id?: string;
+
+    /** Content type */
+    content_type?: ContentObjectTypeRef;
+
+    /** Tools configured for this run */
+    tool_names?: string[];
+
+    /** Schedule ID (if schedule-triggered) */
+    schedule_id?: string;
+
+    /** How the run was created */
+    type?: AgentRunType;
+
+    /** Created timestamp */
+    created_at: string;
+
+    /** Updated timestamp */
+    updated_at: string;
+}
+
+/**
+ * Response from the agent runs search endpoint.
+ */
+export interface SearchAgentRunsResponse {
+    /** Search results */
+    hits: AgentRunSearchHit[];
+
+    /** Total matching results */
+    total: number;
 }
 
 /**

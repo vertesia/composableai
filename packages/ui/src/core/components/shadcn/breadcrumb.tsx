@@ -2,9 +2,10 @@ import * as React from "react"
 import { ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { cn } from "../libs/utils"
+import { Button } from "./button"
 
 interface BreadcrumbProps {
-  label: string
+  label: string | React.ReactNode
   href?: string
   onClick?: () => void
 }
@@ -17,19 +18,23 @@ interface BreadcrumbItemProps {
 export function Breadcrumbs({ path, maxItems = 3, className, separator }: BreadcrumbItemProps) {
   const items = path || [];
 
+
   const renderBreadcrumbItem = (item: BreadcrumbProps) => {
+    const shortenedLabel = typeof item.label === "string" && item.label.length > 20
+      ? item.label.slice(0, 17) + "..."
+      : item.label;
     if (item.onClick) {
-      return <BreadcrumbButton onClick={item.onClick} href={item.href}>{item.label}</BreadcrumbButton>;
+      return <BreadcrumbButton onClick={item.onClick} href={item.href} title={typeof item.label === 'string' ? item.label : undefined}>{shortenedLabel}</BreadcrumbButton>;
     } else if (item.href) {
-      return <BreadcrumbButton href={item.href}>{item.label}</BreadcrumbButton>;
+      return <BreadcrumbButton href={item.href} title={typeof item.label === 'string' ? item.label : undefined}>{shortenedLabel}</BreadcrumbButton>;
     } else {
-      return <BreadcrumbPage>{item.label}</BreadcrumbPage>;
+      return <BreadcrumbPage>{shortenedLabel}</BreadcrumbPage>;
     }
   };
 
   if (items.length <= maxItems) {
     return (
-      <Breadcrumb className={cn("w-full", className)}>
+      <Breadcrumb className={cn("w-full flex items-center", className)}>
         <BreadcrumbList>
           {items.map((item, index) => (
             <React.Fragment key={index}>
@@ -49,7 +54,7 @@ export function Breadcrumbs({ path, maxItems = 3, className, separator }: Breadc
   const lastThreeItems = items.slice(-(maxItems - 1));
 
   return (
-    <Breadcrumb className={cn("w-full", className)}>
+    <Breadcrumb className={cn("w-full flex items-center", className)}>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbEllipsis />
@@ -85,7 +90,7 @@ const BreadcrumbList = React.forwardRef<
   <ol
     ref={ref}
     className={cn(
-      "flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5",
+      "flex flex-wrap items-center gap-1.5 break-words text-sm text-muted sm:gap-2.5",
       className
     )}
     {...props}
@@ -135,9 +140,11 @@ const BreadcrumbButton = React.forwardRef<
   };
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size={"md"}
       ref={ref}
-      className={cn("transition-colors hover:text-foreground cursor-pointer", className)}
+      className={cn("p-0! hover:underline! hover:bg-background!", className)}
       onClick={handleClick}
       {...props}
     />

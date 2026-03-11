@@ -17,7 +17,7 @@ export function JSONCode({ data, className }: { data: any; className?: string })
     }, [data]);
 
     return (
-        <div className={`h-full ${className || ''}`}>
+        <div className={`h-full pb-2 mb-2 ${className || ''}`}>
             <MonacoEditor
                 value={jsonString}
                 language="json"
