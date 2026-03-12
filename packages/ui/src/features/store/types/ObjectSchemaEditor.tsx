@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 
+import { useUITranslation } from '../../../i18n/index.js';
 import { useUserSession } from '@vertesia/ui/session';
 import { MonacoEditor, EditorApi, SchemaEditor, useSchema } from '@vertesia/ui/widgets';
 import { Button, useToast, useTheme, Panel } from '@vertesia/ui/core';
@@ -13,6 +14,7 @@ interface ObjectSchemaEditorProps {
 }
 export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = false }: ObjectSchemaEditorProps) {
     const { store } = useUserSession();
+    const { t } = useUITranslation();
     const toast = useToast();
     const { theme } = useTheme();
 
@@ -37,14 +39,14 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
             onSchemaUpdate(schema);
             toast({
                 status: 'success',
-                title: 'Schema updated',
-                description: 'The schema has been updated successfully',
+                title: t('store.schemaUpdated'),
+                description: t('store.schemaUpdatedSuccess'),
                 duration: 2000
             });
         }).catch((err) => {
             toast({
                 status: 'error',
-                title: 'Failed to update schema',
+                title: t('store.failedToUpdateSchema'),
                 description: err.message,
                 duration: 5000
             })
@@ -73,7 +75,7 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
             } catch (err: any) {
                 toast({
                     status: 'error',
-                    title: 'Invalid JSON Schema',
+                    title: t('store.invalidJsonSchema'),
                     description: err.message,
                     duration: 5000
                 })
@@ -84,11 +86,11 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
     };
 
     const title = (
-        <div className='flex gap-2 items-center'><div className="text-base font-semibold">Schema Editor</div>
+        <div className='flex gap-2 items-center'><div className="text-base font-semibold">{t('store.schemaEditor')}</div>
             {!readonly && <div>
                 <Button variant="outline" size="sm" onClick={handleOnSave}>
                     {
-                        displayJson ? "Edit Schema" : "Edit Json"
+                        displayJson ? t('store.editSchema') : t('store.editJson')
                     }
                 </Button>
             </div>}
@@ -97,7 +99,7 @@ export function ObjectSchemaEditor({ objectType, onSchemaUpdate, readonly = fals
 
     return (
         <Panel title={title} className="bg-background! h-full"
-            action={!readonly ? <Button isLoading={isUpdating} size="sm" onClick={onSave}>Save</Button> : undefined}
+        action = {!readonly ? <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>{t('modal.saveChanges')}</Button> : undefined}
         >
             {
                 displayJson

@@ -3,6 +3,7 @@ import React, { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { AlignLeft } from 'lucide-react';
 import { Button, Modal, ModalBody, ModalFooter, ModalTitle, Styles, SelectBox } from '@vertesia/ui/core';
 
+import { useUITranslation } from '../../../i18n/index.js';
 import { TypeNames } from '../type-signature.js';
 import { DataEditorProps } from './Editable.js';
 import { EditableSchemaProperty } from './EditableSchemaProperty.js';
@@ -20,6 +21,7 @@ function makeTypeOptions() {
 const TYPE_OPTIONS = makeTypeOptions();
 
 export function PropertyEditor({ value, onChange, onCancel, onSave }: DataEditorProps<EditableSchemaProperty>) {
+    const { t } = useUITranslation();
     const [isModalOpen, setModalOpen] = useState(false);
 
     if (!value) return null;
@@ -49,7 +51,7 @@ export function PropertyEditor({ value, onChange, onCancel, onSave }: DataEditor
                 <PropertyTypeEditor value={value.type} onChange={onTypeChange} onCancel={onCancel} onSave={onSave} />
             </div>
             <div>
-                <Button variant={"ghost"} size={"xs"} onClick={() => setModalOpen(true)}  title="Edit description">
+                <Button variant={"ghost"} size={"xs"} onClick={() => setModalOpen(true)}  title={t('widgets.schema.editDescription')}>
                     <AlignLeft className="size-4" />
                 </Button>
                 <EditDescriptionModal value={value.description} isOpen={isModalOpen} onClose={onDescriptionChange} />
@@ -119,9 +121,10 @@ interface EditDescriptionModalProps {
     onClose: (text?: string) => void;
 }
 function EditDescriptionModal({ value, isOpen, onClose }: EditDescriptionModalProps) {
+    const { t } = useUITranslation();
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
-            <ModalTitle>Edit description</ModalTitle>
+            <ModalTitle>{t('widgets.schema.editDescription')}</ModalTitle>
             <EditDescriptionModalForm value={value} onSave={onClose} />
         </Modal>
     )
@@ -132,6 +135,7 @@ interface EditDescriptionModalFormProps {
     onSave: (text: string) => void;
 }
 function EditDescriptionModalForm({ value, onSave }: EditDescriptionModalFormProps) {
+    const { t } = useUITranslation();
     const ref = useRef<HTMLTextAreaElement>(null);
     const [currentValue, setCurrentValue] = useState(value || '');
     useEffect(() => {
@@ -143,7 +147,7 @@ function EditDescriptionModalForm({ value, onSave }: EditDescriptionModalFormPro
                 <textarea ref={ref} className="dark:bg-gray-800 w-full h-full dark:text-white" value={currentValue} onChange={(e) => setCurrentValue(e.target.value)} />
             </ModalBody>
             <ModalFooter>
-                <Button onClick={() => onSave(currentValue)}>Save Changes</Button>
+                <Button onClick={() => onSave(currentValue)}>{t('store.saveChanges')}</Button>
             </ModalFooter>
         </>
     )

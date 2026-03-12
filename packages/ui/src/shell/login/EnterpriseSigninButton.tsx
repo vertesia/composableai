@@ -1,5 +1,6 @@
 import { Button, Input, Spinner, useToast } from "@vertesia/ui/core";
 import { Env } from "@vertesia/ui/env";
+import { useUITranslation } from "@vertesia/ui/i18n";
 import { getFirebaseAuth, setFirebaseTenant, useUXTracking } from "@vertesia/ui/session";
 import { GoogleAuthProvider, OAuthProvider, signInWithRedirect } from "firebase/auth";
 import { useState } from "react";
@@ -40,6 +41,7 @@ interface EnterpriseSigninButtonProps {
     redirectTo?: string;
 }
 export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninButtonProps) {
+    const { t } = useUITranslation();
     const [isLoading, setIsLoading] = useState(false);
     const { trackEvent } = useUXTracking();
 
@@ -52,7 +54,7 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             toast({
-                title: "Invalid email address",
+                title: t('auth.invalidEmail'),
                 status: "error",
                 duration: 5000,
             });
@@ -63,7 +65,7 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
         setFirebaseTenant(email).then((data) => {
             if (!data) {
                 toast({
-                    title: "Tenant not found",
+                    title: t('auth.tenantNotFound'),
                     status: "error",
                     duration: 5000,
                 });
@@ -90,7 +92,7 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
 
     return (
         <>
-            <Input value={email} onChange={setEmail} placeholder="Enter your enterprise email" type="email" />
+            <Input value={email} onChange={setEmail} placeholder={t('auth.enterEnterpriseEmail')} type="email" />
             {
                 isLoading ? (
                     <div className="w-full flex justify-center">
@@ -100,7 +102,7 @@ export default function EnterpriseSigninButton({ redirectTo }: EnterpriseSigninB
                     <Button variant={"outline"}
                         onClick={signIn}
                         className="w-full mt-2 py-4 flex rounded-lg hover:shadow-sm transition duration-150 text-center">
-                        <span className="text-sm font-semibold">Continue with Enterprise SSO</span>
+                        <span className="text-sm font-semibold">{t('auth.continueWithEnterprise')}</span>
                     </Button>
                 )
             }

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, useToast, Tabs, TabsBar, TabsPanel, type Tab as TabDefinition } from '@vertesia/ui/core';
+import { useUITranslation } from '../../../i18n/index.js';
 import {
     CheckCircleIcon,
     ClipboardCopyIcon,
@@ -44,6 +45,7 @@ interface UploadedDocumentsProps {
 }
 
 function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
+    const { t } = useUITranslation();
     const filesArray = useMemo(() => {
         return files ? Array.from(files.values()) : [];
     }, [files]);
@@ -65,13 +67,13 @@ function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
     const getStatusBadge = (status: FileProcessingStatus) => {
         switch (status) {
             case FileProcessingStatus.UPLOADING:
-                return <Badge variant="info">Uploading</Badge>;
+                return <Badge variant="info">{t('agent.uploading')}</Badge>;
             case FileProcessingStatus.PROCESSING:
-                return <Badge variant="info">Processing</Badge>;
+                return <Badge variant="info">{t('agent.processing')}</Badge>;
             case FileProcessingStatus.READY:
-                return <Badge variant="success">Ready</Badge>;
+                return <Badge variant="success">{t('agent.ready')}</Badge>;
             case FileProcessingStatus.ERROR:
-                return <Badge variant="destructive">Error</Badge>;
+                return <Badge variant="destructive">{t('agent.error')}</Badge>;
             default:
                 return null;
         }
@@ -81,7 +83,7 @@ function UploadedDocumentsTab({ files }: UploadedDocumentsProps) {
         <div className="p-3">
             {filesArray.length === 0 ? (
                 <div className="text-sm text-muted text-center py-8">
-                    No files uploaded yet
+                    {t('agent.noFilesUploadedYet')}
                 </div>
             ) : (
                 <div className="space-y-2">
@@ -123,12 +125,13 @@ interface WorkstreamsTabProps {
 }
 
 function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
+    const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
 
     const copyRunId = useCallback((runId: string) => {
         navigator.clipboard.writeText(runId);
-        toast({ status: 'success', title: 'Run ID copied', duration: 2000 });
+        toast({ status: 'success', title: t('agent.runIdCopied'), duration: 2000 });
     }, [toast]);
 
     const downloadConversation = useCallback(async (runId: string) => {
@@ -136,7 +139,7 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
             const url = await getConversationUrl(client, runId);
             if (url) window.open(url, '_blank');
         } catch {
-            toast({ status: 'error', title: 'Failed to download conversation' });
+            toast({ status: 'error', title: t('agent.failedToDownload') });
         }
     }, [client, toast]);
 
@@ -144,7 +147,7 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
         return (
             <div className="flex flex-col items-center justify-center py-8 text-muted">
                 <LayoutListIcon className="size-8 mb-2" />
-                <span className="text-sm">No active workstreams</span>
+                <span className="text-sm">{t('agent.noActiveWorkstreams')}</span>
             </div>
         );
     }
@@ -179,8 +182,8 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
                             />
                         </div>
                         <div className="flex justify-between text-xs text-muted">
-                            <span>{elapsed}s elapsed</span>
-                            <span>{remaining}s remaining</span>
+                            <span>{t('agent.elapsed', { seconds: elapsed })}</span>
+                            <span>{t('agent.remaining', { seconds: remaining })}</span>
                         </div>
                         {/* Actions */}
                         {ws.child_workflow_run_id && (
@@ -192,7 +195,7 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
                                     onClick={() => copyRunId(ws.child_workflow_run_id!)}
                                 >
                                     <ClipboardCopyIcon className="size-3 mr-1" />
-                                    Copy Run ID
+                                    {t('agent.copyRunId')}
                                 </Button>
                                 <Button
                                     variant="ghost"
@@ -201,7 +204,7 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
                                     onClick={() => downloadConversation(ws.child_workflow_run_id!)}
                                 >
                                     <DownloadCloudIcon className="size-3 mr-1" />
-                                    Download
+                                    {t('agent.download')}
                                 </Button>
                             </div>
                         )}
@@ -292,6 +295,7 @@ function AgentRightPanelComponent({
     onClose,
     defaultTab,
 }: AgentRightPanelProps) {
+    const { t } = useUITranslation();
     const [activeTab, setActiveTab] = useState<RightPanelTab>(defaultTab || 'plan');
 
     // Auto-switch to relevant tab when content appears
@@ -315,8 +319,8 @@ function AgentRightPanelComponent({
         {
             name: 'plan',
             label: hasPlan
-                ? <span className="flex items-center gap-1">Plan <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" /></span>
-                : 'Plan',
+                ? <span className="flex items-center gap-1">{t('agent.plan')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" /></span>
+                : t('agent.plan'),
             content: plan ? (
                 <InlineSlidingPlanPanel
                     plan={plan}
@@ -329,7 +333,7 @@ function AgentRightPanelComponent({
                 />
             ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-muted">
-                    <span className="text-sm">No plan available</span>
+                    <span className="text-sm">{t('agent.noPlanAvailable')}</span>
                 </div>
             ),
             is_allowed: true,
@@ -337,16 +341,16 @@ function AgentRightPanelComponent({
         {
             name: 'workstreams',
             label: hasWorkstreams
-                ? <span className="flex items-center gap-1">Workstreams <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">{activeWorkstreams.length}</span></span>
-                : 'Workstreams',
+                ? <span className="flex items-center gap-1">{t('agent.workstreams')} <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">{activeWorkstreams.length}</span></span>
+                : t('agent.workstreams'),
             content: <WorkstreamsTab workstreams={activeWorkstreams} messages={messages} runId={runId} />,
             is_allowed: !hideWorkstreams,
         },
         {
             name: 'documents',
             label: hasDocuments
-                ? <span className="flex items-center gap-1">Documents <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">{openDocuments.length}</span></span>
-                : 'Documents',
+                ? <span className="flex items-center gap-1">{t('agent.documents')} <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] rounded-full bg-info text-info">{openDocuments.length}</span></span>
+                : t('agent.documents'),
             content: openDocuments.length > 0 && onSelectDocument && onCloseDocument ? (
                 <DocumentPanel
                     isOpen={true}
@@ -361,7 +365,7 @@ function AgentRightPanelComponent({
             ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-muted">
                     <FileTextIcon className="size-8 mb-2" />
-                    <span className="text-sm">No documents open</span>
+                    <span className="text-sm">{t('agent.noDocumentsOpen')}</span>
                 </div>
             ),
             is_allowed: true,
@@ -369,20 +373,20 @@ function AgentRightPanelComponent({
         {
             name: 'uploads',
             label: hasUploads
-                ? <span className="flex items-center gap-1">Uploads <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" /></span>
-                : 'Uploads',
+                ? <span className="flex items-center gap-1">{t('agent.uploads')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" /></span>
+                : t('agent.uploads'),
             content: <UploadedDocumentsTab files={processingFiles} />,
             is_allowed: true,
         },
         {
             name: 'artifacts',
-            label: 'Artifacts',
+            label: t('agent.artifacts'),
             content: <ArtifactsTab runId={runId} refreshKey={artifactRefreshKey} />,
             is_allowed: showArtifacts,
         },
         {
             name: 'payload',
-            label: 'Payload',
+            label: t('agent.payload'),
             content: payloadContent ? <div className="overflow-y-auto">{payloadContent}</div> : null,
             is_allowed: !!payloadContent,
         },
