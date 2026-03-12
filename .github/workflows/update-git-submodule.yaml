@@ -39,16 +39,16 @@ jobs:
           echo "Branch '${{ env.TARGET_COMPOSABLEAI_BRANCH }}' is valid."
 
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0 # Fetch all history to ensure we can access the specified commit
           ref: ${{ env.TARGET_COMPOSABLEAI_BRANCH }}
 
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - name: Check if submodule update is needed
