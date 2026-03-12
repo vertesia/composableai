@@ -51,7 +51,21 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Check if submodule update is needed
+        id: precheck
+        run: |
+          current_llumiverse_sha="$(git ls-tree --format='%(objectname)' HEAD llumiverse)"
+
+          if [ "$current_llumiverse_sha" = "${{ env.TARGET_LLUMIVERSE_SHA }}" ]; then
+            echo "No update needed. Submodule 'llumiverse' is already at target SHA."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Submodule update required."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Clean up existing PRs
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -92,6 +106,7 @@ jobs:
 
       - name: Update Git submodule and lockfile
         id: update-submodule
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -172,7 +187,7 @@ jobs:
           echo "author_login=${author_login}" >> $GITHUB_OUTPUT
 
       - name: Assign PR to author
-        if: ${{ steps.update-submodule.outputs.author_login }}
+        if: ${{ steps.precheck.outputs.skip != 'true' && steps.update-submodule.outputs.author_login }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -182,7 +197,7 @@ jobs:
       - name: Notify studio for Slack notification
         # Dispatch to the private studio repo so it can look up the developer's
         # Slack address without exposing private email mappings in this public repo.
-        if: ${{ steps.update-submodule.outputs.author_login }}
+        if: ${{ steps.precheck.outputs.skip != 'true' && steps.update-submodule.outputs.author_login }}
         run: |
           curl -L \
             -X POST \
