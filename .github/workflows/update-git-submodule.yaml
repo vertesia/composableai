@@ -51,7 +51,21 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Check if submodule update is needed
+        id: precheck
+        run: |
+          current_llumiverse_sha="$(git ls-tree --format='%(objectname)' HEAD llumiverse)"
+
+          if [ "$current_llumiverse_sha" = "${{ env.TARGET_LLUMIVERSE_SHA }}" ]; then
+            echo "No update needed. Submodule 'llumiverse' is already at target SHA."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Submodule update required."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Clean up existing PRs
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -92,6 +106,7 @@ jobs:
 
       - name: Update Git submodule and lockfile
         id: update-submodule
+        if: ${{ steps.precheck.outputs.skip != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -166,3 +181,35 @@ jobs:
           echo "new_pr_number=${new_pr_number}" >> $GITHUB_OUTPUT
 
           echo "PR created: ${new_pr_url}"
+
+          # We intentionally avoid exposing commit email addresses in public workflow logs.
+          author_login=$(gh api repos/vertesia/llumiverse/commits/${TARGET_LLUMIVERSE_SHA} --jq '.author.login // empty')
+          echo "author_login=${author_login}" >> $GITHUB_OUTPUT
+
+      - name: Assign PR to author
+        if: ${{ steps.precheck.outputs.skip != 'true' && steps.update-submodule.outputs.author_login }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr edit "${{ steps.update-submodule.outputs.new_pr_number }}" \
+            --add-assignee "${{ steps.update-submodule.outputs.author_login }}"
+
+      - name: Notify studio for Slack notification
+        # Dispatch to the private studio repo so it can look up the developer's
+        # Slack address without exposing private email mappings in this public repo.
+        if: ${{ steps.precheck.outputs.skip != 'true' && steps.update-submodule.outputs.author_login }}
+        run: |
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.REPO_STUDIO_ACCESS_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            --fail-with-body \
+            https://api.github.com/repos/vertesia/studio/dispatches \
+            -d '{
+              "event_type": "composableai-pr-notification",
+              "client_payload": {
+                "github_login": "${{ steps.update-submodule.outputs.author_login }}",
+                "message": "Please review this PR which brings your llumiverse changes to composableai: ${{ steps.update-submodule.outputs.new_pr_url }}"
+              }
+            }'

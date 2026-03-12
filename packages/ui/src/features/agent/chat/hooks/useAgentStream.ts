@@ -101,6 +101,7 @@ export function useAgentStream(
     // Stream messages from the agent
     useEffect(() => {
         // Reset all state when agentRunId changes (new agent)
+        console.debug('[useAgentStream] effect:start', { agentRunId });
         setMessages([]);
         setWorkflowStatus(null);
         setStreamingMessages(new Map());
@@ -241,6 +242,7 @@ export function useAgentStream(
             });
 
         return () => {
+            console.debug('[useAgentStream] effect:cleanup', { agentRunId });
             abortController.abort();
             setMessages([]);
             cancelScheduledStreamingFlush();
