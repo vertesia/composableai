@@ -739,6 +739,9 @@ function ModernAgentConversationInner({
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
+    const instanceIdRef = useRef(
+        `mac-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+    );
 
     // ────────────────────────────────────────────
     // Extracted hooks
@@ -817,6 +820,27 @@ function ModernAgentConversationInner({
         if (lastMain?.type === AgentMessageType.TERMINATED) return "TERMINATED";
         return workflowStatus;
     }, [messages, workflowStatus]);
+
+    console.debug("[ModernAgentConversation] render", {
+        agentRunId,
+        instanceId: instanceIdRef.current,
+        messageCount: messages.length,
+        activeWorkstreams: activeWorkstreams.length,
+    });
+
+    useEffect(() => {
+        console.debug("[ModernAgentConversation] mount", {
+            agentRunId,
+            instanceId: instanceIdRef.current,
+        });
+
+        return () => {
+            console.debug("[ModernAgentConversation] unmount", {
+                agentRunId,
+                instanceId: instanceIdRef.current,
+            });
+        };
+    }, [agentRunId]);
 
     // ────────────────────────────────────────────
     // Computed values
