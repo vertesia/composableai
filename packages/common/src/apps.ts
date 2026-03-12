@@ -559,6 +559,42 @@ export interface CompositeAppCardOverrides {
     color?: string;
 }
 
+// ============================================================================
+// Sidebar Menu Types
+// ============================================================================
+
+/**
+ * The type of a sidebar menu item.
+ * - "section": A visual heading that groups items (not clickable)
+ * - "nav-item": A clickable/navigable entry. An "app" is just a nav-item
+ *   with `appName` + `route: "/"` that has children.
+ */
+export type CompositeAppMenuItemType = "section" | "nav-item";
+
+/**
+ * A single item in the sidebar menu tree.
+ * Nesting is unrestricted: any item type can be a child of any other.
+ * Nav-items carry their own `appName` for routing, independent of position in the tree.
+ */
+export interface CompositeAppMenuItem {
+    /** Stable unique identifier for this menu node */
+    id: string;
+    /** Determines rendering behavior: section heading or navigable item */
+    type: CompositeAppMenuItemType;
+    /** Display label shown in the sidebar */
+    label: string;
+    /** Lucide icon name or SVG content string */
+    icon?: string;
+    /** Which installed app this item routes to (for nav-items) */
+    appName?: string;
+    /** Route path within the app (for nav-items, e.g. "/" or "/dashboard") */
+    route?: string;
+    /** When true, this item is hidden from the sidebar */
+    hidden?: boolean;
+    /** Ordered child items (unrestricted nesting) */
+    children?: CompositeAppMenuItem[];
+}
+
 /**
  * CompositeApp shell configuration.
  * This is the main configuration interface for storing CompositeApp settings.
@@ -584,8 +620,14 @@ export interface CompositeAppConfig {
     sidebar?: CompositeAppSidebarOverrides;
     /** Optional app name to use as the home page instead of the dashboard. Send null to unset. */
     homePlugin?: string | null;
-    /** List of apps to include in the CompositeApp */
+    /** List of apps to include in the CompositeApp (used for installation tracking and fallback sidebar) */
     apps: CompositeAppEntry[];
+    /**
+     * Optional sidebar menu tree. When present, the sidebar renders from this tree
+     * instead of the apps-based pipeline. Each item can be a section heading or a
+     * navigable entry, with unrestricted nesting.
+     */
+    menu?: CompositeAppMenuItem[];
 }
 
 export type CompositeAppConfigPayload = Partial<Omit<CompositeAppConfig, 'id' | 'project'>>;
