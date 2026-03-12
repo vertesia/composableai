@@ -79,7 +79,7 @@ function DocumentPanelComponent({
                 <div className="flex items-center gap-1">
                     {activeDocumentId && (
                         <NavLink
-                            href={`/store/objects/${activeDocumentId}`}
+                            href={`/store/objects/${activeDocumentId}#overview`}
                             topLevelNav
                             className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 w-8 hover:bg-muted/20 text-muted hover:text-foreground"
                         >

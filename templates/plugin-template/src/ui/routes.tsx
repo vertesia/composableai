@@ -10,7 +10,7 @@ export const routes = [
         Component: ChatPage,
     },
     {
-        path: '/chat/:runId/:workflowId',
+        path: '/chat/:agentRunId',
         Component: ChatPage,
     },
     {

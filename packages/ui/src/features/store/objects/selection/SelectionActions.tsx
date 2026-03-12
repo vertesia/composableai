@@ -7,7 +7,8 @@ import { useUITranslation } from '../../../../i18n/index.js';
 import { DocumentSelection, DocumentUploadModal, useDocumentSelection } from "../../../store";
 import { ExportPropertiesAction } from "./actions/ExportPropertiesAction";
 import { StartWorkflowAction } from "./actions/StartWorkflowComponent";
-import { ObjectsActionContextProvider, useObjectsActionContext } from "./ObjectsActionContext";
+import { ObjectsActionContextProvider } from "./ObjectsActionContext";
+import { useObjectsActionContext } from "./ObjectsActionHooks";
 import { ObjectsActionSpec } from "./ObjectsActionSpec";
 
 export function SelectionActions() {
@@ -137,7 +138,7 @@ function PopoverBody({ executeAction, selection }: PopoverBodyProps) {
         executeAction(action);
     }
 
-    const _selection = selection?.hasSelection() ? context.actions.filter(action => !action.hideInList) : [ExportPropertiesAction];
+    const _selection = selection?.hasSelection() ? context.actions.filter((action: ObjectsActionSpec) => !action.hideInList) : [ExportPropertiesAction];
 
     return (
         <div className="rounded-md shadow-md py-2">
