@@ -564,35 +564,40 @@ export interface CompositeAppCardOverrides {
 // ============================================================================
 
 /**
- * The type of a sidebar menu item.
- * - "section": A visual heading that groups items (not clickable)
- * - "nav-item": A clickable/navigable entry. An "app" is just a nav-item
- *   with `appName` + `route: "/"` that has children.
- */
-export type CompositeAppMenuItemType = "section" | "nav-item";
-
-/**
- * A single item in the sidebar menu tree.
- * Nesting is unrestricted: any item type can be a child of any other.
+ * A navigable item in the sidebar menu.
+ * An "app" is just a nav-item with `appName` + `route: "/"` that has children.
  * Nav-items carry their own `appName` for routing, independent of position in the tree.
  */
-export interface CompositeAppMenuItem {
-    /** Stable unique identifier for this menu node */
+export interface CompositeAppMenuNavItem {
+    /** Stable unique identifier */
     id: string;
-    /** Determines rendering behavior: section heading or navigable item */
-    type: CompositeAppMenuItemType;
     /** Display label shown in the sidebar */
     label: string;
     /** Lucide icon name or SVG content string */
     icon?: string;
-    /** Which installed app this item routes to (for nav-items) */
+    /** Which installed app this item routes to */
     appName?: string;
-    /** Route path within the app (for nav-items, e.g. "/" or "/dashboard") */
+    /** Route path within the app (e.g. "/" or "/dashboard") */
     route?: string;
     /** When true, this item is hidden from the sidebar */
     hidden?: boolean;
-    /** Ordered child items (unrestricted nesting) */
-    children?: CompositeAppMenuItem[];
+    /** Ordered child nav-items */
+    children?: CompositeAppMenuNavItem[];
+}
+
+/**
+ * A top-level section heading in the sidebar menu.
+ * Sections are always at root level and contain nav-items.
+ */
+export interface CompositeAppMenuSection {
+    /** Stable unique identifier */
+    id: string;
+    /** Section heading label */
+    label: string;
+    /** When true, this section and its items are hidden from the sidebar */
+    hidden?: boolean;
+    /** Ordered nav-items within this section */
+    items: CompositeAppMenuNavItem[];
 }
 
 /**
@@ -623,11 +628,11 @@ export interface CompositeAppConfig {
     /** List of apps to include in the CompositeApp (used for installation tracking and fallback sidebar) */
     apps: CompositeAppEntry[];
     /**
-     * Optional sidebar menu tree. When present, the sidebar renders from this tree
-     * instead of the apps-based pipeline. Each item can be a section heading or a
-     * navigable entry, with unrestricted nesting.
+     * Optional sidebar menu. When present, the sidebar renders from this
+     * instead of the apps-based pipeline. Top-level array is sections;
+     * each section contains nav-items.
      */
-    menu?: CompositeAppMenuItem[];
+    menu?: CompositeAppMenuSection[];
 }
 
 export type CompositeAppConfigPayload = Partial<Omit<CompositeAppConfig, 'id' | 'project'>>;
