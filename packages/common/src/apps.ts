@@ -349,7 +349,8 @@ export type RenderingTemplateDefinitionRef = Omit<RenderingTemplateDefinition, '
 
 export interface AppManifest extends AppManifestData {
     id: string;
-    account: string;
+    /** The owning account. Undefined for apps imported from a master region. */
+    account?: string;
     created_at: string;
     updated_at: string;
 }
