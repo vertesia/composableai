@@ -319,9 +319,11 @@ export class AgentsApi extends ApiTopic {
                 currentSse = sse;
                 interval = setInterval(() => { }, 1000);
 
+                let connectionOpenedAt = 0;
+
                 sse.onopen = () => {
                     if (isReconnect) console.log(`Reconnected to agent stream ${id}`);
-                    reconnectAttempts = 0;
+                    connectionOpenedAt = Date.now();
                 };
 
                 sse.onmessage = (ev: MessageEvent) => {
@@ -356,6 +358,15 @@ export class AgentsApi extends ApiTopic {
                 sse.onerror = (_err: any) => {
                     if (isClosed) return;
                     cleanup();
+
+                    // Only reset reconnect attempts if the connection was stable
+                    // for at least 5 seconds. This prevents infinite rapid polling
+                    // when the connection opens (200) but drops immediately (e.g.
+                    // proxy/load-balancer timeout).
+                    const connectionDuration = connectionOpenedAt ? Date.now() - connectionOpenedAt : 0;
+                    if (connectionDuration > 5000) {
+                        reconnectAttempts = 0;
+                    }
 
                     if (reconnectAttempts < maxReconnectAttempts) {
                         const delay = calculateBackoffDelay(reconnectAttempts);
