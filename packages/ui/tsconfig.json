@@ -41,8 +41,7 @@
     "noPropertyAccessFromIndexSignature": false,
   },
   "include": [
-    "src",
-    "eslint.config.js"
+    "src"
   ],
   "exclude": [
     "node_modules",
