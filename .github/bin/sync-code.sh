@@ -58,8 +58,7 @@ if [ $is_merged -ne 0 ]; then
     else
         echo "[ERROR] Failed to continue the merge due to other conflicts. Please resolve conflicts manually and commit the changes." >&2
         git diff --name-only --diff-filter=U >&2
-        # TODO send a pull request to the target branch
-        exit 1
+        exit 2 # exit code 2 means "merge conflicts that cannot be resolved automatically"
     fi
 else
     echo "[INFO] Successfully merged code from \"${source_composableai_ref}\" to \"${target_composableai_ref}\"" >&2
