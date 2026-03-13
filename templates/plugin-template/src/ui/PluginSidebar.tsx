@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ModeToggle } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { SidebarItem, SidebarSection, useSidebarToggle } from '@vertesia/ui/layout';
-import { useLocation } from '@vertesia/ui/router';
+import { Path, useLocation, useRouterBasePath } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { HomeIcon, MessageSquare, PlusCircle } from 'lucide-react';
 import type { WorkflowRun } from '@vertesia/common';
@@ -56,9 +56,11 @@ function groupByDate(conversations: WorkflowRun[], t: (key: string) => string): 
 export function PluginSidebar() {
     const { t } = useUITranslation();
     const path = useLocation().pathname;
+    const basePath = useRouterBasePath();
     const { isOpen } = useSidebarToggle();
     const { client } = useUserSession();
     const [conversations, setConversations] = useState<WorkflowRun[]>([]);
+    const appHref = (to: string) => Path.joinPath(basePath, to);
 
     useEffect(() => {
         client.agents.list({
@@ -84,17 +86,19 @@ export function PluginSidebar() {
                     <SidebarSection>
                         <SidebarItem
                             id="menu-home"
-                            current={path === '/app' || path === '/app/'}
+                            current={path === basePath || path === `${basePath}/`}
                             icon={HomeIcon}
-                            href="/app/"
+                            href={appHref('/')}
+                            to="/"
                         >
                             {t('nav.home')}
                         </SidebarItem>
                         <SidebarItem
                             id="menu-chat"
-                            current={path === '/app/chat'}
+                            current={path === appHref('/chat')}
                             icon={PlusCircle}
-                            href="/app/chat"
+                            href={appHref('/chat')}
+                            to="/chat"
                         >
                             {t('nav.newChat')}
                         </SidebarItem>
@@ -102,11 +106,12 @@ export function PluginSidebar() {
                     {grouped.map(group => (
                         <SidebarSection key={group.dateLabel} title={group.dateLabel}>
                             {group.conversations.map(conv => {
-                                const convPath = `/app/chat/${conv.run_id}`;
+                                const convPath = appHref(`/chat/${conv.run_id}`);
                                 return (
                                     <SidebarItem
                                         key={conv.run_id}
                                         href={convPath}
+                                        to={`/chat/${conv.run_id}`}
                                         current={path === convPath}
                                         icon={MessageSquare}
                                         className="overflow-hidden"

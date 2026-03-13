@@ -177,6 +177,11 @@ export function useNavigate() {
     return navigate;
 }
 
+export function useRouterBasePath() {
+    const { matchedRoutePath, router } = useRouterContext();
+    return router instanceof NestedRouter ? router.basePath : matchedRoutePath;
+}
+
 type UseParamsReturn<T> = T extends string ? string : Record<string, string>;
 export function useParams<T>(arg?: T): UseParamsReturn<T> {
     const { params } = useRouterContext();
