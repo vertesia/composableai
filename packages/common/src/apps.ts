@@ -305,7 +305,38 @@ export interface AppManifestData {
      * - ?scope=ui,tools - returns only the UI configuration
      */
     endpoint?: string;
+
+    /**
+     * Optional endpoint overrides keyed by environment name.
+     * When resolving the app endpoint, if the current environment name matches a key,
+     * the corresponding URL is used instead of the main `endpoint`.
+     * Only dev environment names are allowed as keys (starting with "dev-" or exactly "development").
+     */
+    endpoint_overrides?: Record<string, string>;
 }
+
+/**
+ * Returns true if the given environment name is allowed as an endpoint override key.
+ * Only "development" or names starting with "dev-" are valid.
+ */
+export function isValidEndpointOverrideEnv(envName: string): boolean {
+    return envName === 'development' || envName.startsWith('dev-');
+}
+
+/**
+ * Resolves the effective endpoint for an app given an optional environment name.
+ * Returns the override endpoint if the env name matches a valid dev environment, otherwise the default endpoint.
+ */
+export function resolveAppEndpoint(
+    manifest: Pick<AppManifestData, 'endpoint' | 'endpoint_overrides'>,
+    envName?: string
+): string | undefined {
+    if (envName && manifest.endpoint_overrides?.[envName] && isValidEndpointOverrideEnv(envName)) {
+        return manifest.endpoint_overrides[envName];
+    }
+    return manifest.endpoint;
+}
+
 export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'templates' | 'settings' | 'widgets' | 'activities' | 'all';
 export interface AppPackage {
     /**
