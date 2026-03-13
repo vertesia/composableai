@@ -184,7 +184,7 @@ export class PayloadBuilder {
         const envId = inter.runtime?.environment || context.config?.environment;
         const model = context.config?.model;
         const env = await (envId ?
-            this.vertesia.environments.retrieve(context.config?.environment)
+            this.vertesia.environments.retrieve(envId!).catch(() => undefined)
             :
             Promise.resolve(undefined)
         );
