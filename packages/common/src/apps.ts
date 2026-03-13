@@ -317,10 +317,10 @@ export interface AppManifestData {
 
 /**
  * Returns true if the given environment name is allowed as an endpoint override key.
- * Only "development" or names starting with "dev-" are valid.
+ * Only names starting with "desktop-" or "dev-" are valid.
  */
 export function isValidEndpointOverrideEnv(envName: string): boolean {
-    return envName === 'development' || envName.startsWith('dev-');
+    return envName.startsWith('desktop-') || envName.startsWith('dev-');
 }
 
 /**
