@@ -219,6 +219,10 @@ interface ModernAgentConversationProps {
 
     /** Optional payload content to show as a "Payload" tab in the right panel */
     payloadContent?: React.ReactNode;
+    /** Optional conversation content to show as a "Conversation" tab in the right panel */
+    conversationContent?: React.ReactNode;
+    /** When true, renders the conversation inside the right panel as a "Conversation" tab */
+    conversationTab?: boolean;
 }
 
 export function ModernAgentConversation(
@@ -737,6 +741,8 @@ function ModernAgentConversationInner({
     CollectionLinkComponent,
     prependFriendlyMessage,
     payloadContent,
+    conversationContent,
+    conversationTab = false,
 }: ModernAgentConversationProps & { run: AsyncExecutionResult }) {
     const { client } = useUserSession();
     const toast = useToast();
@@ -867,14 +873,16 @@ function ModernAgentConversationInner({
     // ────────────────────────────────────────────
     // Unified right panel state
     // ────────────────────────────────────────────
-    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts';
-    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('plan');
+    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'conversation';
+    const [rightPanelTab, _setRightPanelTab] = useState<RightPanelTab>((conversationContent || conversationTab) ? 'conversation' : 'plan');
     const [rightPanelWidth, setRightPanelWidth] = useState(400);
     const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
 
     const isRightPanelVisible = showRightPanelProp && (showSlidingPanel
         || isDocPanelOpen
-        || (!hideWorkstreamTabs && panelWorkstreams.length > 0));
+        || (!hideWorkstreamTabs && panelWorkstreams.length > 0)
+        || !!conversationContent
+        || conversationTab);
 
     useEffect(() => {
         if (!isRightPanelVisible && isRightPanelResizing) {
@@ -916,28 +924,7 @@ function ModernAgentConversationInner({
         };
     }, [isRightPanelResizing]);
 
-    // Auto-switch tab when plan panel opens
-    useEffect(() => {
-        if (showSlidingPanel) {
-            setRightPanelTab('plan');
-        }
-    }, [showSlidingPanel]);
-
-    // Auto-switch tab when document panel opens
-    useEffect(() => {
-        if (isDocPanelOpen) {
-            setRightPanelTab('documents');
-        }
-    }, [isDocPanelOpen]);
-
-    // Auto-switch tab when active workstreams appear and no other panel is focused.
-    useEffect(() => {
-        if (!hideWorkstreamTabs && panelWorkstreams.length > 0 && !showSlidingPanel && !isDocPanelOpen) {
-            setRightPanelTab('workstreams');
-        }
-    }, [hideWorkstreamTabs, panelWorkstreams.length, showSlidingPanel, isDocPanelOpen]);
-
-    const handleCloseRightPanel = useCallback(() => {
+const handleCloseRightPanel = useCallback(() => {
         setShowSlidingPanel(false);
         handleCloseDocPanel();
     }, [setShowSlidingPanel, handleCloseDocPanel]);
@@ -1337,13 +1324,142 @@ function ModernAgentConversationInner({
         }, new Map<string, string>()),
     [getActivePlan.plan]);
 
+    // Conversation area inner content — shared between main layout and conversationTab mode
+    const conversationAreaJsx = (
+        <div
+            ref={conversationRef}
+            className={cn(
+                "flex flex-col min-h-0 min-w-0 border-0",
+                conversationTab
+                    ? "flex-1 h-full"
+                    : isRightPanelVisible
+                        ? "w-full flex-1 min-h-[50vh]"
+                        : fullWidth
+                            ? "flex-1 w-full"
+                            : `flex-1 mx-auto ${!isModal ? "max-w-4xl" : ""}`
+            )}
+        >
+            {!hideHeader && (
+                <div className="flex-shrink-0">
+                    <Header
+                        title={actualTitle}
+                        isCompleted={isCompleted}
+                        onClose={onClose}
+                        isModal={isModal}
+                        run={run}
+                        viewMode={viewMode}
+                        onViewModeChange={handleViewModeChange}
+                        showPlanPanel={showRightPanelProp && showSlidingPanel}
+                        hasPlan={showRightPanelProp && plans.length > 0}
+                        showPlanButton={showRightPanelProp && !conversationTab}
+                        onTogglePlanPanel={handleTogglePlanPanel}
+                        onDownload={downloadConversation}
+                        onCopyRunId={copyRunId}
+                        resetWorkflow={resetWorkflow}
+                        onRestart={onRestart}
+                        onFork={onFork}
+                        onExportPdf={exportConversationPdf}
+                        isReceivingChunks={debugChunkFlash}
+                    />
+                </div>
+            )}
+
+            {messages.length === 0 && !isCompleted ? (
+                <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-6">
+                    <div className="p-5 max-w-md border border-info rounded-lg shadow-sm">
+                        <div className="flex items-center space-x-3 mb-3">
+                            <PulsatingCircle size="sm" color="blue" />
+                            <div className="text-sm text-muted font-medium">
+                                {ThinkingMessages[thinkingMessageIndex]}
+                            </div>
+                        </div>
+                        <div className="mt-4 flex justify-center">
+                            <AnimatedThinkingDots color="blue" className="mt-1" />
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <AllMessagesMixed
+                    messages={messages}
+                    bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
+                    isCompleted={isCompleted}
+                    plan={getActivePlan.plan}
+                    workstreamStatus={getActivePlan.workstreamStatus}
+                    showPlanPanel={showRightPanelProp && showSlidingPanel}
+                    onTogglePlanPanel={handleTogglePlanPanel}
+                    plans={plans}
+                    activePlanIndex={activePlanIndex}
+                    onChangePlan={handleChangePlan}
+                    taskLabels={taskLabels}
+                    streamingMessages={streamingMessages}
+                    onSendMessage={handleSendMessage}
+                    thinkingMessageIndex={thinkingMessageIndex}
+                    messageItemClassNames={messageItemClassNames}
+                    messageStyleOverrides={messageStyleOverrides}
+                    toolCallGroupClassNames={toolCallGroupClassNames}
+                    hideToolCallsInViewMode={hideToolCallsInViewMode}
+                    streamingMessageClassNames={streamingMessageClassNames}
+                    batchProgressPanelClassNames={batchProgressPanelClassNames}
+                    artifactRunId={run.runId}
+                    viewMode={viewMode}
+                    hideWorkstreamTabs={hideWorkstreamTabs}
+                    workingIndicatorClassName={workingIndicatorClassName}
+                    messageListClassName={messageListClassName}
+                    StoreLinkComponent={effectiveStoreLinkComponent}
+                    CollectionLinkComponent={CollectionLinkComponent}
+                    prependFriendlyMessage={prependFriendlyMessage}
+                />
+            )}
+
+            {!hideMessageInput && (
+                <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+                    {effectiveWorkflowStatus && effectiveWorkflowStatus !== "RUNNING" ? (
+                        <MessageBox
+                            status={effectiveWorkflowStatus === "COMPLETED" ? 'success' : 'done'}
+                            icon={null}
+                            className="m-2"
+                        >
+                            This Workflow is {effectiveWorkflowStatus}
+                        </MessageBox>
+                    ) : showInput && (
+                        <MessageInput
+                            onSend={handleSendMessage}
+                            onStop={handleStopWorkflow}
+                            disabled={isUploading}
+                            isSending={isSending || isUploading}
+                            isStopping={isStopping}
+                            isStreaming={!isCompleted}
+                            isCompleted={isCompleted}
+                            activeTaskCount={getActiveTaskCount()}
+                            placeholder={placeholder ?? 'Type your message...'}
+                            onFilesSelected={handleFileUpload}
+                            uploadedFiles={uploadedFiles}
+                            onRemoveFile={onRemoveFile}
+                            acceptedFileTypes={acceptedFileTypes}
+                            maxFiles={maxFiles}
+                            processingFiles={processingFiles}
+                            hasProcessingFiles={hasProcessingFiles}
+                            renderDocumentSearch={renderDocumentSearch}
+                            selectedDocuments={selectedDocuments}
+                            onRemoveDocument={onRemoveDocument}
+                            hideObjectLinking={hideObjectLinking}
+                            hideFileUpload={hideFileUpload}
+                            className={inputContainerClassName}
+                            inputClassName={inputClassName}
+                        />
+                    )}
+                </div>
+            )}
+        </div>
+    );
+
     // Main content - wrapped with FusionFragmentProvider when fusionData is provided
     const mainContent = (
         <ArtifactUrlCacheProvider>
         <ImageLightboxProvider>
         <div
             ref={conversationLayoutRef}
-            className={cn("flex flex-col lg:flex-row gap-2 h-full relative overflow-hidden", isDragOver && "ring-2 ring-blue-400 ring-inset", className)}
+            className={cn("flex flex-col lg:flex-row gap-2 w-full h-full relative overflow-hidden", isDragOver && "ring-2 ring-blue-400 ring-inset", className)}
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -1358,155 +1474,26 @@ function ModernAgentConversationInner({
                     </div>
                 </div>
             )}
-            {/* Conversation Area - responsive width based on panel visibility */}
-            <div
-                ref={conversationRef}
-                className={cn(
-                    "flex flex-col min-h-0 min-w-0 border-0",
-                    isRightPanelVisible
-                        ? "w-full flex-1 min-h-[50vh]"
-                        : fullWidth
-                            ? "flex-1 w-full"
-                            : `flex-1 mx-auto ${!isModal ? "max-w-4xl" : ""}`
-                )}
-            >
-                {/* Streaming activity indicator moved to Header */}
-
-                {/* Header - flex-shrink-0 to prevent shrinking */}
-                {!hideHeader && (
-                    <div className="flex-shrink-0">
-                        <Header
-                            title={actualTitle}
-                            isCompleted={isCompleted}
-                            onClose={onClose}
-                            isModal={isModal}
-                            run={run}
-                            viewMode={viewMode}
-                            onViewModeChange={handleViewModeChange}
-                            showPlanPanel={showRightPanelProp && showSlidingPanel}
-                            hasPlan={showRightPanelProp && plans.length > 0}
-                            showPlanButton={showRightPanelProp}
-                            onTogglePlanPanel={handleTogglePlanPanel}
-                            onDownload={downloadConversation}
-                            onCopyRunId={copyRunId}
-                            resetWorkflow={resetWorkflow}
-                            onRestart={onRestart}
-                            onFork={onFork}
-                            onExportPdf={exportConversationPdf}
-                            isReceivingChunks={debugChunkFlash}
-                        />
-                    </div>
-                )}
-
-                {messages.length === 0 && !isCompleted ? (
-                    <div className="flex-1 flex flex-col items-center justify-center h-full text-center py-6">
-                        <div className="p-5 max-w-md border border-info rounded-lg shadow-sm">
-                            <div className="flex items-center space-x-3 mb-3">
-                                <PulsatingCircle size="sm" color="blue" />
-                                <div className="text-sm text-muted font-medium">
-                                    {ThinkingMessages[thinkingMessageIndex]}
-                                </div>
-                            </div>
-                            <div className="mt-4 flex justify-center">
-                                <AnimatedThinkingDots color="blue" className="mt-1" />
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <AllMessagesMixed
-                        messages={messages}
-                        bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
-                        isCompleted={isCompleted}
-                        plan={getActivePlan.plan}
-                        workstreamStatus={getActivePlan.workstreamStatus}
-                        showPlanPanel={showRightPanelProp && showSlidingPanel}
-                        onTogglePlanPanel={handleTogglePlanPanel}
-                        plans={plans}
-                        activePlanIndex={activePlanIndex}
-                        onChangePlan={handleChangePlan}
-                        taskLabels={taskLabels}
-                        streamingMessages={streamingMessages}
-                        onSendMessage={handleSendMessage}
-                        thinkingMessageIndex={thinkingMessageIndex}
-                        messageItemClassNames={messageItemClassNames}
-                        messageStyleOverrides={messageStyleOverrides}
-                        toolCallGroupClassNames={toolCallGroupClassNames}
-                        hideToolCallsInViewMode={hideToolCallsInViewMode}
-                        streamingMessageClassNames={streamingMessageClassNames}
-                        batchProgressPanelClassNames={batchProgressPanelClassNames}
-                        artifactRunId={run.runId}
-                        viewMode={viewMode}
-                        hideWorkstreamTabs={hideWorkstreamTabs}
-                        workingIndicatorClassName={workingIndicatorClassName}
-                        messageListClassName={messageListClassName}
-                        StoreLinkComponent={effectiveStoreLinkComponent}
-                        CollectionLinkComponent={CollectionLinkComponent}
-                        prependFriendlyMessage={prependFriendlyMessage}
-                    />
-                )}
-
-                {/* Show workflow status message when not running, or show input when running/unknown */}
-                {/* Input area - flex-shrink-0 to stay pinned at bottom, with iOS safe area support */}
-                {!hideMessageInput && (
-                    <div className="flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-                        {effectiveWorkflowStatus && effectiveWorkflowStatus !== "RUNNING" ? (
-                            <MessageBox
-                                status={effectiveWorkflowStatus === "COMPLETED" ? 'success' : 'done'}
-                                icon={null}
-                                className="m-2"
-                            >
-                                This Workflow is {effectiveWorkflowStatus}
-                            </MessageBox>
-                        ) : showInput && (
-                            <MessageInput
-                                onSend={handleSendMessage}
-                                onStop={handleStopWorkflow}
-                                disabled={isUploading}
-                                isSending={isSending || isUploading}
-                                isStopping={isStopping}
-                                isStreaming={!isCompleted}
-                                isCompleted={isCompleted}
-                                activeTaskCount={getActiveTaskCount()}
-                                placeholder={placeholder}
-                                // File upload props - use internal handler that signals workflow
-                                onFilesSelected={handleFileUpload}
-                                uploadedFiles={uploadedFiles}
-                                onRemoveFile={onRemoveFile}
-                                acceptedFileTypes={acceptedFileTypes}
-                                maxFiles={maxFiles}
-                                // File processing state
-                                processingFiles={processingFiles}
-                                hasProcessingFiles={hasProcessingFiles}
-                                // Document search props
-                                renderDocumentSearch={renderDocumentSearch}
-                                selectedDocuments={selectedDocuments}
-                                onRemoveDocument={onRemoveDocument}
-                                // Object linking
-                                hideObjectLinking={hideObjectLinking}
-                                // Files Uploaded
-                                hideFileUpload={hideFileUpload}
-                                // Styling props
-                                className={inputContainerClassName}
-                                inputClassName={inputClassName}
-                            />
-                        )}
-                    </div>
-                )}
-            </div>
+            {/* Conversation Area — hidden when conversationTab moves it into the right panel */}
+            {!conversationTab && conversationAreaJsx}
 
             {/* Unified Right Panel — Plan | Workstreams | Documents | Uploads */}
             {isRightPanelVisible && (
                 <>
+                    {!conversationTab && (
+                        <div
+                            className="hidden lg:block lg:w-1 lg:shrink-0 cursor-col-resize bg-border/70 hover:bg-border transition-colors"
+                            onMouseDown={() => setIsRightPanelResizing(true)}
+                            role="separator"
+                            aria-orientation="vertical"
+                            aria-label="Resize right panel"
+                        />
+                    )}
                     <div
-                        className="hidden lg:block lg:w-1 lg:shrink-0 cursor-col-resize bg-border/70 hover:bg-border transition-colors"
-                        onMouseDown={() => setIsRightPanelResizing(true)}
-                        role="separator"
-                        aria-orientation="vertical"
-                        aria-label="Resize right panel"
-                    />
-                    <div
-                        className="w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l"
-                        style={{ ['--agent-right-panel-width' as string]: `${rightPanelWidth}px` } as React.CSSProperties}
+                        className={conversationTab
+                            ? "w-full h-full overflow-auto"
+                            : "w-full lg:w-[var(--agent-right-panel-width)] lg:shrink-0 min-h-[50vh] lg:h-full border-t lg:border-t-0 lg:border-l"}
+                        style={!conversationTab ? ({ ['--agent-right-panel-width' as string]: `${rightPanelWidth}px` } as React.CSSProperties) : undefined}
                     >
                     <AgentRightPanel
                         // Plan
@@ -1535,6 +1522,8 @@ function ModernAgentConversationInner({
                         messages={messages}
                         // Payload content
                         payloadContent={payloadContent}
+                        // Conversation content
+                        conversationContent={conversationTab ? conversationAreaJsx : conversationContent}
                         // Panel control
                         onClose={handleCloseRightPanel}
                         defaultTab={rightPanelTab}
