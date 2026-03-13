@@ -50,6 +50,15 @@ export function vertesiaPluginBuilder({
         },
         generateBundle(_options, bundle) {
             delete bundle['virtual-vertesia-plugin-css-entry.js'];
+            // Strip the dangling import from plugin.js so the browser doesn't 404
+            for (const chunk of Object.values(bundle)) {
+                if (chunk.type === 'chunk' && chunk.code) {
+                    chunk.code = chunk.code.replace(
+                        /import\s*["']\.\/virtual-vertesia-plugin-css-entry\.js["'];?\n?/g,
+                        ''
+                    );
+                }
+            }
         },
         writeBundle(this, options, bundle) {
             if (!inlineCss) return;
