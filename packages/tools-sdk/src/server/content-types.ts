@@ -5,7 +5,6 @@ import { Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { ContentTypesCollection } from "../ContentTypesCollection.js";
 import { ToolServerConfig } from "./types.js";
-import { toPathName } from "../utils.js";
 
 export function createContentTypesRoute(app: Hono, basePath: string, config: ToolServerConfig) {
     const { types = [] } = config;
@@ -16,7 +15,7 @@ export function createContentTypesRoute(app: Hono, basePath: string, config: Too
 
         for (const coll of types) {
             for (const type of coll.types) {
-                allTypes.push({ ...type, id: coll.name + ":" + toPathName(type.name) });
+                allTypes.push({ ...type, id: coll.name + ":" + type.name });
             }
         }
 
@@ -47,7 +46,7 @@ export function createContentTypesRoute(app: Hono, basePath: string, config: Too
             });
         }
         const collName = parts[0];
-        const typeName = toPathName(parts[1]);
+        const typeName = parts[1];
         const ctype = types.find(t => t.name === collName)?.getTypeByName(typeName);
         if (ctype) {
             return c.json({ ...ctype, id: collName + ":" + typeName });
@@ -67,12 +66,12 @@ function createContentTypeEndpoints(coll: ContentTypesCollection): Hono {
     const endpoint = new Hono();
 
     endpoint.get('/', (c: Context) => {
-        return c.json(coll.types.map(t => ({ ...t, id: coll.name + ":" + toPathName(t.name) })));
+        return c.json(coll.types.map(t => ({ ...t, id: coll.name + ":" + t.name })));
     });
 
     endpoint.get('/:name', (c: Context) => {
         const name = c.req.param('name');
-        const ctype = coll.types.find(t => toPathName(t.name) === name);
+        const ctype = coll.types.find(t => t.name === name);
         if (!ctype) {
             throw new HTTPException(404, {
                 message: "No content type found with name: " + name
@@ -80,7 +79,7 @@ function createContentTypeEndpoints(coll: ContentTypesCollection): Hono {
         }
         return c.json({
             ...ctype,
-            id: coll.name + ":" + toPathName(ctype.name)
+            id: coll.name + ":" + ctype.name
         });
     });
 
