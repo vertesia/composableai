@@ -31,7 +31,7 @@
     "@aws-sdk/client-iam": "^3.948.0",
     "@vertesia/client": "0.82.1",
     "commander": "^14.0.2",
-    "dotenv": "^16.6.1",
+    "dotenv": "^17.3.1",
     "google-auth-library": "^10.5.0"
   }
 }
