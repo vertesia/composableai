@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@adobe/css-tools": "^4.4.1",
-    "@types/node": "^22.19.2"
+    "@types/node": "^25.5.0"
   },
   "peerDependencies": {
     "vite": "^7.3.0"
