@@ -623,6 +623,14 @@ export interface SetFileMetadataPayload {
     metadata: Record<string, string>;
 }
 
+export interface BulkUploadUrlsPayload {
+    files: { name: string; mime_type?: string; id?: string }[];
+}
+
+export interface BulkUploadUrlsResponse {
+    files: GetFileUrlResponse[];
+}
+
 export enum ContentObjectProcessingPriority {
     normal = "normal",
     low = "low",
