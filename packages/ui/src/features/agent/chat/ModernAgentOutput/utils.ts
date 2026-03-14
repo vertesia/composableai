@@ -631,10 +631,7 @@ export function groupMessagesWithStreaming(
             const sortedMessages = [...item.messages].sort(
                 (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp)
             );
-            const latestStatus = sortedMessages.reduce<ToolExecutionStatus | undefined>(
-                (status, msg) => getToolStatus(msg) || status,
-                undefined
-            );
+            const latestStatus = computeGroupDisplayStatus(sortedMessages);
             groups.push({
                 type: 'tool_group',
                 messages: sortedMessages,
@@ -650,10 +647,7 @@ export function groupMessagesWithStreaming(
                 (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp)
             );
             // Get the latest status from the group
-            const latestStatus = sortedMessages.reduce<ToolExecutionStatus | undefined>(
-                (status, msg) => getToolStatus(msg) || status,
-                undefined
-            );
+            const latestStatus = computeGroupDisplayStatus(sortedMessages);
             groups.push({
                 type: 'tool_group',
                 messages: sortedMessages,
@@ -668,10 +662,7 @@ export function groupMessagesWithStreaming(
                 (a, b) => getTimestampMs(a.timestamp) - getTimestampMs(b.timestamp)
             );
             // Get the latest status from the group
-            const latestStatus = sortedMessages.reduce<ToolExecutionStatus | undefined>(
-                (status, msg) => getToolStatus(msg) || status,
-                undefined
-            );
+            const latestStatus = computeGroupDisplayStatus(sortedMessages);
             groups.push({
                 type: 'tool_group',
                 messages: sortedMessages,
@@ -697,21 +688,43 @@ export function groupMessagesWithStreaming(
 
 /**
  * Merge the ToolExecutionStatus of two groups.
- * Priority: error > warning > running > completed > undefined
+ * Priority: warning > running > completed > error > undefined
+ *
+ * Error has the lowest priority so that individual tool errors do not
+ * turn an entire group red – only the specific tool badge is coloured.
  */
 export function mergeToolStatus(
     a: ToolExecutionStatus | undefined,
     b: ToolExecutionStatus | undefined,
 ): ToolExecutionStatus | undefined {
     const priority: Record<ToolExecutionStatus, number> = {
-        error: 4,
+        error: 0,
         warning: 3,
         running: 2,
         completed: 1,
     };
-    const pa = a ? priority[a] : 0;
-    const pb = b ? priority[b] : 0;
+    const pa = a ? priority[a] : -1;
+    const pb = b ? priority[b] : -1;
     return pa >= pb ? (a ?? b) : b;
+}
+
+/**
+ * Compute a display status for a tool group.
+ * Individual errors are shown on the badge only; the group turns red
+ * only when every tool in the group has errored.
+ */
+export function computeGroupDisplayStatus(
+    messages: AgentMessage[]
+): ToolExecutionStatus | undefined {
+    const statuses = messages.map(getToolStatus).filter(Boolean) as ToolExecutionStatus[];
+    if (statuses.length === 0) return undefined;
+    if (statuses.every(s => s === 'error')) return 'error';
+    return statuses
+        .filter(s => s !== 'error')
+        .reduce<ToolExecutionStatus | undefined>(
+            (acc, s) => mergeToolStatus(acc, s),
+            undefined
+        );
 }
 
 /**
