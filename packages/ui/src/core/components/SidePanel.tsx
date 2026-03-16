@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Minus, X } from 'lucide-react';
 import { Button } from './shadcn/button';
@@ -7,14 +7,15 @@ interface SidePanelProps {
     isOpen: boolean;
     onClose: () => void;
     children: React.ReactNode;
-    title?: string;
+    title?: React.ReactNode;
     panelWidth?: number;
     backdrop?: boolean;
     side?: 'left' | 'right';
     resizable?: boolean;
     className?: string;
+    contentClassName?: string;
 }
-export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, backdrop = false, side = 'right', resizable = true, className }: SidePanelProps) {
+export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, backdrop = false, side = 'right', resizable = true, className, contentClassName }: SidePanelProps) {
     const [_panelWidth, setPanelWidth] = useState(panelWidth);
 
     const handleDragStart = (e: React.MouseEvent) => {
@@ -101,7 +102,7 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
                                             )}
 
                                             {/* Scrollable content */}
-                                            <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-4">
+                                            <div className={contentClassName ?? "flex-1 overflow-y-auto px-2 sm:px-4 py-4"}>
                                                 {children}
                                             </div>
                                         </div>
