@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Badge, Button, useToast, Tabs, TabsBar, TabsPanel, type Tab as TabDefinition } from '@vertesia/ui/core';
 import { useUITranslation } from '../../../i18n/index.js';
 import {
@@ -219,11 +219,13 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
 // Right panel tabs
 // ---------------------------------------------------------------------------
 
-type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload';
+type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
 
 export interface AgentRightPanelProps {
     /** Optional payload content to show as a "Payload" tab */
     payloadContent?: React.ReactNode;
+    /** Optional conversation content to show as a "Conversation" tab */
+    conversationContent?: React.ReactNode;
     // Plan
     plan?: Plan;
     workstreamStatus?: Map<string, 'pending' | 'in_progress' | 'completed' | 'skipped'>;
@@ -291,6 +293,9 @@ function AgentRightPanelComponent({
     // Payload
     payloadContent,
 
+    // Conversation
+    conversationContent,
+
     // Panel
     onClose,
     defaultTab,
@@ -298,14 +303,7 @@ function AgentRightPanelComponent({
     const { t } = useUITranslation();
     const [activeTab, setActiveTab] = useState<RightPanelTab>(defaultTab || 'plan');
 
-    // Auto-switch to relevant tab when content appears
-    useEffect(() => {
-        if (defaultTab) {
-            setActiveTab(defaultTab);
-        }
-    }, [defaultTab]);
-
-    // Determine which tabs have content (for badges/indicators)
+// Determine which tabs have content (for badges/indicators)
     const hasWorkstreams = !hideWorkstreams && activeWorkstreams.length > 0;
     const hasDocuments = openDocuments.length > 0;
     const hasUploads = processingFiles ? processingFiles.size > 0 : false;
@@ -315,7 +313,15 @@ function AgentRightPanelComponent({
         setActiveTab('plan');
     }, []);
 
+    const conversationTab: TabDefinition = {
+        name: 'conversation',
+        label: 'Conversation',
+        content: conversationContent ? <div className="flex flex-col h-full min-h-0">{conversationContent}</div> : null,
+        is_allowed: !!conversationContent,
+    };
+
     const tabs: TabDefinition[] = [
+        ...(conversationContent ? [conversationTab] : []),
         {
             name: 'plan',
             label: hasPlan
@@ -402,11 +408,13 @@ function AgentRightPanelComponent({
         >
             <div className="flex items-center border-b shrink-0 px-1">
                 <div className="flex-1 overflow-x-auto">
-                    <TabsBar className="border-b-0 mb-0" />
+                    <TabsBar className="border-b-0 mb-0 min-w-max" />
                 </div>
-                <Button variant="ghost" size="sm" className="shrink-0 ml-1" onClick={onClose}>
-                    <XIcon className="size-4" />
-                </Button>
+                {!conversationContent && (
+                    <Button variant="ghost" size="sm" className="shrink-0 ml-1" onClick={onClose}>
+                        <XIcon className="size-4" />
+                    </Button>
+                )}
             </div>
             <TabsPanel className="pt-0" />
         </Tabs>
