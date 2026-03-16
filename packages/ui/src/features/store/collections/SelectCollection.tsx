@@ -126,7 +126,9 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
         return collections.filter(col => col.name.toLowerCase().includes(queryLower));
     }, [collections, useServerSearch, hasSearchQuery, searchQuery]);
 
-    const showClearOption = !multiple && !!selectedCollection;
+    const showClearOption = multiple
+        ? Array.isArray(selectedCollection) && selectedCollection.length > 0
+        : !!selectedCollection;
 
     const renderTrailingIcon = () => {
         if (showClearOption) {
