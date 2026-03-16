@@ -217,9 +217,9 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                                 <CommandItem
                                     value="__clear__"
                                     onSelect={handleClear}
-                                    className="text-muted-foreground"
+                                    className="text-muted"
                                 >
-                                    Clear selection
+                                    No default content scope
                                 </CommandItem>
                             )
                         }
