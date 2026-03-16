@@ -213,13 +213,24 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                     </CommandEmpty>
                     <CommandGroup className="max-h-[300px] overflow-auto">
                         {
-                            showClearOption && (
+                            showClearOption && !hasSearchQuery && (
                                 <CommandItem
                                     value="__clear__"
                                     onSelect={handleClear}
+                                    className="text-destructive"
+                                >
+                                    Remove collection selection(s)
+                                </CommandItem>
+                            )
+                        }
+                        {
+                            hasSearchQuery && (
+                                <CommandItem
+                                    value="__clear_search__"
+                                    onSelect={() => setSearchQuery("")}
                                     className="text-muted"
                                 >
-                                    No default content scope
+                                    Clear search text
                                 </CommandItem>
                             )
                         }
