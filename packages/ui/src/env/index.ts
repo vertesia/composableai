@@ -23,7 +23,8 @@ export interface EnvProps {
         providerType?: string,
     },
     region?: string,
-    datadog?: boolean,
+    datadogRum?: boolean,
+    datadogLogs?: boolean,
     logger?: {
         info: (msg: string, ...args: any) => void,
         warn: (msg: string, ...args: any) => void,
@@ -103,8 +104,12 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
         return this._props?.region;
     }
 
-    get datadog() {
-        return this._props?.datadog ?? false;
+    get datadogRum() {
+        return this._props?.datadogRum ?? false;
+    }
+
+    get datadogLogs() {
+        return this._props?.datadogLogs ?? false;
     }
 
     get logger() {
