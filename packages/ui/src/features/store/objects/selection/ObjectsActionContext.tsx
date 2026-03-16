@@ -2,6 +2,7 @@ import { ReactNode, useMemo } from 'react';
 
 import { ErrorBox, useFetch, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
+import { useUITranslation } from '../../../../i18n/index.js';
 
 import { useDocumentSelection } from '../DocumentSelectionProvider';
 import { useDocumentSearch } from '../search/DocumentSearchContext';
@@ -29,6 +30,7 @@ interface ObjectsActionContextProps {
     children: ReactNode;
 }
 export function ObjectsActionContextProvider({ children }: ObjectsActionContextProps) {
+    const { t } = useUITranslation();
     const selection = useDocumentSelection();
     const toast = useToast();
     const { client } = useUserSession();
@@ -59,7 +61,7 @@ export function ObjectsActionContextProvider({ children }: ObjectsActionContextP
     }, [selection, rules]);
 
     if (error) {
-        return <ErrorBox title="Failed to fetch workflows">{error.message}</ErrorBox>
+        return <ErrorBox title={t('store.failedToFetchWorkflows')}>{error.message}</ErrorBox>
     }
 
     return (

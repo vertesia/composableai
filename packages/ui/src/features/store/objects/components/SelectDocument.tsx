@@ -11,6 +11,7 @@ import { ContentDispositionButton } from "./ContentDispositionButton";
 
 import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
 import { Button, ErrorBox, Spinner, useIntersectionObserver } from "@vertesia/ui/core";
+import { useUITranslation } from '../../../../i18n/index.js';
 
 const layout: ColumnLayout[] = [
     { "name": "Name", "field": "properties.title", "type": "string", "fallback": "name" },
@@ -45,6 +46,7 @@ interface SelectDocumentImplProps {
     selectedIds?: Set<string>;
 }
 function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocumentImplProps>) {
+    const { t } = useUITranslation();
     const highlightRow = useCallback(
         (item: ContentObjectItem) => !!selectedIds?.has(item.id),
         [selectedIds],
@@ -80,7 +82,7 @@ function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocument
     }
 
     if (error) {
-        return <ErrorBox title="Search failed">{error.message}</ErrorBox>
+        return <ErrorBox title={t('store.searchFailed')}>{error.message}</ErrorBox>
     }
 
     return (

@@ -1,11 +1,13 @@
 import { GithubAuthProvider, signInWithRedirect } from "firebase/auth";
 import { getFirebaseAuth } from "@vertesia/ui/session";
 import { Button } from "@vertesia/ui/core";
+import { useUITranslation } from "@vertesia/ui/i18n";
 
 interface GitHubSignInButtonProps {
     redirectTo?: string;
 }
 export default function GitHubSignInButton({ }: GitHubSignInButtonProps) {
+    const { t } = useUITranslation();
     const signIn = () => {
         localStorage.removeItem("tenantName");
         //with github can only have one allowed redirect
@@ -34,7 +36,7 @@ export default function GitHubSignInButton({ }: GitHubSignInButtonProps) {
                 loading="lazy"
                 alt="github logo"
             />
-            <span className="text-sm font-semibold">Continue with GitHub</span>
+            <span className="text-sm font-semibold">{t('auth.continueWithGithub')}</span>
         </Button>
     );
 }

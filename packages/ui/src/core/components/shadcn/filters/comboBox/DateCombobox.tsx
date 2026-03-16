@@ -4,6 +4,7 @@ import ReactCalendar from "react-calendar";
 import { Button } from "../../button";
 import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
 import { calendarStyles } from "../filter-styles";
+import { useUITranslation } from '../../../../../i18n/index.js';
 
 export const DateCombobox = ({
     filterValues,
@@ -16,6 +17,7 @@ export const DateCombobox = ({
 }) => {
     const [open, setOpen] = useState(false);
     const [localDateRange, setLocalDateRange] = useState<[Date | null, Date | null]>([null, null]);
+    const { t } = useUITranslation();
 
     // For single date
     const selectedDate = filterValues[0] ? new Date(filterValues[0]) : undefined;
@@ -54,7 +56,7 @@ export const DateCombobox = ({
                     </span>
                 );
             } else {
-                return <span className="text-muted-foreground">Select range</span>;
+                return <span className="text-muted-foreground">{t('filter.selectRange')}</span>;
             }
         } else {
             return selectedDate ? dayjs(selectedDate).format("MMMM DD, YYYY") : "Pick a date";

@@ -1,5 +1,6 @@
 import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
+import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 import { useDocumentSearch } from "../search/DocumentSearchContext";
 import { FileUploadAction, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
 
@@ -60,6 +61,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
     const { client, project: projectRef, store } = useUserSession();
     const search = useDocumentSearch();
     const toast = useToast();
+    const t = i18nInstance.getFixedT(null, NAMESPACE);
     const { checkDocumentProcessing } = useSmartFileUploadProcessing();
 
     return async (files: File[], type: string | null, collectionId?: string): Promise<DocumentUploadResult> => {
@@ -75,7 +77,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
         if (!projectRef) {
             toast({
                 status: "error",
-                title: "No project selected",
+                title: t('store.noProjectSelected'),
                 duration: 3000,
             });
             return result;
@@ -84,7 +86,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
         if (!files || files.length === 0) {
             toast({
                 status: "warning",
-                title: "No files selected",
+                title: t('store.noFilesSelected'),
                 duration: 3000,
             });
             return result;
@@ -95,8 +97,8 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
         if (filesToUpload.length === 0) {
             toast({
                 status: "error",
-                title: "No valid files selected",
-                description: "Please select files with valid content.",
+                title: t('store.noValidFilesSelected'),
+                description: t('store.pleaseSelectValidFiles'),
                 duration: 5000,
             });
             return result;
@@ -118,7 +120,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
 
         // Show user feedback about processed files
         toast({
-            title: "Files analyzed",
+            title: t('store.filesAnalyzedTitle'),
             description: `${filesToUpload.length} file(s): ${toCreate} new, ${toUpdate} to update, ${toSkip} to skip`,
             status: "info",
             duration: 4000,
@@ -164,7 +166,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
                 // Show progress for larger file sets
                 if (filesToProcess.length > batchSize) {
                     toast({
-                        title: "Processing files",
+                        title: t('store.processingFiles'),
                         description: `Processed ${processedCount}/${filesToProcess.length} files...`,
                         status: "info",
                         duration: 2000,
@@ -246,7 +248,7 @@ export function useDocumentUploadHandler(options: UploadHandlerOptions | ((objec
 
                             toast({
                                 status: "error",
-                                title: `Processing failed for ${fileInfo.name}`,
+                                title: t('store.processingFailedFor', { name: fileInfo.name }),
                                 description: error.message,
                                 duration: 4000,
                             });

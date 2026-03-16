@@ -7,7 +7,7 @@ import { ToolExecutionContext } from "./types.js";
 const cache: Record<string, JWTVerifyGetKey> = {};
 
 export async function getJwks(url: string) {
-    if (!cache.url) {
+    if (!cache[url]) {
         console.log('JWKS cache miss for: ', url);
         const jwks = await fetch(url).then(r => {
             if (r.ok) {
@@ -17,9 +17,9 @@ export async function getJwks(url: string) {
         }).catch(err => {
             throw new Error("Failed to fetch jwks: " + err.message);
         })
-        cache.url = createLocalJWKSet(jwks);
+        cache[url] = createLocalJWKSet(jwks);
     }
-    return cache.url;
+    return cache[url];
 }
 
 export async function verifyToken(token: string) {

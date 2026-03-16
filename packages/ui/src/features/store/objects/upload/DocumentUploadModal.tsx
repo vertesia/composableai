@@ -5,6 +5,7 @@ import { useTypeRegistry } from "../../types/TypeRegistryProvider.js";
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from "lucide-react";
 import { ReactNode, useEffect, useMemo, useState } from "react";
+import { useUITranslation } from '../../../../i18n/index.js';
 import { FileUploadAction, FileWithMetadata, useSmartFileUploadProcessing } from "./useSmartFileUploadProcessing";
 import { DocumentUploadResult } from "./useUploadHandler";
 
@@ -63,7 +64,7 @@ export function DocumentUploadModal({
     files: initialFiles,
     collectionId,
     selectedFolder,
-    title = "Upload Files",
+    title,
     children,
     onUploadComplete,
     hideFileSelection = false,
@@ -73,6 +74,8 @@ export function DocumentUploadModal({
     const { client } = useUserSession();
     const { registry: typeRegistry } = useTypeRegistry();
     const toast = useToast();
+    const { t } = useUITranslation();
+    const resolvedTitle = title ?? t('upload.uploadFiles');
     const [files, setFiles] = useState<File[]>([]);
     const [processedFiles, setProcessedFiles] = useState<FileWithMetadata[]>([]);
     const [processingDone, setProcessingDone] = useState(false);
@@ -84,7 +87,7 @@ export function DocumentUploadModal({
     const [modalKey, setModalKey] = useState(Date.now());
     const [collectionData, setCollectionData] = useState<Collection | DynamicCollection | undefined>(undefined);
     const [result, setResult] = useState<DocumentUploadResult | null>(null);
-    const [_title, setTitle] = useState(title);
+    const [_title, setTitle] = useState(resolvedTitle);
     const [_description, setDescription] = useState("");
 
     // Fetch collection details if a collectionId is provided
@@ -96,22 +99,22 @@ export function DocumentUploadModal({
     // Update title and description based on current state
     useEffect(() => {
         if (isUploading) {
-            setTitle("Uploading Files");
+            setTitle(t('upload.uploadingFiles'));
             setDescription(`${Math.round(overallProgress)}% complete`);
         } else if (uploadComplete) {
-            setTitle("Upload Complete");
+            setTitle(t('upload.uploadComplete'));
             setDescription("");
         } else if (processingDone) {
-            setTitle("File Analysis Results");
+            setTitle(t('upload.fileAnalysisResults'));
             setDescription(`${files.length} file${files.length !== 1 ? "s" : ""}`);
         } else if (files.length > 0) {
-            setTitle(title);
-            setDescription("Checking for duplicates and updates");
+            setTitle(resolvedTitle);
+            setDescription(t('upload.checkingForDuplicates'));
         } else {
-            setTitle(title);
+            setTitle(resolvedTitle);
             setDescription("");
         }
-    }, [isUploading, uploadComplete, processingDone, title, overallProgress, files.length]);
+    }, [isUploading, uploadComplete, processingDone, resolvedTitle, overallProgress, files.length, t]);
 
     // Helper function to render collection and folder information
     const renderLocationInfo = () => {
@@ -120,18 +123,18 @@ export function DocumentUploadModal({
         return (
             <MessageBox className="mb-4" status="default" icon={<FolderIcon className="size-5" />}>
                 <div className="flex items-center">
-                    <span className="font-medium">Upload Location:</span>
+                    <span className="font-medium">{t('upload.uploadLocation')}</span>
                 </div>
                 <div className="text-sm mt-1">
                     {collectionData && (
                         <div className="flex items-center">
-                            <span className="mr-1">Collection:</span>
+                            <span className="mr-1">{t('upload.collectionLabel')}</span>
                             <span className="font-medium">{collectionData.name}</span>
                         </div>
                     )}
                     {selectedFolder && (
                         <div className="flex items-center mt-1">
-                            <span className="mr-1">Folder:</span>
+                            <span className="mr-1">{t('upload.folderLabel')}</span>
                             <span className="font-medium">{selectedFolder}</span>
                         </div>
                     )}
@@ -168,7 +171,7 @@ export function DocumentUploadModal({
             setOverallProgress(0);
             setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
             setResult(null);
-            setTitle(title);
+            setTitle(resolvedTitle);
             setDescription("");
 
             // Set initial files if provided
@@ -197,7 +200,7 @@ export function DocumentUploadModal({
         setOverallProgress(0);
         setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
         setResult(null);
-        setTitle(title);
+        setTitle(resolvedTitle);
         setDescription("");
         setModalKey(Date.now());
 
@@ -238,7 +241,7 @@ export function DocumentUploadModal({
 
             // Show processing results to user
             toast({
-                title: "Files analyzed",
+                title: t('upload.filesAnalyzed'),
                 description: `${filesToProcess.length} file(s): ${toCreate} new, ${toUpdate} to update, ${toSkip} to skip`,
                 status: "info",
                 duration: 4000,
@@ -249,8 +252,8 @@ export function DocumentUploadModal({
         } catch (error) {
             console.error("Error processing files:", error);
             toast({
-                title: "Error",
-                description: "There was an error analyzing the files",
+                title: t('agent.error'),
+                description: t('upload.errorAnalyzingFiles'),
                 status: "error",
                 duration: 5000,
             });
@@ -335,8 +338,8 @@ export function DocumentUploadModal({
                 if (files.length > BATCH_SIZE) {
                     const processedCount = batchIndex * BATCH_SIZE;
                     toast({
-                        title: `Processing files (${action})`,
-                        description: `Processed ${processedCount}/${files.length} files...`,
+                        title: t('upload.processingFilesAction', { action }),
+                        description: t('upload.processedCount', { processed: processedCount, total: files.length }),
                         status: "info",
                         duration: 2000,
                     });
@@ -491,7 +494,7 @@ export function DocumentUploadModal({
                     ...status,
                     status: "error" as const,
                     progress: 100,
-                    message: "Upload process interrupted",
+                    message: t('upload.uploadProcessInterrupted'),
                 }));
 
             if (missingStatuses.length > 0) {
@@ -499,7 +502,7 @@ export function DocumentUploadModal({
                 missingStatuses.forEach((status) => {
                     result.failedFiles.push({
                         name: status.file.name,
-                        error: "Upload process interrupted",
+                        error: t('upload.uploadProcessInterrupted'),
                         status: "failed",
                         type: selectedType?.id || null,
                     });
@@ -515,7 +518,7 @@ export function DocumentUploadModal({
                             ...status,
                             status: "error" as const,
                             progress: 100,
-                            message: "Upload process interrupted",
+                            message: t('upload.uploadProcessInterrupted'),
                         }
                         : status,
                 );
@@ -549,7 +552,7 @@ export function DocumentUploadModal({
         }
 
         toast({
-            title: "Upload Complete",
+            title: t('upload.uploadComplete'),
             description: statusMessage,
             status: failedCount > 0 ? "warning" : "success",
             duration: 5000,
@@ -561,9 +564,9 @@ export function DocumentUploadModal({
         return (
             <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">
-                    Content Type <span className="text-muted font-normal">(Optional)</span>
+                    {t('store.contentType')} <span className="text-muted font-normal">{t('store.optional')}</span>
                     <VTooltip
-                        description="Select a content type to apply to the uploaded files. If left empty, Vertesia will automatically detect the type based on file content."
+                        description={t('upload.contentTypeTooltip')}
                         placement="top" size="xs"
                     >
                         <Info className="size-3 ml-2" />
@@ -572,8 +575,8 @@ export function DocumentUploadModal({
                 <SelectBox
                     options={types}
                     value={selectedType}
-                    optionLabel={(type) => (type ? type.name : "Select a content type")}
-                    placeholder="Select a content type or leave empty for automatic detection"
+                    optionLabel={(type) => (type ? type.name : t('store.selectContentTypeLabel'))}
+                    placeholder={t('store.selectContentTypeAuto')}
                     onChange={(selected) => setSelectedType(selected === undefined ? null : selected)}
                     filterBy="name"
                     isClearable
@@ -584,9 +587,9 @@ export function DocumentUploadModal({
                     <div className="p-2 rounded-md">
                         <div className="flex items-center text-attention">
                             <CheckCircleIcon className="size-4 mr-1" />
-                            Automatic Type Detection
+                            {t('store.automaticTypeDetection')}
                             <VTooltip
-                                description="Vertesia will analyze the content and select the most appropriate type. This is recommended for most uploads and ensures optimal processing."
+                                description={t('store.automaticTypeDetectionDescription')}
                                 placement="top" size="xs"
                             >
                                 <Info className="size-3 ml-2" />
@@ -624,8 +627,8 @@ export function DocumentUploadModal({
 
                     <DropZone
                         onDrop={handleFileSelect}
-                        message="Drag and drop files here or click to select"
-                        buttonLabel="Select Files"
+                        message={t('upload.dragAndDrop')}
+                        buttonLabel={t('upload.selectFiles')}
                         className="w-full h-64"
                         allowFolders={allowFolders}
                     />
@@ -642,7 +645,7 @@ export function DocumentUploadModal({
                         // File processing in progress
                         <div className="flex flex-col items-center justify-center py-4">
                             <Spinner size="lg" className="mb-4" />
-                            <div className="text-lg font-medium">Analyzing files...</div>
+                            <div className="text-lg font-medium">{t('upload.analyzingFiles')}</div>
                         </div>
                     ) : (
                         // Processing complete, show type selection
@@ -657,21 +660,21 @@ export function DocumentUploadModal({
                                         <div className="flex flex-col items-center">
                                             <div className="flex items-center gap-2">
                                                 <UploadIcon className="size-5 text-primary" />
-                                                <span className="font-medium">New</span>
+                                                <span className="font-medium">{t('upload.new')}</span>
                                             </div>
                                             <div className="text-2xl font-semibold">{processingStats.toCreate}</div>
                                         </div>
                                         <div className="flex flex-col items-center">
                                             <div className="flex items-center gap-2">
                                                 <CheckCircleIcon className="size-5 text-success" />
-                                                <span className="font-medium">Update</span>
+                                                <span className="font-medium">{t('upload.update')}</span>
                                             </div>
                                             <div className="text-2xl font-semibold">{processingStats.toUpdate}</div>
                                         </div>
                                         <div className="flex flex-col items-center">
                                             <div className="flex items-center gap-2">
                                                 <AlertCircleIcon className="size-5 text-mixer-attention/40" />
-                                                <span className="font-medium">Skip</span>
+                                                <span className="font-medium">{t('upload.skip')}</span>
                                             </div>
                                             <div className="text-2xl font-semibold">{processingStats.toSkip}</div>
                                         </div>
@@ -689,21 +692,19 @@ export function DocumentUploadModal({
                                 {processingStats.toCreate + processingStats.toUpdate > 0 ? (
                                     <div className="space-y-1">
                                         <p>
-                                            {processingStats.toCreate + processingStats.toUpdate} file{processingStats.toCreate + processingStats.toUpdate > 1 ? "s are" : " is"} ready
-                                            to process
+                                            {t('upload.filesReadyToProcess', { count: processingStats.toCreate + processingStats.toUpdate })}
                                         </p>
                                         <p>
                                             {processingStats.toSkip > 0 &&
-                                                `${processingStats.toSkip} file${processingStats.toSkip > 1 ? "s are" : " is"} already in the system and will be skipped.`}
+                                                t('upload.filesToSkip', { count: processingStats.toSkip })}
                                         </p>
                                     </div>
                                 ) : processingStats.toSkip > 0 ? (
                                     <span>
-                                        All {processingStats.toSkip} file(s) already exist in the system and
-                                        will be skipped. You can proceed to view the results.
+                                        {t('upload.allFilesExist', { count: processingStats.toSkip })}
                                     </span>
                                 ) : (
-                                    <span>No files to process.</span>
+                                    <span>{t('upload.noFilesToProcess')}</span>
                                 )}
                             </MessageBox>
 
@@ -750,14 +751,14 @@ export function DocumentUploadModal({
                                 <div className="flex-1 min-w-0">
                                     <div className="truncate font-medium">{fileStatus.file.name}</div>
                                     <div className="text-xs text-muted">
-                                        {fileStatus.status === "pending" && "Waiting..."}
-                                        {fileStatus.status === "uploading" && "Uploading..."}
+                                        {fileStatus.status === "pending" && t('agent.waiting')}
+                                        {fileStatus.status === "uploading" && t('agent.uploading')}
                                         {fileStatus.status === "success" &&
                                             (fileStatus.action === "create"
-                                                ? "Created"
+                                                ? t('store.created')
                                                 : fileStatus.action === "update"
-                                                    ? "Updated"
-                                                    : "Skipped")}
+                                                    ? t('store.updated')
+                                                    : t('upload.skip'))}
                                         {fileStatus.status === "error" && fileStatus.message}
                                     </div>
                                 </div>
@@ -812,7 +813,7 @@ export function DocumentUploadModal({
             return (
                 <ModalFooter>
                     <Button variant="ghost" onClick={handleClose}>
-                        Cancel
+                        {t('modal.cancel')}
                     </Button>
                     <Button
                         onClick={() => {
@@ -837,7 +838,7 @@ export function DocumentUploadModal({
                             handleClose();
                         }}
                     >
-                        {selectedType ? `Use ${selectedType.name}` : "Use Automatic Type Detection"}
+                        {selectedType ? t('upload.useTypeName', { typeName: selectedType.name }) : t('upload.useAutoDetection')}
                     </Button>
                 </ModalFooter>
             );
@@ -848,7 +849,7 @@ export function DocumentUploadModal({
             return (
                 <ModalFooter>
                     <Button variant="ghost" onClick={handleClose}>
-                        Cancel
+                        {t('modal.cancel')}
                     </Button>
                 </ModalFooter>
             );
@@ -862,15 +863,15 @@ export function DocumentUploadModal({
             return (
                 <ModalFooter>
                     <Button variant="ghost" onClick={handleClose}>
-                        Cancel
+                        {t('modal.cancel')}
                     </Button>
                     <Button
                         disabled={!canUpload}
                         onClick={handleUpload}
                     >
                         {processingStats.toCreate + processingStats.toUpdate > 0
-                            ? "Upload"
-                            : "Continue"}
+                            ? t('agent.upload')
+                            : t('upload.continue')}
                     </Button>
                 </ModalFooter>
             );
@@ -881,7 +882,7 @@ export function DocumentUploadModal({
             return (
                 <ModalFooter>
                     <Button variant="ghost" disabled>
-                        Uploading...
+                        {t('agent.uploading')}
                     </Button>
                 </ModalFooter>
             );
@@ -905,7 +906,7 @@ export function DocumentUploadModal({
                         setProcessingStats({ toCreate: 0, toUpdate: 0, toSkip: 0 });
                     }}
                 >
-                    Upload More
+                    {t('upload.uploadMore')}
                 </Button>
                 <Button onClick={() => {
                     if (onUploadComplete && result) {
@@ -913,7 +914,7 @@ export function DocumentUploadModal({
                     }
                     handleClose();
                 }}>
-                    Close
+                    {t('agent.close')}
                 </Button>
             </ModalFooter>
         );

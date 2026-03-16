@@ -49,7 +49,15 @@ export function vertesiaPluginBuilder({
             });
         },
         generateBundle(_options, bundle) {
-            delete bundle['virtual-vertesia-plugin-css-entry.js'];
+            const virtualChunkFileName = 'virtual-vertesia-plugin-css-entry.js';
+            delete bundle[virtualChunkFileName];
+            // Remove references to the virtual chunk from Rollup metadata first.
+            for (const chunk of Object.values(bundle)) {
+                if (chunk.type === 'chunk' && chunk.code) {
+                    chunk.imports = chunk.imports.filter((entry) => !entry.endsWith(virtualChunkFileName));
+                    chunk.dynamicImports = chunk.dynamicImports.filter((entry) => !entry.endsWith(virtualChunkFileName));
+                }
+            }
         },
         writeBundle(this, options, bundle) {
             if (!inlineCss) return;

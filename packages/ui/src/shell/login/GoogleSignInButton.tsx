@@ -1,11 +1,13 @@
 import { GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
 import { getFirebaseAuth } from "@vertesia/ui/session";
 import { Button } from "@vertesia/ui/core";
+import { useUITranslation } from "@vertesia/ui/i18n";
 
 interface GoogleSignInButtonProps {
     redirectTo?: string;
 }
 export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonProps) {
+    const { t } = useUITranslation();
 
     const signIn = () => {
         localStorage.removeItem("tenantName");
@@ -30,7 +32,7 @@ export default function GoogleSignInButton({ redirectTo }: GoogleSignInButtonPro
             onClick={signIn}
             className="w-full py-5 flex rounded-lg hover:shadow-sm transition duration-150 text-center mb-2">
             <img className="size-6" src="https://www.svgrepo.com/show/475656/google-color.svg" loading="lazy" alt="google logo" />
-            <span className="text-sm font-semibold">Continue with Google</span>
+            <span className="text-sm font-semibold">{t('auth.continueWithGoogle')}</span>
         </Button>
     );
 }

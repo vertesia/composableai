@@ -42,7 +42,7 @@
   },
   "include": [
     "src",
-    "eslint.config.js"
+    "src/i18n/locales/*.json"
   ],
   "exclude": [
     "node_modules",

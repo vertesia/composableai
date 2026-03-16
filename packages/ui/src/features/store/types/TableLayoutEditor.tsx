@@ -3,6 +3,7 @@ import { ColumnLayout, ContentObjectType } from '@vertesia/common';
 import { Button, useToast, useTheme, Panel } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { MonacoEditor, EditorApi } from '@vertesia/ui/widgets';
+import { useUITranslation } from '../../../i18n/index.js';
 
 interface TableLayoutEditorProps {
     objectType: ContentObjectType;
@@ -12,6 +13,7 @@ interface TableLayoutEditorProps {
 export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false }: TableLayoutEditorProps) {
     const toast = useToast();
     const { theme } = useTheme();
+    const { t } = useUITranslation();
 
     const [isUpdating, setUpdating] = useState(false);
     const { store } = useUserSession();
@@ -60,15 +62,15 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
         }).then((response) => {
             toast({
                 status: 'success',
-                title: 'Table Layout updated',
-                description: 'The table layout has been updated successfully',
+                title: t('store.tableLayoutUpdated'),
+                description: t('store.tableLayoutUpdatedDesc'),
                 duration: 2000
             });
             onLayoutUpdate(response.table_layout);
         }).catch((err) => {
             toast({
                 status: 'error',
-                title: 'Failed to update table layout',
+                title: t('store.failedToUpdateTableLayout'),
                 description: err.message,
                 duration: 5000
             })
@@ -80,7 +82,7 @@ export function TableLayoutEditor({ objectType, onLayoutUpdate, readonly = false
 
     return (
         <Panel title="Table Layout Editor" className="bg-background! h-full" action={
-            !readonly ? <Button isLoading={isUpdating} size="sm" onClick={onSave}>Save</Button> : undefined
+            !readonly ? <Button isLoading={isUpdating} variant="outline" size="sm" onClick={onSave}>{t('store.saveChanges')}</Button> : undefined
         }>
             <div className="h-full">
                 <MonacoEditor

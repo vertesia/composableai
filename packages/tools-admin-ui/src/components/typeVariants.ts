@@ -5,6 +5,7 @@ export const TYPE_VARIANTS: Record<string, string> = {
     interaction: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
     type: 'bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-300',
     template: 'bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-300',
+    activity: 'bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300',
     mcp: 'bg-pink-100 text-pink-800 dark:bg-pink-500/15 dark:text-pink-300',
 };
 

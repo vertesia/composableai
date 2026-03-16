@@ -3,6 +3,7 @@ import { Button, Input, SelectBox, SelectStack } from "@vertesia/ui/core";
 import { User } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { getFirebaseAuth } from "@vertesia/ui/session";
+import { useUITranslation } from '../../i18n/index.js';
 
 
 interface CompanySizeOption {
@@ -10,41 +11,13 @@ interface CompanySizeOption {
     label: string;
 }
 
-const companySizeOptions: CompanySizeOption[] = [
-    { id: 1, label: "1-10 employees" },
-    { id: 11, label: "11-100 employees" },
-    { id: 101, label: "101-1000 employees" },
-    { id: 1001, label: "1001-5000 employees" },
-    { id: 5001, label: "5000+ employees" },
-];
-
-const accountTypeOptions = [
-    {
-        id: "personal",
-        label: "Personal",
-        description: "For personal use, or for a small team.",
-    },
-    {
-        id: "company",
-        label: "Company",
-        description: "For a company or organization.",
-    },
-];
-
-const projectMaturityOptions = [
-    { id: "testing", label: "Just Testing or Evaluating LLMs" },
-    { id: "exploring", label: "Actively Exploring LLMs on a Project" },
-    { id: "using", label: "Already Using LLMs in Production" },
-    { id: "migrating", label: "Migrating to different LLMs" },
-    { id: "other", label: "Other" },
-];
-
 interface SignupFormProps {
     onSignup: (data: SignupData, fbToken: string) => void;
     goBack: () => void;
 }
 
 export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
+    const { t } = useUITranslation();
     const [accountType, setAccountType] = useState<string | undefined>(undefined);
     const [companySize, setCompanySize] = useState<CompanySizeOption | undefined>(undefined);
     const [companyName, setCompanyName] = useState<string | undefined>(undefined);
@@ -54,6 +27,35 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
 
     const [error, setError] = useState<string | undefined>(undefined);
     const isCompany = accountType === "company";
+
+    const companySizeOptions: CompanySizeOption[] = [
+        { id: 1, label: t('signup.size1to10') },
+        { id: 11, label: t('signup.size11to100') },
+        { id: 101, label: t('signup.size101to1000') },
+        { id: 1001, label: t('signup.size1001to5000') },
+        { id: 5001, label: t('signup.size5000plus') },
+    ];
+
+    const accountTypeOptions = [
+        {
+            id: "personal",
+            label: t('signup.personal'),
+            description: t('signup.personalDescription'),
+        },
+        {
+            id: "company",
+            label: t('signup.company'),
+            description: t('signup.companyDescription'),
+        },
+    ];
+
+    const projectMaturityOptions = [
+        { id: "testing", label: t('signup.justTesting') },
+        { id: "exploring", label: t('signup.activelyExploring') },
+        { id: "using", label: t('signup.alreadyUsing') },
+        { id: "migrating", label: t('signup.migratingLLMs') },
+        { id: "other", label: t('signup.other') },
+    ];
 
     useEffect(() => {
         const user = getFirebaseAuth().currentUser;
@@ -66,16 +68,16 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
 
     const isValid = () => {
         if (!accountType) {
-            setError("Please select an account type");
+            setError(t('signup.pleaseSelectAccountType'));
             return false;
         }
         if (isCompany && !companyName) {
-            setError("Please enter an organization name");
+            setError(t('signup.pleaseEnterOrgName'));
             return false;
         }
 
         if (isCompany && !companySize) {
-            setError("Please select a company size");
+            setError(t('signup.pleaseSelectCompanySize'));
             return false;
         }
 
@@ -112,15 +114,13 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
         <div className="flex flex-col space-y-2">
             <div className="prose">
                 <p className="prose text-sm text-muted pt-4">
-                    Welcome to Vertesia, {fbUser?.displayName} ({fbUser?.email}).
-                    Please tell us a little bit about yourself and you&apos;ll be on your way.
-                    No credit card is required.
+                    {t('signup.welcomeMessage', { name: fbUser?.displayName, email: fbUser?.email })}
                 </p>
                 {error &&
                     <div className="text-destructive">{error}</div>
                 }
             </div>
-            <FormItem label="Account Type">
+            <FormItem label={t('signup.accountType')}>
                 <SelectStack
                     options={accountTypeOptions}
                     selected={accountTypeOptions.find((option) => option.id === accountType)}
@@ -129,38 +129,38 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
             </FormItem>
             {isCompany &&
                 <>
-                    <FormItem label="Company Size">
+                    <FormItem label={t('signup.companySize')}>
                         <SelectBox className="w-full border border-accent bg-muted"
                             value={companySize}
                             options={companySizeOptions}
                             onChange={setCompanySize}
                             optionLabel={(option) => option?.label}
-                            placeholder='Select Company Size'
+                            placeholder={t('signup.selectCompanySize')}
                         />
                     </FormItem>
-                    <FormItem label="Company Name">
+                    <FormItem label={t('signup.companyName')}>
                         <Input value={companyName} onChange={setCompanyName} type="text" required={true} />
                     </FormItem>
-                    <FormItem label="Company Website">
+                    <FormItem label={t('signup.companyWebsite')}>
                         <Input value={companyWebsite} onChange={setCompanyWebsite} type="text" />
                     </FormItem>
                 </>
             }
-            <FormItem label="Project Maturity">
+            <FormItem label={t('signup.projectMaturity')}>
                 <SelectBox className="w-full border border-accent bg-muted"
                     options={projectMaturityOptions}
                     value={projectMaturityOptions.find((option) => option.id === projectMaturity)}
                     optionLabel={(option) => option?.label}
-                    placeholder='Select Project Maturity'
+                    placeholder={t('signup.selectProjectMaturity')}
                     onChange={(option) => setProjectMaturity(option?.id)}
                 />
             </FormItem>
             <div className="pt-8 flex flex-col">
                 <Button variant="primary" onClick={onSubmit} size="xl">
-                    <span className="text-lg">Sign Up</span>
+                    <span className="text-lg">{t('signup.signUp')}</span>
                 </Button>
                 <Button variant="ghost" size="xl" className="mt-4" onClick={goBack}>
-                    <span className="">Wrong account, go back</span>
+                    <span className="">{t('signup.wrongAccountGoBack')}</span>
                 </Button>
             </div>
         </div>

@@ -2,6 +2,7 @@ import { LayoutGrid, TableProperties } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@vertesia/ui/core'
+import { useUITranslation } from '@vertesia/ui/i18n'
 
 const LAST_DISPLAYED_VIEW = 'vertesia.content_store.lastDisplayedView'
 
@@ -9,6 +10,7 @@ interface ContentDispositionButtonProps {
     onUpdate: (value: boolean) => void
 }
 export function ContentDispositionButton({ onUpdate }: Readonly<ContentDispositionButtonProps>) {
+    const { t } = useUITranslation()
     const [isGridView, setIsGridView] = useState(localStorage.getItem(LAST_DISPLAYED_VIEW) === "grid")
 
     const updateView = () => {
@@ -32,7 +34,7 @@ export function ContentDispositionButton({ onUpdate }: Readonly<ContentDispositi
     }
 
     return (
-        <Button variant="outline" onClick={updateView} alt={isGridView ? "Table View" : "Thumbnail View"}>
+        <Button variant="outline" onClick={updateView} alt={isGridView ? t('misc.tableView') : t('misc.thumbnailView')}>
             {
                 isGridView
                     ? <TableProperties />

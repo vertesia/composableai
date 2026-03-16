@@ -2,12 +2,14 @@ import { TransientToken, UserInviteTokenData } from "@vertesia/common"
 import { Button, Modal, ModalBody, ModalTitle } from "@vertesia/ui/core"
 import { useEffect, useState } from "react"
 import { useUserSession } from "@vertesia/ui/session"
+import { useUITranslation } from '../../i18n/index.js'
 
 
 export function InviteAcceptModal() {
 
     const session = useUserSession()
     const { client, account } = session;
+    const { t } = useUITranslation()
     const [showModal, setShowModal] = useState(false)
     const [invites, setInvites] = useState<TransientToken<UserInviteTokenData>[]>([])
 
@@ -71,7 +73,7 @@ export function InviteAcceptModal() {
                 {invite.data.invited_by &&<div className="text-xs">by {invite.data.invited_by.name ?? invite.data.invited_by}</div>}
             </div>
             <div className="flex flex-col gap-4">
-                <Button size={'xs'} onClick={() => accept(invite)}>Accept</Button> <Button size={'xs'} variant="secondary" onClick={() => reject(invite)}>Reject</Button>
+                <Button size={'xs'} onClick={() => accept(invite)}>{t('login.accept')}</Button> <Button size={'xs'} variant="secondary" onClick={() => reject(invite)}>{t('login.reject')}</Button>
             </div>
         </div>)
     })
@@ -79,7 +81,7 @@ export function InviteAcceptModal() {
     return (
         <div>
             <Modal isOpen={showModal} onClose={closeModal}>
-                <ModalTitle>Review Invites</ModalTitle>
+                <ModalTitle>{t('login.reviewInvites')}</ModalTitle>
                 <ModalBody>
                     <div className="text-sm pb-4">
                         You have received the following invites to join other accounts.
