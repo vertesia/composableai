@@ -103,6 +103,14 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
     get region() {
         return this._props?.region;
     }
+    
+    /**
+     * @deprecated Use datadogRum and datadogLogs instead for more granular control. This will be removed in a future release. Is an alias for DatadogRUM
+     * 
+     */
+    get datadog() {
+        return this.datadogRum;
+    }
 
     get datadogRum() {
         return this._props?.datadogRum ?? false;
