@@ -7,6 +7,10 @@ import { useNavigate, useRouterContext } from "./Router";
 interface NavProps {
     children: React.ReactNode | React.ReactNode[];
     /**
+     * Optional router navigation target. If omitted, the wrapped anchor href is used.
+     */
+    to?: string;
+    /**
      * A click was intercepted
      * @param ev
      * @returns
@@ -18,14 +22,16 @@ interface NavProps {
      */
     replace?: boolean;
 }
-export function Nav({ children, onClick, replace = true }: NavProps) {
+export function Nav({ children, to, onClick, replace = true }: NavProps) {
     const navigate = useNavigate();
     const _onClick = (ev: SyntheticEvent) => {
         const link = (ev.target as HTMLElement).closest('a');
-        if (link && link.href) {
+        const rawHref = link?.getAttribute('href');
+        const target = to ?? rawHref;
+        if (link && target) {
             ev.stopPropagation();
             ev.preventDefault();
-            navigate(link.href, { replace });
+            navigate(target, { replace });
             onClick?.(ev);
         }
     }
