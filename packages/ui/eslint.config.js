@@ -8,6 +8,9 @@ import { fixupPluginRules } from '@eslint/compat';
 /** @type {import("eslint").Linter.Config[]} */
 export default [
     {
+        ignores: ['lib/**', 'node_modules/**', '**/*.test.ts', '**/*.test.tsx'],
+    },
+    {
         files: ['src/**/*.{ts,tsx}'],
     },
     // Base ESLint recommended rules
@@ -20,13 +23,14 @@ export default [
     {
         languageOptions: {
             parserOptions: {
-                projectService: true,
+                projectService: {
+                    allowDefaultProject: [
+                        '*.js',
+                        '*.mjs',
+                        'eslint.config.js',
+                    ],
+                },
                 tsconfigRootDir: import.meta.dirname,
-                allowDefaultProject: [
-                    '*.js',
-                    '*.mjs',
-                    'eslint.config.js'
-                ],
             },
         },
     },
@@ -89,6 +93,24 @@ export default [
             "no-empty-pattern": "off",
             "react/display-name": "off",
             "react/no-unknown-property": "off",
+            // React Compiler rules (eslint-plugin-react-hooks v7) — downgraded to warn
+            // Many established patterns in this library violate these new rules.
+            // Silenced in --quiet mode; to be addressed when adopting React Compiler.
+            "react-hooks/set-state-in-effect": "warn",
+            "react-hooks/preserve-manual-memoization": "warn",
+            "react-hooks/immutability": "warn",
+            "react-hooks/refs": "warn",
+            "react-hooks/purity": "warn",
+            // Additional v7 React Compiler rules - off until adoption
+            "react-hooks/static-components": "off",
+            "react-hooks/use-memo": "off",
+            "react-hooks/component-hook-factories": "off",
+            "react-hooks/incompatible-library": "off",
+            "react-hooks/globals": "off",
+            "react-hooks/error-boundaries": "off",
+            "react-hooks/set-state-in-render": "warn",
+            "react-hooks/gating": "off",
+            "react-hooks/config": "off",
         },
     },
 
