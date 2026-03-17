@@ -1,4 +1,4 @@
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 import { CollectionItem } from "@vertesia/common";
@@ -130,7 +130,28 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
         return collections.filter(col => col.name.toLowerCase().includes(queryLower));
     }, [collections, useServerSearch, hasSearchQuery, searchQuery]);
 
-    const showClearOption = selectedCollection && hasSearchQuery;
+    const showClearOption = multiple
+        ? Array.isArray(selectedCollection) && selectedCollection.length > 0
+        : !!selectedCollection;
+
+    const renderTrailingIcon = () => {
+        if (showClearOption) {
+            return (
+                <span
+                    role="button"
+                    aria-label="Clear selection"
+                    className="ml-2 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive cursor-pointer"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleClear();
+                    }}
+                >
+                    <X className="h-4 w-4" />
+                </span>
+            );
+        }
+        return <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />;
+    };
 
     // Show error state
     if (error) {
@@ -167,7 +188,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                     <span className="truncate flex-1 text-left min-w-0">
                         {getDisplayText()}
                     </span>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    {renderTrailingIcon()}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="mt-2 mb-2 w-[var(--radix-popover-trigger-width)] p-0" align="start">
@@ -196,11 +217,22 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                     </CommandEmpty>
                     <CommandGroup className="max-h-[300px] overflow-auto">
                         {
-                            showClearOption && !multiple && (
+                            showClearOption && !hasSearchQuery && (
                                 <CommandItem
                                     value="__clear__"
                                     onSelect={handleClear}
-                                    className="text-muted-foreground"
+                                    className="text-destructive"
+                                >
+                                    Remove collection selection(s)
+                                </CommandItem>
+                            )
+                        }
+                        {
+                            hasSearchQuery && (
+                                <CommandItem
+                                    value="__clear_search__"
+                                    onSelect={() => setSearchQuery("")}
+                                    className="text-muted"
                                 >
                                     {t('store.clearSelection')}
                                 </CommandItem>
