@@ -93,22 +93,20 @@ export default [
             "no-empty-pattern": "off",
             "react/display-name": "off",
             "react/no-unknown-property": "off",
-            // React Compiler rules (eslint-plugin-react-hooks v7) — downgraded to warn
-            // Many established patterns in this library violate these new rules.
-            // Silenced in --quiet mode; to be addressed when adopting React Compiler.
-            "react-hooks/set-state-in-effect": "warn",
-            "react-hooks/preserve-manual-memoization": "warn",
-            "react-hooks/immutability": "warn",
-            "react-hooks/refs": "warn",
-            "react-hooks/purity": "warn",
-            // Additional v7 React Compiler rules - off until adoption
+            // eslint-plugin-react-hooks v7 React Compiler rules.
+            "react-hooks/immutability": "warn",     // prop/state mutation
+            "react-hooks/refs": "warn",             // ref.current in dep arrays
+            "react-hooks/set-state-in-render": "warn", // setState during render risks infinite loops
+            // Rules that are RC-optimization hints only — off without React Compiler:
+            "react-hooks/set-state-in-effect": "off",          // legitimate async setState pattern without RC
+            "react-hooks/preserve-manual-memoization": "off",  // manual memoization IS best practice without RC
+            "react-hooks/purity": "off",                       // fires on idiomatic useRef(Date.now())
             "react-hooks/static-components": "off",
             "react-hooks/use-memo": "off",
             "react-hooks/component-hook-factories": "off",
             "react-hooks/incompatible-library": "off",
             "react-hooks/globals": "off",
             "react-hooks/error-boundaries": "off",
-            "react-hooks/set-state-in-render": "warn",
             "react-hooks/gating": "off",
             "react-hooks/config": "off",
         },
