@@ -3,7 +3,7 @@ import { AgentSearchScope, ConversationVisibility, ExecutionEnvironmentRef, InCo
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
 
 export type WorkflowMode = 'start' | 'schedule';
 
@@ -12,6 +12,26 @@ export interface ScheduledWorkflowConfig {
     description?: string;
     cron_expression: string;
     timezone: string;
+}
+
+export class PayloadBuilderStore {
+    private _listeners = new Set<() => void>();
+    snapshot: PayloadBuilder;
+
+    constructor(client: VertesiaClient) {
+        this.snapshot = new PayloadBuilder(client, this);
+    }
+
+    subscribe = (listener: () => void) => {
+        this._listeners.add(listener);
+        return () => { this._listeners.delete(listener); };
+    };
+
+    getSnapshot = () => this.snapshot;
+
+    notify() {
+        this._listeners.forEach(listener => listener());
+    }
 }
 
 export class PayloadBuilder {
@@ -38,16 +58,20 @@ export class PayloadBuilder {
         schema: JSONSchema;
     };
 
-    constructor(public vertesia: VertesiaClient, public updateState: (data: PayloadBuilder) => void) {
+    private _store: PayloadBuilderStore;
+
+    constructor(public vertesia: VertesiaClient, store: PayloadBuilderStore) {
+        this._store = store;
     }
 
     onStateChanged() {
         const newInstance = this.clone();
-        this.updateState(newInstance);
+        this._store.snapshot = newInstance;
+        this._store.notify();
     }
 
     clone() {
-        const builder = new PayloadBuilder(this.vertesia, this.updateState);
+        const builder = new PayloadBuilder(this.vertesia, this._store);
         builder._interactionParamsSchema = this._interactionParamsSchema;
         builder._interaction = this._interaction;
         builder._data = this._data;
@@ -433,11 +457,9 @@ interface PayloadProviderProps {
 }
 export function PayloadBuilderProvider({ children }: PayloadProviderProps) {
     const { client } = useUserSession();
-    const [builder, setBuilder] = useState<PayloadBuilder>();
-    useEffect(() => {
-        setBuilder(new PayloadBuilder(client, setBuilder));
-    }, []);
-    return builder && (
+    const [store] = useState(() => new PayloadBuilderStore(client));
+    const builder = useSyncExternalStore(store.subscribe, store.getSnapshot);
+    return (
         <PayloadContext.Provider value={builder}>{children}</PayloadContext.Provider >
     )
 }
