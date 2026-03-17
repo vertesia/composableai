@@ -7,7 +7,7 @@ import {
     ModalTitle,
     Input,
     RadioGroup,
-    RadioOptionAdapter,
+    RadioGroupAdapter,
     FormItem
 } from '@vertesia/ui/core';
 
@@ -26,25 +26,11 @@ interface SaveOptionType {
     description: string;
 }
 
-class SaveOptionAdapter extends RadioOptionAdapter<SaveOptionType> {
-    labelOf(item: SaveOptionType): string {
-        return item.label;
-    }
-
-    idOf(item: SaveOptionType): string {
-        return item.id;
-    }
-
-    renderOption(item: SaveOptionType): React.ReactNode {
-        return (
-            <div>
-                <div className="font-medium">{item.label}</div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {item.description}
-                </p>
-            </div>
-        );
-    }
+class SaveOptionAdapter extends RadioGroupAdapter<SaveOptionType> {
+    idOf(item: SaveOptionType): string { return item.id }
+    labelOf(item: SaveOptionType): string { return item.label }
+    descriptionOf(item: SaveOptionType): React.ReactNode { return item.description }
+    selectedClassName(_item: SaveOptionType): string { return 'border-3 border-primary' }
 }
 
 export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading, uploadedFileName }: SaveVersionConfirmModalProps) {
@@ -108,9 +94,8 @@ export function SaveVersionConfirmModal({ isOpen, onClose, onConfirm, isLoading,
                     <RadioGroup
                         adapter={optionAdapter}
                         options={saveOptions}
-                        value={selectedOption}
-                        onChange={handleOptionChange}
-                        gap="gap-4"
+                        selected={selectedOption}
+                        onSelect={handleOptionChange}
                     />
 
                     {createVersion && (
