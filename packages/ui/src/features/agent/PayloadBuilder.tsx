@@ -72,6 +72,14 @@ export class PayloadBuilder {
     set mode(mode: 'start' | 'schedule') {
         if (mode !== this._mode) {
             this._mode = mode;
+            if (mode === 'schedule' && !this._scheduledWorkflowConfig) {
+                this._scheduledWorkflowConfig = {
+                    name: '',
+                    description: '',
+                    cron_expression: '0 9 * * *',
+                    timezone: 'UTC'
+                } as ScheduledWorkflowConfig;
+            }
             this.onStateChanged();
         }
     }
@@ -87,6 +95,14 @@ export class PayloadBuilder {
 
     get scheduledWorkflowConfig() {
         return this._scheduledWorkflowConfig;
+    }
+
+    updateScheduledWorkflowConfig(patch: Partial<ScheduledWorkflowConfig>) {
+        this._scheduledWorkflowConfig = {
+            ...this._scheduledWorkflowConfig,
+            ...patch
+        } as ScheduledWorkflowConfig;
+        this.onStateChanged();
     }
 
     get interactive() {
@@ -297,6 +313,10 @@ export class PayloadBuilder {
             this._start = value;
             this.onStateChanged();
         }
+    }
+
+    markStarted() {
+        this.start = true;
     }
 
     get start(): boolean {
