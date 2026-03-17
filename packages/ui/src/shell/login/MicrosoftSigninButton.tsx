@@ -6,15 +6,11 @@ import { useUITranslation } from "@vertesia/ui/i18n";
 interface GoogleSignInButtonProps {
     redirectTo?: string;
 }
-export default function MicrosoftSignInButton({ redirectTo }: GoogleSignInButtonProps) {
+export default function MicrosoftSignInButton({ redirectTo: _redirectTo }: GoogleSignInButtonProps) {
     const { t } = useUITranslation();
 
     const signIn = () => {
         localStorage.removeItem("tenantName");
-        let redirectPath = redirectTo || window.location.pathname || '/';
-        if (redirectPath[0] !== '/') {
-            redirectPath = '/' + redirectPath;
-        }
         const provider = new OAuthProvider('microsoft.com');
         provider.addScope('profile');
         provider.addScope('email');

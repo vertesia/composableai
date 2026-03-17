@@ -43,7 +43,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
     }, [collection.table_layout]);
 
     const onSubmit = () => {
-        let query: any = undefined;
+        let query: any;
         try {
             query = metadata.query ? JSON.parse(metadata.query) : undefined;
         } catch (err: any) {

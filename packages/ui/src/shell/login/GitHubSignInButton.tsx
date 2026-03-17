@@ -10,12 +10,6 @@ export default function GitHubSignInButton({ }: GitHubSignInButtonProps) {
     const { t } = useUITranslation();
     const signIn = () => {
         localStorage.removeItem("tenantName");
-        //with github can only have one allowed redirect
-        const baseUrl = "https://dengenlabs.firebaseapp.com/__/auth/handler";
-        let redirectPath = baseUrl + window.location.pathname;
-        if (redirectPath[0] !== "/") {
-            redirectPath = "/" + redirectPath;
-        }
         const provider = new GithubAuthProvider();
         provider.addScope("profile");
         provider.addScope("email");
