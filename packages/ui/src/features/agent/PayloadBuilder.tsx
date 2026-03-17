@@ -343,6 +343,21 @@ export class PayloadBuilder {
         this.start = true;
     }
 
+    // Method-style setters for use in React components (avoids react-hooks/immutability lint errors)
+    setMode(mode: 'start' | 'schedule') { this.mode = mode; }
+    setInteraction(interaction: InCodeInteraction | undefined) { this.interaction = interaction; }
+    setEnvironment(environment: ExecutionEnvironmentRef | undefined) { this.environment = environment; }
+    setModel(model: string | undefined) { this.model = model; }
+    setToolNames(tools: string[]) { this.tool_names = tools; }
+    setCollection(collection: string | undefined) { this.collection = collection; }
+    setInteractive(interactive: boolean) { this.interactive = interactive; }
+    setDebugMode(debug_mode: boolean) { this.debug_mode = debug_mode; }
+    setUserChannels(channels: UserChannel[] | undefined) { this.user_channels = channels; }
+    setCheckpointTokens(value: number | undefined) { this.checkpoint_tokens = value; }
+    setVisibility(value: ConversationVisibility | undefined) { this.visibility = value; }
+    setData(data: JSONObject) { this.data = data; }
+    setPreserveRunValues(value: boolean) { this.preserveRunValues = value; }
+
     get start(): boolean {
         return this._start;
     }
