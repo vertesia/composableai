@@ -2,6 +2,7 @@ import { Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
+import { createActivitiesRoute } from "./server/activities.js";
 import { createInteractionsRoute } from "./server/interactions.js";
 import { createMcpRoute } from "./server/mcp.js";
 import { createSiteRoute } from "./server/site.js";
@@ -48,6 +49,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
         interactions = [],
         skills = [],
         templates = [],
+        activities = [],
         mcpProviders = [],
         disableHtml = false,
     } = config;
@@ -98,6 +100,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
                 tools: allToolEndpoints,
                 interactions: interactions.map(col => `${prefix}/interactions/${col.name}`),
                 templates: templates.map(col => `${prefix}/templates/${col.name}`),
+                activities: activities.map(col => `${prefix}/activities/${col.name}`),
                 mcp: mcpProviders.map(p => `${prefix}/mcp/${p.name}`),
             }
         });
@@ -108,6 +111,7 @@ export function createToolServer(config: ToolServerConfig): Hono {
     createToolsRoute(app, `${prefix}/tools`, config);
     createSkillsRoute(app, `${prefix}/skills`, config);
     createWidgetsRoute(app, `${prefix}/widgets`, config);
+    createActivitiesRoute(app, `${prefix}/activities`, config);
     createInteractionsRoute(app, `${prefix}/interactions`, config);
     createTemplatesRoute(app, `${prefix}/templates`, config);
     createContentTypesRoute(app, `${prefix}/types`, config);

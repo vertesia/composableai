@@ -1,6 +1,8 @@
 import { AgentMessage, AgentMessageType, BatchProgressDetails, Plan } from "@vertesia/common";
 import React, { useEffect, useMemo, useState, useRef, useCallback, Component, ReactNode } from "react";
 import { cn } from "@vertesia/ui/core";
+import { useUITranslation } from '../../../../i18n/index.js';
+import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 export type AgentConversationViewMode = "stacked" | "sliding";
 import BatchProgressPanel, { type BatchProgressPanelClassNames } from "./BatchProgressPanel";
@@ -8,7 +10,7 @@ import MessageItem, { type MessageItemClassNames, type MessageItemProps } from "
 import StreamingMessage, { type StreamingMessageClassNames } from "./StreamingMessage";
 import ToolCallGroup, { type ToolCallGroupClassNames } from "./ToolCallGroup";
 import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from "./WorkstreamTabs";
-import { DONE_STATES, getSlidingViewMessageBuckets, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, StreamingData } from "./utils";
+import { DONE_STATES, getSlidingViewMessageBuckets, getWorkstreamId, groupMessagesWithStreaming, mergeConsecutiveToolGroups, RenderableGroup, shouldCollapseAdjacentRenderedMessage, StreamingData } from "./utils";
 import { ThinkingMessages } from "../WaitingMessages";
 
 /** Extended group that may carry preamble info (text from a preceding single/streaming message) */
@@ -82,19 +84,6 @@ const isBatchProgressMessage = (message: AgentMessage): message is AgentMessage 
     return message.type === AgentMessageType.BATCH_PROGRESS && !!message.details?.batch_id;
 };
 
-const shouldDedupeAdjacentMessage = (previous: AgentMessage, current: AgentMessage): boolean => {
-    if (previous.type !== current.type) return false;
-    if (previous.message !== current.message) return false;
-
-    const prevDetails = previous.details as { tool_status?: string } | undefined;
-    const currDetails = current.details as { tool_status?: string } | undefined;
-    if (prevDetails?.tool_status !== "completed" || currDetails?.tool_status !== "completed") return false;
-
-    const prevTs = typeof previous.timestamp === "number" ? previous.timestamp : new Date(previous.timestamp).getTime();
-    const currTs = typeof current.timestamp === "number" ? current.timestamp : new Date(current.timestamp).getTime();
-    return currTs - prevTs < 2000;
-};
-
 // Error boundary to catch and isolate errors in individual message components
 // Note: Markdown parsing errors are handled internally by MarkdownRenderer,
 // so this mainly catches other component errors (e.g., artifact loading, charts)
@@ -124,7 +113,7 @@ class MessageErrorBoundary extends Component<
         if (this.state.hasError) {
             return (
                 <div className="border-l-4 border-l-destructive bg-destructive/10 px-4 py-2 my-2 rounded-r">
-                    <p className="text-sm text-destructive font-medium">Failed to render message</p>
+                    <p className="text-sm text-destructive font-medium">{i18nInstance.getFixedT(null, NAMESPACE)('agent.failedToRenderMessage')}</p>
                     <p className="text-xs text-muted mt-1 truncate">
                         {this.state.error?.message || 'Unknown error'}
                     </p>
@@ -208,6 +197,7 @@ function AllMessagesMixedComponent({
         console.warn('[AllMessagesMixed] artifactRunId prop is missing!');
     }
 
+    const { t } = useUITranslation();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [activeWorkstream, setActiveWorkstream] = useState<string>("all");
 
@@ -309,7 +299,11 @@ function AllMessagesMixedComponent({
             const deduped: AgentMessage[] = [];
             for (const msg of sorted) {
                 const previous = deduped[deduped.length - 1];
-                if (previous && shouldDedupeAdjacentMessage(previous, msg)) {
+                if (previous && shouldCollapseAdjacentRenderedMessage(previous, msg)) {
+                    continue;
+                }
+
+                if (previous && shouldDedupeAdjacentCompletedToolMessage(previous, msg)) {
                     continue;
                 }
                 deduped.push(msg);
@@ -388,9 +382,13 @@ function AllMessagesMixedComponent({
             // If a newer persisted message exists, this stream is stale and should be
             // treated as complete for ordering purposes.
             const isStale = data.startTimestamp <= newestMessageTimestamp;
-            if (data.isComplete || isStale) {
+            if (isStale) {
+                // Only interleave chronologically when a newer persisted message
+                // already exists — the streaming message is truly historical.
                 complete.set(id, data);
             } else if (data.text) {
+                // Keep at the bottom (including isComplete streams) until
+                // the persisted ANSWER/THOUGHT arrives and replaces it.
                 incomplete.push({ id, data });
             }
         });
@@ -556,8 +554,8 @@ function AllMessagesMixedComponent({
                 <div className="flex items-center justify-center h-full text-center py-8">
                     <div className="flex items-center px-3 py-2 text-sm text-muted">
                         {activeWorkstream === "all"
-                            ? "Waiting for agent response..."
-                            : "No messages in this workstream yet..."}
+                            ? t('agent.waitingForAgentResponse')
+                            : t('agent.noMessagesInWorkstream')}
                     </div>
                 </div>
             ) : (
@@ -665,7 +663,7 @@ function AllMessagesMixedComponent({
                                     key={`streaming-incomplete-${id}`}
                                     text={data.text}
                                     workstreamId={data.workstreamId}
-                                    isComplete={false}
+                                    isComplete={data.isComplete}
                                     timestamp={data.startTimestamp}
                                     artifactRunId={artifactRunId}
                                     {...streamingMessageClassNames}
@@ -675,7 +673,7 @@ function AllMessagesMixedComponent({
                             {isAgentWorking && incompleteStreaming.length === 0 && (
                                 <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-xs text-muted">Working...</span>
+                                    <span className="text-xs text-muted">{t('agent.working')}</span>
                                 </div>
                             )}
                         </>
@@ -780,7 +778,7 @@ function AllMessagesMixedComponent({
                                     key={`streaming-incomplete-${id}`}
                                     text={data.text}
                                     workstreamId={data.workstreamId}
-                                    isComplete={false}
+                                    isComplete={data.isComplete}
                                     timestamp={data.startTimestamp}
                                     artifactRunId={artifactRunId}
                                     {...streamingMessageClassNames}
@@ -790,7 +788,7 @@ function AllMessagesMixedComponent({
                             {isAgentWorking && recentThinking.length === 0 && incompleteStreaming.length === 0 && (
                                 <div className={cn("flex items-center gap-2 pl-3 py-1.5 border-l-2 border-l-purple-500", workingIndicatorClassName)}>
                                     <PulsatingCircle size="sm" color="blue" />
-                                    <span className="text-xs text-muted">Working...</span>
+                                    <span className="text-xs text-muted">{t('agent.working')}</span>
                                 </div>
                             )}
                         </>
@@ -801,6 +799,19 @@ function AllMessagesMixedComponent({
         </div>
     );
 }
+
+const shouldDedupeAdjacentCompletedToolMessage = (previous: AgentMessage, current: AgentMessage): boolean => {
+    if (previous.type !== current.type) return false;
+    if (previous.message !== current.message) return false;
+
+    const prevDetails = previous.details as { tool_status?: string } | undefined;
+    const currDetails = current.details as { tool_status?: string } | undefined;
+    if (prevDetails?.tool_status !== "completed" || currDetails?.tool_status !== "completed") return false;
+
+    const prevTs = typeof previous.timestamp === "number" ? previous.timestamp : new Date(previous.timestamp).getTime();
+    const currTs = typeof current.timestamp === "number" ? current.timestamp : new Date(current.timestamp).getTime();
+    return currTs - prevTs < 2000;
+};
 
 const AllMessagesMixed = React.memo(AllMessagesMixedComponent);
 

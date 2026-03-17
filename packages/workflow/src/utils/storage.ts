@@ -25,26 +25,27 @@ export async function saveAgentArtifact(
     name: string,
     fileContent: Readable,
     mimeType: string = "application/json",
+    storageId?: string,
 ) {
-    const { runId } = activityInfo().workflowExecution;
+    const id = storageId || activityInfo().workflowExecution.runId;
     const ext = mime.getExtension(mimeType);
     if (!name) {
         throw ApplicationFailure.nonRetryable(`Name is required`);
     }
 
     //create the file path and append extension if needed
-    const filePath = agentStoragePath(runId) + "/" + name + (ext && !name.endsWith(ext) ? "." + ext : "");
+    const filePath = agentStoragePath(id) + "/" + name + (ext && !name.endsWith(ext) ? "." + ext : "");
 
     try {
-        const source = new NodeStreamSource(fileContent, `${runId}-${basename(filePath)}`, mimeType, filePath);
+        const source = new NodeStreamSource(fileContent, `${id}-${basename(filePath)}`, mimeType, filePath);
         return await client.files.uploadFile(source);
     } catch (err: any) {
-        log.error(`Failed to save agent artifact for run ${runId}`, {
+        log.error(`Failed to save agent artifact for run ${id}`, {
             err,
             file: filePath,
         });
         throw ApplicationFailure.nonRetryable(
-            `Failed to save agent artifact for run ${runId}`,
+            `Failed to save agent artifact for run ${id}`,
             "SaveAgentArtifactError",
             {
                 error: err,
@@ -53,8 +54,8 @@ export async function saveAgentArtifact(
     }
 }
 
-export async function fetchAgentArtifact(client: VertesiaClient, name: string) {
-    const { runId } = activityInfo().workflowExecution;
-    const filePath = agentStoragePath(runId) + "/" + name;
+export async function fetchAgentArtifact(client: VertesiaClient, name: string, storageId?: string) {
+    const id = storageId || activityInfo().workflowExecution.runId;
+    const filePath = agentStoragePath(id) + "/" + name;
     return fetchBlobAsBuffer(client, filePath);
 }

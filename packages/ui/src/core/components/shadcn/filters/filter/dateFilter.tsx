@@ -4,6 +4,7 @@ import Calendar from "react-calendar";
 import { Button } from "../../button";
 import { Filter, FilterGroup } from "../types";
 import { calendarStyles } from "../filter-styles";
+import { useUITranslation } from '../../../../../i18n/index.js';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -27,6 +28,7 @@ export default function DateFilter({
   handleClose,
   filterGroups,
 }: DateFilterProps) {
+  const { t } = useUITranslation();
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [localDateRange, setLocalDateRange] = useState<[Date | null, Date | null]>([null, null]);
 
@@ -129,16 +131,16 @@ export default function DateFilter({
       if (effectiveDateRange[0] && effectiveDateRange[1]) {
         return (
           <span className="flex items-center gap-2">
-            <span className="text-xs text-muted">From:</span>
+            <span className="text-xs text-muted">{t('filter.from')}</span>
             <span className="text-xs font-medium">{dayjs(effectiveDateRange[0]).format("MMMM DD, YYYY")}</span>
-            <span className="text-xs text-muted">To:</span>
+            <span className="text-xs text-muted">{t('filter.to')}</span>
             <span className="text-xs font-medium">{dayjs(effectiveDateRange[1]).format("MMMM DD, YYYY")}</span>
           </span>
         );
       } else if (effectiveDateRange[0]) {
         return (
           <span className="flex items-center gap-2">
-            <span className="text-xs text-muted">From:</span>
+            <span className="text-xs text-muted">{t('filter.from')}</span>
             <span className="text-xs font-medium">{dayjs(effectiveDateRange[0]).format("MMMM DD, YYYY")}</span>
             <span className="text-xs text-muted">→ Select end date</span>
           </span>

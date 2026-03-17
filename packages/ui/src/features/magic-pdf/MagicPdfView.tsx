@@ -3,6 +3,7 @@ import { Button, ErrorBox, ResizableHandle, ResizablePanel, ResizablePanelGroup,
 import { useUserSession } from "@vertesia/ui/session";
 import { X } from "lucide-react";
 import { Component, ErrorInfo, ReactNode, useState } from "react";
+import { useUITranslation, i18nInstance, NAMESPACE } from '../../i18n/index.js';
 import { PdfPageSlider } from "../pdf-viewer/PdfPageSlider";
 import { AnnotatedImageSlider } from "./AnnotatedImageSlider";
 import { DownloadPopover } from "./DownloadPopover";
@@ -37,7 +38,7 @@ class PdfViewErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             return (
                 <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
                     <div className="flex flex-col items-center gap-4 p-8 max-w-md">
-                        <ErrorBox title="Failed to load PDF viewer">
+                        <ErrorBox title={i18nInstance.t('pdf.failedToLoadViewer', { ns: NAMESPACE })}>
                             {this.state.error?.message || 'An unexpected error occurred'}
                         </ErrorBox>
                         {this.props.onClose && (
@@ -59,6 +60,7 @@ interface MagicPdfViewProps {
     onClose?: () => void;
 }
 export function MagicPdfView({ objectId, onClose }: MagicPdfViewProps) {
+    const { t } = useUITranslation();
     const { client } = useUserSession();
 
     const { data: object, error } = useFetch(() => client.store.objects.retrieve(objectId, "+text"), [objectId]);
@@ -67,7 +69,7 @@ export function MagicPdfView({ objectId, onClose }: MagicPdfViewProps) {
         return (
             <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4 p-8 max-w-md">
-                    <ErrorBox title="Fetching document failed">{error.message}</ErrorBox>
+                    <ErrorBox title={t('pdf.fetchingDocumentFailed')}>{error.message}</ErrorBox>
                     {onClose && (
                         <Button variant="outline" onClick={onClose}>
                             Close
@@ -88,7 +90,7 @@ export function MagicPdfView({ objectId, onClose }: MagicPdfViewProps) {
                             variant="ghost"
                             size="xs"
                             onClick={onClose}
-                            alt="Close"
+                            alt={t('pdf.close')}
                         >
                             <X className='size-4' />
                         </Button>
@@ -117,6 +119,7 @@ interface _MagicPdfViewProps {
     onClose?: () => void;
 }
 function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
+    const { t } = useUITranslation();
     const { count: totalPages, pdfUrl, pdfUrlLoading } = useMagicPdfContext();
 
     const getProcessorType = (): "xml" | "markdown" => {
@@ -151,7 +154,7 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                             <DownloadPopover object={object} />
                         </div>
                         <span className="text-xs text-muted-foreground">
-                            Page {pageNumber} / {totalPages}
+                            {t('pdf.pageOf', { pageNumber, totalPages })}
                         </span>
                         <div className="flex items-center gap-x-2">
                             {!!onClose && (
@@ -159,7 +162,7 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                                     variant="ghost"
                                     size="xs"
                                     onClick={onClose}
-                                    alt="Close"
+                                    alt={t('pdf.close')}
                                 >
                                     <X className='size-4' />
                                 </Button>
@@ -196,7 +199,7 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                         <DownloadPopover object={object} />
                     </div>
                     <span className="text-xs text-muted-foreground">
-                        Page {pageNumber} / {totalPages}
+                        {t('pdf.pageOf', { pageNumber, totalPages })}
                     </span>
                     <div className="flex items-center gap-x-2">
                         {!!onClose && (
@@ -204,7 +207,7 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                                 variant="ghost"
                                 size="xs"
                                 onClick={onClose}
-                                alt="Close"
+                                alt={t('pdf.close')}
                             >
                                 <X className='size-4' />
                             </Button>

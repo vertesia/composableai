@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { UploadIcon } from "lucide-react";
 import { Button } from "@vertesia/ui/core";
+import { useUITranslation } from "@vertesia/ui/i18n";
 
 /**
  * Props for the DropZone component
@@ -46,10 +47,12 @@ export interface DropZoneProps {
 export function DropZone({
     onDrop,
     message,
-    buttonLabel = "Upload Files",
+    buttonLabel,
     allowFolders = true,
     className = ""
 }: DropZoneProps) {
+    const { t } = useUITranslation();
+    const resolvedButtonLabel = buttonLabel ?? t('upload.uploadFiles');
     const [isDragging, setIsDragging] = useState(false);
     const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -147,12 +150,9 @@ export function DropZone({
 
                     let message = "";
                     if (folderCount > 0) {
-                        message =
-                            folderCount === 1
-                                ? `Preparing to upload 1 folder with ${fileCount} files...`
-                                : `Preparing to upload ${folderCount} folders with ${fileCount} files...`;
+                        message = t('upload.preparingFolder', { count: folderCount, folderCount, fileCount });
                     } else {
-                        message = `Preparing to upload ${fileCount} file${fileCount === 1 ? "" : "s"}...`;
+                        message = t('upload.preparingFiles', { count: fileCount });
                     }
 
                     onDrop(files, { count: files.length, message });
@@ -191,10 +191,7 @@ export function DropZone({
                 const fileCount = fileArray.length;
 
                 // Create custom message with folder info
-                const formattedMessage =
-                    folderCount === 1
-                        ? `Preparing to upload 1 folder with ${fileCount} files...`
-                        : `Preparing to upload ${folderCount} folders with ${fileCount} files...`;
+                const formattedMessage = t('upload.preparingFolder', { count: folderCount, folderCount, fileCount });
 
                 const customMessage = {
                     count: fileArray.length,
@@ -206,7 +203,7 @@ export function DropZone({
                 // Regular file upload
                 const feedback = {
                     count: fileArray.length,
-                    message: `Preparing to upload ${fileArray.length} file${fileArray.length === 1 ? "" : "s"}...`,
+                    message: t('upload.preparingFiles', { count: fileArray.length }),
                 };
                 onDrop(fileArray, feedback);
             }
@@ -250,8 +247,8 @@ export function DropZone({
             <p className="text-muted">{message}</p>
 
             <div className="flex gap-2 justify-center mt-2">
-                <Button onClick={selectFile}>{buttonLabel}</Button>
-                {allowFolders && (<Button onClick={selectFolder}>Select Folder</Button>)}
+                <Button onClick={selectFile}>{resolvedButtonLabel}</Button>
+                {allowFolders && (<Button onClick={selectFolder}>{t('upload.selectFolder')}</Button>)}
             </div>
 
         </div>

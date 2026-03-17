@@ -7,6 +7,7 @@ import { cn } from "../libs/utils"
 import { Check, CopyIcon, Loader2 } from "lucide-react"
 import clsx from "clsx"
 import { useState } from "react"
+import { i18nInstance, NAMESPACE } from '../../../i18n/instance.js'
 
 const buttonVariants = cva(
   "hover:cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -107,6 +108,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
   ({ size, content, toast, className, alt, ...props }, ref) => {
 
     const [isCopied, setIsCopied] = useState(false);
+    const t = i18nInstance.getFixedT(null, NAMESPACE);
 
     const handleCopy = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -118,7 +120,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
         }
         toast.toast({
           status: "success",
-          title: toast.message || "Copied to clipboard",
+          title: toast.message || t('misc.copiedToClipboard'),
           duration: 2000,
         })
       }).catch((err) => {
@@ -126,7 +128,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
         if (toast && toast.toast)
           toast.toast({
             status: "error",
-            title: "Failed to copy",
+            title: t('misc.failedToCopy'),
             duration: 2000,
           })
       })
@@ -140,7 +142,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
         size={size || "sm"}
         onClick={handleCopy}
         {...props}
-        alt={alt ?? "Copy"}
+        alt={alt ?? t('misc.copy')}
       >
         {isCopied ? 
           <Check className="text-success" />
