@@ -22,7 +22,6 @@ export * from "./shadcn/index.js";
 export * from "./SidePanel.js";
 export * from "./Spinner.js";
 export * from "./styles.js";
-// export * from "./Switch.js";
 export * from "./table/index.js";
 export * from "./TagsInput.js";
 export * from "./toast/index.js";
