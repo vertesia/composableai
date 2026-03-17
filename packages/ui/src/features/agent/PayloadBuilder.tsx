@@ -53,6 +53,7 @@ export class PayloadBuilder {
     _scheduledWorkflowConfig: ScheduledWorkflowConfig | undefined;
 
     private _interactionParamsSchema?: JSONSchema | null;
+    private _schemaVersion = 0;
     private _inputValidator?: {
         validate: ValidateFunction;
         schema: JSONSchema;
@@ -73,6 +74,7 @@ export class PayloadBuilder {
     clone() {
         const builder = new PayloadBuilder(this.vertesia, this._store);
         builder._interactionParamsSchema = this._interactionParamsSchema;
+        builder._schemaVersion = this._schemaVersion;
         builder._interaction = this._interaction;
         builder._data = this._data;
         builder._environment = this._environment;
@@ -370,6 +372,10 @@ export class PayloadBuilder {
         this._preserveRunValues = value;
     }
 
+    get schemaVersion(): number {
+        return this._schemaVersion;
+    }
+
     get interactionParamsSchema(): JSONSchema | null | undefined {
         return this._interactionParamsSchema;
     }
@@ -377,6 +383,7 @@ export class PayloadBuilder {
     set interactionParamsSchema(schema: JSONSchema | null | undefined) {
         if (this._interactionParamsSchema !== schema) {
             this._interactionParamsSchema = schema;
+            this._schemaVersion += 1;
             // Booleans must be true or false, never undefined
             if (schema) {
                 this._data = this.initializeBooleanDefaults(this._data || {}, schema);
