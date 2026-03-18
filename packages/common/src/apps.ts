@@ -310,17 +310,17 @@ export interface AppManifestData {
      * Optional endpoint overrides keyed by environment name.
      * When resolving the app endpoint, if the current environment name matches a key,
      * the corresponding URL is used instead of the main `endpoint`.
-     * Only dev environment names are allowed as keys (starting with "dev-" or exactly "development").
+     * Only dev environment names are allowed as keys (starting with "desktop-" or "dev-").
      */
     endpoint_overrides?: Record<string, string>;
 }
 
 /**
  * Returns true if the given environment name is allowed as an endpoint override key.
- * Only "development" or names starting with "dev-" are valid.
+ * Only "desktop-" or "dev-" prefixed names are valid.
  */
 export function isValidEndpointOverrideEnv(envName: string): boolean {
-    return envName === 'development' || envName.startsWith('dev-');
+    return envName.startsWith('desktop-') || envName.startsWith('dev-');
 }
 
 /**
