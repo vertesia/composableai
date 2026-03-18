@@ -363,14 +363,15 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
     const navigate = useNavigate();
     const { downloadFromContentSource } = useDownloadFile({ client: store, toast });
 
+    const contentSource = object?.content?.source;
     return object ? (
         <SidePanel title={object.properties?.title || object.name} isOpen={true} onClose={onClose}>
             <div className="flex items-center gap-x-2">
                 <Button variant="ghost" size="sm" title="Open Object" onClick={() => navigate(`/objects/${object.id}`)}>
                     <ExternalLink className="size-4" />
                 </Button>
-                {object.content?.source && (
-                    <Button variant="ghost" size="sm" title="Download" onClick={() => downloadFromContentSource(object.content!.source!, object.name || object.content?.name)}>
+                {contentSource && (
+                    <Button variant="ghost" size="sm" title="Download" onClick={() => downloadFromContentSource(contentSource, object.name || object.content?.name)}>
                         <Download className="size-4" />
                     </Button>
                 )}
