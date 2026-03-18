@@ -150,7 +150,8 @@ export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, "p
             // Initialize all workstreams as pending
             statusMap.set(workstreamId, "pending");
         }
-        workstreamMessages.get(workstreamId)!.push(message);
+        const wsMessages = workstreamMessages.get(workstreamId);
+        wsMessages?.push(message);
     });
 
     // Log all workstreams found
@@ -479,7 +480,7 @@ export function groupMessagesWithStreaming(
                     firstTimestamp: getTimestampMs(message.timestamp),
                 });
             }
-            activityGroups.get(activityGroupId)!.messages.push(message);
+            activityGroups.get(activityGroupId)?.messages.push(message);
         } else if (isToolActivityMessage(message)) {
             const toolIteration = getToolIteration(message);
             const toolRunId = getToolRunId(message);
@@ -492,7 +493,7 @@ export function groupMessagesWithStreaming(
                         firstTimestamp: getTimestampMs(message.timestamp)
                     });
                 }
-                iterationGroups.get(toolIteration)!.messages.push(message);
+                iterationGroups.get(toolIteration)?.messages.push(message);
             } else if (toolRunId) {
                 // Fallback: group by tool_run_id if no iteration
                 if (!toolRunGroups.has(toolRunId)) {
@@ -501,7 +502,7 @@ export function groupMessagesWithStreaming(
                         firstTimestamp: getTimestampMs(message.timestamp)
                     });
                 }
-                toolRunGroups.get(toolRunId)!.messages.push(message);
+                toolRunGroups.get(toolRunId)?.messages.push(message);
             } else {
                 // No tool_iteration or tool_run_id - will use consecutive grouping
                 standaloneMessages.push(message);

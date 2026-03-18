@@ -100,7 +100,7 @@ function mergeByToolRunId(messages: AgentMessage[]): AgentMessage[] {
             if (!byRunId.has(runId)) {
                 byRunId.set(runId, []);
             }
-            byRunId.get(runId)!.push(msg);
+            byRunId.get(runId)?.push(msg);
         } else {
             result.push(msg);
         }

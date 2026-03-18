@@ -19,7 +19,7 @@ export function getFirebaseApp(): FirebaseApp {
             _firebaseApp = initializeApp(Env.firebase);
         } catch (error) {
             console.error("Failed to initialize Firebase app:", error);
-            throw new Error("Firebase initialization failed - environment may not be properly initialized");
+            throw new Error("Firebase initialization failed - environment may not be properly initialized", { cause: error });
         }
     }
     return _firebaseApp;

@@ -243,7 +243,7 @@ export function useSmartFileUploadProcessing() {
                 description: error.message,
             });
             console.log("Error in file upload processing check", error);
-            throw new Error("Error in file upload processing check: " + error.message);
+            throw new Error("Error in file upload processing check: " + error.message, { cause: error });
         }
     };
 

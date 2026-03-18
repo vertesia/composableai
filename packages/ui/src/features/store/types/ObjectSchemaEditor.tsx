@@ -143,6 +143,6 @@ const validateSchema = (schema: Record<string, any>) => {
         // against the JSON Schema draft that ajv supports by default.
         ajv.compile(schema);
     } catch (error: any) {
-        throw new Error(`Invalid JSON Schema definition: ${error.message}`);
+        throw new Error(`Invalid JSON Schema definition: ${error.message}`, { cause: error });
     }
 };

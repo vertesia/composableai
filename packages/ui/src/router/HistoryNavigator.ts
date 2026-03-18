@@ -201,7 +201,7 @@ export class HistoryNavigator {
             return;
         }
         const _popStateListener = (ev: PopStateEvent) => {
-            let type: LocationChangeType = ev.state ? 'popState' : 'linkClick';
+            let type: LocationChangeType;
             const to = new URL(window.location.href);
             let state: any = undefined;
             if (ev.state) {

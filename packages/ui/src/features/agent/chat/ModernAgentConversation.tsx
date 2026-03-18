@@ -1227,7 +1227,7 @@ const handleCloseRightPanel = useCallback(() => {
                 if (!workstreamMessages.has(workstreamId)) {
                     workstreamMessages.set(workstreamId, []);
                 }
-                workstreamMessages.get(workstreamId)!.push(message);
+                workstreamMessages.get(workstreamId)?.push(message);
             }
         });
 

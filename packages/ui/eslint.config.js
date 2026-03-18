@@ -8,6 +8,9 @@ import { fixupPluginRules } from '@eslint/compat';
 /** @type {import("eslint").Linter.Config[]} */
 export default [
     {
+        ignores: ['lib/**', 'node_modules/**', '**/*.test.ts', '**/*.test.tsx'],
+    },
+    {
         files: ['src/**/*.{ts,tsx}'],
     },
     // Base ESLint recommended rules
@@ -20,13 +23,14 @@ export default [
     {
         languageOptions: {
             parserOptions: {
-                projectService: true,
+                projectService: {
+                    allowDefaultProject: [
+                        '*.js',
+                        '*.mjs',
+                        'eslint.config.js',
+                    ],
+                },
                 tsconfigRootDir: import.meta.dirname,
-                allowDefaultProject: [
-                    '*.js',
-                    '*.mjs',
-                    'eslint.config.js'
-                ],
             },
         },
     },
@@ -89,6 +93,22 @@ export default [
             "no-empty-pattern": "off",
             "react/display-name": "off",
             "react/no-unknown-property": "off",
+            // eslint-plugin-react-hooks v7 React Compiler rules.
+            "react-hooks/immutability": "warn",     // prop/state mutation
+            "react-hooks/refs": "warn",             // ref.current in dep arrays
+            "react-hooks/set-state-in-render": "warn", // setState during render risks infinite loops
+            // Rules that are RC-optimization hints only — off without React Compiler:
+            "react-hooks/set-state-in-effect": "off",          // legitimate async setState pattern without RC
+            "react-hooks/preserve-manual-memoization": "off",  // manual memoization IS best practice without RC
+            "react-hooks/purity": "off",                       // fires on idiomatic useRef(Date.now())
+            "react-hooks/static-components": "off",
+            "react-hooks/use-memo": "off",
+            "react-hooks/component-hook-factories": "off",
+            "react-hooks/incompatible-library": "off",
+            "react-hooks/globals": "off",
+            "react-hooks/error-boundaries": "off",
+            "react-hooks/gating": "off",
+            "react-hooks/config": "off",
         },
     },
 
