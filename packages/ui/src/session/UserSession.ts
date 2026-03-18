@@ -190,6 +190,30 @@ class UserSession {
         });
     }
 
+    async fetchProjects(accountId: string) {
+        return this.client.projects.list([accountId]).then(projects => {
+            if (!this.authToken) {
+                throw new Error('No token available');
+            }
+            this.authToken = {
+                ...this.authToken,
+                accounts: this.authToken.accounts?.map(account => {
+                    if (account.id === accountId) {
+                        return {
+                            ...account,
+                            projects: projects.filter(project => project.account === accountId)
+                        }
+                    }
+                    return account;
+                })
+            };
+            this.setSession?.(this.clone());
+        }).catch(err => {
+            console.error('Failed to fetch projects', err);
+            throw err;
+        });
+    }
+
     async fetchOnboardingStatus(): Promise<boolean> {
         if (this.onboardingComplete) {
             console.log('Onboarding already completed');
