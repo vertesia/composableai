@@ -109,7 +109,11 @@ export function useArtifacts(
 
             const prefix = `agents/${runId}/`;
             const relatives = paths
-                .map((p) => (p.startsWith(prefix) ? p.slice(prefix.length) : p.split('/').pop() ?? p))
+                .map((p) => {
+                    const idx = p.indexOf(prefix);
+                    if (idx !== -1) return p.slice(idx + prefix.length);
+                    return p.split('/').pop() ?? p;
+                })
                 .filter((p) => p && !isInternalFile(p));
 
             setFlatFiles(relatives);
