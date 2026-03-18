@@ -1,0 +1,19 @@
+{
+  "access.account": "Account",
+  "access.denied": "Access Denied",
+  "access.noPermission": "You don't have permission to view the {{name}} app in project: «{{project}}».",
+  "access.project": "Project",
+  "access.selectAccount": "Select Account",
+  "access.selectProject": "Select Project",
+  "access.switchPrompt": "Switch to a different account or project to access this app.",
+  "nav.conversation": "Conversation",
+  "nav.home": "Home",
+  "nav.newChat": "New Chat",
+  "nav.pluginAssistant": "Plugin Assistant",
+  "nav.signOut": "Sign out",
+  "nav.templateDescription": "This is the plugin template. Use it as a starting point to build your own plugin UI.",
+  "nav.today": "Today",
+  "nav.tryAgentChat": "Try the Agent Chat",
+  "nav.welcome": "Welcome, {{name}}!",
+  "nav.yesterday": "Yesterday"
+}

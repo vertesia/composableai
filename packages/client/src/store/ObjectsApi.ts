@@ -1,6 +1,8 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic } from "@vertesia/api-fetch-client";
 import {
+    BulkObjectCreateResult,
     BulkObjectDeleteResult,
+    BulkObjectUpdateResult,
     canGenerateRendition,
     ComplexSearchPayload,
     ComputeObjectFacetPayload,
@@ -44,10 +46,14 @@ export interface ComputeFacetsResponse {
 export interface SearchResponse {
     results: ContentObjectItem[];
     facets: ComputeFacetsResponse;
+    /** Raw ES aggregation results. Only present when aggs were requested and ES backend was used. */
+    aggregations?: Record<string, unknown>;
 }
 
 export class ObjectsApi extends ApiTopic {
-    constructor(parent: ClientBase) {
+    declare client: ZenoClient;
+
+    constructor(parent: ZenoClient) {
         super(parent, "/api/v1/objects");
     }
 
@@ -92,6 +98,7 @@ export class ObjectsApi extends ApiTopic {
             query: {
                 limit,
                 offset,
+                select: payload.select,
                 ...query,
                 all_revisions: payload.all_revisions,
                 from_root: payload.from_root || undefined,
@@ -254,7 +261,7 @@ export class ObjectsApi extends ApiTopic {
             processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<ContentObject> {
-        const metadata = await (this.client as ZenoClient).files.getMetadata(
+        const metadata = await this.client.files.getMetadata(
             uri,
         );
         const createPayload: CreateContentObjectPayload = {
@@ -364,13 +371,33 @@ export class ObjectsApi extends ApiTopic {
     delete(ids: string[]): Promise<BulkObjectDeleteResult>;
     delete(idOrIds: string | string[]): Promise<{ id: string } | BulkObjectDeleteResult> {
         if (Array.isArray(idOrIds)) {
-            return (this.client as ZenoClient).runOperation({
+            return this.client.runOperation({
                 name: 'delete',
                 ids: idOrIds,
                 params: {}
             }) as Promise<BulkObjectDeleteResult>;
         }
         return this.del(`/${idOrIds}`);
+    }
+
+    bulkUpdate(updates: Record<string, Record<string, any>>): Promise<BulkObjectUpdateResult> {
+        const ids = Object.keys(updates);
+        return this.client.runOperation({
+            name: 'update',
+            ids,
+            params: updates,
+        }) as Promise<BulkObjectUpdateResult>;
+    }
+
+    bulkCreate(objects: CreateContentObjectPayload[], options?: {
+        collection_id?: string;
+        skip_workflows?: boolean;
+    }): Promise<BulkObjectCreateResult> {
+        return this.client.runOperation({
+            name: 'create',
+            ids: [],
+            params: { objects, ...options },
+        }) as Promise<BulkObjectCreateResult>;
     }
 
     listWorkflowRuns(documentId: string): Promise<ListWorkflowRunsResponse> {

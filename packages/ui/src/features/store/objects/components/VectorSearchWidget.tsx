@@ -5,6 +5,8 @@ import { Button, Checkbox, Input, Modal, ModalBody, ModalFooter, ModalTitle, Num
 import { useUserSession } from '@vertesia/ui/session';
 import { Settings } from 'lucide-react';
 
+import { useUITranslation } from '../../../../i18n/index.js';
+
 interface VectorSearchWidgetProps {
     onChange: (query?: ComplexSearchQuery) => void;
     className?: string;
@@ -19,6 +21,7 @@ const embeddingTypes = Object.values(SupportedEmbeddingTypes);
 
 export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }: VectorSearchWidgetProps) {
     const { client, project } = useUserSession();
+    const { t } = useUITranslation();
     const toast = useToast();
 
     const [searchText, setSearchText] = useState<string | undefined>(undefined);
@@ -104,10 +107,10 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
 
     return (
         <div className="flex gap-1 items-center">
-            <Input placeholder="Type what you are looking for, or select a filter" value={searchText} onChange={setSearchText} onKeyDown={handleKeyPress} className='min-w-[200px]' />
-            <Button variant="ghost" onClick={() => setShowSettings(true)} alt="Semantic search settings" className="ml-1"><Settings size={18} /></Button>
+            <Input placeholder={t('store.searchPlaceholder')} value={searchText} onChange={setSearchText} onKeyDown={handleKeyPress} className='min-w-[200px]' />
+            <Button variant="ghost" onClick={() => setShowSettings(true)} alt={t('store.semanticSearchSettings')} className="ml-1"><Settings size={18} /></Button>
             <Modal isOpen={showSettings} onClose={() => setShowSettings(false)}>
-                <ModalTitle>Search Types</ModalTitle>
+                <ModalTitle>{t('store.searchTypes')}</ModalTitle>
                 <ModalBody>
                     <div className="flex flex-col gap-2">
                         <label className="flex items-center gap-2">
@@ -115,9 +118,9 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
                                 checked={selectedTypes.includes(SearchTypes.full_text)}
                                 onCheckedChange={handleCheckboxChange(SearchTypes.full_text)}
                             />
-                            <span>Full Text</span>
+                            <span>{t('store.fullText')}</span>
                         </label>
-                        <div className="font-semibold mt-2 mb-1">Embeddings</div>
+                        <div className="font-semibold mt-2 mb-1">{t('store.embeddings')}</div>
                         {embeddingTypes.map(type => (
                             <label key={type} className="flex items-center gap-2">
                                 <Checkbox
@@ -128,16 +131,16 @@ export function VectorSearchWidget({ onChange, isLoading, refresh, searchTypes }
                             </label>
                         ))}
                         <div className="mt-3">
-                            <span className="mr-2">Limit</span>
+                            <span className="mr-2">{t('store.limit')}</span>
                             <NumberInput type="number" min={1} value={limit} onChange={v => setLimit(Number(v ?? 100))} style={{ width: 80 }} />
                         </div>
                     </div>
                 </ModalBody>
                 <ModalFooter>
-                    <Button variant="outline" onClick={() => setShowSettings(false)}>Close</Button>
+                    <Button variant="outline" onClick={() => setShowSettings(false)}>{t('store.close')}</Button>
                 </ModalFooter>
             </Modal>
-            <Button variant="secondary" isLoading={isLoading} onClick={fireSearch} isDisabled={!isReady} alt="Semantic search">Search</Button>
+            <Button variant="secondary" isLoading={isLoading} onClick={fireSearch} isDisabled={!isReady} alt={t('store.semanticSearch')}>{t('store.search')}</Button>
         </div>
     );
 }

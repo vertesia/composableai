@@ -8,6 +8,7 @@ import {
     Command, CommandEmpty, CommandGroup, CommandItem, CommandInput
 } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
+import { useUITranslation } from '../../../i18n/index.js';
 
 /**
  * A component to select a collection from a list of collections.
@@ -26,8 +27,11 @@ interface SelectCollectionProps {
     multiple?: boolean;
 }
 
-export function SelectCollection({ onChange, value, disabled = false, placeholder = "Select a collection", searchPlaceholder = "Search collections", filterOut, allowDynamic = true, multiple = false }: SelectCollectionProps) {
+export function SelectCollection({ onChange, value, disabled = false, placeholder, searchPlaceholder, filterOut, allowDynamic = true, multiple = false }: SelectCollectionProps) {
     const { client } = useUserSession();
+    const { t } = useUITranslation();
+    const resolvedPlaceholder = placeholder ?? t('store.selectACollection');
+    const resolvedSearchPlaceholder = searchPlaceholder ?? t('store.searchCollections');
 
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
@@ -152,7 +156,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
     // Show error state
     if (error) {
         return (
-            <ErrorBox title="Collection fetch failed">
+            <ErrorBox title={t('store.collectionFetchFailed')}>
                 {error.message}
             </ErrorBox>
         );
@@ -164,11 +168,11 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
             if (selectedCollection.length === 1) {
                 return selectedCollection[0].name;
             }
-            return `${selectedCollection.length} collections selected`;
+            return t('store.collectionsSelected', { count: selectedCollection.length });
         } else if (!multiple && selectedCollection && !Array.isArray(selectedCollection)) {
             return selectedCollection.name;
         }
-        return placeholder;
+        return resolvedPlaceholder;
     };
 
     return (
@@ -191,7 +195,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                 <Command shouldFilter={false}>
                     <div className="flex justify-between items-center border-b px-3" cmdk-input-wrapper="">
                         <CommandInput
-                            placeholder={searchPlaceholder}
+                            placeholder={resolvedSearchPlaceholder}
                             value={searchQuery}
                             onValueChange={handleSearchChange}
                             className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
@@ -205,10 +209,10 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                     <CommandEmpty>
                         {
                             isSearching
-                                ? "Searching..."
+                                ? t('store.searching')
                                 : hasSearchQuery
-                                    ? "No collections found."
-                                    : "No collections available."
+                                    ? t('store.noCollectionsFound')
+                                    : t('store.noCollectionsAvailable')
                         }
                     </CommandEmpty>
                     <CommandGroup className="max-h-[300px] overflow-auto">
@@ -230,7 +234,7 @@ export function SelectCollection({ onChange, value, disabled = false, placeholde
                                     onSelect={() => setSearchQuery("")}
                                     className="text-muted"
                                 >
-                                    Clear search text
+                                    {t('store.clearSelection')}
                                 </CommandItem>
                             )
                         }

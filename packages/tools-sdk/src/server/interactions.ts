@@ -50,16 +50,22 @@ export function createInteractionsRoute(app: Hono, basePath: string, config: Too
         const name = c.req.param('name');
 
         const parts = name.split(':');
-        if (parts.length !== 2) {
-            throw new HTTPException(400, {
-                message: "Invalid interaction name. Expected format 'collection:interaction'"
-            });
-        }
-        const collName = parts[0];
-        const interName = parts[1];
-        const inter = interactions.find(t => t.name === collName)?.getInteractionByName(interName);
-        if (inter) {
-            return c.json({ ...inter, id: collName + ":" + interName });
+        if (parts.length === 2) {
+            // Explicit collection:interaction format
+            const collName = parts[0];
+            const interName = parts[1];
+            const inter = interactions.find(t => t.name === collName)?.getInteractionByName(interName);
+            if (inter) {
+                return c.json({ ...inter, id: collName + ":" + interName });
+            }
+        } else {
+            // Search all collections for the interaction by name
+            for (const coll of interactions) {
+                const inter = coll.getInteractionByName(name);
+                if (inter) {
+                    return c.json({ ...inter, id: coll.name + ":" + name });
+                }
+            }
         }
 
         throw new HTTPException(404, {

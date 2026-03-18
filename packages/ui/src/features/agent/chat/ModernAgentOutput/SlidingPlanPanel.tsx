@@ -1,5 +1,6 @@
 import { Plan } from "@vertesia/common";
 import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
+import { useUITranslation } from '../../../../i18n/index.js';
 import SlideInPanel from "./SlideInPanel";
 
 interface PlanPanelProps {
@@ -10,12 +11,13 @@ interface PlanPanelProps {
 }
 
 export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClose }: PlanPanelProps) {
+    const { t } = useUITranslation();
     return (
         plan && (
-            <SlideInPanel isOpen={isOpen} onClose={onClose} title="Agent Plan">
+            <SlideInPanel isOpen={isOpen} onClose={onClose} title={t('agent.agentPlan')}>
                 {/* Plan Summary */}
                 <div className="mb-4 p-3 bg-info rounded-md border border-info">
-                    <div className="text-sm font-medium text-info mb-1">Plan Progress</div>
+                    <div className="text-sm font-medium text-info mb-1">{t('agent.planProgress')}</div>
                     <div className="flex items-center gap-2">
                         <div className="w-full bg-muted rounded-full h-2.5">
                             <div
@@ -45,7 +47,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                 {/* Detailed Plan Steps */}
                 <div className="rounded-md border border-muted">
                     <div className="p-3 border-b border-muted bg-muted/50">
-                        <div className="font-medium text-sm">Step-by-Step Plan</div>
+                        <div className="font-medium text-sm">{t('agent.stepByStepPlan')}</div>
                     </div>
 
                     <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -96,10 +98,10 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                                         }`}
                                                 >
                                                     {status === "completed"
-                                                        ? "Completed"
+                                                        ? t('agent.completed')
                                                         : status === "in_progress"
-                                                            ? "In Progress"
-                                                            : "Pending"}
+                                                            ? t('agent.inProgress')
+                                                            : t('agent.pending')}
                                                 </span>
                                             </div>
                                         </div>
@@ -109,8 +111,8 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                         ) : (
                             <div className="p-4 text-center text-gray-500 dark:text-gray-400 italic">
                                 <AlertCircle className="h-5 w-5 mx-auto mb-2 text-amber-500" />
-                                <p>No plan has been detected yet</p>
-                                <p className="text-xs mt-1">Plans will appear here when the agent creates one</p>
+                                <p>{t('agent.noPlanDetected')}</p>
+                                <p className="text-xs mt-1">{t('agent.plansWillAppear')}</p>
                             </div>
                         )}
                     </div>
@@ -120,7 +122,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                 {workstreamStatus.size > 1 && (
                     <div className="mt-4 rounded-md border border-gray-200 dark:border-gray-800">
                         <div className="p-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-                            <div className="font-medium text-sm">Workstreams</div>
+                            <div className="font-medium text-sm">{t('agent.workstreams')}</div>
                         </div>
                         <div className="p-3">
                             <div className="grid grid-cols-1 gap-2">
@@ -144,22 +146,22 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                         let StatusIcon = Circle;
                                         let statusColor = "text-gray-400";
                                         let statusBg = "bg-gray-100 dark:bg-gray-800";
-                                        let statusText = "Pending";
+                                        let statusText = t('agent.pending');
 
                                         if (status === "in_progress") {
                                             StatusIcon = Clock;
                                             statusColor = "text-blue-500";
                                             statusBg = "bg-blue-100 dark:bg-blue-800/30";
-                                            statusText = "In Progress";
+                                            statusText = t('agent.inProgress');
                                         } else if (status === "completed") {
                                             StatusIcon = CheckCircle;
                                             statusColor = "text-green-500";
                                             statusBg = "bg-green-100 dark:bg-green-800/30";
-                                            statusText = "Completed";
+                                            statusText = t('agent.completed');
                                         }
 
                                         // Format workstream IDs for better display
-                                        const displayId = id === "main" ? "Main Workstream" : id;
+                                        const displayId = id === "main" ? t('agent.mainWorkstream') : id;
 
                                         return (
                                             <div key={id} className={`flex items-center p-2 rounded ${statusBg}`}>

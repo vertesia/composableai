@@ -1,3 +1,4 @@
+export * from "./ActivityCollection.js";
 export { authorize, AuthSession } from "./auth.js";
 export * from "./ContentTypesCollection.js";
 export * from "./RenderingTemplateCollection.js";
