@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import devServer from '@hono/vite-dev-server';
-import { vertesiaDevServerPlugin } from '@vertesia/build-tools';
+import { vertesiaDevServerPlugin } from '@vertesia/build-tools/vite';
 
 export default defineConfig({
     plugins: [
