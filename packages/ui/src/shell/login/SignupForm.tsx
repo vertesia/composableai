@@ -1,5 +1,5 @@
 import { SignupData } from "@vertesia/common";
-import { Button, Input, SelectBox, SelectStack } from "@vertesia/ui/core";
+import { Button, Input, RadioGroup, SelectBox } from "@vertesia/ui/core";
 import { User } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { getFirebaseAuth } from "@vertesia/ui/session";
@@ -121,7 +121,7 @@ export default function SignupForm({ onSignup, goBack }: SignupFormProps) {
                 }
             </div>
             <FormItem label="Account Type">
-                <SelectStack
+                <RadioGroup
                     options={accountTypeOptions}
                     selected={accountTypeOptions.find((option) => option.id === accountType)}
                     onSelect={(option) => setAccountType(option.id)}
