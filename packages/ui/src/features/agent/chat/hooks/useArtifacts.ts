@@ -73,6 +73,20 @@ function buildTree(paths: string[]): ArtifactTreeNode[] {
     return root.children;
 }
 
+/**
+ * Extract the run-relative path from an artifact listing entry.
+ * The list API may return paths prefixed with the bucket name
+ * (e.g. "store_dev_.../agents/{runId}/files/foo.txt"), so we search
+ * for the "agents/{runId}/" segment anywhere in the string rather
+ * than assuming it starts at index 0.
+ */
+function stripToRelativePath(fullPath: string, runId: string): string {
+    const prefix = `agents/${runId}/`;
+    const idx = fullPath.indexOf(prefix);
+    if (idx !== -1) return fullPath.slice(idx + prefix.length);
+    return fullPath.split('/').pop() ?? fullPath;
+}
+
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -107,9 +121,8 @@ export function useArtifacts(
             const paths = await client.files.listArtifacts(runId);
             if (fetchId !== fetchIdRef.current) return; // stale
 
-            const prefix = `agents/${runId}/`;
             const relatives = paths
-                .map((p) => (p.startsWith(prefix) ? p.slice(prefix.length) : p.split('/').pop() ?? p))
+                .map((p) => stripToRelativePath(p, runId))
                 .filter((p) => p && !isInternalFile(p));
 
             setFlatFiles(relatives);
