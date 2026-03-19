@@ -2,7 +2,6 @@ import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     ActiveWorkstreamsQueryResult,
     ActivityCatalog,
-    AgentEvent,
     AgentMessage,
     AgentMessageType,
     CompactMessage,
@@ -605,20 +604,6 @@ export class WorkflowsApi extends ApiTopic {
             };
 
             connect();
-        });
-    }
-
-    /**
-     * Ingest telemetry events for a workflow run.
-     * Workers use this to send telemetry to zeno-server for BigQuery storage.
-     */
-    ingestEvents(
-        workflowId: string,
-        runId: string,
-        events: AgentEvent[]
-    ): Promise<{ ingested: number; status?: string; error?: string }> {
-        return this.post(`/runs/${workflowId}/${runId}/events`, {
-            payload: { events },
         });
     }
 

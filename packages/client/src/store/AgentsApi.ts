@@ -1,6 +1,7 @@
 import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
 import {
     ActiveWorkstreamsQueryResult,
+    AgentEvent,
     AgentMessage,
     AgentMessageType,
     AgentRun,
@@ -599,6 +600,21 @@ export class AgentsApi extends ApiTopic {
             throw new Error('No body in artifact download response');
         }
         return res.body;
+    }
+
+    // ========================================================================
+    // Telemetry ingestion
+    // ========================================================================
+
+    /**
+     * Ingest telemetry events for an agent run.
+     * Workers use this to send telemetry to zeno-server for BigQuery storage.
+     */
+    ingestEvents(
+        agentRunId: string,
+        events: AgentEvent[],
+    ): Promise<{ ingested: number; status?: string; error?: string }> {
+        return this.post(`/${agentRunId}/events`, { payload: { events } });
     }
 
     // ========================================================================
