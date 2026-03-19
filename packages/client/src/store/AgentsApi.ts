@@ -438,12 +438,10 @@ export class AgentsApi extends ApiTopic {
         id: string,
         options?: {
             includeHistory?: boolean;
-            historyFormat?: 'events' | 'tasks' | 'agent';
         },
     ): Promise<WorkflowRunWithDetails> {
         const query: Record<string, string> = {};
         if (options?.includeHistory) query.include_history = 'true';
-        if (options?.historyFormat) query.history_format = options.historyFormat;
         return this.get(`/${id}/details`, { query });
     }
 
