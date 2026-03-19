@@ -412,6 +412,8 @@ function getEndpointsFromDomain(domain: string) {
         };
     } else {
         const url = `https://${domain}`;
+        // Supports both dot-separated (api.us1.vertesia.io → sts.us1.vertesia.io)
+        // and legacy (api.vertesia.io → sts.vertesia.io)
         return {
             studio: url,
             store: url,
