@@ -417,6 +417,7 @@ export interface InteractionData {
     model?: string;
     model_options?: ModelOptions;
     restriction?: RunDataStorageLevel;
+
     /**
      * @deprecated This is deprecated. Use CompletionResult.type information instead.
      */
@@ -653,15 +654,13 @@ export interface AgentRunnerOptions {
 // Import for local use
 import type { UserChannel } from "./email.js";
 // Re-exported from email.ts for backwards compatibility
-export type {
-    EmailChannel,
-    InteractiveChannel,
-    UserChannel,
-    EmailRouteData,
-} from "./email.js";
 export {
     isEmailChannel,
-    isInteractiveChannel,
+    isInteractiveChannel
+} from "./email.js";
+export type {
+    EmailChannel, EmailRouteData, InteractiveChannel,
+    UserChannel
 } from "./email.js";
 // ================= end user communication channels ====================
 
