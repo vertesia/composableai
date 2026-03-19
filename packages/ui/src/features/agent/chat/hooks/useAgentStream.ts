@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AsyncExecutionResult, VertesiaClient } from '@vertesia/client';
+import { VertesiaClient } from '@vertesia/client';
 import {
     AgentMessage,
     AgentMessageType,
@@ -44,14 +44,14 @@ export interface UseAgentStreamResult {
  * - COMPLETE/IDLE streaming flush
  * - Timestamp-based message dedup and optimistic QUESTION replacement
  * - `isCompleted` derived state
- * - State reset when `run.runId` changes
+ * - State reset when `agentRunId` changes
  *
  * File-processing SYSTEM messages are passed through to the messages array
  * (Option A from the plan) so downstream hooks can react to them.
  */
 export function useAgentStream(
     client: VertesiaClient,
-    run: AsyncExecutionResult,
+    agentRunId: string,
 ): UseAgentStreamResult {
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
@@ -100,37 +100,28 @@ export function useAgentStream(
 
     // Stream messages from the agent
     useEffect(() => {
-        // Reset all state when runId changes (new agent)
+        // Reset all state when agentRunId changes (new agent)
+        console.debug('[useAgentStream] effect:start', { agentRunId });
         setMessages([]);
         setWorkflowStatus(null);
         setStreamingMessages(new Map());
         setServerFileUpdates(new Map());
         const abortController = new AbortController();
 
-        // Check workflow status
-        client.store.workflows.getRunDetails(run.runId, run.workflowId)
-            .then((statusResult) => {
+        // Check agent run status
+        client.agents.retrieve(agentRunId)
+            .then((agentRun) => {
                 if (!abortController.signal.aborted) {
-                    setWorkflowStatus(statusResult.status as string);
+                    setWorkflowStatus(agentRun.status?.toUpperCase() ?? null);
                 }
             })
             .catch((error) => {
                 if (!abortController.signal.aborted) {
-                    console.error('Failed to check workflow status:', error);
+                    console.error('Failed to check agent run status:', error);
                 }
             });
 
-        const workflowsApi = client.store.workflows as typeof client.store.workflows & {
-            streamMessages: (
-                workflowId: string,
-                runId: string,
-                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
-                since?: number,
-                signal?: AbortSignal,
-            ) => Promise<unknown>;
-        };
-
-        workflowsApi.streamMessages(run.workflowId, run.runId, (message) => {
+        client.agents.streamMessages(agentRunId, (message) => {
             if (abortController.signal.aborted) return;
 
             // Handle streaming chunks separately for real-time aggregation
@@ -246,11 +237,12 @@ export function useAgentStream(
         }, undefined, abortController.signal)
             .catch((error) => {
                 if (!abortController.signal.aborted) {
-                    console.error('Failed to stream workflow messages:', error);
+                    console.error('Failed to stream agent messages:', error);
                 }
             });
 
         return () => {
+            console.debug('[useAgentStream] effect:cleanup', { agentRunId });
             abortController.abort();
             setMessages([]);
             cancelScheduledStreamingFlush();
@@ -260,7 +252,7 @@ export function useAgentStream(
                 debugFlashTimeout.current = null;
             }
         };
-    }, [run.runId, client.store.workflows, flushStreamingChunks, cancelScheduledStreamingFlush]);
+    }, [agentRunId, client.agents, flushStreamingChunks, cancelScheduledStreamingFlush]);
 
     // Flush pending streaming chunks when tab becomes visible.
     useEffect(() => {

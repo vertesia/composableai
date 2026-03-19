@@ -5,6 +5,7 @@ import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
 import { Bot, ChevronDown, ChevronRight, CopyIcon, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import { useState, memo, useEffect, useRef } from "react";
+import { useUITranslation } from '../../../../i18n/index.js';
 import { PulsatingCircle } from "../AnimatedThinkingDots";
 import { useImageLightbox } from "../ImageLightbox";
 import { useArtifactUrlCache, getArtifactCacheKey } from "../useArtifactUrlCache.js";
@@ -99,7 +100,7 @@ function mergeByToolRunId(messages: AgentMessage[]): AgentMessage[] {
             if (!byRunId.has(runId)) {
                 byRunId.set(runId, []);
             }
-            byRunId.get(runId)!.push(msg);
+            byRunId.get(runId)?.push(msg);
         } else {
             result.push(msg);
         }
@@ -167,6 +168,7 @@ const isImageUrl = (url: string) => /\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i.test(
 
 // Component to render files (images inline, others as links)
 function FileDisplay({ files, className: fileClassName }: { files: string[]; className?: string }) {
+    const { t } = useUITranslation();
     const { openImage } = useImageLightbox();
 
     if (!files || files.length === 0) return null;
@@ -181,7 +183,7 @@ function FileDisplay({ files, className: fileClassName }: { files: string[]; cla
                             key={idx}
                             className="cursor-pointer"
                             onClick={() => openImage(file, fileName)}
-                            title="Click to enlarge"
+                            title={t('agent.clickToEnlarge')}
                         >
                             <img
                                 src={file}
@@ -246,6 +248,7 @@ const getMessageBadgeClass = (message: AgentMessage): string => {
 };
 
 function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames = {} }: ToolCallItemProps) {
+    const { t } = useUITranslation();
     const [resolvedFiles, setResolvedFiles] = useState<string[]>([]);
     const toast = useToast();
     const { client } = useUserSession();
@@ -325,7 +328,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
         navigator.clipboard.writeText(textToCopy).then(() => {
             toast({
                 status: "success",
-                title: "Copied to clipboard",
+                title: t('agent.copiedToClipboard'),
                 duration: 2000,
             });
         });
@@ -372,7 +375,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                             copyToClipboard();
                         }}
                         className="text-muted opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Copy message"
+                        title={t('agent.copyMessage')}
                     >
                         <CopyIcon className="size-3" />
                     </Button>
@@ -618,6 +621,7 @@ function ToolCallGroupComponent({
     const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
     const [animatingIndices, setAnimatingIndices] = useState<Set<number>>(new Set());
     const prevCountRef = useRef(messages.length);
+    const { t } = useUITranslation();
     const toast = useToast();
 
     // Extract workflow_run_id from messages (any message in the group should have it)
@@ -712,7 +716,7 @@ function ToolCallGroupComponent({
         navigator.clipboard.writeText(allContent).then(() => {
             toast({
                 status: "success",
-                title: "Copied all tool calls to clipboard",
+                title: t('agent.copiedAllToolCalls'),
                 duration: 2000,
             });
         });
@@ -766,7 +770,7 @@ function ToolCallGroupComponent({
                             copyAllToClipboard();
                         }}
                         className="text-muted/50 hover:text-muted h-5 w-5 p-0"
-                        title="Copy all tool calls"
+                        title={t('agent.copyAllToolCalls')}
                     >
                         <CopyIcon className="size-3" />
                     </Button>

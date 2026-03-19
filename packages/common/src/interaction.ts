@@ -760,6 +760,19 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
      */
     restart_from_workflow_run_id?: string;
 
+    /**
+     * The AgentRun MongoDB _id. Used for artifact storage paths: agents/{agent_run_id}/
+     * Flows into ConversationState and down to workstreams.
+     * Undefined for legacy workflows started before the AgentRun system.
+     */
+    agent_run_id?: string;
+
+    /**
+     * The Schedule MongoDB _id. Set when this execution was triggered by a Temporal schedule.
+     * Used by the workflow to create an AgentRun on first run if agent_run_id is absent.
+     */
+    schedule_id?: string;
+
 }
 
 export interface AsyncInteractionExecutionPayload extends AsyncExecutionPayloadBase {
@@ -779,8 +792,6 @@ export type AsyncExecutionPayload = AsyncConversationExecutionPayload | AsyncInt
  * Contains info not available in current_state needed to send LlmCallEvent.
  */
 export interface StreamingTelemetryContext {
-    /** Workflow ID for ingestEvents API call */
-    workflowId: string;
     /** Type of LLM call: start, resume after user message, or resume after tool results */
     callType: LlmCallType;
     /** Activity retry attempt number */
@@ -917,6 +928,7 @@ export enum RunSourceTypes {
     webhook = "webhook",
     test = "test-data",
     system = "system",
+    schedule = "schedule",
 }
 
 export interface RunSource {
@@ -1002,12 +1014,20 @@ export interface ExecutionRunWorkflow {
      *
      * A Run ID is a globally unique, platform-level identifier for a Workflow Execution.
      *
+     * @deprecated For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.
+     * The AgentRun object provides a stable ID that survives workflow restarts.
+     * This field is only relevant for legacy non-agent interaction executions.
+     *
      * @example 01970d37-a890-70c0-9f44-1256d063e69a
      * @see https://docs.temporal.io/workflow-execution/workflowid-runid
      */
     run_id: string;
     /**
      * The Temporal Workflow ID related to this Interaction Run.
+     *
+     * @deprecated For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.
+     * The AgentRun object provides a stable ID that survives workflow restarts.
+     * This field is only relevant for legacy non-agent interaction executions.
      *
      * @example Standard Document Intake:6834841e4f828d4e36192796
      * @see https://docs.temporal.io/workflow-execution/workflowid-runid

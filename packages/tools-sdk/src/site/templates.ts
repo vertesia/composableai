@@ -1,3 +1,5 @@
+import type { RemoteActivityDefinition } from "@vertesia/common";
+import type { ActivityCollection } from "../ActivityCollection.js";
 import type { InteractionCollection } from "../InteractionCollection.js";
 import { ToolServerConfig } from "../server/types.js";
 import type { SkillCollection } from "../SkillCollection.js";
@@ -33,6 +35,11 @@ const templateIcon = /*html*/`
   <line x1="16" y1="13" x2="8" y2="13"/>
   <line x1="16" y1="17" x2="8" y2="17"/>
   <polyline points="10 9 9 9 8 9"/>
+</svg>`;
+
+const activityIcon = /*html*/`
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
 </svg>`;
 
 /**
@@ -822,6 +829,7 @@ export function indexPage(
     const {
         title = 'Tools Server',
         tools = [],
+        activities = [],
         interactions = [],
         skills = [],
         templates = [],
@@ -851,10 +859,11 @@ export function indexPage(
                     <p class="hero-eyebrow">Tools Server</p>
                     <h1 class="hero-title">${title}</h1>
                     <p class="hero-tagline">
-                        Discover the tools, skills, interactions, and content types exposed by this server.
+                        Discover the tools, activities, skills, interactions, and content types exposed by this server.
                     </p>
                     <div class="hero-summary">
                         ${tools.length ? /*html*/`<span><dot></dot> ${tools.length} tool collection${tools.length !== 1 ? 's' : ''}</span>` : ''}
+                        ${activities.length ? /*html*/`<span><dot></dot> ${activities.length} activity collection${activities.length !== 1 ? 's' : ''}</span>` : ''}
                         ${skills.length ? /*html*/`<span><dot></dot> ${skills.length} skill collection${skills.length !== 1 ? 's' : ''}</span>` : ''}
                         ${interactions.length ? /*html*/`<span><dot></dot> ${interactions.length} interaction collection${interactions.length !== 1 ? 's' : ''}</span>` : ''}
                         ${types.length ? /*html*/`<span><dot></dot> ${types.length} content type collection${types.length !== 1 ? 's' : ''}</span>` : ''}
@@ -886,7 +895,7 @@ export function indexPage(
                 type="search"
                 id="collection-search"
                 class="search-input"
-                placeholder="Search tools, skills, interactions, types, templates..."
+                placeholder="Search tools, activities, skills, interactions, types, templates..."
                 aria-label="Search collections"
                 autocomplete="off"
             />
@@ -906,6 +915,22 @@ export function indexPage(
             </div>
             <div class="card-grid">
                 ${tools.map(t => collectionCard(t, 'tools')).join('')}
+            </div>
+        </section>
+        ` : ''}
+
+        ${activities.length > 0 ? /*html*/`
+        <section data-section="activities">
+            <hr>
+            <div class="section-header">
+                <h2>Activity Collections</h2>
+                <p class="section-subtitle">Remote activities for DSL workflows, invoked via HTTP.</p>
+            </div>
+            <div class="card-grid">
+                ${activities.map((a: ActivityCollection) => {
+        const count = a.getActivityDefinitions().length;
+        return collectionCard(a, 'activities', `${count} activit${count !== 1 ? 'ies' : 'y'}`);
+    }).join('')}
             </div>
         </section>
         ` : ''}
@@ -1224,6 +1249,122 @@ export function contentTypeCollectionPage(collection: ContentTypesCollection): s
     <div class="item-list">
         ${typesArray.map(type => simpleItemCard(type)).join('')}
     </div>
+</body>
+</html>`;
+}
+
+/**
+ * Render a detailed activity card
+ */
+export function activityDetailCard(activity: RemoteActivityDefinition, collectionName: string): string {
+    const schema = activity.input_schema;
+    const properties = schema?.properties as Record<string, unknown> | undefined;
+    const required = (schema as Record<string, unknown>)?.required as string[] | undefined;
+
+    return /*html*/`
+<div class="detail-card">
+    <div class="detail-header">
+        <div>
+            <h3 class="detail-title">${activity.name}</h3>
+            <p class="detail-desc">${activity.description || 'No description'}</p>
+        </div>
+        <div class="detail-badges">
+            <span class="badge" style="background: #ec4899; color: white;">Activity</span>
+        </div>
+    </div>
+    <div class="detail-body">
+        <div class="detail-section">
+            <h4 class="detail-section-title">Endpoint</h4>
+            <div class="endpoint-box">
+                <code>POST ${activity.url || `/api/activities/${collectionName}`}</code>
+                <button class="copy-btn" onclick="navigator.clipboard.writeText('${activity.url || `/api/activities/${collectionName}`}')" title="Copy">
+                    ${copyIcon}
+                </button>
+            </div>
+        </div>
+
+        ${schema ? /*html*/`
+        <div class="detail-section">
+            <h4 class="detail-section-title">Input Schema</h4>
+            ${properties ? /*html*/`
+            <div class="info-grid" style="margin-bottom: 1rem;">
+                ${Object.entries(properties).map(([key, value]) => {
+        const prop = value as Record<string, unknown>;
+        const isRequired = required?.includes(key);
+        return /*html*/`
+                    <div class="info-item">
+                        <div class="info-label">${key}${isRequired ? ' *' : ''}</div>
+                        <div class="info-value">
+                            <code>${prop.type || 'any'}</code>
+                            ${prop.description ? `<br><span style="color: #6b7280; font-size: 0.85rem;">${prop.description}</span>` : ''}
+                        </div>
+                    </div>`;
+    }).join('')}
+            </div>
+            ` : ''}
+            <details>
+                <summary style="cursor: pointer; color: #6b7280; font-size: 0.85rem;">View full schema</summary>
+                <div class="schema-block" style="margin-top: 0.75rem;">${highlightJson(schema)}</div>
+            </details>
+        </div>
+        ` : /*html*/`
+        <div class="detail-section">
+            <div class="empty-state">No input schema defined</div>
+        </div>
+        `}
+
+        ${activity.output_schema ? /*html*/`
+        <div class="detail-section">
+            <h4 class="detail-section-title">Output Schema</h4>
+            <details>
+                <summary style="cursor: pointer; color: #6b7280; font-size: 0.85rem;">View output schema</summary>
+                <div class="schema-block" style="margin-top: 0.75rem;">${highlightJson(activity.output_schema)}</div>
+            </details>
+        </div>
+        ` : ''}
+    </div>
+</div>`;
+}
+
+/**
+ * Render an activity collection detail page
+ */
+export function activityCollectionPage(collection: ActivityCollection): string {
+    const activitiesArray = collection.getActivityDefinitions();
+    return /*html*/`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${collection.title || collection.name} - Activities</title>
+    <style>${detailStyles}</style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/">${backArrow} Back to all collections</a>
+    </nav>
+
+    <div class="header">
+        <div class="header-icon">${collection.icon || activityIcon}</div>
+        <div>
+            <h1>${collection.title || collection.name}</h1>
+            <p style="color: #6b7280; margin: 0.25rem 0 0 0;">${collection.description || ''}</p>
+            <div class="endpoint-box">
+                <code>/api/activities/${collection.name}</code>
+                <button class="copy-btn" onclick="navigator.clipboard.writeText(window.location.origin + '/api/activities/${collection.name}')" title="Copy endpoint URL">
+                    ${copyIcon}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <h2>${activitiesArray.length} Activit${activitiesArray.length !== 1 ? 'ies' : 'y'}</h2>
+
+    ${activitiesArray.length > 0 ?
+            activitiesArray.map(activity => activityDetailCard(activity, collection.name)).join('') :
+            '<div class="empty-state">No activities in this collection</div>'
+        }
 </body>
 </html>`;
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { InputList } from "../../../InputList";
 import { Button } from "../../button";
 import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
-import { InputList } from "../../../index";
 
 export const StringListCombobox = ({
     filterType,

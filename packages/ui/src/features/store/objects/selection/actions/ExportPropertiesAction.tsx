@@ -1,11 +1,14 @@
 import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
+import { useUITranslation } from '../../../../../i18n/index.js';
+import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
 import { ExportPropertiesModal, ExportTypes } from "../../ExportPropertiesModal";
-import { useObjectsActionCallback } from "../ObjectsActionContext";
+import { useObjectsActionCallback } from "../ObjectsActionHooks";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function ExportPropertiesComponent({ action, objectIds }: ActionComponentTypeProps) {
+    const { t } = useUITranslation();
     const { store } = useUserSession();
     const toast = useToast();
     const [isOpen, setOpen] = useState(false);
@@ -79,7 +82,7 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
 
                     toast({
                         status: 'success',
-                        title: 'Export Properties',
+                        title: t('store.actions.exportProperties'),
                         description: exportAll ? 'Export the properties of all objects completed'
                             : `Export the properties of ${objectIds.length} object${objectIds.length > 1 ? 's' : ''} is completed`,
                         duration: 2000
@@ -87,7 +90,7 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
                 }).catch(err => {
                     toast({
                         status: 'error',
-                        title: 'Error Export Properties',
+                        title: t('store.actions.errorExportProperties'),
                         description: err.message,
                         duration: 5000
                     });
@@ -106,10 +109,11 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
     )
 }
 
+const t = i18nInstance.getFixedT(null, NAMESPACE);
 export const ExportPropertiesAction: ObjectsActionSpec = {
     id: "exportProperties",
-    name: 'Export Properties',
-    description: 'Export all Object Properties',
+    name: t('store.actions.exportProperties'),
+    description: t('store.actions.exportAllObjectProperties'),
     confirm: false,
     component: ExportPropertiesComponent,
 }

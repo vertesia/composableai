@@ -4,6 +4,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { ContentObjectTypeItem } from "@vertesia/common";
 import { Table, TBody, THead } from "@vertesia/ui/core";
 import { useNavigate } from "@vertesia/ui/router";
+import { useUITranslation } from '../../../i18n/index.js';
 
 dayjs.extend(relativeTime);
 
@@ -12,16 +13,17 @@ interface ContentObjectTypesTableProps {
     isLoading: boolean;
 }
 export function ContentObjectTypesTable({ objects, isLoading }: ContentObjectTypesTableProps) {
+    const { t } = useUITranslation();
     const navigate = useNavigate();
 
     return (
         <Table className="w-full">
             <THead>
                 <tr>
-                    <th>Name</th>
-                    <th>Strict Mode</th>
-                    <th>Semantic Chunking</th>
-                    <th>Updated At</th>
+                    <th>{t('store.name')}</th>
+                    <th>{t('store.strictMode')}</th>
+                    <th>{t('store.semanticChunking')}</th>
+                    <th>{t('store.updatedAt')}</th>
                 </tr>
             </THead>
             <TBody isLoading={isLoading && (!objects || objects.length === 0)} columns={4}>

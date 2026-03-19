@@ -4,61 +4,58 @@ import { ModernAgentConversation } from "@vertesia/ui/features";
 import { Button } from "@vertesia/ui/core";
 import { useNavigate, useParams } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
-import type { AsyncConversationExecutionPayload } from "@vertesia/common";
+import { useUITranslation } from "@vertesia/ui/i18n";
+import type { CreateAgentRunPayload } from "@vertesia/common";
 import { ASSISTANT_INTERACTION } from "./constants";
 
 export function HomePage() {
     const { user } = useUserSession();
+    const { t } = useUITranslation();
     const navigate = useNavigate();
 
     return (
         <div className="p-6 space-y-4">
-            <h1 className="text-2xl font-semibold">Welcome, {user?.name || user?.email}!</h1>
+            <h1 className="text-2xl font-semibold">{t('nav.welcome', { name: user?.name || user?.email })}</h1>
             <p className="text-muted">
-                This is the plugin template. Use it as a starting point to build your own plugin UI.
+                {t('nav.templateDescription')}
             </p>
             <Button variant="outline" onClick={() => navigate('/chat')}>
                 <Bot className="size-4 mr-2" />
-                Try the Agent Chat
+                {t('nav.tryAgentChat')}
             </Button>
         </div>
     );
 }
 
 export function ChatPage() {
-    const { client } = useUserSession();
+    const { t } = useUITranslation();
+    const { store } = useUserSession();
     const navigate = useNavigate();
     const params = useParams();
-    const { runId, workflowId } = params as { runId?: string; workflowId?: string };
-
-    const run = runId && workflowId ? { run_id: runId, workflow_id: workflowId } : null;
+    const { agentRunId } = params as { agentRunId?: string };
 
     const startWorkflow = useCallback(async (initialMessage?: string) => {
-        const payload: AsyncConversationExecutionPayload = {
-            type: 'conversation',
+        const payload: CreateAgentRunPayload = {
             interaction: ASSISTANT_INTERACTION,
             interactive: true,
             data: { user_prompt: initialMessage || '' },
         };
-        const result = await client.interactions.executeAsync(payload);
+        const result = await store.agents.start(payload);
         if (result) {
-            const runData = { run_id: result.runId, workflow_id: result.workflowId };
-            navigate(`/chat/${result.runId}/${result.workflowId}`);
-            return runData;
+            navigate(`/chat/${result.id}`);
+            return { agent_run_id: result.id! };
         }
         return undefined;
-    }, [client, navigate]);
+    }, [store, navigate]);
 
     const handleReset = useCallback(() => navigate('/chat'), [navigate]);
 
     return (
         <div className="flex flex-col h-full">
             <ModernAgentConversation
-                run={run ? { runId: run.run_id, workflowId: run.workflow_id } : undefined}
+                agentRunId={agentRunId}
                 startWorkflow={startWorkflow}
-                title="Plugin Assistant"
-                placeholder="Ask me anything..."
-                startButtonText="Start Conversation"
+                title={t('nav.pluginAssistant')}
                 resetWorkflow={handleReset}
                 hideObjectLinking
                 interactive

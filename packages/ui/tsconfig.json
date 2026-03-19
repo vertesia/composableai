@@ -41,7 +41,8 @@
     "noPropertyAccessFromIndexSignature": false,
   },
   "include": [
-    "src"
+    "src",
+    "src/i18n/locales/*.json"
   ],
   "exclude": [
     "node_modules",

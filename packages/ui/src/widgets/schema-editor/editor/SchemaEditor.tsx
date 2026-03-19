@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { Button, useToast } from '@vertesia/ui/core';
 
+import { useUITranslation } from '../../../i18n/index.js';
 import { ManagedSchema, SchemaNode } from '../ManagedSchema.js';
 import { TypeNames } from '../type-signature.js';
 import { Editable } from './Editable.js';
@@ -100,6 +101,7 @@ interface PropertyTitleBarProps {
     readonly: boolean;
 }
 function PropertyTitleBar({ property, readonly }: PropertyTitleBarProps) {
+    const { t } = useUITranslation();
     const toast = useToast();
 
     const onChange = (value: EditableSchemaProperty) => {
@@ -116,7 +118,7 @@ function PropertyTitleBar({ property, readonly }: PropertyTitleBarProps) {
         } catch (err: any) {
             toast({
                 status: 'error',
-                title: 'Invalid property declaration',
+                title: t('widgets.schema.invalidPropertyDeclaration'),
                 description: err.message,
                 duration: 9000
             })

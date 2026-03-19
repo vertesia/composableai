@@ -16,15 +16,22 @@
     "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
   },
   "exports": {
-    "types": "./lib/types/index.d.ts",
-    "import": "./lib/esm/index.js",
-    "require": "./lib/cjs/index.js"
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.js"
+    },
+    "./vite": {
+      "types": "./lib/types/vite.d.ts",
+      "import": "./lib/esm/vite.js",
+      "require": "./lib/cjs/vite.js"
+    }
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.2",
-    "@types/node": "^25.0.3",
+    "@types/node": "^22.19.2",
     "rollup": "^4.59.0",
     "@rollup/plugin-terser": "^0.4.4",
     "ts-dual-module": "^0.6.3",
