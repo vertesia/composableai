@@ -465,7 +465,7 @@ export type HistoryFormat = 'events' | 'tasks' | 'agent';
  */
 export interface AgentTask {
     /** Type discriminator for future task types */
-    taskType: 'tool_call' | 'llm_call' | 'input' | 'timer' | 'subagent' | 'processing';
+    taskType: 'tool_call' | 'llm_call' | 'input' | 'timer' | 'subagent' | 'processing' | 'signal';
 
     /** Tool-specific fields */
     toolName: string;
@@ -478,7 +478,7 @@ export interface AgentTask {
     scheduled_at: string | null;
     started_at: string | null;
     completed_at: string | null;
-    status: 'running' | 'completed' | 'error' | 'warning';
+    status: 'running' | 'completed' | 'error' | 'warning' | 'received' | 'sent';
 
     /** Tool data */
     parameters?: Record<string, unknown>;
@@ -496,6 +496,9 @@ export interface AgentTask {
 
     /** Workstream tracking */
     workstreamId?: string;
+
+    /** Signal direction for signal tasks */
+    direction?: 'sending' | 'receiving';
 
     /** LLM stop reason for llm_call tasks (e.g., "stop", "length", "tool_use") */
     finish_reason?: string;

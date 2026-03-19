@@ -793,8 +793,6 @@ export type AsyncExecutionPayload = AsyncConversationExecutionPayload | AsyncInt
  * Contains info not available in current_state needed to send LlmCallEvent.
  */
 export interface StreamingTelemetryContext {
-    /** Workflow ID for ingestEvents API call */
-    workflowId: string;
     /** Type of LLM call: start, resume after user message, or resume after tool results */
     callType: LlmCallType;
     /** Activity retry attempt number */
