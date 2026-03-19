@@ -9,13 +9,28 @@ import {
     CompactMessage,
     ConversationActivityState,
     CreateAgentRunPayload,
+    ErrorAnalyticsResponse,
+    FirstResponseBehaviorAnalyticsResponse,
+    LatencyAnalyticsResponse,
     ListAgentRunsQuery,
+    ListWorkflowRunsResponse,
+    parseMessage,
+    PromptSizeAnalyticsResponse,
+    RunsByAgentAnalyticsResponse,
     SearchAgentRunsQuery,
     SearchAgentRunsResponse,
-    ListWorkflowRunsResponse,
-    WorkflowRunWithDetails,
-    parseMessage,
+    TimeToFirstResponseAnalyticsResponse,
     toAgentMessage,
+    TokenUsageAnalyticsResponse,
+    ToolAnalyticsResponse,
+    ToolParameterAnalyticsResponse,
+    TopPrincipalsAnalyticsResponse,
+    WorkflowAnalyticsFilterOptionsResponse,
+    WorkflowAnalyticsSummaryQuery,
+    WorkflowAnalyticsSummaryResponse,
+    WorkflowAnalyticsTimeSeriesQuery,
+    WorkflowRunWithDetails,
+    WorkflowToolParametersQuery,
 } from '@vertesia/common';
 import { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
@@ -584,5 +599,152 @@ export class AgentsApi extends ApiTopic {
             throw new Error('No body in artifact download response');
         }
         return res.body;
+    }
+
+    // ========================================================================
+    // Analytics
+    // ========================================================================
+
+    /**
+     * Get analytics summary.
+     * Returns overall metrics including token usage, success rates, and run counts.
+     */
+    getAnalyticsSummary(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<WorkflowAnalyticsSummaryResponse> {
+        return this.post('/analytics/summary', { payload: query });
+    }
+
+    /**
+     * Get token usage analytics.
+     * Returns token consumption metrics by model, agent, tool, or over time.
+     */
+    getTokenUsageAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<TokenUsageAnalyticsResponse> {
+        return this.post('/analytics/tokens', { payload: query });
+    }
+
+    /**
+     * Get LLM latency analytics.
+     * Returns duration/latency metrics for LLM calls.
+     */
+    getLlmLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/llm', { payload: query });
+    }
+
+    /**
+     * Get tool latency analytics.
+     * Returns duration/latency metrics for tool calls.
+     */
+    getToolLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/tools', { payload: query });
+    }
+
+    /**
+     * Get agent latency analytics.
+     * Returns duration metrics for complete agent runs.
+     */
+    getAgentLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/agents', { payload: query });
+    }
+
+    /**
+     * Get error analytics.
+     * Returns error rates, types, and trends.
+     */
+    getErrorAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<ErrorAnalyticsResponse> {
+        return this.post('/analytics/errors', { payload: query });
+    }
+
+    /**
+     * Get tool usage analytics.
+     * Returns tool invocation counts, success rates, and performance metrics.
+     */
+    getToolAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<ToolAnalyticsResponse> {
+        return this.post('/analytics/tools', { payload: query });
+    }
+
+    /**
+     * Get tool parameter analytics.
+     * Returns parameter value distributions for a specific tool.
+     */
+    getToolParameterAnalytics(
+        query: WorkflowToolParametersQuery
+    ): Promise<ToolParameterAnalyticsResponse> {
+        return this.post('/analytics/tools/parameters', { payload: query });
+    }
+
+    /**
+     * Get available filter options for analytics.
+     * Returns unique agents, environments, and models from telemetry data.
+     */
+    getAnalyticsFilterOptions(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<WorkflowAnalyticsFilterOptionsResponse> {
+        return this.post('/analytics/filter-options', { payload: query });
+    }
+
+    /**
+     * Get average prompt size (input tokens) by agent for startConversation calls.
+     * This represents the initial prompt + tools size.
+     */
+    getPromptSizeAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<PromptSizeAnalyticsResponse> {
+        return this.post('/analytics/prompt-size', { payload: query });
+    }
+
+    /**
+     * Get top principals (users/API keys) who started the most agent runs.
+     * Returns the top N principals sorted by run count descending.
+     */
+    getTopPrincipalsAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<TopPrincipalsAnalyticsResponse> {
+        return this.post('/analytics/top-principals', { payload: query });
+    }
+
+    /**
+     * Get agent run distribution - how many runs per agent/interaction type.
+     * Returns the top N agents sorted by run count descending.
+     */
+    getRunsByAgentAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<RunsByAgentAnalyticsResponse> {
+        return this.post('/analytics/runs-by-agent', { payload: query });
+    }
+
+    /**
+     * Get time to first response analytics.
+     * Measures the time from agent start to the completion of the first LLM call.
+     * Returns average, min, max, median, p95, and p99 metrics.
+     */
+    getTimeToFirstResponseAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<TimeToFirstResponseAnalyticsResponse> {
+        return this.post('/analytics/time-to-first-response', { payload: query });
+    }
+
+    /**
+     * Get first response behavior analytics.
+     * Analyzes the agent's first LLM response behavior:
+     * - Percentage of agents that start by making a plan
+     * - Percentage of agents that return no tool calls at start
+     */
+    getFirstResponseBehaviorAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<FirstResponseBehaviorAnalyticsResponse> {
+        return this.post('/analytics/first-response-behavior', { payload: query });
     }
 }
