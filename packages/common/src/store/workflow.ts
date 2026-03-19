@@ -87,14 +87,6 @@ export interface WorkflowExecutionBaseParams<T = Record<string, any>> {
     ancestors?: WorkflowAncestor[]
 
     /**
-     * If true, copy workspace artifacts (scripts/, files/, skills/, docs/, out/)
-     * from parent workflow to this workflow on startup.
-     * Defaults to true when spawning child workflows.
-     * conversation.json and tools.json are never copied.
-     */
-    inherit_artifacts?: boolean;
-
-    /**
      *  List of enabled processing queues. Managed by the application.
      */
     _enabled_queues?: Queue[];
@@ -473,7 +465,7 @@ export type HistoryFormat = 'events' | 'tasks' | 'agent';
  */
 export interface AgentTask {
     /** Type discriminator for future task types */
-    taskType: 'tool_call' | 'llm_call' | 'input' | 'timer' | 'subagent' | 'processing';
+    taskType: 'tool_call' | 'llm_call' | 'input' | 'timer' | 'subagent' | 'processing' | 'signal';
 
     /** Tool-specific fields */
     toolName: string;
@@ -486,7 +478,7 @@ export interface AgentTask {
     scheduled_at: string | null;
     started_at: string | null;
     completed_at: string | null;
-    status: 'running' | 'completed' | 'error' | 'warning';
+    status: 'running' | 'completed' | 'error' | 'warning' | 'received' | 'sent';
 
     /** Tool data */
     parameters?: Record<string, unknown>;
@@ -504,6 +496,9 @@ export interface AgentTask {
 
     /** Workstream tracking */
     workstreamId?: string;
+
+    /** Signal direction for signal tasks */
+    direction?: 'sending' | 'receiving';
 
     /** LLM stop reason for llm_call tasks (e.g., "stop", "length", "tool_use") */
     finish_reason?: string;

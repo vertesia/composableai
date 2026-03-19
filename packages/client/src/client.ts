@@ -257,6 +257,13 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     }
 
     /**
+     * Alias for store.agents
+     */
+    get agents() {
+        return this.store.agents;
+    }
+
+    /**
      * Alias for store.workflows
      */
     get workflows() {

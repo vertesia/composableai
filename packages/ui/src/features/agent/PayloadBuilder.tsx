@@ -3,7 +3,7 @@ import { AgentSearchScope, ConversationVisibility, ExecutionEnvironmentRef, InCo
 import { JSONObject } from "@vertesia/json";
 import { useUserSession } from "@vertesia/ui/session";
 import Ajv, { ValidateFunction } from "ajv";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
 
 export type WorkflowMode = 'start' | 'schedule';
 
@@ -12,6 +12,26 @@ export interface ScheduledWorkflowConfig {
     description?: string;
     cron_expression: string;
     timezone: string;
+}
+
+export class PayloadBuilderStore {
+    private _listeners = new Set<() => void>();
+    snapshot: PayloadBuilder;
+
+    constructor(client: VertesiaClient) {
+        this.snapshot = new PayloadBuilder(client, this);
+    }
+
+    subscribe = (listener: () => void) => {
+        this._listeners.add(listener);
+        return () => { this._listeners.delete(listener); };
+    };
+
+    getSnapshot = () => this.snapshot;
+
+    notify() {
+        this._listeners.forEach(listener => listener());
+    }
 }
 
 export class PayloadBuilder {
@@ -33,22 +53,28 @@ export class PayloadBuilder {
     _scheduledWorkflowConfig: ScheduledWorkflowConfig | undefined;
 
     private _interactionParamsSchema?: JSONSchema | null;
+    private _schemaVersion = 0;
     private _inputValidator?: {
         validate: ValidateFunction;
         schema: JSONSchema;
     };
 
-    constructor(public vertesia: VertesiaClient, public updateState: (data: PayloadBuilder) => void) {
+    private _store: PayloadBuilderStore;
+
+    constructor(public vertesia: VertesiaClient, store: PayloadBuilderStore) {
+        this._store = store;
     }
 
     onStateChanged() {
         const newInstance = this.clone();
-        this.updateState(newInstance);
+        this._store.snapshot = newInstance;
+        this._store.notify();
     }
 
     clone() {
-        const builder = new PayloadBuilder(this.vertesia, this.updateState);
+        const builder = new PayloadBuilder(this.vertesia, this._store);
         builder._interactionParamsSchema = this._interactionParamsSchema;
+        builder._schemaVersion = this._schemaVersion;
         builder._interaction = this._interaction;
         builder._data = this._data;
         builder._environment = this._environment;
@@ -72,6 +98,14 @@ export class PayloadBuilder {
     set mode(mode: 'start' | 'schedule') {
         if (mode !== this._mode) {
             this._mode = mode;
+            if (mode === 'schedule' && !this._scheduledWorkflowConfig) {
+                this._scheduledWorkflowConfig = {
+                    name: '',
+                    description: '',
+                    cron_expression: '0 9 * * *',
+                    timezone: 'UTC'
+                } as ScheduledWorkflowConfig;
+            }
             this.onStateChanged();
         }
     }
@@ -87,6 +121,14 @@ export class PayloadBuilder {
 
     get scheduledWorkflowConfig() {
         return this._scheduledWorkflowConfig;
+    }
+
+    updateScheduledWorkflowConfig(patch: Partial<ScheduledWorkflowConfig>) {
+        this._scheduledWorkflowConfig = {
+            ...this._scheduledWorkflowConfig,
+            ...patch
+        } as ScheduledWorkflowConfig;
+        this.onStateChanged();
     }
 
     get interactive() {
@@ -184,18 +226,26 @@ export class PayloadBuilder {
         const envId = inter.runtime?.environment || context.config?.environment;
         const model = context.config?.model;
         const env = await (envId ?
-            this.vertesia.environments.retrieve(context.config?.environment)
+            this.vertesia.environments.retrieve(envId).catch(() => undefined)
             :
             Promise.resolve(undefined)
         );
 
 
-        this.interactionParamsSchema = context.interactionParamsSchema ?? null;
-        // trigger the setter to update the corresponding interactionParamsSchema
+        // Set data BEFORE the interaction setter so that initializeBooleanDefaults (called
+        // inside the interactionParamsSchema setter) uses the real run values as its base
+        // rather than an empty object. This prevents an intermediate render where the schema
+        // is set but _data is still {} — which would cause Input to mount with empty state.
+        this._data = context.data;
+
+        // Set interaction (which recomputes interactionParamsSchema from prompts via setter)
         this.interaction = inter;
+        // Prefer the schema stored in context (persisted with the run) over the recomputed one
+        if (context.interactionParamsSchema != null) {
+            this.interactionParamsSchema = context.interactionParamsSchema;
+        }
 
         this._tool_names = context.tool_names || [];
-        this._data = context.data;
         this._interactive = context.interactive;
         this._debug_mode = context.debug_mode ?? false;
         this._non_blocking_subagents = context.non_blocking_subagents ?? true;
@@ -291,6 +341,25 @@ export class PayloadBuilder {
         }
     }
 
+    markStarted() {
+        this.start = true;
+    }
+
+    // Method-style setters for use in React components (avoids react-hooks/immutability lint errors)
+    setMode(mode: 'start' | 'schedule') { this.mode = mode; }
+    setInteraction(interaction: InCodeInteraction | undefined) { this.interaction = interaction; }
+    setEnvironment(environment: ExecutionEnvironmentRef | undefined) { this.environment = environment; }
+    setModel(model: string | undefined) { this.model = model; }
+    setToolNames(tools: string[]) { this.tool_names = tools; }
+    setCollection(collection: string | undefined) { this.collection = collection; }
+    setInteractive(interactive: boolean) { this.interactive = interactive; }
+    setDebugMode(debug_mode: boolean) { this.debug_mode = debug_mode; }
+    setUserChannels(channels: UserChannel[] | undefined) { this.user_channels = channels; }
+    setCheckpointTokens(value: number | undefined) { this.checkpoint_tokens = value; }
+    setVisibility(value: ConversationVisibility | undefined) { this.visibility = value; }
+    setData(data: JSONObject) { this.data = data; }
+    setPreserveRunValues(value: boolean) { this.preserveRunValues = value; }
+
     get start(): boolean {
         return this._start;
     }
@@ -303,6 +372,10 @@ export class PayloadBuilder {
         this._preserveRunValues = value;
     }
 
+    get schemaVersion(): number {
+        return this._schemaVersion;
+    }
+
     get interactionParamsSchema(): JSONSchema | null | undefined {
         return this._interactionParamsSchema;
     }
@@ -310,6 +383,7 @@ export class PayloadBuilder {
     set interactionParamsSchema(schema: JSONSchema | null | undefined) {
         if (this._interactionParamsSchema !== schema) {
             this._interactionParamsSchema = schema;
+            this._schemaVersion += 1;
             // Booleans must be true or false, never undefined
             if (schema) {
                 this._data = this.initializeBooleanDefaults(this._data || {}, schema);
@@ -405,11 +479,9 @@ interface PayloadProviderProps {
 }
 export function PayloadBuilderProvider({ children }: PayloadProviderProps) {
     const { client } = useUserSession();
-    const [builder, setBuilder] = useState<PayloadBuilder>();
-    useEffect(() => {
-        setBuilder(new PayloadBuilder(client, setBuilder));
-    }, []);
-    return builder && (
+    const [store] = useState(() => new PayloadBuilderStore(client));
+    const builder = useSyncExternalStore(store.subscribe, store.getSnapshot);
+    return (
         <PayloadContext.Provider value={builder}>{children}</PayloadContext.Provider >
     )
 }

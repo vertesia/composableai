@@ -131,15 +131,18 @@ export class NestedRouter extends BaseRouter {
             const childBasePath = options?.basePath;
             // e.g. "/store" + "/objects/123" => "/store/objects/123"
             basePath = childBasePath ? joinPath(this.basePath, childBasePath) : this.basePath;
+            this.parent.navigate(path, {
+                ...options,
+                basePath,
+            });
         } else {
-            // e.g. "/store" + "/studio" => "/studio"
-            basePath = options?.basePath ?? this.basePath;
+            // isBasePathNested === false: navigate to an absolute path without adding this router's basePath
+            // Pass through to parent without adding our basePath prefix
+            this.parent.navigate(path, {
+                ...options,
+                basePath: options?.basePath,
+            });
         }
-
-        this.parent.navigate(path, {
-            ...options,
-            basePath,
-        });
     }
 }
 
@@ -174,6 +177,11 @@ export function useNavigate() {
     return navigate;
 }
 
+export function useRouterBasePath() {
+    const { matchedRoutePath, router } = useRouterContext();
+    return router instanceof NestedRouter ? router.basePath : matchedRoutePath;
+}
+
 type UseParamsReturn<T> = T extends string ? string : Record<string, string>;
 export function useParams<T>(arg?: T): UseParamsReturn<T> {
     const { params } = useRouterContext();
@@ -187,6 +195,14 @@ export function useParams<T>(arg?: T): UseParamsReturn<T> {
 export function useLocation() {
     const { location } = useRouterContext();
     return location;
+}
+
+export function usePageTitle(title: string) {
+    useEffect(() => {
+        const prev = document.title;
+        document.title = title;
+        return () => { document.title = prev; };
+    }, [title]);
 }
 
 export function useNavigationPrompt(prompt: NavigationPrompt) {

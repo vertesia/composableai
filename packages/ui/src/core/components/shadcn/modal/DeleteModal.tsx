@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { useUITranslation } from "@vertesia/ui/i18n";
 import { ConfirmModal } from "./ConfirmModal.js";
 import { useToast } from "../../toast/index.js";
 
@@ -10,6 +11,7 @@ interface DeleteModalProps {
     deleteApi: (id: string) => Promise<any>;
 }
 export function DeleteModal({ idToDelete, title, content, setIdToDelete, deleteApi }: DeleteModalProps) {
+    const { t } = useUITranslation();
     const toast = useToast();
 
     const doDelete = async () => {
@@ -20,13 +22,13 @@ export function DeleteModal({ idToDelete, title, content, setIdToDelete, deleteA
         return deleteApi(idToDelete)
             .then(() => {
                 toast({
-                    title: 'Delete succeeded',
+                    title: t('modal.delete.succeeded'),
                     status: 'success'
                 });
             }).catch((err: any) => {
                 toast({
-                    title: 'Failed to delete',
-                    description: err.message ?? 'An error occurred while deleting the object',
+                    title: t('modal.delete.failed'),
+                    description: err.message ?? t('modal.delete.error'),
                     status: 'error'
                 });
             }).finally(() => {

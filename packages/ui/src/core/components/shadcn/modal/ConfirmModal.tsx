@@ -1,5 +1,6 @@
 import { TriangleAlert } from "lucide-react"
 import React, { useRef } from "react"
+import { useUITranslation } from "@vertesia/ui/i18n"
 import { Modal, ModalTitle, ModalFooter } from "./dialog"
 import { Button } from "../button"
 
@@ -9,9 +10,11 @@ interface ConfirmModalProps {
     onConfirm: () => void
     onCancel: () => void
     isOpen: boolean
+    isLoading?: boolean
 }
 
-export function ConfirmModal({ title, content, onConfirm, onCancel, isOpen }: ConfirmModalProps) {
+export function ConfirmModal({ title, content, onConfirm, onCancel, isOpen, isLoading }: ConfirmModalProps) {
+    const { t } = useUITranslation()
     const cancelButtonRef = useRef(null)
 
     return (
@@ -35,15 +38,16 @@ export function ConfirmModal({ title, content, onConfirm, onCancel, isOpen }: Co
                 <Button
                     variant="destructive"
                     onClick={onConfirm}
+                    isLoading={isLoading}
                 >
-                    Confirm
+                    {t('modal.confirm')}
                 </Button>
                 <Button
                     variant="outline"
                     onClick={onCancel}
                     ref={cancelButtonRef}
                 >
-                    Cancel
+                    {t('modal.cancel')}
                 </Button>
             </ModalFooter>
         </Modal>

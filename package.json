@@ -3,16 +3,18 @@
     "version": "1.0.0-dev.20260305.083323Z",
     "license": "Apache-2.0",
     "private": true,
+    "type": "module",
     "scripts": {
         "bump": "pnpm exec wst bump minor -x llumiverse",
         "release": "pnpm -r publish --access public",
         "build": "pnpm -r build",
         "test": "pnpm -r test",
         "clean": "rimraf ./node_modules && pnpm -r clean",
-        "prepublishOnly": "pnpm build"
+        "prepublishOnly": "pnpm build",
+        "lint": "pnpm -r lint"
     },
     "devDependencies": {
-        "eslint": "^9.32.0",
+        "eslint": "^10.0.2",
         "npm-ws-tools": "^0.3.0",
         "rimraf": "^5.0.5",
         "typescript": "^5.9.3",
@@ -32,11 +34,11 @@
             "glob@>=10.2.0 <10.5.0": "^10.5.0",
             "js-yaml@>=4.0.0 <4.1.1": "^4.1.1",
             "koa@<2.16.4": "^2.16.4",
-            "hono@<4.12.4": "^4.12.4",
+            "hono@<4.12.7": "^4.12.7",
             "@hono/node-server@<1.19.10": "^1.19.10",
             "serialize-javascript@<7.0.3": "^7.0.3",
             "dompurify@<3.3.2": "^3.3.2",
-            "undici@>=6.0.0 <6.21.3": "^6.23.0",
+            "undici@>=6.0.0 <6.21.3": "^7.24.1",
             "vite": "$vite",
             "is-generator-function": "1.0.10",
             "mdast-util-to-hast@>=13.0.0 <13.2.1": "^13.2.1",
@@ -54,7 +56,8 @@
             "diff@>=4.0.0 <5.0.0": "^4.0.4",
             "diff@>=5.0.0 <5.2.2": "^5.2.2",
             "diff@>=6.0.0 <8.0.3": "^8.0.3",
-            "ajv@>=6.0.0 <6.14.0": "^6.14.0"
+            "ajv@>=6.0.0 <6.14.0": "^6.14.0",
+            "@types/node": "^22.19.2"
         }
     }
 }

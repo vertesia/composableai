@@ -1,16 +1,24 @@
 import type { ProjectRef } from '@vertesia/common';
 import { SelectBox, Spinner, useFetch } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from '@vertesia/ui/session';
 import { LockIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface PluginAccessDeniedProps {
     name: string;
 }
 
 export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
+    const { t } = useUITranslation();
     const { client, user, accounts, account, project } = useUserSession();
     const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>(account?.id);
+
+    const effectiveAccountId = useMemo(() => {
+        if (selectedAccountId) return selectedAccountId;
+        if (accounts && accounts.length > 0) return accounts[0].id;
+        return undefined;
+    }, [selectedAccountId, accounts]);
 
     const { data: allProjects } = useFetch(
         () => user ? client.projects.list() : Promise.resolve([]),
@@ -18,15 +26,9 @@ export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
     );
 
     const filteredProjects = useMemo(() => {
-        if (!allProjects || !selectedAccountId) return [];
-        return allProjects.filter(p => p.account === selectedAccountId);
-    }, [allProjects, selectedAccountId]);
-
-    useEffect(() => {
-        if (!selectedAccountId && accounts && accounts.length > 0) {
-            setSelectedAccountId(accounts[0].id);
-        }
-    }, [accounts, selectedAccountId]);
+        if (!allProjects || !effectiveAccountId) return [];
+        return allProjects.filter(p => p.account === effectiveAccountId);
+    }, [allProjects, effectiveAccountId]);
 
     const onAccountChange = (selected: { id: string }) => {
         setSelectedAccountId(selected.id);
@@ -50,46 +52,45 @@ export function PluginAccessDenied({ name }: PluginAccessDeniedProps) {
         );
     }
 
-    const selectedOrg = accounts?.find(a => a.id === selectedAccountId);
+    const selectedOrg = accounts?.find(a => a.id === effectiveAccountId);
 
     return (
         <div className="w-full flex flex-col items-center gap-4 mt-24">
             <div className="w-1/3">
                 <div className="mb-8 flex flex-col items-center text-center">
                     <LockIcon className="w-10 h-10 mb-4 text-muted-foreground" />
-                    <div className="text-xl font-semibold">Access Denied</div>
+                    <div className="text-xl font-semibold">{t('access.denied')}</div>
                     <div className="mt-2 text-sm text-muted-foreground">
-                        You don&apos;t have permission to view the <span className="font-semibold text-foreground">{name}</span> app
-                        in project: <span className="font-semibold text-foreground">&laquo;{project?.name}&raquo;</span>.
+                        {t('access.noPermission', { name, project: project?.name })}
                     </div>
                 </div>
                 {showSelectors && (
                     <>
                         <div className="mb-4 text-sm text-muted-foreground">
-                            Switch to a different account or project to access this app.
+                            {t('access.switchPrompt')}
                         </div>
                         {hasMultipleAccounts && (
                             <div className="mb-4 flex flex-col gap-2">
-                                <span className="font-semibold text-muted-foreground">Account</span>
+                                <span className="font-semibold text-muted-foreground">{t('access.account')}</span>
                                 <SelectBox
                                     by="id"
                                     value={selectedOrg}
                                     options={accounts ?? []}
                                     optionLabel={(option) => option.name}
-                                    placeholder="Select Account"
+                                    placeholder={t('access.selectAccount')}
                                     onChange={onAccountChange}
                                 />
                             </div>
                         )}
                         {hasMultipleProjects && (
                             <div className="mb-4 flex flex-col gap-2">
-                                <span className="font-semibold text-muted-foreground">Project</span>
+                                <span className="font-semibold text-muted-foreground">{t('access.project')}</span>
                                 <SelectBox
                                     by="id"
                                     value={undefined}
                                     options={filteredProjects}
                                     optionLabel={(option) => option.name}
-                                    placeholder="Select Project"
+                                    placeholder={t('access.selectProject')}
                                     onChange={onProjectChange}
                                 />
                             </div>

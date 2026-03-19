@@ -39,7 +39,7 @@ interface DirectiveNode {
 }
 
 export function remarkDirectiveHandler() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return (tree: any) => {
         visit(tree, (node): VisitorResult => {
             if (

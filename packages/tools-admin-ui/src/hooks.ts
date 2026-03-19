@@ -28,10 +28,11 @@ export function useResourceData(baseUrl: string, mcpEndpoints?: string[]) {
             fetchJson('interactions'),
             fetchJson('tools'),
             fetchJson('skills'),
+            fetchJson('activities'),
             fetchJson('types'),
             fetchJson('templates'),
-        ]).then(([interactions, tools, skills, types, templates]) =>
-            buildResourceData(interactions, tools, skills, types, templates, mcpEndpoints)
+        ]).then(([interactions, tools, skills, activities, types, templates]) =>
+            buildResourceData(interactions, tools, skills, activities, types, templates, mcpEndpoints)
         );
     }, [baseUrl, mcpEndpoints]);
 }

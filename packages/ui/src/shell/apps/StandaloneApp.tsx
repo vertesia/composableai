@@ -3,6 +3,7 @@ import { Center, useFetch, SelectBox } from "@vertesia/ui/core";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from "@vertesia/ui/session";
 import { LockIcon } from "lucide-react";
 import { ComponentType, ReactNode, useEffect, useMemo, useState } from "react";
+import { useUITranslation } from '../../i18n/index.js';
 import { AppInstallationProvider } from "./AppInstallationProvider";
 
 
@@ -73,6 +74,7 @@ interface AccessDeniedMessageProps {
 
 function AccessDeniedMessage({ name }: AccessDeniedMessageProps) {
     const { project, accounts, client } = useUserSession();
+    const { t } = useUITranslation();
     const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>();
 
     // Fetch all projects where the app is installed across all organizations
@@ -117,7 +119,7 @@ function AccessDeniedMessage({ name }: AccessDeniedMessageProps) {
     return (
         <Center className="pt-10 flex flex-col items-center text-center text-gray-700">
             <LockIcon className="w-10 h-10 mb-4 text-gray-500" />
-            <div className="text-xl font-semibold">Access Denied</div>
+            <div className="text-xl font-semibold">{t('shell.accessDenied')}</div>
             <div className="mt-2 text-sm text-gray-500">
                 You don&apos;t have permission to view the <span className="font-semibold">{name}</span> app in project: <span className="font-semibold">&laquo;{project?.name}&raquo;</span>.
             </div>
@@ -130,25 +132,25 @@ function AccessDeniedMessage({ name }: AccessDeniedMessageProps) {
                 <div className="mt-4 flex flex-row gap-4 items-end">
                     {orgOptions.length > 1 && (
                         <div>
-                            <div className="text-sm text-gray-500 mb-2">Organization</div>
+                            <div className="text-sm text-gray-500 mb-2">{t('shell.organization')}</div>
                             <SelectBox
                                 by="id"
                                 value={selectedOrg}
                                 options={orgOptions}
                                 optionLabel={(option) => option.name}
-                                placeholder="Select Organization"
+                                placeholder={t('shell.selectOrganization')}
                                 onChange={(org) => setSelectedAccountId(org.id)}
                             />
                         </div>
                     )}
                     <div>
-                        {orgOptions.length > 1 && <div className="text-sm text-gray-500 mb-2">Project</div>}
+                        {orgOptions.length > 1 && <div className="text-sm text-gray-500 mb-2">{t('login.terminal.project')}</div>}
                         <SelectBox
                             by="id"
                             value={undefined}
                             options={filteredProjects}
                             optionLabel={(option) => option.name}
-                            placeholder="Select Project"
+                            placeholder={t('shell.selectProject')}
                             onChange={onProjectChange}
                         />
                     </div>
@@ -159,10 +161,11 @@ function AccessDeniedMessage({ name }: AccessDeniedMessageProps) {
 }
 
 function UnknownAppName() {
+    const { t } = useUITranslation();
     return (
         <Center className="pt-10 flex flex-col items-center text-center text-gray-700">
             <LockIcon className="w-10 h-10 mb-4 text-gray-500" />
-            <div className="text-xl font-semibold">Application not registered</div>
+            <div className="text-xl font-semibold">{t('shell.applicationNotRegistered')}</div>
             <div className="mt-2 text-sm text-gray-500">
                 Before starting to code a Vertesia application you must register an application manifest
                 in Vertesia Studio then install it in one or more projects.

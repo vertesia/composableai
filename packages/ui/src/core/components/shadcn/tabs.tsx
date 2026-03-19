@@ -6,13 +6,13 @@ import { cn } from "../libs/utils";
 import { SelectBox } from "./selectBox";
 
 export interface Tab {
-    name: string;
-    current?: boolean;
-    href?: string;
-    label: ReactNode;
-    content: ReactNode;
-    disabled?: boolean;
-    is_allowed?: boolean;
+  name: string;
+  current?: boolean;
+  href?: string;
+  label: ReactNode;
+  content: ReactNode;
+  disabled?: boolean;
+  is_allowed?: boolean;
 }
 
 const TabsContext = React.createContext<{
@@ -39,6 +39,7 @@ interface TabsProps {
   defaultValue?: string;
   className?: string;
   fullWidth?: boolean;
+  fullHeight?: boolean;
   children?: React.ReactNode;
   onTabChange?: (tabName: string) => void;
   responsive?: boolean;
@@ -52,6 +53,7 @@ const Tabs = ({
   current,
   className,
   fullWidth,
+  fullHeight,
   children,
   onTabChange,
   responsive = false,
@@ -119,7 +121,7 @@ const Tabs = ({
 
   const handleValueChange = (newValue: string) => {
     setValue(newValue);
-    
+
     // Update the URL hash when tab changes (only if updateHash is true and not controlled by parent)
     if (updateHash && !current) {
       // Preserve existing history state when changing hash
@@ -127,7 +129,7 @@ const Tabs = ({
       const newUrl = window.location.pathname + window.location.search + '#' + newValue;
       window.history.pushState(currentState, '', newUrl);
     }
-    
+
     if (onTabChange) {
       onTabChange(newValue);
     }
@@ -143,7 +145,7 @@ const Tabs = ({
         defaultValue={value || visibleTabs[0]?.name}
         value={value}
         onValueChange={handleValueChange}
-        className={className}
+        className={cn("flex-1 flex flex-col min-h-0 px-2", fullHeight && "h-full", className)}
       >
         {children}
       </TabsPrimitive.Root>
@@ -151,7 +153,7 @@ const Tabs = ({
   );
 };
 
-const TabsBar = ({ className }: { className?: string }) => {
+const TabsBar = ({ className, sticky }: { className?: string; sticky?: boolean }) => {
   const { tabs, size, current, setTab, responsive, variant, updateHash } = React.useContext(TabsContext);
 
   const fullWidth = size !== 0;
@@ -182,7 +184,7 @@ const TabsBar = ({ className }: { className?: string }) => {
         <div className="px-2 block lg:hidden">
           <SelectBox
             label="Tab"
-            className={(className)}
+            className={cn(sticky && "sticky top-0 bg-background z-10", className)}
             options={tabs}
             optionLabel={(tab: Tab) => typeof tab.label === 'string' ? tab.label : String(tab.label)}
             value={tabs.find(tab => tab.name === current)}
@@ -192,9 +194,9 @@ const TabsBar = ({ className }: { className?: string }) => {
           />
         </div>
       )}
-      <TabsList size={size} variant={variant} className={cn((fullWidth ? "w-full" : ""), className, (responsive ? "hidden lg:flex" : ""))}>
+      <TabsList size={size} variant={variant} className={cn((fullWidth ? "w-full" : ""), sticky && "sticky top-0 bg-background z-10", className, (responsive ? "hidden lg:flex" : ""))}>
         {tabs.map((tab) => (
-          
+
           <TabsTrigger
             key={tab.name}
             value={tab.name}
@@ -237,7 +239,7 @@ const TabsList: React.ForwardRefExoticComponent<TabsListProps & React.RefAttribu
     <TabsPrimitive.List
       ref={ref}
       className={cn(
-        variant === "tabs" 
+        variant === "tabs"
           ? "border-b -mb-px flex space-x-4"
           : "flex space-x-2 p-1 rounded-md",
         className
@@ -275,19 +277,19 @@ const TabsTrigger: React.ForwardRefExoticComponent<TabsTriggerProps & React.RefA
     <TabsPrimitive.Trigger
       ref={ref}
       className={cn(
-        variant === "tabs" 
+        variant === "tabs"
           ? cn(
-              "border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer",
-              "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
-              "data-[state=active]:border-primary data-[state=active]:text-primary",
-              "disabled:pointer-events-none disabled:opacity-50"
-            )
+            "border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer",
+            "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
+            "data-[state=active]:border-primary data-[state=active]:text-primary",
+            "disabled:pointer-events-none disabled:opacity-50"
+          )
           : cn(
-              "px-3 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer rounded-sm transition-colors",
-              "tborder border-input bg-muted shadow-xs hover:bg-muted ring-inset",
-              "data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm",
-              "disabled:pointer-events-none disabled:opacity-50"
-            ),
+            "px-3 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer rounded-sm transition-colors",
+            "tborder border-input bg-muted shadow-xs hover:bg-muted ring-inset",
+            "data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm",
+            "disabled:pointer-events-none disabled:opacity-50"
+          ),
         className,
         size ? `w-1/${size}` : ""
       )}
@@ -308,7 +310,7 @@ const TabsContent: React.ForwardRefExoticComponent<TabsContentProps & React.RefA
     ref={ref}
     className={cn(
       "focus-visible:outline-none",
-      "flex-1 overflow-y-auto min-h-0 pt-2",
+      "flex-1 overflow-y-auto min-h-0 pt-2 pb-4",
       className
     )}
     {...props}

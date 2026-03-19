@@ -6,6 +6,7 @@ import { VegaEmbed } from 'react-vega';
 import type { View } from 'vega';
 import type { TopLevelSpec as VisualizationSpec } from 'vega-lite';
 import { cn } from '../../../core/components/libs/utils';
+import { useUITranslation } from '../../../i18n/index.js';
 import { useUserSession } from '@vertesia/ui/session';
 import type { VegaLiteChartSpec } from './AgentChart';
 import { getArtifactCacheKey, getFileCacheKey, useArtifactUrlCache } from './useArtifactUrlCache';
@@ -52,6 +53,7 @@ function FullscreenDialog({
     description?: string;
     children: React.ReactNode;
 }) {
+    const { t } = useUITranslation();
     return (
         <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogPrimitive.Portal>
@@ -67,7 +69,7 @@ function FullscreenDialog({
                         <button
                             onClick={onClose}
                             className="absolute top-3 right-3 z-10 p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 shadow-sm"
-                            aria-label="Close fullscreen"
+                            aria-label={t('agent.closeFullscreen')}
                         >
                             <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                         </button>
@@ -80,7 +82,7 @@ function FullscreenDialog({
                     <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-xl">
                         <div className="flex flex-col">
                             <DialogPrimitive.Title className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                                {title || 'Dashboard'}
+                                {title || t('agent.dashboard')}
                             </DialogPrimitive.Title>
                             {description && (
                                 <DialogPrimitive.Description className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -540,6 +542,7 @@ function getDarkModeConfig(isDark: boolean): Record<string, any> {
 }
 
 export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }: VegaLiteChartProps) {
+    const { t } = useUITranslation();
     const { title, description, spec: vegaSpec, options } = spec;
     const [isExporting, setIsExporting] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
@@ -912,28 +915,28 @@ export const VegaLiteChart = memo(function VegaLiteChart({ spec, artifactRunId }
                 onClick={handleCopy}
                 disabled={isCopied}
                 className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 flex items-center gap-1"
-                title="Copy to clipboard"
+                title={t('agent.copyToClipboard')}
             >
                 {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {isCopied ? 'Copied' : 'Copy'}
+                {isCopied ? t('agent.copied') : t('agent.copy')}
             </button>
             <button
                 onClick={handleExport}
                 disabled={isExporting}
                 className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                title="Export as PNG"
+                title={t('agent.exportAsPng')}
             >
                 <Download className="w-3 h-3" />
-                {isExporting ? 'Exporting...' : 'Export'}
+                {isExporting ? t('agent.exporting') : t('agent.export')}
             </button>
             {showFullscreenButton && (
                 <button
                     onClick={toggleFullscreen}
                     className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors flex items-center gap-1"
-                    title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                    title={isFullscreen ? t('agent.exitFullscreen') : t('agent.fullscreen')}
                 >
                     {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
-                    {isFullscreen ? 'Exit' : 'Fullscreen'}
+                    {isFullscreen ? t('agent.exit') : t('agent.fullscreen')}
                 </button>
             )}
         </div>

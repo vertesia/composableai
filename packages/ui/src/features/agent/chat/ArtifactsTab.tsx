@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react';
+import { Button } from '@vertesia/ui/core';
+import { useUserSession } from '@vertesia/ui/session';
 import {
     ChevronDownIcon,
     ChevronRightIcon,
@@ -9,8 +10,8 @@ import {
     PackageIcon,
     RefreshCwIcon,
 } from 'lucide-react';
-import { Button } from '@vertesia/ui/core';
-import { useUserSession } from '@vertesia/ui/session';
+import React, { useCallback, useState } from 'react';
+import { useUITranslation } from '../../../i18n/index.js';
 import { useArtifacts, type ArtifactTreeNode } from './hooks/useArtifacts.js';
 
 // ---------------------------------------------------------------------------
@@ -86,6 +87,7 @@ interface ArtifactsTabProps {
 }
 
 function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
+    const { t } = useUITranslation();
     const { client } = useUserSession();
     const { tree, flatFiles, isLoading, error, refresh } = useArtifacts(client, runId, refreshKey);
     const [downloadingPath, setDownloadingPath] = useState<string | null>(null);
@@ -93,11 +95,17 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
     const handleDownload = useCallback(async (relativePath: string) => {
         if (!runId) return;
         setDownloadingPath(relativePath);
+        // Open the tab synchronously (before the await) so the browser treats it as
+        // a direct user action and doesn't block it as a popup.
+        const newTab = window.open('', '_blank');
         try {
             const { url } = await client.files.getArtifactDownloadUrl(runId, relativePath, 'attachment');
-            window.open(url, '_blank');
+            if (newTab) {
+                newTab.location.href = url;
+            }
         } catch (err) {
             console.error('Failed to get artifact download URL:', err);
+            newTab?.close();
         } finally {
             setDownloadingPath(null);
         }
@@ -116,7 +124,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
         return (
             <div className="flex flex-col items-center justify-center py-8 text-muted">
                 <Loader2Icon className="size-6 animate-spin mb-2" />
-                <span className="text-sm">Loading artifacts...</span>
+                <span className="text-sm">{t('agent.loadingArtifacts')}</span>
             </div>
         );
     }
@@ -127,7 +135,7 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
                 <span className="text-sm text-destructive mb-2">{error}</span>
                 <Button variant="ghost" size="sm" onClick={refresh}>
                     <RefreshCwIcon className="size-3.5 mr-1.5" />
-                    Retry
+                    {t('agent.retry')}
                 </Button>
             </div>
         );
@@ -137,10 +145,10 @@ function ArtifactsTabComponent({ runId, refreshKey = 0 }: ArtifactsTabProps) {
         return (
             <div className="flex flex-col items-center justify-center py-8 text-muted">
                 <PackageIcon className="size-8 mb-2" />
-                <span className="text-sm">No artifacts yet</span>
+                <span className="text-sm">{t('agent.noArtifactsYet')}</span>
                 <Button variant="ghost" size="sm" className="mt-2" onClick={refresh}>
                     <RefreshCwIcon className="size-3.5 mr-1.5" />
-                    Refresh
+                    {t('agent.refresh')}
                 </Button>
             </div>
         );

@@ -82,6 +82,8 @@ export const EXTERNALS = [
     /^vega-lite\/.*/,
     /^framer-motion\/.*/,
     "dompurify",
+    "i18next",
+    "react-i18next",
     "mermaid",
     "react-pdf",
     /^react-pdf\/.*/,

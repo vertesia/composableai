@@ -175,18 +175,19 @@ export class SchemaNode {
 
     loadChildren() {
         this.children = [];
-        if (this.schema.items && (this.schema.items as JSONSchema).properties) {
-            this._loadChildren((this.schema.items as JSONSchema).properties!);
+        const itemProperties = (this.schema.items as JSONSchema)?.properties;
+        if (this.schema.items && itemProperties) {
+            this._loadChildren(itemProperties, this.children);
         } else if (this.schema.properties) {
-            this._loadChildren(this.schema.properties);
+            this._loadChildren(this.schema.properties, this.children);
         }
     }
 
-    _loadChildren(properties: Record<string, JSONSchema>) {
+    _loadChildren(properties: Record<string, JSONSchema>, children: SchemaNode[]) {
         for (const name of Object.keys(properties)) {
             const childSchema = properties[name];
             const child = new SchemaNode(name, childSchema, this.loader, this);
-            this.children!.push(child);
+            children.push(child);
             if (child.isParent) {
                 child.loadChildren();
             }
