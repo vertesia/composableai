@@ -30,7 +30,7 @@ overrides:
   lodash@>= 4.0.0 <4.17.23: ^4.17.23
   lodash-es@>= 4.0.0 <4.17.23: ^4.17.23
   '@isaacs/brace-expansion@>=5.0.0 <6.0.0': ^5.0.1
-  fast-xml-parser@<5.3.8: ^5.3.8
+  fast-xml-parser@<5.3.8: ^5.5.7
   minimatch@>=3.0.0 <4.0.0: legacy-v3
   minimatch@>=5.0.0 <6.0.0: legacy-v5
   minimatch@>=9.0.0 <10.0.0: legacy-v9
@@ -5503,6 +5503,10 @@ packages:
     resolution: {integrity: sha512-3+fdZyBRVg29n4rXP0joHthhcHdPUHaIC16cuyyd1iLsuaO6Vea36MPrxgAzbZna8lhvZeRL8Bc9GP56/J9xEw==}
     hasBin: true
 
+  fast-xml-parser@5.5.7:
+    resolution: {integrity: sha512-LteOsISQ2GEiDHZch6L9hB0+MLoYVLToR7xotrzU0opCICBkxOPgHAy1HxAvtxfJNXDJpgAsQN30mkrfpO2Prg==}
+    hasBin: true
+
   fastq@1.20.1:
     resolution: {integrity: sha512-GGToxJ/w1x32s/D2EKND7kTil4n8OVk/9mycTc4VDza13lOvpUZTGX3mFSCtV9ksdGBVzvsyAVLM6mHFThxXxw==}
 
@@ -8990,7 +8994,7 @@ snapshots:
   '@aws-sdk/xml-builder@3.972.5':
     dependencies:
       '@smithy/types': 4.12.0
-      fast-xml-parser: 5.5.6
+      fast-xml-parser: 5.5.7
       tslib: 2.8.1
 
   '@aws/lambda-invoke-store@0.2.3': {}
@@ -13165,6 +13169,12 @@ snapshots:
       path-expression-matcher: 1.1.3
 
   fast-xml-parser@5.5.6:
+    dependencies:
+      fast-xml-builder: 1.1.4
+      path-expression-matcher: 1.1.3
+      strnum: 2.2.0
+
+  fast-xml-parser@5.5.7:
     dependencies:
       fast-xml-builder: 1.1.4
       path-expression-matcher: 1.1.3
