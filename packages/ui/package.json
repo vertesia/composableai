@@ -54,7 +54,7 @@
     "dayjs": "^1.11.19",
     "debounce": "^2.2.0",
     "dompurify": "^3.3.2",
-    "fast-xml-parser": "^5.3.8",
+    "fast-xml-parser": "^5.5.7",
     "firebase": "^10.12.2",
     "framer-motion": "^12.23.12",
     "i18next": "^25.8.14",
