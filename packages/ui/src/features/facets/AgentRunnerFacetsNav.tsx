@@ -1,5 +1,6 @@
 import { Button, Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { VInteractionFacet } from './utils/VInteractionFacet';
 import { VStringFacet } from './utils/VStringFacet';
 import { VUserFacet } from './utils/VUserFacet';
 import { SearchInterface } from './utils/SearchInterface';
@@ -9,6 +10,7 @@ interface AgentRunnerFacetsNavProps {
     facets: {
         statuses?: any[];
         initiated_by?: any[];
+        interactions?: any[];
     };
     search: SearchInterface;
 }
@@ -17,40 +19,45 @@ interface AgentRunnerFacetsNavProps {
 export function useAgentRunnerFilterGroups(facets: AgentRunnerFacetsNavProps['facets']): FilterGroup[] {
     const customFilterGroups: FilterGroup[] = [];
 
-    if (facets.statuses) {
-        const statusFilterGroup = VStringFacet({
-            search: null as any, // This will be provided by the search context
-            buckets: facets.statuses || [],
-            name: 'status',
-            placeholder: 'Status',
-        });
-        customFilterGroups.push(statusFilterGroup);
-    }
+    customFilterGroups.push({
+        name: 'id',
+        placeholder: 'Run ID',
+        type: 'text',
+        multiple: false
+    });
 
-    if (facets.initiated_by) {
-        const initiatedByFilterGroup = VUserFacet({
-            buckets: facets.initiated_by || [],
-            name: 'initiated_by',
-            placeholder: 'Initiated By'
-        });
-        customFilterGroups.push(initiatedByFilterGroup);
-    }
+    customFilterGroups.push(VInteractionFacet({
+        buckets: facets.interactions || [],
+        name: 'interaction',
+        placeholder: 'Interaction',
+    }));
 
-    const dateAfterFilterGroup = {
+    customFilterGroups.push(VStringFacet({
+        search: null as any, // This will be provided by the search context
+        buckets: facets.statuses || [],
+        name: 'status',
+        placeholder: 'Status',
+    }));
+
+    customFilterGroups.push(VUserFacet({
+        buckets: facets.initiated_by || [],
+        name: 'initiated_by',
+        placeholder: 'Initiated By'
+    }));
+
+    customFilterGroups.push({
         name: 'start',
         placeholder: 'Started After',
         type: 'date' as const,
         multiple: false
-    };
-    customFilterGroups.push(dateAfterFilterGroup);
+    });
 
-    const dateBeforeFilterGroup = {
+    customFilterGroups.push({
         name: 'end',
         placeholder: 'Started Before',
         type: 'date' as const,
         multiple: false
-    };
-    customFilterGroups.push(dateBeforeFilterGroup);
+    });
 
     return customFilterGroups;
 }
@@ -90,14 +97,24 @@ export function useAgentRunnerFilterHandler(search: SearchInterface) {
 // Legacy component for backward compatibility
 export function AgentRunnerFacetsNav({ facets, search }: AgentRunnerFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
+    const didMountRef = useRef(false);
+    const skipNextSearchRef = useRef(Object.keys(search.query || {}).length > 0);
     const filterGroups = useAgentRunnerFilterGroups(facets);
-    const handleFilterLogic = useAgentRunnerFilterHandler(search);
+    const handleFilterLogic = useMemo(() => useAgentRunnerFilterHandler(search), [search]);
 
-    const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
-        const newFilters = typeof value === 'function' ? value(filters) : value;
-        setFilters(newFilters);
-        handleFilterLogic(newFilters);
-    };
+    useEffect(() => {
+        if (!didMountRef.current) {
+            didMountRef.current = true;
+            return;
+        }
+
+        if (skipNextSearchRef.current) {
+            skipNextSearchRef.current = false;
+            return;
+        }
+
+        handleFilterLogic(filters);
+    }, [filters, handleFilterLogic]);
 
     const handleRefetch = () => {
         search.search();
@@ -107,7 +124,7 @@ export function AgentRunnerFacetsNav({ facets, search }: AgentRunnerFacetsNavPro
         <FilterProvider
             filterGroups={filterGroups}
             filters={filters}
-            setFilters={handleFilterChange}
+            setFilters={setFilters}
         >
             <div className='flex justify-between mb-1'>
                 <div className='flex gap-2 items-center'>

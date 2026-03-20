@@ -83,6 +83,7 @@ export class AgentsApi extends ApiTopic {
      */
     list(query?: ListAgentRunsQuery): Promise<AgentRun[]> {
         const params: Record<string, string> = {};
+        if (query?.id) params.id = query.id;
         if (query?.status) {
             params.status = Array.isArray(query.status) ? query.status.join(',') : query.status;
         }

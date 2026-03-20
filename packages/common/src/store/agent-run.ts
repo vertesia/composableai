@@ -174,6 +174,9 @@ export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties 
  * Filters for listing agent runs.
  */
 export interface ListAgentRunsQuery {
+    /** Filter by agent run ID */
+    id?: string;
+
     /** Filter by status (single or multiple) */
     status?: AgentRunStatus | AgentRunStatus[];
 
