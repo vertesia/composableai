@@ -62,8 +62,8 @@ export function useAgentRunnerFilterGroups(facets: AgentRunnerFacetsNavProps['fa
     return customFilterGroups;
 }
 
-// Hook to create filter change handler for agent runners
-export function useAgentRunnerFilterHandler(search: SearchInterface) {
+// Create filter change handler for agent runners
+export function createAgentRunnerFilterHandler(search: SearchInterface) {
     return (newFilters: BaseFilter[]) => {
 
         // Clear all filters first, then apply new ones
@@ -98,9 +98,11 @@ export function useAgentRunnerFilterHandler(search: SearchInterface) {
 export function AgentRunnerFacetsNav({ facets, search }: AgentRunnerFacetsNavProps) {
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const didMountRef = useRef(false);
-    const skipNextSearchRef = useRef(Object.keys(search.query || {}).length > 0);
+    const skipNextSearchRef = useRef(
+        typeof window !== 'undefined' && Boolean(new URLSearchParams(window.location.search).get('filters'))
+    );
     const filterGroups = useAgentRunnerFilterGroups(facets);
-    const handleFilterLogic = useMemo(() => useAgentRunnerFilterHandler(search), [search]);
+    const handleFilterLogic = useMemo(() => createAgentRunnerFilterHandler(search), [search]);
 
     useEffect(() => {
         if (!didMountRef.current) {
