@@ -5,10 +5,21 @@ import { Users } from "lucide-react";
 import { ReactNode } from "react";
 import { useUITranslation } from '../../i18n/index.js';
 
-//TODO use a real cache
 const USER_CACHE: Record<string, Promise<User>> = {};
 const GROUP_CACHE: Record<string, Promise<UserGroup>> = {};
 const APIKEY_CACHE: Record<string, Promise<ApiKey>> = {};
+
+function cachedFetch<T>(cache: Record<string, Promise<T>>, key: string, fetcher: () => Promise<T>): Promise<T> {
+    let entry = cache[key];
+    if (!entry) {
+        entry = fetcher().catch((err) => {
+            delete cache[key]; // evict on failure so retries work
+            throw err;
+        });
+        cache[key] = entry;
+    }
+    return entry;
+}
 
 /**
  * Fetch the user information given a user reference.
@@ -18,16 +29,7 @@ const APIKEY_CACHE: Record<string, Promise<ApiKey>> = {};
 export function useFetchUserInfo(userId: string) {
     const { client } = useUserSession();
 
-    return useFetch(() => {
-        let user: Promise<User> | undefined = USER_CACHE[userId];
-        if (!user) {
-            user = client.users.retrieve(userId).then(user => {
-                return user;
-            });
-            USER_CACHE[userId] = user;
-        }
-        return user;
-    }, [userId]);
+    return useFetch(() => cachedFetch(USER_CACHE, userId, () => client.users.retrieve(userId)), [userId]);
 }
 
 /**
@@ -37,16 +39,7 @@ export function useFetchUserInfo(userId: string) {
 export function useFetchGroupInfo(groupId: string) {
     const { client } = useUserSession();
 
-    return useFetch(() => {
-        let group: Promise<UserGroup> | undefined = GROUP_CACHE[groupId];
-        if (!group) {
-            group = client.iam.groups.retrieve(groupId).then(group => {
-                return group;
-            });
-            GROUP_CACHE[groupId] = group;
-        }
-        return group;
-    }, [groupId]);
+    return useFetch(() => cachedFetch(GROUP_CACHE, groupId, () => client.iam.groups.retrieve(groupId)), [groupId]);
 }
 
 /**
@@ -56,16 +49,7 @@ export function useFetchGroupInfo(groupId: string) {
 export function useFetchApiKeyInfo(keyId: string) {
     const { client } = useUserSession();
 
-    return useFetch(() => {
-        let apikey: Promise<ApiKey> | undefined = APIKEY_CACHE[keyId];
-        if (!apikey) {
-            apikey = client.apikeys.retrieve(keyId).then(apikey => {
-                return apikey;
-            });
-            APIKEY_CACHE[keyId] = apikey;
-        }
-        return apikey;
-    }, [keyId]);
+    return useFetch(() => cachedFetch(APIKEY_CACHE, keyId, () => client.apikeys.retrieve(keyId)), [keyId]);
 }
 
 function AvatarPlaceholder() {
@@ -394,8 +378,7 @@ interface ApiKeyAvatarProps extends InfoProps {
 }
 export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAvatarProps) {
     const { t } = useUITranslation();
-    const { client } = useUserSession();
-    const { data, error } = useFetch<ApiKey>(() => client.apikeys.retrieve(keyId), []);
+    const { data, error } = useFetchApiKeyInfo(keyId);
 
     if (error) {
         return <ErrorAvatar title={t('user.failedToFetchApiKey')} error={error} showTitle={showTitle} size={size} />
