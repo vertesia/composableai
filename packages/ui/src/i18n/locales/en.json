@@ -148,6 +148,7 @@
   "agent.waitingForAgentResponse": "Waiting for agent response...",
   "agent.workflowCancelled": "Workflow cancelled",
   "agent.working": "Working...",
+  "agent.payload": "Payload",
   "agent.workstreams": "Workstreams",
   "agent.yes": "Yes",
   "auth.continueWithEnterprise": "Continue with Enterprise SSO",
