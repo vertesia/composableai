@@ -25,6 +25,8 @@ export const EXTERNALS = [
     "@radix-ui/react-separator",
     "@radix-ui/react-slot",
     "@radix-ui/react-tabs",
+    "@radix-ui/react-radio-group",
+    "@radix-ui/react-switch",
     "@radix-ui/react-tooltip",
     '@radix-ui/react-dismissable-layer',
     '@radix-ui/react-focus-guards',
