@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
 import RelativeTime from "dayjs/plugin/relativeTime";
 import { shortId } from "../../../utils";
-import { Eye } from "lucide-react";
+import { ExternalLink, Eye } from "lucide-react";
 import { Button } from "@vertesia/ui/core";
 dayjs.extend(RelativeTime);
 dayjs.extend(LocalizedFormat);
@@ -159,6 +159,32 @@ const renderers: Record<string, (params?: URLSearchParams, onClick?: (id: string
     typeLink(_params?: URLSearchParams, _onClick?: (id: string) => void) {
         return (value: any, index: number) => {
             return <td key={index}>{value?.name || "n/a"}</td>;
+        };
+    },
+    revision(_params?: URLSearchParams, _onClick?: (id: string) => void) {
+        return (value: any, index: number) => {
+            const rev = value?.revision;
+            if (!rev) return <td key={index} />;
+            return (
+                <td key={index}>
+                    <div className="flex flex-col gap-0.5">
+                        {rev.root &&
+                            <div className="flex items-center gap-1">
+                                <span className="text-xs text-muted font-mono">
+                                    root: ~{rev.root.slice(-7)}
+                                </span>
+                                <a
+                                    href={`/store/objects/${rev.root}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <ExternalLink className="size-3 text-muted" />
+                                </a>
+                            </div>
+                        }
+                        {rev.label && <span className="text-xs text-muted">label: {rev.label}</span>}
+                    </div>
+                </td>
+            );
         };
     },
     date(params?: URLSearchParams, _onClick?: (id: string) => void) {

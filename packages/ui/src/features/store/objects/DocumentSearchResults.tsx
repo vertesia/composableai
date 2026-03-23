@@ -103,6 +103,12 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         typeRegistry ? layout || getTableLayout(typeRegistry, search.query.type) : defaultLayout,
     );
 
+    useEffect(() => {
+        if (layout) {
+            setActualLayout(layout);
+        }
+    }, [layout]);
+
     //TODO _setRefreshTrigger state not used
     const [refreshTrigger, _setRefreshTrigger] = useState(0);
     const [loaded, setLoaded] = useState(0);
