@@ -1,3 +1,4 @@
+import { ColumnLayout } from '@vertesia/common';
 import { Button, Popover, PopoverContent, PopoverTrigger, SelectList } from '@vertesia/ui/core';
 import clsx from 'clsx';
 import { EllipsisVertical, X } from 'lucide-react';
@@ -11,7 +12,10 @@ import { ObjectsActionContextProvider } from "./ObjectsActionContext";
 import { useObjectsActionContext } from "./ObjectsActionHooks";
 import { ObjectsActionSpec } from "./ObjectsActionSpec";
 
-export function SelectionActions() {
+interface SelectionActionsProps {
+    table_layout?: ColumnLayout[];
+}
+export function SelectionActions({ table_layout }: SelectionActionsProps) {
     const selection = useDocumentSelection();
     const size = selection.size();
     const plural = size > 1 ? "s" : "";
@@ -24,7 +28,7 @@ export function SelectionActions() {
     };
 
     return (
-        <ObjectsActionContextProvider>
+        <ObjectsActionContextProvider table_layout={table_layout}>
             <div className="flex items-center gap-x-2">
                 {hasSelection && !hasSingleSelection &&
                     <div className="flex items-center gap-x-1 shrink-0">

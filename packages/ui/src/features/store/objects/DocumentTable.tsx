@@ -372,6 +372,7 @@ function DocumentTableImpl({
     const columns = useMemo(() => {
         // avoid rendering empty layouts
         const actualLayout = layout.length > 0 ? layout : defaultLayout;
+        console.log("Using layout with columns:", actualLayout.map((col) => col.name).join(", "));
         return actualLayout.map((col) => new DocumentTableColumn(col, previewObject));
     }, [layout, previewObject]);
 

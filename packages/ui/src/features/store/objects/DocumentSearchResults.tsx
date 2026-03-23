@@ -106,6 +106,12 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         typeRegistry ? layout || getTableLayout(typeRegistry, search.query.type) : defaultLayout,
     );
 
+    useEffect(() => {
+        if (layout) {
+            setActualLayout(layout);
+        }
+    }, [layout]);
+
     //TODO _setRefreshTrigger state not used
     const [refreshTrigger, _setRefreshTrigger] = useState(0);
     const [loaded, setLoaded] = useState(0);
@@ -313,29 +319,28 @@ function Toolsbar(props: ToolsbarProps) {
     return (
         <div className="sticky top-0 z-10 bg-background py-2 flex justify-between items-center">
             {
-                allowFilter && (
+                allowFilter ? (
                     <FilterProvider
                         filterGroups={filterGroups}
                         filters={filters}
                         setFilters={handleFilterChange}
                     >
-                        <div className="flex flex-row gap-4 items-center justify-between w-full">
-                            <div className="flex gap-2 items-center w-2/3">
-                                {
-                                    allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
-                                }
-                                <FilterBtn />
+                        <div>
+                            <div className="flex flex-row gap-4 items-center justify-between w-full">
+                                <div className="flex gap-2 items-center w-2/3">
+                                    {
+                                        allowSearch && <VectorSearchWidget onChange={handleVectorSearch} isLoading={isLoading} refresh={refreshTrigger} className="w-full" />
+                                    }
+                                    <FilterBtn />
+                                </div>
+                            </div>
+                            <div className="flex gap-2 items-center pt-2">
+                                <FilterBar />
+                                <FilterClear />
                             </div>
                         </div>
-                        <div className="flex gap-2 items-center pt-2">
-                            <FilterBar />
-                            <FilterClear />
-                        </div>
                     </FilterProvider>
-                )
-            }
-            {
-                !allowFilter && (
+                ) : (
                     <div className="flex flex-row gap-4 items-center justify-between w-full">
                         <div className="flex gap-2 items-center w-2/3">
                             {

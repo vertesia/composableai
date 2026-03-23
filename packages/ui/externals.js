@@ -17,6 +17,7 @@ export const EXTERNALS = [
     "@headlessui/react",
     "lucide-react",
     "clsx",
+    'radix-ui',
     "@radix-ui/react-checkbox",
     "@radix-ui/react-dialog",
     "@radix-ui/react-label",

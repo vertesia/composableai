@@ -48,11 +48,11 @@ export function DocumentTableView({ objects, selection, isLoading, columns, onRo
                                     </td>
                                 }
                                 {columns.map((col, index) => col.render(obj, index))}
-                                {isHighlighted && (
-                                    <td className="w-8 text-center">
+                                <td className="w-8 text-center">
+                                    {isHighlighted && (
                                         <CheckIcon className="size-4 text-blue-600 dark:text-blue-400 inline-block" />
-                                    </td>
-                                )}
+                                    )}
+                                </td>
                             </tr>
                         )
                     })

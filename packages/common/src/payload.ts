@@ -9,6 +9,7 @@ import {
     RunSearchQuery,
     SimpleSearchQuery
 } from "./query.js";
+import { ColumnLayout } from "./store/store.js";
 
 export type SortOrder = 'asc' | 'desc';
 
@@ -87,6 +88,7 @@ export interface ExportPropertiesPayload {
     objectIds: string[];
     type: string;
     query?: ComplexSearchQuery;
+    table_layout?: ColumnLayout[];
 }
 
 export interface ExportPropertiesResponse {
