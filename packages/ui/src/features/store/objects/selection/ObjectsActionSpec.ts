@@ -1,6 +1,8 @@
 import { VertesiaClient } from "@vertesia/client";
+import { ColumnLayout } from "@vertesia/common";
 import { ToastFn } from "@vertesia/ui/core";
-import { DocumentSearch, DocumentSelection } from "../../../store";
+import { DocumentSelection } from '../DocumentSelectionProvider';
+import { DocumentSearch } from '../search/DocumentSearchContext';
 
 export interface ObjectsActionSpec {
     id: string;
@@ -19,6 +21,7 @@ export interface ObjectsActionParams {
     selection: DocumentSelection,
     toast: ToastFn,
     search: DocumentSearch,
+    table_layout?: ColumnLayout[],
 }
 
 export interface ActionComponentTypeProps {

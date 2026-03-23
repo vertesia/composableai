@@ -70,6 +70,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
         });
 
         if (token && state) {
+            session.setSession = setSession;
             const validationError = verifyState(state);
             if (validationError) {
                 console.error(`Auth: invalid state: ${validationError}`);

@@ -5,7 +5,7 @@ import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from '@vertesia/ui/session';
 
 import { useDocumentSearch } from '../../search/DocumentSearchContext';
-import { useObjectsActionContext } from '../ObjectsActionContext';
+import { useObjectsActionContext } from '../ObjectsActionHooks';
 import { ActionComponentTypeProps, ObjectsActionSpec } from '../ObjectsActionSpec';
 import ConfirmAction from './ConfirmAction';
 

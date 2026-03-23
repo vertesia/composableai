@@ -41,6 +41,9 @@ export function DocumentSearchProvider({ children, limit, parent, typeId, facets
         search.query.type = typeId;
         search.query.parent = parent;
         search.query.name = name;
+        if (collectionId) {
+            search.query.all_revisions = true;
+        }
         return search;
     }, [typeId, limit, collectionId]);
 

@@ -2,7 +2,7 @@ import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
 import { SelectContentTypeModal } from "../../../types";
-import { useObjectsActionCallback } from "../ObjectsActionContext";
+import { useObjectsActionCallback } from "../ObjectsActionHooks";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function ChangeTypeActionComponent({ action, objectIds, children }: ActionComponentTypeProps) {

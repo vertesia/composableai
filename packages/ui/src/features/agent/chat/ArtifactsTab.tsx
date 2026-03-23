@@ -24,7 +24,12 @@ interface TreeNodeProps {
     onDownload: (relativePath: string) => void;
     downloadingPath: string | null;
 }
-
+//** Convert a raw directory segment (e.g. "out_files") into a readable label ("Out Files"). */
+function formatDirectoryLabel(name: string): string {
+    return name
+        .replace(/[_-]/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeProps) {
     const [expanded, setExpanded] = useState(true);
 
@@ -42,7 +47,7 @@ function TreeNode({ node, depth, runId, onDownload, downloadingPath }: TreeNodeP
                     {expanded
                         ? <FolderOpenIcon className="size-4 shrink-0 text-info" />
                         : <FolderIcon className="size-4 shrink-0 text-info" />}
-                    <span className="truncate font-medium">{node.name}</span>
+                    <span className="truncate font-medium">{formatDirectoryLabel(node.name)}</span>
                 </button>
                 {expanded && node.children.map((child) => (
                     <TreeNode

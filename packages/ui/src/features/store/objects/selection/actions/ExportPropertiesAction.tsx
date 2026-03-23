@@ -2,7 +2,7 @@ import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
 import { ExportPropertiesModal, ExportTypes } from "../../ExportPropertiesModal";
-import { useObjectsActionCallback } from "../ObjectsActionContext";
+import { useObjectsActionCallback } from "../ObjectsActionHooks";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function ExportPropertiesComponent({ action, objectIds }: ActionComponentTypeProps) {
@@ -59,6 +59,7 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
                     objectIds: Ids,
                     type: exportType,
                     query: exportAll && !query.vector ? query : { type: query.type },
+                    table_layout: ctx.params?.table_layout,
                 }).then((response) => {
                     let data;
 
