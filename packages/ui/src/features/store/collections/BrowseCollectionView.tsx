@@ -4,6 +4,16 @@ import { useUserSession } from "@vertesia/ui/session";
 import { TypeRegistry } from "../types/TypeRegistry.js";
 import { useTypeRegistry } from "../types/TypeRegistryProvider.js";
 import { DocumentSearchResults, DocumentSearchResultsWithDropZone } from "../objects/DocumentSearchResults";
+import { ColumnLayout } from "@vertesia/common";
+
+const collectionDefaultLayout: ColumnLayout[] = [
+    { name: "ID", field: "id", type: "objectId?slice=-7" },
+    { name: "Name", field: ".", type: "objectName" },
+    { name: "Revision", field: ".", type: "revision" },
+    { name: "Type", field: "type.name", type: "string" },
+    { name: "Status", field: "status", type: "string" },
+    { name: "Updated At", field: "updated_at", type: "date" },
+];
 
 
 interface BrowseCollectionViewProps {
@@ -44,6 +54,6 @@ function getTableLayout(collection: Collection, typeRegistry?: TypeRegistry | un
     if (table_layout && table_layout.length > 0) {
         return table_layout;
     } else {
-        return undefined;
+        return collectionDefaultLayout;
     }
 }
