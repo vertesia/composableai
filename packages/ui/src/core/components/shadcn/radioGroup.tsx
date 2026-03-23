@@ -1,7 +1,7 @@
 "use client"
 
+import { RadioGroup as RadioGroupPrimitive } from "@radix-ui/react-radio-group"
 import * as React from "react"
-import { RadioGroup as RadioGroupPrimitive } from "radix-ui"
 
 import { cn } from "../libs/utils"
 
@@ -97,3 +97,4 @@ export const RadioOptionAdapter = RadioGroupAdapter
 
 export { RadioGroup, RadioGroupItem }
 export type { RadioGroupOption, RadioGroupProps }
+
