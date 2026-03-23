@@ -625,6 +625,8 @@ export interface CompositeAppConfig {
     sidebar?: CompositeAppSidebarOverrides;
     /** Optional app name to use as the home page instead of the dashboard. Send null to unset. */
     homePlugin?: string | null;
+    /** Optional route within the home plugin (e.g. "/dashboard"). Paired with homePlugin. */
+    homeRoute?: string | null;
     /** List of apps to include in the CompositeApp (used for installation tracking and fallback sidebar) */
     apps: CompositeAppEntry[];
     /**
