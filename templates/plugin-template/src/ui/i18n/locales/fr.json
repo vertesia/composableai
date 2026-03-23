@@ -1,0 +1,19 @@
+{
+  "access.account": "Compte",
+  "access.denied": "Accès refusé",
+  "access.noPermission": "Vous n'avez pas la permission de voir l'application {{name}} dans le projet : «{{project}}».",
+  "access.project": "Projet",
+  "access.selectAccount": "Sélectionner un compte",
+  "access.selectProject": "Sélectionner un projet",
+  "access.switchPrompt": "Changez de compte ou de projet pour accéder à cette application.",
+  "nav.conversation": "Conversation",
+  "nav.home": "Accueil",
+  "nav.newChat": "Nouvelle conversation",
+  "nav.pluginAssistant": "Assistant du plugin",
+  "nav.signOut": "Se déconnecter",
+  "nav.templateDescription": "Ceci est le modèle de plugin. Utilisez-le comme point de départ pour créer votre propre interface de plugin.",
+  "nav.today": "Aujourd'hui",
+  "nav.tryAgentChat": "Essayer le chat agent",
+  "nav.welcome": "Bienvenue, {{name}} !",
+  "nav.yesterday": "Hier"
+}

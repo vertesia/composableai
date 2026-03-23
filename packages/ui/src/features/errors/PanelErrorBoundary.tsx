@@ -1,6 +1,7 @@
 import { MessageBox } from '@vertesia/ui/core';
 import { VertesiaErrorBoundary } from './VertesiaErrorBoundary';
 import { ReactNode } from 'react';
+import { useUITranslation } from '../../i18n/index.js';
 
 export function PanelErrorBoundary({ children }: { children: ReactNode }) {
     return (
@@ -11,11 +12,12 @@ export function PanelErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function PanelErrorFallback({ error }: { error?: Error }) {
+    const { t } = useUITranslation();
     return (
-        <MessageBox status="error" title="Sorry, something went wrong...">
+        <MessageBox status="error" title={t('errors.somethingWentWrong')}>
             <div className='mb-4'>
-                Our team has been notified and will be quickly working on resolving it.
-                If you&apos;d like to escalate or simply contact us, please email us at&nbsp;
+                {t('errors.teamNotifiedLine1')}
+                {' '}{t('errors.teamNotifiedLine2')}&nbsp;
 
                 <a className='text-info' href="mailto:support@vertesiahq.com">support@vertesiahq.com</a>.
             </div>

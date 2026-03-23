@@ -10,6 +10,7 @@ import {
 } from "@vertesia/ui/core";
 import { ContentObjectTypeItem } from "@vertesia/common";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
+import { useUITranslation } from '../../../i18n/index.js';
 import { CheckCircleIcon, Info } from "lucide-react";
 
 /**
@@ -44,11 +45,13 @@ interface SelectContentTypeModalProps {
 export function SelectContentTypeModal({
     isOpen,
     onClose,
-    title = "Select Content Type",
+    title,
     children,
     initialSelectedType = null,
     allowNone = true,
 }: SelectContentTypeModalProps) {
+    const { t } = useUITranslation();
+    const resolvedTitle = title ?? t('store.selectContentType');
     const { registry: typeRegistry } = useTypeRegistry();
     const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | null>(initialSelectedType);
 
@@ -72,21 +75,21 @@ export function SelectContentTypeModal({
             onClose={handleClose}
             className="w-full max-w-xl mx-auto"
         >
-            <ModalTitle>{title}</ModalTitle>
+            <ModalTitle>{resolvedTitle}</ModalTitle>
             <ModalBody>
                 {children}
 
                 {/* Type selection */}
                 <div className="mb-4 mt-4">
                     <label className="block text-sm font-medium mb-2">
-                        Content Type {allowNone && <span className="text-gray-500 font-normal">(Optional)</span>}
+                        {t('store.contentType')} {allowNone && <span className="text-gray-500 font-normal">{t('store.optional')}</span>}
                     </label>
                     {allowNone ? (
                         <SelectBox
                             options={types}
                             value={selectedType}
-                            optionLabel={(type) => type ? type.name : 'Select a content type'}
-                            placeholder="Select a content type or leave empty for automatic detection"
+                            optionLabel={(type) => type ? type.name : t('store.selectContentTypeLabel')}
+                            placeholder={t('store.selectContentTypeAuto')}
                             onChange={(selected: ContentObjectTypeItem | null | undefined) => setSelectedType(selected || null)}
                             filterBy="name"
                             isClearable={true}
@@ -95,8 +98,8 @@ export function SelectContentTypeModal({
                         <SelectBox
                             options={types}
                             value={selectedType}
-                            optionLabel={(type) => type ? type.name : 'Select a content type'}
-                            placeholder="Select a content type"
+                            optionLabel={(type) => type ? type.name : t('store.selectContentTypeLabel')}
+                            placeholder={t('store.selectContentTypeLabel')}
                             onChange={(selected: ContentObjectTypeItem | null | undefined) => setSelectedType(selected || null)}
                             filterBy="name"
                         />
@@ -106,9 +109,9 @@ export function SelectContentTypeModal({
                 {!selectedType && (
                     <div className="flex items-center text-attention">
                         <CheckCircleIcon className="size-4 mr-1" />
-                        Automatic Type Detection
+                        {t('store.automaticTypeDetection')}
                         <VTooltip
-                            description="Vertesia will analyze the content and select the most appropriate type. This is recommended for most uploads and ensures optimal processing."
+                            description={t('store.automaticTypeDetectionDescription')}
                             placement="top" size="xs"
                         >
                             <Info className="size-3 ml-2" />
@@ -117,11 +120,11 @@ export function SelectContentTypeModal({
                 )}
             </ModalBody>
             <ModalFooter>
-                <Button variant="ghost" onClick={handleClose} alt="Cancel">
-                    Cancel
+                <Button variant="ghost" onClick={handleClose} alt={t('modal.cancel')}>
+                    {t('modal.cancel')}
                 </Button>
-                <Button onClick={handleConfirm} alt="Confirm selection">
-                    Confirm
+                <Button onClick={handleConfirm} alt={t('store.confirmSelection')}>
+                    {t('modal.confirm')}
                 </Button>
             </ModalFooter>
         </Modal>

@@ -78,6 +78,7 @@ export function SidebarTooltip({ children, text }: { children: React.ReactNode, 
 
 export interface SidebarItemProps {
     href: string
+    to?: string
     icon?: React.ComponentType<React.HTMLAttributes<Element>>
     current?: boolean
     onClick?: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
@@ -88,7 +89,7 @@ export interface SidebarItemProps {
     external?: boolean; //If true, the link will open in a new tab
     replace?: boolean; //If true, navigation replaces the current history entry instead of pushing
 }
-export function SidebarItem({ external, className, tools, children, icon: Icon, href, current, onClick, replace }: SidebarItemProps) {
+export function SidebarItem({ external, className, tools, children, icon: Icon, href, to, current, onClick, replace }: SidebarItemProps) {
     const { toggleMobile } = useSidebarToggle();
     const _closeSideBar = () => {
         setTimeout(() => {
@@ -106,7 +107,7 @@ export function SidebarItem({ external, className, tools, children, icon: Icon, 
     }
     return (
         <li>
-            <Nav onClick={_closeSideBar} replace={replace}>
+            <Nav to={to} onClick={_closeSideBar} replace={replace}>
                 <SidebarTooltip text={children as string}>
                     <a
                         href={href}

@@ -2,6 +2,7 @@ import { ComplexSearchPayload, ContentObjectItem, FindPayload } from "@vertesia/
 import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Md5 } from "ts-md5";
+import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 
 /**
  * Types of actions that can be taken with a file
@@ -109,6 +110,7 @@ async function prepareFilesWithMetadata(files: File[], selectedFolder?: string |
 export function useSmartFileUploadProcessing() {
     const { client } = useUserSession();
     const toast = useToast();
+    const t = i18nInstance.getFixedT(null, NAMESPACE);
 
     /**
      * Check files to determine if they need to be created, updated, or skipped
@@ -236,12 +238,12 @@ export function useSmartFileUploadProcessing() {
             return filesWithMetadata;
         } catch (error: any) {
             toast({
-                title: "Error in file upload processing check",
+                title: t('store.errorInUploadProcessingCheck'),
                 status: "error",
                 description: error.message,
             });
             console.log("Error in file upload processing check", error);
-            throw new Error("Error in file upload processing check: " + error.message);
+            throw new Error("Error in file upload processing check: " + error.message, { cause: error });
         }
     };
 

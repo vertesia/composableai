@@ -1,6 +1,7 @@
 import { ConfirmModal } from "@vertesia/ui/core";
 import { useCallback, useState } from "react";
-import { ObjectsActionCallback, useObjectsActionCallback } from "../ObjectsActionHooks";
+import { useUITranslation } from '../../../../../i18n/index.js';
+import { ObjectsActionCallback, useObjectsActionCallback } from '../ObjectsActionHooks';
 import { ObjectsActionParams, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 interface ObjectsActionComponentProps {
@@ -15,7 +16,7 @@ interface ObjectsActionComponentProps {
  * @returns
  */
 export default function ConfirmAction({ action, callback, children }: ObjectsActionComponentProps) {
-
+    const { t } = useUITranslation();
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const confirmationText = action.confirmationText || `Are you sure you want to ${action.name}?`;
 
@@ -38,7 +39,7 @@ export default function ConfirmAction({ action, callback, children }: ObjectsAct
     return (
         <>
             {children}
-            <ConfirmModal onConfirm={onConfirm} onCancel={() => setShowConfirmModal(false)} title={"Are you sure?"} content={confirmationText} isOpen={showConfirmModal} />
+            <ConfirmModal onConfirm={onConfirm} onCancel={() => setShowConfirmModal(false)} title={t('store.actions.areYouSure')} content={confirmationText} isOpen={showConfirmModal} />
         </>
     );
 
