@@ -15,6 +15,21 @@ export interface ArtifactTreeNode {
 }
 
 // ---------------------------------------------------------------------------
+// Internal files we never show to the user
+// ---------------------------------------------------------------------------
+
+const INTERNAL_FILE_PATTERNS = [
+    /conversation\.json$/,
+    /-conversation\.json$/,
+    /^tools\.json$/,
+];
+
+function isInternalFile(relativePath: string): boolean {
+    const basename = relativePath.split('/').pop() ?? relativePath;
+    return INTERNAL_FILE_PATTERNS.some((re) => re.test(basename));
+}
+
+// ---------------------------------------------------------------------------
 // Build a tree from a flat list of relative paths
 // ---------------------------------------------------------------------------
 
@@ -103,10 +118,14 @@ export function useArtifacts(
         setError(null);
 
         try {
-            const paths = await client.agents.listArtifacts(runId);
+            const paths = await client.files.listArtifacts(runId);
             if (fetchId !== fetchIdRef.current) return; // stale
 
-            setFlatFiles(paths.filter(Boolean));
+            const relatives = paths
+                .map((p) => stripToRelativePath(p, runId))
+                .filter((p) => p && !isInternalFile(p));
+
+            setFlatFiles(relatives);
         } catch (err) {
             if (fetchId !== fetchIdRef.current) return;
             setError(err instanceof Error ? err.message : 'Failed to list artifacts');
