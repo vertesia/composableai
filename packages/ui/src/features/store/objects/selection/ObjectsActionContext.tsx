@@ -1,5 +1,6 @@
 import { ReactNode, useMemo } from 'react';
 
+import { ColumnLayout } from '@vertesia/common';
 import { ErrorBox, useFetch, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 
@@ -27,8 +28,9 @@ const DEFAULT_ACTIONS: ObjectsActionSpec[] = [
 
 interface ObjectsActionContextProps {
     children: ReactNode;
+    table_layout?: ColumnLayout[];
 }
-export function ObjectsActionContextProvider({ children }: ObjectsActionContextProps) {
+export function ObjectsActionContextProvider({ children, table_layout }: ObjectsActionContextProps) {
     const selection = useDocumentSelection();
     const toast = useToast();
     const { client } = useUserSession();
@@ -51,12 +53,12 @@ export function ObjectsActionContextProvider({ children }: ObjectsActionContextP
 
     const context = useMemo(() => {
         const context = new ObjectsActionContext({
-            selection, toast, client, search
+            selection, toast, client, search, table_layout
         });
         context.allActions = DEFAULT_ACTIONS;
         context.wfRules = rules!;
         return context;
-    }, [selection, rules]);
+    }, [selection, rules, table_layout]);
 
     if (error) {
         return <ErrorBox title="Failed to fetch workflows">{error.message}</ErrorBox>

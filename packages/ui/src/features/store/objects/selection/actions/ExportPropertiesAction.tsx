@@ -59,6 +59,7 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
                     objectIds: Ids,
                     type: exportType,
                     query: exportAll && !query.vector ? query : { type: query.type },
+                    table_layout: ctx.params?.table_layout,
                 }).then((response) => {
                     let data;
 
