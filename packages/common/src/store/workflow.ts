@@ -403,6 +403,8 @@ interface TaskBase {
     completed: string | null;
     error: string | null;
     result: any;
+    /** Temporal run ID that produced this task (set when aggregating across continueAsNew runs). */
+    runId?: string;
 }
 
 // Activity-specific task
@@ -493,6 +495,9 @@ export interface AgentTask {
 
     /** Available skills for this LLM call */
     availableSkills?: string[];
+
+    /** Temporal run ID that produced this task. */
+    runId?: string;
 
     /** Workstream tracking */
     workstreamId?: string;
