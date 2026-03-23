@@ -1,6 +1,5 @@
-import { Menu, MenuButton, MenuItems, MenuItem as _MenuItem, Transition } from '@headlessui/react';
+import { Menu, MenuButton, MenuItems, MenuItem as _MenuItem } from '@headlessui/react';
 import clsx from 'clsx';
-import { Fragment } from 'react';
 
 interface DropdownProps {
     trigger: React.ReactNode;
@@ -12,19 +11,12 @@ export function Dropdown({ trigger, children }: DropdownProps) {
             <MenuButton as="span" className="-m-1.5 flex items-center p-1.5">
                 {trigger}
             </MenuButton>
-            <Transition
-                as={Fragment}
-                enter="transition ease-out duration-100"
-                enterFrom="transform opacity-0 scale-95"
-                enterTo="transform opacity-100 scale-100"
-                leave="transition ease-in duration-75"
-                leaveFrom="transform opacity-100 scale-100"
-                leaveTo="transform opacity-0 scale-95"
+            <MenuItems
+                transition
+                className="absolute right-0 z-10 mt-2.5 w-48 origin-top-right rounded-md bg-white dark:bg-slate-900 dark:border-slate-800 dark:border py-2 shadow-lg ring-1 ring-gray-900/5 dark:ring-slate-200/5 focus:outline-hidden transition data-[closed]:opacity-0 data-[closed]:scale-95 data-[enter]:duration-100 data-[enter]:ease-out data-[leave]:duration-75 data-[leave]:ease-in"
             >
-                <MenuItems className="absolute right-0 z-10 mt-2.5 w-48 origin-top-right rounded-md bg-white dark:bg-slate-900 dark:border-slate-800 dark:border py-2 shadow-lg ring-1 ring-gray-900/5 dark:ring-slate-200/5 focus:outline-hidden">
-                    {children}
-                </MenuItems>
-            </Transition>
+                {children}
+            </MenuItems>
         </Menu>
     )
 }
