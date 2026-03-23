@@ -114,4 +114,10 @@ PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 const PopoverClose = PopoverPrimitive.Close;
 PopoverClose.displayName = PopoverPrimitive.Close.displayName;
 
+export function usePopoverContext() {
+  const ctx = React.useContext(PopoverContext);
+  if (!ctx) throw new Error('usePopoverContext must be used within a Popover');
+  return { ...ctx, close: () => ctx.setOpen(false) };
+}
+
 export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor, PopoverClose };

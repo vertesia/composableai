@@ -30,6 +30,7 @@ export const EXTERNALS = [
     '@radix-ui/react-focus-guards',
     '@radix-ui/react-focus-scope',
     '@radix-ui/react-portal',
+    '@radix-ui/react-dropdown-menu',
     'aria-hidden',
     'react-remove-scroll',
     'react-remove-scroll-bar',
