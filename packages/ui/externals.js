@@ -14,7 +14,6 @@ export const EXTERNALS = [
     "firebase/auth",
     "firebase/analytics",
     "jwt-decode",
-    "@headlessui/react",
     "lucide-react",
     "clsx",
     'radix-ui',
