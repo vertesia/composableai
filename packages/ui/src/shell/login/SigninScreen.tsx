@@ -3,6 +3,7 @@ import { Button, useSafeLayoutEffect } from "@vertesia/ui/core";
 import { Env } from "@vertesia/ui/env";
 import { useUITranslation } from "@vertesia/ui/i18n";
 import { UserNotFoundError, useUserSession, useUXTracking } from "@vertesia/ui/session";
+import { RegionTag } from "@vertesia/ui/layout";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import EnterpriseSigninButton from "./EnterpriseSigninButton";
@@ -41,13 +42,14 @@ function SigninScreenImpl({ isNested = false, lightLogo, darkLogo }: SigninScree
             >
 
                 <StandardSigninPanel authError={authError} lightLogo={lightLogo} darkLogo={darkLogo} />
-                <div className="flex gap-x-6 mt-10 justify-center text-muted">
+                <div className="flex gap-x-6 mt-10 justify-center items-center text-muted">
                     <a href="https://vertesiahq.com/privacy" className="text-sm">
                         {t('auth.privacyPolicy')}
                     </a>
                     <a href="https://vertesiahq.com/terms" className="text-sm">
                         {t('auth.termsOfService')}
                     </a>
+                    <RegionTag />
                 </div>
             </div>
         </div>
