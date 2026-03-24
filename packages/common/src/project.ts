@@ -400,7 +400,7 @@ export interface FetchBatchResult {
         id: string;
         document: ElasticsearchDocumentData;
     }>;
-    nextCursor: string | null;
+    next_cursor: string | null;
     done: boolean;
 }
 
@@ -411,7 +411,7 @@ export interface IndexBatchResult {
     successful: number;
     failed: number;
     processed: number;
-    nextCursor: string | null;
+    next_cursor: string | null;
     done: boolean;
 }
 
@@ -532,7 +532,7 @@ export interface FetchDocumentsByIdsResult {
         id: string;
         document: ElasticsearchDocumentData;
     }>;
-    notFound: string[];
+    not_found: string[];
 }
 
 /**

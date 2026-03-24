@@ -103,18 +103,18 @@ export class IndexingApi extends ApiTopic {
     /**
      * Index a single document to Elasticsearch
      */
-    index(objectId: string, document: ElasticsearchDocumentData): Promise<{ status: string; objectId: string }> {
+    index(objectId: string, document: ElasticsearchDocumentData): Promise<{ status: string; object_id: string }> {
         return this.post("/internal/index", {
-            payload: { objectId, document },
+            payload: { object_id: objectId, document },
         });
     }
 
     /**
      * Delete a document from Elasticsearch
      */
-    delete(objectId: string): Promise<{ status: string; objectId: string }> {
+    delete(objectId: string): Promise<{ status: string; object_id: string }> {
         return this.post("/internal/delete", {
-            payload: { objectId },
+            payload: { object_id: objectId },
         });
     }
 
@@ -129,7 +129,7 @@ export class IndexingApi extends ApiTopic {
         targetIndex?: string
     ): Promise<BulkIndexResult> {
         return this.post("/internal/bulk-index", {
-            payload: { documents, targetIndex },
+            payload: { documents, target_index: targetIndex },
         });
     }
 
@@ -265,7 +265,7 @@ export class IndexingApi extends ApiTopic {
      */
     fetchDocumentsByIds(objectIds: string[]): Promise<FetchDocumentsByIdsResult> {
         return this.post("/internal/fetch-by-ids", {
-            payload: { objectIds },
+            payload: { object_ids: objectIds },
         });
     }
 
@@ -276,7 +276,7 @@ export class IndexingApi extends ApiTopic {
      */
     bulkDelete(objectIds: string[]): Promise<BulkDeleteResult> {
         return this.post("/internal/bulk-delete", {
-            payload: { objectIds },
+            payload: { object_ids: objectIds },
         });
     }
 
