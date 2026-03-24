@@ -4,8 +4,8 @@ import clsx from 'clsx';
 import { EllipsisVertical, X } from 'lucide-react';
 
 import { useState } from "react";
-import { DocumentSelection, useDocumentSelection } from '../DocumentSelectionProvider';
-import { DocumentUploadModal } from '../upload/DocumentUploadModal';
+import { useUITranslation } from '../../../../i18n/index.js';
+import { DocumentSelection, DocumentUploadModal, useDocumentSelection } from "../../../store";
 import { ExportPropertiesAction } from "./actions/ExportPropertiesAction";
 import { StartWorkflowAction } from "./actions/StartWorkflowComponent";
 import { ObjectsActionContextProvider } from "./ObjectsActionContext";
@@ -60,6 +60,7 @@ function ActionsWrapper({ }: ActionsWrapperProps) {
 }
 
 export function UploadObjectsButton({ collectionId, allowFolders = true }: { collectionId?: string, allowFolders?: boolean }) {
+    const { t } = useUITranslation();
     const [files, setFiles] = useState<File[]>([]);
     const [isOpen, setIsOpen] = useState(false);
 
@@ -70,7 +71,7 @@ export function UploadObjectsButton({ collectionId, allowFolders = true }: { col
 
     return (
         <>
-            <Button onClick={() => setIsOpen(true)}>Upload</Button>
+            <Button onClick={() => setIsOpen(true)}>{t('store.upload')}</Button>
             <DocumentUploadModal
                 collectionId={collectionId ?? ''}
                 isOpen={isOpen}
@@ -91,13 +92,14 @@ export function UploadObjectsButton({ collectionId, allowFolders = true }: { col
 
 function StartWorkflowButton() {
     const ctx = useObjectsActionContext();
+    const { t } = useUITranslation();
 
     const selection = ctx.params.selection;
     const hasSelection = selection.hasSelection();
 
     return (
         hasSelection &&
-        <Button onClick={() => ctx.run(StartWorkflowAction.id)}>Start Workflow</Button>
+        <Button onClick={() => ctx.run(StartWorkflowAction.id)}>{t('store.actions.startWorkflow')}</Button>
     )
 }
 function optionLayout(option: ObjectsActionSpec) {

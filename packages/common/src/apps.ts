@@ -1,6 +1,6 @@
 import { JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { CatalogInteractionRef } from "./interaction.js";
-import { InCodeTypeDefinition } from "./store/index.js";
+import { DSLActivityOptions, InCodeTypeDefinition } from "./store/index.js";
 
 /**
  * Additional navigation item for an app's UI configuration.
@@ -91,6 +91,14 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
      * Provides clean, readable tool names (e.g., "jira" instead of "https://mcp.atlassian.com/v1/mcp")
      */
     namespace: string;
+
+    /**
+     * Reference to an OAuth Application name for this collection.
+     * When set, uses the OAuth Application's config (endpoints, client_id, client_secret)
+     * instead of MCP dynamic client registration or random fallback.
+     * The referenced OAuth Application must exist in the same project.
+     */
+    oauth_app?: string;
 }
 
 /**
@@ -190,6 +198,33 @@ export interface AgentToolDefinition extends ToolDefinition {
     related_tools?: string[];
 }
 
+/**
+ * Definition of a remote activity exposed by a tool server for use in DSL workflows.
+ * Remote activities are identified in workflow steps using colon-separated names:
+ * `app:<app_name>:<collection>:<activity_name>` (e.g. `app:my-nlp-app:examples:word_count`).
+ */
+export interface RemoteActivityDefinition {
+    /** Activity name (snake_case, unique within the collection) */
+    name: string;
+    /** Collection name this activity belongs to */
+    collection?: string;
+    /** Display title */
+    title?: string;
+    /** Description of what the activity does */
+    description?: string;
+    /** JSON Schema for the activity input parameters */
+    input_schema?: Record<string, any>;
+    /** JSON Schema for the activity output */
+    output_schema?: Record<string, any>;
+    /**
+     * The activity execution URL. Can be absolute or relative to the tool server base URL.
+     * If not provided, the collection-specific activities endpoint is used.
+     */
+    url?: string;
+    /** Suggested timeout and retry configuration */
+    options?: DSLActivityOptions;
+}
+
 export type AppCapabilities = 'ui' | 'tools' | 'interactions' | 'types' | 'templates';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 export interface AppManifestData {
@@ -278,8 +313,39 @@ export interface AppManifestData {
      * - ?scope=ui,tools - returns only the UI configuration
      */
     endpoint?: string;
+
+    /**
+     * Optional endpoint overrides keyed by environment name.
+     * When resolving the app endpoint, if the current environment name matches a key,
+     * the corresponding URL is used instead of the main `endpoint`.
+     * Only dev environment names are allowed as keys (starting with "desktop-" or "dev-").
+     */
+    endpoint_overrides?: Record<string, string>;
 }
-export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'templates' | 'settings' | 'widgets' | 'all';
+
+/**
+ * Returns true if the given environment name is allowed as an endpoint override key.
+ * Only "desktop-" or "dev-" prefixed names are valid.
+ */
+export function isValidEndpointOverrideEnv(envName: string): boolean {
+    return envName.startsWith('desktop-') || envName.startsWith('dev-');
+}
+
+/**
+ * Resolves the effective endpoint for an app given an optional environment name.
+ * Returns the override endpoint if the env name matches a valid dev environment, otherwise the default endpoint.
+ */
+export function resolveAppEndpoint(
+    manifest: Pick<AppManifestData, 'endpoint' | 'endpoint_overrides'>,
+    envName?: string
+): string | undefined {
+    if (envName && manifest.endpoint_overrides?.[envName] && isValidEndpointOverrideEnv(envName)) {
+        return manifest.endpoint_overrides[envName];
+    }
+    return manifest.endpoint;
+}
+
+export type AppPackageScope = 'ui' | 'tools' | 'interactions' | 'types' | 'templates' | 'settings' | 'widgets' | 'activities' | 'all';
 export interface AppPackage {
     /**
      * The UI configuration of the app
@@ -310,6 +376,13 @@ export interface AppPackage {
      * Widgets provided by the app.
      */
     widgets?: Record<string, AppWidgetInfo>;
+
+    /**
+     * Remote activities exposed by the app for use in DSL workflows.
+     * Activities are discovered via `?scope=activities` and referenced in workflow steps
+     * using colon-separated names: `app:<app_name>:<collection>:<activity_name>`.
+     */
+    activities?: RemoteActivityDefinition[];
 
     /**
      * A JSON chema for the app installation settings.

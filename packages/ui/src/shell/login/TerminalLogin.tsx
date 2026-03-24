@@ -4,6 +4,7 @@ import { Env } from "@vertesia/ui/env"
 import { useLocation } from "@vertesia/ui/router"
 import { fetchComposableTokenFromFirebaseToken, useUserSession } from '@vertesia/ui/session'
 import { useState } from 'react'
+import { useUITranslation } from '../../i18n/index.js'
 
 interface ProfileData {
     profile?: string
@@ -81,13 +82,14 @@ export function TerminalLogin() {
     const location = useLocation()
     const clientInfo = getClientInfo(location)
     const toast = useToast()
+    const { t } = useUITranslation()
 
     const onAccept = async (data: ProfileData) => {
         if (!clientInfo) return
         if (!data.profile) {
             toast({
-                title: 'Profile is required',
-                description: 'Please enter a profile name to save the client authorization',
+                title: t('login.terminal.profileRequired'),
+                description: t('login.terminal.profileRequiredDesc'),
                 status: 'error',
                 duration: 2000
             })
@@ -95,8 +97,8 @@ export function TerminalLogin() {
         }
         if (!data.account) {
             toast({
-                title: 'Account is required',
-                description: 'Please select an account to authorize the client to access the ComposablePrompts servers',
+                title: t('login.terminal.accountRequired'),
+                description: t('login.terminal.accountRequiredDesc'),
                 status: 'error',
                 duration: 2000
             })
@@ -104,8 +106,8 @@ export function TerminalLogin() {
         }
         if (!data.project) {
             toast({
-                title: 'Project is required',
-                description: 'Please select a project to authorize the client to access the ComposablePrompts servers',
+                title: t('login.terminal.projectRequired'),
+                description: t('login.terminal.projectRequiredDesc'),
                 status: 'error',
                 duration: 2000
             })
@@ -133,7 +135,7 @@ export function TerminalLogin() {
                 setPayload(payload)
             } else {
                 toast({
-                    title: 'Failed to get composable token',
+                    title: t('login.terminal.failedToGetToken'),
                     status: 'error',
                     duration: 5000
                 })
@@ -144,7 +146,7 @@ export function TerminalLogin() {
                 setPayload(payload)
             } else {
                 toast({
-                    title: 'Error authorizing client',
+                    title: t('login.terminal.errorAuthorizingClient'),
                     description: err.message,
                     status: 'error',
                     duration: 5000
@@ -155,7 +157,7 @@ export function TerminalLogin() {
 
     const getPageContent = () => {
         if (!clientInfo) {
-            return <ErrorBox title='Invalid request'>This page should be called by a terminal client to authenticate against the ComposablePrompts servers</ErrorBox>
+            return <ErrorBox title={t('login.terminal.invalidRequest')}>{t('login.terminal.invalidRequestDesc')}</ErrorBox>
         }
 
         return payload
@@ -177,19 +179,19 @@ interface AuthAcceptScreenProps {
 function AuthAcceptScreen({ onAccept, clientInfo }: Readonly<AuthAcceptScreenProps>) {
     const { client, user } = useUserSession()
     const { data: allProjects, error } = useFetch(() => user ? client.projects.list() : Promise.resolve([]), [user])
-
+    const { t } = useUITranslation()
 
     if (error) {
-        return <ErrorBox title='Error loading projects'>{error.message}</ErrorBox>
+        return <ErrorBox title={t('login.terminal.errorLoadingProjects')}>{error.message}</ErrorBox>
     }
 
     const getEnvironmentName = () => {
         if (Env.isLocalDev) {
-            return "Local Dev"
+            return t('login.terminal.envLocalDev')
         } else if (Env.isDev) {
-            return "Staging"
+            return t('login.terminal.envStaging')
         }
-        return "Production"
+        return t('login.terminal.envProduction')
     }
 
     const envName = getEnvironmentName()
@@ -201,12 +203,12 @@ function AuthAcceptScreen({ onAccept, clientInfo }: Readonly<AuthAcceptScreenPro
                     Authorizing client on {envName} environment.
                 </div>
                 <div className='mb-2 text-md text-muted-foreground'>
-                    <div>A client app wants authorization to access the composable prompt servers in your name.</div>
+                    <div>{t('login.terminal.clientWantsAuth')}</div>
                     <div>The client app code is <b className="text-foreground">{clientInfo.code}</b>. You can check if the code is correct in the terminal.</div>
                 </div>
                 <div className='mb-2 text-sm text-muted-foreground'>
-                    <div>You must choose the target account and project for the client to access.</div>
-                    <div>Also, enter a profile name that will be used to save the authorization in your client configuration.</div>
+                    <div>{t('login.terminal.chooseAccountProject')}</div>
+                    <div>{t('login.terminal.profileNameNote')}</div>
                 </div>
             </div>
             <ProfileForm onAccept={onAccept} allProjects={allProjects} data={clientInfo} />
@@ -216,12 +218,13 @@ function AuthAcceptScreen({ onAccept, clientInfo }: Readonly<AuthAcceptScreenPro
 
 function AuthDoneScreen({ payload, error }: Readonly<{ payload: LoginResult, error?: Error }>) {
     const toast = useToast()
+    const { t } = useUITranslation()
     const onCopy = () => {
         if (payload) {
             navigator.clipboard.writeText(JSON.stringify(payload))
             toast({
-                title: 'Authentication Payload copied',
-                description: error ? 'You can paste the authentication payload in the terminal to authenticate the client.' : 'You can close the page now.',
+                title: t('login.terminal.authPayloadCopied'),
+                description: error ? t('login.terminal.authPayloadCopiedWithError', { error: error.message }) : t('login.terminal.authPayloadCopiedSuccess'),
                 status: 'success',
                 duration: 5000
             })
@@ -233,14 +236,12 @@ function AuthDoneScreen({ payload, error }: Readonly<{ payload: LoginResult, err
             {
                 error ?
                     <div>
-                        <ErrorBox title='Failed to send the authorization token to the cli tool'>This can happen due to security checks on Safari. The error is &quot;{error.message}&quot;</ErrorBox>
-                        <div>Don&apos;t worry, you can still authenticate the cli tool by pasting the authentication token in the terminal.
-                            You can close this page.</div>
+                        <ErrorBox title={t('login.terminal.failedToSendToken')}>{t('login.terminal.failedToSendTokenDesc', { error: error.message })}</ErrorBox>
                     </div>
-                    : <div>The client is authenticated. You can close this page.</div>
+                    : <div>{t('login.terminal.clientAuthenticated')}</div>
             }
             <Center className="mt-4">
-                <Button variant='secondary' onClick={onCopy}>Copy the Authentication Payload</Button>
+                <Button variant='secondary' onClick={onCopy}>{t('login.terminal.copyAuthPayload')}</Button>
             </Center>
         </div>
     )
@@ -253,6 +254,7 @@ interface ProfileFormProps {
 }
 function ProfileForm({ allProjects, data, onAccept }: Readonly<ProfileFormProps>) {
     const { accounts, account, project } = useUserSession()
+    const { t } = useUITranslation()
     const [currentData, setCurrentData] = useState<ProfileData>(() => ({
         profile: data.profile,
         account: data.account ?? account?.id,
@@ -276,22 +278,22 @@ function ProfileForm({ allProjects, data, onAccept }: Readonly<ProfileFormProps>
     return (
         <div className='w-1/3'>
             <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-muted-foreground">Profile Name</span>
+                <span className="font-semibold text-muted-foreground">{t('login.terminal.profileName')}</span>
                 <Input type='text' value={currentData.profile} onChange={onChangeProfile} />
             </div>
             <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-muted-foreground">Account</span>
+                <span className="font-semibold text-muted-foreground">{t('login.terminal.account')}</span>
                 <SelectAccount value={currentData.account} onChange={onChangeAccount} accounts={accounts || []} />
             </div>
             <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-muted-foreground">Project</span>
+                <span className="font-semibold text-muted-foreground">{t('login.terminal.project')}</span>
                 <SelectProject value={currentData.project} onChange={onChangeProject} projects={projects} />
             </div>
             <div className='mb-4 text-sm text-attention'>
-                <b>Note:</b> If your browser asks for permission to access your local network, please allow it. This is required to send the authorization token back to the CLI tool. If not, you will need to copy/paste the token manually in your terminal.
+                {t('login.terminal.browserPermissionNote')}
             </div>
             <div>
-                <Button size='xl' onClick={() => onAccept(currentData)}>Authorize Client</Button>
+                <Button size='xl' onClick={() => onAccept(currentData)}>{t('login.terminal.authorizeClient')}</Button>
             </div>
         </div>
     )
@@ -303,6 +305,7 @@ interface SelectAccountProps {
     onChange: (value: AccountRef) => void
 }
 function SelectAccount({ value, accounts, onChange }: Readonly<SelectAccountProps>) {
+    const { t } = useUITranslation()
     const _onChange = (value: AccountRef) => {
         onChange(value)
     }
@@ -312,7 +315,7 @@ function SelectAccount({ value, accounts, onChange }: Readonly<SelectAccountProp
         onChange={_onChange}
         by="id"
         optionLabel={(option) => option.name}
-        placeholder='Select Account'
+        placeholder={t('login.terminal.selectAccount')}
     />
 }
 
@@ -322,6 +325,7 @@ interface SelectProjectProps {
     onChange: (value: ProjectRef) => void
 }
 function SelectProject({ value, projects, onChange }: Readonly<SelectProjectProps>) {
+    const { t } = useUITranslation()
     const _onChange = (value: ProjectRef) => {
         onChange(value)
     }
@@ -331,7 +335,7 @@ function SelectProject({ value, projects, onChange }: Readonly<SelectProjectProp
             value={projects.find(p => p.id === value)}
             options={projects}
             optionLabel={(option) => option.name}
-            placeholder='Select Project'
+            placeholder={t('login.terminal.selectProject')}
             onChange={_onChange} />
     )
 }

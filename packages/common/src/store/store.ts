@@ -45,6 +45,15 @@ export interface InheritedPropertyMetadata {
     /** The collection ID that provided this property */
     collection: string;
 }
+/**
+ * Computed per-request permissions for the current user on a content object.
+ * Not stored in the database — computed on the fly by the API from the object's security field.
+ */
+export interface ContentObjectUserPermissions {
+    can_write: boolean;
+    can_delete: boolean;
+}
+
 export interface ContentObject<T = any> extends ContentObjectItem<T> {
     text?: string; // the text representation of the object
     text_etag?: string;
@@ -285,6 +294,11 @@ export interface ContentObjectItem<T = Record<string, any>> extends BaseObject {
      * The document score, used for ranking and sorting.
      */
     score?: number;
+
+    /**
+     * Computed per-request: the current user's effective permissions on this object.
+     */
+    user_permissions?: ContentObjectUserPermissions;
 }
 
 /**
@@ -607,6 +621,14 @@ export interface SetFileMetadataPayload {
     file: string;
     /** Custom metadata key-value pairs to set on the file */
     metadata: Record<string, string>;
+}
+
+export interface BulkUploadUrlsPayload {
+    files: { name: string; mime_type?: string; id?: string }[];
+}
+
+export interface BulkUploadUrlsResponse {
+    files: GetFileUrlResponse[];
 }
 
 export enum ContentObjectProcessingPriority {

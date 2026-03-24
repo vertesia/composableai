@@ -63,6 +63,8 @@ export interface BaseAgentEvent {
     timestamp: string;
     /** Globally unique ID for this agent run */
     runId: string;
+    /** Stable AgentRun ID (MongoDB _id) that persists across workflow restarts */
+    agentRunId?: string;
     /** LLM model identifier (e.g., "claude-3-5-sonnet", "gemini-1.5-pro") */
     model: string;
     /** Environment ID (MongoDB ObjectId of the environment) */
@@ -288,8 +290,10 @@ export interface WorkflowAnalyticsFilter {
     toolTypes?: ('builtin' | 'interaction' | 'remote' | 'skill')[];
     /** Filter by success/failure status */
     success?: boolean;
-    /** Filter by specific workflow run IDs */
+    /** Filter by specific workflow run IDs (Temporal run IDs) */
     runIds?: string[];
+    /** Filter by stable AgentRun IDs (MongoDB _id, persists across restarts) */
+    agentRunIds?: string[];
     /** Filter by principal IDs (users or API keys) */
     principals?: string[];
 }

@@ -34,7 +34,7 @@ export function getConfigUrl(value: ConfigUrlRef) {
             }
     }
 }
-const getServiceUrl = (service: string, env: string) => `https://${service}-server-${env}.api.vertesia.io`;
+const getServiceUrl = (service: string, env: string) => `https://${service}-server-${env}.api.us1.vertesia.io`;
 export function getServerUrls(value: ConfigUrlRef) {
     switch (value) {
         case "local":

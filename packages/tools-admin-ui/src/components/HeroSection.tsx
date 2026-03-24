@@ -25,6 +25,7 @@ function countByType(resources: ResourceItem[]): Record<string, number> {
 
 const badgeLabels: { type: ResourceType; label: string }[] = [
     { type: 'tool', label: 'tool' },
+    { type: 'activity', label: 'activity' },
     { type: 'skill', label: 'skill' },
     { type: 'interaction', label: 'interaction' },
     { type: 'type', label: 'content type' },

@@ -85,7 +85,17 @@ export interface ExecutionEnvironment {
     default_model?: string;
     enabled_models?: AIModel[];
     apiKey?: string;
+    /**
+     * Hint showing first and last characters of the API key (e.g. "AKIA...3xQf").
+     * Stored alongside the encrypted key so the UI can display which key is configured.
+     */
+    apikey_hint?: string;
     config?: any;
+    /**
+     * Additional provider-specific settings passed through to the driver.
+     * For example, custom headers for Apigee-proxied endpoints.
+     */
+    settings?: Record<string, unknown>;
     account: string;
     allowed_projects?: string[];
     created_by: string,

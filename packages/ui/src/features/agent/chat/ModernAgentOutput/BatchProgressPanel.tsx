@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useState, memo } from "react";
 import { PulsatingCircle } from "../AnimatedThinkingDots";
+import { useUITranslation } from "../../../../i18n/index.js";
 
 export interface BatchProgressPanelProps {
     message: AgentMessage;
@@ -52,6 +53,7 @@ function BatchProgressPanelComponent({
 }: BatchProgressPanelProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const toast = useToast();
+    const { t } = useUITranslation();
 
     const { tool_name, total, completed, succeeded, failed, items, started_at, completed_at } = batchData;
 
@@ -103,7 +105,7 @@ function BatchProgressPanelComponent({
         navigator.clipboard.writeText(content).then(() => {
             toast({
                 status: "success",
-                title: "Copied batch details to clipboard",
+                title: t('agent.copiedBatchDetails'),
                 duration: 2000,
             });
         });
@@ -123,7 +125,7 @@ function BatchProgressPanelComponent({
             >
                 <div className="flex items-center gap-2">
                     {renderStatusIndicator()}
-                    <span className={cn("text-xs font-medium text-muted", senderClassName)}>Batch</span>
+                    <span className={cn("text-xs font-medium text-muted", senderClassName)}>{t('agent.batch')}</span>
                     <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
                         {tool_name}
                     </span>
@@ -152,7 +154,7 @@ function BatchProgressPanelComponent({
                             copyToClipboard();
                         }}
                         className="text-muted"
-                        title="Copy batch details"
+                        title={t('agent.copyBatchDetails')}
                     >
                         <CopyIcon className="size-3" />
                     </Button>
@@ -222,7 +224,7 @@ function BatchProgressPanelComponent({
 
                             {/* Message */}
                             <span className="text-muted truncate flex-1" title={item.message}>
-                                {item.message || (item.status === "pending" ? "Waiting..." : "")}
+                                {item.message || (item.status === "pending" ? t('agent.waiting') : "")}
                             </span>
 
                             {/* Duration */}

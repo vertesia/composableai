@@ -1,7 +1,8 @@
 import { Plan } from "@vertesia/common";
 import { Badge, Button, cn } from "@vertesia/ui/core";
-import { AlertCircle, CheckCircle, Circle, Clock, X } from "lucide-react";
+import { AlertCircle, CheckCircle, Circle, Clock } from "lucide-react";
 import React from "react";
+import { useUITranslation } from '../../../../i18n/index.js';
 
 interface InlinePlanPanelProps {
   plan: Plan;
@@ -17,11 +18,13 @@ function InlineSlidingPlanPanelComponent({
   plan,
   workstreamStatus,
   isOpen,
-  onClose,
+  onClose: _onClose,
   plans = [],
   activePlanIndex = 0,
   onChangePlan = () => { },
 }: InlinePlanPanelProps) {
+  const { t } = useUITranslation();
+
   // Don't render if panel is closed
   if (!isOpen) {
     return null;
@@ -29,27 +32,14 @@ function InlineSlidingPlanPanelComponent({
 
   // Render the normal panel
   return (
-    <div className="h-full shadow-xl border border-muted/20 overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b border-muted/20">
-        <h3 className="font-bold text-base">
-          Plan
-        </h3>
-        <Button variant={"ghost"} onClick={onClose} >
-          <X className="size-4" />
-          <span className="sr-only">Close</span>
-        </Button>
-      </div>
+    <div className="h-full overflow-hidden">
       <div
-        className="p-3 overflow-y-auto"
-        style={{
-          height: "calc(100% - 44px)",
-          maxHeight: "calc(100vh - 150px)",
-        }}
+        className="p-3 overflow-y-auto h-full"
       >
         {/* Plan Summary - count only tasks, excluding main workstream */}
         <div className="mb-3 p-2 bg-info rounded-md border border-info">
           <div className="text-xs font-medium text-info mb-1">
-            Task Progress
+            {t('agent.taskProgress')}
           </div>
           <div className="flex items-center gap-2">
             {/* Calculate progress based on plan tasks, regardless of workstream */}
@@ -107,20 +97,20 @@ function InlineSlidingPlanPanelComponent({
               }
               disabled={activePlanIndex >= plans.length - 1}
             >
-              Older Plan
+              {t('agent.olderPlan')}
             </Button>
             <div className="text-xs text-muted">
               {plans[activePlanIndex]?.timestamp
                 ? new Date(
                   plans[activePlanIndex].timestamp,
                 ).toLocaleTimeString()
-                : "Unknown time"}
+                : t('agent.unknownTime')}
             </div>
             <Button variant={"ghost"}
               onClick={() => onChangePlan(Math.max(0, activePlanIndex - 1))}
               disabled={activePlanIndex <= 0}
             >
-              Newer Plan
+              {t('agent.newerPlan')}
             </Button>
           </div>
         )}
@@ -128,7 +118,7 @@ function InlineSlidingPlanPanelComponent({
         {/* Detailed Plan Steps */}
         <div className="rounded-md border border-muted/30">
           <div className="p-2 border-b border-muted/30 bg-muted">
-            <div className="font-medium text-xs">Step-by-Step Plan</div>
+            <div className="font-medium text-xs">{t('agent.stepByStepPlan')}</div>
           </div>
 
           <div className="divide-y divide-muted/20 max-h-[calc(100vh-350px)] overflow-y-auto">
@@ -175,10 +165,10 @@ function InlineSlidingPlanPanelComponent({
                         </div>
                         <Badge variant={status === "completed" ? "success" : status === "in_progress" ? "info" : "default"}>
                           {status === "completed"
-                            ? "Completed"
+                            ? t('agent.completed')
                             : status === "in_progress"
-                              ? "In Progress"
-                              : "Pending"}
+                              ? t('agent.inProgress')
+                              : t('agent.pending')}
                         </Badge>
                       </div>
                     </div>
@@ -188,9 +178,9 @@ function InlineSlidingPlanPanelComponent({
             ) : (
               <div className="p-3 text-center text-muted italic">
                 <AlertCircle className="size-4 mx-auto mb-2 text-attention" />
-                <p className="text-xs">No plan has been detected yet</p>
+                <p className="text-xs">{t('agent.noPlanDetected')}</p>
                 <p className="text-xs mt-1">
-                  Plans will appear here when the agent creates one
+                  {t('agent.plansWillAppear')}
                 </p>
               </div>
             )}
@@ -215,7 +205,7 @@ function InlineSlidingPlanPanelComponent({
           return workstreamEntries.length > 0 ? (
             <div className="mt-3 rounded-md border border-gray-200 dark:border-gray-800">
               <div className="p-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-                <div className="font-medium text-xs">Workstreams</div>
+                <div className="font-medium text-xs">{t('agent.workstreams')}</div>
               </div>
               <div className="p-3">
                 <div className="grid grid-cols-1 gap-2">
@@ -223,18 +213,18 @@ function InlineSlidingPlanPanelComponent({
                     let StatusIcon = Circle;
                     let statusColor = "text-gray-400";
                     let statusBg = "bg-gray-100 dark:bg-gray-800";
-                    let statusText = "Pending";
+                    let statusText = t('agent.pending');
 
                     if (status === "in_progress") {
                       StatusIcon = Clock;
                       statusColor = "text-info";
                       statusBg = "bg-info/20";
-                      statusText = "In Progress";
+                      statusText = t('agent.inProgress');
                     } else if (status === "completed") {
                       StatusIcon = CheckCircle;
                       statusColor = "text-success";
                       statusBg = "bg-success/20";
-                      statusText = "Completed";
+                      statusText = t('agent.completed');
                     }
 
                     return (

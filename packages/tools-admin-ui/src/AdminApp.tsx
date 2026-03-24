@@ -5,6 +5,7 @@ import { NestedRouterProvider, RouteComponent } from '@vertesia/ui/router';
 import { AdminContext } from './AdminContext.js';
 import { AdminTopBar } from './components/AdminTopBar.js';
 import { useResourceData, useServerInfo } from './hooks.js';
+import { ActivityCollection } from './pages/ActivityCollection.js';
 import { HomePage } from './pages/HomePage.js';
 import { InteractionCollection } from './pages/InteractionCollection.js';
 import { InteractionDetail } from './pages/InteractionDetail.js';
@@ -21,6 +22,7 @@ const routes: Route[] = [
     { path: '/interactions/:collection', Component: InteractionCollection },
     { path: '/interactions/:collection/:name', Component: InteractionDetail },
     { path: '/tools/:collection', Component: ToolCollection },
+    { path: '/activities/:collection', Component: ActivityCollection },
     { path: '/skills/:collection', Component: SkillCollection },
     { path: '/skills/:collection/:name', Component: SkillDetail },
     { path: '/types/:collection', Component: TypeCollection },

@@ -1,10 +1,9 @@
-import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
+import * as React from "react";
 
-import { cn } from "../libs/utils"
 import { JSX } from "react";
-import { useIsInModal } from "./modal/dialog";
 import { usePortalContainer } from "../../hooks/PortalContainerProvider";
+import { cn } from "../libs/utils";
 
 export interface PopoverContextValue {
   open: boolean;
@@ -19,11 +18,11 @@ interface PopoverProps {
   onOpenChange?: (open: boolean) => void;
   hover?: boolean;
   click?: boolean;
+  modal?: boolean;
   children?: React.ReactNode;
 }
-const Popover = ({ hover = false, click = false, children, _open, onOpenChange }: PopoverProps): JSX.Element => {
+const Popover = ({ hover = false, click = false, modal, children, _open, onOpenChange }: PopoverProps): JSX.Element => {
   const [open, setOpen] = React.useState(_open || false);
-  const insideModal = useIsInModal();
 
   const handleOpenChange = (open: boolean) => {
     setOpen(open);
@@ -34,7 +33,7 @@ const Popover = ({ hover = false, click = false, children, _open, onOpenChange }
 
   return (
     <PopoverContext.Provider value={{ open, setOpen, hover, click }}>
-      <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange} modal={insideModal}>
+      <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange} modal={modal}>
         {children}
       </PopoverPrimitive.Root>
     </PopoverContext.Provider>
@@ -120,4 +119,4 @@ export function usePopoverContext() {
   return { ...ctx, close: () => ctx.setOpen(false) };
 }
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor, PopoverClose };
+export { Popover, PopoverAnchor, PopoverClose, PopoverContent, PopoverTrigger };

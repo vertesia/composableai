@@ -8,6 +8,7 @@ import {
     ReindexRangeResult,
     FetchBatchResult,
     IndexBatchResult,
+    NextIndexCursorResult,
     TriggerReindexResult,
     ElasticsearchIndexStats,
     IndexConfiguration,
@@ -15,6 +16,8 @@ import {
     BulkDeleteResult,
     EnsureIndexResult,
     SwapAliasResult,
+    AnalyzeDriftBatchResult,
+    DriftAnalysisStatusResponse,
 } from "@vertesia/common";
 
 /**
@@ -46,7 +49,21 @@ export class IndexingApi extends ApiTopic {
      * @param recreateIndex If true, drops and recreates the index before reindexing
      */
     async reindex(recreateIndex?: boolean): Promise<GenericCommandResponse> {
-        return this.post("/reindex", { payload: { recreateIndex } });
+        return this.post("/reindex", { payload: { recreate_index: recreateIndex } });
+    }
+
+    /**
+     * Trigger an on-demand drift analysis between MongoDB and Elasticsearch
+     */
+    async analyzeDrift(): Promise<DriftAnalysisStatusResponse> {
+        return this.post("/analyze-drift", { payload: {} });
+    }
+
+    /**
+     * Get the latest drift analysis status/result for this project
+     */
+    async getDriftAnalysis(): Promise<DriftAnalysisStatusResponse> {
+        return this.get("/drift-analysis");
     }
 
     /**
@@ -86,18 +103,18 @@ export class IndexingApi extends ApiTopic {
     /**
      * Index a single document to Elasticsearch
      */
-    index(objectId: string, document: ElasticsearchDocumentData): Promise<{ status: string; objectId: string }> {
+    index(objectId: string, document: ElasticsearchDocumentData): Promise<{ status: string; object_id: string }> {
         return this.post("/internal/index", {
-            payload: { objectId, document },
+            payload: { object_id: objectId, document },
         });
     }
 
     /**
      * Delete a document from Elasticsearch
      */
-    delete(objectId: string): Promise<{ status: string; objectId: string }> {
+    delete(objectId: string): Promise<{ status: string; object_id: string }> {
         return this.post("/internal/delete", {
-            payload: { objectId },
+            payload: { object_id: objectId },
         });
     }
 
@@ -112,7 +129,7 @@ export class IndexingApi extends ApiTopic {
         targetIndex?: string
     ): Promise<BulkIndexResult> {
         return this.post("/internal/bulk-index", {
-            payload: { documents, targetIndex },
+            payload: { documents, target_index: targetIndex },
         });
     }
 
@@ -145,7 +162,7 @@ export class IndexingApi extends ApiTopic {
      */
     swapAlias(newIndexName: string, deleteOld?: boolean): Promise<SwapAliasResult> {
         return this.post("/internal/swap-alias", {
-            payload: { newIndexName, deleteOld },
+            payload: { new_index_name: newIndexName, delete_old: deleteOld },
         });
     }
 
@@ -189,10 +206,33 @@ export class IndexingApi extends ApiTopic {
      * @param limit Maximum documents to process (default: 500)
      * @param targetIndex Optional explicit index name for zero-downtime reindexing
      * @param since Only index docs with updated_at >= this ISO timestamp (for catch-up after reindex)
+     * @param endCursor End cursor (inclusive) for partitioned reindexing
      */
-    indexBatch(cursor?: string | null, limit?: number, targetIndex?: string, since?: string): Promise<IndexBatchResult> {
+    indexBatch(cursor?: string | null, limit?: number, targetIndex?: string, since?: string, endCursor?: string | null): Promise<IndexBatchResult> {
         return this.post("/internal/index-batch", {
-            payload: { cursor, limit, targetIndex, since },
+            payload: { cursor, limit, target_index: targetIndex, since, end_cursor: endCursor },
+        });
+    }
+
+    /**
+     * Discover one or more cursor boundaries for partitioned reindexing
+     *
+     * @param cursor Start cursor (exclusive)
+     * @param limit Maximum documents in the partition
+     * @param count Maximum number of boundaries to return
+     */
+    getNextIndexCursor(cursor?: string | null, limit?: number, count?: number): Promise<NextIndexCursorResult> {
+        return this.post("/internal/next-cursor", {
+            payload: { cursor, limit, count },
+        });
+    }
+
+    /**
+     * Analyze one batch of MongoDB documents against Elasticsearch by _id and updated_at
+     */
+    analyzeDriftBatch(cursor?: string | null, limit?: number): Promise<AnalyzeDriftBatchResult> {
+        return this.post("/internal/analyze-drift-batch", {
+            payload: { cursor, limit },
         });
     }
 
@@ -209,7 +249,11 @@ export class IndexingApi extends ApiTopic {
         recreateIndex?: boolean;
     }): Promise<TriggerReindexResult> {
         return this.post("/internal/trigger-reindex", {
-            payload: options ?? {},
+            payload: options ? {
+                full_reindex: options.fullReindex,
+                object_ids: options.objectIds,
+                recreate_index: options.recreateIndex,
+            } : {},
         });
     }
 
@@ -221,7 +265,7 @@ export class IndexingApi extends ApiTopic {
      */
     fetchDocumentsByIds(objectIds: string[]): Promise<FetchDocumentsByIdsResult> {
         return this.post("/internal/fetch-by-ids", {
-            payload: { objectIds },
+            payload: { object_ids: objectIds },
         });
     }
 
@@ -232,7 +276,7 @@ export class IndexingApi extends ApiTopic {
      */
     bulkDelete(objectIds: string[]): Promise<BulkDeleteResult> {
         return this.post("/internal/bulk-delete", {
-            payload: { objectIds },
+            payload: { object_ids: objectIds },
         });
     }
 

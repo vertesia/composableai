@@ -6,6 +6,7 @@ import { useWatchSearchResult } from "./search/ObjectTypeSearchContext";
 import { EmptyCollection, ErrorBox, Input, SelectBox, useDebounce, useIntersectionObserver, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
+import { useUITranslation } from '../../../i18n/index.js';
 
 import { CreateOrUpdateTypeModal, CreateOrUpdateTypePayload } from "./CreateOrUpdateTypeModal";
 
@@ -17,6 +18,7 @@ interface ContentObjectTypesSearchProps {
 export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypesSearchProps) {
     const { store } = useUserSession();
     const { reload: reloadTypes } = useTypeRegistry();
+    const { t } = useUITranslation();
 
     const toast = useToast();
 
@@ -66,7 +68,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
 
     if (error) {
         return (
-            <ErrorBox title="Failed to fetch ObjectTypes">{error.message}</ErrorBox>
+            <ErrorBox title={t('store.failedToFetchTypes')}>{error.message}</ErrorBox>
         );
     };
 
@@ -78,7 +80,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
         return store.types.create(payload).then(async () => {
             toast({
                 status: "success",
-                title: "Type created",
+                title: t('store.typeCreated'),
                 duration: 2000
             });
             reloadTypes();
@@ -86,7 +88,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
         }).catch(err => {
             toast({
                 status: "error",
-                title: "Error creating type",
+                title: t('store.errorCreatingType'),
                 description: err.message,
                 duration: 5000
             });
@@ -96,20 +98,20 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
     return (
         <div className="flex flex-col gap-4 h-full">
             <div className="flex flex-shrink-0 gap-4">
-                <Input placeholder="Filter by Name" value={searchTerm} onChange={setSearchTerm} />
-                <SelectBox className="w-60" isClearable options={Object.values(ChunkableOptions)} value={chunkable} onChange={onChunkableChange} placeholder={"Is Chunkable"} />
+                <Input placeholder={t('store.filterByName')} value={searchTerm} onChange={setSearchTerm} />
+                <SelectBox className="w-60" isClearable options={Object.values(ChunkableOptions)} value={chunkable} onChange={onChunkableChange} placeholder={t('store.isChunkable')} />
             </div>
             <div className="flex-1 overflow-y-auto">
                 {
                     (!isLoading && objects?.length === 0) ? (
-                        <EmptyCollection title="No Type" buttonLabel="Create Type" onClick={onOpenCreateModal}>
-                            Get started by creating a new Type.
+                        <EmptyCollection title={t('store.noType')} buttonLabel={t('store.createType')} onClick={onOpenCreateModal}>
+                            {t('store.getStartedTypes')}
                         </EmptyCollection >
                     ) : (
                         <ContentObjectTypesTable objects={objects} isLoading={isLoading} />
                     )
                 }
-                <CreateOrUpdateTypeModal okLabel="Create" title="Create Type" isOpen={showCreateModal} onClose={onCloseCreateModal} />
+                <CreateOrUpdateTypeModal okLabel="Create" title={t('store.createType')} isOpen={showCreateModal} onClose={onCloseCreateModal} />
             </div>
         </div>
     )

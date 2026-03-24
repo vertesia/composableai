@@ -54,7 +54,9 @@ export function NestedRouterProvider({ routes, index, children, fixLinks = false
             matchedRoutePath: '/' + nestedRouteMatch.matchedSegments.join('/'),
             remainingPath: nestedRouteMatch.remainingSegments ? '/' + nestedRouteMatch.remainingSegments.join('/') : undefined,
             navigate: (to: string, options?: NavigateOptions) => {
-                return nestedRouter!.navigate(to, options);
+                if (nestedRouter) {
+                    return nestedRouter.navigate(to, options);
+                }
             }
 
         }}>

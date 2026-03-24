@@ -1,5 +1,6 @@
 import { CheckCircleIcon } from "lucide-react";
 import { useState } from "react";
+import { useUITranslation } from "@vertesia/ui/i18n";
 
 /**
  * Props for the UploadResultCategory component
@@ -32,6 +33,7 @@ export function UploadResultCategory({
     icon = <CheckCircleIcon className="h-4 w-4 text-green-500" />,
     items
 }: UploadResultCategoryProps) {
+    const { t } = useUITranslation();
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
@@ -71,7 +73,7 @@ export function UploadResultCategory({
                         </ul>
                     ) : (
                         <div className="text-sm text-muted py-2">
-                            No items to display
+                            {t('upload.noItems')}
                         </div>
                     )}
                 </div>
