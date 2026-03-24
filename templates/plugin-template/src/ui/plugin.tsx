@@ -1,4 +1,5 @@
 import { PortalContainerProvider } from "@vertesia/ui/core";
+import "./i18n"; // register plugin-specific translations
 import { App } from "./app";
 
 /**

@@ -1,7 +1,7 @@
 "use client"
 
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
 import * as React from "react"
-import { RadioGroup as RadioGroupPrimitive } from "radix-ui"
 
 import { cn } from "../libs/utils"
 
@@ -58,7 +58,7 @@ function RadioGroup<T = RadioGroupOption>({ onSelect, selected, options, adapter
     <RadioGroupPrimitive.Root
       data-slot="radio-group"
       value={selected ? getId(selected) : undefined}
-      onValueChange={(id) => {
+      onValueChange={(id: string) => {
         const option = options.find((o) => getId(o) === id)
         if (option) onSelect(option)
       }}
@@ -97,3 +97,4 @@ export const RadioOptionAdapter = RadioGroupAdapter
 
 export { RadioGroup, RadioGroupItem }
 export type { RadioGroupOption, RadioGroupProps }
+

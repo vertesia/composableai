@@ -1,3 +1,4 @@
+import { I18nProvider } from '@vertesia/ui/i18n'
 import { StandaloneApp, VertesiaShell } from '@vertesia/ui/shell'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -12,10 +13,12 @@ setUsePluginAssets(false);
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <VertesiaShell>
-            <StandaloneApp name={import.meta.env.VITE_APP_NAME}> {/* <---- define VITE_APP_NAME en var in .env.local */}
-                <RouterProvider routes={[{ path: "*", Component: App }]} />
-            </StandaloneApp>
-        </VertesiaShell>
+        <I18nProvider>
+            <VertesiaShell>
+                <StandaloneApp name={import.meta.env.VITE_APP_NAME}> {/* <---- define VITE_APP_NAME en var in .env.local */}
+                    <RouterProvider routes={[{ path: "*", Component: App }]} />
+                </StandaloneApp>
+            </VertesiaShell>
+        </I18nProvider>
     </StrictMode>,
 )

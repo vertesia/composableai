@@ -73,6 +73,44 @@ describe('Test Vertesia Client', () => {
         expect(client.tokenServerUrl).toBe('https://sts-staging.vertesia.io');
     });
 
+    test('Initialization with regional serverUrl (api.us1)', () => {
+        const client = new VertesiaClient({
+            serverUrl: 'https://api.us1.vertesia.io',
+            storeUrl: 'https://api.us1.vertesia.io',
+        });
+
+        expect(client).toBeDefined();
+        expect(client.baseUrl).toBe('https://api.us1.vertesia.io');
+        expect(client.storeUrl).toBe('https://api.us1.vertesia.io');
+        // api.us1 → hostname startsWith("api") → replace api→sts → sts.us1.vertesia.io
+        // URL.toString() adds trailing /
+        expect(client.tokenServerUrl).toBe('https://sts.us1.vertesia.io/');
+    });
+
+    test('Initialization with regional serverUrl (api.eu1)', () => {
+        const client = new VertesiaClient({
+            serverUrl: 'https://api.eu1.vertesia.io',
+            storeUrl: 'https://api.eu1.vertesia.io',
+        });
+
+        expect(client).toBeDefined();
+        expect(client.baseUrl).toBe('https://api.eu1.vertesia.io');
+        expect(client.storeUrl).toBe('https://api.eu1.vertesia.io');
+        expect(client.tokenServerUrl).toBe('https://sts.eu1.vertesia.io/');
+    });
+
+    test('Initialization with regional preview serverUrl (api-preview.us1)', () => {
+        const client = new VertesiaClient({
+            serverUrl: 'https://api-preview.us1.vertesia.io',
+            storeUrl: 'https://api-preview.us1.vertesia.io',
+        });
+
+        expect(client).toBeDefined();
+        expect(client.baseUrl).toBe('https://api-preview.us1.vertesia.io');
+        // hostname includes "-preview." → routes to production STS (preview uses prod STS)
+        expect(client.tokenServerUrl).toBe('https://sts.vertesia.io');
+    });
+
     test('Initialization with site localhost', () => {
         const client = new VertesiaClient({
             serverUrl: 'http://localhost:8091',

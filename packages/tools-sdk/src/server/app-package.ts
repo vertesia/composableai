@@ -1,4 +1,4 @@
-import { AppPackage, AppPackageScope, AppWidgetInfo, CatalogInteractionRef, InCodeTypeDefinition } from "@vertesia/common";
+import { AppPackage, AppPackageScope, AppWidgetInfo, CatalogInteractionRef, InCodeTypeDefinition, RemoteActivityDefinition } from "@vertesia/common";
 import { Context, Hono } from "hono";
 import { ToolUseContext } from "../types.js";
 import { ToolServerConfig } from "./types.js";
@@ -103,6 +103,15 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, (pkg: AppPackage, config
             pkg.settings_schema = { ...config.settings };
         }
     },
+    async activities(pkg: AppPackage, config: ToolServerConfig) {
+        const allActivities: RemoteActivityDefinition[] = [];
+        for (const coll of config.activities || []) {
+            for (const def of coll.getActivityDefinitions()) {
+                allActivities.push({ ...def, collection: coll.name });
+            }
+        }
+        pkg.activities = allActivities;
+    },
 }
 
 
@@ -120,6 +129,7 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
         await builders.widgets(pkg, config, c);
         await builders.ui(pkg, config, c);
         await builders.settings(pkg, config, c);
+        await builders.activities(pkg, config, c);
     } else {
         if (scopes.has('tools')) {
             await builders.tools(pkg, config, c);
@@ -140,7 +150,10 @@ async function handlePackageRequest(c: Context, config: ToolServerConfig) {
             await builders.ui(pkg, config, c);
         }
         if (scopes.has('settings')) {
-            builders.settings(pkg, config, c);
+            await builders.settings(pkg, config, c);
+        }
+        if (scopes.has('activities')) {
+            await builders.activities(pkg, config, c);
         }
     }
 

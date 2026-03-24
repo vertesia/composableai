@@ -1,11 +1,14 @@
 import { useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
+import { useUITranslation } from '../../../../../i18n/index.js';
+import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
 import { SelectContentTypeModal } from "../../../types";
 import { useObjectsActionCallback } from "../ObjectsActionHooks";
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function ChangeTypeActionComponent({ action, objectIds, children }: ActionComponentTypeProps) {
+    const { t } = useUITranslation();
     const { store } = useUserSession();
     const toast = useToast();
     const [isOpen, setOpen] = useState(false);
@@ -33,14 +36,14 @@ export function ChangeTypeActionComponent({ action, objectIds, children }: Actio
         }).then((r) => {
             toast({
                 status: 'success',
-                title: 'Change Type',
+                title: t('store.actions.changeType'),
                 description: `Change the type of ${objectIds.length} objects is ${r.status === 'in_progress' ? 'in progress' : 'completed'}`,
                 duration: 2000
             });
         }).catch(err => {
             toast({
                 status: 'error',
-                title: 'Error changing type',
+                title: t('store.actions.errorChangingType'),
                 description: err.message,
                 duration: 5000
             });
@@ -63,10 +66,11 @@ export function ChangeTypeActionComponent({ action, objectIds, children }: Actio
     )
 }
 
+const t = i18nInstance.getFixedT(null, NAMESPACE);
 export const ChangeTypeAction: ObjectsActionSpec = {
     id: "changeType",
-    name: 'Change Content Type',
-    description: 'Change the Content Type of the selected documents',
+    name: t('store.actions.changeContentType'),
+    description: t('store.actions.changeContentTypeDesc'),
     confirm: false,
     component: ChangeTypeActionComponent,
 }

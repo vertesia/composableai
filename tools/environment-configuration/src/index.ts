@@ -42,6 +42,7 @@ program
     "AWS Bedrock",
   )
   .option("--role <role_name>", "The AWS Role Name", "VertesiaBedrockRole")
+  .option("--sts-url <sts_url>", "The Vertesia STS issuer URL to trust", process.env.VERTESIA_STS_URL)
   .option("-t,--tags <tags...>", "List of tags in the format key=value")
   .action((options) => {
     const tags = options.tags?.map((tag: string) => {
@@ -55,6 +56,7 @@ program
       options.env,
       options.role,
       tags,
+      options.stsUrl,
     );
   });
 
@@ -81,6 +83,7 @@ program
     "The Vertesia Execution Environment Name",
     "GCP Vertex AI",
   )
+  .option("--sts-url <sts_url>", "The Vertesia STS issuer URL to trust", process.env.VERTESIA_STS_URL)
   .action((options) => {
     configureVertexAiEnvironment(
       vertesia,
@@ -89,6 +92,7 @@ program
       options.poolName,
       options.providerName,
       options.project,
+      options.stsUrl,
     );
   });
 

@@ -12,6 +12,7 @@ import TextFilter from "./filter/TextFilter";
 import DateFilter from "./filter/dateFilter";
 import SelectFilter from "./filter/SelectFilter";
 import StringListFilter from "./filter/StringListFilter";
+import { useUITranslation } from '../../../../i18n/index.js';
 
 const FilterContext = React.createContext<{
   filters: Filter[];
@@ -163,6 +164,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
 
 const FilterBtn = ({ className }: { className?: string }) => {
   const { filters, setFilters, filterGroups } = React.useContext(FilterContext);
+  const { t } = useUITranslation();
   const [open, setOpen] = React.useState(false);
   const [selectedView, setSelectedView] = React.useState<string | null>(null);
   const [commandInput, setCommandInput] = React.useState("");
@@ -198,7 +200,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
     );
 
     if (options.length === 0) {
-      return <CommandEmpty>No available filters</CommandEmpty>;
+      return <CommandEmpty>{t('filter.noAvailableFilters')}</CommandEmpty>;
     }
 
     return options.map((group: FilterGroup, index: number) => (
@@ -299,7 +301,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
           )}
         >
           <ListFilter className="size-4 shrink-0 transition-all text-muted" />
-          {"Filter"}
+          {t('filter.filter')}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start" sideOffset={4}>
@@ -307,7 +309,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
           {
             filterGroups.find(group => group.name === selectedView)?.type === "select" && (
               <CommandInput
-                placeholder={selectedView ? `Filter by ${selectedView}` : "Filter..."}
+                placeholder={selectedView ? t('filter.filterBy', { view: selectedView }) : t('filter.filterPlaceholder')}
                 className="h-9 ring-0"
                 value={commandInput}
                 onValueChange={(value) => {
@@ -319,7 +321,7 @@ const FilterBtn = ({ className }: { className?: string }) => {
             )
           }
           <CommandList>
-            <CommandEmpty>No matching filters</CommandEmpty>
+            <CommandEmpty>{t('filter.noMatchingFilters')}</CommandEmpty>
             <CommandGroup>
               {!selectedView ? getAvailableFilterGroups() : renderFilterOptions()}
             </CommandGroup>
@@ -342,6 +344,7 @@ const FilterBar = ({ className }: { className?: string }) => {
 
 const FilterClear = ({ className }: { className?: string }) => {
   const { filters, setFilters } = React.useContext(FilterContext);
+  const { t } = useUITranslation();
 
   const hasActiveFilters = filters.filter((filter) => filter.value?.length > 0).length > 0;
 
@@ -356,7 +359,7 @@ const FilterClear = ({ className }: { className?: string }) => {
       className={cn("transition group", className)}
       onClick={() => setFilters([])}
     >
-      Clear All
+      {t('filter.clearAll')}
     </Button>
   );
 };

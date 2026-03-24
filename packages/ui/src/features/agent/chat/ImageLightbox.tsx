@@ -1,5 +1,6 @@
 import { useState, createContext, useContext, useCallback, ReactNode } from "react";
 import { X, ExternalLink } from "lucide-react";
+import { useUITranslation } from '../../../i18n/index.js';
 
 interface ImageLightboxContextValue {
     openImage: (src: string, alt?: string) => void;
@@ -35,6 +36,8 @@ export function ImageLightboxProvider({ children }: ImageLightboxProviderProps) 
         setImage(null);
     }, []);
 
+    const { t } = useUITranslation();
+
     return (
         <ImageLightboxContext.Provider value={{ openImage, closeImage }}>
             {children}
@@ -46,14 +49,14 @@ export function ImageLightboxProvider({ children }: ImageLightboxProviderProps) 
                     <div className="relative max-w-[90vw] max-h-[90vh]">
                         <img
                             src={image.src}
-                            alt={image.alt || "Enlarged view"}
+                            alt={image.alt || t('agent.enlargedView')}
                             className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
                         />
                         {/* Close button */}
                         <button
                             className="absolute top-2 right-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
                             onClick={closeImage}
-                            title="Close"
+                            title={t('agent.close')}
                         >
                             <X className="size-6" />
                         </button>
@@ -64,7 +67,7 @@ export function ImageLightboxProvider({ children }: ImageLightboxProviderProps) 
                             rel="noopener noreferrer"
                             className="absolute bottom-2 right-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
                             onClick={(e) => e.stopPropagation()}
-                            title="Open in new tab"
+                            title={t('agent.openInNewTab')}
                         >
                             <ExternalLink className="size-5" />
                         </a>

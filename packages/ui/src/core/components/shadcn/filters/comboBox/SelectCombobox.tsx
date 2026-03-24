@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../../popover";
 import { AnimateChangeInHeight } from "../animateChangeInHeight";
 import { FilterGroupOption, FilterOption } from "../types";
 import { DynamicLabel } from "../DynamicLabel";
+import { useUITranslation } from '../../../../../i18n/index.js';
 
 export const SelectionCombobox = ({
     filterType,
@@ -22,6 +23,7 @@ export const SelectionCombobox = ({
     const [open, setOpen] = useState(false);
     const [commandInput, setCommandInput] = useState("");
     const commandInputRef = useRef<HTMLInputElement>(null);
+    const { t } = useUITranslation();
     const nonSelectedFilterValues = options?.filter(
         (option) => !filterValues.some(filter => filter.value === option.value)
     );
@@ -71,7 +73,7 @@ export const SelectionCombobox = ({
                             ref={commandInputRef}
                         />
                         <CommandList>
-                            <CommandEmpty>No results found.</CommandEmpty>
+                            <CommandEmpty>{t('filter.noResultsFound')}</CommandEmpty>
                             <CommandGroup>
                                 {filterValues.map((value) => {
                                     return (

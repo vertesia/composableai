@@ -1,5 +1,6 @@
 import { SupportedIntegrations } from "./integrations.js";
 import { ContentObjectTypeRef } from "./store/store.js";
+import { WorkflowRunStatus } from "./store/workflow.js";
 import { AccountRef } from "./user.js";
 
 export interface ICreateProjectPayload {
@@ -280,34 +281,34 @@ export interface EmbeddingsStatusResponse {
  */
 export interface IndexingStatusResponse {
     /** Whether indexing infrastructure is available globally */
-    infrastructureEnabled: boolean;
+    infrastructure_enabled: boolean;
     /** Whether indexing is enabled for this project */
-    indexingEnabled: boolean;
-    /** @deprecated Now derived from indexingEnabled - queries automatically route to index when indexing is enabled */
+    indexing_enabled: boolean;
+    /** @deprecated Now derived from indexing_enabled - queries automatically route to index when indexing is enabled */
     query_enabled: boolean;
     /** Index status */
     index: {
         /** Whether the index exists */
         exists: boolean;
         /** Alias name (used for queries) */
-        aliasName: string;
+        alias_name: string;
         /** Actual index name (versioned) */
-        indexName: string;
+        index_name: string;
         /** Index version (timestamp when created) */
         version: number;
         /** When the current index was created */
-        createdAt: string | null;
+        created_at: string | null;
         /** Number of documents in the index */
-        documentCount: number;
+        document_count: number;
         /** Index size in bytes */
-        sizeBytes: number;
+        size_bytes: number;
     };
     /** MongoDB document count for comparison */
-    mongoDocumentCount: number;
+    mongo_document_count: number;
     /** Whether a reindex is currently in progress */
-    reindexInProgress: boolean;
+    reindex_in_progress: boolean;
     /** Reindex progress (if reindex is in progress) */
-    reindexProgress?: {
+    reindex_progress?: {
         /** Total documents to reindex */
         total: number;
         /** Documents processed so far */
@@ -319,19 +320,19 @@ export interface IndexingStatusResponse {
         /** Current status (e.g., "indexing", "complete") */
         status: string;
         /** Current batch number */
-        currentBatch: number;
+        current_batch: number;
         /** Total number of batches */
-        totalBatches: number;
+        total_batches: number;
         /** Percentage complete (0-100) */
-        percentComplete: number;
+        percent_complete: number;
         /** Batches processed per second */
-        batchesPerSecond: number;
+        batches_per_second: number;
         /** Documents processed per second */
-        docsPerSecond: number;
+        docs_per_second: number;
         /** Elapsed time in seconds */
-        elapsedSeconds: number;
+        elapsed_seconds: number;
         /** Estimated seconds remaining (null if unknown) */
-        estimatedSecondsRemaining: number | null;
+        estimated_seconds_remaining: number | null;
     };
 }
 
@@ -377,8 +378,8 @@ export interface BulkIndexResult {
  */
 export interface CreateReindexTargetResult {
     created: boolean;
-    indexName: string;
-    aliasName: string;
+    index_name: string;
+    alias_name: string;
     version: number;
 }
 
@@ -399,7 +400,7 @@ export interface FetchBatchResult {
         id: string;
         document: ElasticsearchDocumentData;
     }>;
-    nextCursor: string | null;
+    next_cursor: string | null;
     done: boolean;
 }
 
@@ -410,7 +411,16 @@ export interface IndexBatchResult {
     successful: number;
     failed: number;
     processed: number;
-    nextCursor: string | null;
+    next_cursor: string | null;
+    done: boolean;
+}
+
+/**
+ * Result from discovering the next cursor boundary for batch partitioning
+ */
+export interface NextIndexCursorResult {
+    next_cursors: string[];
+    count: number;
     done: boolean;
 }
 
@@ -420,9 +430,9 @@ export interface IndexBatchResult {
 export interface TriggerReindexResult {
     status: string;
     workflow?: string;
-    workflowId?: string;
-    runId?: string;
-    objectCount?: number;
+    workflow_id?: string;
+    run_id?: string;
+    object_count?: number;
     reason?: string;
     enabled?: boolean;
 }
@@ -433,10 +443,10 @@ export interface TriggerReindexResult {
 export interface ElasticsearchIndexStats {
     enabled: boolean;
     exists?: boolean;
-    documentCount?: number;
-    sizeInBytes?: number;
-    indexName?: string;
-    aliasName?: string;
+    document_count?: number;
+    size_in_bytes?: number;
+    index_name?: string;
+    alias_name?: string;
 }
 
 /**
@@ -456,25 +466,25 @@ export interface EmbeddingTypeConfig {
 export interface IndexConfiguration {
     enabled: boolean;
     exists?: boolean;
-    indexName?: string;
-    aliasName?: string;
+    index_name?: string;
+    alias_name?: string;
     version?: number;
-    documentCount?: number;
-    sizeInBytes?: number;
-    embeddingDimensions?: {
+    document_count?: number;
+    size_in_bytes?: number;
+    embedding_dimensions?: {
         text?: number;
         image?: number;
         properties?: number;
     };
     /** ISO 639-1 language code for text analysis */
     language?: string;
-    fieldMappings?: Record<string, unknown>;
-    projectEmbeddingsConfig?: {
+    field_mappings?: Record<string, unknown>;
+    project_embeddings_config?: {
         text?: EmbeddingTypeConfig;
         image?: EmbeddingTypeConfig;
         properties?: EmbeddingTypeConfig;
     };
-    createdAt?: Date | null;
+    created_at?: Date | null;
 }
 
 /**
@@ -522,7 +532,7 @@ export interface FetchDocumentsByIdsResult {
         id: string;
         document: ElasticsearchDocumentData;
     }>;
-    notFound: string[];
+    not_found: string[];
 }
 
 /**
@@ -550,13 +560,53 @@ export interface EnsureIndexResult {
     language?: string;
 }
 
+export interface AnalyzeDriftBatchResult {
+    processed: number;
+    missing: number;
+    stale: number;
+    next_cursor: string | null;
+    done: boolean;
+    sample_missing_ids: string[];
+    sample_stale_ids: string[];
+}
+
+export interface DriftAnalysisProgress {
+    total: number;
+    processed: number;
+    missing: number;
+    stale: number;
+    status: string;
+    current_batch: number;
+    total_batches: number;
+    percent_complete: number;
+    docs_per_second: number;
+    elapsed_seconds: number;
+    estimated_seconds_remaining: number | null;
+}
+
+export interface DriftAnalysisResult {
+    total: number;
+    processed: number;
+    missing: number;
+    stale: number;
+    sample_missing_ids: string[];
+    sample_stale_ids: string[];
+    completed_at: string;
+}
+
+export interface DriftAnalysisStatusResponse extends WorkflowRunStatus {
+    progress?: DriftAnalysisProgress;
+    result?: DriftAnalysisResult;
+    error?: string;
+}
+
 /**
  * Result from swap alias operation
  */
 export interface SwapAliasResult {
     swapped: boolean;
-    aliasName?: string;
-    newIndexName?: string;
+    alias_name?: string;
+    new_index_name?: string;
     reason?: string;
 }
 

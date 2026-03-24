@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useUserSession } from "@vertesia/ui/session";
+import { i18nInstance, NAMESPACE } from '../../i18n/instance.js';
 
 interface TenantConfig {
     tenantKey: string;
@@ -11,6 +12,7 @@ interface TenantConfig {
 }
 
 export function useCurrentTenant() {
+    const t = i18nInstance.getFixedT(null, NAMESPACE);
     const { user } = useUserSession();
     const [currentTenant, setCurrentTenant] = useState<TenantConfig | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -55,7 +57,7 @@ export function useCurrentTenant() {
                 }
             } catch (error) {
                 console.error('Error loading current tenant:', error);
-                setError('Failed to load tenant configuration');
+                setError(t('errors.failedToLoadTenantConfig'));
                 setCurrentTenant(null);
             } finally {
                 setIsLoading(false);

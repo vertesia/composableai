@@ -224,7 +224,7 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                 error: error,
             },
         });
-        throw new Error('Failed to get composable token');
+        throw new Error('Failed to get composable token', { cause: error });
     }
 }
 
