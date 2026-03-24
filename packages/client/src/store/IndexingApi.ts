@@ -16,6 +16,8 @@ import {
     BulkDeleteResult,
     EnsureIndexResult,
     SwapAliasResult,
+    AnalyzeDriftBatchResult,
+    DriftAnalysisStatusResponse,
 } from "@vertesia/common";
 
 /**
@@ -48,6 +50,20 @@ export class IndexingApi extends ApiTopic {
      */
     async reindex(recreateIndex?: boolean): Promise<GenericCommandResponse> {
         return this.post("/reindex", { payload: { recreateIndex } });
+    }
+
+    /**
+     * Trigger an on-demand drift analysis between MongoDB and Elasticsearch
+     */
+    async analyzeDrift(): Promise<DriftAnalysisStatusResponse> {
+        return this.post("/analyze-drift", { payload: {} });
+    }
+
+    /**
+     * Get the latest drift analysis status/result for this project
+     */
+    async getDriftAnalysis(): Promise<DriftAnalysisStatusResponse> {
+        return this.get("/drift-analysis");
     }
 
     /**
@@ -206,6 +222,15 @@ export class IndexingApi extends ApiTopic {
      */
     getNextIndexCursor(cursor?: string | null, limit?: number): Promise<NextIndexCursorResult> {
         return this.post("/internal/next-cursor", {
+            payload: { cursor, limit },
+        });
+    }
+
+    /**
+     * Analyze one batch of MongoDB documents against Elasticsearch by _id and updated_at
+     */
+    analyzeDriftBatch(cursor?: string | null, limit?: number): Promise<AnalyzeDriftBatchResult> {
+        return this.post("/internal/analyze-drift-batch", {
             payload: { cursor, limit },
         });
     }

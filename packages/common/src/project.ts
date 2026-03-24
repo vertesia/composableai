@@ -1,5 +1,6 @@
 import { SupportedIntegrations } from "./integrations.js";
 import { ContentObjectTypeRef } from "./store/store.js";
+import { WorkflowRunStatus } from "./store/workflow.js";
 import { AccountRef } from "./user.js";
 
 export interface ICreateProjectPayload {
@@ -557,6 +558,46 @@ export interface EnsureIndexResult {
         properties?: number;
     };
     language?: string;
+}
+
+export interface AnalyzeDriftBatchResult {
+    processed: number;
+    missing: number;
+    stale: number;
+    nextCursor: string | null;
+    done: boolean;
+    sampleMissingIds: string[];
+    sampleStaleIds: string[];
+}
+
+export interface DriftAnalysisProgress {
+    total: number;
+    processed: number;
+    missing: number;
+    stale: number;
+    status: string;
+    currentBatch: number;
+    totalBatches: number;
+    percentComplete: number;
+    docsPerSecond: number;
+    elapsedSeconds: number;
+    estimatedSecondsRemaining: number | null;
+}
+
+export interface DriftAnalysisResult {
+    total: number;
+    processed: number;
+    missing: number;
+    stale: number;
+    sampleMissingIds: string[];
+    sampleStaleIds: string[];
+    completedAt: string;
+}
+
+export interface DriftAnalysisStatusResponse extends WorkflowRunStatus {
+    progress?: DriftAnalysisProgress;
+    result?: DriftAnalysisResult;
+    error?: string;
 }
 
 /**
