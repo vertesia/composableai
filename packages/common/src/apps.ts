@@ -91,6 +91,14 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
      * Provides clean, readable tool names (e.g., "jira" instead of "https://mcp.atlassian.com/v1/mcp")
      */
     namespace: string;
+
+    /**
+     * Reference to an OAuth Application name for this collection.
+     * When set, uses the OAuth Application's config (endpoints, client_id, client_secret)
+     * instead of MCP dynamic client registration or random fallback.
+     * The referenced OAuth Application must exist in the same project.
+     */
+    oauth_app?: string;
 }
 
 /**

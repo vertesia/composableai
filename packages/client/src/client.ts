@@ -11,6 +11,7 @@ import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
 import MCPOAuthApi from "./MCPOAuthApi.js";
+import OAuthAppsApi from "./OAuthAppsApi.js";
 import ProjectsApi from "./ProjectsApi.js";
 import SkillsApi from "./SkillsApi.js";
 import PromptsApi from "./PromptsApi.js";
@@ -349,6 +350,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
     mcpOAuth = new MCPOAuthApi(this);
+    oauthApps = new OAuthAppsApi(this);
 }
 
 function isApiKey(apiKey: string) {
