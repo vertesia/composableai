@@ -515,6 +515,8 @@ export interface CompositeAppSwitchersOverrides {
 export interface CompositeAppSidebarOverrides {
     /** Whether to show section title headers in the sidebar (defaults to true) */
     showSectionHeaders?: boolean;
+    /** Whether menu items auto-collapse when navigating (accordion behavior). When false, all items stay expanded. Defaults to true. */
+    autoCollapse?: boolean;
 }
 
 /**
