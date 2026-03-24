@@ -4,3 +4,4 @@ export * from "./Navbar.js";
 export * from "./Sidebar.js";
 export * from "./SidebarContext.js";
 export * from "./TitleBar.js";
+export * from "./RegionTag.js";

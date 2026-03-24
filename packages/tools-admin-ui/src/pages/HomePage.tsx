@@ -9,6 +9,7 @@ import { filterResources } from '../types.js';
 
 const sections: { type: ResourceType; title: string; subtitle: string }[] = [
     { type: 'tool', title: 'Tools', subtitle: 'Remote tools available to agents via Vertesia.' },
+    { type: 'activity', title: 'Activities', subtitle: 'Remote activities for DSL workflows, invoked via HTTP.' },
     { type: 'skill', title: 'Skills', subtitle: 'Reusable instructions and scripts packaged as tools.' },
     { type: 'interaction', title: 'Interactions', subtitle: 'Conversation blueprints surfaced in the Vertesia UI.' },
     { type: 'type', title: 'Content Types', subtitle: 'Schema definitions for structured content in the data store.' },

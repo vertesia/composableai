@@ -1,10 +1,12 @@
 import { Avatar, Button } from '@vertesia/ui/core';
 import { Env } from '@vertesia/ui/env';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { HamburgerButton } from '@vertesia/ui/layout';
 import { useUserSession } from '@vertesia/ui/session';
 import { LogOut } from 'lucide-react';
 
 export function PluginTopNav() {
+    const { t } = useUITranslation();
     const { user, logout } = useUserSession();
 
     return (
@@ -28,7 +30,7 @@ export function PluginTopNav() {
                                 variant="outline"
                                 size="xs"
                                 onClick={() => logout()}
-                                alt="Sign out"
+                                alt={t('nav.signOut')}
                             >
                                 <LogOut className="size-3.5" />
                             </Button>

@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useUITranslation } from '../../../i18n/index.js';
 
 interface DocumentPreviewPanelProps {
   objectId: string | null;
@@ -36,6 +37,7 @@ export function DocumentPreviewPanel({
   const [text, setText] = useState<string | undefined>();
   const [imageUrl, setImageUrl] = useState<string | undefined>();
   const [currentTab, setCurrentTab] = useState("preview");
+  const { t } = useUITranslation();
   const toast = useToast();
 
   useEffect(() => {
@@ -67,8 +69,8 @@ export function DocumentPreviewPanel({
         .catch((error) => {
           console.error("Error loading object:", error);
           toast({
-            title: "Error",
-            description: "Failed to load document",
+            title: t('agent.error'),
+            description: t('store.failedToLoadDocument'),
             status: "error",
             duration: 3000,
           });
@@ -145,8 +147,8 @@ export function DocumentPreviewPanel({
           <FileText className="h-5 w-5 text-indigo-600 mr-2" />
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 truncate">
             {isLoading
-              ? "Loading document..."
-              : object?.name || "Document Preview"}
+              ? t('store.loadingDocument')
+              : object?.name || t('store.documentPreview')}
           </h2>
         </div>
         <div className="flex items-center space-x-2">
@@ -157,7 +159,7 @@ export function DocumentPreviewPanel({
             className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800"
           >
             <Maximize2 className="h-4 w-4" />
-            <span>Full View</span>
+            <span>{t('store.fullView')}</span>
           </Button>
           <Button
             variant="ghost"
@@ -179,7 +181,7 @@ export function DocumentPreviewPanel({
               className="text-indigo-600 dark:text-indigo-400 mb-2"
             />
             <p className="text-gray-600 dark:text-gray-400">
-              Loading document...
+              {t('store.loadingDocument')}
             </p>
           </div>
         </div>
@@ -197,7 +199,7 @@ export function DocumentPreviewPanel({
               >
                 <div className="flex items-center gap-1">
                   <LayoutGrid className="h-4 w-4" />
-                  <span>Preview</span>
+                  <span>{t('store.preview')}</span>
                 </div>
               </button>
               <button
@@ -209,7 +211,7 @@ export function DocumentPreviewPanel({
               >
                 <div className="flex items-center gap-1">
                   <Info className="h-4 w-4" />
-                  <span>Properties</span>
+                  <span>{t('store.properties')}</span>
                 </div>
               </button>
             </div>
@@ -268,13 +270,13 @@ export function DocumentPreviewPanel({
                   <div className="flex flex-col items-center justify-center h-64 border border-gray-200 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-800">
                     <FileText className="h-16 w-16 text-indigo-300 dark:text-indigo-400 mb-4" />
                     <p className="text-gray-600 dark:text-gray-400 text-center mb-4">
-                      PDF document preview is available in full view. TODO{" "}
+                      {t('store.pdfPreviewFullView')}
                     </p>
                     <Button
                       onClick={handleViewFullDocument}
                       className="bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
-                      Open Full Document View
+                      {t('store.openFullDocumentView')}
                     </Button>
                   </div>
                 )}
@@ -284,7 +286,7 @@ export function DocumentPreviewPanel({
                   <div className="flex flex-col items-center justify-center h-64 border border-gray-200 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-800">
                     <FileText className="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" />
                     <p className="text-gray-600 dark:text-gray-400 text-center">
-                      No preview available for this document type.
+                      {t('store.noPreviewAvailable')}
                     </p>
                   </div>
                 )}
@@ -301,55 +303,55 @@ export function DocumentPreviewPanel({
                   <div className="flex flex-col items-center justify-center h-64 border border-gray-200 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-800">
                     <Info className="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" />
                     <p className="text-gray-600 dark:text-gray-400 text-center">
-                      No properties available for this document.
+                      {t('store.noPropertiesAvailable')}
                     </p>
                   </div>
                 )}
 
                 <div className="mt-4">
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Document Information
+                    {t('store.documentInformation')}
                   </h3>
                   <div className="shadow rounded-md p-4 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                     <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                      <div className="text-gray-500 dark:text-gray-400">ID</div>
+                      <div className="text-gray-500 dark:text-gray-400">{t('store.id')}</div>
                       <div className="font-medium dark:text-gray-200">
                         {object.id}
                       </div>
 
                       <div className="text-gray-500 dark:text-gray-400">
-                        Type
+                        {t('store.contentType')}
                       </div>
                       <div className="font-medium dark:text-gray-200">
-                        {object.type?.name || "Unknown"}
+                        {object.type?.name || t('store.unknown')}
                       </div>
 
                       <div className="text-gray-500 dark:text-gray-400">
-                        Content Type
+                        {t('store.contentType')}
                       </div>
                       <div className="font-medium dark:text-gray-200">
-                        {object.content?.type || "N/A"}
+                        {object.content?.type || t('store.na')}
                       </div>
 
-                      <div className="text-gray-500">Size</div>
+                      <div className="text-gray-500">{t('store.size')}</div>
                       <div className="font-medium">
                         {object.content && "size" in object.content
                           ? formatFileSize(object.content.size as number)
-                          : "Unknown"}
+                          : t('store.unknown')}
                       </div>
 
-                      <div className="text-gray-500">Created</div>
+                      <div className="text-gray-500">{t('store.created')}</div>
                       <div className="font-medium">
                         {object.created_at
                           ? new Date(object.created_at).toLocaleString()
-                          : "N/A"}
+                          : t('store.na')}
                       </div>
 
-                      <div className="text-gray-500">Updated</div>
+                      <div className="text-gray-500">{t('store.updated')}</div>
                       <div className="font-medium">
                         {object.updated_at
                           ? new Date(object.updated_at).toLocaleString()
-                          : "N/A"}
+                          : t('store.na')}
                       </div>
                     </div>
                   </div>
@@ -375,8 +377,8 @@ export function DocumentPreviewPanel({
                     .catch((error) => {
                       console.error("Error getting download URL:", error);
                       toast({
-                        title: "Error",
-                        description: "Failed to download file",
+                        title: t('agent.error'),
+                        description: t('store.failedToDownloadFile'),
                         status: "error",
                         duration: 3000,
                       });
@@ -387,7 +389,7 @@ export function DocumentPreviewPanel({
               className="text-indigo-600 border-indigo-300 hover:bg-indigo-50"
             >
               <Download className="h-4 w-4 mr-2" />
-              Download
+              {t('pdf.download')}
             </Button>
           )}
         </div>
@@ -395,7 +397,7 @@ export function DocumentPreviewPanel({
           onClick={handleViewFullDocument}
           className="bg-indigo-600 hover:bg-indigo-700 text-white"
         >
-          Open Full Document
+          {t('store.openFullDocument')}
           <ChevronRight className="h-4 w-4 ml-2" />
         </Button>
       </div>

@@ -2,12 +2,14 @@ import { ContentObject, DocumentMetadata } from "@vertesia/common";
 import { Button, Popover, PopoverContent, PopoverTrigger } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Download } from "lucide-react";
+import { useUITranslation } from '../../i18n/index.js';
 import { getResourceUrl } from "./MagicPdfProvider";
 
 interface DownloadPopoverProps {
     object: ContentObject;
 }
 export function DownloadPopover({ object }: DownloadPopoverProps) {
+    const { t } = useUITranslation();
     const { client } = useUserSession()
     const onDownload = (name: string) => {
         getResourceUrl(client, object.id, name).then(url => window.open(url, '_blank'));
@@ -32,7 +34,7 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
                 variant="ghost"
                 size="xs"
                 onClick={() => onDownload("document.md")}
-                alt="Download"
+                alt={t('pdf.download')}
             >
                 <Download className='size-4' />
             </Button>
@@ -46,7 +48,7 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
                 <Button
                     variant="ghost"
                     size="xs"
-                    alt="Download"
+                    alt={t('pdf.download')}
                 >
                     <Download className='size-4' />
                 </Button>

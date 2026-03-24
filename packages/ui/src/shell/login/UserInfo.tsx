@@ -5,6 +5,7 @@ import { useUserSession } from "@vertesia/ui/session";
 // Package version is now passed as prop from the consuming application
 import { Check, CopyIcon } from "lucide-react";
 import { useState } from "react";
+import { useUITranslation } from '../../i18n/index.js';
 
 export function InfoItems({ title, value }: { title: string, value: string }) {
     function copyToClipboard(value: string) {
@@ -32,6 +33,7 @@ export function InfoItems({ title, value }: { title: string, value: string }) {
 }
 
 export default function InfoList() {
+    const { t } = useUITranslation();
 
     const session = useUserSession();
     const { account, project, client, authToken } = session;
@@ -42,27 +44,27 @@ export default function InfoList() {
     const tabs = [
         {
             name: 'user',
-            label: 'User',
+            label: t('user.user'),
             content:
                 <div className="space-y-1 p-2">
-                    <InfoItems title="Organization ID" value={account?.id ?? 'Unknown'} />
-                    <InfoItems title="Project ID" value={project?.id ?? 'Unknown'} />
-                    <InfoItems title="User ID" value={authToken?.sub ?? 'Unknown'} />
-                    <InfoItems title="Organization Roles" value={authToken?.account_roles?.join(',') ?? 'Unknown'} />
-                    <InfoItems title="Project Roles" value={authToken?.project_roles?.join(',') ?? 'Unknown'} />
+                    <InfoItems title={t('user.organizationId')} value={account?.id ?? t('user.unknown')} />
+                    <InfoItems title={t('user.projectId')} value={project?.id ?? t('user.unknown')} />
+                    <InfoItems title={t('user.userId')} value={authToken?.sub ?? t('user.unknown')} />
+                    <InfoItems title={t('user.organizationRoles')} value={authToken?.account_roles?.join(',') ?? t('user.unknown')} />
+                    <InfoItems title={t('user.projectRoles')} value={authToken?.project_roles?.join(',') ?? t('user.unknown')} />
                 </div>
         },
         {
             name: 'environment',
-            label: 'Environment',
+            label: t('user.environment'),
             content:
                 <div className="space-y-1 p-2">
-                    <InfoItems title="Tenant ID" value={tenantId} />
-                    <InfoItems title="Environment" value={Env.type} />
-                    <InfoItems title="Server" value={server} />
-                    <InfoItems title="Store" value={store} />
-                    <InfoItems title="App Version" value={Env.version} />
-                    <InfoItems title="SDK Version" value={Env.sdkVersion || 'unknown'} />
+                    <InfoItems title={t('user.tenantId')} value={tenantId} />
+                    <InfoItems title={t('user.environment')} value={Env.type} />
+                    <InfoItems title={t('user.server')} value={server} />
+                    <InfoItems title={t('user.store')} value={store} />
+                    <InfoItems title={t('user.appVersion')} value={Env.version} />
+                    <InfoItems title={t('user.sdkVersion')} value={Env.sdkVersion || t('user.unknown')} />
                 </div>
         }
     ];

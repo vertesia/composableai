@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "@vertesia/ui/core";
+import { useUITranslation } from "@vertesia/ui/i18n";
 import { MarkdownRenderer } from "@vertesia/ui/widgets";
 import { MessageSquare, CheckCircle, XCircle, AlertCircle, HelpCircle, Send } from "lucide-react";
 
@@ -112,7 +113,7 @@ export function AskUserWidget({
     onSubmit,
     allowFreeResponse = false,
     multiSelect = false,
-    placeholder = "Type your response...",
+    placeholder,
     isLoading = false,
     icon,
     variant = "default",
@@ -131,6 +132,8 @@ export function AskUserWidget({
     inputClassName,
     submitButtonClassName,
 }: AskUserWidgetProps) {
+    const { t } = useUITranslation();
+    const resolvedPlaceholder = placeholder ?? t('agent.typeYourResponse');
     const [inputValue, setInputValue] = React.useState("");
     const [selectedOptions, setSelectedOptions] = React.useState<Set<string>>(new Set());
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -243,7 +246,7 @@ export function AskUserWidget({
                                         className="flex items-center gap-2"
                                     >
                                         <Send className="size-4" />
-                                        Submit Selection{selectedOptions.size > 0 ? ` (${selectedOptions.size})` : ""}
+                                        {selectedOptions.size > 0 ? t('agent.submitSelectionCount', { count: selectedOptions.size }) : t('agent.submitSelection')}
                                     </Button>
                                 </div>
                             </div>
@@ -297,7 +300,7 @@ export function AskUserWidget({
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder={placeholder}
+                                placeholder={resolvedPlaceholder}
                                 disabled={isLoading}
                                 className={`flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${inputClassName || ""}`}
                             />
@@ -307,7 +310,7 @@ export function AskUserWidget({
                                 disabled={isLoading || !inputValue.trim()}
                                 className={submitButtonClassName}
                             >
-                                {isLoading ? "..." : "Send"}
+                                {isLoading ? "..." : t('agent.send')}
                             </Button>
                         </div>
                     </div>
@@ -337,12 +340,15 @@ export function ConfirmationWidget({
     description,
     onConfirm,
     onCancel,
-    confirmLabel = "Yes",
-    cancelLabel = "No",
+    confirmLabel,
+    cancelLabel,
     isLoading = false,
     variant = "default",
     className,
 }: ConfirmationWidgetProps) {
+    const { t } = useUITranslation();
+    const resolvedConfirmLabel = confirmLabel ?? t('agent.yes');
+    const resolvedCancelLabel = cancelLabel ?? t('agent.no');
     return (
         <AskUserWidget
             question={question}
@@ -353,12 +359,12 @@ export function ConfirmationWidget({
             options={[
                 {
                     id: "confirm",
-                    label: confirmLabel,
+                    label: resolvedConfirmLabel,
                     icon: <CheckCircle className="size-4" />,
                 },
                 {
                     id: "cancel",
-                    label: cancelLabel,
+                    label: resolvedCancelLabel,
                     icon: <XCircle className="size-4" />,
                 },
             ]}

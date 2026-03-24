@@ -1,4 +1,5 @@
 import { Context } from "hono";
+import { ActivityCollection } from "../ActivityCollection.js";
 import { InteractionCollection } from "../InteractionCollection.js";
 import { SkillCollection } from "../SkillCollection.js";
 import { RenderingTemplateCollection } from "../RenderingTemplateCollection.js";
@@ -49,6 +50,10 @@ export interface ToolServerConfig {
      * Tool collections to expose
      */
     tools?: ToolCollection[];
+    /**
+     * Activity collections to expose for DSL workflows
+     */
+    activities?: ActivityCollection[];
     /**
      * Interaction collections to expose
      */

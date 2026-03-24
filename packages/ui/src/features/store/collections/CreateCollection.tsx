@@ -4,6 +4,7 @@ import { SelectContentType } from "../types/SelectContentType";
 import { useNavigate } from "@vertesia/ui/router";
 import { useUserSession } from "@vertesia/ui/session";
 import { useState } from "react";
+import { useUITranslation } from '../../../i18n/index.js';
 
 interface CreateCollectionFormProps {
     onClose: () => void;
@@ -13,6 +14,7 @@ interface CreateCollectionFormProps {
 export function CreateCollectionForm({ onClose, redirect = true, onAddToCollection }: CreateCollectionFormProps) {
     const navigate = useNavigate();
     const toast = useToast();
+    const { t } = useUITranslation();
     const [isProcessing, setProcessing] = useState(false);
     const { client } = useUserSession();
     const [payload, setPayload] = useState<CreateCollectionPayload>({
@@ -31,8 +33,8 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
     const onCreate = () => {
         if (!payload?.name || !payload.name.trim()) {
             toast({
-                title: "Name is required",
-                description: "Please provide a name for the collection",
+                title: t('type.nameRequired'),
+                description: t('store.pleaseProvideName'),
                 status: "error",
                 duration: 5000,
             });
@@ -51,7 +53,7 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
             .then((r) => {
                 onClose();
                 toast({
-                    title: "Collection created",
+                    title: t('store.collectionCreated'),
                     description: `Collection "${r.name}" created successfully`,
                     status: "success",
                     duration: 3000,
@@ -64,7 +66,7 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
             })
             .catch((err) => {
                 toast({
-                    title: "Failed to create collection",
+                    title: t('store.failedToCreateCollection'),
                     description: err.message,
                     status: "error",
                     duration: 5000,
@@ -77,20 +79,20 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
         <>
             <ModalBody>
                 <form onSubmit={(e) => e.preventDefault()}>
-                    <FormItem label="Name" required>
+                    <FormItem label={t('type.name')} required>
                         <Input type="text" value={payload.name || ""} onChange={(value) => setPayloadProp("name", value)} />
                     </FormItem>
-                    <FormItem label="Description" className="mt-2">
+                    <FormItem label={t('type.description')} className="mt-2">
                         <Textarea
                             value={payload.description || ""}
                             onChange={(ev) => setPayloadProp("description", ev.target.value)}
                         />
                     </FormItem>
-                    <FormItem label="Dynamic Collection" className="mt-2" direction="row" description="Dynamically fetch content for the collection based on a query. If not enabled, then content must be added by users or agents.">
+                    <FormItem label={t('store.dynamicCollection')} className="mt-2" direction="row" description={t('store.dynamicCollectionDescription')}>
                         <Switch value={payload.dynamic || false} onChange={(value) => setPayloadProp("dynamic", value)} />
                     </FormItem>
                     {!payload.dynamic &&
-                        <FormItem label="Allowed Content Types" className="mt-4" description="Optionally select which content types can be added to the collection. If not set, then all content types are allowed.">
+                        <FormItem label={t('store.allowedContentTypes')} className="mt-4" description={t('store.allowedContentTypesOptionalDescription')}>
                             <SelectContentType
                                 defaultValue={payload.allowed_types || null}
                                 onChange={(v) => {
@@ -104,7 +106,7 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
                             />
                         </FormItem>
                     }
-                    <FormItem label="Type" className="mt-2" description="Optionally select a content type to assign custom properties and data to the collection.">
+                    <FormItem label={t('store.contentType')} className="mt-2" description={t('store.typeDescription')}>
                         <SelectContentType
                             defaultValue={payload.type || null}
                             onChange={(v) => {
@@ -121,7 +123,7 @@ export function CreateCollectionForm({ onClose, redirect = true, onAddToCollecti
             </ModalBody>
             <ModalFooter>
                 <Button isDisabled={isProcessing} onClick={onCreate}>
-                    Create Collection
+                    {t('store.createCollection')}
                 </Button>
             </ModalFooter>
         </>
@@ -133,9 +135,10 @@ interface CreateCollectionModalProps {
     onClose: () => void;
 }
 export function CreateCollectionModal({ isOpen, onClose }: CreateCollectionModalProps) {
+    const { t } = useUITranslation();
     return (
         <Modal onClose={onClose} isOpen={isOpen}>
-            <ModalTitle>Create a Collection</ModalTitle>
+            <ModalTitle>{t('store.createACollection')}</ModalTitle>
             <CreateCollectionForm onClose={onClose} />
         </Modal>
     );

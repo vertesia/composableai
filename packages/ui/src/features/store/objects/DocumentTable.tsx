@@ -1,5 +1,6 @@
 import { ContentObjectItem } from "@vertesia/common";
 import { Spinner, useToast } from "@vertesia/ui/core";
+import { useUITranslation } from '../../../i18n/index.js';
 import { DropZone } from '@vertesia/ui/widgets';
 import clsx from "clsx";
 import { ChangeEvent, useMemo, useState } from "react";
@@ -60,6 +61,7 @@ function ObjectTableWithDropZone({
     const [typeSelectionOpen, setTypeSelectionOpen] = useState(false);
     const search = useDocumentSearch();
     const toast = useToast();
+    const { t } = useUITranslation();
     const { checkDocumentProcessing } = useSmartFileUploadProcessing();
 
     // Handle file uploads when a file is dropped
@@ -80,7 +82,7 @@ function ObjectTableWithDropZone({
                 const toSkip = processed.filter((f) => f.action === "skip").length;
 
                 toast({
-                    title: "Files ready to process",
+                    title: t('store.filesReadyToProcess'),
                     description: `${droppedFiles.length} file(s): ${toCreate} new, ${toUpdate} to update, ${toSkip} to skip`,
                     status: "info",
                     duration: 4000,
@@ -92,8 +94,8 @@ function ObjectTableWithDropZone({
         } catch (error) {
             console.error("Error processing files:", error);
             toast({
-                title: "Error processing files",
-                description: "There was an error checking for duplicate files",
+                title: t('store.errorProcessingFiles'),
+                description: t('store.errorCheckingDuplicates'),
                 status: "error",
                 duration: 4000,
             });
@@ -251,7 +253,7 @@ function ObjectTableWithDropZone({
                         // If there are failures, show them
                         if (result.failedFiles && result.failedFiles.length > 0) {
                             toast({
-                                title: "Upload Issues",
+                                title: t('store.uploadIssues'),
                                 description: `${result.failedFiles.length} file(s) failed to upload`,
                                 status: "warning",
                                 duration: 5000,
@@ -266,7 +268,7 @@ function ObjectTableWithDropZone({
 
                             if (created > 0 || updated > 0) {
                                 toast({
-                                    title: "Upload Complete",
+                                    title: t('store.uploadComplete'),
                                     description: `${created > 0 ? `${created} created` : ""}${created > 0 && updated > 0 ? ", " : ""}${updated > 0 ? `${updated} updated` : ""}${skipped > 0 ? `, ${skipped} skipped` : ""}`,
                                     status: "success",
                                     duration: 5000,

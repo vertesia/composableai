@@ -2,6 +2,7 @@
 import './index.css';
 import "./env.js"
 
+import { I18nProvider } from '@vertesia/ui/i18n';
 import { VertesiaShell } from '@vertesia/ui/shell';
 import { RouterProvider } from '@vertesia/ui/router';
 import { StrictMode } from 'react';
@@ -32,9 +33,11 @@ if (!baseUrl) {
 } else {
     root.render(
         <StrictMode>
-            <VertesiaShell>
-                <RouterProvider routes={devRoutes} />
-            </VertesiaShell>
+            <I18nProvider lng="en">
+                <VertesiaShell>
+                    <RouterProvider routes={devRoutes} />
+                </VertesiaShell>
+            </I18nProvider>
         </StrictMode>,
     );
 }

@@ -1,6 +1,6 @@
 import { AgentMessage, AgentMessageType } from "@vertesia/common";
 import { describe, expect, it } from "vitest";
-import { getSlidingViewMessageBuckets, groupMessagesWithStreaming, isToolActivityMessage, mergeConsecutiveToolGroups } from "./utils";
+import { getSlidingViewMessageBuckets, groupMessagesWithStreaming, isToolActivityMessage, mergeConsecutiveToolGroups, shouldCollapseAdjacentRenderedMessage } from "./utils";
 
 function makeMessage(overrides: Partial<AgentMessage>): AgentMessage {
     return {
@@ -113,5 +113,117 @@ describe("ModernAgentOutput utils - sliding view thinking", () => {
 
         expect(result.importantMessages).toEqual([question]);
         expect(result.recentThinking).toEqual([thinking]);
+    });
+});
+
+describe("ModernAgentOutput utils - streamed deduplication", () => {
+    it("skips a stale streaming item once an equivalent streamed answer is persisted", () => {
+        const answer = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.ANSWER,
+            message: "Here is the final synthesis.",
+            details: {
+                streamed: true,
+            },
+        });
+
+        const grouped = groupMessagesWithStreaming(
+            [answer],
+            new Map([
+                ["stream-1", {
+                    text: "Here is the final synthesis.",
+                    startTimestamp: 1000,
+                    workstreamId: "main",
+                }],
+            ]),
+        );
+
+        expect(grouped).toHaveLength(1);
+        expect(grouped[0].type).toBe("single");
+    });
+
+    it("skips a stale streaming item when the persisted message matches by activity id", () => {
+        const answer = makeMessage({
+            timestamp: 2000,
+            type: AgentMessageType.ANSWER,
+            message: "Different final text",
+            details: {
+                activity_id: "activity-1",
+            },
+        });
+
+        const grouped = groupMessagesWithStreaming(
+            [answer],
+            new Map([
+                ["activity-1", {
+                    text: "partial text",
+                    startTimestamp: 1000,
+                    workstreamId: "main",
+                    activityId: "activity-1",
+                }],
+            ]),
+        );
+
+        expect(grouped).toHaveLength(1);
+        expect(grouped[0].type).toBe("single");
+    });
+});
+
+describe("ModernAgentOutput utils - adjacent rendered deduplication", () => {
+    it("collapses adjacent answer and complete messages with the same text", () => {
+        const previous = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.ANSWER,
+            message: "Final answer",
+            workstream_id: "main",
+        });
+        const current = makeMessage({
+            timestamp: 1500,
+            type: AgentMessageType.COMPLETE,
+            message: "Final answer",
+            workstream_id: "main",
+        });
+
+        expect(shouldCollapseAdjacentRenderedMessage(previous, current)).toBe(true);
+    });
+
+    it("collapses adjacent streamed thought and answer messages with the same text", () => {
+        const previous = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.THOUGHT,
+            message: "Synthesizing results",
+            workstream_id: "roundtable",
+            details: {
+                streamed: true,
+            },
+        });
+        const current = makeMessage({
+            timestamp: 1200,
+            type: AgentMessageType.ANSWER,
+            message: "Synthesizing results",
+            workstream_id: "roundtable",
+            details: {
+                streamed: true,
+            },
+        });
+
+        expect(shouldCollapseAdjacentRenderedMessage(previous, current)).toBe(true);
+    });
+
+    it("keeps repeated content when it is from a different workstream", () => {
+        const previous = makeMessage({
+            timestamp: 1000,
+            type: AgentMessageType.ANSWER,
+            message: "Same text",
+            workstream_id: "alpha",
+        });
+        const current = makeMessage({
+            timestamp: 1200,
+            type: AgentMessageType.COMPLETE,
+            message: "Same text",
+            workstream_id: "beta",
+        });
+
+        expect(shouldCollapseAdjacentRenderedMessage(previous, current)).toBe(false);
     });
 });

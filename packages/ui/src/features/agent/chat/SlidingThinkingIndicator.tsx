@@ -2,6 +2,7 @@ import { AgentMessage, AgentMessageType } from "@vertesia/common";
 import { Button, cn } from "@vertesia/ui/core";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { useUITranslation } from '../../../i18n/index.js';
 import { AnimatedThinkingDots, PulsatingCircle, PulsingMessageLoader } from "./AnimatedThinkingDots";
 import MessageItem from "./ModernAgentOutput/MessageItem";
 import { ThinkingMessages } from "./WaitingMessages";
@@ -28,6 +29,7 @@ export function SlidingThinkingIndicator({
     showDetails: externalShowDetails,
     onShowDetailsChange,
 }: SlidingThinkingIndicatorProps) {
+    const { t } = useUITranslation();
     // Use external state if provided, otherwise use internal state
     const [internalShowDetails, setInternalShowDetails] = useState(false);
 
@@ -275,15 +277,15 @@ export function SlidingThinkingIndicator({
                         variant="ghost"
                         onClick={() => setShowDetails(!showDetails)}
                         className="text-slate-500 hover:text-slate-700 flex items-center gap-1 text-xs"
-                        title={showDetails ? "Hide thinking details" : "Show all messages"}
+                        title={showDetails ? t('agent.hideThinkingDetails') : t('agent.showAllMessages')}
                     >
                         {showDetails ? (
                             <>
-                                <EyeOffIcon className="h-3 w-3" /> Hide details
+                                <EyeOffIcon className="h-3 w-3" /> {t('agent.hideDetails')}
                             </>
                         ) : (
                             <>
-                                <EyeIcon className="h-3 w-3" /> Show details
+                                <EyeIcon className="h-3 w-3" /> {t('agent.showDetails')}
                             </>
                         )}
                     </Button>

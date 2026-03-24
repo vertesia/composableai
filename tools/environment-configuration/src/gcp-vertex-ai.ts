@@ -1,6 +1,6 @@
 import { AnyAuthClient, GoogleAuth } from "google-auth-library";
 import { VertesiaClient } from "@vertesia/client";
-import { delay, VERTESIA_PROVIDER_URL } from "./common.js";
+import { delay, getProviderUrl } from "./common.js";
 import { SupportedProviders } from "@vertesia/common";
 
 export const configureVertexAiEnvironment = async (
@@ -10,6 +10,7 @@ export const configureVertexAiEnvironment = async (
   poolName: string,
   providerName: string,
   gcpProjectId?: string,
+  stsUrl?: string,
 ): Promise<void> => {
   // 1. Get Organization and Project from Vertesia
   const account = await vertesia.account.info();
@@ -57,6 +58,7 @@ export const configureVertexAiEnvironment = async (
     projectId,
     poolName,
     providerName,
+    stsUrl,
   );
 
   // 5. Create policy binding
@@ -159,6 +161,7 @@ const getOrCreateProvider = async (
   projectId: string,
   poolName: string,
   providerName: string,
+  stsUrl?: string,
 ) => {
   // check if provider already exists. if not create it
   let provider;
@@ -193,7 +196,7 @@ const getOrCreateProvider = async (
           "attribute.name": "assertion.name",
         },
         oidc: {
-          issuerUri: VERTESIA_PROVIDER_URL,
+          issuerUri: getProviderUrl(stsUrl),
         },
       },
     });

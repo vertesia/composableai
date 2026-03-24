@@ -28,86 +28,19 @@ export const DONE_STATES = [
 export function isInProgress(messages: AgentMessage[]) {
     if (!messages.length) return true;
 
-    // First, group messages by workstream
-    const workstreamMessages = new Map<string, AgentMessage[]>();
+    // Only the main workstream determines whether the conversation is in progress.
+    // Child workstream COMPLETE/IDLE messages must not flip this flag.
+    const mainMessages = messages.filter(m => getWorkstreamId(m) === 'main');
 
-    messages.forEach((message) => {
-        const workstreamId = getWorkstreamId(message);
-        if (!workstreamMessages.has(workstreamId)) {
-            workstreamMessages.set(workstreamId, []);
-        }
-        workstreamMessages.get(workstreamId)!.push(message);
-    });
-
-    // Log all workstreams we found for debugging
-    console.log("[isInProgress] Workstreams found:", Array.from(workstreamMessages.keys()));
-
-    // If there's only one workstream and it's not "main", we should treat it as the main one
-    // This handles cases where a conversation might not have an explicit main workstream
-    if (workstreamMessages.size === 1 && !workstreamMessages.has("main")) {
-        const onlyWorkstreamId = workstreamMessages.keys().next().value || "unknown";
-        console.log(`[isInProgress] Only one workstream found (${onlyWorkstreamId}), treating as main`);
-
-        const onlyWorkstreamMsgs = workstreamMessages.get(onlyWorkstreamId)!;
-        const lastMessage = onlyWorkstreamMsgs[onlyWorkstreamMsgs.length - 1];
-
-        console.log(`[isInProgress] Last message type in only workstream: ${lastMessage.type}`);
-
-        // Check if this single workstream is completed
-        if (!DONE_STATES.includes(
-            lastMessage.type
-        )) {
-            console.log("[isInProgress] Only workstream is still in progress");
-            return true;
-        }
-
-        console.log("[isInProgress] Only workstream is completed");
-        return false;
+    // If there are no main workstream messages yet, check if there's exactly one
+    // workstream — treat it as main (handles single-workstream conversations).
+    if (mainMessages.length === 0) {
+        const lastMessage = messages[messages.length - 1];
+        return !DONE_STATES.includes(lastMessage.type);
     }
 
-    // Check the main workstream if it exists
-    if (workstreamMessages.has("main")) {
-        const mainWorkstreamMsgs = workstreamMessages.get("main")!;
-
-        // If there are no messages in the main workstream, the conversation is still in progress
-        if (mainWorkstreamMsgs.length === 0) {
-            console.log("[isInProgress] Main workstream exists but has no messages, still in progress");
-            return true;
-        }
-
-        // Check if the main workstream is completed
-        const lastMainMessage = mainWorkstreamMsgs[mainWorkstreamMsgs.length - 1];
-        console.log(`[isInProgress] Last message type in main workstream: ${lastMainMessage.type}`);
-
-        if (!DONE_STATES.includes(
-            lastMainMessage.type
-        )) {
-            console.log("[isInProgress] Main workstream is still in progress");
-            return true;
-        }
-
-        console.log("[isInProgress] Main workstream is completed");
-        return false;
-    }
-
-    // If we get here, there are multiple workstreams but no "main" workstream
-    // We'll keep the conversation active if any workstream is still active
-    console.log("[isInProgress] Multiple workstreams but no main, checking if any are still active");
-
-    for (const [workstreamId, msgs] of workstreamMessages.entries()) {
-        if (msgs.length > 0) {
-            const lastMessage = msgs[msgs.length - 1];
-            if (!DONE_STATES.includes(
-                lastMessage.type
-            )) {
-                console.log(`[isInProgress] Workstream ${workstreamId} is still active`);
-                return true;
-            }
-        }
-    }
-
-    console.log("[isInProgress] All workstreams are completed");
-    return false;
+    const lastMainMessage = mainMessages[mainMessages.length - 1];
+    return !DONE_STATES.includes(lastMainMessage.type);
 }
 
 export const formatRelative = (ts: number | string) =>
@@ -217,7 +150,8 @@ export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, "p
             // Initialize all workstreams as pending
             statusMap.set(workstreamId, "pending");
         }
-        workstreamMessages.get(workstreamId)!.push(message);
+        const wsMessages = workstreamMessages.get(workstreamId);
+        wsMessages?.push(message);
     });
 
     // Log all workstreams found
@@ -258,10 +192,10 @@ export function getWorkstreamStatusMap(messages: AgentMessage[]): Map<string, "p
 // Helper function to get conversation URL - used by other components
 export async function getConversationUrl(
     vertesia: VertesiaClient,
-    workflowRunId: string,
+    agentRunId: string,
 ): Promise<string> {
-    return vertesia.files
-        .getDownloadUrl(`agents/${workflowRunId}/conversation.json`)
+    return vertesia.agents
+        .getArtifactUrl(agentRunId, 'conversation.json')
         .then((r) => r.url);
 }
 
@@ -281,6 +215,100 @@ export interface StreamingData {
     workstreamId?: string;
     isComplete?: boolean;
     startTimestamp: number;
+    activityId?: string;
+}
+
+function normalizeComparableText(text: unknown): string | undefined {
+    if (typeof text !== "string") return undefined;
+    const normalized = text.replace(/\r\n/g, "\n").trim();
+    return normalized || undefined;
+}
+
+function getMessageComparableText(message: AgentMessage): string | undefined {
+    return normalizeComparableText(message.message);
+}
+
+function isStreamReplacedByMessage(
+    streaming: StreamingData,
+    messages: AgentMessage[],
+): boolean {
+    const streamingText = normalizeComparableText(streaming.text);
+    if (!streamingText) return false;
+
+    const streamWorkstreamId = streaming.workstreamId || "main";
+
+    return messages.some((message) => {
+        const messageTimestamp = getTimestampMs(message.timestamp);
+        if (messageTimestamp < streaming.startTimestamp) return false;
+        if (getWorkstreamId(message) !== streamWorkstreamId) return false;
+
+        if (
+            streaming.activityId &&
+            message.details?.activity_id === streaming.activityId
+        ) {
+            return true;
+        }
+
+        if (
+            message.type !== AgentMessageType.THOUGHT &&
+            message.type !== AgentMessageType.ANSWER &&
+            message.type !== AgentMessageType.COMPLETE &&
+            message.type !== AgentMessageType.IDLE
+        ) {
+            return false;
+        }
+
+        if (!message.details?.streamed) return false;
+
+        return getMessageComparableText(message) === streamingText;
+    });
+}
+
+export function shouldCollapseAdjacentRenderedMessage(
+    previous: AgentMessage,
+    current: AgentMessage,
+): boolean {
+    if (getWorkstreamId(previous) !== getWorkstreamId(current)) return false;
+
+    const previousText = getMessageComparableText(previous);
+    const currentText = getMessageComparableText(current);
+    if (!previousText || previousText !== currentText) return false;
+
+    const previousTimestamp = getTimestampMs(previous.timestamp);
+    const currentTimestamp = getTimestampMs(current.timestamp);
+    if (currentTimestamp - previousTimestamp > 10_000) return false;
+
+    if (
+        previous.type === AgentMessageType.ANSWER &&
+        (current.type === AgentMessageType.COMPLETE || current.type === AgentMessageType.IDLE)
+    ) {
+        return true;
+    }
+
+    if (
+        previous.type === AgentMessageType.THOUGHT &&
+        (current.type === AgentMessageType.ANSWER ||
+            current.type === AgentMessageType.COMPLETE ||
+            current.type === AgentMessageType.IDLE) &&
+        (previous.details?.streamed || current.details?.streamed)
+    ) {
+        return true;
+    }
+
+    if (
+        previous.type === current.type &&
+        (previous.details?.streamed || current.details?.streamed) &&
+        (
+            current.type === AgentMessageType.THOUGHT ||
+            current.type === AgentMessageType.ANSWER ||
+            current.type === AgentMessageType.COMPLETE ||
+            current.type === AgentMessageType.IDLE
+        )
+    ) {
+        return true;
+    }
+
+    return false;
 }
 
 /**
@@ -452,7 +480,7 @@ export function groupMessagesWithStreaming(
                     firstTimestamp: getTimestampMs(message.timestamp),
                 });
             }
-            activityGroups.get(activityGroupId)!.messages.push(message);
+            activityGroups.get(activityGroupId)?.messages.push(message);
         } else if (isToolActivityMessage(message)) {
             const toolIteration = getToolIteration(message);
             const toolRunId = getToolRunId(message);
@@ -465,7 +493,7 @@ export function groupMessagesWithStreaming(
                         firstTimestamp: getTimestampMs(message.timestamp)
                     });
                 }
-                iterationGroups.get(toolIteration)!.messages.push(message);
+                iterationGroups.get(toolIteration)?.messages.push(message);
             } else if (toolRunId) {
                 // Fallback: group by tool_run_id if no iteration
                 if (!toolRunGroups.has(toolRunId)) {
@@ -474,7 +502,7 @@ export function groupMessagesWithStreaming(
                         firstTimestamp: getTimestampMs(message.timestamp)
                     });
                 }
-                toolRunGroups.get(toolRunId)!.messages.push(message);
+                toolRunGroups.get(toolRunId)?.messages.push(message);
             } else {
                 // No tool_iteration or tool_run_id - will use consecutive grouping
                 standaloneMessages.push(message);
@@ -537,6 +565,7 @@ export function groupMessagesWithStreaming(
     streamingMessages.forEach((data, streamingId) => {
         // Skip empty streaming messages
         if (!data.text) return;
+        if (isStreamReplacedByMessage(data, messages)) return;
 
         // Filter by workstream if specified
         if (activeWorkstream && activeWorkstream !== "all") {
