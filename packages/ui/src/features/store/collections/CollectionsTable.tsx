@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useState, useEffect } from "react";
 import { CreateCollectionModal } from "./CreateCollection";
+import { useUITranslation } from '../../../i18n/index.js';
 
 dayjs.extend(relativeTime);
 
@@ -14,6 +15,7 @@ interface CollectionsTableProps {
 export function CollectionsTable({ }: CollectionsTableProps) {
     const { client } = useUserSession();
     const toast = useToast();
+    const { t } = useUITranslation();
     const [collectionToDelete, setCollectionToDelete] = useState<string | undefined>();
     const [isLoading, setIsLoading] = useState(true);
     const [isOpen, setOpen] = useState(false);
@@ -28,7 +30,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
     }, [collections, error]);
 
     if (error) {
-        return <ErrorBox title='Collections fetch failed'>{error.message}</ErrorBox>
+        return <ErrorBox title={t('store.collectionFetchFailed')}>{error.message}</ErrorBox>
     }
 
     const deleteCollection = async () => {
@@ -37,7 +39,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
         try {
             await client.store.collections.delete(collectionToDelete);
             toast({
-                title: 'Collection deleted',
+                title: t('store.collectionDeleted'),
                 status: 'success',
                 duration: 3000
             });
@@ -45,7 +47,7 @@ export function CollectionsTable({ }: CollectionsTableProps) {
         } catch (err: any) {
             console.error('Failed to delete collection:', err);
             toast({
-                title: 'Failed to delete collection',
+                title: t('store.failedToDeleteCollection'),
                 description: err.message || 'An error occurred',
                 status: 'error',
                 duration: 5000
@@ -63,9 +65,9 @@ export function CollectionsTable({ }: CollectionsTableProps) {
                     (<Table className="w-full">
                         <thead>
                             <tr>
-                                <th>Name</th >
-                                <th>Type</th>
-                                <th>Created</th>
+                                <th>{t('type.name')}</th >
+                                <th>{t('type.type')}</th>
+                                <th>{t('store.created')}</th>
                                 <th></th>
                             </tr >
                         </thead >
@@ -95,8 +97,8 @@ export function CollectionsTable({ }: CollectionsTableProps) {
                             }
                         </TBody>
                     </Table >) :
-                    <EmptyCollection title="No Collections" buttonLabel='New Collections' onClick={() => setOpen(true)}>
-                        Get started by creating a new Collections.
+                    <EmptyCollection title={t('store.noCollections')} buttonLabel={t('store.newCollections')} onClick={() => setOpen(true)}>
+                        {t('store.getStartedCollections')}
                     </EmptyCollection>)
             }
 
@@ -104,8 +106,8 @@ export function CollectionsTable({ }: CollectionsTableProps) {
 
             <ConfirmModal
                 isOpen={!!collectionToDelete}
-                title="Delete Collection"
-                content="Are you sure you want to delete this collection? This action cannot be undone."
+                title={t('store.deleteCollection')}
+                content={t('store.areYouSureDeleteCollection')}
                 onConfirm={deleteCollection}
                 onCancel={() => setCollectionToDelete(undefined)}
             />
@@ -113,8 +115,9 @@ export function CollectionsTable({ }: CollectionsTableProps) {
     )
 }
 
-export function collectionIcon(isDynamic: boolean) {
-    const tooltipText = isDynamic ? "Dynamic Collection" : "Static Collection";
+export function CollectionIcon({ isDynamic }: { isDynamic: boolean }) {
+    const { t } = useUITranslation();
+    const tooltipText = isDynamic ? t('store.dynamicCollection') : t('store.staticCollection');
     const icon = isDynamic ? <Search className="size-5" /> : <FolderClosed className="size-5" />;
 
     return (
@@ -122,4 +125,9 @@ export function collectionIcon(isDynamic: boolean) {
             {icon}
         </VTooltip>
     );
+}
+
+/** @deprecated Use CollectionIcon component instead */
+export function collectionIcon(isDynamic: boolean) {
+    return <CollectionIcon isDynamic={isDynamic} />;
 }

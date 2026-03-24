@@ -4,6 +4,7 @@ import { useUserSession } from '@vertesia/ui/session';
 import { Button } from '@vertesia/ui/core';
 import { NavLink } from '@vertesia/ui/router';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
+import { useUITranslation } from '../../../i18n/index.js';
 import { DocumentTabBar } from './DocumentTabBar.js';
 import type { OpenDocument } from './types/document.js';
 
@@ -29,6 +30,7 @@ function DocumentPanelComponent({
     runId,
 }: DocumentPanelProps) {
     const { client } = useUserSession();
+    const { t } = useUITranslation();
     const [content, setContent] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,7 @@ function DocumentPanelComponent({
             setContent(textResult.text);
             setDocName(obj.name);
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Failed to load document';
+            const message = err instanceof Error ? err.message : t('agent.failedToLoadDocument');
             setError(message);
             setContent(null);
         } finally {
@@ -71,7 +73,7 @@ function DocumentPanelComponent({
                 <div className="flex items-center gap-2 min-w-0">
                     <FileTextIcon className="size-4 text-muted shrink-0" />
                     <h3 className="font-bold text-sm truncate">
-                        {docName || 'Document'}
+                        {docName || t('agent.document')}
                     </h3>
                 </div>
                 <div className="flex items-center gap-1">
@@ -82,12 +84,12 @@ function DocumentPanelComponent({
                             className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 w-8 hover:bg-muted/20 text-muted hover:text-foreground"
                         >
                             <ExternalLinkIcon className="size-4" />
-                            <span className="sr-only">Open document</span>
+                            <span className="sr-only">{t('agent.openDocument')}</span>
                         </NavLink>
                     )}
                     <Button variant="ghost" size="sm" onClick={onClose}>
                         <X className="size-4" />
-                        <span className="sr-only">Close</span>
+                        <span className="sr-only">{t('agent.close')}</span>
                     </Button>
                 </div>
             </div>
@@ -107,7 +109,7 @@ function DocumentPanelComponent({
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
                         <Loader2Icon className="size-5 animate-spin text-muted" />
-                        <span className="ml-2 text-sm text-muted">Loading document...</span>
+                        <span className="ml-2 text-sm text-muted">{t('agent.loadingDocument')}</span>
                     </div>
                 ) : error ? (
                     <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">
@@ -122,7 +124,7 @@ function DocumentPanelComponent({
                 ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-muted">
                         <FileTextIcon className="size-8 mb-2" />
-                        <span className="text-sm">No content available</span>
+                        <span className="text-sm">{t('agent.noContentAvailable')}</span>
                     </div>
                 )}
             </div>

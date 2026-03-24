@@ -1,6 +1,7 @@
 import { DocAnalyzerProgress, DocProcessorOutputFormat, MarkdownRenditionFormat, WorkflowExecutionStatus } from "@vertesia/common";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useEffect, useState } from "react";
+import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 
 // Maximum text size before cropping (128K characters)
 const MAX_TEXT_DISPLAY_SIZE = 128 * 1024;
@@ -136,6 +137,7 @@ export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
  */
 export function useOfficePdfConversion(objectId: string, enabled: boolean) {
     const { client } = useUserSession();
+    const t = i18nInstance.getFixedT(null, NAMESPACE);
 
     const [pdfUrl, setPdfUrl] = useState<string | undefined>();
     const [isConverting, setIsConverting] = useState(false);
@@ -163,12 +165,12 @@ export function useOfficePdfConversion(objectId: string, enabled: boolean) {
                     setPdfUrl(response.renditions[0]);
                     setIsConverting(false);
                 } else if (response.status === "failed") {
-                    setError("PDF conversion failed");
+                    setError(t('store.pdfConversionFailed'));
                     setIsConverting(false);
                 }
             } catch (err) {
                 console.error("Failed to convert Office document to PDF:", err);
-                setError("Failed to convert to PDF");
+                setError(t('store.failedToConvertToPdf'));
                 setIsConverting(false);
             }
         };

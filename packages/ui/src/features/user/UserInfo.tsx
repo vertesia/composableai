@@ -3,11 +3,23 @@ import { Avatar, Popover, PopoverContent, PopoverTrigger, Table, useFetch } from
 import { useUserSession } from "@vertesia/ui/session";
 import { Users } from "lucide-react";
 import { ReactNode } from "react";
+import { useUITranslation } from '../../i18n/index.js';
 
-//TODO use a real cache
 const USER_CACHE: Record<string, Promise<User>> = {};
 const GROUP_CACHE: Record<string, Promise<UserGroup>> = {};
 const APIKEY_CACHE: Record<string, Promise<ApiKey>> = {};
+
+function cachedFetch<T>(cache: Record<string, Promise<T>>, key: string, fetcher: () => Promise<T>): Promise<T> {
+    let entry = cache[key];
+    if (!entry) {
+        entry = fetcher().catch((err) => {
+            delete cache[key]; // evict on failure so retries work
+            throw err;
+        });
+        cache[key] = entry;
+    }
+    return entry;
+}
 
 /**
  * Fetch the user information given a user reference.
@@ -17,16 +29,7 @@ const APIKEY_CACHE: Record<string, Promise<ApiKey>> = {};
 export function useFetchUserInfo(userId: string) {
     const { client } = useUserSession();
 
-    return useFetch(() => {
-        let user: Promise<User> | undefined = USER_CACHE[userId];
-        if (!user) {
-            user = client.users.retrieve(userId).then(user => {
-                return user;
-            });
-            USER_CACHE[userId] = user;
-        }
-        return user;
-    }, [userId]);
+    return useFetch(() => cachedFetch(USER_CACHE, userId, () => client.users.retrieve(userId)), [userId]);
 }
 
 /**
@@ -36,16 +39,7 @@ export function useFetchUserInfo(userId: string) {
 export function useFetchGroupInfo(groupId: string) {
     const { client } = useUserSession();
 
-    return useFetch(() => {
-        let group: Promise<UserGroup> | undefined = GROUP_CACHE[groupId];
-        if (!group) {
-            group = client.iam.groups.retrieve(groupId).then(group => {
-                return group;
-            });
-            GROUP_CACHE[groupId] = group;
-        }
-        return group;
-    }, [groupId]);
+    return useFetch(() => cachedFetch(GROUP_CACHE, groupId, () => client.iam.groups.retrieve(groupId)), [groupId]);
 }
 
 /**
@@ -55,16 +49,7 @@ export function useFetchGroupInfo(groupId: string) {
 export function useFetchApiKeyInfo(keyId: string) {
     const { client } = useUserSession();
 
-    return useFetch(() => {
-        let apikey: Promise<ApiKey> | undefined = APIKEY_CACHE[keyId];
-        if (!apikey) {
-            apikey = client.apikeys.retrieve(keyId).then(apikey => {
-                return apikey;
-            });
-            APIKEY_CACHE[keyId] = apikey;
-        }
-        return apikey;
-    }, [keyId]);
+    return useFetch(() => cachedFetch(APIKEY_CACHE, keyId, () => client.apikeys.retrieve(keyId)), [keyId]);
 }
 
 function AvatarPlaceholder() {
@@ -77,11 +62,12 @@ interface InfoProps {
 }
 
 function SystemAvatar({ showTitle = false, size = "md" }: InfoProps) {
+    const { t } = useUITranslation();
     return (
-        <UserPopoverPanel title="System User" description="The system user is used to initialize built-in objects.">
+        <UserPopoverPanel title={t('user.systemUser')} description={t('user.systemUserDescription')}>
             <div className="flex gap-2 items-center">
                 <Avatar src="/icon.svg" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2">System User</div>}
+                {showTitle && <div className="text-sm font-semibold pl-2">{t('user.systemUser')}</div>}
             </div>
         </UserPopoverPanel>
     )
@@ -90,18 +76,19 @@ interface ServiceInfoProps extends InfoProps {
     accountId: string;
 }
 function ServiceAccountAvatar({ accountId, showTitle = false, size = "md" }: ServiceInfoProps) {
+    const { t } = useUITranslation();
     const description = (
         <>
-            <div>This user is used by robots like workflow workers.</div>
+            <div>{t('user.serviceAccountDescription')}</div>
             <div className="text-gray-800 dark:text-gray-500 text-sm"><span className="font-semibold">ID:</span> {accountId}</div>
         </>
     )
 
     return (
-        <UserPopoverPanel title="Service Account" description={description}>
+        <UserPopoverPanel title={t('user.serviceAccount')} description={description}>
             <div className="flex flex-row items-center gap-2">
                 <Avatar src="/cloud.svg" name="SA" color="bg-amber-500" className="px-[5px] text-white" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2 truncate">Service Account : {accountId}</div>}
+                {showTitle && <div className="text-sm font-semibold pl-2 truncate">{t('user.serviceAccount')} : {accountId}</div>}
             </div>
         </UserPopoverPanel>
     );
@@ -114,6 +101,7 @@ interface AgentAvatarProps extends InfoProps {
     isScheduleAgent?: boolean;
 }
 function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false, size = "md", isScheduleAgent = false }: AgentAvatarProps) {
+    const { t } = useUITranslation();
     // Fetch user info - must call hooks unconditionally per React rules
     const shouldFetchUser = onBehalfOfType === 'user' && onBehalfOfId;
     const shouldFetchApiKey = onBehalfOfType === 'apikey' && onBehalfOfId;
@@ -126,8 +114,8 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
     const apiKey = shouldFetchApiKey ? apiKeyResult.data : undefined;
 
     // Determine title and description
-    const title = user ? "Agent on behalf of" : apiKey ? "Agent on behalf of API key" : "Service Account";
-    const _title = isScheduleAgent ? `Schedule ${title}` : title;
+    const title = user ? t('user.agentOnBehalfOf') : apiKey ? t('user.agentOnBehalfOfApiKey') : t('user.serviceAccount');
+    const _title = isScheduleAgent ? t('user.schedule', { title }) : title;
 
     const description = (
         <div className="space-y-2">
@@ -152,7 +140,7 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
             )}
             {!user && !apiKey && (
                 <>
-                    <div>This user is used by robots like workflow workers.</div>
+                    <div>{t('user.serviceAccountDescription')}</div>
                     <div className="text-gray-800 dark:text-gray-500 text-sm">
                         <span className="font-semibold">ID:</span> {agentId}
                     </div>
@@ -222,8 +210,9 @@ interface UserInfoProps extends InfoProps {
     userRef: string | undefined;
 }
 export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoProps) {
+    const { t } = useUITranslation();
     if (!userRef) {
-        return <UnknownAvatar title="Unknown User" message="User information is not available." showTitle={showTitle} size={size} />
+        return <UnknownAvatar title={t('user.unknownUser')} message={t('user.unknownUserDescription')} showTitle={showTitle} size={size} />
     }
 
     const parts = userRef.split(':');
@@ -296,7 +285,7 @@ export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoPr
             return <ApiKeyAvatar keyId={parts[1]} size={size} showTitle={showTitle} />
 
         default:
-            return <ErrorAvatar title="Unknown User" error={`Invalid user ref type: ${type}`} showTitle={showTitle} size={size} />
+            return <ErrorAvatar title={t('user.unknownUser')} error={`Invalid user ref type: ${type}`} showTitle={showTitle} size={size} />
     }
 }
 
@@ -320,10 +309,11 @@ interface GroupAvatarProps extends InfoProps {
     userId: string;
 }
 function GroupAvatar({ userId, showTitle = false, size = "md" }: GroupAvatarProps) {
+    const { t } = useUITranslation();
     const { data: group, error } = useFetchGroupInfo(userId);
 
     if (error) {
-        return <ErrorAvatar title="Failed to fetch group" error={error} showTitle={showTitle} size={size} />
+        return <ErrorAvatar title={t('user.failedToFetchGroup')} error={error} showTitle={showTitle} size={size} />
     }
 
     if (!group) {
@@ -333,7 +323,7 @@ function GroupAvatar({ userId, showTitle = false, size = "md" }: GroupAvatarProp
     const description = (
         <div className="space-y-1">
             {group.description && <div className="text-sm">{group.description}</div>}
-            <div className="text-xs text-muted-foreground">Group ID: {group.id}</div>
+            <div className="text-xs text-muted-foreground">{t('user.groupId', { id: group.id })}</div>
             {group.tags && group.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                     {group.tags.map(tag => (
@@ -345,10 +335,10 @@ function GroupAvatar({ userId, showTitle = false, size = "md" }: GroupAvatarProp
     )
 
     return (
-        <UserPopoverPanel title={group.name || "Unnamed Group"} description={description}>
+        <UserPopoverPanel title={group.name || t('user.unnamedGroup')} description={description}>
             <div className="flex flex-row items-center gap-2">
                 <Users className="size-6 text-indigo-500" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2">{group.name || "Unnamed Group"}</div>}
+                {showTitle && <div className="text-sm font-semibold pl-2">{group.name || t('user.unnamedGroup')}</div>}
             </div>
         </UserPopoverPanel>
     )
@@ -358,10 +348,11 @@ interface UserAvatarProps extends InfoProps {
     userId: string;
 }
 function UserAvatar({ userId, showTitle = false, size = "md" }: UserAvatarProps) {
+    const { t } = useUITranslation();
     const { data: user, error } = useFetchUserInfo(userId);
 
     if (error) {
-        return <ErrorAvatar title="Failed to fetch user" error={error} showTitle={showTitle} size={size} />
+        return <ErrorAvatar title={t('user.failedToFetchUser')} error={error} showTitle={showTitle} size={size} />
     }
 
     if (!user) {
@@ -373,10 +364,10 @@ function UserAvatar({ userId, showTitle = false, size = "md" }: UserAvatarProps)
     )
 
     return (
-        <UserPopoverPanel title={user.name || user.email || user.username || "unknown"} description={description}>
+        <UserPopoverPanel title={user.name || user.email || user.username || t('user.unknown')} description={description}>
             <div className="flex flex-row items-center gap-2">
                 <Avatar src={user.picture} name={user.name} color="bg-indigo-500" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2">{user.name || user.email || user.username || "unknown"}</div>}
+                {showTitle && <div className="text-sm font-semibold pl-2">{user.name || user.email || user.username || t('user.unknown')}</div>}
             </div>
         </UserPopoverPanel>
     )
@@ -386,31 +377,31 @@ interface ApiKeyAvatarProps extends InfoProps {
     keyId: string;
 }
 export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAvatarProps) {
-    const { client } = useUserSession();
-    const { data, error } = useFetch<ApiKey>(() => client.apikeys.retrieve(keyId), []);
+    const { t } = useUITranslation();
+    const { data, error } = useFetchApiKeyInfo(keyId);
 
     if (error) {
-        return <ErrorAvatar title="Failed to fetch the apikey" error={error} showTitle={showTitle} size={size} />
+        return <ErrorAvatar title={t('user.failedToFetchApiKey')} error={error} showTitle={showTitle} size={size} />
     }
 
     if (!data) {
         return <AvatarPlaceholder />
     }
 
-    const title = "Private Key";
+    const title = t('user.privateKey');
     const avatar = <Avatar name={"PK"} color="bg-pink-500" size={size} />;
     const description = (
         <Table className="dark:bg-gray-800 dark:text-gray-200 table-fixed w-full">
             <tr>
-                <td className="font-semibold w-20">Key:</td>
+                <td className="font-semibold w-20">{t('user.key')}</td>
                 <td className="truncate max-w-0">{data?.name}</td>
             </tr>
             <tr>
-                <td className="font-semibold w-20">Account:</td>
+                <td className="font-semibold w-20">{t('user.account')}</td>
                 <td className="truncate max-w-0">{data?.account}</td>
             </tr>
             <tr>
-                <td className="font-semibold w-20">Project:</td>
+                <td className="font-semibold w-20">{t('user.project')}</td>
                 <td className="truncate max-w-0">{data?.project.name}</td>
             </tr>
         </Table>
@@ -420,7 +411,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = "md" }: ApiKeyAv
         <UserPopoverPanel title={title} description={description}>
             <div className="flex flex-row items-center gap-2">
                 {avatar}
-                {showTitle && <div className="text-sm font-semibold">{data?.name || data?.account || data?.project.name || "unknown"}</div>}
+                {showTitle && <div className="text-sm font-semibold">{data?.name || data?.account || data?.project.name || t('user.unknown')}</div>}
             </div>
         </UserPopoverPanel >
     )

@@ -2,17 +2,7 @@ import { ContentObjectTypeItem } from "@vertesia/common";
 import { SelectBox } from "@vertesia/ui/core";
 import { useEffect, useState } from "react";
 import { useTypeRegistry } from "./TypeRegistryProvider.js";
-
-const optionLabel = (t: ContentObjectTypeItem | null) => {
-    if (t === null) return 'None';
-
-    return (
-        <div>
-            <div className="text-sm">{t.name}</div>
-            <div className="text-xs text-muted truncate">{t.description}</div>
-        </div>
-    );
-};
+import { useUITranslation } from '../../../i18n/index.js';
 
 interface SelectContentTypeProps {
     defaultValue?: string | string[] | null; // the typeId
@@ -22,8 +12,20 @@ interface SelectContentTypeProps {
     multiple?: boolean;
 }
 export function SelectContentType({ className, defaultValue, onChange, isClearable, multiple}: SelectContentTypeProps) {
+    const { t } = useUITranslation();
     const { registry: typeRegistry } = useTypeRegistry();
     const [isMounted, setIsMounted] = useState(false);
+
+    const optionLabel = (type: ContentObjectTypeItem | null) => {
+        if (type === null) return t('store.none');
+
+        return (
+            <div>
+                <div className="text-sm">{type.name}</div>
+                <div className="text-xs text-muted truncate">{type.description}</div>
+            </div>
+        );
+    };
     const [selectedType, setSelectedType] = useState<ContentObjectTypeItem | undefined>();
     const [selectedTypes, setSelectedTypes] = useState<ContentObjectTypeItem[]>([])
 
@@ -60,7 +62,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
                     options={typeRegistry?.types || []}
                     value={selectedTypes}
                     onChange={_onChangeMultiple}
-                    placeholder="Choose Content Types..."
+                    placeholder={t('store.chooseContentTypes')}
                     optionLabel={optionLabel}
                     className={className || "text-sm bg-background"}
                     filterBy="name"
@@ -77,7 +79,7 @@ export function SelectContentType({ className, defaultValue, onChange, isClearab
                 options={typeRegistry?.types || []}
                 value={selectedType}
                 onChange={_onChange}
-                placeholder="Choose a Content Type..."
+                placeholder={t('store.chooseContentType')}
                 optionLabel={optionLabel}
                 className={className || "text-sm bg-background"}
                 filterBy="name"

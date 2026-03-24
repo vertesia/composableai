@@ -1,14 +1,15 @@
 import { ContentObject, DocumentMetadata } from "@vertesia/common";
-import { Button } from "@vertesia/ui/core";
+import { Button, Popover, PopoverContent, PopoverTrigger } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import { Popover } from "@vertesia/ui/widgets";
 import { Download } from "lucide-react";
+import { useUITranslation } from '../../i18n/index.js';
 import { getResourceUrl } from "./MagicPdfProvider";
 
 interface DownloadPopoverProps {
     object: ContentObject;
 }
 export function DownloadPopover({ object }: DownloadPopoverProps) {
+    const { t } = useUITranslation();
     const { client } = useUserSession()
     const onDownload = (name: string) => {
         getResourceUrl(client, object.id, name).then(url => window.open(url, '_blank'));
@@ -33,7 +34,7 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
                 variant="ghost"
                 size="xs"
                 onClick={() => onDownload("document.md")}
-                alt="Download"
+                alt={t('pdf.download')}
             >
                 <Download className='size-4' />
             </Button>
@@ -42,18 +43,18 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
 
     // Default XML processor - multiple options, use popover
     return (
-        <Popover strategy='absolute' placement='bottom-start' zIndex={100} offset={8}>
-            <Popover.Trigger click>
+        <Popover>
+            <PopoverTrigger>
                 <Button
                     variant="ghost"
                     size="xs"
-                    alt="Download"
+                    alt={t('pdf.download')}
                 >
                     <Download className='size-4' />
                 </Button>
-            </Popover.Trigger>
-            <Popover.Content>
-                <div className="rounded-md shadow-md border border-border bg-popover min-w-[200px] flex flex-col divide-y divide-border">
+            </PopoverTrigger>
+            <PopoverContent align="start" className="p-0 w-auto">
+                <div className="min-w-[200px] flex flex-col divide-y divide-border">
                     <button className={buttonClass} onClick={() => onDownload("annotated.pdf")}>
                         annotated.pdf
                     </button>
@@ -64,7 +65,7 @@ export function DownloadPopover({ object }: DownloadPopoverProps) {
                         analyzed-pages.json
                     </button>
                 </div>
-            </Popover.Content>
+            </PopoverContent>
         </Popover>
     )
 }

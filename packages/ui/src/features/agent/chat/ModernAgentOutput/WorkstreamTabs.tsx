@@ -1,6 +1,8 @@
 import { AgentMessage } from "@vertesia/common";
 import { cn } from "@vertesia/ui/core";
 import { CheckCircle, Clock } from "lucide-react";
+import { useUITranslation } from '../../../../i18n/index.js';
+import { i18nInstance, NAMESPACE } from '../../../../i18n/instance.js';
 import { getWorkstreamId } from "./utils";
 
 interface WorkstreamTabsProps {
@@ -21,10 +23,11 @@ export default function WorkstreamTabs({
   count,
   completionStatus,
 }: WorkstreamTabsProps) {
+  const { t } = useUITranslation();
   // Create a new map with just the core workstreams
   const filteredWorkstreams = new Map<string, string>();
-  filteredWorkstreams.set("all", "All Messages");
-  filteredWorkstreams.set("main", "Main");
+  filteredWorkstreams.set("all", t('agent.allMessages'));
+  filteredWorkstreams.set("main", t('agent.main'));
 
   // Only add actual workstreams from messages (not our test workstreams)
   workstreams.forEach((name, id) => {
@@ -113,10 +116,11 @@ export function extractWorkstreams(
   messages: AgentMessage[],
 ): Map<string, string> {
   const workstreams = new Map<string, string>();
+  const t = i18nInstance.getFixedT(null, NAMESPACE);
 
   // Always include "all" and "main" workstreams
-  workstreams.set("all", "All Messages");
-  workstreams.set("main", "Main");
+  workstreams.set("all", t('agent.allMessages'));
+  workstreams.set("main", t('agent.main'));
 
   // Extract workstream IDs directly from message.workstream_id only
   messages.forEach((message) => {
@@ -135,7 +139,7 @@ export function extractWorkstreams(
   // Special case: if there's only the 'main' workstream, we want to explicitly make sure it exists
   // This ensures that both 'all' and 'main' are added if no additional workstreams are found
   if (workstreams.size <= 2 && !workstreams.has("main")) {
-    workstreams.set("main", "Main");
+    workstreams.set("main", t('agent.main'));
   }
 
   console.log("Final workstreams map:", workstreams);

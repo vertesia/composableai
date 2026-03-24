@@ -11,8 +11,8 @@ Env.init({
     isDocker: true,
     type: "development",
     endpoints: {
-        studio: "https://api.vertesia.io",
-        zeno: "https://api.vertesia.io",
-        sts: "https://sts.vertesia.io",
+        studio: "https://api.us1.vertesia.io",
+        zeno: "https://api.us1.vertesia.io",
+        sts: "https://sts.us1.vertesia.io",
     }
 });

@@ -6,7 +6,7 @@ import {
 } from "@aws-sdk/client-iam";
 import { VertesiaClient } from "@vertesia/client";
 import { SupportedProviders } from "@vertesia/common";
-import { VERTESIA_STS, VERTESIA_PROVIDER_URL, delay } from "./common.js";
+import { delay, getProviderUrl, getStsHost } from "./common.js";
 
 const defaultTags = [
   {
@@ -21,6 +21,7 @@ export async function configureBedrockEnvironment(
   envName: string,
   roleName: string,
   tags: Array<{ Key: string; Value: string }>,
+  stsUrl?: string,
 ): Promise<void> {
   const effectiveTags = tags && tags.length ? tags : defaultTags;
 
@@ -41,7 +42,7 @@ export async function configureBedrockEnvironment(
   const iamClient = new IAMClient({ region: region });
 
   // 3. Configure OIDC Provider (Check if already exists, create if not)
-  const providerArn = await createOIDCProvider(iamClient, effectiveTags);
+  const providerArn = await createOIDCProvider(iamClient, effectiveTags, stsUrl);
   console.log(`Created OIDC Provider with ARN: ${providerArn}`);
 
   // 4. Configure a new Vertesia Execution Environment
@@ -63,6 +64,7 @@ export async function configureBedrockEnvironment(
     providerArn,
     roleName,
     effectiveTags,
+    stsUrl,
   );
   console.log(`Created IAM Role with ARN: ${roleArn}`);
 
@@ -85,8 +87,9 @@ export async function configureBedrockEnvironment(
 const createOIDCProvider = async (
   iamClient: IAMClient,
   tags: Array<{ Key: string; Value: string }>,
+  stsUrl?: string,
 ): Promise<string> => {
-  const providerURL = VERTESIA_PROVIDER_URL;
+  const providerURL = getProviderUrl(stsUrl);
   const audience = "bedrock";
 
   try {
@@ -115,9 +118,10 @@ const createIAMRole = async (
   providerArn: string,
   roleName: string,
   tags: Array<{ Key: string; Value: string }>,
+  stsUrl?: string,
 ): Promise<string> => {
   const condition: Record<string, string> = {};
-  const key = `${VERTESIA_STS}:sub`;
+  const key = `${getStsHost(stsUrl)}:sub`;
   condition[key] = `env:${organizationId}:${environmentId}`;
 
   const assumeRolePolicyDocument = JSON.stringify({

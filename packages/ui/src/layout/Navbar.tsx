@@ -3,6 +3,7 @@ import { Menu, Search } from 'lucide-react'
 import { Button, HeroIcon } from '@vertesia/ui/core'
 import { useSidebarToggle } from './SidebarContext.js'
 import { TitleBar } from './TitleBar.js'
+import { useUITranslation } from '../i18n/index.js'
 
 interface NavbarProps {
     title?: string
@@ -38,10 +39,11 @@ interface SearchBoxProps {
     onSearch?: (query: string) => void
 }
 function SearchBox({ }: SearchBoxProps) {
+    const { t } = useUITranslation();
     return (
         <form className="relative flex flex-1" action="#" method="GET">
             <label htmlFor="search-field" className="sr-only">
-                Search
+                {t('layout.search')}
             </label>
             <Search
                 className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400"
@@ -50,7 +52,7 @@ function SearchBox({ }: SearchBoxProps) {
             <input
                 id="search-field"
                 className="block h-full w-full border-0 py-0 pl-8 pr-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm"
-                placeholder="Search..."
+                placeholder={t('layout.searchPlaceholder')}
                 type="search"
                 name="search"
             />

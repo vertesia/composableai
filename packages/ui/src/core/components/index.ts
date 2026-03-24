@@ -3,8 +3,6 @@ export * from "./Avatar.js";
 export * from "./Center.js";
 export * from "./ComboBox.js";
 export * from "./Divider.js";
-export * from "./Dropdown.js";
-export * from "./DropdownList.js";
 export * from "./EmptyCollection.js";
 export * from "./FileUpload.js";
 export * from "./FormItem.js";

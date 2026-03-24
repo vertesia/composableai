@@ -1,5 +1,7 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
+    BulkUploadUrlsPayload,
+    BulkUploadUrlsResponse,
     GetFileUrlPayload,
     GetFileUrlResponse,
     GetUploadUrlPayload,
@@ -90,6 +92,64 @@ export class FilesApi extends ApiTopic {
 
     getDownloadUrlWithOptions(payload: GetFileUrlPayload): Promise<GetFileUrlResponse> {
         return this.post("/download-url", { payload });
+    }
+
+    /**
+     * Get presigned upload URLs for multiple files in a single request.
+     * Each file gets its own presigned URL for direct upload to cloud storage.
+     * @param payload - Array of file descriptors (name, optional mime_type, optional id)
+     * @returns Array of upload URL responses
+     */
+    bulkGetUploadUrls(payload: BulkUploadUrlsPayload): Promise<BulkUploadUrlsResponse> {
+        return this.post("/bulk-upload-urls", { payload });
+    }
+
+    /**
+     * Upload multiple files in parallel. Gets presigned URLs in bulk, then PUTs all files concurrently.
+     * @param sources - Array of file sources to upload
+     * @param concurrency - Maximum number of concurrent uploads (default: 10)
+     * @returns Array of upload results with source URI, name, type, and etag
+     */
+    async bulkUpload(sources: (StreamSource | File)[], concurrency = 10): Promise<{ source: string; name: string; type?: string; etag?: string }[]> {
+        const fileDescriptors = sources.map(s => ({
+            name: s.name,
+            mime_type: s.type,
+            id: s instanceof StreamSource ? s.id : undefined,
+        }));
+
+        const { files } = await this.bulkGetUploadUrls({ files: fileDescriptors });
+
+        // Upload with concurrency limit using chunked Promise.all
+        const results: { source: string; name: string; type?: string; etag?: string }[] = new Array(sources.length);
+
+        for (let i = 0; i < sources.length; i += concurrency) {
+            const batch = sources.slice(i, i + concurrency);
+            await Promise.all(
+                batch.map(async (source, j) => {
+                    const idx = i + j;
+                    const { url, id, mime_type } = files[idx];
+                    const isStream = source instanceof StreamSource;
+                    const sourceMimeType = source.type || mime_type;
+
+                    const res = await fetch(url, {
+                        method: 'PUT',
+                        body: isStream ? source.stream : source,
+                        //@ts-expect-error: duplex is not in the types
+                        duplex: isStream ? 'half' : undefined,
+                        headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
+                    });
+
+                    if (!res.ok) {
+                        throw new Error(`Failed to upload file ${source.name}: ${res.statusText}`);
+                    }
+
+                    const etag = res.headers.get('etag')?.replace(/^"(.*)"$/, '$1');
+                    results[idx] = { source: id, name: source.name, type: sourceMimeType, etag };
+                })
+            );
+        }
+
+        return results;
     }
 
     /**

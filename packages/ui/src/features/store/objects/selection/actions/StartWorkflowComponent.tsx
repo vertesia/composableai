@@ -1,10 +1,13 @@
 import { Button, Modal, ModalBody, ModalFooter, ModalTitle, SelectList, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { useCallback, useState } from "react";
-import { useObjectsActionCallback, useObjectsActionContext } from "../ObjectsActionHooks";
+import { useUITranslation } from '../../../../../i18n/index.js';
+import { i18nInstance, NAMESPACE } from '../../../../../i18n/instance.js';
+import { useObjectsActionContext, useObjectsActionCallback } from '../ObjectsActionHooks';
 import { ActionComponentTypeProps, ObjectsActionSpec } from "../ObjectsActionSpec";
 
 export function StartWorkflowComponent({ action, objectIds, collectionId }: ActionComponentTypeProps) {
+    const { t } = useUITranslation();
     const toast = useToast();
     const { client } = useUserSession();
     const [isOpen, setOpen] = useState(false);
@@ -25,14 +28,14 @@ export function StartWorkflowComponent({ action, objectIds, collectionId }: Acti
             .execute(workflowId, objectIds, { collection_id: collectionId })
             .then(() => {
                 toast({
-                    title: "Workflow started",
+                    title: t('store.actions.workflowStarted'),
                     status: "success",
                     duration: 3000,
                 });
             })
             .catch((err) => {
                 toast({
-                    title: "Error starting workflow",
+                    title: t('store.actions.errorStartingWorkflow'),
                     status: "error",
                     description: err.message,
                     duration: 9000,
@@ -45,10 +48,11 @@ export function StartWorkflowComponent({ action, objectIds, collectionId }: Acti
     return <StartWorkflowModal isOpen={isOpen} onClose={onStartWorkflow} />;
 }
 
+const t = i18nInstance.getFixedT(null, NAMESPACE);
 export const StartWorkflowAction: ObjectsActionSpec = {
     id: "startWorkflow",
-    name: "Start Workflow",
-    description: "Start an workflow on the selected objects",
+    name: t('store.actions.startWorkflow'),
+    description: t('store.actions.startWorkflowDesc'),
     confirm: false,
     hideInList: true,
     component: StartWorkflowComponent,
@@ -59,9 +63,10 @@ interface StartWorkflowModalProps {
     onClose: (workflowId?: string | undefined) => void;
 }
 function StartWorkflowModal({ isOpen, onClose }: StartWorkflowModalProps) {
+    const { t } = useUITranslation();
     return (
         <Modal onClose={() => onClose(undefined)} isOpen={isOpen} className="">
-            <ModalTitle>Start a Workflow by Rule</ModalTitle>
+            <ModalTitle>{t('store.actions.startWorkflowByRule')}</ModalTitle>
             <StartWorkflowBody onClose={onClose} />
         </Modal>
     );
@@ -83,6 +88,7 @@ interface StartWorkflowBodyProps {
     onClose: (workflowId?: string | undefined) => void;
 }
 function StartWorkflowBody({ onClose }: StartWorkflowBodyProps) {
+    const { t } = useUITranslation();
     const [selected, setSelected] = useState<ObjectsActionSpec | undefined>(undefined);
     const context = useObjectsActionContext();
 
@@ -99,7 +105,7 @@ function StartWorkflowBody({ onClose }: StartWorkflowBodyProps) {
     return (
         <div>
             <ModalBody>
-                <div className="pb-2">Choose a workflow rule to start:</div>
+                <div className="pb-2">{t('store.actions.chooseWorkflowRule')}</div>
                 <div className="max-h-[420px] overflow-y-scroll border-border border rounded-md">
                     <SelectList
                         options={context.wfRules}

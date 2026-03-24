@@ -1,5 +1,6 @@
 import { Button, Modal, ModalBody, ModalTitle, SelectBox, Spinner } from "@vertesia/ui/core";
 import { useState } from "react";
+import { useUITranslation } from '../../../i18n/index.js';
 
 export enum ExportTypes {
     CSV = "CSV", JSON = "JSON"
@@ -32,6 +33,7 @@ interface SelectPanelProps {
     onClose: (exportType?: string | null, exportAll?: boolean) => void;
 }
 function SelectPanel({ onClose }: SelectPanelProps) {
+    const { t } = useUITranslation();
     const [exportType, setExportType] = useState<string | undefined>(undefined);
     const [exportAll, setExportAll] = useState<string | undefined>(undefined);
 
@@ -52,7 +54,7 @@ function SelectPanel({ onClose }: SelectPanelProps) {
                     options={selectionOption}
                     value={exportAll}
                     onChange={setExportAll}
-                    placeholder="Choose what to export"
+                    placeholder={t('store.chooseWhatToExport')}
                     className="h-full w-full text-sm"
                     filterBy="name"
                     isClearable
@@ -63,13 +65,13 @@ function SelectPanel({ onClose }: SelectPanelProps) {
                     options={Object.values(ExportTypes)}
                     value={exportType}
                     onChange={setExportType}
-                    placeholder="Choose a format"
+                    placeholder={t('store.chooseAFormat')}
                     className="h-full w-full text-sm"
                     filterBy="name"
                     isClearable
                 />
 
-                <Button className="w-full" isDisabled={!exportType || !exportAll} onClick={onSubmit}>Export Properties</Button>
+                <Button className="w-full" isDisabled={!exportType || !exportAll} onClick={onSubmit}>{t('store.actions.exportProperties')}</Button>
             </div>
         </ModalBody>
     )
@@ -77,12 +79,13 @@ function SelectPanel({ onClose }: SelectPanelProps) {
 
 interface WaitingPanelProps { }
 function WaitingPanel({ }: WaitingPanelProps) {
+    const { t } = useUITranslation();
     return (
         <ModalBody className="min-h-[84px] pt-0">
             <div className='h-full grid flex-col gap-y-2 content-between justify-items-center'>
                 <div className="text-sm flex flex-col gap-x-2">
-                    <p>EXPORT IS IN PROGRESS</p>
-                    <p className="pt-2 grid justify-items-center">PLEASE WAIT</p>
+                    <p>{t('store.exportInProgress')}</p>
+                    <p className="pt-2 grid justify-items-center">{t('store.pleaseWait')}</p>
                 </div>
                 <Spinner size='lg' />
             </div>

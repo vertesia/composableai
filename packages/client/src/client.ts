@@ -11,6 +11,7 @@ import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
 import MCPOAuthApi from "./MCPOAuthApi.js";
+import OAuthAppsApi from "./OAuthAppsApi.js";
 import ProjectsApi from "./ProjectsApi.js";
 import SkillsApi from "./SkillsApi.js";
 import PromptsApi from "./PromptsApi.js";
@@ -257,6 +258,13 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     }
 
     /**
+     * Alias for store.agents
+     */
+    get agents() {
+        return this.store.agents;
+    }
+
+    /**
      * Alias for store.workflows
      */
     get workflows() {
@@ -342,6 +350,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
     mcpOAuth = new MCPOAuthApi(this);
+    oauthApps = new OAuthAppsApi(this);
 }
 
 function isApiKey(apiKey: string) {
@@ -412,6 +421,8 @@ function getEndpointsFromDomain(domain: string) {
         };
     } else {
         const url = `https://${domain}`;
+        // Supports both dot-separated (api.us1.vertesia.io → sts.us1.vertesia.io)
+        // and legacy (api.vertesia.io → sts.vertesia.io)
         return {
             studio: url,
             store: url,

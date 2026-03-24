@@ -1,4 +1,5 @@
 import { ColumnLayout, ComplexSearchQuery, ContentObject, ContentObjectItem } from '@vertesia/common';
+import { useUITranslation } from '../../../i18n/index.js';
 import {
     Filter as BaseFilter,
     Button, Divider, ErrorBox,
@@ -50,6 +51,7 @@ interface DocumentSearchResultsWithDropZoneProps {
 export function DocumentSearchResultsWithDropZone({ onUploadDone = async () => { }, layout }: DocumentSearchResultsWithDropZoneProps) {
     const search = useDocumentSearch();
     const toast = useToast();
+    const { t } = useUITranslation();
 
     // Create a wrapper around the onUploadDone callback that also refreshes the search
     const handleUploadDone = async (objectIds: string[]) => {
@@ -62,8 +64,8 @@ export function DocumentSearchResultsWithDropZone({ onUploadDone = async () => {
             search.search().then(() => {
                 // Notify the user that the list has been refreshed
                 toast({
-                    title: "Document list refreshed",
-                    description: "The document list has been updated with your uploaded files.",
+                    title: t('store.documentListRefreshed'),
+                    description: t('store.documentListRefreshedDesc'),
                     status: "info",
                     duration: 3000,
                 });
@@ -94,6 +96,7 @@ interface DocumentSearchResultsProps {
 }
 export function DocumentSearchResults({ layout, onUpload, allowFilter = true, allowSearch = true }: DocumentSearchResultsProps) {
     // Get the search context to access collectionId
+    const { t } = useUITranslation();
     const searchContext = useDocumentSearch();
     const [isReady, setIsReady] = useState(false);
     const [selectedObject, setSelectedObject] = useState<ContentObjectItem | null>(null);
@@ -248,7 +251,7 @@ export function DocumentSearchResults({ layout, onUpload, allowFilter = true, al
         <div className="flex flex-col gap-y-2">
             <OverviewDrawer object={selectedObject} onClose={() => setSelectedObject(null)} />
             {
-                error && <ErrorBox title="Error">{error.message}</ErrorBox>
+                error && <ErrorBox title={t('store.error')}>{error.message}</ErrorBox>
             }
             <Toolsbar
                 isLoading={isLoading}
@@ -299,6 +302,7 @@ interface ToolsbarProps {
     setIsGridView: React.Dispatch<React.SetStateAction<boolean>>;
 }
 function Toolsbar(props: ToolsbarProps) {
+    const { t } = useUITranslation();
     const {
         isLoading,
         refreshTrigger,
@@ -347,7 +351,7 @@ function Toolsbar(props: ToolsbarProps) {
                 )
             }
             <div className="flex gap-1 items-center">
-                <Button variant="outline" onClick={handleRefetch} alt="Refresh"><RefreshCw size={16} /></Button>
+                <Button variant="outline" onClick={handleRefetch} alt={t('store.refresh')}><RefreshCw size={16} /></Button>
                 <ContentDispositionButton onUpdate={setIsGridView} />
             </div>
         </div>
@@ -364,14 +368,15 @@ function OverviewDrawer({ object, onClose }: OverviewDrawerProps) {
     const navigate = useNavigate();
     const { downloadFromContentSource } = useDownloadFile({ client: store, toast });
 
+    const contentSource = object?.content?.source;
     return object ? (
         <SidePanel title={object.properties?.title || object.name} isOpen={true} onClose={onClose}>
             <div className="flex items-center gap-x-2">
                 <Button variant="ghost" size="sm" title="Open Object" onClick={() => navigate(`/objects/${object.id}`)}>
                     <ExternalLink className="size-4" />
                 </Button>
-                {object.content?.source && (
-                    <Button variant="ghost" size="sm" title="Download" onClick={() => downloadFromContentSource(object.content!.source!, object.name || object.content?.name)}>
+                {contentSource && (
+                    <Button variant="ghost" size="sm" title="Download" onClick={() => downloadFromContentSource(contentSource, object.name || object.content?.name)}>
                         <Download className="size-4" />
                     </Button>
                 )}

@@ -1,5 +1,6 @@
 import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
 import { Table, TBody } from "@vertesia/ui/core";
+import { useUITranslation } from '../../../../i18n/index.js';
 import { CheckIcon } from "lucide-react";
 import { ChangeEvent } from "react";
 import { DocumentIcon, DocumentIconSkeleton } from "../components/DocumentIcon";
@@ -21,6 +22,7 @@ interface ViewProps {
 }
 
 export function DocumentTableView({ objects, selection, isLoading, columns, onRowClick, highlightRow, selectedObject, toggleAll, onSelectionChange }: ViewProps) {
+    const { t } = useUITranslation();
     return (
         <Table className="w-full border-t">
             <thead>
@@ -55,7 +57,7 @@ export function DocumentTableView({ objects, selection, isLoading, columns, onRo
                         )
                     })
                 }
-                {objects.length === 0 && <tr><td colSpan={columns.length + (selection ? 1 : 0)} className="text-center">No objects. Just drag and drop documents or images here to create content objects.</td></tr>}
+                {objects.length === 0 && <tr><td colSpan={columns.length + (selection ? 1 : 0)} className="text-center">{t('store.noObjectsDragAndDrop')}</td></tr>}
             </TBody>
         </Table>
     )
