@@ -11,6 +11,7 @@ export * from './environment.js';
 export * from "./facets.js";
 export * from './group.js';
 export * from './integrations.js';
+export * from './oauth.js';
 export * from './interaction.js';
 export * from './pending-asks.js';
 export * from './json-schema.js';
