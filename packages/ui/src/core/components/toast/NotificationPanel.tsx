@@ -1,6 +1,6 @@
-import { Transition } from "@headlessui/react"
+import { AnimatePresence, motion } from "framer-motion"
 import { CircleCheck, AlertTriangle, Info, CircleX, X } from "lucide-react"
-import { Fragment, useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef } from "react"
 import { ToastProps } from "./ToastProps.js"
 
 const icons = {
@@ -57,50 +57,44 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
         >
             <div className="flex w-full flex-col items-center space-y-4 sm:items-end">
                 {/* Notification panel, dynamically insert this into the live region when it needs to be displayed */}
-                <Transition
-                    appear={true}
-                    show={show}
-                    as={Fragment}
-                    afterLeave={onClose}
-                    enter="transform ease-out duration-700 transition"
-                    enterFrom="translate-y-0 opacity-0 sm:translate-y-0 sm:translate-x-2"
-                    enterTo="translate-y-2 opacity-100 sm:translate-x-0"
-                    leave="transition ease-in duration-300"
-                    leaveFrom="opacity-100"
-                    leaveTo="opacity-0"
-                >
-                    <div
-                        className="pointer-events-auto w-full max-w-md overflow-hidden rounded-lg bg-muted shadow-lg ring-1 ring-border"
-                        onMouseEnter={clearCurrentTimeout}
-                        onMouseLeave={resetTimeout}
-                    >
-                        <div className="p-5">
-                            <div className="flex items-start">
-                                <div className="shrink-0">
-                                    <Icon className={`size-6 ${color}`} aria-hidden="true" />
-                                </div>
-                                <div className="ml-3 flex-1 pt-0.5 min-w-0">
-                                    <p className="text-sm font-semibold text-foreground break-words">{data.title}</p>
-                                    {data.description && (
-                                        <p className="mt-2 text-sm text-muted break-words whitespace-pre-wrap leading-relaxed">
-                                            {data.description}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="ml-4 flex shrink-0">
-                                    <button
-                                        type="button"
-                                        className="inline-flex rounded-md bg-muted text-muted hover:text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
-                                        onClick={() => setShow(false)}
-                                    >
-                                        <span className="sr-only">Close</span>
-                                        <X className="size-5" aria-hidden="true" />
-                                    </button>
+                <AnimatePresence onExitComplete={onClose}>
+                    {show && (
+                        <motion.div
+                            className="pointer-events-auto w-full max-w-md overflow-hidden rounded-lg bg-muted shadow-lg ring-1 ring-border"
+                            initial={{ opacity: 0, x: 8 }}
+                            animate={{ opacity: 1, x: 0, transition: { ease: 'easeOut', duration: 0.7 } }}
+                            exit={{ opacity: 0, transition: { ease: 'easeIn', duration: 0.3 } }}
+                            onMouseEnter={clearCurrentTimeout}
+                            onMouseLeave={resetTimeout}
+                        >
+                            <div className="p-5">
+                                <div className="flex items-start">
+                                    <div className="shrink-0">
+                                        <Icon className={`size-6 ${color}`} aria-hidden="true" />
+                                    </div>
+                                    <div className="ml-3 flex-1 pt-0.5 min-w-0">
+                                        <p className="text-sm font-semibold text-foreground break-words">{data.title}</p>
+                                        {data.description && (
+                                            <p className="mt-2 text-sm text-muted break-words whitespace-pre-wrap leading-relaxed">
+                                                {data.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="ml-4 flex shrink-0">
+                                        <button
+                                            type="button"
+                                            className="inline-flex rounded-md bg-muted text-muted hover:text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                                            onClick={() => setShow(false)}
+                                        >
+                                            <span className="sr-only">Close</span>
+                                            <X className="size-5" aria-hidden="true" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </Transition>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     )

@@ -1,5 +1,5 @@
-import { Transition } from "@headlessui/react";
-import { Fragment, ReactNode, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ReactNode, useEffect, useState } from "react";
 import { useUserSession } from "@vertesia/ui/session";
 
 
@@ -12,35 +12,31 @@ export function SplashScreen({ icon: Icon }: SplashScreenProps) {
 
     useEffect(() => {
         if (!isLoading) {
-            setShow(false)
+            setShow(false);
         }
-        // setTimeout(() => {
-        //     setShow(false)
-        // }, 2000)
-    }, [isLoading])
+    }, [isLoading]);
 
-    // 300 500 700 1000
     return (
-        <Transition
-            appear={true}
-            show={show}
-            as={Fragment}
-            unmount
-            leave="transition ease-in duration-500"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-        >
-            <div style={{ zIndex: 999999, position: 'fixed', inset: 0 }} className='fixed inset-x-0 inset-y-0'>
-                <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }} className="flex w-full h-full items-center justify-center">
-                    <div className="animate-[spin_4s_linear_infinite]">
-                        <div className='animate-pulse rounded-full bg-transparent'>
-                            {Icon || <LoadingIcon />}
+        <AnimatePresence>
+            {show && (
+                <motion.div
+                    style={{ zIndex: 999999, position: 'fixed', inset: 0 }}
+                    className='fixed inset-x-0 inset-y-0'
+                    initial={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ ease: 'easeIn', duration: 0.5 }}
+                >
+                    <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }} className="flex w-full h-full items-center justify-center">
+                        <div className="animate-[spin_4s_linear_infinite]">
+                            <div className='animate-pulse rounded-full bg-transparent'>
+                                {Icon || <LoadingIcon />}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </Transition>
-    )
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
 }
 
 function LoadingIcon() {
