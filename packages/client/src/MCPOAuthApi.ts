@@ -47,11 +47,12 @@ export default class MCPOAuthApi extends ApiTopic {
     }
 
     /**
-     * Disconnect OAuth authentication for an MCP server
-     * @param mcpServerUrl - The MCP server URL
+     * Disconnect OAuth authentication for a specific collection
+     * @param appInstallId - The app installation ID
+     * @param collectionName - The collection name
      */
-    disconnect(mcpServerUrl: string): Promise<void> {
-        return this.del(`/disconnect/${encodeURIComponent(mcpServerUrl)}`);
+    disconnect(appInstallId: string, collectionName: string): Promise<void> {
+        return this.del(`/disconnect/${appInstallId}/${collectionName}`);
     }
 
     /**
