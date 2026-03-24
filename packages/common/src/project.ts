@@ -281,34 +281,34 @@ export interface EmbeddingsStatusResponse {
  */
 export interface IndexingStatusResponse {
     /** Whether indexing infrastructure is available globally */
-    infrastructureEnabled: boolean;
+    infrastructure_enabled: boolean;
     /** Whether indexing is enabled for this project */
-    indexingEnabled: boolean;
-    /** @deprecated Now derived from indexingEnabled - queries automatically route to index when indexing is enabled */
+    indexing_enabled: boolean;
+    /** @deprecated Now derived from indexing_enabled - queries automatically route to index when indexing is enabled */
     query_enabled: boolean;
     /** Index status */
     index: {
         /** Whether the index exists */
         exists: boolean;
         /** Alias name (used for queries) */
-        aliasName: string;
+        alias_name: string;
         /** Actual index name (versioned) */
-        indexName: string;
+        index_name: string;
         /** Index version (timestamp when created) */
         version: number;
         /** When the current index was created */
-        createdAt: string | null;
+        created_at: string | null;
         /** Number of documents in the index */
-        documentCount: number;
+        document_count: number;
         /** Index size in bytes */
-        sizeBytes: number;
+        size_bytes: number;
     };
     /** MongoDB document count for comparison */
-    mongoDocumentCount: number;
+    mongo_document_count: number;
     /** Whether a reindex is currently in progress */
-    reindexInProgress: boolean;
+    reindex_in_progress: boolean;
     /** Reindex progress (if reindex is in progress) */
-    reindexProgress?: {
+    reindex_progress?: {
         /** Total documents to reindex */
         total: number;
         /** Documents processed so far */
@@ -320,19 +320,19 @@ export interface IndexingStatusResponse {
         /** Current status (e.g., "indexing", "complete") */
         status: string;
         /** Current batch number */
-        currentBatch: number;
+        current_batch: number;
         /** Total number of batches */
-        totalBatches: number;
+        total_batches: number;
         /** Percentage complete (0-100) */
-        percentComplete: number;
+        percent_complete: number;
         /** Batches processed per second */
-        batchesPerSecond: number;
+        batches_per_second: number;
         /** Documents processed per second */
-        docsPerSecond: number;
+        docs_per_second: number;
         /** Elapsed time in seconds */
-        elapsedSeconds: number;
+        elapsed_seconds: number;
         /** Estimated seconds remaining (null if unknown) */
-        estimatedSecondsRemaining: number | null;
+        estimated_seconds_remaining: number | null;
     };
 }
 
@@ -378,8 +378,8 @@ export interface BulkIndexResult {
  */
 export interface CreateReindexTargetResult {
     created: boolean;
-    indexName: string;
-    aliasName: string;
+    index_name: string;
+    alias_name: string;
     version: number;
 }
 
@@ -443,10 +443,10 @@ export interface TriggerReindexResult {
 export interface ElasticsearchIndexStats {
     enabled: boolean;
     exists?: boolean;
-    documentCount?: number;
-    sizeInBytes?: number;
-    indexName?: string;
-    aliasName?: string;
+    document_count?: number;
+    size_in_bytes?: number;
+    index_name?: string;
+    alias_name?: string;
 }
 
 /**
@@ -466,25 +466,25 @@ export interface EmbeddingTypeConfig {
 export interface IndexConfiguration {
     enabled: boolean;
     exists?: boolean;
-    indexName?: string;
-    aliasName?: string;
+    index_name?: string;
+    alias_name?: string;
     version?: number;
-    documentCount?: number;
-    sizeInBytes?: number;
-    embeddingDimensions?: {
+    document_count?: number;
+    size_in_bytes?: number;
+    embedding_dimensions?: {
         text?: number;
         image?: number;
         properties?: number;
     };
     /** ISO 639-1 language code for text analysis */
     language?: string;
-    fieldMappings?: Record<string, unknown>;
-    projectEmbeddingsConfig?: {
+    field_mappings?: Record<string, unknown>;
+    project_embeddings_config?: {
         text?: EmbeddingTypeConfig;
         image?: EmbeddingTypeConfig;
         properties?: EmbeddingTypeConfig;
     };
-    createdAt?: Date | null;
+    created_at?: Date | null;
 }
 
 /**
