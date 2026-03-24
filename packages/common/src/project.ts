@@ -419,7 +419,7 @@ export interface IndexBatchResult {
  * Result from discovering the next cursor boundary for batch partitioning
  */
 export interface NextIndexCursorResult {
-    nextCursor: string | null;
+    next_cursors: string[];
     count: number;
     done: boolean;
 }
@@ -430,9 +430,9 @@ export interface NextIndexCursorResult {
 export interface TriggerReindexResult {
     status: string;
     workflow?: string;
-    workflowId?: string;
-    runId?: string;
-    objectCount?: number;
+    workflow_id?: string;
+    run_id?: string;
+    object_count?: number;
     reason?: string;
     enabled?: boolean;
 }
@@ -564,10 +564,10 @@ export interface AnalyzeDriftBatchResult {
     processed: number;
     missing: number;
     stale: number;
-    nextCursor: string | null;
+    next_cursor: string | null;
     done: boolean;
-    sampleMissingIds: string[];
-    sampleStaleIds: string[];
+    sample_missing_ids: string[];
+    sample_stale_ids: string[];
 }
 
 export interface DriftAnalysisProgress {
@@ -576,12 +576,12 @@ export interface DriftAnalysisProgress {
     missing: number;
     stale: number;
     status: string;
-    currentBatch: number;
-    totalBatches: number;
-    percentComplete: number;
-    docsPerSecond: number;
-    elapsedSeconds: number;
-    estimatedSecondsRemaining: number | null;
+    current_batch: number;
+    total_batches: number;
+    percent_complete: number;
+    docs_per_second: number;
+    elapsed_seconds: number;
+    estimated_seconds_remaining: number | null;
 }
 
 export interface DriftAnalysisResult {
@@ -589,9 +589,9 @@ export interface DriftAnalysisResult {
     processed: number;
     missing: number;
     stale: number;
-    sampleMissingIds: string[];
-    sampleStaleIds: string[];
-    completedAt: string;
+    sample_missing_ids: string[];
+    sample_stale_ids: string[];
+    completed_at: string;
 }
 
 export interface DriftAnalysisStatusResponse extends WorkflowRunStatus {
@@ -605,8 +605,8 @@ export interface DriftAnalysisStatusResponse extends WorkflowRunStatus {
  */
 export interface SwapAliasResult {
     swapped: boolean;
-    aliasName?: string;
-    newIndexName?: string;
+    alias_name?: string;
+    new_index_name?: string;
     reason?: string;
 }
 

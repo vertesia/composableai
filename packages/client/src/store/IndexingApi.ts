@@ -49,7 +49,7 @@ export class IndexingApi extends ApiTopic {
      * @param recreateIndex If true, drops and recreates the index before reindexing
      */
     async reindex(recreateIndex?: boolean): Promise<GenericCommandResponse> {
-        return this.post("/reindex", { payload: { recreateIndex } });
+        return this.post("/reindex", { payload: { recreate_index: recreateIndex } });
     }
 
     /**
@@ -162,7 +162,7 @@ export class IndexingApi extends ApiTopic {
      */
     swapAlias(newIndexName: string, deleteOld?: boolean): Promise<SwapAliasResult> {
         return this.post("/internal/swap-alias", {
-            payload: { newIndexName, deleteOld },
+            payload: { new_index_name: newIndexName, delete_old: deleteOld },
         });
     }
 
@@ -210,19 +210,20 @@ export class IndexingApi extends ApiTopic {
      */
     indexBatch(cursor?: string | null, limit?: number, targetIndex?: string, since?: string, endCursor?: string | null): Promise<IndexBatchResult> {
         return this.post("/internal/index-batch", {
-            payload: { cursor, limit, targetIndex, since, endCursor },
+            payload: { cursor, limit, target_index: targetIndex, since, end_cursor: endCursor },
         });
     }
 
     /**
-     * Discover the next cursor boundary for partitioned reindexing
+     * Discover one or more cursor boundaries for partitioned reindexing
      *
      * @param cursor Start cursor (exclusive)
      * @param limit Maximum documents in the partition
+     * @param count Maximum number of boundaries to return
      */
-    getNextIndexCursor(cursor?: string | null, limit?: number): Promise<NextIndexCursorResult> {
+    getNextIndexCursor(cursor?: string | null, limit?: number, count?: number): Promise<NextIndexCursorResult> {
         return this.post("/internal/next-cursor", {
-            payload: { cursor, limit },
+            payload: { cursor, limit, count },
         });
     }
 
@@ -248,7 +249,11 @@ export class IndexingApi extends ApiTopic {
         recreateIndex?: boolean;
     }): Promise<TriggerReindexResult> {
         return this.post("/internal/trigger-reindex", {
-            payload: options ?? {},
+            payload: options ? {
+                full_reindex: options.fullReindex,
+                object_ids: options.objectIds,
+                recreate_index: options.recreateIndex,
+            } : {},
         });
     }
 
