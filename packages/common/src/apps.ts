@@ -466,36 +466,12 @@ export interface OAuthMetadataResponse {
 // ============================================================================
 
 /**
- * App navigation item display overrides.
- * Allows customizing individual nav items for an app installation within the CompositeApp shell.
- */
-export interface CompositeAppNavItemOverride {
-    /** Used as identifier to match the nav item to override -- does not change route path */
-    route: string;
-    /** Hide this nav item from the sidebar */
-    hidden?: boolean;
-    /** Override the displayed nav item label */
-    label?: string;
-    /** Override the displayed nav item icon (Lucide icon name or SVG content string) */
-    icon?: string;
-    /** Override whether this item appears as an independent sidebar entry (overrides manifest topLevel) */
-    topLevel?: boolean;
-    //TODO: Set permissions for routes
-}
-
-/**
  * Configuration entry for an individual app in the CompositeApp shell.
- * References an app installation by name and allows customizing its appearance.
+ * References an app installation by name.
  */
 export interface CompositeAppEntry {
     /** App installation name (must match an installed app) */
     appName: string;
-    /** Override the label displayed for the app */
-    labelOverride?: string;
-    /** Override the icon displayed for the app (Lucide icon name or SVG content string) */
-    iconOverride?: string;
-    /** Overrides for navigation items provided by the app */
-    navigationOverrides?: CompositeAppNavItemOverride[];
 }
 
 /**
