@@ -8,6 +8,7 @@ import {
     ReindexRangeResult,
     FetchBatchResult,
     IndexBatchResult,
+    NextIndexCursorResult,
     TriggerReindexResult,
     ElasticsearchIndexStats,
     IndexConfiguration,
@@ -189,10 +190,23 @@ export class IndexingApi extends ApiTopic {
      * @param limit Maximum documents to process (default: 500)
      * @param targetIndex Optional explicit index name for zero-downtime reindexing
      * @param since Only index docs with updated_at >= this ISO timestamp (for catch-up after reindex)
+     * @param endCursor End cursor (inclusive) for partitioned reindexing
      */
-    indexBatch(cursor?: string | null, limit?: number, targetIndex?: string, since?: string): Promise<IndexBatchResult> {
+    indexBatch(cursor?: string | null, limit?: number, targetIndex?: string, since?: string, endCursor?: string | null): Promise<IndexBatchResult> {
         return this.post("/internal/index-batch", {
-            payload: { cursor, limit, targetIndex, since },
+            payload: { cursor, limit, targetIndex, since, endCursor },
+        });
+    }
+
+    /**
+     * Discover the next cursor boundary for partitioned reindexing
+     *
+     * @param cursor Start cursor (exclusive)
+     * @param limit Maximum documents in the partition
+     */
+    getNextIndexCursor(cursor?: string | null, limit?: number): Promise<NextIndexCursorResult> {
+        return this.post("/internal/next-cursor", {
+            payload: { cursor, limit },
         });
     }
 

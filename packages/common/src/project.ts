@@ -415,6 +415,15 @@ export interface IndexBatchResult {
 }
 
 /**
+ * Result from discovering the next cursor boundary for batch partitioning
+ */
+export interface NextIndexCursorResult {
+    nextCursor: string | null;
+    count: number;
+    done: boolean;
+}
+
+/**
  * Result from triggering a reindex
  */
 export interface TriggerReindexResult {
