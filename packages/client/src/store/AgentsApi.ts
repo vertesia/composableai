@@ -159,25 +159,14 @@ export class AgentsApi extends ApiTopic {
             lessons_learned?: string[];
             /** ES-only: conversation content text (not stored in MongoDB) */
             content?: string;
-        },
-    ): Promise<AgentRun> {
-        return this.post(`/${id}/status`, { payload: update });
-    }
-
-    /**
-     * Update agent run archive state.
-     * Called by the archive workflow to track archival progress.
-     */
-    updateArchiveState(
-        id: string,
-        update: {
+            // Archive state fields (set by the archive workflow)
             archive_state?: AgentRunArchiveState;
             archived_at?: string;
             archive_version?: number;
             last_archive_error?: string;
         },
     ): Promise<AgentRun> {
-        return this.post(`/${id}/archive-state`, { payload: update });
+        return this.post(`/${id}/status`, { payload: update });
     }
 
     // ========================================================================
@@ -538,6 +527,21 @@ export class AgentsApi extends ApiTopic {
      */
     listChildren(id: string): Promise<ListWorkflowRunsResponse> {
         return this.get(`/${id}/children`);
+    }
+
+    /**
+     * Get details for a specific child workflow.
+     * Serves from GCS archive when available, falls back to Temporal.
+     */
+    getChildDetails(
+        id: string,
+        childWorkflowId: string,
+        options?: { includeHistory?: boolean; historyFormat?: string },
+    ): Promise<WorkflowRunWithDetails> {
+        const query: Record<string, any> = {};
+        if (options?.includeHistory) query.include_history = true;
+        if (options?.historyFormat) query.history_format = options.historyFormat;
+        return this.get(`/${id}/children/${childWorkflowId}/details`, { query });
     }
 
     // ========================================================================
