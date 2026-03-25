@@ -23,6 +23,17 @@ import { ConversationActivityState } from "./workflow.js";
 export type AgentRunStatus = 'created' | 'running' | 'completed' | 'failed' | 'cancelled';
 
 /**
+ * Archive lifecycle state for an agent run.
+ *
+ * - `none`:      No archive exists (default)
+ * - `pending`:   Terminal status recorded; archive workflow triggered
+ * - `archiving`: Archive workflow is running
+ * - `complete`:  Archive stored in GCS successfully
+ * - `failed`:    Archive attempt failed (see `last_archive_error`)
+ */
+export type AgentRunArchiveState = 'none' | 'pending' | 'archiving' | 'complete' | 'failed';
+
+/**
  * How the agent run was created.
  */
 export type AgentRunType = 'api' | 'schedule';
@@ -136,6 +147,25 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
 
     /** Lessons learned from the conversation (extracted at completion) */
     lessons_learned?: string[];
+
+    // --- Archival ---
+
+    /** Archive lifecycle state */
+    archive_state?: AgentRunArchiveState;
+
+    /** When the last successful archive completed */
+    archived_at?: Date;
+
+    /** Archive format version (for forward compatibility) */
+    archive_version?: number;
+
+    /** Last archive error message (when archive_state === 'failed') */
+    last_archive_error?: string;
+
+    /** Source agent run ID when this run was forked (enables message history chaining) */
+    forked_from?: string;
+
+    // --- Timestamps ---
 
     /** Timestamp when the document was created */
     created_at: Date;

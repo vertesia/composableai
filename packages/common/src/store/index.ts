@@ -1,5 +1,6 @@
 export * from "./activity-catalog.js";
 export * from "./agent-run.js";
+export * from "./agent-run-archive.js";
 export * from "./collections.js";
 export * from "./common.js";
 export * from "./conversation-state.js";

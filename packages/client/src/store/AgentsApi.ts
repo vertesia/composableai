@@ -5,6 +5,7 @@ import {
     AgentMessage,
     AgentMessageType,
     AgentRun,
+    AgentRunArchiveState,
     AgentRunInternals,
     AgentRunStatus,
     CompactMessage,
@@ -161,6 +162,22 @@ export class AgentsApi extends ApiTopic {
         },
     ): Promise<AgentRun> {
         return this.post(`/${id}/status`, { payload: update });
+    }
+
+    /**
+     * Update agent run archive state.
+     * Called by the archive workflow to track archival progress.
+     */
+    updateArchiveState(
+        id: string,
+        update: {
+            archive_state?: AgentRunArchiveState;
+            archived_at?: string;
+            archive_version?: number;
+            last_archive_error?: string;
+        },
+    ): Promise<AgentRun> {
+        return this.post(`/${id}/archive-state`, { payload: update });
     }
 
     // ========================================================================
