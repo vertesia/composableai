@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Cpu, FileTextIcon, SendIcon, UploadIcon, XIcon } from "lucide-react";
+import { Bot, Cpu, FileTextIcon, RefreshCcw, SendIcon, UploadIcon, XIcon } from "lucide-react";
 import { useUserSession } from "@vertesia/ui/session";
 import {
     ActiveWorkstreamEntry,
@@ -1452,7 +1452,36 @@ const handleCloseRightPanel = useCallback(() => {
                             icon={null}
                             className="m-2"
                         >
-                            This Workflow is {effectiveWorkflowStatus}
+                            <div className="flex items-center justify-between w-full">
+                                <span>This Workflow is {effectiveWorkflowStatus}</span>
+                                {onRestart && isTerminalStatus(workflowStatus) && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="ml-2"
+                                        onClick={async () => {
+                                            try {
+                                                const newRun = await client.agents.restart(agentRunId);
+                                                toast({
+                                                    status: 'success',
+                                                    title: t('agent.conversationRestarted'),
+                                                    duration: 2000,
+                                                });
+                                                onRestart(newRun);
+                                            } catch (_error: unknown) {
+                                                toast({
+                                                    status: 'error',
+                                                    title: t('agent.failedToRestartConversation'),
+                                                    duration: 2000,
+                                                });
+                                            }
+                                        }}
+                                    >
+                                        <RefreshCcw className="size-3.5 mr-1" />
+                                        {t('agent.restartConversation')}
+                                    </Button>
+                                )}
+                            </div>
                         </MessageBox>
                     ) : showInput && (
                         <MessageInput
