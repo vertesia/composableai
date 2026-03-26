@@ -10,6 +10,7 @@ import {
     ConversationFileRef,
     Plan,
     UserInputSignal,
+    AgentRunStatus,
 } from "@vertesia/common";
 import { FusionFragmentProvider } from "@vertesia/fusion-ux";
 import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
@@ -35,6 +36,13 @@ import { useAgentStream } from "./hooks/useAgentStream.js";
 import { useAgentPlans } from "./hooks/useAgentPlans.js";
 import { useDocumentPanel } from "./hooks/useDocumentPanel.js";
 import { useFileProcessing } from "./hooks/useFileProcessing.js";
+
+const TERMINAL_STATUSES: AgentRunStatus[] = ['completed', 'failed', 'cancelled'];
+
+function isTerminalStatus(workflowStatus: string | null): boolean {
+    if (!workflowStatus) return false;
+    return TERMINAL_STATUSES.includes(workflowStatus.toLowerCase() as AgentRunStatus);
+}
 
 export type StartWorkflowFn = (
     initialMessage?: string,
@@ -1367,6 +1375,7 @@ const handleCloseRightPanel = useCallback(() => {
                     <Header
                         title={actualTitle}
                         isCompleted={isCompleted}
+                        isTerminal={isTerminalStatus(workflowStatus)}
                         onClose={onClose}
                         isModal={isModal}
                         agentRunId={agentRunId}
