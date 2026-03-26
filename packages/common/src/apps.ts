@@ -652,6 +652,13 @@ export interface CompositeAppMenuSection {
     items: CompositeAppMenuNavItem[];
 }
 
+export interface CompositeAppHomePlugin {
+    /** The app name to use as the home page */
+    appName: string;
+    /** Optional route within the app (e.g. "/dashboard"). Defaults to "/" */
+    appRoute?: string;
+}
+
 /**
  * CompositeApp shell configuration.
  * This is the main configuration interface for storing CompositeApp settings.
@@ -675,10 +682,8 @@ export interface CompositeAppConfig {
     switchers?: CompositeAppSwitchersOverrides;
     /** Optional sidebar display overrides */
     sidebar?: CompositeAppSidebarOverrides;
-    /** Optional app name to use as the home page instead of the dashboard. Send null to unset. */
-    homePlugin?: string | null;
-    /** Optional route within the home plugin (e.g. "/dashboard"). Paired with homePlugin. */
-    homeRoute?: string | null;
+    /** Optional home page override. When set, redirects "/" to the specified app route instead of the dashboard. Send null to unset. */
+    homePlugin?: CompositeAppHomePlugin | null;
     /** List of apps to include in the CompositeApp (used for installation tracking and fallback sidebar) */
     apps: CompositeAppEntry[];
     /**
