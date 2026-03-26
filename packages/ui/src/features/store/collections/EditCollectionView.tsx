@@ -1,4 +1,4 @@
-import { Collection, CreateCollectionPayload, JSONSchemaObject } from "@vertesia/common";
+import { Collection, CreateCollectionPayload, getContentTypeRefId, JSONSchemaObject } from "@vertesia/common";
 import { Button, ErrorBox, FormItem, Input, Panel, Styles, Textarea, useFetch, useToast, useTheme } from "@vertesia/ui/core";
 import { SharedPropsEditor, SyncMemberHeadsToggle, UserInfo } from "@vertesia/ui/features";
 import { useUserSession } from "@vertesia/ui/session";
@@ -23,7 +23,7 @@ interface EditCollectionViewProps {
 }
 export function EditCollectionView({ refetch, collection }: EditCollectionViewProps) {
     const { t } = useUITranslation();
-    const typeId = collection.type?.id;
+    const typeId = collection.type ? getContentTypeRefId(collection.type) : undefined;
     const tableLayoutRef = useRef<EditorApi | undefined>(undefined);
     const toast = useToast();
     const { theme } = useTheme();
@@ -34,7 +34,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
         description: collection.description || "",
         query: collection.query ? JSON.stringify(collection.query, null, 2) : "",
         tags: collection.tags || [],
-        type: collection.type?.id || "",
+        type: collection.type ? getContentTypeRefId(collection.type) : "",
         allowed_types: collection.allowed_types || [],
     });
 
@@ -239,7 +239,7 @@ function PropertiesEditor({ typeId, collection }: PropertiesEditorProps) {
     const { client } = useUserSession();
     const [isUpdating, setIsUpdating] = useState(false);
 
-    const { data: type, error } = useFetch(() => client.store.types.retrieve(typeId), [typeId]);
+    const { data: type, error } = useFetch(() => client.store.types.catalog.resolve(typeId), [typeId]);
     const schema = type?.object_schema || {};
     const object = useMemo(() => new ManagedObject(schema, collection.properties || {}), [schema, collection.properties]);
 
