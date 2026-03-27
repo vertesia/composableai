@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/tools-admin-ui",
-    "version": "1.0.0-dev.20260305.083323Z",
+    "version": "1.0.0",
     "description": "Shared admin UI for Vertesia tool servers",
     "type": "module",
     "license": "Apache-2.0",

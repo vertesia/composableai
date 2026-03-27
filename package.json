@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/packages",
-    "version": "1.0.0-dev.20260305.083323Z",
+    "version": "1.0.0",
     "license": "Apache-2.0",
     "private": true,
     "type": "module",
@@ -57,7 +57,12 @@
             "diff@>=5.0.0 <5.2.2": "^5.2.2",
             "diff@>=6.0.0 <8.0.3": "^8.0.3",
             "ajv@>=6.0.0 <6.14.0": "^6.14.0",
-            "@types/node": "^22.19.2"
+            "@types/node": "^22.19.2",
+            "flatted@<3.4.2": "^3.4.2",
+            "yaml@>=2.0.0 <2.8.3": "^2.8.3",
+            "picomatch@<2.3.2": "^2.3.2",
+            "picomatch@>=4.0.0 <4.0.4": "^4.0.4",
+            "brace-expansion@<5.0.5": "^5.0.5"
         }
     }
 }
