@@ -80,10 +80,6 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
         return !this.isStable;
     }
 
-    get isPreview() {
-        return this.type === "preview";
-    }
-
     get isLocalDev() {
         return this.prop("isLocalDev");
     }
