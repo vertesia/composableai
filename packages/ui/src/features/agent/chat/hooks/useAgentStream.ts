@@ -30,6 +30,8 @@ export interface UseAgentStreamResult {
     removeOptimisticMessages: (predicate: (msg: AgentMessage) => boolean) => void;
     /** Workflow status fetched from API (RUNNING, COMPLETED, FAILED, etc.) */
     workflowStatus: string | null;
+    /** Temporal workflow run ID (first_workflow_run_id from AgentRun) */
+    workflowRunId: string | null;
     /** Server-side file processing status updates (from SYSTEM messages) */
     serverFileUpdates: Map<string, ConversationFile>;
 }
@@ -56,6 +58,7 @@ export function useAgentStream(
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
     const [workflowStatus, setWorkflowStatus] = useState<string | null>(null);
+    const [workflowRunId, setWorkflowRunId] = useState<string | null>(null);
 
     // Server-side file processing status updates
     const [serverFileUpdates, setServerFileUpdates] = useState<Map<string, ConversationFile>>(new Map());
@@ -104,15 +107,17 @@ export function useAgentStream(
         console.debug('[useAgentStream] effect:start', { agentRunId });
         setMessages([]);
         setWorkflowStatus(null);
+        setWorkflowRunId(null);
         setStreamingMessages(new Map());
         setServerFileUpdates(new Map());
         const abortController = new AbortController();
 
         // Check agent run status
-        client.agents.retrieve(agentRunId)
+        client.agents.getInternals(agentRunId)
             .then((agentRun) => {
                 if (!abortController.signal.aborted) {
                     setWorkflowStatus(agentRun.status?.toUpperCase() ?? null);
+                    setWorkflowRunId(agentRun.first_workflow_run_id ?? null);
                 }
             })
             .catch((error) => {
@@ -295,6 +300,7 @@ export function useAgentStream(
         addOptimisticMessage,
         removeOptimisticMessages,
         workflowStatus,
+        workflowRunId,
         serverFileUpdates,
     };
 }
