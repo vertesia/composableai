@@ -10,6 +10,10 @@ function getInputType(_name: string, schema: PropertySchema) {
     if (schema.editor) {
         return schema.editor;
     }
+    // Check for enum constraint
+    if (schema.enum?.length) {
+        return 'enum';
+    }
     // Check format as fallback (e.g., "document", "media", "date", etc.)
     if (schema.schema.format) {
         return schema.schema.format;
@@ -78,6 +82,7 @@ export abstract class Node<SchemaT extends Schema = Schema, ValueT = JSONSchemaT
         this.parent && this.parent.onChange(node);
     }
 
+
 }
 
 export abstract class ManagedObjectBase<SchemaT extends Schema = Schema> extends Node<SchemaT, JSONSchemaObject> {
@@ -94,6 +99,11 @@ export abstract class ManagedObjectBase<SchemaT extends Schema = Schema> extends
     getProperty(name: string) {
         const schema = this.schema.properties[name];
         if (schema.isMulti) {
+            if (schema.enum?.length) {
+                // Enum arrays are multi-select scalars, not managed lists
+                this.getOrInitArrayProperty(name);
+                return new ManagedProperty(this, schema);
+            }
             return new ManagedListProperty(this, schema as ArrayPropertySchema, this.getOrInitArrayProperty(name));
         } else if (schema.isObject) {
             return new ManagedObjectProperty(this, schema, schema.name, this.getOrInitObjectProperty(name));
@@ -134,7 +144,12 @@ export abstract class ManagedObjectBase<SchemaT extends Schema = Schema> extends
         const out: Node[] = [];
         for (const schema of Object.values(this.schema.properties)) {
             if (schema.isMulti) {
-                out.push(new ManagedListProperty(this, schema as ArrayPropertySchema, this.getOrInitArrayProperty(schema.name)));
+                if (schema.enum?.length) {
+                    this.getOrInitArrayProperty(schema.name);
+                    out.push(new ManagedProperty(this, schema));
+                } else {
+                    out.push(new ManagedListProperty(this, schema as ArrayPropertySchema, this.getOrInitArrayProperty(schema.name)));
+                }
             } else if (schema.isObject) {
                 out.push(new ManagedObjectProperty(this, schema, schema.name, this.getOrInitObjectProperty(schema.name)));
             } else {
