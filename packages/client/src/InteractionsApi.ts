@@ -20,7 +20,9 @@ export interface ComputeInteractionFacetsResponse {
 }
 
 export interface AsyncExecutionResult {
-    runId: string, workflowId: string
+    runId: string;
+    workflowId: string;
+    agentRunId?: string;
 }
 
 export default class InteractionsApi extends ApiTopic {
