@@ -1,5 +1,6 @@
 import { AsyncExecutionPayload, ExecutionRunStatus, InteractionExecutionPayload, InteractionExecutionResult, NamedInteractionExecutionPayload, RateLimitRequestPayload, RateLimitRequestResponse } from '@vertesia/common';
 import { VertesiaClient } from './client.js';
+import type { AsyncExecutionResult } from './InteractionsApi.js';
 
 export async function EventSourceProvider(): Promise<typeof EventSource> {
     if (typeof globalThis.EventSource === 'function') {
@@ -115,7 +116,7 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
     });
 }
 
-export async function executeInteractionAsync(client: VertesiaClient, payload: AsyncExecutionPayload): Promise<{ runId: string, workflowId: string }> {
+export async function executeInteractionAsync(client: VertesiaClient, payload: AsyncExecutionPayload): Promise<AsyncExecutionResult> {
     return await client.post('/api/v1/execute/async', {
         payload,
     });
