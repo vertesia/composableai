@@ -15,6 +15,7 @@ export interface HeaderProps {
     onClose?: () => void;
     isModal: boolean;
     agentRunId: string;
+    workflowRunId: string;
     viewMode: AgentConversationViewMode;
     onViewModeChange: (mode: AgentConversationViewMode) => void;
     showPlanPanel: boolean;
@@ -22,7 +23,7 @@ export interface HeaderProps {
     showPlanButton?: boolean;
     onTogglePlanPanel: () => void;
     onDownload?: () => void;
-    onCopyRunId?: () => void;
+    // onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
     /** Called to show run details/internals modal */
@@ -43,6 +44,7 @@ export default function Header({
     onClose,
     isModal,
     agentRunId,
+    workflowRunId,
     viewMode,
     onViewModeChange,
     showPlanPanel,
@@ -50,7 +52,7 @@ export default function Header({
     showPlanButton = true,
     onTogglePlanPanel,
     onDownload,
-    onCopyRunId,
+    // onCopyRunId,
     resetWorkflow,
     onExportPdf,
     onShowDetails,
@@ -69,7 +71,7 @@ export default function Header({
                         <span className="font-medium">{title}</span>
                     </div>
                     <span className="text-xs text-muted ml-1 flex items-center gap-1.5">
-                        (Run ID: {agentRunId})
+                        (Agent Run ID: {agentRunId})
                         {/* Streaming chunk indicator - gray when idle, purple when receiving */}
                         <span className={cn(
                             "w-2 h-2 rounded-full transition-colors duration-200",
@@ -82,10 +84,10 @@ export default function Header({
                 <div className="flex justify-end items-center space-x-2 ml-auto">
                     {/* View Mode Toggle */}
                     <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
-                        <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("stacked")}>
+                        <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("stacked")}>
                             {t('agent.details')}
                         </Button>
-                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" className="rounded-r-md" onClick={() => onViewModeChange("sliding")}>
+                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("sliding")}>
                             {t('agent.summary')}
                         </Button>
                     </div>
@@ -112,11 +114,11 @@ export default function Header({
                     {/* More actions */}
                     <MoreDropdown
                         agentRunId={agentRunId}
+                        workflowRunId={workflowRunId}
                         isModal={isModal}
                         isTerminal={isTerminal}
                         onClose={onClose}
                         onDownload={onDownload}
-                        onCopyRunId={onCopyRunId}
                         resetWorkflow={resetWorkflow}
                         onExportPdf={onExportPdf}
                         onShowDetails={onShowDetails}
@@ -136,11 +138,11 @@ export default function Header({
 
 function MoreDropdown({
     agentRunId,
+    workflowRunId,
     isModal,
     isTerminal,
     onClose,
     onDownload,
-    onCopyRunId,
     resetWorkflow,
     onExportPdf,
     onShowDetails,
@@ -148,6 +150,7 @@ function MoreDropdown({
     onFork,
 }: {
     agentRunId: string;
+    workflowRunId: string;
     isModal: boolean;
     isTerminal: boolean;
     onClose?: () => void;
@@ -229,6 +232,24 @@ function MoreDropdown({
         return url;
     }
 
+    const copyAgentRunId = () => {
+        navigator.clipboard.writeText(agentRunId);
+        toast({
+            status: "success",
+            title: t('agent.agentRunIdCopied'),
+            duration: 2000,
+        });
+    };
+
+     const copyWorkflowRunId = () => {
+        navigator.clipboard.writeText(workflowRunId);
+        toast({
+            status: "success",
+            title: t('agent.workflowRunIdCopied'),
+            duration: 2000,
+        });
+     };
+
     return (
         <Popover hover>
             <PopoverTrigger>
@@ -252,19 +273,11 @@ function MoreDropdown({
                                             </CommandItem>
                                         )
                                     }
-                                    <CommandItem className="text-xs" onSelect={() => {
-                                        if (onCopyRunId) {
-                                            onCopyRunId();
-                                        } else {
-                                            navigator.clipboard.writeText(agentRunId);
-                                            toast({
-                                                status: "success",
-                                                title: t('agent.runIdCopied'),
-                                                duration: 2000,
-                                            });
-                                        }
-                                    }}>
-                                        <CopyIcon className="size-3.5 mr-2 text-muted" /> {t('agent.copyRunId')}
+                                    <CommandItem className="text-xs" onSelect={copyAgentRunId}>
+                                        <CopyIcon className="size-3.5 mr-2 text-muted" /> {t('agent.copyAgentRunId')}
+                                    </CommandItem>
+                                    <CommandItem className="text-xs" onSelect={copyWorkflowRunId}>
+                                        <CopyIcon className="size-3.5 mr-2 text-muted" /> {t('agent.copyWorkflowRunId')}
                                     </CommandItem>
                                     {onShowDetails && (
                                         <CommandItem className="text-xs" onSelect={onShowDetails}>
