@@ -168,6 +168,9 @@ export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties 
 
     /** Enable debug mode for verbose logging */
     debug_mode?: boolean;
+
+    /** Principal ref of the user who initiated the run (for server-to-server forwarding) */
+    started_by?: string;
 }
 
 /**
