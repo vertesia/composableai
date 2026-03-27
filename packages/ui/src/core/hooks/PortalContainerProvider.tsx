@@ -1,6 +1,6 @@
 import React from "react";
 
-const PortalContainerContext = React.createContext<HTMLElement | undefined>(undefined);
+export const PortalContainerContext = React.createContext<HTMLElement | undefined>(undefined);
 
 function findOrCreatePortalContainer(root: ShadowRoot | Document, id = "plugin-portal-container") {
     // Determine the actual parent element to search and append to
@@ -26,10 +26,18 @@ export function PortalContainerProvider({
     children: React.ReactNode;
     id?: string;
 }) {
+    const inherited = React.useContext(PortalContainerContext);
     const ref = React.useRef<HTMLDivElement>(null);
-    const [container, setContainer] = React.useState<HTMLElement | null | undefined>(undefined);
+    const [container, setContainer] = React.useState<HTMLElement | null | undefined>(
+        inherited || undefined
+    );
 
     React.useEffect(() => {
+        // If a parent already provides a portal container, inherit it
+        if (inherited) {
+            setContainer(inherited);
+            return;
+        }
         if (ref.current) {
             const root = ref.current.getRootNode();
             if (root instanceof ShadowRoot || root instanceof Document) {
@@ -39,7 +47,7 @@ export function PortalContainerProvider({
                 setContainer(null);
             }
         }
-    }, [id]);
+    }, [id, inherited]);
 
     // If container not discovered yet → render hidden marker only
     if (container === undefined) {
