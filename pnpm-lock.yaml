@@ -843,7 +843,7 @@ importers:
         specifier: ^3.3.2
         version: 3.3.2
       fast-xml-parser:
-        specifier: ^5.3.8
+        specifier: ^5.5.7
         version: 5.5.7
       firebase:
         specifier: ^10.12.2
