@@ -7,6 +7,8 @@ import {
     FindPayload,
     PopulatedExecutionRun,
     RunCreatePayload,
+    ExecutionRunDocRef,
+    RunClonePayload,
     RunListingFilters,
     RunListingQueryOptions,
     RunSearchPayload,
@@ -157,5 +159,13 @@ export class RunsApi extends ApiTopic {
      */
     fork(runId: string): Promise<{ runId: string; workflowId: string }> {
         return this.post(`/${runId}/fork`, {});
+    }
+
+    /**
+     * Clone an existing ExecutionRun for fork workflows.
+     * Creates a new run with the same interaction/config but fresh status.
+     */
+    clone(payload: RunClonePayload): Promise<ExecutionRunDocRef> {
+        return this.post('/clone', { payload });
     }
 }
