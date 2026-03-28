@@ -14,6 +14,10 @@ export interface AppUINavItem {
     icon: string;
     /** Route path relative to app base */
     route: string;
+    /** Nested sub-items displayed within this item's collapsible section */
+    children?: AppUINavItem[];
+    /** When true, this item appears as an independent entry in the sidebar (outside its parent app group) */
+    topLevel?: boolean;
 }
 
 export interface AppUIConfig {
@@ -535,34 +539,12 @@ export interface OAuthMetadataResponse {
 // ============================================================================
 
 /**
- * App navigation item display overrides.
- * Allows customizing individual nav items for an app installation within the CompositeApp shell.
- */
-export interface CompositeAppNavItemOverride {
-    /** Used as identifier to match the nav item to override -- does not change route path */
-    route: string;
-    /** Hide this nav item from the sidebar */
-    hidden?: boolean;
-    /** Override the displayed nav item label */
-    label?: string;
-    /** Override the displayed nav item icon (Lucide icon name or SVG content string) */
-    icon?: string;
-    //TODO: Set permissions for routes
-}
-
-/**
  * Configuration entry for an individual app in the CompositeApp shell.
- * References an app installation by name and allows customizing its appearance.
+ * References an app installation by name.
  */
 export interface CompositeAppEntry {
     /** App installation name (must match an installed app) */
     appName: string;
-    /** Override the label displayed for the app */
-    labelOverride?: string;
-    /** Override the icon displayed for the app (Lucide icon name or SVG content string) */
-    iconOverride?: string;
-    /** Overrides for navigation items provided by the app */
-    navigationOverrides?: CompositeAppNavItemOverride[];
 }
 
 /**
@@ -594,10 +576,40 @@ export interface CompositeAppMessageOverrides {
  * Switcher visibility overrides for the CompositeApp header.
  */
 export interface CompositeAppSwitchersOverrides {
-    /** Whether to show the organization switcher (defaults to true) */
-    showOrganization?: boolean;
-    /** Whether to show the project switcher (defaults to true) */
-    showProject?: boolean;
+    /** Whether to hide the organization switcher (defaults to false) */
+    hideOrganization?: boolean;
+    /** Whether to hide the project switcher (defaults to false) */
+    hideProject?: boolean;
+}
+
+/**
+ * Header button visibility overrides for the CompositeApp header.
+ */
+export interface CompositeAppHeaderOverrides {
+    /** Whether to hide the App Portal button (defaults to false) */
+    hideAppPortal?: boolean;
+    /** Whether to hide the Docs button (defaults to false) */
+    hideDocs?: boolean;
+    /** Whether to hide the Help button (defaults to false) */
+    hideHelp?: boolean;
+}
+
+/**
+ * User menu overrides for the CompositeApp.
+ */
+export interface CompositeAppUserMenuOverrides {
+    /** Whether to hide the User Menu (defaults to false) */
+    hidden?: boolean;
+}
+
+/**
+ * Sidebar display overrides for the CompositeApp.
+ */
+export interface CompositeAppSidebarOverrides {
+    /** Whether to hide section title headers in the sidebar (defaults to false) */
+    hideSectionHeaders?: boolean;
+    /** Whether menu items auto-collapse when navigating (accordion behavior). When false, all items stay expanded. Defaults to true. */
+    autoCollapse?: boolean;
 }
 
 /**
@@ -617,6 +629,54 @@ export interface CompositeAppCardOverrides {
     icon?: string;
     /** Override the card color (e.g., "blue", "red", "purple") */
     color?: string;
+}
+
+// ============================================================================
+// Sidebar Menu Types
+// ============================================================================
+
+/**
+ * A navigable item in the sidebar menu.
+ * An "app" is just a nav-item with `appName` + `route: "/"` that has children.
+ * Nav-items carry their own `appName` for routing, independent of position in the tree.
+ */
+export interface CompositeAppMenuNavItem {
+    /** Stable unique identifier */
+    id: string;
+    /** Display label shown in the sidebar */
+    label: string;
+    /** Lucide icon name or SVG content string */
+    icon?: string;
+    /** Which installed app this item routes to */
+    appName?: string;
+    /** Route path within the app (e.g. "/" or "/dashboard") */
+    route?: string;
+    /** When true, this item is hidden from the sidebar */
+    hidden?: boolean;
+    /** Ordered child nav-items */
+    children?: CompositeAppMenuNavItem[];
+}
+
+/**
+ * A top-level section heading in the sidebar menu.
+ * Sections are always at root level and contain nav-items.
+ */
+export interface CompositeAppMenuSection {
+    /** Stable unique identifier */
+    id: string;
+    /** Section heading label */
+    label: string;
+    /** When true, this section and its items are hidden from the sidebar */
+    hidden?: boolean;
+    /** Ordered nav-items within this section */
+    items: CompositeAppMenuNavItem[];
+}
+
+export interface CompositeAppHomePlugin {
+    /** The app name to use as the home page */
+    appName: string;
+    /** Optional route within the app (e.g. "/dashboard"). Defaults to "/" */
+    appRoute?: string;
 }
 
 /**
@@ -640,8 +700,22 @@ export interface CompositeAppConfig {
     message?: CompositeAppMessageOverrides;
     /** Optional switcher visibility overrides */
     switchers?: CompositeAppSwitchersOverrides;
-    /** List of apps to include in the CompositeApp */
+    /** Optional sidebar display overrides */
+    sidebar?: CompositeAppSidebarOverrides;
+    /** Optional header button visibility overrides */
+    header?: CompositeAppHeaderOverrides;
+    /** Optional user menu overrides */
+    userMenu?: CompositeAppUserMenuOverrides;
+    /** Optional home page override. When set, redirects "/" to the specified app route instead of the dashboard. Send null to unset. */
+    homePlugin?: CompositeAppHomePlugin | null;
+    /** List of apps to include in the CompositeApp (used for installation tracking and fallback sidebar) */
     apps: CompositeAppEntry[];
+    /**
+     * Optional sidebar menu. When present, the sidebar renders from this
+     * instead of the apps-based pipeline. Top-level array is sections;
+     * each section contains nav-items.
+     */
+    menu?: CompositeAppMenuSection[];
 }
 
 export type CompositeAppConfigPayload = Partial<Omit<CompositeAppConfig, 'id' | 'project'>>;
