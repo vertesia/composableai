@@ -576,38 +576,38 @@ export interface CompositeAppMessageOverrides {
  * Switcher visibility overrides for the CompositeApp header.
  */
 export interface CompositeAppSwitchersOverrides {
-    /** Whether to show the organization switcher (defaults to true) */
-    showOrganization?: boolean;
-    /** Whether to show the project switcher (defaults to true) */
-    showProject?: boolean;
+    /** Whether to hide the organization switcher (defaults to false) */
+    hideOrganization?: boolean;
+    /** Whether to hide the project switcher (defaults to false) */
+    hideProject?: boolean;
 }
 
 /**
  * Header button visibility overrides for the CompositeApp header.
  */
 export interface CompositeAppHeaderOverrides {
-    /** Whether to show the App Portal button (defaults to true) */
-    showAppPortal?: boolean;
-    /** Whether to show the Docs button (defaults to true) */
-    showDocs?: boolean;
-    /** Whether to show the Help button (defaults to true) */
-    showHelp?: boolean;
+    /** Whether to hide the App Portal button (defaults to false) */
+    hideAppPortal?: boolean;
+    /** Whether to hide the Docs button (defaults to false) */
+    hideDocs?: boolean;
+    /** Whether to hide the Help button (defaults to false) */
+    hideHelp?: boolean;
 }
 
 /**
  * User menu overrides for the CompositeApp.
  */
 export interface CompositeAppUserMenuOverrides {
-    /** Whether to show the User Menu (defaults to true) */
-    visible?: boolean;
+    /** Whether to hide the User Menu (defaults to false) */
+    hidden?: boolean;
 }
 
 /**
  * Sidebar display overrides for the CompositeApp.
  */
 export interface CompositeAppSidebarOverrides {
-    /** Whether to show section title headers in the sidebar (defaults to true) */
-    showSectionHeaders?: boolean;
+    /** Whether to hide section title headers in the sidebar (defaults to false) */
+    hideSectionHeaders?: boolean;
     /** Whether menu items auto-collapse when navigating (accordion behavior). When false, all items stay expanded. Defaults to true. */
     autoCollapse?: boolean;
 }
