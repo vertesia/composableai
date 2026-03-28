@@ -592,8 +592,14 @@ export interface CompositeAppHeaderOverrides {
     showDocs?: boolean;
     /** Whether to show the Help button (defaults to true) */
     showHelp?: boolean;
+}
+
+/**
+ * User menu overrides for the CompositeApp.
+ */
+export interface CompositeAppUserMenuOverrides {
     /** Whether to show the User Menu (defaults to true) */
-    showUserMenu?: boolean;
+    visible?: boolean;
 }
 
 /**
@@ -698,6 +704,8 @@ export interface CompositeAppConfig {
     sidebar?: CompositeAppSidebarOverrides;
     /** Optional header button visibility overrides */
     header?: CompositeAppHeaderOverrides;
+    /** Optional user menu overrides */
+    userMenu?: CompositeAppUserMenuOverrides;
     /** Optional home page override. When set, redirects "/" to the specified app route instead of the dashboard. Send null to unset. */
     homePlugin?: CompositeAppHomePlugin | null;
     /** List of apps to include in the CompositeApp (used for installation tracking and fallback sidebar) */
