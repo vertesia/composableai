@@ -74,7 +74,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:text-destructive not-data-[variant=destructive]:focus:**:text-accent-foreground gap-1.5 rounded-md px-1.5 py-1 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 group/dropdown-menu-item relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "hover:bg-muted focus:bg-muted data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:text-destructive gap-2 rounded-md px-1.5 py-1 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 group/dropdown-menu-item relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       {...props}
@@ -96,7 +96,7 @@ function DropdownMenuCheckboxItem({
       data-slot="dropdown-menu-checkbox-item"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus:bg-muted focus:text-muted focus:**:text-muted gap-2 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       checked={checked}
@@ -140,7 +140,7 @@ function DropdownMenuRadioItem({
       data-slot="dropdown-menu-radio-item"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus:bg-muted focus:text-muted focus:**:text-muted gap-2 rounded-md py-1 pr-8 pl-1.5 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       {...props}
@@ -170,7 +170,7 @@ function DropdownMenuLabel({
     <DropdownMenuPrimitive.Label
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cn("text-muted-foreground px-1.5 py-1 text-xs font-medium data-inset:pl-7", className)}
+      className={cn("text-muted px-1.5 py-1 text-xs font-medium data-inset:pl-7", className)}
       {...props}
     />
   )
@@ -196,7 +196,7 @@ function DropdownMenuShortcut({
   return (
     <span
       data-slot="dropdown-menu-shortcut"
-      className={cn("text-muted-foreground group-focus/dropdown-menu-item:text-accent-foreground ml-auto text-xs tracking-widest", className)}
+      className={cn("text-muted group-focus/dropdown-menu-item:text-muted ml-auto text-xs tracking-widest", className)}
       {...props}
     />
   )
@@ -221,7 +221,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground gap-1.5 rounded-md px-1.5 py-1 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 flex cursor-default items-center outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus:bg-muted focus:text-muted data-open:bg-muted data-open:text-muted not-data-[variant=destructive]:focus:**:text-muted gap-2 rounded-md px-1.5 py-1 text-sm data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4 flex cursor-default items-center outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       {...props}
@@ -287,18 +287,34 @@ export function Dropdown({ trigger, children, align = 'right' }: DropdownProps) 
   );
 }
 
+interface MenuGroupProps {
+  children: React.ReactNode | React.ReactNode[];
+  label?: string;
+}
+export function MenuGroup({ children, label }: MenuGroupProps) {
+  return (
+    <DropdownMenuGroup>
+      {label && <DropdownMenuLabel>{label}</DropdownMenuLabel>}
+      {children}
+    </DropdownMenuGroup>
+  );
+}
+
 interface MenuItemProps {
   children: React.ReactNode | React.ReactNode[];
   onClick?: (ev: React.MouseEvent) => void;
   href?: string;
   closeOnClick?: boolean;
   isDisabled?: boolean;
+  variant?: "default" | "destructive";
+  className?: string;
 }
-export function MenuItem({ children, href, onClick, closeOnClick = true, isDisabled = false }: MenuItemProps) {
+export function MenuItem({ children, href, onClick, closeOnClick = true, isDisabled = false, variant = "default", className }: MenuItemProps) {
   return (
     <DropdownMenuItem
-      className="hover:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-nowrap"
+      className={cn("data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-nowrap", className)}
       disabled={isDisabled}
+      variant={variant}
       onSelect={(e) => { if (!closeOnClick) e.preventDefault(); }}
       onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
       asChild={!!href}
