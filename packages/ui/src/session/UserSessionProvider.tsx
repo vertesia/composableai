@@ -6,7 +6,7 @@ import { getFirebaseAuth } from "./auth/firebase";
 import { useAuthState } from "./auth/useAuthState";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from "./UserSession";
 
-const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app"];
+const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app", ".dev1.vertesia.io"];
 const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
 
 export function shouldRedirectToCentralAuth() {
