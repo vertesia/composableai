@@ -333,6 +333,16 @@ export interface IndexingStatusResponse {
         elapsed_seconds: number;
         /** Estimated seconds remaining (null if unknown) */
         estimated_seconds_remaining: number | null;
+        /** Total bytes sent to ES */
+        total_bytes?: number;
+        /** Total ES bulk flushes */
+        bulk_flushes?: number;
+        /** Average bytes per ES bulk flush */
+        avg_flush_bytes?: number;
+        /** Configured batch size */
+        batch_size?: number;
+        /** Configured parallel batch count */
+        parallel_batch_count?: number;
     };
 }
 
@@ -413,6 +423,16 @@ export interface IndexBatchResult {
     processed: number;
     next_cursor: string | null;
     done: boolean;
+    /** Number of ES bulk flushes performed */
+    bulk_flushes?: number;
+    /** Total bytes sent to ES */
+    total_bytes?: number;
+    /** Average bytes per ES bulk flush */
+    avg_flush_bytes?: number;
+    /** Duration of the batch in milliseconds */
+    duration_ms?: number;
+    /** Docs per second for this batch */
+    docs_per_second?: number;
 }
 
 /**
