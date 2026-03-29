@@ -10,11 +10,6 @@ const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app"];
 const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
 
 export function shouldRedirectToCentralAuth() {
-    // Authentication is not supported in Docker environment.
-    // See https://github.com/vertesia/studio/wiki/Composable-UI-Hosting-Options
-    if (Env.isDocker) {
-        return true;
-    }
     if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
         return true;
     }
