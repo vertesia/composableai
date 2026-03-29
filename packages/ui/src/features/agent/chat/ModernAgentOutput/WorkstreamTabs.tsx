@@ -142,8 +142,6 @@ export function extractWorkstreams(
     workstreams.set("main", t('agent.main'));
   }
 
-  console.log("Final workstreams map:", workstreams);
-
   return workstreams;
 }
 
