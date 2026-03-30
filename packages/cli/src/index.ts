@@ -10,7 +10,7 @@ import { getPublishMemoryAction } from './memory/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
 import { createProfile, deleteProfile, listProfiles, showActiveAuthToken, showProfile, tryRefreshToken, updateCurrentProfile, updateProfile, useProfile } from './profiles/commands.js';
-import { getConfigFile } from './profiles/index.js';
+import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/index.js';
 import { listProjects } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
@@ -79,7 +79,7 @@ program.command("datagen <interaction>")
 program.command("codegen [interactionName]")
     .description("Generate code given an interaction name of for all the interactions in the project if no interaction is specified.")
     .option('--versions [versions]', 'A comma separated list of version selectors to include. A version selector is either a version number or "draft". The default is "draft"', "draft")
-    .option('-a, -all', 'When used, all the interaction versions will be exported')
+    .option('-a, --all', 'When used, all the interaction versions will be exported')
     .option('-d, --dir [file]', 'The output directory if any. Default to "./interactions" if not specified.', './interactions')
     .option('-x, --export <version>', 'The version to export from index.ts. If not specified, the latest version will be exported or if no version is available, the draft version will be exported')
     .action((interactionName: string | undefined, options) => runExport(program, interactionName, options));
@@ -149,7 +149,8 @@ profilesRoot.command('use [name]')
     });
 profilesRoot.command('add [name]')
     .alias('create')
-    .option("-t, --target <env>", "The target environment for the profile. Possible values are: local, dev, staging, prod or an URL for custom servers.")
+    .option("-t, --target <env>", "The target environment for the profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.")
+    .option("-r, --region <region>", `Deployment region: ${AVAILABLE_REGIONS.join(', ')}. Defaults to ${DEFAULT_REGION}. Only applies to preview and prod targets.`)
     .option("-k, --apikey <key>", "The API key to use for the profile")
     .option("-p, --project <project>", "The project ID to use for the profile")
     .option("-a, --account <account>", "The account ID to use for the profile")
