@@ -6,6 +6,7 @@ import { AuthTokenPayload } from "@vertesia/common";
 export interface EnvProps {
     name: string; // the app name
     version: string,
+    commitTimestamp?: string, // ISO timestamp of the deployed commit
     sdkVersion?: string, // the @vertesia/ui package version
     isLocalDev: boolean,
     isDocker: boolean,
@@ -18,6 +19,7 @@ export interface EnvProps {
     firebase?: {
         apiKey: string,
         authDomain: string,
+        authorizedDomains?: string[],
         projectId: string,
         appId?: string,
         providerType?: string,
@@ -56,6 +58,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
         return this.prop("version");
     }
 
+    get commitTimestamp() {
+        return this._props?.commitTimestamp;
+    }
+
     get sdkVersion() {
         return this._props?.sdkVersion;
     }
@@ -72,16 +78,8 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
         return this.type === "production";
     }
 
-    get isStable() {
-        return this.type === "production" || this.type === "preview" || this.type === "disaster-recovery";
-    }
-
     get isDev() {
-        return !this.isStable;
-    }
-
-    get isPreview() {
-        return this.type === "preview";
+        return !this.isProd;
     }
 
     get isLocalDev() {
