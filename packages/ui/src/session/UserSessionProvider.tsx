@@ -9,7 +9,6 @@ import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, User
 
 const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
 
-
 interface UserSessionProviderProps {
     children: ReactNode | ReactNode[];
 }
