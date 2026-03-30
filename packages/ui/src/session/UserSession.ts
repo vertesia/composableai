@@ -6,6 +6,7 @@ import { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 
 import { getComposableToken } from './auth/composable';
+import { shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
@@ -114,11 +115,7 @@ class UserSession {
     logout() {
         console.log('Logging out');
 
-        // Check if we should use central auth for logout
-        const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app"];
-        const shouldUseCentralAuth = Env.isDocker || devDomains.some((domain) => window.location.hostname.endsWith(domain));
-
-        if (shouldUseCentralAuth) {
+        if (shouldRedirectToCentralAuth()) {
             // Redirect to central auth for logout
             // Central auth will handle Firebase logout
             console.log('Using central auth logout');
