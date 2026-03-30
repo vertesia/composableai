@@ -19,6 +19,7 @@ export interface EnvProps {
     firebase?: {
         apiKey: string,
         authDomain: string,
+        authorizedDomains?: string[],
         projectId: string,
         appId?: string,
         providerType?: string,
