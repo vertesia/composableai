@@ -1,26 +1,20 @@
-const firebaseAuthDomains = new Set([
-    "cloud.vertesia.io",
-    "preview.cloud.vertesia.io",
-]);
-
-const firebaseAuthDomainPatterns = [
-    /^cloud\.[a-z0-9-]+\.vertesia\.io$/,
-    /^preview\.[a-z0-9-]+\.vertesia\.io$/,
-    /^[a-z0-9-]+\.cloud\.[a-z0-9-]+\.vertesia\.io$/,
-];
+import { Env } from "@vertesia/ui/env";
 
 const localhostDomains = new Set(["localhost", "127.0.0.1"]);
 
+function getAuthorizedDomains() {
+    const domains = Env.firebase?.authorizedDomains ?? [];
+    return new Set(domains.map((domain) => domain.trim().toLowerCase()).filter(Boolean));
+}
+
 export function shouldUseFirebaseAuth(hostname = window.location.hostname) {
-    if (localhostDomains.has(hostname)) {
+    const normalizedHostname = hostname.trim().toLowerCase();
+
+    if (localhostDomains.has(normalizedHostname)) {
         return false;
     }
 
-    if (firebaseAuthDomains.has(hostname)) {
-        return true;
-    }
-
-    return firebaseAuthDomainPatterns.some((pattern) => pattern.test(hostname));
+    return getAuthorizedDomains().has(normalizedHostname);
 }
 
 export function shouldRedirectToCentralAuth(hostname = window.location.hostname) {
