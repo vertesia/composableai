@@ -1,6 +1,6 @@
 {
   "name": "@vertesia/create-plugin",
-  "version": "1.1.0-dev.20260327.125707Z",
+  "version": "1.0.0",
   "description": "CLI to create Vertesia plugins: UI plugins or tool servers",
   "type": "module",
   "bin": {
