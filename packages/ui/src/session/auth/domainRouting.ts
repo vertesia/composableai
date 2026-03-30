@@ -8,7 +8,12 @@ function getAuthorizedDomainsFromEnv() {
 }
 
 function getAuthorizedDomains() {
-    const domains = Env.firebase?.authorizedDomains ?? getAuthorizedDomainsFromEnv();
+    let domains: string[];
+    if (Env.firebase?.authorizedDomains) {
+        domains = Env.firebase.authorizedDomains;
+    } else {
+        domains = getAuthorizedDomainsFromEnv();
+    }
     return new Set(domains.map((domain: string) => domain.trim().toLowerCase()).filter(Boolean));
 }
 
