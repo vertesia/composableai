@@ -90,6 +90,7 @@ export interface RunSearchQuery extends SimpleSearchQuery {
     finish_reason?: string;
     created_by?: string;
     workflow_run_ids?: string[];
+    workflow_ids?: string[];
     run_ids?: string[];
 }
 

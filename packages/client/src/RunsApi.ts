@@ -7,6 +7,8 @@ import {
     FindPayload,
     PopulatedExecutionRun,
     RunCreatePayload,
+    ExecutionRunDocRef,
+    RunClonePayload,
     RunListingFilters,
     RunListingQueryOptions,
     RunSearchPayload,
@@ -143,19 +145,10 @@ export class RunsApi extends ApiTopic {
     }
 
     /**
-     * Restart a failed/terminated conversation workflow.
-     * Loads conversation history from the old run and starts a new workflow
-     * running the latest code.
+     * Clone an existing ExecutionRun for fork workflows.
+     * Creates a new run with the same interaction/config but fresh status.
      */
-    restart(runId: string): Promise<{ runId: string; workflowId: string }> {
-        return this.post(`/${runId}/restart`, {});
-    }
-
-    /**
-     * Fork a conversation workflow — works even if the original is still running.
-     * Creates a new workflow with the conversation history from the source run.
-     */
-    fork(runId: string): Promise<{ runId: string; workflowId: string }> {
-        return this.post(`/${runId}/fork`, {});
+    clone(payload: RunClonePayload): Promise<ExecutionRunDocRef> {
+        return this.post('/clone', { payload });
     }
 }
