@@ -1,7 +1,7 @@
 import colors from 'ansi-colors';
 import enquirer from "enquirer";
 import jwt from 'jsonwebtoken';
-import { config, getConfigUrl, getServerUrls, shouldRefreshProfileToken } from "./index.js";
+import { AVAILABLE_REGIONS, DEFAULT_REGION, Region, config, getConfigUrl, getServerUrls, shouldRefreshProfileToken } from "./index.js";
 import { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
 
@@ -79,6 +79,7 @@ export function deleteProfile(name: string) {
 
 interface CreateProfileOptions {
     target?: string,
+    region?: string,
     apikey?: string,
     project?: string;
     account?: string;
@@ -106,8 +107,8 @@ export async function createProfile(name?: string, options: CreateProfileOptions
         });
     }
     if (!options.target) {
-        // only show local and staging in dev mode
-        const choices = config.isDevMode ? ['local', 'staging', 'preview', 'prod', 'custom'] : ['preview', 'prod'];
+        // only show dev environments in dev mode
+        const choices = config.isDevMode ? ['local', 'dev-main', 'dev-preview', 'preview', 'prod', 'custom'] : ['preview', 'prod'];
         questions.push({
             type: 'select',
             name: 'target',
@@ -150,6 +151,20 @@ export async function createProfile(name?: string, options: CreateProfileOptions
         target = customResponse.url.trim();
     }
 
+    // Prompt for region when target requires it (preview/prod only)
+    let region: Region = (options.region as Region) ?? DEFAULT_REGION;
+    const needsRegionPrompt = !options.region && (target === 'preview' || target === 'prod');
+    if (needsRegionPrompt) {
+        const regionResponse: any = await prompt({
+            type: 'select',
+            name: 'region',
+            message: 'Deployment region',
+            choices: AVAILABLE_REGIONS,
+            initial: AVAILABLE_REGIONS[0],
+        } as any);
+        region = regionResponse.region as Region;
+    }
+
     if (options.apikey) {
         if (!options.account || !options.project) {
             console.error("When using --apikey you must provide the project and account IDs");
@@ -159,13 +174,14 @@ export async function createProfile(name?: string, options: CreateProfileOptions
             account: options.account,
             project: options.project,
             name,
-            config_url: getConfigUrl(target!),
+            config_url: getConfigUrl(target!, region),
             apikey: options.apikey,
-            ...getServerUrls(target!),
+            region,
+            ...getServerUrls(target!, region),
         });
         config.use(name!).save();
     } else {
-        config.createProfile(name!, target!).start(options.onResult);
+        config.createProfile(name!, target!, region).start(options.onResult);
     }
 
     return name!;

@@ -125,6 +125,14 @@ export function useRunsFilterGroups(facets: RunsFacetsNavProps['facets']): Filte
     };
     customFilterGroups.push(workflowRunIdFilterGroup);
 
+    const workflowIdFilterGroup = {
+        name: 'workflow_ids',
+        placeholder: 'Workflow ID',
+        type: 'text' as const,
+        multiple: false
+    };
+    customFilterGroups.push(workflowIdFilterGroup);
+
     return customFilterGroups;
 }
 
@@ -160,7 +168,7 @@ export function useRunsFilterHandler(search: SearchInterface) {
                 }
 
                 // Force array format for backend fields that expect arrays
-                if ((filterName === 'run_ids' || filterName === 'workflow_run_ids') && !Array.isArray(filterValue)) {
+                if ((filterName === 'run_ids' || filterName === 'workflow_run_ids' || filterName === 'workflow_ids') && !Array.isArray(filterValue)) {
                     filterValue = [filterValue];
                 }
 

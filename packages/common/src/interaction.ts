@@ -761,6 +761,18 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     restart_from_workflow_run_id?: string;
 
     /**
+     * The Temporal firstExecutionRunId of the original workflow being restarted/forked.
+     * Used by loadConversationForRestart to look up the original ExecutionRun
+     * so that token accumulation and status updates target a valid run.
+     */
+    source_first_workflow_run_id?: string;
+
+    /**
+     * When true, indicates this is a fork (new ExecutionRun) rather than a restart (reuse original).
+     */
+    is_fork?: boolean;
+
+    /**
      * The AgentRun MongoDB _id. Used for artifact storage paths: agents/{agent_run_id}/
      * Flows into ConversationState and down to workstreams.
      * Undefined for legacy workflows started before the AgentRun system.

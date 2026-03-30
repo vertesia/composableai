@@ -2,19 +2,13 @@ import { Env } from "@vertesia/ui/env";
 import { onAuthStateChanged } from "firebase/auth";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { UserNotFoundError, getComposableToken } from "./auth/composable";
+import { shouldRedirectToCentralAuth } from "./auth/domainRouting";
 import { getFirebaseAuth } from "./auth/firebase";
 import { useAuthState } from "./auth/useAuthState";
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, UserSession, UserSessionContext } from "./UserSession";
 
-const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app", ".dev1.vertesia.io"];
 const CENTRAL_AUTH_REDIRECT = "https://internal-auth.vertesia.app/";
 
-export function shouldRedirectToCentralAuth() {
-    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-        return true;
-    }
-    return devDomains.some((domain) => window.location.hostname.endsWith(domain));
-}
 
 interface UserSessionProviderProps {
     children: ReactNode | ReactNode[];
@@ -106,7 +100,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                 });
             return;
         } else {
-            //if on a dev domain and not logged in, redirect to central auth
+            // If the current host is not in the Firebase allowlist, central auth owns sign-in.
             if (!session.isLoggedIn()) {
                 console.log("Auth: not logged in & no token/state");
                 Env.logger.info("Not logged in & no token/state", {
@@ -117,7 +111,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                 });
                 if (shouldRedirectToCentralAuth()) {
                     console.log(
-                        "Auth: on dev domain, redirecting to central auth with selection",
+                        "Auth: host is not in Firebase auth allowlist, redirecting to central auth with selection",
                         selectedAccount,
                         selectedProject,
                     );
@@ -130,8 +124,8 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                     redirectToCentralAuth();
                     return; // Don't register onAuthStateChanged listener when redirecting
                 } else {
-                    console.log("Auth: not on dev domain");
-                    Env.logger.info("Not on dev domain", {
+                    console.log("Auth: host is in Firebase auth allowlist");
+                    Env.logger.info("Host is in Firebase auth allowlist", {
                         vertesia: {
                             account_id: selectedAccount,
                             project_id: selectedProject,
