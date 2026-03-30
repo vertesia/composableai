@@ -116,7 +116,7 @@ class UserSession {
 
         // Check if we should use central auth for logout
         const devDomains = [".composable.sh", ".vertesia.dev", "vertesia.app"];
-        const shouldUseCentralAuth = Env.isDocker || devDomains.some((domain) => window.location.hostname.endsWith(domain));
+        const shouldUseCentralAuth = devDomains.some((domain) => window.location.hostname.endsWith(domain));
 
         if (shouldUseCentralAuth) {
             // Redirect to central auth for logout
