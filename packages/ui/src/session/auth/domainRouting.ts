@@ -3,7 +3,7 @@ import { Env } from "@vertesia/ui/env";
 const localhostDomains = new Set(["localhost", "127.0.0.1"]);
 
 function getAuthorizedDomainsFromEnv() {
-    const rawDomains = import.meta.env.VITE_FIREBASE_AUTHORIZED_DOMAINS;
+    const rawDomains = import.meta.env?.VITE_FIREBASE_AUTHORIZED_DOMAINS;
     return rawDomains ? rawDomains.split(",") : [];
 }
 
