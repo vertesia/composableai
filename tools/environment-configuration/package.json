@@ -24,14 +24,14 @@
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.3.0",
     "prettier": "3.5.3",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
     "@aws-sdk/client-iam": "^3.948.0",
-    "@vertesia/client": "0.82.1",
+    "@vertesia/client": "1.0.0",
     "commander": "^14.0.2",
-    "dotenv": "^16.6.1",
+    "dotenv": "^17.3.1",
     "google-auth-library": "^10.5.0"
   }
 }
