@@ -75,7 +75,7 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
     }
 
     get isProd() {
-        return this.type === "production";
+        return this.type === "production" || this.type === "preview";
     }
 
     get isDev() {
