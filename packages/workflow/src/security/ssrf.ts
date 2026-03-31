@@ -21,7 +21,9 @@ export class URLValidationError extends Error {
  */
 export async function safeFetch(url: string, init: RequestInit = {}): Promise<Response> {
     const response = await fetch(url, { ...init, redirect: 'manual' });
-    if (response.status >= 300 && response.status < 400) {
+    // Only block actual redirects (those with a Location header). 304 Not Modified is a 3xx
+    // but carries no Location and must not be treated as a redirect.
+    if (response.headers.has('location')) {
         throw new URLValidationError(
             `Request to ${url} returned a redirect (${response.status}), which is not allowed`,
         );
