@@ -91,7 +91,7 @@ function ServiceAccountAvatar({ accountId, showTitle = false, size = "md" }: Ser
         <UserPopoverPanel title={t('user.serviceAccount')} description={description}>
             <div className="flex flex-row items-center gap-2">
                 <Avatar src="/cloud.svg" name="SA" color="bg-amber-500" className="px-[5px] text-white" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2 truncate">{t('user.serviceAccount')} : ~_accountId.slice(-6)}</div>}
+                {showTitle && <div className="text-sm font-semibold pl-2 truncate">{t('user.serviceAccount')} : ~{_accountId.slice(-6)}</div>}
             </div>
         </UserPopoverPanel>
     );
