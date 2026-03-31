@@ -94,11 +94,11 @@ describe("escapeFalseLatex", () => {
 
     it("handles interleaved currency and real latex on same line", () => {
         // $ positions: $500M, $sales (open), $ (close latex), $15M
-        // Pass 1 commits $sales = x*e^(y)$ as LaTeX (has ^( superscript)
+        // Pass 1 commits $sales = x*e^{y}$ as LaTeX (has braces)
         // Pass 2: $500M has committed pair between it and next unpaired → escape
         //         $15M is lone (no closing $) → remark-math can't pair it → safe as-is
-        const input = "The report for $500M shows that (given a formula $sales = x*e^(y)$) we were off by nearly $15M in 2025.";
-        const expected = "The report for \\$500M shows that (given a formula $sales = x*e^(y)$) we were off by nearly $15M in 2025.";
+        const input = "The report for $500M shows that (given a formula $sales = x*e^{y}$) we were off by nearly $15M in 2025.";
+        const expected = "The report for \\$500M shows that (given a formula $sales = x*e^{y}$) we were off by nearly $15M in 2025.";
         expect(escapeFalseLatex(input)).toBe(expected);
     });
 
@@ -133,11 +133,11 @@ describe("escapeFalseLatex", () => {
     });
 
     it("handles complex mixed input with inline latex, display math, and multiple currency patterns", () => {
-        const input = "The report for $500M shows that (given a formula $sales = x*e^(y)$) we were off by nearly $15M in 2025. Final sales showed that true estimates should have been closer to $515M in raw $ ammounts, +/- $5M to $ 7.5M. This is derived from the overall equation $$variance = x*v/2*e^(y-y`)$$";
+        const input = "The report for $500M shows that (given a formula $sales = x*e^{y}$) we were off by nearly $15M in 2025. Final sales showed that true estimates should have been closer to $515M in raw $ ammounts, +/- $5M to $ 7.5M. This is derived from the overall equation $$variance = x*v/2*e^(y-y`)$$";
         const result = escapeFalseLatex(input);
 
         // Inline LaTeX preserved
-        expect(result).toContain("$sales = x*e^(y)$");
+        expect(result).toContain("$sales = x*e^{y}$");
         // Display math preserved
         expect(result).toContain("$$variance = x*v/2*e^(y-y`)$$");
         // Currency $ escaped where they would form false-latex pairs

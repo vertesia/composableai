@@ -7,7 +7,7 @@ const INLINE_CODE_REGEX = /`[^`\n]*`/g;
 function isDefinitelyLatex(content: string): boolean {
     if (/\\[a-zA-Z]/.test(content)) return true;   // \command (\frac, \alpha, etc.)
     if (/[{}]/.test(content)) return true;          // brace groups
-    if (/[_^][\w{(]/.test(content)) return true;    // sub/superscript
+    if (/[_^][\w{]/.test(content)) return true;     // sub/superscript
     return false;
 }
 
