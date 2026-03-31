@@ -1,7 +1,7 @@
 import { MockActivityEnvironment } from "@temporalio/testing";
 import { ContentEventName, DSLActivityExecutionPayload } from "@vertesia/common";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { resolveRemoteActivities, ResolveRemoteActivitiesParams } from "./resolveRemoteActivities.js";
+import { resolveRemoteActivities, type RemoteActivityMap, ResolveRemoteActivitiesParams } from "./resolveRemoteActivities.js";
 
 vi.stubGlobal("fetch", vi.fn());
 
@@ -11,6 +11,7 @@ vi.mock("../utils/client.js", () => ({
     getVertesiaClient: vi.fn().mockReturnValue({
         apps: {
             getInstalledApps: (...args: any[]) => mockGetInstalledApps(...args),
+            validateUrl: vi.fn().mockResolvedValue({ valid: true }),
         },
     }),
 }));
@@ -46,7 +47,7 @@ describe("resolveRemoteActivities", () => {
     it("returns empty map when no apps installed", async () => {
         mockGetInstalledApps.mockResolvedValueOnce([]);
 
-        const result = await testEnv.run(resolveRemoteActivities, createPayload());
+        const result: RemoteActivityMap = await testEnv.run(resolveRemoteActivities, createPayload());
         expect(result).toEqual({});
         expect(mockGetInstalledApps).toHaveBeenCalledWith("tools");
     });
@@ -73,7 +74,7 @@ describe("resolveRemoteActivities", () => {
             ),
         );
 
-        const result = await testEnv.run(resolveRemoteActivities, createPayload());
+        const result: RemoteActivityMap = await testEnv.run(resolveRemoteActivities, createPayload());
 
         expect(Object.keys(result)).toHaveLength(2);
         expect(result["app:my-nlp-app:nlp:analyze_sentiment"]).toBeDefined();
@@ -108,7 +109,7 @@ describe("resolveRemoteActivities", () => {
                 new Response(JSON.stringify({ activities: [{ name: "task_b", collection: "main" }] }), { status: 200 }),
             );
 
-        const result = await testEnv.run(resolveRemoteActivities, createPayload());
+        const result: RemoteActivityMap = await testEnv.run(resolveRemoteActivities, createPayload());
 
         expect(Object.keys(result)).toHaveLength(2);
         expect(result["app:app-one:main:task_a"]).toBeDefined();
@@ -125,7 +126,7 @@ describe("resolveRemoteActivities", () => {
             new Response(JSON.stringify({ activities: [] }), { status: 200 }),
         );
 
-        const result = await testEnv.run(resolveRemoteActivities, createPayload());
+        const result: RemoteActivityMap = await testEnv.run(resolveRemoteActivities, createPayload());
         expect(result).toEqual({});
     });
 
@@ -135,7 +136,7 @@ describe("resolveRemoteActivities", () => {
             manifest: { name: "no-endpoint" },
         }]);
 
-        const result = await testEnv.run(resolveRemoteActivities, createPayload());
+        const result: RemoteActivityMap = await testEnv.run(resolveRemoteActivities, createPayload());
         expect(result).toEqual({});
         expect(mockFetch).not.toHaveBeenCalled();
     });
@@ -160,7 +161,7 @@ describe("resolveRemoteActivities", () => {
                 new Response(JSON.stringify({ activities: [{ name: "task", collection: "main" }] }), { status: 200 }),
             );
 
-        const result = await testEnv.run(resolveRemoteActivities, createPayload());
+        const result: RemoteActivityMap = await testEnv.run(resolveRemoteActivities, createPayload());
         expect(Object.keys(result)).toHaveLength(1);
         expect(result["app:same-app:main:task"].app_install_id).toBe("install-1");
     });
@@ -183,7 +184,7 @@ describe("resolveRemoteActivities", () => {
                 new Response(JSON.stringify({ activities: [{ name: "task", collection: "main" }] }), { status: 200 }),
             );
 
-        const result = await testEnv.run(resolveRemoteActivities, createPayload());
+        const result: RemoteActivityMap = await testEnv.run(resolveRemoteActivities, createPayload());
         expect(Object.keys(result)).toHaveLength(1);
         expect(result["app:working-app:main:task"]).toBeDefined();
     });
@@ -191,7 +192,7 @@ describe("resolveRemoteActivities", () => {
     it("returns empty map when getInstalledApps fails", async () => {
         mockGetInstalledApps.mockRejectedValueOnce(new Error("API error"));
 
-        const result = await testEnv.run(resolveRemoteActivities, createPayload());
+        const result: RemoteActivityMap = await testEnv.run(resolveRemoteActivities, createPayload());
         expect(result).toEqual({});
     });
 
@@ -213,7 +214,7 @@ describe("resolveRemoteActivities", () => {
             ),
         );
 
-        const result = await testEnv.run(resolveRemoteActivities, createPayload()) as Record<string, unknown>;
+        const result: RemoteActivityMap = await testEnv.run(resolveRemoteActivities, createPayload());
         expect(Object.keys(result)).toHaveLength(1);
         expect(result["app:bad-app:main:has_collection"]).toBeDefined();
     });
