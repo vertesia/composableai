@@ -719,3 +719,11 @@ export interface CompositeAppConfig {
 }
 
 export type CompositeAppConfigPayload = Partial<Omit<CompositeAppConfig, 'id' | 'project'>>;
+
+export interface ValidateUrlRequest {
+    url: string;
+}
+
+export interface ValidateUrlResponse {
+    valid: true;
+}
