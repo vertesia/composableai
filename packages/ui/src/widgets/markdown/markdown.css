@@ -190,3 +190,15 @@
     margin-top: 0.5rem;
     font-style: italic;
 }
+
+/* ------------------------------------------------------------------ */
+/* KaTeX: hide the unstyled HTML layer, keep browser-rendered MathML  */
+/* rehype-katex emits two children inside .katex:                     */
+/*   .katex-mathml — MathML markup (browsers render this natively)    */
+/*   .katex-html   — HTML markup (needs full katex.css to look right) */
+/* Since we don't load the full KaTeX CSS, hide the broken HTML layer */
+/* ------------------------------------------------------------------ */
+
+.katex .katex-html {
+    display: none;
+}
