@@ -1,10 +1,6 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { Env } from "@vertesia/ui/env";
 import { shouldRedirectToCentralAuth, shouldUseFirebaseAuth } from "./domainRouting";
-
-afterEach(() => {
-    vi.unstubAllEnvs();
-});
 
 describe("domainRouting", () => {
     it("uses Firebase auth for configured authorized domains", () => {
@@ -89,9 +85,7 @@ describe("domainRouting", () => {
         expect(shouldUseFirebaseAuth("cloud.vertesia.io")).toBe(true);
     });
 
-    it("falls back to the env variable when explicit domains are not provided", () => {
-        vi.stubEnv("VITE_FIREBASE_AUTHORIZED_DOMAINS", "cloud.vertesia.io, preview.cloud.vertesia.io");
-
+    it("redirects to central auth when no authorized domains are configured", () => {
         Env.init({
             name: "test",
             version: "1.0.0",
@@ -110,8 +104,7 @@ describe("domainRouting", () => {
             },
         });
 
-        expect(shouldUseFirebaseAuth("cloud.vertesia.io")).toBe(true);
-        expect(shouldUseFirebaseAuth("preview.cloud.vertesia.io")).toBe(true);
-        expect(shouldUseFirebaseAuth("studio.vertesia.app")).toBe(false);
+        expect(shouldUseFirebaseAuth("cloud.vertesia.io")).toBe(false);
+        expect(shouldRedirectToCentralAuth("cloud.vertesia.io")).toBe(true);
     });
 });
