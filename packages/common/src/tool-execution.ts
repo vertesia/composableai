@@ -25,7 +25,7 @@ export interface ToolEndpointOverrides {
  */
 export interface ToolExecutionMetadata {
     /**
-     * Workflow run ID (Temporal execution ID)
+     * Workflow run ID
      */
     run_id?: string;
     /**
