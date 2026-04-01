@@ -76,10 +76,15 @@ bootstrap_template() {
   # env -i: strip pnpm-injected env vars (NODE_PATH, npm_config_*) to prevent npm from resolving
   # packages from the studio's virtual store instead of installing fresh
   # npm_config_package_lock=false: work around npm 11 bug crashing in #buildLegacyLockfile
+  # npm_config_cache: use a per-run temp dir so npm exec always fetches the latest from verdaccio
+  #   instead of reusing a stale cached version of create-plugin that predates recent fixes
+  local npm_cache_dir="/tmp/npm-cache-$$"
   (cd /tmp && env -i HOME="$HOME" PATH="$PATH" \
     npm_config_registry="${npm_config_registry:-}" \
     npm_config_package_lock="false" \
+    npm_config_cache="${npm_cache_dir}" \
     npm exec --yes -- "@vertesia/create-plugin@${NPM_TAG}" "$project_name" -t "${TEMPLATE_NAME}" --yes ${branch_args} ${pm_args} ${EXTRA_CREATE_ARGS:-})
+  rm -rf "${npm_cache_dir}"
 }
 
 build_project_npm() {
