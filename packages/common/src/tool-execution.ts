@@ -29,11 +29,12 @@ export interface ToolExecutionMetadata {
      */
     run_id?: string;
     /**
-     * Artifact storage path prefix for uploadArtifact/downloadArtifact calls.
-     * Resolves to agent_run_id (+ workstream launch_id) when available,
-     * falls back to run_id for legacy workflows.
+     * Conversation storage ID for artifact operations (uploadArtifact/downloadArtifact).
+     * Produced by getConversationStorageId(): agent_run_id for root workflows,
+     * {agent_run_id}/workstreams/{launch_id} for child workstreams,
+     * or falls back to run_id for legacy workflows.
      */
-    artifact_storage_id?: string;
+    conversation_storage_id?: string;
     /**
      * App installation ID
      */
