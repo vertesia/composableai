@@ -42,7 +42,13 @@ export async function downloadTemplate(
       throw new Error(`Local template directory not found: ${sourcePath}`);
     }
 
-    fs.cpSync(sourcePath, projectName, { recursive: true });
+    fs.cpSync(sourcePath, projectName, {
+      recursive: true,
+      filter: (src) => {
+        const rel = src.slice(sourcePath.length);
+        return !rel.startsWith('/node_modules') && !rel.startsWith('/dist') && !rel.startsWith('/.pnpm');
+      }
+    });
     console.log(chalk.green('   ✓ Template copied\n'));
     return;
   }

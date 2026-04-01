@@ -88,7 +88,7 @@ export async function installDependencies(projectName: string, packageManager: s
   try {
     execSync(`${packageManager} install`, {
       cwd: projectName,
-      stdio: 'inherit'
+      stdio: 'inherit',
     });
     console.log();
   } catch (error) {
