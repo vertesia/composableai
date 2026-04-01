@@ -77,10 +77,13 @@ interface ServiceInfoProps extends InfoProps {
 }
 function ServiceAccountAvatar({ accountId, showTitle = false, size = "md" }: ServiceInfoProps) {
     const { t } = useUITranslation();
+    const _type = accountId.split(':')[0];
+    const _accountId = accountId.split(':')[1];
     const description = (
         <>
             <div>{t('user.serviceAccountDescription')}</div>
-            <div className="text-gray-800 dark:text-gray-500 text-sm"><span className="font-semibold">ID:</span> {accountId}</div>
+            <div className="text-muted text-sm"><span className="font-semibold">Type:</span> {_type}</div>
+            <div className="text-muted text-sm"><span className="font-semibold">ID:</span> {_accountId}</div>
         </>
     )
 
@@ -88,7 +91,49 @@ function ServiceAccountAvatar({ accountId, showTitle = false, size = "md" }: Ser
         <UserPopoverPanel title={t('user.serviceAccount')} description={description}>
             <div className="flex flex-row items-center gap-2">
                 <Avatar src="/cloud.svg" name="SA" color="bg-amber-500" className="px-[5px] text-white" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2 truncate">{t('user.serviceAccount')} : {accountId}</div>}
+                {showTitle && <div className="text-sm font-semibold pl-2 truncate">{t('user.serviceAccount')} : ~{_accountId.slice(-6)}</div>}
+            </div>
+        </UserPopoverPanel>
+    );
+}
+
+
+interface EmailAgentAvatarProps extends InfoProps {
+    email: string;
+}
+function EmailAgentAvatar({ email, showTitle = false, size = "md" }: EmailAgentAvatarProps) {
+    const { t } = useUITranslation();
+
+    // Determine title and description
+    const title = t('user.agentOnBehalfOfEmail');
+
+    const description = (
+        <>
+            <div>{t('user.serviceAccountDescription')}</div>
+            <div className="text-muted text-sm"><span className="font-semibold">Email:</span> {email}</div>
+        </>
+    )
+    return (
+        <UserPopoverPanel title={title} description={description}>
+            <div className="flex items-center gap-2">
+                <div className="flex items-center -space-x-2">
+                    <Avatar
+                        src="/cloud.svg"
+                        color="bg-amber-500"
+                        className="px-[5px] text-white border-2 border-white dark:border-gray-800"
+                        size={size}
+                    />
+                    <Avatar
+                        name={email}
+                        size={size}
+                        className="border-2 border-white dark:border-gray-800"
+                    />
+                </div>
+                {showTitle && (
+                    <div className="text-sm font-semibold truncate">
+                        {t('user.agentOnBehalfOfEmail')} : {email}
+                    </div>
+                )}
             </div>
         </UserPopoverPanel>
     );
@@ -280,6 +325,13 @@ export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoPr
                 isScheduleAgent={true}
             />
         }
+
+        case "email": {
+            // format: email:userEmail
+            return <EmailAgentAvatar email={parts[1]} showTitle={showTitle} size={size} />
+
+        }
+
 
         case PrincipalType.ApiKey:
             return <ApiKeyAvatar keyId={parts[1]} size={size} showTitle={showTitle} />
