@@ -39,6 +39,7 @@ async function main() {
     .option('-y, --yes', 'Non-interactive mode: use defaults for all prompts', false)
     .option('--dev', 'Use workspace dependencies (development mode)', false)
     .option('--local-templates <path>', 'Use local template directory instead of fetching from GitHub')
+    .option('--package-manager <manager>', 'Package manager to use: pnpm or npm (overrides template default and interactive selection)')
     .addHelpText('after', `
 Available Templates:
 ${config.templates.map(t => `  - ${t.name}`).join('\n')}
@@ -48,8 +49,8 @@ Documentation: ${config.docsUrl}
     .parse();
 
   let projectName = program.args[0];
-  const opts = program.opts<{ branch?: string; template?: string; yes: boolean; dev: boolean; localTemplates?: string }>();
-  const { branch, template, yes: nonInteractive, dev, localTemplates } = opts;
+  const opts = program.opts<{ branch?: string; template?: string; yes: boolean; dev: boolean; localTemplates?: string; packageManager?: string }>();
+  const { branch, template, yes: nonInteractive, dev, localTemplates, packageManager: packageManagerOverride } = opts;
 
   // Prompt for project name if not provided as CLI argument
   if (!projectName) {
@@ -96,8 +97,11 @@ Documentation: ${config.docsUrl}
     // Step 3: Read template configuration
     const templateConfig = readTemplateConfig(projectName);
 
-    // Step 4: Detect and select package manager (may be forced by template)
-    const packageManager = await selectPackageManager(templateConfig.packageManager, nonInteractive);
+    // Step 4: Detect and select package manager (CLI flag overrides template default)
+    const packageManager = await selectPackageManager(
+      (packageManagerOverride as 'pnpm' | 'npm' | undefined) ?? templateConfig.packageManager,
+      nonInteractive
+    );
 
     // Step 5: Prompt user for configuration
     const answers = await promptUser(projectName, templateConfig, nonInteractive);
