@@ -25,9 +25,15 @@ export interface ToolEndpointOverrides {
  */
 export interface ToolExecutionMetadata {
     /**
-     * Workflow run ID
+     * Workflow run ID (Temporal execution ID)
      */
     run_id?: string;
+    /**
+     * Artifact storage path prefix for uploadArtifact/downloadArtifact calls.
+     * Resolves to agent_run_id (+ workstream launch_id) when available,
+     * falls back to run_id for legacy workflows.
+     */
+    artifact_storage_id?: string;
     /**
      * App installation ID
      */
