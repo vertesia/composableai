@@ -10,3 +10,7 @@ overrides:
   "picomatch@<2.3.2": "^2.3.2"
   "picomatch@>=4.0.0 <4.0.4": "^4.0.4"
   "fast-xml-parser@>=4.0.0-beta.3 <5.5.7": "^5.5.7"
+minimumReleaseAge: 1440 # 1 day in minutes, minimumReleaseAge protects against supply chain attacks.
+minimumReleaseAgeExclude:
+- '@vertesia/*'
+- '@llumiverse/*'
