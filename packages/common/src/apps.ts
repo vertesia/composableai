@@ -271,9 +271,7 @@ export interface AppManifestData {
 
     /**
      * A list of tool collections endpoints to be used by this app.
-     * A tools collection endpoint is an URL which may end with a `?import` query string.
-     * If the `?import` query string is used the tool will be imported as a javascript module and not executed through a POST on the collections endpoint.
-     * This feature is for advanced composition of tools. Prefer using endpoint. 
+     * Prefer using endpoint over tool_collections.
      */
     tool_collections?: ToolCollection[]
 
@@ -719,3 +717,11 @@ export interface CompositeAppConfig {
 }
 
 export type CompositeAppConfigPayload = Partial<Omit<CompositeAppConfig, 'id' | 'project'>>;
+
+export interface ValidateUrlRequest {
+    url: string;
+}
+
+export interface ValidateUrlResponse {
+    valid: true;
+}

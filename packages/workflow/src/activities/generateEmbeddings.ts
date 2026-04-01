@@ -218,14 +218,17 @@ async function generateTextEmbeddings(
         tokenCount = countTokens(document.text).count;
     }
 
+    if (type === SupportedEmbeddingTypes.properties && document.properties) {
+        const propertiesText = JSON.stringify(document.properties);
+        tokenCount = countTokens(propertiesText).count;
+    }
+
     const maxTokens = config.max_tokens ?? 8000;
 
     //generate embeddings for the main doc if document isn't too large
     log.debug(`Generating ${type} embeddings for document ${document.id}`);
     if (
-        type === SupportedEmbeddingTypes.text &&
-        tokenCount !== undefined &&
-        tokenCount > maxTokens
+        tokenCount !== undefined && tokenCount > maxTokens
     ) {
         //TODO: Review strategy for large documents
         log.warn(
