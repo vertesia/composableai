@@ -48,12 +48,14 @@ derive_tag_and_branch() {
 #   EXTRA_CREATE_ARGS - additional arguments to pass to create-plugin (e.g. "--local-templates /path")
 bootstrap_template() {
   local prefix="${1:-test-plugin}"
+  local pkg_manager="${2:-}"
 
   echo ""
   echo "=== Bootstrapping template ==="
   echo "  Template: ${TEMPLATE_NAME}"
   echo "  Ref: ${TEMPLATE_REF:-<auto>}"
   echo "  Tag: ${NPM_TAG}"
+  [ -n "$pkg_manager" ] && echo "  Package manager: ${pkg_manager}"
 
   # Create project in /tmp to avoid interference from composableai's pnpm-workspace.yaml
   TEST_PROJECT_DIR="/tmp/${prefix}-$$"
@@ -66,9 +68,40 @@ bootstrap_template() {
     branch_args="-b ${TEMPLATE_REF}"
   fi
 
-  # npx --yes: auto-install without prompting
-  # --yes after pkg: passed to create-plugin for non-interactive mode (long form avoids npx consuming it)
-  (cd /tmp && npx --yes "@vertesia/create-plugin@${NPM_TAG}" "$project_name" -t "${TEMPLATE_NAME}" --yes ${branch_args} ${EXTRA_CREATE_ARGS:-})
+  local pm_args=""
+  [ -n "$pkg_manager" ] && pm_args="--package-manager ${pkg_manager}"
+
+  # npm exec: closest to the documented `npm init @vertesia/plugin` user command
+  # --: tells npm exec to stop parsing flags and pass everything to create-plugin
+  # env -i: strip pnpm-injected env vars (NODE_PATH, npm_config_*) to prevent npm from resolving
+  # packages from the studio's virtual store instead of installing fresh
+  # npm_config_package_lock=false: work around npm 11 bug crashing in #buildLegacyLockfile
+  # npm_config_cache: use a per-run temp dir so npm exec always fetches the latest from verdaccio
+  #   instead of reusing a stale cached version of create-plugin that predates recent fixes
+  local npm_cache_dir="/tmp/npm-cache-$$"
+  (cd /tmp && env -i HOME="$HOME" PATH="$PATH" \
+    npm_config_registry="${npm_config_registry:-}" \
+    npm_config_package_lock="false" \
+    npm_config_cache="${npm_cache_dir}" \
+    npm exec --yes -- "@vertesia/create-plugin@${NPM_TAG}" "$project_name" -t "${TEMPLATE_NAME}" --yes ${branch_args} ${pm_args} ${EXTRA_CREATE_ARGS:-})
+  rm -rf "${npm_cache_dir}"
+}
+
+build_project_npm() {
+  echo ""
+  echo "=== Building bootstrapped project (npm) ==="
+
+  if [ ! -d "$TEST_PROJECT_DIR" ]; then
+    echo "ERROR: Test project directory not found: ${TEST_PROJECT_DIR}"
+    exit 1
+  fi
+
+  cd "$TEST_PROJECT_DIR"
+  npm run build
+
+  echo ""
+  echo "=== Build succeeded (npm) ==="
+  cd - > /dev/null
 }
 
 build_project() {

@@ -33,12 +33,13 @@ async function main() {
   const program = new Command()
     .name('create-plugin')
     .description('CLI to create Vertesia plugins: UI plugins or tool servers')
-    .argument('<project-name>', 'Name of the project to create')
+    .argument('[project-name]', 'Name of the project to create')
     .option('-b, --branch <branch>', 'Use a specific template branch')
     .option('-t, --template <name>', 'Template name (skips interactive selection)')
     .option('-y, --yes', 'Non-interactive mode: use defaults for all prompts', false)
     .option('--dev', 'Use workspace dependencies (development mode)', false)
     .option('--local-templates <path>', 'Use local template directory instead of fetching from GitHub')
+    .option('--package-manager <manager>', 'Package manager to use: pnpm or npm (overrides template default and interactive selection)')
     .addHelpText('after', `
 Available Templates:
 ${config.templates.map(t => `  - ${t.name}`).join('\n')}
@@ -47,9 +48,23 @@ Documentation: ${config.docsUrl}
 `)
     .parse();
 
-  const projectName = program.args[0];
-  const opts = program.opts<{ branch?: string; template?: string; yes: boolean; dev: boolean; localTemplates?: string }>();
-  const { branch, template, yes: nonInteractive, dev, localTemplates } = opts;
+  let projectName = program.args[0];
+  const opts = program.opts<{ branch?: string; template?: string; yes: boolean; dev: boolean; localTemplates?: string; packageManager?: string }>();
+  const { branch, template, yes: nonInteractive, dev, localTemplates, packageManager: packageManagerOverride } = opts;
+
+  // Prompt for project name if not provided as CLI argument
+  if (!projectName) {
+    const { default: prompts } = await import('prompts');
+    const answer = await prompts({
+      type: 'text',
+      name: 'projectName',
+      message: 'Project name:',
+      validate: (v: string) => validation.projectNamePattern.test(v) || validation.projectNameError,
+    }, {
+      onCancel: () => { console.log(chalk.red('\n❌ Installation cancelled.\n')); process.exit(1); },
+    });
+    projectName = answer.projectName;
+  }
 
   // Validate project name
   if (!validation.projectNamePattern.test(projectName)) {
@@ -82,8 +97,11 @@ Documentation: ${config.docsUrl}
     // Step 3: Read template configuration
     const templateConfig = readTemplateConfig(projectName);
 
-    // Step 4: Detect and select package manager (may be forced by template)
-    const packageManager = await selectPackageManager(templateConfig.packageManager, nonInteractive);
+    // Step 4: Detect and select package manager (CLI flag overrides template default)
+    const packageManager = await selectPackageManager(
+      (packageManagerOverride as 'pnpm' | 'npm' | undefined) ?? templateConfig.packageManager,
+      nonInteractive
+    );
 
     // Step 5: Prompt user for configuration
     const answers = await promptUser(projectName, templateConfig, nonInteractive);
@@ -133,12 +151,6 @@ Documentation: ${config.docsUrl}
 
   } catch (error) {
     console.log(chalk.red(`\n❌ Installation failed: ${error instanceof Error ? error.message : 'Unknown error'}\n`));
-
-    // Cleanup on failure
-    if (fs.existsSync(projectName)) {
-      console.log(chalk.gray('Cleaning up...'));
-      fs.rmSync(projectName, { recursive: true, force: true });
-    }
 
     process.exit(1);
   }

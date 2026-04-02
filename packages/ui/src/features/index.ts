@@ -9,3 +9,4 @@ export * from "./permissions/index.js";
 export * from "./store/index.js";
 export * from "./user/index.js";
 export * from "./utils/index.js";
+export * from "./oauth/index.js";

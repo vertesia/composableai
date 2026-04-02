@@ -77,10 +77,13 @@ interface ServiceInfoProps extends InfoProps {
 }
 function ServiceAccountAvatar({ accountId, showTitle = false, size = "md" }: ServiceInfoProps) {
     const { t } = useUITranslation();
+    const _type = accountId.split(':')[0];
+    const _accountId = accountId.split(':')[1];
     const description = (
         <>
             <div>{t('user.serviceAccountDescription')}</div>
-            <div className="text-gray-800 dark:text-gray-500 text-sm"><span className="font-semibold">ID:</span> {accountId}</div>
+            <div className="text-muted text-sm"><span className="font-semibold">Type:</span> {_type}</div>
+            <div className="text-muted text-sm"><span className="font-semibold">ID:</span> {_accountId}</div>
         </>
     )
 
@@ -88,7 +91,46 @@ function ServiceAccountAvatar({ accountId, showTitle = false, size = "md" }: Ser
         <UserPopoverPanel title={t('user.serviceAccount')} description={description}>
             <div className="flex flex-row items-center gap-2">
                 <Avatar src="/cloud.svg" name="SA" color="bg-amber-500" className="px-[5px] text-white" size={size} />
-                {showTitle && <div className="text-sm font-semibold pl-2 truncate">{t('user.serviceAccount')} : {accountId}</div>}
+                {showTitle && <div className="text-sm font-semibold pl-2 truncate">{t('user.serviceAccount')} : ~{_accountId.slice(-6)}</div>}
+            </div>
+        </UserPopoverPanel>
+    );
+}
+
+
+interface EmailAgentAvatarProps extends InfoProps {
+    email: string;
+}
+function EmailAgentAvatar({ email, showTitle = false, size = "md" }: EmailAgentAvatarProps) {
+    const { t } = useUITranslation();
+
+    const description = (
+        <>
+            <div>{t('user.serviceAccountDescription')}</div>
+            <div className="text-muted text-sm"><span className="font-semibold">Email:</span> {email}</div>
+        </>
+    )
+    return (
+        <UserPopoverPanel title={'Email Agent'} description={description}>
+            <div className="flex items-center gap-2">
+                <div className="flex items-center -space-x-2">
+                    <Avatar
+                        src="/cloud.svg"
+                        color="bg-amber-500"
+                        className="px-[5px] text-white border-2 border-white dark:border-gray-800"
+                        size={size}
+                    />
+                    <Avatar
+                        name={email}
+                        size={size}
+                        className="border-2 border-white dark:border-gray-800"
+                    />
+                </div>
+                {showTitle && (
+                    <div className="text-sm font-semibold truncate">
+                        {t('user.agentOnBehalfOf')} : {email}
+                    </div>
+                )}
             </div>
         </UserPopoverPanel>
     );
@@ -114,7 +156,8 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
     const apiKey = shouldFetchApiKey ? apiKeyResult.data : undefined;
 
     // Determine title and description
-    const title = user ? t('user.agentOnBehalfOf') : apiKey ? t('user.agentOnBehalfOfApiKey') : t('user.serviceAccount');
+    const shortenedAgentId = agentId.slice(-6);
+    const title = user ? t('user.agentOnBehalfOf') : apiKey ? t('user.agentOnBehalfOfApiKey') : t('user.serviceAccount') + `~${shortenedAgentId}`;
     const _title = isScheduleAgent ? t('user.schedule', { title }) : title;
 
     const description = (
@@ -125,7 +168,7 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
                         <Avatar src={user.picture} name={user.name} size="sm" />
                         <div>
                             <div className="font-medium">{user.name || user.email}</div>
-                            {user.email && user.name && <div className="text-xs text-muted-foreground">{user.email}</div>}
+                            {user.email && user.name && <div className="text-xs text-muted">{user.email}</div>}
                         </div>
                     </div>
                 </>
@@ -178,7 +221,7 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
                 </div>
                 {showTitle && (
                     <div className="text-sm font-semibold truncate">
-                        {user ? `Agent (${user.name || user.email})` : apiKey ? `Agent (${apiKey.name})` : title}
+                        {user ? `Agent      (${user.name || user.email})` : apiKey ? `Agent (${apiKey.name})` : title}
                     </div>
                 )}
             </div>
@@ -266,10 +309,11 @@ export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoPr
         }
 
         case PrincipalType.Schedule: {
-            // format: schedule:agentId:user:userId
-            const agentId = parts[1];
-            const onBehalfOfType = parts[2];
-            const onBehalfOfId = parts[3];
+            // format: schedule:{scheduleID}:agent:{accountID}:{projectID}:{agentID}:user:{userId}
+
+            const agentId = parts[2] === 'agent' ? parts.slice(3, 6).join(':') : 'unknown-agent';
+            const onBehalfOfType = parts[6]; // e.g. "user"
+            const onBehalfOfId = parts[7]; // e.g. userId
 
             return <AgentAvatar
                 agentId={agentId}
@@ -280,6 +324,13 @@ export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoPr
                 isScheduleAgent={true}
             />
         }
+
+        case "email": {
+            // format: email:userEmail
+            return <EmailAgentAvatar email={parts[1]} showTitle={showTitle} size={size} />
+
+        }
+
 
         case PrincipalType.ApiKey:
             return <ApiKeyAvatar keyId={parts[1]} size={size} showTitle={showTitle} />

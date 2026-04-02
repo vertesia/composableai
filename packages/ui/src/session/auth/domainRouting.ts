@@ -1,22 +1,13 @@
-import { Env } from "@vertesia/ui/env";
-
-const localhostDomains = new Set(["localhost", "127.0.0.1"]);
-
-function getAuthorizedDomains() {
-    const domains = Env.firebase?.authorizedDomains ?? [];
-    return new Set(domains.map((domain: string) => domain.trim().toLowerCase()).filter(Boolean));
-}
-
-export function shouldUseFirebaseAuth(hostname = window.location.hostname) {
-    const normalizedHostname = hostname.trim().toLowerCase();
-
-    if (localhostDomains.has(normalizedHostname)) {
-        return false;
+declare global {
+    interface Window {
+        AUTH_MODE?: 'firebase' | 'central';
     }
-
-    return getAuthorizedDomains().has(normalizedHostname);
 }
 
-export function shouldRedirectToCentralAuth(hostname = window.location.hostname) {
-    return !shouldUseFirebaseAuth(hostname);
+export function shouldUseFirebaseAuth(_hostname?: string) {
+    return window.AUTH_MODE === 'firebase';
+}
+
+export function shouldRedirectToCentralAuth(_hostname?: string) {
+    return !shouldUseFirebaseAuth();
 }
