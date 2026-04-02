@@ -1,95 +1,95 @@
 import { describe, expect, it } from "vitest";
-import { escapeFalseLatex } from "./escapeFalseLatex";
+import { preprocessMathDelimiters } from "./preprocessMathDelimiters";
 
-describe("escapeFalseLatex", () => {
+describe("preprocessMathDelimiters", () => {
     // --- Definitely LaTeX (preserved) ---
 
     it("preserves LaTeX with backslash command", () => {
-        expect(escapeFalseLatex("$x = \\frac{-b}{2a}$")).toBe("$x = \\frac{-b}{2a}$");
+        expect(preprocessMathDelimiters("$x = \\frac{-b}{2a}$")).toBe("$x = \\frac{-b}{2a}$");
     });
 
     it("preserves LaTeX with Greek letters", () => {
-        expect(escapeFalseLatex("$\\alpha + \\beta$")).toBe("$\\alpha + \\beta$");
+        expect(preprocessMathDelimiters("$\\alpha + \\beta$")).toBe("$\\alpha + \\beta$");
     });
 
     it("preserves LaTeX with superscript", () => {
-        expect(escapeFalseLatex("$n^2$")).toBe("$n^2$");
+        expect(preprocessMathDelimiters("$n^2$")).toBe("$n^2$");
     });
 
     it("preserves LaTeX with subscript", () => {
-        expect(escapeFalseLatex("$a_{ij}$")).toBe("$a_{ij}$");
+        expect(preprocessMathDelimiters("$a_{ij}$")).toBe("$a_{ij}$");
     });
 
     it("preserves ion notation with ^+", () => {
-        expect(escapeFalseLatex("$Ca^+$")).toBe("$Ca^+$");
+        expect(preprocessMathDelimiters("$Ca^+$")).toBe("$Ca^+$");
     });
 
     it("preserves ion notation with ^- ", () => {
-        expect(escapeFalseLatex("$Cl^-$")).toBe("$Cl^-$");
+        expect(preprocessMathDelimiters("$Cl^-$")).toBe("$Cl^-$");
     });
 
     it("preserves ion notation with braces", () => {
-        expect(escapeFalseLatex("$Ca^{2+}$")).toBe("$Ca^{2+}$");
+        expect(preprocessMathDelimiters("$Ca^{2+}$")).toBe("$Ca^{2+}$");
     });
 
     it("preserves display math ($$...$$)", () => {
-        expect(escapeFalseLatex("$$E = mc^2$$")).toBe("$$E = mc^2$$");
+        expect(preprocessMathDelimiters("$$E = mc^2$$")).toBe("$$E = mc^2$$");
     });
 
     it("preserves multiline display math", () => {
         const input = "$$\nx = \\frac{-b}{2a}\n$$";
-        expect(escapeFalseLatex(input)).toBe(input);
+        expect(preprocessMathDelimiters(input)).toBe(input);
     });
 
     // --- Definitely not LaTeX (escaped) ---
 
     it("escapes currency amounts with space before closing $", () => {
-        expect(escapeFalseLatex("between $100M and $500M")).toBe("between \\$100M and \\$500M");
+        expect(preprocessMathDelimiters("between $100M and $500M")).toBe("between \\$100M and \\$500M");
     });
 
     it("escapes dollar with space after opening $", () => {
-        expect(escapeFalseLatex("all $ figures by $500k")).toBe("all \\$ figures by \\$500k");
+        expect(preprocessMathDelimiters("all $ figures by $500k")).toBe("all \\$ figures by \\$500k");
     });
 
     it("escapes pair ending with operator -", () => {
-        expect(escapeFalseLatex("$100K-$500K range")).toBe("\\$100K-\\$500K range");
+        expect(preprocessMathDelimiters("$100K-$500K range")).toBe("\\$100K-\\$500K range");
     });
 
     // --- Uncertain (preserved as fallback) ---
 
     it("preserves uncertain content as fallback", () => {
-        expect(escapeFalseLatex("$100 + 200$")).toBe("$100 + 200$");
+        expect(preprocessMathDelimiters("$100 + 200$")).toBe("$100 + 200$");
     });
 
     // --- Code block protection ---
 
     it("preserves dollar signs inside inline code", () => {
-        expect(escapeFalseLatex("use `$100 and $200` as values")).toBe("use `$100 and $200` as values");
+        expect(preprocessMathDelimiters("use `$100 and $200` as values")).toBe("use `$100 and $200` as values");
     });
 
     it("preserves dollar signs inside fenced code blocks", () => {
         const input = "text\n```\nprice $100 and $200\n```\nmore";
-        expect(escapeFalseLatex(input)).toBe(input);
+        expect(preprocessMathDelimiters(input)).toBe(input);
     });
 
     it("escapes outside code but preserves inside", () => {
         const input = "costs $100M and $500M\n```\nprice = $200\n```";
         const expected = "costs \\$100M and \\$500M\n```\nprice = $200\n```";
-        expect(escapeFalseLatex(input)).toBe(expected);
+        expect(preprocessMathDelimiters(input)).toBe(expected);
     });
 
     // --- Edge cases ---
 
     it("returns empty string unchanged", () => {
-        expect(escapeFalseLatex("")).toBe("");
+        expect(preprocessMathDelimiters("")).toBe("");
     });
 
     it("returns string with no dollar signs unchanged", () => {
-        expect(escapeFalseLatex("no dollars here")).toBe("no dollars here");
+        expect(preprocessMathDelimiters("no dollars here")).toBe("no dollars here");
     });
 
     it("does not double-escape already escaped \\$", () => {
-        expect(escapeFalseLatex("costs \\$100")).toBe("costs \\$100");
+        expect(preprocessMathDelimiters("costs \\$100")).toBe("costs \\$100");
     });
 
     it("handles interleaved currency and real latex on same line", () => {
@@ -99,7 +99,7 @@ describe("escapeFalseLatex", () => {
         //         $15M is lone (no closing $) → remark-math can't pair it → safe as-is
         const input = "The report for $500M shows that (given a formula $sales = x*e^{y}$) we were off by nearly $15M in 2025.";
         const expected = "The report for \\$500M shows that (given a formula $sales = x*e^{y}$) we were off by nearly $15M in 2025.";
-        expect(escapeFalseLatex(input)).toBe(expected);
+        expect(preprocessMathDelimiters(input)).toBe(expected);
     });
 
     it("handles odd number of currency $ before real latex", () => {
@@ -108,7 +108,7 @@ describe("escapeFalseLatex", () => {
         // Pass 2: $500M has committed pair after it → escape
         const input = "costs $500M. Also $x = \\frac{1}{2}$ works";
         const expected = "costs \\$500M. Also $x = \\frac{1}{2}$ works";
-        expect(escapeFalseLatex(input)).toBe(expected);
+        expect(preprocessMathDelimiters(input)).toBe(expected);
     });
 
     it("handles real latex on its own line after false latex", () => {
@@ -117,56 +117,56 @@ describe("escapeFalseLatex", () => {
         // $500M has no pair on same line (newline breaks it)
         // Pair 2: $x = \frac{1}{2}$ → has \frac → preserve
         const expected = "between \\$100M and \\$500M\nwhere $x = \\frac{1}{2}$";
-        expect(escapeFalseLatex(input)).toBe(expected);
+        expect(preprocessMathDelimiters(input)).toBe(expected);
     });
 
     it("handles the full user input scenario", () => {
         const input = "Make me a report from the documents to determine if sales are between $100M and $500M";
         const expected = "Make me a report from the documents to determine if sales are between \\$100M and \\$500M";
-        expect(escapeFalseLatex(input)).toBe(expected);
+        expect(preprocessMathDelimiters(input)).toBe(expected);
     });
 
     it("handles the dollar figures scenario", () => {
         const input = "make the $ figures represented more reasonable (decrease all $ figures by 500k)";
         const expected = "make the \\$ figures represented more reasonable (decrease all \\$ figures by 500k)";
-        expect(escapeFalseLatex(input)).toBe(expected);
+        expect(preprocessMathDelimiters(input)).toBe(expected);
     });
 
     // --- Single letter variables and simple assignments ---
 
     it("preserves single letter variable $r$", () => {
-        expect(escapeFalseLatex("growth rate $r$ can be expressed")).toBe("growth rate $r$ can be expressed");
+        expect(preprocessMathDelimiters("growth rate $r$ can be expressed")).toBe("growth rate $r$ can be expressed");
     });
 
     it("preserves single letter variable $t$", () => {
-        expect(escapeFalseLatex("and $t$ is years")).toBe("and $t$ is years");
+        expect(preprocessMathDelimiters("and $t$ is years")).toBe("and $t$ is years");
     });
 
     it("preserves variable assignment $r = 0.235$", () => {
-        expect(escapeFalseLatex("where $r = 0.235$ (growth rate)")).toBe("where $r = 0.235$ (growth rate)");
+        expect(preprocessMathDelimiters("where $r = 0.235$ (growth rate)")).toBe("where $r = 0.235$ (growth rate)");
     });
 
     it("preserves variable assignment $n = 4$", () => {
-        expect(escapeFalseLatex("$n = 4$ (quarters per year)")).toBe("$n = 4$ (quarters per year)");
+        expect(preprocessMathDelimiters("$n = 4$ (quarters per year)")).toBe("$n = 4$ (quarters per year)");
     });
 
     it("preserves LaTeX with \\% command", () => {
-        expect(escapeFalseLatex("we achieved $r = 23.5\\%$ growth")).toBe("we achieved $r = 23.5\\%$ growth");
+        expect(preprocessMathDelimiters("we achieved $r = 23.5\\%$ growth")).toBe("we achieved $r = 23.5\\%$ growth");
     });
 
     it("replaces \\$ inside LaTeX with \\text{\\textdollar} for remark-math compatibility", () => {
-        expect(escapeFalseLatex("where $P = \\$2,847,500$ is the amount")).toBe("where $P = \\text{\\textdollar}2,847,500$ is the amount");
+        expect(preprocessMathDelimiters("where $P = \\$2,847,500$ is the amount")).toBe("where $P = \\text{\\textdollar}2,847,500$ is the amount");
     });
 
     it("preserves variable assignment $d = 0.15$", () => {
-        expect(escapeFalseLatex("with rate $d = 0.15$:")).toBe("with rate $d = 0.15$:");
+        expect(preprocessMathDelimiters("with rate $d = 0.15$:")).toBe("with rate $d = 0.15$:");
     });
 
     // --- Financial report mixed patterns (from example.md) ---
 
     it("handles currency followed by single-letter LaTeX variable", () => {
         const input = "Product Line A generated $1,234,567 in revenue with an average transaction value of $156.78. The revenue growth rate $r$ can be expressed as:";
-        const result = escapeFalseLatex(input);
+        const result = preprocessMathDelimiters(input);
         expect(result).toContain("$r$");
         expect(result).toContain("\\$1,234,567");
         expect(result).toContain("\\$156.78");
@@ -174,7 +174,7 @@ describe("escapeFalseLatex", () => {
 
     it("handles line with currency and LaTeX \\% command", () => {
         const input = "Using this formula, we achieved $r = 23.5\\%$ growth. Marketing spent $387,900, yielding a customer acquisition cost (CAC) of $45.23 per customer.";
-        const result = escapeFalseLatex(input);
+        const result = preprocessMathDelimiters(input);
         expect(result).toContain("$r = 23.5\\%$");
         expect(result).toContain("\\$387,900");
         expect(result).toContain("\\$45.23");
@@ -182,7 +182,7 @@ describe("escapeFalseLatex", () => {
 
     it("handles line with \\$ inside LaTeX and currency amounts (line 23 scenario)", () => {
         const input = "Where $P = \\$2,847,500$ (initial quarterly revenue), $r = 0.235$ (growth rate), $n = 4$ (quarters per year), and $t$ is years.";
-        const result = escapeFalseLatex(input);
+        const result = preprocessMathDelimiters(input);
         expect(result).toContain("$P = \\text{\\textdollar}2,847,500$");
         expect(result).toContain("$r = 0.235$");
         expect(result).toContain("$n = 4$");
@@ -191,14 +191,14 @@ describe("escapeFalseLatex", () => {
 
     it("handles profitability ratio line with mixed currency and LaTeX fractions", () => {
         const input = "- Net Margin after $178,450 in taxes: $\\frac{\\$1,023,820}{\\$2,847,500} = 36.0\\%$";
-        const result = escapeFalseLatex(input);
+        const result = preprocessMathDelimiters(input);
         expect(result).toContain("\\$178,450");
         expect(result).toContain("$\\frac{\\text{\\textdollar}1,023,820}{\\text{\\textdollar}2,847,500} = 36.0\\%$");
     });
 
     it("handles line 31 scenario: multiple \\$-containing LaTeX formulas", () => {
         const input = "Where $F = \\$567,800$ (fixed costs), $P = \\$89.99$ (price per unit), and $V = \\$0.42$ (variable cost per unit). This yields $Q_{\\text{BE}} = 6,338$ units.";
-        const result = escapeFalseLatex(input);
+        const result = preprocessMathDelimiters(input);
         expect(result).toContain("$F = \\text{\\textdollar}567,800$");
         expect(result).toContain("$P = \\text{\\textdollar}89.99$");
         expect(result).toContain("$V = \\text{\\textdollar}0.42$");
@@ -207,7 +207,7 @@ describe("escapeFalseLatex", () => {
 
     it("handles line 64 scenario: two \\$-containing LaTeX spans + trailing currency", () => {
         const input = "Starting value $V_0 = \\$850,000$ depreciated to $\\$723,500$ after one quarter. Total accumulated depreciation across all assets reached $1,234,000.";
-        const result = escapeFalseLatex(input);
+        const result = preprocessMathDelimiters(input);
         expect(result).toContain("$V_0 = \\text{\\textdollar}850,000$");
         expect(result).toContain("$\\text{\\textdollar}723,500$");
         // $1,234,000 is a lone $ (can't pair after LaTeX spans are committed) — safe unescaped
@@ -216,12 +216,12 @@ describe("escapeFalseLatex", () => {
 
     it("does not transform \\$ outside math spans", () => {
         // \\$ that is already an escape for currency should remain \\$
-        expect(escapeFalseLatex("costs \\$100")).toBe("costs \\$100");
+        expect(preprocessMathDelimiters("costs \\$100")).toBe("costs \\$100");
     });
 
     it("handles complex mixed input with inline latex, display math, and multiple currency patterns", () => {
         const input = "The report for $500M shows that (given a formula $sales = x*e^{y}$) we were off by nearly $15M in 2025. Final sales showed that true estimates should have been closer to $515M in raw $ ammounts, +/- $5M to $ 7.5M. This is derived from the overall equation $$variance = x*v/2*e^(y-y`)$$";
-        const result = escapeFalseLatex(input);
+        const result = preprocessMathDelimiters(input);
 
         // Inline LaTeX preserved
         expect(result).toContain("$sales = x*e^{y}$");

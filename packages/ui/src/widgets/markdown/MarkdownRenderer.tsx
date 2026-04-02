@@ -16,7 +16,7 @@ import {
     isExpandLanguage,
 } from './codeBlockHandlers';
 import { useCodeBlockRendererRegistry } from './CodeBlockRendering';
-import { escapeFalseLatex } from './escapeFalseLatex';
+import { preprocessMathDelimiters } from './preprocessMathDelimiters';
 import { MarkdownFigure } from './MarkdownFigure';
 import { MarkdownImage } from './MarkdownImage';
 import { MarkdownLink } from './MarkdownLink';
@@ -105,7 +105,7 @@ export function MarkdownRenderer({
 }: MarkdownRendererProps) {
     const codeBlockRegistry = useCodeBlockRendererRegistry();
     const normalizedMarkdown = React.useMemo(
-        () => normalizeDirectives(normalizeCustomSchemeLinks(escapeFalseLatex(children))),
+        () => normalizeDirectives(normalizeCustomSchemeLinks(preprocessMathDelimiters(children))),
         [children]
     );
 
