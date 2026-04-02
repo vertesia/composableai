@@ -127,16 +127,53 @@ function escapeInText(text: string): string {
         }
     }
 
-    if (toEscape.size === 0) return text;
+    // Collect definitely-LaTeX span boundaries (character positions) for \$ → \textdollar{} replacement.
+    // remark-math doesn't treat \$ as escaped, so \$ inside math breaks delimiter pairing.
+    const latexSpans: [number, number][] = [];
+    for (let i = 0; i < positions.length - 1; i++) {
+        if (!committed.has(i) || !committed.has(i + 1)) continue;
+        // Check this is a real pair (both committed, adjacent in committed set)
+        const content = getContent(text, positions[i], positions[i + 1]);
+        if (content !== null && isDefinitelyLatex(content) && !toEscape.has(positions[i])) {
+            latexSpans.push([positions[i], positions[i + 1]]);
+            i++; // skip the closing position
+        }
+    }
 
-    // Build result with escapes using array+join to avoid O(n²) string concatenation
+    if (toEscape.size === 0 && latexSpans.length === 0) return text;
+
+    // Build result with escapes and \$ replacement inside LaTeX spans
     const parts: string[] = [];
     let segStart = 0;
-    for (const pos of Array.from(toEscape).sort((a, b) => a - b)) {
-        if (pos > segStart) parts.push(text.slice(segStart, pos));
-        parts.push("\\$");
-        segStart = pos + 1;
+
+    // Merge escape positions and latex span boundaries into a single sorted pass
+    const escapePositions = Array.from(toEscape).sort((a, b) => a - b);
+    let escIdx = 0;
+    let spanIdx = 0;
+
+    while (escIdx < escapePositions.length || spanIdx < latexSpans.length) {
+        const escPos = escIdx < escapePositions.length ? escapePositions[escIdx] : Infinity;
+        const spanOpen = spanIdx < latexSpans.length ? latexSpans[spanIdx][0] : Infinity;
+
+        if (escPos < spanOpen) {
+            // Emit text up to escape position, then escaped $
+            if (escPos > segStart) parts.push(text.slice(segStart, escPos));
+            parts.push("\\$");
+            segStart = escPos + 1;
+            escIdx++;
+        } else {
+            // Emit text up to span start, then the span content with \$ → \textdollar{}
+            const [open, close] = latexSpans[spanIdx];
+            if (open > segStart) parts.push(text.slice(segStart, open));
+            const spanContent = text.slice(open, close + 1);
+            parts.push(spanContent.replace(/\\\$/g, "\\text{\\textdollar}"));
+            segStart = close + 1;
+            // Skip any escape positions inside this span (shouldn't happen, but be safe)
+            while (escIdx < escapePositions.length && escapePositions[escIdx] <= close) escIdx++;
+            spanIdx++;
+        }
     }
+
     if (segStart < text.length) parts.push(text.slice(segStart));
     return parts.join("");
 }

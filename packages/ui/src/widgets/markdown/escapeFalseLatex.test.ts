@@ -154,8 +154,8 @@ describe("escapeFalseLatex", () => {
         expect(escapeFalseLatex("we achieved $r = 23.5\\%$ growth")).toBe("we achieved $r = 23.5\\%$ growth");
     });
 
-    it("preserves LaTeX with \\$ inside math", () => {
-        expect(escapeFalseLatex("where $P = \\$2,847,500$ is the amount")).toBe("where $P = \\$2,847,500$ is the amount");
+    it("replaces \\$ inside LaTeX with \\text{\\textdollar} for remark-math compatibility", () => {
+        expect(escapeFalseLatex("where $P = \\$2,847,500$ is the amount")).toBe("where $P = \\text{\\textdollar}2,847,500$ is the amount");
     });
 
     it("preserves variable assignment $d = 0.15$", () => {
@@ -180,10 +180,10 @@ describe("escapeFalseLatex", () => {
         expect(result).toContain("\\$45.23");
     });
 
-    it("handles line with \\$ inside LaTeX and currency amounts", () => {
+    it("handles line with \\$ inside LaTeX and currency amounts (line 23 scenario)", () => {
         const input = "Where $P = \\$2,847,500$ (initial quarterly revenue), $r = 0.235$ (growth rate), $n = 4$ (quarters per year), and $t$ is years.";
         const result = escapeFalseLatex(input);
-        expect(result).toContain("$P = \\$2,847,500$");
+        expect(result).toContain("$P = \\text{\\textdollar}2,847,500$");
         expect(result).toContain("$r = 0.235$");
         expect(result).toContain("$n = 4$");
         expect(result).toContain("$t$");
@@ -193,7 +193,30 @@ describe("escapeFalseLatex", () => {
         const input = "- Net Margin after $178,450 in taxes: $\\frac{\\$1,023,820}{\\$2,847,500} = 36.0\\%$";
         const result = escapeFalseLatex(input);
         expect(result).toContain("\\$178,450");
-        expect(result).toContain("$\\frac{\\$1,023,820}{\\$2,847,500} = 36.0\\%$");
+        expect(result).toContain("$\\frac{\\text{\\textdollar}1,023,820}{\\text{\\textdollar}2,847,500} = 36.0\\%$");
+    });
+
+    it("handles line 31 scenario: multiple \\$-containing LaTeX formulas", () => {
+        const input = "Where $F = \\$567,800$ (fixed costs), $P = \\$89.99$ (price per unit), and $V = \\$0.42$ (variable cost per unit). This yields $Q_{\\text{BE}} = 6,338$ units.";
+        const result = escapeFalseLatex(input);
+        expect(result).toContain("$F = \\text{\\textdollar}567,800$");
+        expect(result).toContain("$P = \\text{\\textdollar}89.99$");
+        expect(result).toContain("$V = \\text{\\textdollar}0.42$");
+        expect(result).toContain("$Q_{\\text{BE}} = 6,338$");
+    });
+
+    it("handles line 64 scenario: two \\$-containing LaTeX spans + trailing currency", () => {
+        const input = "Starting value $V_0 = \\$850,000$ depreciated to $\\$723,500$ after one quarter. Total accumulated depreciation across all assets reached $1,234,000.";
+        const result = escapeFalseLatex(input);
+        expect(result).toContain("$V_0 = \\text{\\textdollar}850,000$");
+        expect(result).toContain("$\\text{\\textdollar}723,500$");
+        // $1,234,000 is a lone $ (can't pair after LaTeX spans are committed) — safe unescaped
+        expect(result).toContain("reached $1,234,000.");
+    });
+
+    it("does not transform \\$ outside math spans", () => {
+        // \\$ that is already an escape for currency should remain \\$
+        expect(escapeFalseLatex("costs \\$100")).toBe("costs \\$100");
     });
 
     it("handles complex mixed input with inline latex, display math, and multiple currency patterns", () => {
