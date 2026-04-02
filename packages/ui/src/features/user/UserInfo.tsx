@@ -104,9 +104,6 @@ interface EmailAgentAvatarProps extends InfoProps {
 function EmailAgentAvatar({ email, showTitle = false, size = "md" }: EmailAgentAvatarProps) {
     const { t } = useUITranslation();
 
-    // Determine title and description
-    const title = t('user.agentOnBehalfOfEmail');
-
     const description = (
         <>
             <div>{t('user.serviceAccountDescription')}</div>
@@ -114,7 +111,7 @@ function EmailAgentAvatar({ email, showTitle = false, size = "md" }: EmailAgentA
         </>
     )
     return (
-        <UserPopoverPanel title={title} description={description}>
+        <UserPopoverPanel title={'Email Agent'} description={description}>
             <div className="flex items-center gap-2">
                 <div className="flex items-center -space-x-2">
                     <Avatar
@@ -131,7 +128,7 @@ function EmailAgentAvatar({ email, showTitle = false, size = "md" }: EmailAgentA
                 </div>
                 {showTitle && (
                     <div className="text-sm font-semibold truncate">
-                        {t('user.agentOnBehalfOfEmail')} : {email}
+                        {t('user.agentOnBehalfOf')} : {email}
                     </div>
                 )}
             </div>
@@ -159,7 +156,8 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
     const apiKey = shouldFetchApiKey ? apiKeyResult.data : undefined;
 
     // Determine title and description
-    const title = user ? t('user.agentOnBehalfOf') : apiKey ? t('user.agentOnBehalfOfApiKey') : t('user.serviceAccount');
+    const shortenedAgentId = agentId.slice(-6);
+    const title = user ? t('user.agentOnBehalfOf') : apiKey ? t('user.agentOnBehalfOfApiKey') : t('user.serviceAccount') + `~${shortenedAgentId}`;
     const _title = isScheduleAgent ? t('user.schedule', { title }) : title;
 
     const description = (
@@ -170,7 +168,7 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
                         <Avatar src={user.picture} name={user.name} size="sm" />
                         <div>
                             <div className="font-medium">{user.name || user.email}</div>
-                            {user.email && user.name && <div className="text-xs text-muted-foreground">{user.email}</div>}
+                            {user.email && user.name && <div className="text-xs text-muted">{user.email}</div>}
                         </div>
                     </div>
                 </>
@@ -223,7 +221,7 @@ function AgentAvatar({ agentId, onBehalfOfType, onBehalfOfId, showTitle = false,
                 </div>
                 {showTitle && (
                     <div className="text-sm font-semibold truncate">
-                        {user ? `Agent (${user.name || user.email})` : apiKey ? `Agent (${apiKey.name})` : title}
+                        {user ? `Agent      (${user.name || user.email})` : apiKey ? `Agent (${apiKey.name})` : title}
                     </div>
                 )}
             </div>
@@ -311,10 +309,11 @@ export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoPr
         }
 
         case PrincipalType.Schedule: {
-            // format: schedule:agentId:user:userId
-            const agentId = parts[1];
-            const onBehalfOfType = parts[2];
-            const onBehalfOfId = parts[3];
+            // format: schedule:{scheduleID}:agent:{accountID}:{projectID}:{agentID}:user:{userId}
+
+            const agentId = parts[2] === 'agent' ? parts.slice(3, 6).join(':') : 'unknown-agent';
+            const onBehalfOfType = parts[6]; // e.g. "user"
+            const onBehalfOfId = parts[7]; // e.g. userId
 
             return <AgentAvatar
                 agentId={agentId}
