@@ -71,6 +71,15 @@ export default class OAuthAppsApi extends ApiTopic {
     }
 
     /**
+     * Test and establish a client_credentials OAuth connection.
+     * Verifies credentials by fetching a token and caching it at project level.
+     * Only valid for grant_type=client_credentials applications.
+     */
+    connect(id: string): Promise<{ success: boolean }> {
+        return this.post(`/${id}/connect`, { payload: {} });
+    }
+
+    /**
      * Get a valid access token for an OAuth application (auto-refreshes).
      * Primarily used by workflows/activities.
      */
