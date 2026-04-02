@@ -24,7 +24,15 @@ export interface OAuthApplicationData {
     project: string;
 
     /**
+     * The OAuth 2.0 grant type to use.
+     * - 'authorization_code': 3-legged flow requiring user authorization (default).
+     * - 'client_credentials': 2-legged server-to-server flow using client_id + client_secret.
+     */
+    grant_type?: 'authorization_code' | 'client_credentials';
+
+    /**
      * The OAuth 2.0 authorization endpoint URL.
+     * Only used for authorization_code flow.
      * Optional when endpoints are discovered via .well-known (e.g. MCP servers).
      */
     authorization_endpoint?: string;
@@ -52,7 +60,7 @@ export interface OAuthApplicationData {
 
     /**
      * Whether to use PKCE (Proof Key for Code Exchange) in the authorization flow.
-     * Defaults to true.
+     * Only applies to authorization_code flow. Defaults to true.
      */
     use_pkce: boolean;
 
@@ -79,6 +87,7 @@ export interface OAuthApplication extends OAuthApplicationData {
 export interface CreateOAuthApplicationPayload {
     name: string;
     display_name: string;
+    grant_type?: 'authorization_code' | 'client_credentials';
     authorization_endpoint?: string;
     token_endpoint?: string;
     client_id: string;
@@ -112,8 +121,11 @@ export interface OAuthAppAuthStatus {
 
 /**
  * Response from the OAuth authorize endpoint.
+ * For authorization_code flow: contains authorization_url and state for browser redirect.
+ * For client_credentials flow: contains connected=true (token was fetched server-side, no redirect needed).
  */
 export interface OAuthAppAuthorizeResponse {
-    authorization_url: string;
-    state: string;
+    authorization_url?: string;
+    state?: string;
+    connected?: boolean;
 }

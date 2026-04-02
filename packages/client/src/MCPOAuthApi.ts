@@ -47,6 +47,17 @@ export default class MCPOAuthApi extends ApiTopic {
     }
 
     /**
+     * Connect a client_credentials OAuth Application to an MCP collection.
+     * Discovers and backfills the token endpoint if not configured, then verifies credentials.
+     * Only applicable when the OAuth Application uses grant_type=client_credentials.
+     * @param appInstallId - The app installation ID
+     * @param collectionName - The collection name
+     */
+    connect(appInstallId: string, collectionName: string): Promise<{ success: boolean }> {
+        return this.post(`/connect/${appInstallId}/${collectionName}`, {});
+    }
+
+    /**
      * Disconnect OAuth authentication for a specific collection
      * @param appInstallId - The app installation ID
      * @param collectionName - The collection name
