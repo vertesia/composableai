@@ -20,7 +20,7 @@ function isDefinitelyNotLatex(content: string): boolean {
     if (/^\s/.test(content)) return true;           // space after opening $
     if (/\s$/.test(content)) return true;           // space before closing $
     // Ends with bare operator, except ^+ or ^- (ion notation)
-    if (/[+\-*/]$/.test(content) && !/\^[+\-]$/.test(content)) return true;
+    if (/[+*/-]$/.test(content) && !/\^[+-]$/.test(content)) return true;
     return false;
 }
 
