@@ -602,6 +602,14 @@ export interface CompositeAppUserMenuOverrides {
 }
 
 /**
+ * Theme overrides for the CompositeApp.
+ */
+export interface CompositeAppThemeOverrides {
+    /** When true, forces light mode and disables dark mode (defaults to false) */
+    disableDarkMode?: boolean;
+}
+
+/**
  * Sidebar display overrides for the CompositeApp.
  */
 export interface CompositeAppSidebarOverrides {
@@ -705,6 +713,8 @@ export interface CompositeAppConfig {
     header?: CompositeAppHeaderOverrides;
     /** Optional user menu overrides */
     userMenu?: CompositeAppUserMenuOverrides;
+    /** Optional theme overrides (e.g. disable dark mode) */
+    theme?: CompositeAppThemeOverrides;
     /** Optional home page override. When set, redirects "/" to the specified app route instead of the dashboard. Send null to unset. */
     homePlugin?: CompositeAppHomePlugin | null;
     /** List of apps to include in the CompositeApp (used for installation tracking and fallback sidebar) */
