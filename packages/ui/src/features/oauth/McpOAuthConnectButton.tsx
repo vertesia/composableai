@@ -93,7 +93,12 @@ export function McpOAuthConnectButton({
             setAuthenticating(true);
             onError?.(null);
             const response = await client.mcpOAuth.authorize(appId, collectionName);
-            if (response.authorization_url) {
+            if (response.connected) {
+                // Client credentials: token was fetched server-side, no popup needed
+                setAuthenticating(false);
+                await loadStatus();
+                onAuthChange?.();
+            } else if (response.authorization_url) {
                 openOAuthPopup(response.authorization_url);
             } else {
                 onError?.(`${collectionName}: Authorization URL not provided by server`);
