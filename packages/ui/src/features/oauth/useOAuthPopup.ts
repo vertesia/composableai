@@ -60,7 +60,7 @@ export function useOAuthPopup({ onComplete, onError }: UseOAuthPopupOptions) {
             cleanupRef.current = null;
         }
 
-        // Open OAuth authorization in centered popup window
+        // Open OAuth authorization in centered popup window.
         const width = 600;
         const height = 700;
         const left = window.screenX + (window.outerWidth - width) / 2;
@@ -75,23 +75,18 @@ export function useOAuthPopup({ onComplete, onError }: UseOAuthPopupOptions) {
         let messageReceived = false;
         let intervalId: ReturnType<typeof setInterval> | null = null;
 
-        // Listen for message from OAuth callback page
-        const handleMessage = (event: MessageEvent) => {
-            // Verify origin for security
-            if (event.origin !== window.location.origin) {
-                return;
-            }
+        // BroadcastChannel is same-origin by spec — no origin check required.
+        const channel = new BroadcastChannel('oauth-callback');
 
-            // Validate message structure before processing
+        const handleMessage = (event: MessageEvent) => {
             if (!isOAuthMessage(event.data)) {
                 return;
             }
 
             messageReceived = true;
-            window.removeEventListener('message', handleMessage);
+            channel.close();
             if (intervalId) clearInterval(intervalId);
 
-            // Call completion callback using ref to get latest version
             onCompleteRef.current();
 
             if (!event.data.success && event.data.error) {
@@ -101,17 +96,15 @@ export function useOAuthPopup({ onComplete, onError }: UseOAuthPopupOptions) {
             cleanupRef.current = null;
         };
 
-        window.addEventListener('message', handleMessage);
+        channel.addEventListener('message', handleMessage);
 
-        // Fallback: Poll for popup closure in case message is not received
-        // Only set up polling if we have a reference to the popup
+        // Poll for popup closure so the button resets if the user dismisses the popup early.
         if (popup) {
             intervalId = setInterval(() => {
                 if (popup.closed) {
                     if (intervalId) clearInterval(intervalId);
-                    window.removeEventListener('message', handleMessage);
+                    channel.close();
 
-                    // Only reload if we didn't already receive a message
                     if (!messageReceived) {
                         onCompleteRef.current();
                     }
@@ -123,7 +116,7 @@ export function useOAuthPopup({ onComplete, onError }: UseOAuthPopupOptions) {
 
         // Store cleanup function
         cleanupRef.current = () => {
-            window.removeEventListener('message', handleMessage);
+            channel.close();
             if (intervalId) clearInterval(intervalId);
         };
     };

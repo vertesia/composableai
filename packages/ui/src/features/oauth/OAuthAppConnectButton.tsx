@@ -1,7 +1,7 @@
 import type { OAuthAppAuthStatus } from '@vertesia/common';
+import { useUserSession } from '@vertesia/ui/session';
 import { Button, Spinner } from '../../core/index.js';
 import { useUITranslation } from '../../i18n/index.js';
-import { useUserSession } from '../../session/index.js';
 import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useOAuthPopup } from './useOAuthPopup.js';

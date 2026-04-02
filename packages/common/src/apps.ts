@@ -517,8 +517,9 @@ export interface OAuthAuthStatus {
  * Response from OAuth authorization endpoint
  */
 export interface OAuthAuthorizeResponse {
-    authorization_url: string;
-    state: string;
+    authorization_url?: string;
+    state?: string;
+    connected?: boolean;
 }
 
 /**
