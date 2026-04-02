@@ -5,9 +5,11 @@ const INLINE_CODE_REGEX = /`[^`\n]*`/g;
  * Positive detection: content contains LaTeX structural patterns.
  */
 function isDefinitelyLatex(content: string): boolean {
-    if (/\\[a-zA-Z]/.test(content)) return true;   // \command (\frac, \alpha, etc.)
+    if (/\\[^\s]/.test(content)) return true;       // \command or \symbol (\frac, \%, \$, etc.)
     if (/[{}]/.test(content)) return true;          // brace groups
     if (/[_^][\w{]/.test(content)) return true;     // sub/superscript
+    if (/^[a-zA-Z]$/.test(content)) return true;    // single letter variable ($r$, $x$, $t$)
+    if (/^[a-zA-Z]\s*=/.test(content)) return true; // variable assignment ($r = 0.235$, $n = 4$)
     return false;
 }
 
@@ -99,7 +101,13 @@ function escapeInText(text: string): string {
         }
 
         const content = getContent(text, positions[idx], positions[next]);
-        if (content !== null && isDefinitelyNotLatex(content)) {
+        if (content === null) {
+            // Cross-line pair: remark-math processes per-paragraph, so these can't
+            // actually pair. Don't consume — let each line's $ pair independently.
+            idx++;
+            continue;
+        }
+        if (isDefinitelyNotLatex(content)) {
             toEscape.add(positions[idx]);
             toEscape.add(positions[next]);
         }

@@ -132,6 +132,70 @@ describe("escapeFalseLatex", () => {
         expect(escapeFalseLatex(input)).toBe(expected);
     });
 
+    // --- Single letter variables and simple assignments ---
+
+    it("preserves single letter variable $r$", () => {
+        expect(escapeFalseLatex("growth rate $r$ can be expressed")).toBe("growth rate $r$ can be expressed");
+    });
+
+    it("preserves single letter variable $t$", () => {
+        expect(escapeFalseLatex("and $t$ is years")).toBe("and $t$ is years");
+    });
+
+    it("preserves variable assignment $r = 0.235$", () => {
+        expect(escapeFalseLatex("where $r = 0.235$ (growth rate)")).toBe("where $r = 0.235$ (growth rate)");
+    });
+
+    it("preserves variable assignment $n = 4$", () => {
+        expect(escapeFalseLatex("$n = 4$ (quarters per year)")).toBe("$n = 4$ (quarters per year)");
+    });
+
+    it("preserves LaTeX with \\% command", () => {
+        expect(escapeFalseLatex("we achieved $r = 23.5\\%$ growth")).toBe("we achieved $r = 23.5\\%$ growth");
+    });
+
+    it("preserves LaTeX with \\$ inside math", () => {
+        expect(escapeFalseLatex("where $P = \\$2,847,500$ is the amount")).toBe("where $P = \\$2,847,500$ is the amount");
+    });
+
+    it("preserves variable assignment $d = 0.15$", () => {
+        expect(escapeFalseLatex("with rate $d = 0.15$:")).toBe("with rate $d = 0.15$:");
+    });
+
+    // --- Financial report mixed patterns (from example.md) ---
+
+    it("handles currency followed by single-letter LaTeX variable", () => {
+        const input = "Product Line A generated $1,234,567 in revenue with an average transaction value of $156.78. The revenue growth rate $r$ can be expressed as:";
+        const result = escapeFalseLatex(input);
+        expect(result).toContain("$r$");
+        expect(result).toContain("\\$1,234,567");
+        expect(result).toContain("\\$156.78");
+    });
+
+    it("handles line with currency and LaTeX \\% command", () => {
+        const input = "Using this formula, we achieved $r = 23.5\\%$ growth. Marketing spent $387,900, yielding a customer acquisition cost (CAC) of $45.23 per customer.";
+        const result = escapeFalseLatex(input);
+        expect(result).toContain("$r = 23.5\\%$");
+        expect(result).toContain("\\$387,900");
+        expect(result).toContain("\\$45.23");
+    });
+
+    it("handles line with \\$ inside LaTeX and currency amounts", () => {
+        const input = "Where $P = \\$2,847,500$ (initial quarterly revenue), $r = 0.235$ (growth rate), $n = 4$ (quarters per year), and $t$ is years.";
+        const result = escapeFalseLatex(input);
+        expect(result).toContain("$P = \\$2,847,500$");
+        expect(result).toContain("$r = 0.235$");
+        expect(result).toContain("$n = 4$");
+        expect(result).toContain("$t$");
+    });
+
+    it("handles profitability ratio line with mixed currency and LaTeX fractions", () => {
+        const input = "- Net Margin after $178,450 in taxes: $\\frac{\\$1,023,820}{\\$2,847,500} = 36.0\\%$";
+        const result = escapeFalseLatex(input);
+        expect(result).toContain("\\$178,450");
+        expect(result).toContain("$\\frac{\\$1,023,820}{\\$2,847,500} = 36.0\\%$");
+    });
+
     it("handles complex mixed input with inline latex, display math, and multiple currency patterns", () => {
         const input = "The report for $500M shows that (given a formula $sales = x*e^{y}$) we were off by nearly $15M in 2025. Final sales showed that true estimates should have been closer to $515M in raw $ ammounts, +/- $5M to $ 7.5M. This is derived from the overall equation $$variance = x*v/2*e^(y-y`)$$";
         const result = escapeFalseLatex(input);
