@@ -2,7 +2,7 @@ import { log } from "@temporalio/activity";
 import { VertesiaClient } from "@vertesia/client";
 import { NodeStreamSource } from "@vertesia/client/node";
 import { Readable } from "stream";
-import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
+import { TextExtractionResult, TextExtractionStatus } from "@vertesia/common";
 
 /**
  * Uploads extracted text preview to cloud storage

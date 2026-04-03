@@ -4,8 +4,8 @@ import type { VertesiaClient } from "@vertesia/client";
 import { AUDIO_RENDITION_NAME, ContentEventName, ContentNature, DSLActivityExecutionPayload } from "@vertesia/common";
 import type { ActivityContext } from "@vertesia/workflow";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { TextExtractionStatus } from "../../result-types.js";
-import { transcribeMedia, TranscriptMediaParams, TranscriptMediaResult } from "./transcribeMediaWithGladia.js";
+import { TextExtractionStatus, TranscriptMediaResult } from "@vertesia/common";
+import { transcribeMedia, TranscriptMediaParams } from "./transcribeMediaWithGladia.js";
 
 // Mock setupActivity from the relative path used by the activity
 vi.mock("../../dsl/setup/ActivityContext.js", async (importOriginal) => {

@@ -2,7 +2,7 @@ import { log } from "@temporalio/activity";
 import { FetchClient } from "@vertesia/api-fetch-client";
 import { AudioMetadata, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, TranscriptSegment, VideoMetadata } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
-import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
+import { TextExtractionResult, TextExtractionStatus } from "@vertesia/common";
 
 export interface SaveGladiaTranscriptionParams {
     gladiaTranscriptionId: string;

@@ -19,7 +19,6 @@ export { prepareVideo } from "./media/prepareVideo.js";
 export { convertPdfToStructuredText } from "./media/processPdfWithTextract.js";
 export { saveGladiaTranscription } from "./media/saveGladiaTranscription.js";
 export { transcribeMedia } from "./media/transcribeMediaWithGladia.js";
-export type { TranscriptMediaResult } from "./media/transcribeMediaWithGladia.js";
 export { mergeChildArtifacts } from "./mergeChildArtifacts.js";
 export { notifyWebhook } from "./notifyWebhook.js";
 export { checkRateLimit } from "./rateLimiter.js";

@@ -2,8 +2,8 @@ import { MockActivityEnvironment } from "@temporalio/testing";
 import { ContentEventName, DSLActivityExecutionPayload } from "@vertesia/common";
 import type { VertesiaClient } from "@vertesia/client";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ActivityContext, TextExtractionResult } from "@vertesia/workflow";
-import { TextExtractionStatus } from "../../result-types.js";
+import type { ActivityContext } from "@vertesia/workflow";
+import { TextExtractionStatus, type TextExtractionResult } from "@vertesia/common";
 import { saveGladiaTranscription, SaveGladiaTranscriptionParams } from "./saveGladiaTranscription.js";
 
 // Mock setupActivity from the relative path used by the activity

@@ -11,6 +11,54 @@ export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayl
 }
 
 /**
+ * The result of a text extraction operation.
+ */
+export interface TextExtractionResult {
+    objectId?: string;
+    file?: {
+        source_url: string;
+        result_url?: string;
+    }
+    status: TextExtractionStatus;
+    hasText: boolean;
+    message?: string;
+    tokens?: {
+        count: number;
+        encoding: string;
+        etag: string;
+    };
+    len?: number;
+    error?: string;
+}
+
+export enum TextExtractionStatus {
+    skipped = "skipped",
+    success = "success",
+    error = "error",
+}
+
+export interface TranscriptMediaResult extends TextExtractionResult {
+    message?: string;
+    /**
+     * Gladia transcription ID for fetching results in a follow-up activity.
+     * Present when async media transcription completes successfully.
+     */
+    gladiaTranscriptionId?: string;
+}
+
+export interface TransformTablesWorkflowPayload extends Omit<WorkflowExecutionPayload, "vars"> {
+    vars: AdaptTablesParams;
+    environment?: string;
+}
+
+export interface TransformTablesWorkflowResult {
+    result_path: string;
+    status: string;
+    table_count: number;
+    item_count: number;
+}
+
+/**
  * Represents a image in a document that has been analyzed
  */
 export interface DocImage {

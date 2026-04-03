@@ -11,7 +11,7 @@ import { mutoolPdfToText } from "../conversion/mutool.js";
 import { markdownWithPandoc } from "../conversion/pandoc.js";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../errors.js";
-import { TextExtractionResult, TextExtractionStatus } from "../result-types.js";
+import { TextExtractionResult, TextExtractionStatus } from "@vertesia/common";
 import { fetchBlobAsBuffer, md5 } from "../utils/blobs.js";
 import {
     createFileSourceResult,

@@ -1,9 +1,8 @@
 import { activityInfo, CompleteAsyncError, log } from "@temporalio/activity";
 import { FetchClient, RequestError } from "@vertesia/api-fetch-client";
-import { AUDIO_RENDITION_NAME, ContentNature, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, VideoMetadata } from "@vertesia/common";
+import { AUDIO_RENDITION_NAME, ContentNature, DSLActivityExecutionPayload, DSLActivitySpec, GladiaConfiguration, SupportedIntegrations, TextExtractionStatus, TranscriptMediaResult, VideoMetadata } from "@vertesia/common";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../../errors.js";
-import { TextExtractionResult, TextExtractionStatus } from "../../index.js";
 
 
 export interface TranscriptMediaParams {
@@ -14,15 +13,6 @@ export interface TranscriptMediaParams {
 
 export interface TranscriptMedia extends DSLActivitySpec<TranscriptMediaParams> {
     name: 'TranscribeMedia';
-}
-
-export interface TranscriptMediaResult extends TextExtractionResult {
-    message?: string;
-    /**
-     * Gladia transcription ID for fetching results in a follow-up activity.
-     * Present when async media transcription completes successfully.
-     */
-    gladiaTranscriptionId?: string;
 }
 
 const GLADIA_URL = "https://api.gladia.io/v2";
