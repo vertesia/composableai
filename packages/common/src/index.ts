@@ -1,6 +1,7 @@
 export * from './access-control.js';
 export * from './analytics.js';
 export * from './audit-trail.js';
+export * from './cost-analytics.js';
 export * from './apikey.js';
 export * from './apps.js';
 export * from './ask-user.js';
@@ -11,7 +12,6 @@ export * from './environment.js';
 export * from "./facets.js";
 export * from './group.js';
 export * from './integrations.js';
-export * from './oauth.js';
 export * from './interaction.js';
 export * from './pending-asks.js';
 export * from './json-schema.js';

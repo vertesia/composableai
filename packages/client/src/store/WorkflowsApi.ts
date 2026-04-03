@@ -1,26 +1,43 @@
 import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
-    ActiveWorkstreamsQueryResult,
     ActivityCatalog,
+    AgentEvent,
+    CostAnalyticsQuery,
+    CostAnalyticsResponse,
     AgentMessage,
     AgentMessageType,
     CompactMessage,
     CreateWorkflowRulePayload,
     DSLWorkflowDefinition,
     DSLWorkflowSpec,
+    ErrorAnalyticsResponse,
     ExecuteWorkflowPayload,
+    FirstResponseBehaviorAnalyticsResponse,
+    LatencyAnalyticsResponse,
     ListWorkflowInteractionsResponse,
     ListWorkflowRunsPayload,
     ListWorkflowRunsResponse,
     parseMessage,
     toAgentMessage,
+    PromptSizeAnalyticsResponse,
+    RunsByAgentAnalyticsResponse,
+    TimeToFirstResponseAnalyticsResponse,
+    TokenUsageAnalyticsResponse,
+    ToolAnalyticsResponse,
+    ToolParameterAnalyticsResponse,
+    TopPrincipalsAnalyticsResponse,
     WebSocketClientMessage,
     WebSocketServerMessage,
     WorkflowActionPayload,
+    WorkflowAnalyticsFilterOptionsResponse,
+    WorkflowAnalyticsSummaryQuery,
+    WorkflowAnalyticsSummaryResponse,
+    WorkflowAnalyticsTimeSeriesQuery,
     WorkflowDefinitionRef,
     WorkflowRule,
     WorkflowRuleItem,
     WorkflowRunWithDetails,
+    WorkflowToolParametersQuery,
 } from "@vertesia/common";
 import { VertesiaClient } from "../client.js";
 import { EventSourceProvider } from "../execute.js";
@@ -102,59 +119,6 @@ export class WorkflowsApi extends ApiTopic {
         return this.get(`/runs/${workflowId}/${runId}/query/${queryName}`);
     }
 
-    // ========================================================================
-    // Workstream helpers
-    // ========================================================================
-
-    /**
-     * List active workstreams for a running conversation workflow.
-     * Each entry includes `child_workflow_id` / `child_workflow_run_id` which
-     * can be passed to `retrieveMessages` or `streamMessages` to fetch the
-     * child's own message stream.
-     *
-     * @example
-     * ```ts
-     * const { running } = await client.workflows.getActiveWorkstreams(wfId, runId);
-     * for (const ws of running) {
-     *   const msgs = await client.workflows.retrieveWorkstreamMessages(ws);
-     *   console.log(ws.workstream_id, msgs.length, 'messages');
-     * }
-     * ```
-     */
-    getActiveWorkstreams(workflowId: string, runId: string): Promise<ActiveWorkstreamsQueryResult> {
-        return this.query<ActiveWorkstreamsQueryResult>(workflowId, runId, 'ActiveWorkstreams');
-    }
-
-    /**
-     * Retrieve historical messages for a specific workstream (child workflow).
-     * Convenience wrapper — extracts child IDs from an `ActiveWorkstreamEntry`.
-     */
-    retrieveWorkstreamMessages(
-        workstream: { child_workflow_id: string; child_workflow_run_id?: string },
-        since?: number,
-    ): Promise<AgentMessage[]> {
-        if (!workstream.child_workflow_run_id) {
-            return Promise.resolve([]);
-        }
-        return this.retrieveMessages(workstream.child_workflow_id, workstream.child_workflow_run_id, since);
-    }
-
-    /**
-     * Stream messages for a specific workstream (child workflow) in real-time.
-     * Convenience wrapper — extracts child IDs from an `ActiveWorkstreamEntry`.
-     */
-    streamWorkstreamMessages(
-        workstream: { child_workflow_id: string; child_workflow_run_id?: string },
-        onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
-        since?: number,
-        signal?: AbortSignal,
-    ): Promise<unknown> {
-        if (!workstream.child_workflow_run_id) {
-            return Promise.resolve(null);
-        }
-        return this.streamMessages(workstream.child_workflow_id, workstream.child_workflow_run_id, onMessage, since, signal);
-    }
-
     execute(
         name: string,
         payload: ExecuteWorkflowPayload = {},
@@ -190,247 +154,208 @@ export class WorkflowsApi extends ApiTopic {
      * This approach provides better performance for conversations with large historical messages
      * since HTTP responses are compressed while SSE streams cannot be compressed.
      */
-    async streamMessages(
-        workflowId: string,
-        runId: string,
-        onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
-        since?: number,
-        signal?: AbortSignal,
-    ): Promise<unknown> {
-        return new Promise<unknown>((resolve, reject) => {
-            const run = async () => {
-                let reconnectAttempts = 0;
-                let lastMessageTimestamp = since || 0;
-                let isClosed = false;
-                let currentSse: EventSource | null = null;
-                let interval: NodeJS.Timeout | null = null;
-                let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-                let abortHandler: (() => void) | null = null;
+    async streamMessages(workflowId: string, runId: string, onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void, since?: number): Promise<unknown> {
+        return new Promise<unknown>(async (resolve, reject) => {
+            let reconnectAttempts = 0;
+            let lastMessageTimestamp = since || 0;
+            let isClosed = false;
+            let currentSse: EventSource | null = null;
+            let interval: NodeJS.Timeout | null = null;
 
-                const maxReconnectAttempts = 10;
-                const baseDelay = 1000; // 1 second base delay
-                const maxDelay = 30000; // 30 seconds max delay
+            const maxReconnectAttempts = 10;
+            const baseDelay = 1000; // 1 second base delay
+            const maxDelay = 30000; // 30 seconds max delay
 
-                const calculateBackoffDelay = (attempts: number): number => {
-                    const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
-                    // Add jitter to prevent thundering herd
-                    const jitter = Math.random() * 0.1 * exponentialDelay;
-                    return exponentialDelay + jitter;
-                };
+            const calculateBackoffDelay = (attempts: number): number => {
+                const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+                // Add jitter to prevent thundering herd
+                const jitter = Math.random() * 0.1 * exponentialDelay;
+                return exponentialDelay + jitter;
+            };
 
-                const cleanup = () => {
-                    if (reconnectTimer) {
-                        clearTimeout(reconnectTimer);
-                        reconnectTimer = null;
-                    }
-                    if (interval) {
-                        clearInterval(interval);
-                        interval = null;
-                    }
-                    if (currentSse) {
-                        currentSse.close();
-                        currentSse = null;
-                    }
-                    if (signal && abortHandler) {
-                        signal.removeEventListener("abort", abortHandler);
-                        abortHandler = null;
-                    }
-                };
+            const cleanup = () => {
+                if (interval) {
+                    clearInterval(interval);
+                    interval = null;
+                }
+                if (currentSse) {
+                    currentSse.close();
+                    currentSse = null;
+                }
+            };
 
-                const exit = (payload: unknown) => {
-                    if (!isClosed) {
-                        isClosed = true;
-                        cleanup();
-                        resolve(payload);
-                    }
-                };
+            const exit = (payload: unknown) => {
+                if (!isClosed) {
+                    isClosed = true;
+                    cleanup();
+                    resolve(payload);
+                }
+            };
 
-                // Allow callers to externally cancel the stream lifecycle.
-                if (signal) {
-                    if (signal.aborted) {
-                        isClosed = true;
-                        cleanup();
+            // 1. Fetch historical messages via GET /updates (gzip-compressed if > 3KB)
+            // This is more efficient than receiving historical over uncompressed SSE
+            try {
+                const historical = await this.retrieveMessages(workflowId, runId, since);
+                for (const msg of historical) {
+                    // Update timestamp for SSE connection
+                    lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
+
+                    // Deliver historical messages to consumer
+                    if (onMessage) {
+                        onMessage(msg, exit);
+                    }
+
+                    // Check if workflow already completed
+                    const workstreamId = msg.workstream_id || 'main';
+                    const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
+                        (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
+                    if (streamIsOver) {
+                        console.log("Workflow already completed in historical messages");
                         resolve(null);
                         return;
                     }
-                    abortHandler = () => {
-                        exit(null);
-                    };
-                    signal.addEventListener("abort", abortHandler, { once: true });
                 }
+            } catch (err) {
+                console.warn("Failed to fetch historical messages, continuing with SSE:", err);
+                // Continue to SSE - it will send historical if skipHistory is not set
+            }
 
-                // 1. Fetch historical messages via GET /updates (gzip-compressed if > 3KB)
-                // This is more efficient than receiving historical over uncompressed SSE
+            // 2. Connect to SSE for real-time updates only (skipHistory=true)
+            const setupStream = async (isReconnect: boolean = false) => {
+                if (isClosed) return;
+
                 try {
-                    if (isClosed) return;
-                    const historical = await this.retrieveMessages(workflowId, runId, since);
-                    if (isClosed) return;
-                    for (const msg of historical) {
-                        if (isClosed) return;
-                        // Update timestamp for SSE connection
-                        lastMessageTimestamp = Math.max(lastMessageTimestamp, msg.timestamp || 0);
+                    const EventSourceImpl = await EventSourceProvider();
+                    const client = this.client as VertesiaClient;
+                    const streamUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/stream`);
 
-                        // Deliver historical messages to consumer
-                        if (onMessage) {
-                            onMessage(msg, exit);
-                        }
-                        if (isClosed) return;
-
-                        // Check if workflow already completed
-                        const workstreamId = msg.workstream_id || 'main';
-                        const streamIsOver = msg.type === AgentMessageType.TERMINATED ||
-                            (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
-                        if (streamIsOver) {
-                            console.log("Workflow already completed in historical messages");
-                            exit(null);
-                            return;
-                        }
+                    // Use the timestamp of the last received message for reconnection
+                    if (lastMessageTimestamp > 0) {
+                        streamUrl.searchParams.set("since", lastMessageTimestamp.toString());
                     }
-                } catch (err) {
-                    if (isClosed) return;
-                    console.warn("Failed to fetch historical messages, continuing with SSE:", err);
-                    // Continue to SSE - it will send historical if skipHistory is not set
-                }
 
-                // 2. Connect to SSE for real-time updates only (skipHistory=true)
-                const setupStream = async (isReconnect: boolean = false) => {
-                    if (isClosed) return;
+                    // Skip historical messages - we already fetched them via GET /updates
+                    streamUrl.searchParams.set("skipHistory", "true");
 
-                    try {
-                        const EventSourceImpl = await EventSourceProvider();
-                        if (isClosed) return;
-                        const client = this.client as VertesiaClient;
-                        const streamUrl = new URL(client.workflows.baseUrl + `/runs/${workflowId}/${runId}/stream`);
+                    const bearerToken = client._auth ? await client._auth() : undefined;
+                    if (!bearerToken) {
+                        reject(new Error("No auth token available"));
+                        return;
+                    }
 
-                        // Use the timestamp of the last received message for reconnection
-                        if (lastMessageTimestamp > 0) {
-                            streamUrl.searchParams.set("since", lastMessageTimestamp.toString());
+                    const token = bearerToken.split(" ")[1];
+                    streamUrl.searchParams.set("access_token", token);
+
+                    if (isReconnect) {
+                        console.log(`Reconnecting to SSE stream for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+                    }
+
+                    const sse = new EventSourceImpl(streamUrl.href);
+                    currentSse = sse;
+
+                    // Prevent Node from exiting prematurely
+                    interval = setInterval(() => { }, 1000);
+
+                    sse.onopen = () => {
+                        if (isReconnect) {
+                            console.log(`Successfully reconnected to SSE stream for run ${runId}`);
                         }
+                        // Reset reconnect attempts on successful connection
+                        reconnectAttempts = 0;
+                    };
 
-                        // Skip historical messages - we already fetched them via GET /updates
-                        streamUrl.searchParams.set("skipHistory", "true");
-
-                        const bearerToken = client._auth ? await client._auth() : undefined;
-                        if (isClosed) return;
-                        if (!bearerToken) {
-                            isClosed = true;
-                            cleanup();
-                            reject(new Error("No auth token available"));
+                    sse.onmessage = (ev: MessageEvent) => {
+                        if (!ev.data || ev.data.startsWith(":")) {
+                            console.log("Received comment or heartbeat; ignoring it.: ", ev.data);
                             return;
                         }
 
-                        const token = bearerToken.split(" ")[1];
-                        streamUrl.searchParams.set("access_token", token);
+                        try {
+                            // Parse message using parseMessage() which handles both compact and legacy formats
+                            const compactMessage = parseMessage(ev.data);
 
-                        if (isReconnect) {
-                            console.log(`Reconnecting to SSE stream for run ${runId} (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
-                        }
-
-                        if (isClosed) return;
-                        const sse = new EventSourceImpl(streamUrl.href);
-                        currentSse = sse;
-
-                        // Prevent Node from exiting prematurely
-                        interval = setInterval(() => { }, 1000);
-
-                        sse.onopen = () => {
-                            if (isReconnect) {
-                                console.log(`Successfully reconnected to SSE stream for run ${runId}`);
-                            }
-                            // Reset reconnect attempts on successful connection
-                            reconnectAttempts = 0;
-                        };
-
-                        sse.onmessage = (ev: MessageEvent) => {
-                            if (isClosed) return;
-                            if (!ev.data || ev.data.startsWith(":")) {
-                                return;
-                            }
-
-                            try {
-                                // Parse message using parseMessage() which handles both compact and legacy formats
-                                const compactMessage = parseMessage(ev.data);
-
-                                // Update last message timestamp for reconnection (use ts field or current time)
-                                if (compactMessage.ts) {
-                                    lastMessageTimestamp = Math.max(lastMessageTimestamp, compactMessage.ts);
-                                } else {
-                                    lastMessageTimestamp = Date.now();
-                                }
-
-                                // Convert to AgentMessage for consumers (they shouldn't need to know about compact format)
-                                if (onMessage) {
-                                    const agentMessage = toAgentMessage(compactMessage, runId);
-                                    onMessage(agentMessage, exit);
-                                }
-
-                                // Get workstream ID (defaults to 'main' if not set)
-                                const workstreamId = compactMessage.w || 'main';
-
-                                const streamIsOver = compactMessage.t === AgentMessageType.TERMINATED ||
-                                    (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
-
-                                // Only close the stream when the main workstream completes or terminates
-                                if (streamIsOver) {
-                                    console.log("Closing stream due to COMPLETE message from main workstream");
-                                    exit(null);
-                                } else if (compactMessage.t === AgentMessageType.COMPLETE) {
-                                    console.log(`Received COMPLETE message from non-main workstream: ${workstreamId}, keeping stream open`);
-                                }
-                            } catch (err) {
-                                console.error("Failed to parse SSE message:", err, ev.data);
-                            }
-                        };
-
-                        sse.onerror = (err: any) => {
-                            if (isClosed) return;
-
-                            console.warn(`SSE stream error for run ${runId}:`, err);
-                            cleanup();
-
-                            // Check if we should attempt reconnection
-                            if (reconnectAttempts < maxReconnectAttempts) {
-                                const delay = calculateBackoffDelay(reconnectAttempts);
-                                console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
-
-                                reconnectAttempts++;
-                                reconnectTimer = setTimeout(() => {
-                                    reconnectTimer = null;
-                                    if (!isClosed) {
-                                        setupStream(true);
-                                    }
-                                }, delay);
+                            // Update last message timestamp for reconnection (use ts field or current time)
+                            if (compactMessage.ts) {
+                                lastMessageTimestamp = Math.max(lastMessageTimestamp, compactMessage.ts);
                             } else {
-                                console.error(`Failed to reconnect to SSE stream for run ${runId} after ${maxReconnectAttempts} attempts`);
-                                isClosed = true;
-                                cleanup();
-                                reject(new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`));
+                                lastMessageTimestamp = Date.now();
                             }
-                        };
-                    } catch (err) {
+
+                            // Convert to AgentMessage for consumers (they shouldn't need to know about compact format)
+                            if (onMessage) {
+                                const agentMessage = toAgentMessage(compactMessage, runId);
+                                onMessage(agentMessage, exit);
+                            }
+
+                            // Get workstream ID (defaults to 'main' if not set)
+                            const workstreamId = compactMessage.w || 'main';
+
+                            const streamIsOver = compactMessage.t === AgentMessageType.TERMINATED ||
+                                (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
+
+                            // Only close the stream when the main workstream completes or terminates
+                            if (streamIsOver) {
+                                console.log("Closing stream due to COMPLETE message from main workstream");
+                                if (!isClosed) {
+                                    isClosed = true;
+                                    cleanup();
+                                    resolve(null);
+                                }
+                            } else if (compactMessage.t === AgentMessageType.COMPLETE) {
+                                console.log(`Received COMPLETE message from non-main workstream: ${workstreamId}, keeping stream open`);
+                            }
+                        } catch (err) {
+                            console.error("Failed to parse SSE message:", err, ev.data);
+                        }
+                    };
+
+                    sse.onerror = (err: any) => {
                         if (isClosed) return;
-                        console.error("Error setting up SSE stream:", err);
+
+                        console.warn(`SSE stream error for run ${runId}:`, err);
+                        cleanup();
+
+                        // Check if we should attempt reconnection
                         if (reconnectAttempts < maxReconnectAttempts) {
                             const delay = calculateBackoffDelay(reconnectAttempts);
+                            console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+
                             reconnectAttempts++;
-                            reconnectTimer = setTimeout(() => {
-                                reconnectTimer = null;
+                            setTimeout(() => {
                                 if (!isClosed) {
                                     setupStream(true);
                                 }
                             }, delay);
                         } else {
+                            console.error(`Failed to reconnect to SSE stream for run ${runId} after ${maxReconnectAttempts} attempts`);
                             isClosed = true;
-                            cleanup();
-                            reject(err);
+                            reject(new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`));
                         }
+                    };
+                } catch (err) {
+                    console.error("Error setting up SSE stream:", err);
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        const delay = calculateBackoffDelay(reconnectAttempts);
+                        reconnectAttempts++;
+                        setTimeout(() => {
+                            if (!isClosed) {
+                                setupStream(true);
+                            }
+                        }, delay);
+                    } else {
+                        reject(err);
                     }
-                };
+                }
+            };
 
-                // Start the async setup process
-                setupStream(false);
-            }
-            run().catch(reject);
+            // Start the async setup process
+            setupStream(false);
+
+            // Return cleanup function for external cancellation
+            return () => {
+                isClosed = true;
+                cleanup();
+            };
         });
     }
 
@@ -605,6 +530,179 @@ export class WorkflowsApi extends ApiTopic {
 
             connect();
         });
+    }
+
+    /**
+     * Ingest telemetry events for a workflow run.
+     * Workers use this to send telemetry to zeno-server for BigQuery storage.
+     */
+    ingestEvents(
+        workflowId: string,
+        runId: string,
+        events: AgentEvent[]
+    ): Promise<{ ingested: number; status?: string; error?: string }> {
+        return this.post(`/runs/${workflowId}/${runId}/events`, {
+            payload: { events },
+        });
+    }
+
+    // ========================================================================
+    // Analytics API
+    // ========================================================================
+
+    /**
+     * Get workflow analytics summary.
+     * Returns overall metrics including token usage, success rates, and run counts.
+     */
+    getAnalyticsSummary(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<WorkflowAnalyticsSummaryResponse> {
+        return this.post('/analytics/summary', { payload: query });
+    }
+
+    /**
+     * Get token usage analytics.
+     * Returns token consumption metrics by model, agent, tool, or over time.
+     */
+    getTokenUsageAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<TokenUsageAnalyticsResponse> {
+        return this.post('/analytics/tokens', { payload: query });
+    }
+
+    /**
+     * Get LLM latency analytics.
+     * Returns duration/latency metrics for LLM calls.
+     */
+    getLlmLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/llm', { payload: query });
+    }
+
+    /**
+     * Get tool latency analytics.
+     * Returns duration/latency metrics for tool calls.
+     */
+    getToolLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/tools', { payload: query });
+    }
+
+    /**
+     * Get agent/workflow latency analytics.
+     * Returns duration metrics for complete workflow runs.
+     */
+    getAgentLatencyAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<LatencyAnalyticsResponse> {
+        return this.post('/analytics/latency/agents', { payload: query });
+    }
+
+    /**
+     * Get error analytics.
+     * Returns error rates, types, and trends.
+     */
+    getErrorAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<ErrorAnalyticsResponse> {
+        return this.post('/analytics/errors', { payload: query });
+    }
+
+    /**
+     * Get tool usage analytics.
+     * Returns tool invocation counts, success rates, and performance metrics.
+     */
+    getToolAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<ToolAnalyticsResponse> {
+        return this.post('/analytics/tools', { payload: query });
+    }
+
+    /**
+     * Get tool parameter analytics.
+     * Returns parameter value distributions for a specific tool.
+     */
+    getToolParameterAnalytics(
+        query: WorkflowToolParametersQuery
+    ): Promise<ToolParameterAnalyticsResponse> {
+        return this.post('/analytics/tools/parameters', { payload: query });
+    }
+
+    /**
+     * Get available filter options for analytics.
+     * Returns unique agents, environments, and models from telemetry data.
+     */
+    getAnalyticsFilterOptions(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<WorkflowAnalyticsFilterOptionsResponse> {
+        return this.post('/analytics/filter-options', { payload: query });
+    }
+
+    /**
+     * Get average prompt size (input tokens) by agent for startConversation calls.
+     * This represents the initial prompt + tools size.
+     */
+    getPromptSizeAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<PromptSizeAnalyticsResponse> {
+        return this.post('/analytics/prompt-size', { payload: query });
+    }
+
+    /**
+     * Get top principals (users/API keys) who started the most agent runs.
+     * Returns the top N principals sorted by run count descending.
+     */
+    getTopPrincipalsAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<TopPrincipalsAnalyticsResponse> {
+        return this.post('/analytics/top-principals', { payload: query });
+    }
+
+    /**
+     * Get agent run distribution - how many runs per agent/interaction type.
+     * Returns the top N agents sorted by run count descending.
+     */
+    getRunsByAgentAnalytics(
+        query: WorkflowAnalyticsSummaryQuery = {}
+    ): Promise<RunsByAgentAnalyticsResponse> {
+        return this.post('/analytics/runs-by-agent', { payload: query });
+    }
+
+    /**
+     * Get time to first response analytics.
+     * Measures the time from agent start to the completion of the first LLM call.
+     * Returns average, min, max, median, p95, and p99 metrics.
+     */
+    getTimeToFirstResponseAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<TimeToFirstResponseAnalyticsResponse> {
+        return this.post('/analytics/time-to-first-response', { payload: query });
+    }
+
+    /**
+     * Get first response behavior analytics.
+     * Analyzes the agent's first LLM response behavior:
+     * - Percentage of agents that start by making a plan
+     * - Percentage of agents that return no tool calls at start
+     */
+    getFirstResponseBehaviorAnalytics(
+        query: WorkflowAnalyticsTimeSeriesQuery = {}
+    ): Promise<FirstResponseBehaviorAnalyticsResponse> {
+        return this.post('/analytics/first-response-behavior', { payload: query });
+    }
+
+    getCostAnalytics(
+        query: CostAnalyticsQuery = {}
+    ): Promise<CostAnalyticsResponse> {
+        return this.post('/analytics/cost', { payload: query });
+    }
+
+    getGlobalCostAnalytics(
+        query: CostAnalyticsQuery = {}
+    ): Promise<CostAnalyticsResponse> {
+        return this.post('/analytics/cost/global', { payload: query });
     }
 
     rules = new WorkflowsRulesApi(this);
