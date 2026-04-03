@@ -15,10 +15,10 @@ export { BILLABLE_AUDIT_ACTIONS };
 // ============================================================================
 
 export interface CostAnalyticsQuery {
-    /** Start time (ISO string) */
-    from?: string;
-    /** End time (ISO string) */
-    to?: string;
+    /** Start time (ISO string or epoch ms) */
+    from?: string | number;
+    /** End time (ISO string or epoch ms) */
+    to?: string | number;
     /** Group results by this dimension */
     group_by?: 'model' | 'environment' | 'account' | 'project' | 'provider';
     /** Time series resolution */

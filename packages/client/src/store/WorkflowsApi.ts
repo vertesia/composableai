@@ -2,8 +2,6 @@ import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
 import {
     ActivityCatalog,
     AgentEvent,
-    CostAnalyticsQuery,
-    CostAnalyticsResponse,
     AgentMessage,
     AgentMessageType,
     CompactMessage,
@@ -691,18 +689,6 @@ export class WorkflowsApi extends ApiTopic {
         query: WorkflowAnalyticsTimeSeriesQuery = {}
     ): Promise<FirstResponseBehaviorAnalyticsResponse> {
         return this.post('/analytics/first-response-behavior', { payload: query });
-    }
-
-    getCostAnalytics(
-        query: CostAnalyticsQuery = {}
-    ): Promise<CostAnalyticsResponse> {
-        return this.post('/analytics/cost', { payload: query });
-    }
-
-    getGlobalCostAnalytics(
-        query: CostAnalyticsQuery = {}
-    ): Promise<CostAnalyticsResponse> {
-        return this.post('/analytics/cost/global', { payload: query });
     }
 
     rules = new WorkflowsRulesApi(this);
