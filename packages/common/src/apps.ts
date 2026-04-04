@@ -176,6 +176,22 @@ export function normalizeToolCollection(collection: ToolCollection): ToolCollect
 
 
 /**
+ * Metadata hints from MCP tool annotations (per MCP spec).
+ */
+export interface MCPToolAnnotations {
+    /** Human-readable display name for the tool */
+    title?: string;
+    /** If true, the tool does not modify any state */
+    readOnlyHint?: boolean;
+    /** If true, the tool may perform irreversible destructive operations */
+    destructiveHint?: boolean;
+    /** If true, calling the tool multiple times with the same args has no additional effect */
+    idempotentHint?: boolean;
+    /** If true, the tool interacts with external entities outside the local environment */
+    openWorldHint?: boolean;
+}
+
+/**
  * Tool definition with optional activation control for agent exposure.
  */
 export interface AgentToolDefinition extends ToolDefinition {
@@ -200,6 +216,10 @@ export interface AgentToolDefinition extends ToolDefinition {
      * when this skill is called. Used for dynamic tool discovery.
      */
     related_tools?: string[];
+    /**
+     * MCP tool annotations providing hints about tool behavior and safety.
+     */
+    annotations?: MCPToolAnnotations;
 }
 
 /**
@@ -467,7 +487,7 @@ export interface AppToolCollection {
     /**
      * the tools provided by this collection
      */
-    tools: { name: string, description?: string, related_tools?: string[] }[]
+    tools: AgentToolDefinition[]
 }
 
 /**
