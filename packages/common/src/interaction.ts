@@ -26,6 +26,7 @@ import { ExecutionRunDocRef } from "./runs.js";
 import { ConversationState } from "./store/conversation-state.js";
 import { AccountRef } from "./user.js";
 import { LlmCallType } from "./workflow-analytics.js";
+import type { MCPToolAnnotations } from "./apps.js";
 
 export interface InteractionExecutionError {
     code: string;
@@ -1226,6 +1227,12 @@ export interface BuiltinToolDefinition {
      * JSON schema for the tool's parameters
      */
     params: JSONSchema;
+
+    /**
+     * Behavioral hints following the MCP ToolAnnotations spec.
+     * Used for display purposes only — not sent to LLMs.
+     */
+    annotations?: MCPToolAnnotations;
 }
 
 /**
