@@ -507,6 +507,9 @@ export interface AgentTask {
 
     /** LLM stop reason for llm_call tasks (e.g., "stop", "length", "tool_use") */
     finish_reason?: string;
+
+    /** Warnings about the task outcome (e.g. unexpected model behavior). */
+    warnings?: string[];
 }
 
 export interface WorkflowRun {
