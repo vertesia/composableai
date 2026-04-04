@@ -132,6 +132,14 @@ export default class AppsApi extends ApiTopic {
     }
 
     /**
+     * Update the tool allowlist for an app installation.
+     * Pass null to remove all restrictions (all tools permitted).
+     */
+    updateToolAllowlist(installId: string, tool_allowlist: string[] | null): Promise<AppInstallationWithManifest> {
+        return this.put(`/installations/${installId}/tool-allowlist`, { payload: { tool_allowlist } });
+    }
+
+    /**
      * Validate that a URL is safe to use as a remote tool/activity endpoint.
      * Throws a ServerError(400) if the URL is blocked (SSRF protection).
      */

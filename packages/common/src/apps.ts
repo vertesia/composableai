@@ -455,6 +455,12 @@ export interface AppInstallation {
     project: string; // the project where the app is installed
     manifest: string; // the app manifest
     settings?: Record<string, any>; // settings for the app installation
+    /**
+     * Admin-managed allowlist of tool names permitted for this installation.
+     * When undefined, all tools from the app are permitted.
+     * When set, only listed tool names are available for agent configuration and execution.
+     */
+    tool_allowlist?: string[];
     created_at: string;
     updated_at: string;
 }
