@@ -1219,9 +1219,9 @@ export interface BuiltinToolDefinition {
     name: string;
 
     /**
-     * Human-readable description of what the tool does
+     * One-line summary shown in the tool selector UI
      */
-    description: string;
+    summary?: string;
 
     /**
      * JSON schema for the tool's parameters
