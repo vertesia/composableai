@@ -26,4 +26,15 @@ export class CostApi extends ApiTopic {
     ): Promise<CostAnalyticsResponse> {
         return this.post('/analytics/global', { payload: query });
     }
+
+    /**
+     * Get the CSV export URL for raw inference audit events.
+     */
+    getExportUrl(params?: { from?: string | number; to?: string | number }): string {
+        const searchParams = new URLSearchParams();
+        if (params?.from) searchParams.set('from', typeof params.from === 'number' ? new Date(params.from).toISOString() : params.from);
+        if (params?.to) searchParams.set('to', typeof params.to === 'number' ? new Date(params.to).toISOString() : params.to);
+        const qs = searchParams.toString();
+        return `${this.baseUrl}/export${qs ? `?${qs}` : ''}`;
+    }
 }
