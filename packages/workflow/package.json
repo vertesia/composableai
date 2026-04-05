@@ -48,7 +48,6 @@
         "p-limit": "^6.2.0",
         "papaparse": "^5.5.3",
         "seedrandom": "^3.0.5",
-        "sharp": "^0.33.4",
         "tiktoken": "^1.0.22",
         "tmp": "^0.2.4",
         "tmp-promise": "^3.0.3",

@@ -17,7 +17,7 @@ import { log } from "@temporalio/activity";
 import { TextractProcessor } from "../../conversion/TextractProcessor.js";
 import { setupActivity } from "../../dsl/setup/ActivityContext.js";
 import { DocumentNotFoundError } from "../../errors.js";
-import { TextExtractionResult, TextExtractionStatus } from "../../result-types.js";
+import { TextExtractionResult, TextExtractionStatus } from "@vertesia/common";
 import { fetchBlobAsBuffer, md5 } from "../../utils/blobs.js";
 import { countTokens } from "../../utils/tokens.js";
 

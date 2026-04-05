@@ -1087,9 +1087,6 @@ importers:
       seedrandom:
         specifier: ^3.0.5
         version: 3.0.5
-      sharp:
-        specifier: ^0.33.4
-        version: 0.33.5
       tiktoken:
         specifier: ^1.0.22
         version: 1.0.22

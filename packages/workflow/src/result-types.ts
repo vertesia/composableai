@@ -1,29 +1,3 @@
-
-
-
-/**
- * The result of a text extraction operation.
- */
-export interface TextExtractionResult {
-    objectId?: string;
-    file?: {   
-        source_url: string;
-        result_url?: string;
-    }
-    status: TextExtractionStatus;
-    hasText: boolean;
-    message?: string;
-    tokens?: {
-        count: number;
-        encoding: string;
-        etag: string;
-    };
-    len?: number;
-    error?: string;
-}
-
-export enum TextExtractionStatus {
-    skipped = "skipped",
-    success = "success",
-    error = "error",
-}
+// Types moved to @vertesia/common (store/doc-analyzer.ts)
+// This file is kept empty to avoid breaking barrel exports.
+// Internal consumers should import from @vertesia/common instead.
