@@ -1254,7 +1254,9 @@ export interface SystemSkillCatalogEntry {
     title: string;
     /** Description of what the skill unlocks */
     description: string;
-    /** Builtin tools that become available when this skill is called */
+    /** Tools that become available when this skill is called */
+    tools: string[];
+    /** Related tools that complement this skill */
     related_tools: string[];
 }
 

@@ -14,8 +14,8 @@ type TooltipContentProps = React.ComponentPropsWithoutRef<typeof TooltipPrimitiv
   side?: "top" | "right" | "bottom" | "left"
 };
 
-const TooltipContent: React.ForwardRefExoticComponent<TooltipContentProps & React.RefAttributes<React.ElementRef<typeof TooltipPrimitive.Content>>> = React.forwardRef<
-  React.ElementRef<typeof TooltipPrimitive.Content>,
+const TooltipContent: React.ForwardRefExoticComponent<TooltipContentProps & React.RefAttributes<React.ComponentRef<typeof TooltipPrimitive.Content>>> = React.forwardRef<
+  React.ComponentRef<typeof TooltipPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> & {
     side?: "top" | "right" | "bottom" | "left"
   }
@@ -49,9 +49,26 @@ interface TooltipPopoverProps {
   asChild?: boolean;
 }
 export function VTooltip({ description, children, size = 'sm', placement = 'top', className, asChild }: TooltipPopoverProps) {
+  const [open, setOpen] = React.useState(false);
+  const suppressRef = React.useRef(false);
+
+  React.useEffect(() => {
+    const suppress = () => {
+      setOpen(false);
+      suppressRef.current = true;
+      requestAnimationFrame(() => { suppressRef.current = false; });
+    };
+    window.addEventListener('blur', suppress);
+    document.addEventListener('visibilitychange', suppress);
+    return () => {
+      window.removeEventListener('blur', suppress);
+      document.removeEventListener('visibilitychange', suppress);
+    };
+  }, []);
+
   return (
     <TooltipProvider delayDuration={0}>
-      <Tooltip>
+      <Tooltip open={open} onOpenChange={(v) => { if (!suppressRef.current) setOpen(v); }}>
         <TooltipTrigger className="cursor-pointer" asChild={asChild}>
           {children}
         </TooltipTrigger>
