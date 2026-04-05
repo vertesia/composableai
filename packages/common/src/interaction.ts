@@ -1229,6 +1229,12 @@ export interface BuiltinToolDefinition {
     params: JSONSchema;
 
     /**
+     * Whether this tool is active by default when no explicit tool list is provided.
+     * Tools with default: false are only activated by skills.
+     */
+    default: boolean;
+
+    /**
      * Behavioral hints following the MCP ToolAnnotations spec.
      * Used for display purposes only — not sent to LLMs.
      */
