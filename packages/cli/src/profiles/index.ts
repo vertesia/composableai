@@ -15,24 +15,34 @@ export function getConfigFile(path?: string) {
     }
 }
 
-export type Region = 'us1' | 'eu1' | 'jp1';
+export type Region = 'dev1' | 'us1' | 'eu1' | 'jp1';
 export const DEFAULT_REGION: Region = 'us1';
-export const AVAILABLE_REGIONS: Region[] = ['us1', 'eu1', 'jp1'];
+export const AVAILABLE_REGIONS: Region[] = ['dev1', 'us1', 'eu1', 'jp1'];
 
 export type ConfigUrlRef = "local" | "dev-main" | "dev-preview" | "preview" | "prod" | string;
+export function isNamedDevTarget(value: string): boolean {
+    return /^dev-[a-zA-Z0-9-]+$/.test(value);
+}
+
+export function getDefaultRegion(value: ConfigUrlRef): Region {
+    if (value === 'local' || isNamedDevTarget(value)) {
+        return 'dev1';
+    }
+    return DEFAULT_REGION;
+}
+
 export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGION): string {
     switch (value) {
         case "local":
             return "https://localhost:5173/cli";
-        case "dev-main":
-            return "https://dev-main.ui.dev1.vertesia.io/cli";
-        case "dev-preview":
-            return "https://dev-preview.ui.dev1.vertesia.io/cli";
         case "preview":
             return `https://preview.cloud.${region}.vertesia.io/cli`;
         case "prod":
             return `https://cloud.${region}.vertesia.io/cli`;
         default:
+            if (isNamedDevTarget(value)) {
+                return `https://${value}.ui.${region}.vertesia.io/cli`;
+            }
             if (value.startsWith("http://") || value.startsWith("https://")) {
                 return value;
             } else {
@@ -47,16 +57,6 @@ export function getServerUrls(value: ConfigUrlRef, region: Region = DEFAULT_REGI
                 studio_server_url: "http://localhost:8091",
                 zeno_server_url: "http://localhost:8092",
             };
-        case "dev-main":
-            return {
-                studio_server_url: "https://studio-server-dev-main.api.dev1.vertesia.io",
-                zeno_server_url: "https://zeno-server-dev-main.api.dev1.vertesia.io",
-            };
-        case "dev-preview":
-            return {
-                studio_server_url: "https://studio-server-dev-preview.api.dev1.vertesia.io",
-                zeno_server_url: "https://zeno-server-dev-preview.api.dev1.vertesia.io",
-            };
         case "preview":
             return {
                 studio_server_url: `https://api-preview.${region}.vertesia.io`,
@@ -68,13 +68,19 @@ export function getServerUrls(value: ConfigUrlRef, region: Region = DEFAULT_REGI
                 zeno_server_url: `https://api.${region}.vertesia.io`,
             };
         default:
+            if (isNamedDevTarget(value)) {
+                return {
+                    studio_server_url: `https://studio-server-${value}.api.${region}.vertesia.io`,
+                    zeno_server_url: `https://zeno-server-${value}.api.${region}.vertesia.io`,
+                };
+            }
             throw new Error("Unable to detect server urls from custom target.");
     }
 }
 export function getCloudTypeFromConfigUrl(url: string) {
     if (url.startsWith("https://localhost")) {
         return "staging";
-    } else if (url.includes(".ui.dev1.vertesia.io")) {
+    } else if (/\.ui\.[a-z0-9-]+\.vertesia\.io/.test(url)) {
         return "staging";
     } else if (url.startsWith("https://preview.")) {
         return "preview";
@@ -239,8 +245,9 @@ export class Config {
     }
 
     createProfile(name: string, target: ConfigUrlRef, region: Region = DEFAULT_REGION) {
-        const config_url = getConfigUrl(target, region);
-        return new ConfigureProfile(this, { name, config_url, region }, true);
+        const resolvedRegion = region ?? getDefaultRegion(target);
+        const config_url = getConfigUrl(target, resolvedRegion);
+        return new ConfigureProfile(this, { name, config_url, region: resolvedRegion }, true);
     }
 
     updateProfile(name: string) {

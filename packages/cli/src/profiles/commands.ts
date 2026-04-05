@@ -1,7 +1,7 @@
 import colors from 'ansi-colors';
 import enquirer from "enquirer";
 import jwt from 'jsonwebtoken';
-import { AVAILABLE_REGIONS, DEFAULT_REGION, Region, config, getConfigUrl, getServerUrls, shouldRefreshProfileToken } from "./index.js";
+import { AVAILABLE_REGIONS, ConfigUrlRef, Region, config, getConfigUrl, getDefaultRegion, getServerUrls, shouldRefreshProfileToken } from "./index.js";
 import { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
 
@@ -151,16 +151,16 @@ export async function createProfile(name?: string, options: CreateProfileOptions
         target = customResponse.url.trim();
     }
 
-    // Prompt for region when target requires it (preview/prod only)
-    let region: Region = (options.region as Region) ?? DEFAULT_REGION;
-    const needsRegionPrompt = !options.region && (target === 'preview' || target === 'prod');
+    // Default region depends on the selected target: dev targets use dev1, stable targets use us1.
+    let region: Region = (options.region as Region) ?? getDefaultRegion(target as ConfigUrlRef);
+    const needsRegionPrompt = !options.region && target !== 'custom';
     if (needsRegionPrompt) {
         const regionResponse: any = await prompt({
             type: 'select',
             name: 'region',
             message: 'Deployment region',
             choices: AVAILABLE_REGIONS,
-            initial: AVAILABLE_REGIONS[0],
+            initial: AVAILABLE_REGIONS.indexOf(region),
         } as any);
         region = regionResponse.region as Region;
     }
