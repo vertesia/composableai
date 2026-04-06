@@ -289,6 +289,11 @@ export interface InteractionEndpointQuery {
      * Whether or not to return the result schema
      */
     include_result_schema?: boolean;
+
+    /**
+     * When true, filter results to only interactions with is_skill=true.
+     */
+    is_skill?: boolean;
 }
 
 /**
