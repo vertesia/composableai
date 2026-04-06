@@ -18,6 +18,21 @@ export interface RunCreatePayload extends NamedInteractionExecutionPayload {
 }
 
 /**
+ * Payload for cloning an existing ExecutionRun.
+ * Creates a new run document with the same interaction/config but fresh status.
+ * Used by fork flows to create a new ExecutionRun for the forked workflow.
+ */
+export interface RunClonePayload {
+    /** The _id of the source ExecutionRun to clone */
+    source_run_id: string;
+    /** Temporal workflow reference for the new run */
+    workflow: {
+        run_id: string;
+        workflow_id: string;
+    };
+}
+
+/**
  * To be used as a value for a numeric or date filters
  */
 export interface RangeValue {

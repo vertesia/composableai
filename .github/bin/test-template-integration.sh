@@ -44,6 +44,7 @@ cleanup() {
   fi
 
   cleanup_test_project
+  [ -n "$TEST_PROJECT_DIR_NPM" ] && [ -d "$TEST_PROJECT_DIR_NPM" ] && rm -rf "$TEST_PROJECT_DIR_NPM"
 
   # Remove verdaccio data
   if [ -d "$VERDACCIO_DIR" ]; then
@@ -194,6 +195,11 @@ echo "=== Bootstrapped package.json ==="
 cat "${TEST_PROJECT_DIR}/package.json"
 
 build_project
+
+TEST_PROJECT_DIR_NPM=""
+bootstrap_template "integration-test-plugin-npm" npm
+TEST_PROJECT_DIR_NPM="$TEST_PROJECT_DIR"
+build_project_npm
 
 echo ""
 echo "✅ Template integration test passed!"

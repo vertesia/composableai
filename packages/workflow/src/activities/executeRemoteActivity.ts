@@ -5,6 +5,7 @@ import {
     RemoteActivityExecutionResponse,
 } from "@vertesia/common";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
+import { URLValidationError, safeFetch } from "../security/ssrf.js";
 
 /**
  * Parameters for the executeRemoteActivity bridge activity.
@@ -39,8 +40,19 @@ export async function executeRemoteActivity(
     payload: DSLActivityExecutionPayload<ExecuteRemoteActivityParams>,
 ): Promise<any> {
     const ctx = await setupActivity<ExecuteRemoteActivityParams>(payload);
-    const { params, runId } = ctx;
+    const { params, runId, client } = ctx;
     const { url, activity_name, params: activityParams, app_install_id, app_settings } = params;
+
+    // Validate the URL via Studio before forwarding the auth token
+    try {
+        await client.apps.validateUrl(url);
+    } catch (e) {
+        log.warn("URL validation blocked remote activity endpoint", { activity: activity_name, url, error: (e as Error).message });
+        throw ApplicationFailure.create({
+            message: `Remote activity ${activity_name} blocked: ${(e as Error).message}`,
+            nonRetryable: true,
+        });
+    }
 
     const executionPayload: RemoteActivityExecutionPayload = {
         activity_name,
@@ -58,7 +70,7 @@ export async function executeRemoteActivity(
 
     let response: Response;
     try {
-        response = await fetch(url, {
+        response = await safeFetch(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -68,6 +80,13 @@ export async function executeRemoteActivity(
             body: JSON.stringify(executionPayload),
         });
     } catch (err: unknown) {
+        if (err instanceof URLValidationError) {
+            log.warn("Redirect blocked on remote activity endpoint", { activity: activity_name, url, error: err.message });
+            throw ApplicationFailure.create({
+                message: `Remote activity ${activity_name} blocked: ${err.message}`,
+                nonRetryable: true,
+            });
+        }
         const message = err instanceof Error ? err.message : String(err);
         log.warn("Failed to reach remote activity endpoint", {
             error: message, activity: activity_name, endpoint: url, runId, app_install_id,

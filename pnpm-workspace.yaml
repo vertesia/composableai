@@ -3,3 +3,7 @@ packages:
     - packages/*
     - templates/*
     - "!templates/worker-template"
+minimumReleaseAge: 1440 # 1 day in minutes, minimumReleaseAge protects against supply chain attacks.
+minimumReleaseAgeExclude:
+- '@vertesia/*'
+- '@llumiverse/*'

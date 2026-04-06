@@ -36,15 +36,21 @@ export type VertesiaClientProps = {
      * advanced configurations, use `serverUrl` and `storeUrl` instead.
      *
      * @example api.vertesia.io
-     * @example api-preview.vertesia.io
-     * @example api-staging.vertesia.io
+     * @example api.us1.vertesia.io
+     * @example api-preview.eu1.vertesia.io
      * @default api.vertesia.io
      * @since 0.52.0
      */
     site?:
         | "api.vertesia.io"
         | "api-preview.vertesia.io"
-        | "api-staging.vertesia.io";
+        | "api.us1.vertesia.io"
+        | "api-preview.us1.vertesia.io"
+        | "api.eu1.vertesia.io"
+        | "api-preview.eu1.vertesia.io"
+        | "api.jp1.vertesia.io"
+        | "api-preview.jp1.vertesia.io"
+        | "api.dev1.vertesia.io";
     serverUrl?: string;
     storeUrl?: string;
     tokenServerUrl?: string;
@@ -136,45 +142,35 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         if (opts.tokenServerUrl) {
             this.tokenServerUrl = opts.tokenServerUrl;
         } else if (opts.site) {
-            // Preview uses production STS, staging uses its own STS
-            if (opts.site === "api-preview.vertesia.io" || opts.site === "api.vertesia.io") {
-                this.tokenServerUrl = "https://sts.vertesia.io";
-            } else {
-                this.tokenServerUrl = `https://${opts.site.replace(/^api/, "sts")}`;
-            }
+            // Strip -preview (preview uses the same STS as production for the same region),
+            // then replace api prefix with sts.
+            // Examples:
+            //   api.vertesia.io          -> sts.vertesia.io
+            //   api-preview.vertesia.io  -> sts.vertesia.io
+            //   api.us1.vertesia.io      -> sts.us1.vertesia.io
+            //   api-preview.eu1.vertesia.io -> sts.eu1.vertesia.io
+            const stsHost = opts.site.replace('api-preview.', 'api.').replace(/^api/, 'sts');
+            this.tokenServerUrl = `https://${stsHost}`;
         } else if (opts.serverUrl || opts.storeUrl) {
             // Determine STS URL based on environment in serverUrl or storeUrl
             const urlToCheck = opts.serverUrl || opts.storeUrl || "";
             try {
                 const url = new URL(urlToCheck);
-                // Check for environment patterns
-                if (url.hostname.includes("-production.")) {
-                    // zeno-server-production.api.vertesia.io -> sts.vertesia.io
-                    this.tokenServerUrl = "https://sts.vertesia.io";
-                } else if (url.hostname.includes("-preview.")) {
-                    // zeno-server-preview.api.vertesia.io -> sts.vertesia.io
-                    this.tokenServerUrl = "https://sts.vertesia.io";
-                } else if (url.hostname === "api.vertesia.io") {
-                    this.tokenServerUrl = "https://sts.vertesia.io";
-                } else if (url.hostname === "api-preview.vertesia.io") {
-                    this.tokenServerUrl = "https://sts.vertesia.io";
-                } else if (url.hostname === "api-staging.vertesia.io") {
-                    this.tokenServerUrl = "https://sts-staging.vertesia.io";
-                } else if (url.hostname.startsWith("api")) {
-                    // Generic api.* pattern replacement
-                    url.hostname = url.hostname.replace(/^api/, "sts");
-                    this.tokenServerUrl = url.toString();
+                if (url.hostname.startsWith("api")) {
+                    // Strip -preview and replace api with sts.
+                    // api.us1.vertesia.io         -> sts.us1.vertesia.io
+                    // api-preview.us1.vertesia.io -> sts.us1.vertesia.io
+                    // api.vertesia.io             -> sts.vertesia.io
+                    const stsHost = url.hostname.replace('api-preview.', 'api.').replace(/^api/, 'sts');
+                    this.tokenServerUrl = `https://${stsHost}`;
                 } else {
-                    // Default to staging for everything else
-                    this.tokenServerUrl = "https://sts-staging.vertesia.io";
+                    this.tokenServerUrl = "https://sts.dev1.vertesia.io";
                 }
             } catch (e) {
-                // Default to staging if URL parsing fails
-                this.tokenServerUrl = "https://sts-staging.vertesia.io";
+                this.tokenServerUrl = "https://sts.dev1.vertesia.io";
             }
         } else {
-            // Default to staging if no URL provided
-            this.tokenServerUrl = "https://sts-staging.vertesia.io";
+            this.tokenServerUrl = "https://sts.dev1.vertesia.io";
         }
 
         this.store = new ZenoClient({

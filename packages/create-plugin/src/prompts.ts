@@ -15,14 +15,12 @@ export async function promptUser(projectName: string, templateConfig: TemplateCo
     return {};
   }
 
-  // Process prompts - replace ${PROJECT_NAME} and other variables in initial values
-  const processedPrompts = templateConfig.prompts.map(p => {
-    const prompt: any = { ...p };
+  // Pre-populate PROJECT_NAME from the directory name — skip the prompt entirely
+  const filteredPrompts = templateConfig.prompts.filter(p => p.name !== 'PROJECT_NAME');
 
-    // Override PROJECT_NAME initial value with the directory name
-    if (prompt.name === 'PROJECT_NAME') {
-      prompt.initial = projectName;
-    }
+  // Process prompts - replace ${PROJECT_NAME} and other variables in initial values
+  const processedPrompts = filteredPrompts.map(p => {
+    const prompt: any = { ...p };
 
     // Replace ${PROJECT_NAME} in initial values
     if (typeof prompt.initial === 'string') {
@@ -56,17 +54,15 @@ export async function promptUser(projectName: string, templateConfig: TemplateCo
     return prompt;
   });
 
-  let answers: Record<string, any>;
+  let answers: Record<string, any> = { PROJECT_NAME: projectName };
 
   if (nonInteractive) {
     // Use default/initial values for all prompts
     console.log(chalk.gray('Using default values (non-interactive mode)\n'));
-    answers = {};
     for (const prompt of processedPrompts) {
       if (prompt.type === 'confirm') {
         answers[prompt.name] = prompt.initial ?? true;
       } else if (prompt.type === 'select' && prompt.choices) {
-        // Use the initial index or first choice
         const idx = typeof prompt.initial === 'number' ? prompt.initial : 0;
         answers[prompt.name] = prompt.choices[idx]?.value ?? prompt.choices[0]?.value;
       } else {
@@ -76,16 +72,18 @@ export async function promptUser(projectName: string, templateConfig: TemplateCo
   } else {
     console.log(chalk.blue('⚙️  Configure your project:\n'));
 
-    answers = await prompts(processedPrompts, {
+    const userAnswers = await prompts(processedPrompts, {
       onCancel: () => {
         throw new Error('Installation cancelled by user');
       }
     });
 
     // Check if all prompts were answered
-    if (Object.keys(answers).length !== processedPrompts.length) {
+    if (Object.keys(userAnswers).length !== processedPrompts.length) {
       throw new Error('Installation cancelled');
     }
+
+    answers = { ...answers, ...userAnswers };
   }
 
   // Process derived variables

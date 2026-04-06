@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import type { AppInstallation, AppInstallationKind, AppInstallationPayload, AppInstallationWithManifest, AppManifest, AppManifestData, AppToolCollection, ProjectRef, RequireAtLeastOne } from "@vertesia/common";
+import type { AppInstallation, AppInstallationKind, AppInstallationPayload, AppInstallationWithManifest, AppManifest, AppManifestData, AppToolCollection, ProjectRef, RequireAtLeastOne, ValidateUrlRequest, ValidateUrlResponse } from "@vertesia/common";
 
 export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
     manifest: null,
@@ -129,6 +129,22 @@ export default class AppsApi extends ApiTopic {
                 settings: settingsPayload.settings
             } satisfies AppInstallationPayload
         });
+    }
+
+    /**
+     * Update the tool allowlist for an app installation.
+     * Pass null to remove all restrictions (all tools permitted).
+     */
+    updateToolAllowlist(installId: string, tool_allowlist: string[] | null): Promise<AppInstallationWithManifest> {
+        return this.put(`/installations/${installId}/tool-allowlist`, { payload: { tool_allowlist } });
+    }
+
+    /**
+     * Validate that a URL is safe to use as a remote tool/activity endpoint.
+     * Throws a ServerError(400) if the URL is blocked (SSRF protection).
+     */
+    validateUrl(url: string): Promise<ValidateUrlResponse> {
+        return this.post('/validate-url', { payload: { url } satisfies ValidateUrlRequest });
     }
 
 }

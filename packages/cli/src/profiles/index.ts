@@ -15,17 +15,23 @@ export function getConfigFile(path?: string) {
     }
 }
 
-export type ConfigUrlRef = "local" | "staging" | "preview" | "prod" | string;
-export function getConfigUrl(value: ConfigUrlRef) {
+export type Region = 'us1' | 'eu1' | 'jp1';
+export const DEFAULT_REGION: Region = 'us1';
+export const AVAILABLE_REGIONS: Region[] = ['us1', 'eu1', 'jp1'];
+
+export type ConfigUrlRef = "local" | "dev-main" | "dev-preview" | "preview" | "prod" | string;
+export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGION): string {
     switch (value) {
         case "local":
             return "https://localhost:5173/cli";
-        case "staging":
-            return "https://staging.cloud.vertesia.io/cli";
+        case "dev-main":
+            return "https://dev-main.ui.dev1.vertesia.io/cli";
+        case "dev-preview":
+            return "https://dev-preview.ui.dev1.vertesia.io/cli";
         case "preview":
-            return "https://preview.cloud.vertesia.io/cli";
+            return `https://preview.cloud.${region}.vertesia.io/cli`;
         case "prod":
-            return "https://cloud.vertesia.io/cli";
+            return `https://cloud.${region}.vertesia.io/cli`;
         default:
             if (value.startsWith("http://") || value.startsWith("https://")) {
                 return value;
@@ -34,24 +40,32 @@ export function getConfigUrl(value: ConfigUrlRef) {
             }
     }
 }
-const getServiceUrl = (service: string, env: string) => `https://${service}-server-${env}.api.us1.vertesia.io`;
-export function getServerUrls(value: ConfigUrlRef) {
+export function getServerUrls(value: ConfigUrlRef, region: Region = DEFAULT_REGION): { studio_server_url: string; zeno_server_url: string } {
     switch (value) {
         case "local":
             return {
                 studio_server_url: "http://localhost:8091",
                 zeno_server_url: "http://localhost:8092",
             };
-        case "staging":
+        case "dev-main":
+            return {
+                studio_server_url: "https://studio-server-dev-main.api.dev1.vertesia.io",
+                zeno_server_url: "https://zeno-server-dev-main.api.dev1.vertesia.io",
+            };
+        case "dev-preview":
+            return {
+                studio_server_url: "https://studio-server-dev-preview.api.dev1.vertesia.io",
+                zeno_server_url: "https://zeno-server-dev-preview.api.dev1.vertesia.io",
+            };
         case "preview":
             return {
-                studio_server_url: getServiceUrl("studio", value),
-                zeno_server_url: getServiceUrl("zeno", value),
+                studio_server_url: `https://api-preview.${region}.vertesia.io`,
+                zeno_server_url: `https://api-preview.${region}.vertesia.io`,
             };
         case "prod":
             return {
-                studio_server_url: getServiceUrl("studio", "production"),
-                zeno_server_url: getServiceUrl("zeno", "production"),
+                studio_server_url: `https://api.${region}.vertesia.io`,
+                zeno_server_url: `https://api.${region}.vertesia.io`,
             };
         default:
             throw new Error("Unable to detect server urls from custom target.");
@@ -60,7 +74,7 @@ export function getServerUrls(value: ConfigUrlRef) {
 export function getCloudTypeFromConfigUrl(url: string) {
     if (url.startsWith("https://localhost")) {
         return "staging";
-    } else if (url.startsWith("https://staging.")) {
+    } else if (url.includes(".ui.dev1.vertesia.io")) {
         return "staging";
     } else if (url.startsWith("https://preview.")) {
         return "preview";
@@ -79,6 +93,7 @@ export interface Profile {
     project: string;
     studio_server_url: string;
     zeno_server_url: string;
+    region?: Region;
     session_tags?: string;
 }
 
@@ -223,9 +238,9 @@ export class Config {
         return this;
     }
 
-    createProfile(name: string, target: ConfigUrlRef) {
-        const config_url = getConfigUrl(target);
-        return new ConfigureProfile(this, { name, config_url }, true);
+    createProfile(name: string, target: ConfigUrlRef, region: Region = DEFAULT_REGION) {
+        const config_url = getConfigUrl(target, region);
+        return new ConfigureProfile(this, { name, config_url, region }, true);
     }
 
     updateProfile(name: string) {
