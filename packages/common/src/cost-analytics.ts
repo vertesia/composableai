@@ -29,6 +29,12 @@ export interface CostAnalyticsQuery {
     environment_id?: string;
     /** Filter by provider */
     provider?: string;
+    /** Filter by project ID (optional, for org scope) */
+    project_id?: string;
+    /** Filter by account ID (set automatically by server) */
+    account_id?: string;
+    /** Scope: 'project' (default, current project) or 'org' (all projects in account) */
+    scope?: 'project' | 'org';
     /** Pricing source: 'list' (current list prices) or 'historical' (actual prices from billing period). Default: 'list' */
     pricing_source?: 'list' | 'historical';
     /** Skip cache and force fresh query */
