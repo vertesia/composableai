@@ -5,6 +5,14 @@ import { executeRemoteActivity, ExecuteRemoteActivityParams } from "./executeRem
 
 vi.stubGlobal("fetch", vi.fn());
 
+vi.mock("../utils/client.js", () => ({
+    getVertesiaClient: vi.fn().mockReturnValue({
+        apps: {
+            validateUrl: vi.fn().mockResolvedValue({ valid: true }),
+        },
+    }),
+}));
+
 let testEnv: MockActivityEnvironment;
 const mockFetch = vi.mocked(fetch);
 

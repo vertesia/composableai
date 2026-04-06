@@ -1,3 +1,16 @@
 # This file defines a pnpm workspace that is independent of the project root
 packages:
   - "."
+overrides:
+  "minimatch@>=3.0.0 <4.0.0": "legacy-v3"
+  "minimatch@>=9.0.0 <10.0.0": "legacy-v9"
+  "ajv@>=7.0.0 <8.18.0": "^8.18.0"
+  "flatted@<3.4.2": "^3.4.2"
+  "yaml@>=2.0.0 <2.8.3": "^2.8.3"
+  "picomatch@<2.3.2": "^2.3.2"
+  "picomatch@>=4.0.0 <4.0.4": "^4.0.4"
+  "fast-xml-parser@>=4.0.0-beta.3 <5.5.7": "^5.5.7"
+minimumReleaseAge: 1440 # 1 day in minutes, minimumReleaseAge protects against supply chain attacks.
+minimumReleaseAgeExclude:
+- '@vertesia/*'
+- '@llumiverse/*'

@@ -28,6 +28,7 @@ cleanup() {
   echo ""
   echo "=== Cleanup ==="
   cleanup_test_project
+  [ -n "$TEST_PROJECT_DIR_NPM" ] && [ -d "$TEST_PROJECT_DIR_NPM" ] && rm -rf "$TEST_PROJECT_DIR_NPM"
   echo "Done."
 }
 
@@ -99,6 +100,11 @@ fi
 
 bootstrap_template "smoke-test-plugin"
 build_project
+
+TEST_PROJECT_DIR_NPM=""
+bootstrap_template "smoke-test-plugin-npm" npm
+TEST_PROJECT_DIR_NPM="$TEST_PROJECT_DIR"
+build_project_npm
 
 echo ""
 echo "✅ Template smoke test passed!"

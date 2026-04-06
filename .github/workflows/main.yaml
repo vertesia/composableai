@@ -112,19 +112,22 @@ jobs:
       - run: pnpm build
       - run: npm --prefix packages/workflow test
 
-  template-smoke-test:
+  template-integration-test:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/preview'
     needs: composableai-build
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Smoke test published packages
-        run: ./.github/bin/test-template-smoke.sh --release-type release
+          cache: "pnpm"
+      - run: pnpm install
+      - run: pnpm -r build
+      - name: Template integration test - Plugin
+        run: ./.github/bin/test-template-integration.sh --release-type snapshot --template "Vertesia Plugin"
 
   notify-repo-studio:
     runs-on: ubuntu-latest

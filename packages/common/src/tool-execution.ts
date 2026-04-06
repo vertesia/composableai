@@ -29,6 +29,10 @@ export interface ToolExecutionMetadata {
      */
     run_id?: string;
     /**
+     * Conversation storage ID for artifact operations
+     */
+    conversation_storage_id?: string;
+    /**
      * App installation ID
      */
     app_install_id?: string;

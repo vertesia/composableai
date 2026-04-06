@@ -26,6 +26,7 @@ import { ExecutionRunDocRef } from "./runs.js";
 import { ConversationState } from "./store/conversation-state.js";
 import { AccountRef } from "./user.js";
 import { LlmCallType } from "./workflow-analytics.js";
+import type { MCPToolAnnotations } from "./apps.js";
 
 export interface InteractionExecutionError {
     code: string;
@@ -288,6 +289,11 @@ export interface InteractionEndpointQuery {
      * Whether or not to return the result schema
      */
     include_result_schema?: boolean;
+
+    /**
+     * When true, filter results to only interactions with is_skill=true.
+     */
+    is_skill?: boolean;
 }
 
 /**
@@ -761,6 +767,18 @@ export interface AsyncConversationExecutionPayload extends AsyncExecutionPayload
     restart_from_workflow_run_id?: string;
 
     /**
+     * The Temporal firstExecutionRunId of the original workflow being restarted/forked.
+     * Used by loadConversationForRestart to look up the original ExecutionRun
+     * so that token accumulation and status updates target a valid run.
+     */
+    source_first_workflow_run_id?: string;
+
+    /**
+     * When true, indicates this is a fork (new ExecutionRun) rather than a restart (reuse original).
+     */
+    is_fork?: boolean;
+
+    /**
      * The AgentRun MongoDB _id. Used for artifact storage paths: agents/{agent_run_id}/
      * Flows into ConversationState and down to workstreams.
      * Undefined for legacy workflows started before the AgentRun system.
@@ -1206,14 +1224,26 @@ export interface BuiltinToolDefinition {
     name: string;
 
     /**
-     * Human-readable description of what the tool does
+     * One-line summary shown in the tool selector UI
      */
-    description: string;
+    summary?: string;
 
     /**
      * JSON schema for the tool's parameters
      */
     params: JSONSchema;
+
+    /**
+     * Whether this tool is active by default when no explicit tool list is provided.
+     * Tools with default: false are only activated by skills.
+     */
+    default: boolean;
+
+    /**
+     * Behavioral hints following the MCP ToolAnnotations spec.
+     * Used for display purposes only — not sent to LLMs.
+     */
+    annotations?: MCPToolAnnotations;
 }
 
 /**
@@ -1229,7 +1259,9 @@ export interface SystemSkillCatalogEntry {
     title: string;
     /** Description of what the skill unlocks */
     description: string;
-    /** Builtin tools that become available when this skill is called */
+    /** Tools that become available when this skill is called */
+    tools: string[];
+    /** Related tools that complement this skill */
     related_tools: string[];
 }
 

@@ -1,5 +1,5 @@
 import { AgentRun } from "@vertesia/common";
-import { Button, Command, CommandGroup, CommandItem, CommandList, cn, Popover, PopoverContent, PopoverTrigger, useToast } from "@vertesia/ui/core";
+import { Button, Dropdown, MenuGroup, MenuItem, cn, useToast } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
 import { Bot, ClipboardList, CopyIcon, DownloadCloudIcon, ExternalLink, GitFork, InfoIcon, MoreVertical, RefreshCcw, XIcon } from "lucide-react";
 import { useUITranslation } from '../../../../i18n/index.js';
@@ -15,6 +15,7 @@ export interface HeaderProps {
     onClose?: () => void;
     isModal: boolean;
     agentRunId: string;
+    workflowRunId: string;
     viewMode: AgentConversationViewMode;
     onViewModeChange: (mode: AgentConversationViewMode) => void;
     showPlanPanel: boolean;
@@ -22,7 +23,7 @@ export interface HeaderProps {
     showPlanButton?: boolean;
     onTogglePlanPanel: () => void;
     onDownload?: () => void;
-    onCopyRunId?: () => void;
+    // onCopyRunId?: () => void;
     resetWorkflow?: () => void;
     onExportPdf?: () => void;
     /** Called to show run details/internals modal */
@@ -43,6 +44,7 @@ export default function Header({
     onClose,
     isModal,
     agentRunId,
+    workflowRunId,
     viewMode,
     onViewModeChange,
     showPlanPanel,
@@ -50,7 +52,7 @@ export default function Header({
     showPlanButton = true,
     onTogglePlanPanel,
     onDownload,
-    onCopyRunId,
+    // onCopyRunId,
     resetWorkflow,
     onExportPdf,
     onShowDetails,
@@ -69,7 +71,7 @@ export default function Header({
                         <span className="font-medium">{title}</span>
                     </div>
                     <span className="text-xs text-muted ml-1 flex items-center gap-1.5">
-                        (Run ID: {agentRunId})
+                        (Agent Run ID: {agentRunId})
                         {/* Streaming chunk indicator - gray when idle, purple when receiving */}
                         <span className={cn(
                             "w-2 h-2 rounded-full transition-colors duration-200",
@@ -82,10 +84,10 @@ export default function Header({
                 <div className="flex justify-end items-center space-x-2 ml-auto">
                     {/* View Mode Toggle */}
                     <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
-                        <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" className="rounded-l-md" onClick={() => onViewModeChange("stacked")}>
+                        <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("stacked")}>
                             {t('agent.details')}
                         </Button>
-                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" className="rounded-r-md" onClick={() => onViewModeChange("sliding")}>
+                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("sliding")}>
                             {t('agent.summary')}
                         </Button>
                     </div>
@@ -112,11 +114,11 @@ export default function Header({
                     {/* More actions */}
                     <MoreDropdown
                         agentRunId={agentRunId}
+                        workflowRunId={workflowRunId}
                         isModal={isModal}
                         isTerminal={isTerminal}
                         onClose={onClose}
                         onDownload={onDownload}
-                        onCopyRunId={onCopyRunId}
                         resetWorkflow={resetWorkflow}
                         onExportPdf={onExportPdf}
                         onShowDetails={onShowDetails}
@@ -136,11 +138,11 @@ export default function Header({
 
 function MoreDropdown({
     agentRunId,
+    workflowRunId,
     isModal,
     isTerminal,
     onClose,
     onDownload,
-    onCopyRunId,
     resetWorkflow,
     onExportPdf,
     onShowDetails,
@@ -148,6 +150,7 @@ function MoreDropdown({
     onFork,
 }: {
     agentRunId: string;
+    workflowRunId: string;
     isModal: boolean;
     isTerminal: boolean;
     onClose?: () => void;
@@ -229,88 +232,83 @@ function MoreDropdown({
         return url;
     }
 
+    const copyAgentRunId = () => {
+        navigator.clipboard.writeText(agentRunId);
+        toast({
+            status: "success",
+            title: t('agent.agentRunIdCopied'),
+            duration: 2000,
+        });
+    };
+
+    const copyWorkflowRunId = () => {
+        navigator.clipboard.writeText(workflowRunId);
+        toast({
+            status: "success",
+            title: t('agent.workflowRunIdCopied'),
+            duration: 2000,
+        });
+    };
+
     return (
-        <Popover hover>
-            <PopoverTrigger>
+        <Dropdown
+            align="right"
+            trigger={
                 <Button size="xs" variant="ghost" title={t('agent.moreActions')}>
                     <MoreVertical className="size-4" />
                 </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48" align="end">
-                <div className="rounded-md shadow-lg z-50">
-                    <div className="py-1 min-w-36">
-                        <Command>
-                            <CommandList>
-                                <CommandGroup>
-                                    <div className="flex items-center px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300">
-                                        <span className="text-muted">{t('agent.actions')}</span>
-                                    </div>
-                                    {
-                                        isModal && (
-                                            <CommandItem className="text-xs" onSelect={() => openUrl(`/store/agent-runner/${agentRunId}`)}>
-                                                <ExternalLink className="size-3.5 mr-2 text-muted" /> {t('agent.openInNewTab')}
-                                            </CommandItem>
-                                        )
-                                    }
-                                    <CommandItem className="text-xs" onSelect={() => {
-                                        if (onCopyRunId) {
-                                            onCopyRunId();
-                                        } else {
-                                            navigator.clipboard.writeText(agentRunId);
-                                            toast({
-                                                status: "success",
-                                                title: t('agent.runIdCopied'),
-                                                duration: 2000,
-                                            });
-                                        }
-                                    }}>
-                                        <CopyIcon className="size-3.5 mr-2 text-muted" /> {t('agent.copyRunId')}
-                                    </CommandItem>
-                                    {onShowDetails && (
-                                        <CommandItem className="text-xs" onSelect={onShowDetails}>
-                                            <InfoIcon className="size-3.5 mr-2 text-muted" /> Show Details
-                                        </CommandItem>
-                                    )}
-                                    <CommandItem className="text-xs" onSelect={() => {
-                                        if (onDownload) {
-                                            onDownload();
-                                        } else {
-                                            getConversationUrl(client, agentRunId).then((r) => window.open(r, "_blank"));
-                                        }
-                                    }}>
-                                        <DownloadCloudIcon className="size-3.5 mr-2 text-muted" /> {t('agent.downloadConversation')}
-                                    </CommandItem>
-                                    {onExportPdf && (
-                                        <CommandItem className="text-xs" onSelect={onExportPdf}>
-                                            <DownloadCloudIcon className="size-3.5 mr-2 text-muted" /> {t('agent.exportAsPdf')}
-                                        </CommandItem>
-                                    )}
-                                    {onClose && isModal && (
-                                        <CommandItem className="text-xs" onSelect={onClose}>
-                                            <XIcon className="size-3.5 mr-2 text-muted" /> {t('agent.close')}
-                                        </CommandItem>
-                                    )}
-                                    {onRestart && isTerminal && (
-                                        <CommandItem className="text-xs" onSelect={restartWorkflow}>
-                                            <RefreshCcw className="size-3.5 mr-2 text-muted" /> {t('agent.restartConversation')}
-                                        </CommandItem>
-                                    )}
-                                    {onFork && (
-                                        <CommandItem className="text-xs" onSelect={forkWorkflow}>
-                                            <GitFork className="size-3.5 mr-2 text-muted" /> {t('agent.forkConversation')}
-                                        </CommandItem>
-                                    )}
-                                    <CommandItem className="text-xs text-destructive" onSelect={() => {
-                                        cancelWorkflow();
-                                    }}>
-                                        <XIcon className="size-3.5 mr-2 text-destructive" /> {t('agent.cancelWorkflow')}
-                                    </CommandItem>
-                                </CommandGroup>
-                            </CommandList>
-                        </Command>
-                    </div>
-                </div>
-            </PopoverContent>
-        </Popover>
+            }
+        >
+            <MenuGroup label="Actions">
+                {isModal && (
+                    <MenuItem onClick={() => openUrl(`/store/agent-runner/${agentRunId}`)}>
+                        <ExternalLink className="size-3.5 text-muted" /> {t('agent.openInNewTab')}
+                    </MenuItem>
+                )}
+                <MenuItem onClick={copyAgentRunId}>
+                    <CopyIcon className="size-3.5 text-muted" /> {t('agent.copyAgentRunId')}
+                </MenuItem>
+                <MenuItem onClick={copyWorkflowRunId}>
+                    <CopyIcon className="size-3.5 text-muted" /> {t('agent.copyWorkflowRunId')}
+                </MenuItem>
+                {onShowDetails && (
+                    <MenuItem onClick={onShowDetails}>
+                        <InfoIcon className="size-3.5 text-muted" /> {t('agent.details')}
+                    </MenuItem>
+                )}
+                <MenuItem onClick={() => {
+                    if (onDownload) {
+                        onDownload();
+                    } else {
+                        getConversationUrl(client, agentRunId).then((r) => window.open(r, "_blank"));
+                    }
+                }}>
+                    <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.downloadConversation')}
+                </MenuItem>
+                {onExportPdf && (
+                    <MenuItem onClick={onExportPdf}>
+                        <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.exportAsPdf')}
+                    </MenuItem>
+                )}
+                {onClose && isModal && (
+                    <MenuItem onClick={onClose}>
+                        <XIcon className="size-3.5 text-muted" /> {t('agent.close')}
+                    </MenuItem>
+                )}
+                {onRestart && isTerminal && (
+                    <MenuItem onClick={restartWorkflow}>
+                        <RefreshCcw className="size-3.5 text-muted" /> {t('agent.restartConversation')}
+                    </MenuItem>
+                )}
+                {onFork && (
+                    <MenuItem onClick={forkWorkflow}>
+                        <GitFork className="size-3.5 text-muted" /> {t('agent.forkConversation')}
+                    </MenuItem>
+                )}
+                <MenuItem onClick={cancelWorkflow} variant="destructive">
+                    <XIcon className="size-3.5" /> {t('agent.cancelWorkflow')}
+                </MenuItem>
+            </MenuGroup>
+        </Dropdown>
     );
 }

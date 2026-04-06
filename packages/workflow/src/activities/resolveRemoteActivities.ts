@@ -5,7 +5,9 @@ import {
     DSLActivityExecutionPayload,
     RemoteActivityDefinition,
 } from "@vertesia/common";
+import { VertesiaClient } from "@vertesia/client";
 import { setupActivity } from "../dsl/setup/ActivityContext.js";
+import { URLValidationError, safeFetch } from "../security/ssrf.js";
 
 /** Prefix identifying a remote activity name in DSL workflow steps */
 const REMOTE_ACTIVITY_PREFIX = "app:";
@@ -66,7 +68,7 @@ export async function resolveRemoteActivities(
         }
 
         try {
-            const pkg = await fetchActivitiesPackage(manifest.endpoint, payload.auth_token);
+            const pkg = await fetchActivitiesPackage(manifest.endpoint, payload.auth_token, client);
             if (!pkg.activities || pkg.activities.length === 0) {
                 continue;
             }
@@ -94,7 +96,7 @@ export async function resolveRemoteActivities(
                 }
 
                 // Resolve the activity execution URL (collection-specific endpoint)
-                const activityUrl = resolveActivityUrl(manifest.endpoint, activity, collection);
+                const activityUrl = await resolveActivityUrl(manifest.endpoint, activity, collection, client);
 
                 map[qualifiedName] = {
                     url: activityUrl,
@@ -126,11 +128,13 @@ export async function resolveRemoteActivities(
 /**
  * Fetches the activities scope from a tool server package endpoint.
  */
-async function fetchActivitiesPackage(endpoint: string, authToken: string): Promise<AppPackage> {
+async function fetchActivitiesPackage(endpoint: string, authToken: string, client: VertesiaClient): Promise<AppPackage> {
     const url = new URL(endpoint);
     url.searchParams.set('scope', 'activities');
 
-    const response = await fetch(url.toString(), {
+    await client.apps.validateUrl(url.toString());
+
+    const response = await safeFetch(url.toString(), {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
@@ -147,21 +151,32 @@ async function fetchActivitiesPackage(endpoint: string, authToken: string): Prom
 }
 
 /**
- * Resolves the execution URL for a remote activity.
+ * Resolves and validates the execution URL for a remote activity.
  * If the activity has a `url` field, resolve it relative to the endpoint base.
  * Otherwise, use the collection-specific activities endpoint: `/api/activities/{collection}`.
+ * Validates the resolved URL to prevent second-hop SSRF from tool server responses.
  */
-function resolveActivityUrl(endpoint: string, activity: RemoteActivityDefinition, collection: string): string {
+async function resolveActivityUrl(endpoint: string, activity: RemoteActivityDefinition, collection: string, client: VertesiaClient): Promise<string> {
+    let resolved: string;
     if (activity.url) {
-        // Absolute URLs are used as-is
-        if (activity.url.startsWith('http://') || activity.url.startsWith('https://')) {
-            return activity.url;
-        }
-        // Resolve relative URLs against the endpoint's base path (not just origin)
-        return new URL(activity.url, endpoint).toString();
+        // Absolute URLs are used as-is; relative URLs are resolved against the endpoint base
+        resolved = (activity.url.startsWith('http://') || activity.url.startsWith('https://'))
+            ? activity.url
+            : new URL(activity.url, endpoint).toString();
+    } else {
+        // Default: POST to the collection-specific activities endpoint
+        const base = new URL(endpoint);
+        const activitiesPath = base.pathname.replace(/\/package\/?$/, `/activities/${collection}`);
+        resolved = new URL(activitiesPath, base.origin).toString();
     }
-    // Default: POST to the collection-specific activities endpoint
-    const base = new URL(endpoint);
-    const activitiesPath = base.pathname.replace(/\/package\/?$/, `/activities/${collection}`);
-    return new URL(activitiesPath, base.origin).toString();
+
+    // Validate the resolved URL via Studio — safeFetch on the discovery request does NOT protect this
+    // second-hop URL which comes from the tool server response body.
+    try {
+        await client.apps.validateUrl(resolved);
+    } catch (e) {
+        throw new URLValidationError(`Blocked activity URL from app response: ${(e as Error).message}`);
+    }
+
+    return resolved;
 }

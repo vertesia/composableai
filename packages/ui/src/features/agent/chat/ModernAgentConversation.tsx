@@ -760,6 +760,7 @@ function ModernAgentConversationInner({
         addOptimisticMessage,
         removeOptimisticMessages,
         workflowStatus,
+        workflowRunId,
         serverFileUpdates,
     } = useAgentStream(client, agentRunId);
 
@@ -1268,16 +1269,6 @@ const handleCloseRightPanel = useCallback(() => {
         }
     };
 
-    // Handle copying run ID
-    const copyRunId = () => {
-        navigator.clipboard.writeText(agentRunId);
-        toast({
-            status: "success",
-            title: t('agent.runIdCopied'),
-            duration: 2000,
-        });
-    };
-
     const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
     const exportConversationPdf = () => {
@@ -1370,6 +1361,7 @@ const handleCloseRightPanel = useCallback(() => {
                         onClose={onClose}
                         isModal={isModal}
                         agentRunId={agentRunId}
+                        workflowRunId={workflowRunId || ''}
                         viewMode={viewMode}
                         onViewModeChange={handleViewModeChange}
                         showPlanPanel={showRightPanelProp && showSlidingPanel}
@@ -1377,7 +1369,6 @@ const handleCloseRightPanel = useCallback(() => {
                         showPlanButton={showRightPanelProp && !conversationTab}
                         onTogglePlanPanel={handleTogglePlanPanel}
                         onDownload={downloadConversation}
-                        onCopyRunId={copyRunId}
                         resetWorkflow={resetWorkflow}
                         onRestart={onRestart}
                         onFork={onFork}
