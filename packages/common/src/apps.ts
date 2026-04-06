@@ -688,8 +688,12 @@ export interface CompositeAppMenuNavItem {
     route?: string;
     /** When true, this item is hidden from the sidebar */
     hidden?: boolean;
-    /** Optional description for dashboard cards and summary views */
-    description?: string;
+    /**
+     * Optional description for dashboard cards and summary views.
+     * `null` = user explicitly cleared it (show no description, skip fallback).
+     * `undefined` / absent = no override (fall back to manifest description).
+     */
+    description?: string | null;
     /** Ordered child nav-items */
     children?: CompositeAppMenuNavItem[];
 }
