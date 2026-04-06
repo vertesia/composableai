@@ -688,6 +688,8 @@ export interface CompositeAppMenuNavItem {
     route?: string;
     /** When true, this item is hidden from the sidebar */
     hidden?: boolean;
+    /** Optional description for dashboard cards and summary views */
+    description?: string;
     /** Ordered child nav-items */
     children?: CompositeAppMenuNavItem[];
 }
