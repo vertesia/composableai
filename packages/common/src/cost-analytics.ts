@@ -29,6 +29,8 @@ export interface CostAnalyticsQuery {
     environment_id?: string;
     /** Filter by provider */
     provider?: string;
+    /** Pricing source: 'list' (current list prices) or 'historical' (actual prices from billing period). Default: 'list' */
+    pricing_source?: 'list' | 'historical';
     /** Skip cache and force fresh query */
     no_cache?: boolean;
 }
