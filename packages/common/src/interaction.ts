@@ -26,6 +26,7 @@ import { ExecutionRunDocRef } from "./runs.js";
 import { ConversationState } from "./store/conversation-state.js";
 import { AccountRef } from "./user.js";
 import { LlmCallType } from "./workflow-analytics.js";
+import type { MCPToolAnnotations } from "./apps.js";
 
 export interface InteractionExecutionError {
     code: string;
@@ -1218,14 +1219,26 @@ export interface BuiltinToolDefinition {
     name: string;
 
     /**
-     * Human-readable description of what the tool does
+     * One-line summary shown in the tool selector UI
      */
-    description: string;
+    summary?: string;
 
     /**
      * JSON schema for the tool's parameters
      */
     params: JSONSchema;
+
+    /**
+     * Whether this tool is active by default when no explicit tool list is provided.
+     * Tools with default: false are only activated by skills.
+     */
+    default: boolean;
+
+    /**
+     * Behavioral hints following the MCP ToolAnnotations spec.
+     * Used for display purposes only — not sent to LLMs.
+     */
+    annotations?: MCPToolAnnotations;
 }
 
 /**
@@ -1241,7 +1254,9 @@ export interface SystemSkillCatalogEntry {
     title: string;
     /** Description of what the skill unlocks */
     description: string;
-    /** Builtin tools that become available when this skill is called */
+    /** Tools that become available when this skill is called */
+    tools: string[];
+    /** Related tools that complement this skill */
     related_tools: string[];
 }
 
