@@ -14,6 +14,8 @@ export interface AppUINavItem {
     icon: string;
     /** Route path relative to app base */
     route: string;
+    /** Optional description shown on dashboard cards and other summary views */
+    description?: string;
     /** Nested sub-items displayed within this item's collapsible section */
     children?: AppUINavItem[];
     /** When true, this item appears as an independent entry in the sidebar (outside its parent app group) */
