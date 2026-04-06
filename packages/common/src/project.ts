@@ -457,6 +457,63 @@ export interface TriggerReindexResult {
     enabled?: boolean;
 }
 
+// --- Zeno Bulk types (Go migration service) ---
+
+export interface ComputeShardsResult {
+    alias: string;
+    target_index: string;
+    shards: Array<{ min?: string; max?: string }>;
+    count: number;
+}
+
+export interface ComputeShardsRequest {
+    tenant_id: string;
+    shard_size?: number;
+}
+
+export interface IndexShardParams {
+    tenant_id: string;
+    target_index: string;
+    shard_min: string;
+    shard_max?: string;
+    dry_run?: boolean;
+    concurrency?: number;
+    batch_size?: number;
+    bulk_size_bytes?: number;
+    bulk_concurrency?: number;
+    updated_since?: string;
+}
+
+export interface SwapAliasViaBulkRequest {
+    tenant_id: string;
+    target_index: string;
+}
+
+export interface IndexShardResult {
+    status: string;
+    projects_done: number;
+    projects_total: number;
+    scanned: number;
+    written: number;
+    skipped: number;
+    errors: number;
+    read_docs_s: string;
+    write_docs_s: string;
+    read_mb: string;
+    write_mb: string;
+    read_mb_s: string;
+    write_mb_s: string;
+    duration_sec: number;
+    failed_projects?: Array<{ tenant: string; error: string }>;
+}
+
+export interface SwapAliasViaBulkResult {
+    status: string;
+    alias: string;
+    old_index: string;
+    new_index: string;
+}
+
 /**
  * Elasticsearch index statistics
  */

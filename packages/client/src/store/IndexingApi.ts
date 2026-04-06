@@ -18,6 +18,12 @@ import {
     SwapAliasResult,
     AnalyzeDriftBatchResult,
     DriftAnalysisStatusResponse,
+    ComputeShardsRequest,
+    ComputeShardsResult,
+    IndexShardParams,
+    IndexShardResult,
+    SwapAliasViaBulkRequest,
+    SwapAliasViaBulkResult,
 } from "@vertesia/common";
 
 /**
@@ -290,5 +296,68 @@ export class IndexingApi extends ApiTopic {
         return this.post("/internal/configuration", {
             payload: {},
         });
+    }
+
+    // ========================================================================
+    // Zeno Bulk endpoints (Go migration service)
+    // Routes via LB path rules in prod, or derived URL in dev.
+    // ========================================================================
+
+    /**
+     * Get the zeno-bulk base URL.
+     * Dev branches: store URL contains "zeno-server" → replace with "zeno-bulk".
+     * Production/preview: same domain, LB routes /reindex/* to zeno-bulk.
+     */
+    private get zenoBulkBaseUrl(): string {
+        const storeBaseUrl = this.client.baseUrl;
+        if (storeBaseUrl.includes('zeno-server')) {
+            return storeBaseUrl.replace(/zeno-server/, 'zeno-bulk');
+        }
+        return storeBaseUrl;
+    }
+
+    private async zenoBulkPost<T>(path: string, body: unknown): Promise<T> {
+        const url = this.zenoBulkBaseUrl + path;
+        const req = await this.client.createRequest(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const res = await fetch(req);
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`zeno-bulk ${path} failed: ${res.status} ${text}`);
+        }
+        return await res.json() as T;
+    }
+
+    /**
+     * Compute shard boundaries for a tenant via zeno-bulk
+     */
+    computeShards(tenantId: string, shardSize?: number): Promise<ComputeShardsResult> {
+        return this.zenoBulkPost('/reindex/compute-shards', {
+            tenant_id: tenantId,
+            shard_size: shardSize ?? 50000,
+        } satisfies ComputeShardsRequest);
+    }
+
+    /**
+     * Index a single shard via zeno-bulk (retryable by Temporal)
+     */
+    indexShard(params: IndexShardParams): Promise<IndexShardResult> {
+        return this.zenoBulkPost('/reindex/shard', {
+            force: true,
+            params,
+        });
+    }
+
+    /**
+     * Swap ES alias via zeno-bulk
+     */
+    swapAliasViaBulk(tenantId: string, targetIndex: string): Promise<SwapAliasViaBulkResult> {
+        return this.zenoBulkPost('/reindex/swap-alias', {
+            tenant_id: tenantId,
+            target_index: targetIndex,
+        } satisfies SwapAliasViaBulkRequest);
     }
 }
