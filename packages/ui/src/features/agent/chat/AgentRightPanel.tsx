@@ -322,11 +322,6 @@ function AgentRightPanelComponent({
     const hasUploads = processingFiles ? processingFiles.size > 0 : false;
     const hasPlan = showPlan && plan;
 
-    const handleCloseDocPanel = useCallback(() => {
-        setInternalActiveTab('plan');
-        onTabChange?.('plan');
-    }, [onTabChange]);
-
     const conversationTab: TabDefinition = {
         name: 'conversation',
         label: 'Conversation',
@@ -374,7 +369,6 @@ function AgentRightPanelComponent({
             content: openDocuments.length > 0 && onSelectDocument && onCloseDocument ? (
                 <DocumentPanel
                     isOpen={true}
-                    onClose={handleCloseDocPanel}
                     documents={openDocuments}
                     activeDocumentId={activeDocumentId ?? null}
                     onSelectDocument={onSelectDocument}
