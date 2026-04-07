@@ -14,6 +14,8 @@ export interface AppUINavItem {
     icon: string;
     /** Route path relative to app base */
     route: string;
+    /** Optional description shown on dashboard cards and other summary views */
+    description?: string;
     /** Nested sub-items displayed within this item's collapsible section */
     children?: AppUINavItem[];
     /** When true, this item appears as an independent entry in the sidebar (outside its parent app group) */
@@ -176,6 +178,22 @@ export function normalizeToolCollection(collection: ToolCollection): ToolCollect
 
 
 /**
+ * Metadata hints from MCP tool annotations (per MCP spec).
+ */
+export interface MCPToolAnnotations {
+    /** Human-readable display name for the tool */
+    title?: string;
+    /** If true, the tool does not modify any state */
+    readOnlyHint?: boolean;
+    /** If true, the tool may perform irreversible destructive operations */
+    destructiveHint?: boolean;
+    /** If true, calling the tool multiple times with the same args has no additional effect */
+    idempotentHint?: boolean;
+    /** If true, the tool interacts with external entities outside the local environment */
+    openWorldHint?: boolean;
+}
+
+/**
  * Tool definition with optional activation control for agent exposure.
  */
 export interface AgentToolDefinition extends ToolDefinition {
@@ -200,6 +218,10 @@ export interface AgentToolDefinition extends ToolDefinition {
      * when this skill is called. Used for dynamic tool discovery.
      */
     related_tools?: string[];
+    /**
+     * MCP tool annotations providing hints about tool behavior and safety.
+     */
+    annotations?: MCPToolAnnotations;
 }
 
 /**
@@ -435,6 +457,12 @@ export interface AppInstallation {
     project: string; // the project where the app is installed
     manifest: string; // the app manifest
     settings?: Record<string, any>; // settings for the app installation
+    /**
+     * Admin-managed allowlist of tool names permitted for this installation.
+     * When undefined, all tools from the app are permitted.
+     * When set, only listed tool names are available for agent configuration and execution.
+     */
+    tool_allowlist?: string[];
     created_at: string;
     updated_at: string;
 }
@@ -467,7 +495,7 @@ export interface AppToolCollection {
     /**
      * the tools provided by this collection
      */
-    tools: { name: string, description?: string, related_tools?: string[] }[]
+    tools: AgentToolDefinition[]
 }
 
 /**
@@ -555,6 +583,8 @@ export interface CompositeAppLogoOverrides {
     lightModeUrl?: string;
     /** URL for dark mode logo (overrides default Vertesia logo) */
     darkModeUrl?: string;
+    /** Whether to hide the Vertesia footer logo in the sidebar when header logo is overridden (defaults to false) */
+    hideFooterLogo?: boolean;
 }
 
 
@@ -660,6 +690,12 @@ export interface CompositeAppMenuNavItem {
     route?: string;
     /** When true, this item is hidden from the sidebar */
     hidden?: boolean;
+    /**
+     * Optional description for dashboard cards and summary views.
+     * `null` = user explicitly cleared it (show no description, skip fallback).
+     * `undefined` / absent = no override (fall back to manifest description).
+     */
+    description?: string | null;
     /** Ordered child nav-items */
     children?: CompositeAppMenuNavItem[];
 }

@@ -58,6 +58,7 @@ export enum AccountType {
     partner = 'partner',
     free = 'free',
     customer = 'customer',
+    prospect = 'prospect',
     unknown = 'unknown'
 }
 
