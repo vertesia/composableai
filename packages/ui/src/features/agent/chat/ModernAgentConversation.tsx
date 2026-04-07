@@ -783,6 +783,7 @@ function ModernAgentConversationInner({
         closeDocument: handleCloseDocument,
         selectDocument,
         openDocInPanel,
+        updateDocumentTitle,
     } = useDocumentPanel(messages);
 
     const {
@@ -1536,6 +1537,7 @@ const handleCloseRightPanel = useCallback(() => {
                         activeDocumentId={activeDocumentId}
                         onSelectDocument={selectDocument}
                         onCloseDocument={handleCloseDocument}
+                        onUpdateDocumentTitle={updateDocumentTitle}
                         docRefreshKey={docRefreshKey}
                         runId={agentRunId}
                         // Uploads

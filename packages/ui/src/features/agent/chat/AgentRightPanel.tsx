@@ -244,6 +244,7 @@ export interface AgentRightPanelProps {
     activeDocumentId?: string | null;
     onSelectDocument?: (id: string) => void;
     onCloseDocument?: (id: string) => void;
+    onUpdateDocumentTitle?: (id: string, title: string) => void;
     docRefreshKey?: number;
     runId?: string;
 
@@ -284,6 +285,7 @@ function AgentRightPanelComponent({
     activeDocumentId,
     onSelectDocument,
     onCloseDocument,
+    onUpdateDocumentTitle,
     docRefreshKey = 0,
     runId,
 
@@ -377,6 +379,7 @@ function AgentRightPanelComponent({
                     activeDocumentId={activeDocumentId ?? null}
                     onSelectDocument={onSelectDocument}
                     onCloseDocument={onCloseDocument}
+                    onUpdateDocumentTitle={onUpdateDocumentTitle}
                     refreshKey={docRefreshKey}
                     runId={runId}
                 />
