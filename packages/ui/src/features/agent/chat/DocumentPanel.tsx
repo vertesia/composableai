@@ -87,25 +87,25 @@ function DocumentPanelComponent({
                             topLevelNav
                             className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 w-8 hover:bg-muted/20 text-muted hover:text-foreground"
                         >
-                            <VTooltip description={t('agent.openDocument')} placement="top">
+                            <VTooltip description={t('agent.openDocument')} placement="top" size='xs'>
                                 <ExternalLinkIcon className="size-4" />
                             </VTooltip>
                         </NavLink>
                     )}
-                    <Button variant="ghost" size="sm" onClick={onClose} title={t('agent.close')}>
+                    <DocumentTabBar
+                        documents={documents}
+                        activeId={activeDocumentId}
+                        onSelect={onSelectDocument}
+                    />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => activeDocumentId && onCloseDocument(activeDocumentId)}
+                        title={t('agent.close')}
+                    >
                         <X className="size-4" />
                     </Button>
                 </div>
-            </div>
-
-            {/* Tab bar */}
-            <div className="shrink-0">
-                <DocumentTabBar
-                    documents={documents}
-                    activeId={activeDocumentId}
-                    onSelect={onSelectDocument}
-                    onClose={onCloseDocument}
-                />
             </div>
 
             {/* Content area */}
