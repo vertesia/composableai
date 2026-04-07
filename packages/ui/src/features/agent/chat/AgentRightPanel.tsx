@@ -16,7 +16,6 @@ import type { Plan, ConversationFile, AgentMessage } from '@vertesia/common';
 import { useUserSession } from '@vertesia/ui/session';
 import InlineSlidingPlanPanel from './ModernAgentOutput/InlineSlidingPlanPanel';
 import { getConversationUrl } from './ModernAgentOutput/utils.js';
-import { extractWorkstreams } from './ModernAgentOutput/WorkstreamTabs.js';
 import { DocumentPanel } from './DocumentPanel.js';
 import { ArtifactsTab } from './ArtifactsTab.js';
 import type { OpenDocument } from './types/document.js';
@@ -31,7 +30,7 @@ export interface WorkstreamInfo {
     elapsed_ms: number;
     deadline_ms: number;
     remaining_ms: number;
-    status: 'running' | 'canceling';
+    status: 'running' | 'canceling' | 'completed' | 'canceled';
     phase?: string;
     child_workflow_id?: string;
     child_workflow_run_id?: string;
@@ -125,7 +124,7 @@ interface WorkstreamsTabProps {
     runId?: string;
 }
 
-function WorkstreamsTab({ workstreams, messages }: WorkstreamsTabProps) {
+function WorkstreamsTab({ workstreams, messages: _messages }: WorkstreamsTabProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
@@ -144,18 +143,7 @@ function WorkstreamsTab({ workstreams, messages }: WorkstreamsTabProps) {
         }
     }, [client, toast]);
 
-    // When live poll is empty, derive completed workstreams from message history
-    const completedWorkstreams = useMemo(() => {
-        if (workstreams.length > 0) return [];
-        const wsMap = extractWorkstreams(messages);
-        const ids: string[] = [];
-        wsMap.forEach((_, id) => {
-            if (id !== 'all' && id !== 'main') ids.push(id);
-        });
-        return ids;
-    }, [workstreams.length, messages]);
-
-    if (workstreams.length === 0 && completedWorkstreams.length === 0) {
+    if (workstreams.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-8 text-muted">
                 <LayoutListIcon className="size-8 mb-2" />
@@ -164,27 +152,23 @@ function WorkstreamsTab({ workstreams, messages }: WorkstreamsTabProps) {
         );
     }
 
-    if (workstreams.length === 0) {
-        return (
-            <div className="p-3 space-y-2">
-                {completedWorkstreams.map((id) => (
-                    <div key={id} className="p-3 border rounded-md flex items-center justify-between">
-                        <span className="text-sm font-medium truncate">{id}</span>
-                        <Badge variant="done">{t('agent.completed')}</Badge>
-                    </div>
-                ))}
-            </div>
-        );
-    }
-
     return (
         <div className="p-3 space-y-2">
             {workstreams.map((ws) => {
+                const isActive = ws.status === 'running' || ws.status === 'canceling';
                 const elapsed = Math.round(ws.elapsed_ms / 1000);
                 const remaining = Math.round(ws.remaining_ms / 1000);
                 const progress = ws.deadline_ms > 0
                     ? Math.min(100, Math.round((ws.elapsed_ms / ws.deadline_ms) * 100))
                     : 0;
+
+                const statusBadge = ws.status === 'running'
+                    ? <Badge variant="info">{ws.phase || 'running'}</Badge>
+                    : ws.status === 'canceling'
+                        ? <Badge variant="attention">canceling</Badge>
+                        : ws.status === 'completed'
+                            ? <Badge variant="done">{t('agent.completed')}</Badge>
+                            : <Badge variant="destructive">{t('agent.canceled')}</Badge>;
 
                 return (
                     <div
@@ -195,21 +179,23 @@ function WorkstreamsTab({ workstreams, messages }: WorkstreamsTabProps) {
                             <span className="text-sm font-medium truncate">
                                 {ws.workstream_id}
                             </span>
-                            <Badge variant={ws.status === 'running' ? 'info' : 'attention'}>
-                                {ws.status === 'running' ? (ws.phase || 'running') : 'canceling'}
-                            </Badge>
+                            {statusBadge}
                         </div>
-                        {/* Progress bar */}
-                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-info rounded-full transition-all duration-500"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-                        <div className="flex justify-between text-xs text-muted">
-                            <span>{t('agent.elapsed', { seconds: elapsed })}</span>
-                            <span>{t('agent.remaining', { seconds: remaining })}</span>
-                        </div>
+                        {/* Progress bar — only for active workstreams */}
+                        {isActive && (
+                            <>
+                                <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-info rounded-full transition-all duration-500"
+                                        style={{ width: `${progress}%` }}
+                                    />
+                                </div>
+                                <div className="flex justify-between text-xs text-muted">
+                                    <span>{t('agent.elapsed', { seconds: elapsed })}</span>
+                                    <span>{t('agent.remaining', { seconds: remaining })}</span>
+                                </div>
+                            </>
+                        )}
                         {/* Actions */}
                         {ws.child_workflow_run_id && (
                             <div className="flex gap-1 pt-1 border-t border-muted">

@@ -812,6 +812,7 @@ function ModernAgentConversationInner({
     const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
     const [isDragOver, setIsDragOver] = useState(false);
     const [activeWorkstreams, setActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
+    const [completedWorkstreams, setCompletedWorkstreams] = useState<Array<{ launch_id: string; workstream_id: string; status: 'completed' | 'canceled' }>>([]);
     const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
 
@@ -867,7 +868,7 @@ function ModernAgentConversationInner({
     }, [plans, activePlanIndex, workstreamStatusMap]);
 
     const panelWorkstreams = useMemo<WorkstreamInfo[]>(() => {
-        return activeWorkstreams.map((ws) => ({
+        const running: WorkstreamInfo[] = activeWorkstreams.map((ws) => ({
             workstream_id: ws.workstream_id,
             launch_id: ws.launch_id,
             elapsed_ms: ws.elapsed_ms,
@@ -878,7 +879,16 @@ function ModernAgentConversationInner({
             child_workflow_id: ws.child_workflow_id,
             child_workflow_run_id: ws.child_workflow_run_id,
         }));
-    }, [activeWorkstreams]);
+        const completed: WorkstreamInfo[] = completedWorkstreams.map((ws) => ({
+            workstream_id: ws.workstream_id,
+            launch_id: ws.launch_id,
+            elapsed_ms: 0,
+            deadline_ms: 0,
+            remaining_ms: 0,
+            status: ws.status,
+        }));
+        return [...running, ...completed];
+    }, [activeWorkstreams, completedWorkstreams]);
 
     // ────────────────────────────────────────────
     // Stable callbacks
@@ -1028,6 +1038,12 @@ const handleCloseRightPanel = useCallback(() => {
                 const result = await client.agents.getActiveWorkstreams(agentRunId);
                 if (isCancelled) return;
                 setActiveWorkstreams(result.running ?? []);
+                const completed = (result as unknown as { completed?: Array<{ launch_id: string; workstream_id: string; status: string }> }).completed ?? [];
+                setCompletedWorkstreams(completed.map(c => ({
+                    launch_id: c.launch_id,
+                    workstream_id: c.workstream_id,
+                    status: c.status === 'canceled' ? 'canceled' : 'completed',
+                })));
                 workstreamFetchFailedRef.current = false;
             } catch (error) {
                 if (isCancelled) return;

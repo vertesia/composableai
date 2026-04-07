@@ -17,7 +17,7 @@ export function DocumentTabBar({ documents, activeId, onSelect }: DocumentTabBar
                 align="right"
                 trigger={
                     <Button variant="ghost" size="xs"
-                        title='All documents'
+                        title='All opened documents'
                         className="flex items-center gap-1.5 max-w-[220px] text-xs h-7 px-2">
                         <ChevronDownIcon className="size-3 shrink-0" />
                     </Button>
