@@ -696,6 +696,8 @@ export interface CompositeAppMenuNavItem {
      * `undefined` / absent = no override (fall back to manifest description).
      */
     description?: string | null;
+    /** When false, this item won't appear as a card on the dashboard. Defaults to true. */
+    showOnDashboard?: boolean;
     /** Ordered child nav-items */
     children?: CompositeAppMenuNavItem[];
 }
