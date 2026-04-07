@@ -1,9 +1,13 @@
 packages:
-    - llumiverse/common
-    - packages/*
-    - templates/*
-    - "!templates/worker-template"
+  - llumiverse/common
+  - packages/*
+  - templates/*
+  - "!templates/worker-template"
 minimumReleaseAge: 1440 # 1 day in minutes, minimumReleaseAge protects against supply chain attacks.
 minimumReleaseAgeExclude:
-- '@vertesia/*'
-- '@llumiverse/*'
+  - '@vertesia/*'
+  - '@llumiverse/*'
+  # Renovate security update: lodash-es@4.18.1
+  - lodash-es@4.18.1
+  # Renovate security update: vite@7.3.2
+  - vite@7.3.2
