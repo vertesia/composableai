@@ -583,6 +583,8 @@ export interface CompositeAppLogoOverrides {
     lightModeUrl?: string;
     /** URL for dark mode logo (overrides default Vertesia logo) */
     darkModeUrl?: string;
+    /** Whether to hide the Vertesia footer logo in the sidebar when header logo is overridden (defaults to false) */
+    hideFooterLogo?: boolean;
 }
 
 
