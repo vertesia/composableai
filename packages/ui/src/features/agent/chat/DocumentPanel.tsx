@@ -90,11 +90,6 @@ function DocumentPanelComponent({
                             </VTooltip>
                         </NavLink>
                     )}
-                    <DocumentTabBar
-                        documents={documents}
-                        activeId={activeDocumentId}
-                        onSelect={onSelectDocument}
-                    />
                     <Button
                         variant="ghost"
                         size="sm"
@@ -103,6 +98,11 @@ function DocumentPanelComponent({
                     >
                         <X className="size-4" />
                     </Button>
+                    <DocumentTabBar
+                        documents={documents}
+                        activeId={activeDocumentId}
+                        onSelect={onSelectDocument}
+                    />
                 </div>
             </div>
 

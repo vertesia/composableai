@@ -12,12 +12,12 @@ export function DocumentTabBar({ documents, activeId, onSelect }: DocumentTabBar
     if (documents.length === 0) return null;
 
     return (
-        <div className="flex items-center gap-1 px-2 py-1.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <div className="flex items-center gap-1 px-2 py-1.5">
             <Dropdown
-                align="left"
+                align="right"
                 trigger={
                     <Button variant="ghost" size="xs"
-                        title='Other document'
+                        title='All documents'
                         className="flex items-center gap-1.5 max-w-[220px] text-xs h-7 px-2">
                         <ChevronDownIcon className="size-3 shrink-0" />
                     </Button>
