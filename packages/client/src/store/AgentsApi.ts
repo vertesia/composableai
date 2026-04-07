@@ -5,6 +5,7 @@ import {
     AgentMessage,
     AgentMessageType,
     AgentRun,
+    AgentRunArchiveState,
     AgentRunInternals,
     AgentRunStatus,
     CompactMessage,
@@ -158,6 +159,11 @@ export class AgentsApi extends ApiTopic {
             lessons_learned?: string[];
             /** ES-only: conversation content text (not stored in MongoDB) */
             content?: string;
+            // Archive state fields (set by the archive workflow)
+            archive_state?: AgentRunArchiveState;
+            archived_at?: string;
+            archive_version?: number;
+            last_archive_error?: string;
         },
     ): Promise<AgentRun> {
         return this.post(`/${id}/status`, { payload: update });
@@ -240,7 +246,7 @@ export class AgentsApi extends ApiTopic {
         let lastMessageTimestamp = since || 0;
         let isClosed = false;
         let currentSse: EventSource | null = null;
-        let interval: NodeJS.Timeout | null = null;
+        let interval: ReturnType<typeof setInterval> | null = null;
         let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
         let abortHandler: (() => void) | null = null;
 
@@ -521,6 +527,20 @@ export class AgentsApi extends ApiTopic {
      */
     listChildren(id: string): Promise<ListWorkflowRunsResponse> {
         return this.get(`/${id}/children`);
+    }
+
+    /**
+     * Get details for a specific child workflow.
+     * Serves from GCS archive when available, falls back to Temporal.
+     */
+    getChildDetails(
+        id: string,
+        childWorkflowId: string,
+        options?: { includeHistory?: boolean },
+    ): Promise<WorkflowRunWithDetails> {
+        const query: Record<string, any> = {};
+        if (options?.includeHistory) query.include_history = true;
+        return this.get(`/${id}/children/${childWorkflowId}/details`, { query });
     }
 
     // ========================================================================
