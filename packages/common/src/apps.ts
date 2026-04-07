@@ -14,6 +14,8 @@ export interface AppUINavItem {
     icon: string;
     /** Route path relative to app base */
     route: string;
+    /** Optional description shown on dashboard cards and other summary views */
+    description?: string;
     /** Nested sub-items displayed within this item's collapsible section */
     children?: AppUINavItem[];
     /** When true, this item appears as an independent entry in the sidebar (outside its parent app group) */
@@ -581,6 +583,8 @@ export interface CompositeAppLogoOverrides {
     lightModeUrl?: string;
     /** URL for dark mode logo (overrides default Vertesia logo) */
     darkModeUrl?: string;
+    /** Whether to hide the Vertesia footer logo in the sidebar when header logo is overridden (defaults to false) */
+    hideFooterLogo?: boolean;
 }
 
 
@@ -686,6 +690,12 @@ export interface CompositeAppMenuNavItem {
     route?: string;
     /** When true, this item is hidden from the sidebar */
     hidden?: boolean;
+    /**
+     * Optional description for dashboard cards and summary views.
+     * `null` = user explicitly cleared it (show no description, skip fallback).
+     * `undefined` / absent = no override (fall back to manifest description).
+     */
+    description?: string | null;
     /** Ordered child nav-items */
     children?: CompositeAppMenuNavItem[];
 }

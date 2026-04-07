@@ -156,8 +156,8 @@ export interface ConversationState {
 export interface AvailableSkill {
     /** Skill name (e.g., "analyze_data") - without the "learn_" prefix */
     name: string;
-    /** Source URL of the skill collection (e.g., "https://tools.vertesia.io/api/skills/data-analysis") */
-    src: string;
+    /** Source URL of the skill collection (e.g., "https://tools.vertesia.io/api/skills/data-analysis"). Undefined for interaction-based skills. */
+    src?: string;
 }
 
 /**
