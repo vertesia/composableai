@@ -246,7 +246,7 @@ export class AgentsApi extends ApiTopic {
         let lastMessageTimestamp = since || 0;
         let isClosed = false;
         let currentSse: EventSource | null = null;
-        let interval: NodeJS.Timeout | null = null;
+        let interval: ReturnType<typeof setInterval> | null = null;
         let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
         let abortHandler: (() => void) | null = null;
 
@@ -536,11 +536,10 @@ export class AgentsApi extends ApiTopic {
     getChildDetails(
         id: string,
         childWorkflowId: string,
-        options?: { includeHistory?: boolean; historyFormat?: string },
+        options?: { includeHistory?: boolean },
     ): Promise<WorkflowRunWithDetails> {
         const query: Record<string, any> = {};
         if (options?.includeHistory) query.include_history = true;
-        if (options?.historyFormat) query.history_format = options.historyFormat;
         return this.get(`/${id}/children/${childWorkflowId}/details`, { query });
     }
 
