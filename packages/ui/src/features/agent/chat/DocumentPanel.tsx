@@ -10,7 +10,6 @@ import type { OpenDocument } from './types/document.js';
 
 interface DocumentPanelProps {
     isOpen: boolean;
-    onClose: () => void;
     documents: OpenDocument[];
     activeDocumentId: string | null;
     onSelectDocument: (id: string) => void;
@@ -22,7 +21,6 @@ interface DocumentPanelProps {
 
 function DocumentPanelComponent({
     isOpen,
-    onClose,
     documents,
     activeDocumentId,
     onSelectDocument,
