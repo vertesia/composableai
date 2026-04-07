@@ -16,6 +16,7 @@ import type { Plan, ConversationFile, AgentMessage } from '@vertesia/common';
 import { useUserSession } from '@vertesia/ui/session';
 import InlineSlidingPlanPanel from './ModernAgentOutput/InlineSlidingPlanPanel';
 import { getConversationUrl } from './ModernAgentOutput/utils.js';
+import { extractWorkstreams } from './ModernAgentOutput/WorkstreamTabs.js';
 import { DocumentPanel } from './DocumentPanel.js';
 import { ArtifactsTab } from './ArtifactsTab.js';
 import type { OpenDocument } from './types/document.js';
@@ -124,7 +125,7 @@ interface WorkstreamsTabProps {
     runId?: string;
 }
 
-function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
+function WorkstreamsTab({ workstreams, messages }: WorkstreamsTabProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
@@ -143,11 +144,35 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
         }
     }, [client, toast]);
 
-    if (workstreams.length === 0) {
+    // When live poll is empty, derive completed workstreams from message history
+    const completedWorkstreams = useMemo(() => {
+        if (workstreams.length > 0) return [];
+        const wsMap = extractWorkstreams(messages);
+        const ids: string[] = [];
+        wsMap.forEach((_, id) => {
+            if (id !== 'all' && id !== 'main') ids.push(id);
+        });
+        return ids;
+    }, [workstreams.length, messages]);
+
+    if (workstreams.length === 0 && completedWorkstreams.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-8 text-muted">
                 <LayoutListIcon className="size-8 mb-2" />
                 <span className="text-sm">{t('agent.noActiveWorkstreams')}</span>
+            </div>
+        );
+    }
+
+    if (workstreams.length === 0) {
+        return (
+            <div className="p-3 space-y-2">
+                {completedWorkstreams.map((id) => (
+                    <div key={id} className="p-3 border rounded-md flex items-center justify-between">
+                        <span className="text-sm font-medium truncate">{id}</span>
+                        <Badge variant="done">{t('agent.completed')}</Badge>
+                    </div>
+                ))}
             </div>
         );
     }

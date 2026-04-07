@@ -80,6 +80,7 @@
   "agent.moreActions": "More actions",
   "agent.newerPlan": "Newer Plan",
   "agent.no": "No",
+  "agent.completed": "Completed",
   "agent.noActiveWorkstreams": "No active workstreams",
   "agent.noAgentRunning": "No agent currently running",
   "agent.noArtifactsYet": "No artifacts yet",
