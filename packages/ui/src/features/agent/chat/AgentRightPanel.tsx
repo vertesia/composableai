@@ -259,6 +259,10 @@ export interface AgentRightPanelProps {
     onClose: () => void;
     /** Which tab to auto-activate when panel opens */
     defaultTab?: RightPanelTab;
+    /** Controlled active tab (overrides internal state when provided) */
+    activeTab?: RightPanelTab;
+    /** Callback when the active tab changes */
+    onTabChange?: (tab: RightPanelTab) => void;
 }
 
 function AgentRightPanelComponent({
@@ -299,9 +303,16 @@ function AgentRightPanelComponent({
     // Panel
     onClose,
     defaultTab,
+    activeTab: activeTabProp,
+    onTabChange,
 }: AgentRightPanelProps) {
     const { t } = useUITranslation();
-    const [activeTab, setActiveTab] = useState<RightPanelTab>(defaultTab || 'plan');
+    const [internalActiveTab, setInternalActiveTab] = useState<RightPanelTab>(defaultTab || 'plan');
+    const activeTab = activeTabProp ?? internalActiveTab;
+    const handleTabChange = (name: string) => {
+        setInternalActiveTab(name as RightPanelTab);
+        onTabChange?.(name as RightPanelTab);
+    };
 
 // Determine which tabs have content (for badges/indicators)
     const hasWorkstreams = !hideWorkstreams && activeWorkstreams.length > 0;
@@ -310,8 +321,9 @@ function AgentRightPanelComponent({
     const hasPlan = showPlan && plan;
 
     const handleCloseDocPanel = useCallback(() => {
-        setActiveTab('plan');
-    }, []);
+        setInternalActiveTab('plan');
+        onTabChange?.('plan');
+    }, [onTabChange]);
 
     const conversationTab: TabDefinition = {
         name: 'conversation',
@@ -402,7 +414,7 @@ function AgentRightPanelComponent({
         <Tabs
             tabs={tabs}
             current={activeTab}
-            onTabChange={(name) => setActiveTab(name as RightPanelTab)}
+            onTabChange={handleTabChange}
             fullHeight
             className="px-0"
         >

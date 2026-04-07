@@ -898,8 +898,8 @@ function ModernAgentConversationInner({
     // ────────────────────────────────────────────
     // Unified right panel state
     // ────────────────────────────────────────────
-    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'conversation';
-    const [rightPanelTab, _setRightPanelTab] = useState<RightPanelTab>((conversationContent || conversationTab) ? 'conversation' : 'plan');
+    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
+    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>((conversationContent || conversationTab) ? 'conversation' : 'plan');
     const [rightPanelWidth, setRightPanelWidth] = useState(400);
     const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
 
@@ -964,12 +964,13 @@ const handleCloseRightPanel = useCallback(() => {
                     e.preventDefault();
                     e.stopPropagation();
                     openDocInPanel(documentId);
+                    setRightPanelTab('documents');
                 }}
             >
                 {children}
             </a>
         ),
-        [openDocInPanel]
+        [openDocInPanel, setRightPanelTab]
     );
 
     const effectiveStoreLinkComponent = StoreLinkComponent ?? internalStoreLinkComponent;
@@ -1045,6 +1046,15 @@ const handleCloseRightPanel = useCallback(() => {
             window.clearInterval(pollHandle);
         };
     }, [client.agents, agentRunId, isCompleted, activeWorkstreams.length]);
+
+    // Auto-switch to Workstreams tab the first time workstreams become active
+    const hasAutoSwitchedToWorkstreamsRef = useRef(false);
+    useEffect(() => {
+        if (panelWorkstreams.length > 0 && !hasAutoSwitchedToWorkstreamsRef.current) {
+            hasAutoSwitchedToWorkstreamsRef.current = true;
+            setRightPanelTab('workstreams');
+        }
+    }, [panelWorkstreams.length]);
 
     // Notify parent when input availability is determined
     useEffect(() => {
@@ -1542,6 +1552,8 @@ const handleCloseRightPanel = useCallback(() => {
                         // Panel control
                         onClose={handleCloseRightPanel}
                         defaultTab={rightPanelTab}
+                        activeTab={rightPanelTab}
+                        onTabChange={setRightPanelTab}
                     />
                     </div>
                 </>
