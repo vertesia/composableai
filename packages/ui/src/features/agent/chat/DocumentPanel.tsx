@@ -79,6 +79,11 @@ function DocumentPanelComponent({
                     </h3>
                 </div>
                 <div className="flex items-center gap-1">
+                    <DocumentTabBar
+                        documents={documents}
+                        activeId={activeDocumentId}
+                        onSelect={onSelectDocument}
+                    />
                     {activeDocumentId && (
                         <NavLink
                             href={`/store/objects/${activeDocumentId}#overview`}
@@ -98,11 +103,6 @@ function DocumentPanelComponent({
                     >
                         <X className="size-4" />
                     </Button>
-                    <DocumentTabBar
-                        documents={documents}
-                        activeId={activeDocumentId}
-                        onSelect={onSelectDocument}
-                    />
                 </div>
             </div>
 
