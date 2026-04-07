@@ -782,4 +782,5 @@ export class AgentsApi extends ApiTopic {
     ): Promise<FirstResponseBehaviorAnalyticsResponse> {
         return this.post('/analytics/first-response-behavior', { payload: query });
     }
+
 }
