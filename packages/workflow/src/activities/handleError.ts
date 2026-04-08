@@ -8,7 +8,14 @@ export interface HandleDslErrorParams {
 
 export async function handleDslError(payload: DSLActivityExecutionPayload<HandleDslErrorParams>): Promise<void> {
     const { client, params, objectId } = await setupActivity<HandleDslErrorParams>(payload);
-    const isIntake = payload.workflow_name === "StandardDocumentIntake" || payload.workflow_name === "StandardImageIntake";
+
+    const isIntake = [
+        "StandardDocumentIntake",
+        "StandardImageIntake",
+        "StandardVideoIntake",
+        "StandardAudioIntake",
+        "StandardDocPartIntake",
+    ].includes(payload.workflow_name);
     if (!isIntake) {
         log.warn(`Workflow execution failed, but no error handler registered for this workflow: ${payload.workflow_name}`,
             { error: params.errorMessage },
