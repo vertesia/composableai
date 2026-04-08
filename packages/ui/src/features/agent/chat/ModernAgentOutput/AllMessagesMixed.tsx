@@ -439,13 +439,18 @@ function AllMessagesMixedComponent({
         // Check if each workstream is completed
         for (const [workstreamId, msgs] of workstreamMessages.entries()) {
             if (msgs.length > 0) {
-                const lastMessage = msgs[msgs.length - 1];
-                statusMap.set(workstreamId, [
-                    AgentMessageType.COMPLETE,
-                    AgentMessageType.IDLE,
-                    AgentMessageType.REQUEST_INPUT,
-                    AgentMessageType.TERMINATED
-                ].includes(lastMessage.type));
+                const isCompleted = msgs.some(m => {
+                    if ([AgentMessageType.COMPLETE, AgentMessageType.IDLE, AgentMessageType.REQUEST_INPUT, AgentMessageType.TERMINATED].includes(m.type)) {
+                        return true;
+                    }
+                    // Workstream completion is sent as UPDATE with workstream_event: 'completed' or status: 'completed'/'canceled'
+                    if (m.type === AgentMessageType.UPDATE && m.details) {
+                        const d = m.details as Record<string, unknown>;
+                        return d.workstream_event === 'completed' || d.status === 'completed' || d.status === 'canceled';
+                    }
+                    return false;
+                });
+                statusMap.set(workstreamId, isCompleted);
             }
         }
 

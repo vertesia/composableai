@@ -1,4 +1,4 @@
-import { log } from '@temporalio/activity';
+import { ApplicationFailure, log } from '@temporalio/activity';
 import { DSLActivityExecutionPayload, DSLActivitySpec, VideoMetadata, VideoRendition, POSTER_RENDITION_NAME, AUDIO_RENDITION_NAME, WEB_VIDEO_RENDITION_NAME, ContentNature } from '@vertesia/common';
 import { exec } from 'child_process';
 import fs from 'fs';
@@ -84,7 +84,7 @@ async function getVideoMetadata(videoPath: string): Promise<VideoMetadataExtende
         );
 
         if (!videoStream) {
-            throw new Error('No video stream found in file');
+            throw ApplicationFailure.nonRetryable('No video stream found in file');
         }
 
         const duration = parseFloat(metadata.format.duration ?? '0') || 0;
@@ -111,6 +111,9 @@ async function getVideoMetadata(videoPath: string): Promise<VideoMetadataExtende
         log.error(
             `Failed to get video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`,
         );
+        if (error instanceof ApplicationFailure) {
+            throw error;
+        }
         throw new Error(
             `Failed to probe video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`,
         );

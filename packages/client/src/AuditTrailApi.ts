@@ -13,7 +13,9 @@ export default class AuditTrailApi extends ApiTopic {
         if (query?.resourceTypes?.length) params.set('resourceTypes', query.resourceTypes.join(','));
         if (query?.resourceId) params.set('resourceId', query.resourceId);
         if (query?.principalId) params.set('principalId', query.principalId);
-        if (query?.principalUserId) params.set('principalUserId', query.principalUserId);
+        if (query?.principalType) params.set('principalType', query.principalType);
+        if (query?.effectivePrincipalId) params.set('effectivePrincipalId', query.effectivePrincipalId);
+        if (query?.hasEffectivePrincipal !== undefined) params.set('hasEffectivePrincipal', String(query.hasEffectivePrincipal));
         if (query?.projectId) params.set('projectId', query.projectId);
         if (query?.from) params.set('from', query.from);
         if (query?.to) params.set('to', query.to);
