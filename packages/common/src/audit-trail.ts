@@ -1,4 +1,5 @@
 export type AuditAction =
+    // CRUD operations
     | 'create'
     | 'update'
     | 'delete'
@@ -8,7 +9,34 @@ export type AuditAction =
     | 'attach'
     | 'detach'
     | 'publish'
-    | 'unpublish';
+    | 'unpublish'
+    // Billable operations
+    | 'inference'
+    | 'embedding'
+    | 'image_generation';
+
+/** Billable audit actions for cost analytics queries */
+export const BILLABLE_AUDIT_ACTIONS: AuditAction[] = [
+    'inference',
+    'embedding',
+    'image_generation',
+];
+
+/**
+ * Generic metering entry attached to audit events.
+ * Used for cost attribution, usage tracking, and billing.
+ *
+ * Examples:
+ *   { category: "tokens", type: "input", quantity: 1234 }
+ *   { category: "tokens", type: "output", quantity: 567 }
+ *   { category: "compute", type: "duration_ms", quantity: 2100 }
+ *   { category: "processing", type: "pages", quantity: 12 }
+ */
+export interface AuditMeter {
+    category: string;
+    type: string;
+    quantity: number;
+}
 
 export interface AuditTrailEvent {
     event_type: 'audit';
@@ -28,6 +56,10 @@ export interface AuditTrailEvent {
     tenant_id: string | null;
     account_name: string | null;
     project_name: string | null;
+    /** Generic metering data for cost attribution and usage tracking */
+    meters?: AuditMeter[];
+    /** Event-specific metadata — shape varies by action/resource_type */
+    details?: Record<string, unknown>;
 }
 
 export interface AuditTrailQuery {
