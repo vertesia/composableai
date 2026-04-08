@@ -4,6 +4,7 @@ export type AuditAction =
     | 'update'
     | 'delete'
     | 'bulk_create'
+    | 'bulk_change_type'
     | 'bulk_update'
     | 'bulk_delete'
     | 'attach'
