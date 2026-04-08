@@ -49,7 +49,7 @@ export interface AuditTrailEvent {
     success: boolean;
     principal_id: string | null;
     principal_type: string | null;
-    principal_user_id: string | null;
+    effective_principal_id: string | null;
     roles: string[];
     account_id: string | null;
     project_id: string | null;
@@ -69,10 +69,14 @@ export interface AuditTrailQuery {
     resourceTypes?: string[];
     /** Filter by resource ID */
     resourceId?: string;
-    /** Filter by principal ID (matches principal_id column — API keys, service accounts) */
+    /** Filter by exact actor principal ref (matches principal_id column). */
     principalId?: string;
-    /** Filter by principal user ID (matches principal_user_id column — human users) */
-    principalUserId?: string;
+    /** Filter by top-level actor category (matches principal_type column). */
+    principalType?: string;
+    /** Filter by delegated/direct effective principal ref (matches effective_principal_id column). */
+    effectivePrincipalId?: string;
+    /** Filter by whether an event has an effective principal ref. */
+    hasEffectivePrincipal?: boolean;
     /** Filter by project ID */
     projectId?: string;
     /** Start time (ISO string) */
