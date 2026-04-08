@@ -30,7 +30,7 @@ export interface WorkstreamInfo {
     elapsed_ms: number;
     deadline_ms: number;
     remaining_ms: number;
-    status: 'running' | 'canceling';
+    status: 'running' | 'canceling' | 'completed' | 'canceled';
     phase?: string;
     child_workflow_id?: string;
     child_workflow_run_id?: string;
@@ -124,7 +124,7 @@ interface WorkstreamsTabProps {
     runId?: string;
 }
 
-function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
+function WorkstreamsTab({ workstreams, messages: _messages }: WorkstreamsTabProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
@@ -155,11 +155,20 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
     return (
         <div className="p-3 space-y-2">
             {workstreams.map((ws) => {
+                const isActive = ws.status === 'running' || ws.status === 'canceling';
                 const elapsed = Math.round(ws.elapsed_ms / 1000);
                 const remaining = Math.round(ws.remaining_ms / 1000);
                 const progress = ws.deadline_ms > 0
                     ? Math.min(100, Math.round((ws.elapsed_ms / ws.deadline_ms) * 100))
                     : 0;
+
+                const statusBadge = ws.status === 'running'
+                    ? <Badge variant="info">{ws.phase || 'running'}</Badge>
+                    : ws.status === 'canceling'
+                        ? <Badge variant="attention">canceling</Badge>
+                        : ws.status === 'completed'
+                            ? <Badge variant="done">{t('agent.completed')}</Badge>
+                            : <Badge variant="destructive">{t('agent.canceled')}</Badge>;
 
                 return (
                     <div
@@ -170,21 +179,23 @@ function WorkstreamsTab({ workstreams }: WorkstreamsTabProps) {
                             <span className="text-sm font-medium truncate">
                                 {ws.workstream_id}
                             </span>
-                            <Badge variant={ws.status === 'running' ? 'info' : 'attention'}>
-                                {ws.status === 'running' ? (ws.phase || 'running') : 'canceling'}
-                            </Badge>
+                            {statusBadge}
                         </div>
-                        {/* Progress bar */}
-                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-info rounded-full transition-all duration-500"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-                        <div className="flex justify-between text-xs text-muted">
-                            <span>{t('agent.elapsed', { seconds: elapsed })}</span>
-                            <span>{t('agent.remaining', { seconds: remaining })}</span>
-                        </div>
+                        {/* Progress bar — only for active workstreams */}
+                        {isActive && (
+                            <>
+                                <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-info rounded-full transition-all duration-500"
+                                        style={{ width: `${progress}%` }}
+                                    />
+                                </div>
+                                <div className="flex justify-between text-xs text-muted">
+                                    <span>{t('agent.elapsed', { seconds: elapsed })}</span>
+                                    <span>{t('agent.remaining', { seconds: remaining })}</span>
+                                </div>
+                            </>
+                        )}
                         {/* Actions */}
                         {ws.child_workflow_run_id && (
                             <div className="flex gap-1 pt-1 border-t border-muted">
@@ -244,6 +255,7 @@ export interface AgentRightPanelProps {
     activeDocumentId?: string | null;
     onSelectDocument?: (id: string) => void;
     onCloseDocument?: (id: string) => void;
+    onUpdateDocumentTitle?: (id: string, title: string) => void;
     docRefreshKey?: number;
     runId?: string;
 
@@ -259,6 +271,10 @@ export interface AgentRightPanelProps {
     onClose: () => void;
     /** Which tab to auto-activate when panel opens */
     defaultTab?: RightPanelTab;
+    /** Controlled active tab (overrides internal state when provided) */
+    activeTab?: RightPanelTab;
+    /** Callback when the active tab changes */
+    onTabChange?: (tab: RightPanelTab) => void;
 }
 
 function AgentRightPanelComponent({
@@ -280,6 +296,7 @@ function AgentRightPanelComponent({
     activeDocumentId,
     onSelectDocument,
     onCloseDocument,
+    onUpdateDocumentTitle,
     docRefreshKey = 0,
     runId,
 
@@ -299,19 +316,22 @@ function AgentRightPanelComponent({
     // Panel
     onClose,
     defaultTab,
+    activeTab: activeTabProp,
+    onTabChange,
 }: AgentRightPanelProps) {
     const { t } = useUITranslation();
-    const [activeTab, setActiveTab] = useState<RightPanelTab>(defaultTab || 'plan');
+    const [internalActiveTab, setInternalActiveTab] = useState<RightPanelTab>(defaultTab || 'plan');
+    const activeTab = activeTabProp ?? internalActiveTab;
+    const handleTabChange = (name: string) => {
+        setInternalActiveTab(name as RightPanelTab);
+        onTabChange?.(name as RightPanelTab);
+    };
 
 // Determine which tabs have content (for badges/indicators)
     const hasWorkstreams = !hideWorkstreams && activeWorkstreams.length > 0;
     const hasDocuments = openDocuments.length > 0;
     const hasUploads = processingFiles ? processingFiles.size > 0 : false;
     const hasPlan = showPlan && plan;
-
-    const handleCloseDocPanel = useCallback(() => {
-        setActiveTab('plan');
-    }, []);
 
     const conversationTab: TabDefinition = {
         name: 'conversation',
@@ -360,11 +380,11 @@ function AgentRightPanelComponent({
             content: openDocuments.length > 0 && onSelectDocument && onCloseDocument ? (
                 <DocumentPanel
                     isOpen={true}
-                    onClose={handleCloseDocPanel}
                     documents={openDocuments}
                     activeDocumentId={activeDocumentId ?? null}
                     onSelectDocument={onSelectDocument}
                     onCloseDocument={onCloseDocument}
+                    onUpdateDocumentTitle={onUpdateDocumentTitle}
                     refreshKey={docRefreshKey}
                     runId={runId}
                 />
@@ -402,7 +422,7 @@ function AgentRightPanelComponent({
         <Tabs
             tabs={tabs}
             current={activeTab}
-            onTabChange={(name) => setActiveTab(name as RightPanelTab)}
+            onTabChange={handleTabChange}
             fullHeight
             className="px-0"
         >

@@ -11,6 +11,7 @@ export interface UseDocumentPanelResult {
     closeDocument: (docId: string) => void;
     selectDocument: (docId: string) => void;
     openDocInPanel: (docId: string) => void;
+    updateDocumentTitle: (docId: string, title: string) => void;
 }
 
 function toNonEmptyString(value: unknown): string | undefined {
@@ -165,6 +166,12 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
         setIsDocPanelOpen(true);
     }, []);
 
+    const updateDocumentTitle = useCallback((docId: string, title: string) => {
+        setOpenDocuments(prev => prev.map(d =>
+            d.id === docId ? { ...d, title } : d
+        ));
+    }, []);
+
     return {
         openDocuments,
         activeDocumentId,
@@ -174,5 +181,6 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
         closeDocument,
         selectDocument,
         openDocInPanel,
+        updateDocumentTitle,
     };
 }

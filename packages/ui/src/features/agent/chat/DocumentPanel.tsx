@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ExternalLinkIcon, FileTextIcon, Loader2Icon, X } from 'lucide-react';
 import { useUserSession } from '@vertesia/ui/session';
-import { Button } from '@vertesia/ui/core';
+import { Button, VTooltip } from '@vertesia/ui/core';
 import { NavLink } from '@vertesia/ui/router';
 import { MarkdownRenderer } from '@vertesia/ui/widgets';
 import { useUITranslation } from '../../../i18n/index.js';
@@ -10,22 +10,22 @@ import type { OpenDocument } from './types/document.js';
 
 interface DocumentPanelProps {
     isOpen: boolean;
-    onClose: () => void;
     documents: OpenDocument[];
     activeDocumentId: string | null;
     onSelectDocument: (id: string) => void;
     onCloseDocument: (id: string) => void;
+    onUpdateDocumentTitle?: (id: string, title: string) => void;
     refreshKey: number;
     runId?: string;
 }
 
 function DocumentPanelComponent({
     isOpen,
-    onClose,
     documents,
     activeDocumentId,
     onSelectDocument,
     onCloseDocument,
+    onUpdateDocumentTitle,
     refreshKey,
     runId,
 }: DocumentPanelProps) {
@@ -45,7 +45,9 @@ function DocumentPanelComponent({
                 client.store.objects.retrieve(docId),
             ]);
             setContent(textResult.text);
-            setDocName(obj.name);
+            const name = obj.name;
+            setDocName(name);
+            if (name) onUpdateDocumentTitle?.(docId, name);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : t('agent.failedToLoadDocument');
             setError(message);
@@ -53,7 +55,7 @@ function DocumentPanelComponent({
         } finally {
             setIsLoading(false);
         }
-    }, [client]);
+    }, [client, onUpdateDocumentTitle]);
 
     // Fetch content when active document changes or refreshKey bumps
     useEffect(() => {
@@ -77,31 +79,31 @@ function DocumentPanelComponent({
                     </h3>
                 </div>
                 <div className="flex items-center gap-1">
+                    <DocumentTabBar
+                        documents={documents}
+                        activeId={activeDocumentId}
+                        onSelect={onSelectDocument}
+                    />
                     {activeDocumentId && (
                         <NavLink
                             href={`/store/objects/${activeDocumentId}#overview`}
                             topLevelNav
                             className="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 w-8 hover:bg-muted/20 text-muted hover:text-foreground"
                         >
-                            <ExternalLinkIcon className="size-4" />
-                            <span className="sr-only">{t('agent.openDocument')}</span>
+                            <VTooltip description={t('agent.openDocument')} placement="top" size='xs'>
+                                <ExternalLinkIcon className="size-4" />
+                            </VTooltip>
                         </NavLink>
                     )}
-                    <Button variant="ghost" size="sm" onClick={onClose}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => activeDocumentId && onCloseDocument(activeDocumentId)}
+                        title={t('agent.close')}
+                    >
                         <X className="size-4" />
-                        <span className="sr-only">{t('agent.close')}</span>
                     </Button>
                 </div>
-            </div>
-
-            {/* Tab bar */}
-            <div className="shrink-0">
-                <DocumentTabBar
-                    documents={documents}
-                    activeId={activeDocumentId}
-                    onSelect={onSelectDocument}
-                    onClose={onCloseDocument}
-                />
             </div>
 
             {/* Content area */}

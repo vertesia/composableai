@@ -783,6 +783,7 @@ function ModernAgentConversationInner({
         closeDocument: handleCloseDocument,
         selectDocument,
         openDocInPanel,
+        updateDocumentTitle,
     } = useDocumentPanel(messages);
 
     const {
@@ -811,6 +812,7 @@ function ModernAgentConversationInner({
     const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
     const [isDragOver, setIsDragOver] = useState(false);
     const [activeWorkstreams, setActiveWorkstreams] = useState<ActiveWorkstreamEntry[]>([]);
+    const [completedWorkstreams, setCompletedWorkstreams] = useState<Array<{ launch_id: string; workstream_id: string; status: 'completed' | 'canceled' }>>([]);
     const workstreamFetchFailedRef = useRef(false);
     const dragCounterRef = useRef(0);
 
@@ -866,7 +868,7 @@ function ModernAgentConversationInner({
     }, [plans, activePlanIndex, workstreamStatusMap]);
 
     const panelWorkstreams = useMemo<WorkstreamInfo[]>(() => {
-        return activeWorkstreams.map((ws) => ({
+        const running: WorkstreamInfo[] = activeWorkstreams.map((ws) => ({
             workstream_id: ws.workstream_id,
             launch_id: ws.launch_id,
             elapsed_ms: ws.elapsed_ms,
@@ -877,7 +879,16 @@ function ModernAgentConversationInner({
             child_workflow_id: ws.child_workflow_id,
             child_workflow_run_id: ws.child_workflow_run_id,
         }));
-    }, [activeWorkstreams]);
+        const completed: WorkstreamInfo[] = completedWorkstreams.map((ws) => ({
+            workstream_id: ws.workstream_id,
+            launch_id: ws.launch_id,
+            elapsed_ms: 0,
+            deadline_ms: 0,
+            remaining_ms: 0,
+            status: ws.status,
+        }));
+        return [...running, ...completed];
+    }, [activeWorkstreams, completedWorkstreams]);
 
     // ────────────────────────────────────────────
     // Stable callbacks
@@ -898,8 +909,8 @@ function ModernAgentConversationInner({
     // ────────────────────────────────────────────
     // Unified right panel state
     // ────────────────────────────────────────────
-    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'conversation';
-    const [rightPanelTab, _setRightPanelTab] = useState<RightPanelTab>((conversationContent || conversationTab) ? 'conversation' : 'plan');
+    type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
+    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>((conversationContent || conversationTab) ? 'conversation' : 'plan');
     const [rightPanelWidth, setRightPanelWidth] = useState(400);
     const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
 
@@ -964,12 +975,13 @@ const handleCloseRightPanel = useCallback(() => {
                     e.preventDefault();
                     e.stopPropagation();
                     openDocInPanel(documentId);
+                    setRightPanelTab('documents');
                 }}
             >
                 {children}
             </a>
         ),
-        [openDocInPanel]
+        [openDocInPanel, setRightPanelTab]
     );
 
     const effectiveStoreLinkComponent = StoreLinkComponent ?? internalStoreLinkComponent;
@@ -1026,6 +1038,12 @@ const handleCloseRightPanel = useCallback(() => {
                 const result = await client.agents.getActiveWorkstreams(agentRunId);
                 if (isCancelled) return;
                 setActiveWorkstreams(result.running ?? []);
+                const completed = (result as unknown as { completed?: Array<{ launch_id: string; workstream_id: string; status: string }> }).completed ?? [];
+                setCompletedWorkstreams(completed.map(c => ({
+                    launch_id: c.launch_id,
+                    workstream_id: c.workstream_id,
+                    status: c.status === 'canceled' ? 'canceled' : 'completed',
+                })));
                 workstreamFetchFailedRef.current = false;
             } catch (error) {
                 if (isCancelled) return;
@@ -1045,6 +1063,15 @@ const handleCloseRightPanel = useCallback(() => {
             window.clearInterval(pollHandle);
         };
     }, [client.agents, agentRunId, isCompleted, activeWorkstreams.length]);
+
+    // Auto-switch to Workstreams tab the first time workstreams become active
+    const hasAutoSwitchedToWorkstreamsRef = useRef(false);
+    useEffect(() => {
+        if (panelWorkstreams.length > 0 && !hasAutoSwitchedToWorkstreamsRef.current) {
+            hasAutoSwitchedToWorkstreamsRef.current = true;
+            setRightPanelTab('workstreams');
+        }
+    }, [panelWorkstreams.length]);
 
     // Notify parent when input availability is determined
     useEffect(() => {
@@ -1526,6 +1553,7 @@ const handleCloseRightPanel = useCallback(() => {
                         activeDocumentId={activeDocumentId}
                         onSelectDocument={selectDocument}
                         onCloseDocument={handleCloseDocument}
+                        onUpdateDocumentTitle={updateDocumentTitle}
                         docRefreshKey={docRefreshKey}
                         runId={agentRunId}
                         // Uploads
@@ -1542,6 +1570,8 @@ const handleCloseRightPanel = useCallback(() => {
                         // Panel control
                         onClose={handleCloseRightPanel}
                         defaultTab={rightPanelTab}
+                        activeTab={rightPanelTab}
+                        onTabChange={setRightPanelTab}
                     />
                     </div>
                 </>
