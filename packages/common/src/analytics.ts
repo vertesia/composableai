@@ -56,6 +56,10 @@ export interface EntityStatusCounts {
     id: string;
     /* Optional human-readable name for the entity, if available */
     name?: string;
+    /** For interactions: the published version number */
+    version?: number;
+    /** For interactions: the lifecycle status (draft, published, archived) */
+    status?: string;
     /** Total count, or null if query failed */
     total: number | null;
     /** Counts by status, values are null if individual status query failed */
