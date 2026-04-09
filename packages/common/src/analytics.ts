@@ -51,11 +51,11 @@ export interface RunAnalyticsResult {
     },
 }
 
-/** Entity with status breakdown (requires compound index for covered queries) */
+/** Entity with status breakdown */
 export interface EntityStatusCounts {
     id: string;
     /* Optional human-readable name for the entity, if available */
-    name?: string; 
+    name?: string;
     /** Total count, or null if query failed */
     total: number | null;
     /** Counts by status, values are null if individual status query failed */
@@ -64,16 +64,18 @@ export interface EntityStatusCounts {
     hasErrors?: boolean;
 }
 
-/** Lightweight analytics summary using covered queries - scalable to 1M+ documents */
+/** Scalable analytics summary */
 export interface RunsAnalyticsSummary {
     /** Total count of runs (from estimatedDocumentCount), null if failed */
     total: number | null;
     /** Counts by status, values are null if individual query failed */
     byStatus: Record<string, number | null>;
-    /** Counts by environment with status breakdown (uses { environment: 1, status: 1 } compound index) */
+    /** Counts by environment with status breakdown */
     byEnvironment: EntityStatusCounts[];
-    /** Counts by interaction with status breakdown (uses { interaction: 1, status: 1 } compound index) */
+    /** Counts by interaction with status breakdown */
     byInteraction: EntityStatusCounts[];
+    /** Counts by code-based interaction with status breakdown */
+    byCodeInteraction?: EntityStatusCounts[];
     /** Number of queries that failed out of total */
     queryStats: {
         total: number;
@@ -81,7 +83,7 @@ export interface RunsAnalyticsSummary {
     };
 }
 
-/** Date range filter for analytics queries (uses created_at field) */
+/** Date range filter for analytics queries */
 export interface DateRangeQuery {
     /** Start date in ISO format, optional (unbounded if omitted) */
     start?: string;
