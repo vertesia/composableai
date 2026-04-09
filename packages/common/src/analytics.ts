@@ -54,7 +54,8 @@ export interface RunAnalyticsResult {
 /** Entity with status breakdown (requires compound index for covered queries) */
 export interface EntityStatusCounts {
     id: string;
-    name: string;
+    /* Optional human-readable name for the entity, if available */
+    name?: string; 
     /** Total count, or null if query failed */
     total: number | null;
     /** Counts by status, values are null if individual status query failed */
