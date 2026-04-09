@@ -55,14 +55,17 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
                 }
             }
 
+            const typeId = ctx.params?.type?.id ?? query.type;
+            const table_layout = ctx.params?.type?.table_layout ?? undefined;
+
             getObjectIds().then((Ids) => {
                 // When exporting all, send search result if a vector search was used
-                // otherwise send the query.
+                // otherwise send the query — always constrained to the current content type.
                 store.objects.exportProperties({
                     objectIds: Ids,
                     type: exportType,
-                    query: exportAll && !query.vector ? query : { type: query.type },
-                    table_layout: ctx.params?.table_layout,
+                    query: exportAll && !query.vector ? { ...query, type: typeId } : { type: typeId },
+                    table_layout: table_layout,
                 }).then((response) => {
                     let data;
 
@@ -102,6 +105,12 @@ export function ExportPropertiesComponent({ action, objectIds }: ActionComponent
             });
         } else {
             setOpen(false);
+            toast({
+                status: 'error',
+                title: t('store.actions.errorExportProperties'),
+                description: 'No objects selected for export',
+                duration: 5000
+            });
         }
     }
 

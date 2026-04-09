@@ -1,6 +1,6 @@
 import { ReactNode, useMemo } from 'react';
 
-import { ColumnLayout } from '@vertesia/common';
+import { ContentObjectTypeItem } from '@vertesia/common';
 import { ErrorBox, useFetch, useToast } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import { useUITranslation } from '../../../../i18n/index.js';
@@ -29,9 +29,9 @@ const DEFAULT_ACTIONS: ObjectsActionSpec[] = [
 
 interface ObjectsActionContextProps {
     children: ReactNode;
-    table_layout?: ColumnLayout[];
+    type?: ContentObjectTypeItem;
 }
-export function ObjectsActionContextProvider({ children, table_layout }: ObjectsActionContextProps) {
+export function ObjectsActionContextProvider({ children, type }: ObjectsActionContextProps) {
     const { t } = useUITranslation();
     const selection = useDocumentSelection();
     const toast = useToast();
@@ -55,12 +55,12 @@ export function ObjectsActionContextProvider({ children, table_layout }: Objects
 
     const context = useMemo(() => {
         const context = new ObjectsActionContext({
-            selection, toast, client, search, table_layout
+            selection, toast, client, search, type
         });
         context.allActions = DEFAULT_ACTIONS;
         context.wfRules = rules!;
         return context;
-    }, [selection, rules, table_layout]);
+    }, [selection, rules, type]);
 
     if (error) {
         return <ErrorBox title={t('store.failedToFetchWorkflows')}>{error.message}</ErrorBox>
