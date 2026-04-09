@@ -103,7 +103,7 @@ export function SidePanel({ isOpen, title, onClose, children, panelWidth = 768, 
 
                                             {/* Scrollable content */}
                                             <div className={contentClassName ?? "flex-1 overflow-auto px-2 sm:px-4 py-4"}>
-                                                <div className='w-full'>
+                                                <div className='w-full h-full flex-1 flex flex-col'>
                                                     {children}
                                                 </div>
                                             </div>
