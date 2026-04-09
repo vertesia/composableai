@@ -698,6 +698,13 @@ export interface CompositeAppMenuNavItem {
     description?: string | null;
     /** When true, this item is excluded from the Composite App dashboard cards */
     hideFromDashboard?: boolean;
+    /**
+     * When set, only users belonging to at least one of these groups can see this item.
+     * Empty array or undefined means visible to everyone.
+     * Admin users bypass this check.
+     * Values are group IDs (not names).
+     */
+    requiredGroups?: string[];
     /** Ordered child nav-items */
     children?: CompositeAppMenuNavItem[];
 }
