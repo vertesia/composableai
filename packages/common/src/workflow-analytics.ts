@@ -146,6 +146,10 @@ export interface LlmCallEvent extends BaseAgentEvent {
     completionTokens: number;
     /** Total tokens used */
     totalTokens: number;
+    /** Number of prompt tokens served from cache */
+    promptCachedTokens?: number;
+    /** Number of prompt tokens written into cache */
+    promptCacheWriteTokens?: number;
     /** Duration of the LLM call in milliseconds */
     durationMs: number;
     /** Whether the call succeeded */
@@ -356,6 +360,10 @@ export interface TokenUsageMetrics {
     outputTokens: number;
     /** Total tokens (input + output) */
     totalTokens: number;
+    /** Total prompt tokens served from cache */
+    cachedInputTokens?: number;
+    /** Total prompt tokens written into cache */
+    cacheWriteInputTokens?: number;
     /** Average tokens per LLM call */
     avgTokensPerCall?: number;
 }

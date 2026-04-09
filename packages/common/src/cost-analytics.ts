@@ -48,6 +48,8 @@ export interface CostAnalyticsQuery {
 export interface CostSummary {
     total_cost: number;
     total_input_tokens: number;
+    total_cached_input_tokens?: number;
+    total_cache_write_input_tokens?: number;
     total_output_tokens: number;
     total_calls: number;
     total_duration_ms: number;
@@ -57,6 +59,8 @@ export interface CostByDimension {
     dimension: string;
     cost: number;
     input_tokens: number;
+    cached_input_tokens?: number;
+    cache_write_input_tokens?: number;
     output_tokens: number;
     calls: number;
 }
@@ -65,6 +69,8 @@ export interface CostTimeSeriesPoint {
     timestamp: string;
     cost: number;
     input_tokens: number;
+    cached_input_tokens?: number;
+    cache_write_input_tokens?: number;
     output_tokens: number;
     calls: number;
 }
@@ -72,6 +78,8 @@ export interface CostTimeSeriesPoint {
 export interface ModelPricing {
     model: string;
     input_price_per_m_tokens: number;
+    cached_input_price_per_m_tokens?: number;
+    cache_write_input_price_per_m_tokens?: number;
     output_price_per_m_tokens: number;
     source: 'billing_export' | 'unavailable';
 }
