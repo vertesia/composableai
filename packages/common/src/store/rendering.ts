@@ -25,6 +25,16 @@ export interface ImageRenditionVars extends BaseRenditionVars {
     max_pages?: number;
 }
 
+export interface ImageRenditionParams {
+    max_hw: number;
+    format: ImageRenditionFormat;
+    outputPath?: string;
+}
+
+export function getRenditionsPath(contentEtag: string, params: ImageRenditionParams) {
+    return `renditions/${contentEtag}/${params.max_hw}`;
+}
+
 /** Metadata for PDF rendering (displayed in header/footer) */
 export interface PdfRenderingMetadata {
     /** Document ID to display in footer */
