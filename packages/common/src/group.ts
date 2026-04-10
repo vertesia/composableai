@@ -1,6 +1,5 @@
 import { UserRef } from "./user.js";
 
-
 export interface UserGroup {
     id: string;
     account: string;

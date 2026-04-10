@@ -1,3 +1,7 @@
+/**
+ * Audit actions are intentionally open-ended because several services emit
+ * domain-specific action names beyond the core CRUD verbs.
+ */
 export type AuditAction =
     // CRUD operations
     | 'create'
@@ -14,7 +18,9 @@ export type AuditAction =
     // Billable operations
     | 'inference'
     | 'embedding'
-    | 'image_generation';
+    | 'image_generation'
+    | 'read'
+    | (string & {});
 
 /** Billable audit actions for cost analytics queries */
 export const BILLABLE_AUDIT_ACTIONS: AuditAction[] = [
@@ -51,6 +57,11 @@ export interface AuditTrailEvent {
     principal_id: string | null;
     principal_type: string | null;
     effective_principal_id: string | null;
+    /**
+     * Optional human-user identifier retained for compatibility with older
+     * consumers that denormalized the user id separately from principal_id.
+     */
+    principal_user_id?: string | null;
     roles: string[];
     account_id: string | null;
     project_id: string | null;
@@ -74,6 +85,8 @@ export interface AuditTrailQuery {
     principalId?: string;
     /** Filter by top-level actor category (matches principal_type column). */
     principalType?: string;
+    /** Filter by principal user ID (matches principal_user_id column — human users). */
+    principalUserId?: string;
     /** Filter by delegated/direct effective principal ref (matches effective_principal_id column). */
     effectivePrincipalId?: string;
     /** Filter by whether an event has an effective principal ref. */
