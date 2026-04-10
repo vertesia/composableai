@@ -673,6 +673,29 @@ export interface CompositeAppCardOverrides {
 // ============================================================================
 
 /**
+ * Access control settings for a composite app nav item.
+ * Extensible: add new permission fields here as needs evolve.
+ */
+export interface CompositeAppNavItemPermissions {
+    /**
+     * When set, only users belonging to at least one of these groups can see this item.
+     * Admin users bypass this check.
+     * Values are group IDs (not names).
+     */
+    groupsAllowed?: string[];
+    /**
+     * When set, only these specific users can see this item.
+     * Admin users bypass this check.
+     * Values are user IDs.
+     *
+     * If both `groupsAllowed` and `usersAllowed` are set, access is granted
+     * if the user matches EITHER list (OR logic).
+     * Both empty/absent means visible to everyone.
+     */
+    usersAllowed?: string[];
+}
+
+/**
  * A navigable item in the sidebar menu.
  * An "app" is just a nav-item with `appName` + `route: "/"` that has children.
  * Nav-items carry their own `appName` for routing, independent of position in the tree.
@@ -696,6 +719,10 @@ export interface CompositeAppMenuNavItem {
      * `undefined` / absent = no override (fall back to manifest description).
      */
     description?: string | null;
+    /** When true, this item is excluded from the Composite App dashboard cards */
+    hideFromDashboard?: boolean;
+    /** Optional access control settings for this nav item */
+    permissions?: CompositeAppNavItemPermissions;
     /** Ordered child nav-items */
     children?: CompositeAppMenuNavItem[];
 }

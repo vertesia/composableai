@@ -89,4 +89,13 @@ export class GroupsApi extends ApiTopic {
     removeMember(groupId: string, userId: string): Promise<UserGroup> {
         return this.del('/' + groupId + '/members/' + userId);
     }
+
+    /**
+     * Sync the account's members group with current organization members.
+     * Creates the group if it doesn't exist.
+     * @returns The synced UserGroup object
+     */
+    syncMembers(): Promise<UserGroup> {
+        return this.post('/sync-members');
+    }
 }

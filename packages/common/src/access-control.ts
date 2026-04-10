@@ -30,6 +30,8 @@ export enum Permission {
     account_write = "account:write",
     account_admin = "account:admin",
     manage_billing = "account:billing",
+    /** View cost and usage analytics */
+    billing_read = "billing:read",
     account_member = "account:member",
 
 

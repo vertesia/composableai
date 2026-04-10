@@ -1,14 +1,43 @@
 export type AuditAction =
+    // CRUD operations
     | 'create'
     | 'update'
     | 'delete'
     | 'bulk_create'
+    | 'bulk_change_type'
     | 'bulk_update'
     | 'bulk_delete'
     | 'attach'
     | 'detach'
     | 'publish'
-    | 'unpublish';
+    | 'unpublish'
+    // Billable operations
+    | 'inference'
+    | 'embedding'
+    | 'image_generation';
+
+/** Billable audit actions for cost analytics queries */
+export const BILLABLE_AUDIT_ACTIONS: AuditAction[] = [
+    'inference',
+    'embedding',
+    'image_generation',
+];
+
+/**
+ * Generic metering entry attached to audit events.
+ * Used for cost attribution, usage tracking, and billing.
+ *
+ * Examples:
+ *   { category: "tokens", type: "input", quantity: 1234 }
+ *   { category: "tokens", type: "output", quantity: 567 }
+ *   { category: "compute", type: "duration_ms", quantity: 2100 }
+ *   { category: "processing", type: "pages", quantity: 12 }
+ */
+export interface AuditMeter {
+    category: string;
+    type: string;
+    quantity: number;
+}
 
 export interface AuditTrailEvent {
     event_type: 'audit';
@@ -21,13 +50,17 @@ export interface AuditTrailEvent {
     success: boolean;
     principal_id: string | null;
     principal_type: string | null;
-    principal_user_id: string | null;
+    effective_principal_id: string | null;
     roles: string[];
     account_id: string | null;
     project_id: string | null;
     tenant_id: string | null;
     account_name: string | null;
     project_name: string | null;
+    /** Generic metering data for cost attribution and usage tracking */
+    meters?: AuditMeter[];
+    /** Event-specific metadata — shape varies by action/resource_type */
+    details?: Record<string, unknown>;
 }
 
 export interface AuditTrailQuery {
@@ -37,10 +70,14 @@ export interface AuditTrailQuery {
     resourceTypes?: string[];
     /** Filter by resource ID */
     resourceId?: string;
-    /** Filter by principal ID (matches principal_id column — API keys, service accounts) */
+    /** Filter by exact actor principal ref (matches principal_id column). */
     principalId?: string;
-    /** Filter by principal user ID (matches principal_user_id column — human users) */
-    principalUserId?: string;
+    /** Filter by top-level actor category (matches principal_type column). */
+    principalType?: string;
+    /** Filter by delegated/direct effective principal ref (matches effective_principal_id column). */
+    effectivePrincipalId?: string;
+    /** Filter by whether an event has an effective principal ref. */
+    hasEffectivePrincipal?: boolean;
     /** Filter by project ID */
     projectId?: string;
     /** Start time (ISO string) */
