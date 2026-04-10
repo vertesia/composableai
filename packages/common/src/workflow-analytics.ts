@@ -142,6 +142,10 @@ export interface LlmCallEvent extends BaseAgentEvent {
     eventType: AgentEventType.LlmCall;
     /** Number of input/prompt tokens */
     promptTokens: number;
+    /** Number of prompt tokens served from cache */
+    promptCachedTokens?: number;
+    /** Number of prompt tokens written into cache */
+    promptCacheWriteTokens?: number;
     /** Number of output/completion tokens */
     completionTokens: number;
     /** Total tokens used */
@@ -352,6 +356,10 @@ export interface WorkflowToolParametersQuery extends WorkflowAnalyticsQueryBase 
 export interface TokenUsageMetrics {
     /** Total input/prompt tokens */
     inputTokens: number;
+    /** Total cached input tokens */
+    cachedInputTokens?: number;
+    /** Total cache write input tokens */
+    cacheWriteInputTokens?: number;
     /** Total output/completion tokens */
     outputTokens: number;
     /** Total tokens (input + output) */
