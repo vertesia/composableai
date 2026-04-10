@@ -142,6 +142,10 @@ export interface LlmCallEvent extends BaseAgentEvent {
     eventType: AgentEventType.LlmCall;
     /** Number of input/prompt tokens */
     promptTokens: number;
+    /** Number of prompt tokens served from cache */
+    promptCachedTokens?: number;
+    /** Number of prompt tokens written into cache */
+    promptCacheWriteTokens?: number;
     /** Number of output/completion tokens */
     completionTokens: number;
     /** Total tokens used */
