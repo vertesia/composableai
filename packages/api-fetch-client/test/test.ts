@@ -42,6 +42,9 @@ describe('Test requests', () => {
     it('handles errors in incorrect content type', done => {
         client.get('/html-error').catch((err: any) => {
             assert(err.payload.text === "<html><body>Error!</body></html>");
+            assert(err.original_message === "Expected JSON response but received text/html; charset=utf-8");
+            assert(err.payload.content_type === "text/html; charset=utf-8");
+            assert(typeof err.payload.parse_error === "string");
             assert(err.status === 401);
             done();
         }).catch(done);
@@ -54,5 +57,4 @@ describe('Test requests', () => {
         }).catch(done);
     });
 });
-
 

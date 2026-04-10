@@ -134,10 +134,16 @@ export abstract class ClientBase {
                 try {
                     return this.jsonParse(text);
                 } catch (err: any) {
+                    const contentType = res.headers.get('content-type') || undefined;
+                    const hasJsonContentType = !!contentType && /\bjson\b/i.test(contentType);
                     return {
                         status: res.status,
                         error: "Not a valid JSON payload",
-                        message: err.message,
+                        message: hasJsonContentType
+                            ? "Response body was not valid JSON"
+                            : `Expected JSON response but received ${contentType || 'an unknown content type'}`,
+                        parse_error: err.message,
+                        content_type: contentType,
                         text: text,
                     };
                 }
