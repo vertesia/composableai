@@ -24,3 +24,5 @@ export interface UserGroupRef {
 }
 
 export const UserGroupRefPopulate = 'id name tags description';
+
+export const MEMBERS_GROUP_NAME = 'members';

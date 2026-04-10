@@ -1,5 +1,5 @@
 import { VertesiaClient } from "@vertesia/client";
-import { ColumnLayout } from "@vertesia/common";
+import { ColumnLayout, ContentObjectTypeItem } from "@vertesia/common";
 import { ToastFn } from "@vertesia/ui/core";
 import { DocumentSelection } from '../DocumentSelectionProvider';
 import { DocumentSearch } from '../search/DocumentSearchContext';
@@ -22,6 +22,7 @@ export interface ObjectsActionParams {
     toast: ToastFn,
     search: DocumentSearch,
     table_layout?: ColumnLayout[],
+    type?: ContentObjectTypeItem,
 }
 
 export interface ActionComponentTypeProps {
