@@ -20,7 +20,7 @@ export interface CostAnalyticsQuery {
     /** End time (ISO string or epoch ms) */
     to?: string | number;
     /** Group results by this dimension */
-    group_by?: 'model' | 'environment' | 'account' | 'project' | 'provider' | 'interaction' | 'workflow';
+    group_by?: 'model' | 'environment' | 'account' | 'project' | 'provider' | 'interaction';
     /** Time series resolution */
     resolution?: 'hour' | 'day' | 'week' | 'month';
     /** Filter by model pattern */
@@ -29,10 +29,10 @@ export interface CostAnalyticsQuery {
     environment_id?: string;
     /** Filter by provider */
     provider?: string;
-    /** Filter by workflow ID */
-    workflow_id?: string;
     /** Filter by project ID (optional, for org scope) */
     project_id?: string;
+    /** Filter by workflow / agent run ID */
+    workflow_id?: string;
     /** Filter by account ID (set automatically by server) */
     account_id?: string;
     /** Scope: 'project' (default, current project) or 'org' (all projects in account) */
@@ -59,6 +59,7 @@ export interface CostSummary {
 
 export interface CostByDimension {
     dimension: string;
+    label?: string;
     cost: number;
     input_tokens: number;
     cached_input_tokens?: number;
