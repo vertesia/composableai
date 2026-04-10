@@ -39,6 +39,7 @@ export function InviteAcceptModal() {
 
     const accept = async (invite: TransientToken<UserInviteTokenData>) => {
         await client.account.acceptInvite(invite.id);
+        await session.authCallback;
         await session.fetchAccounts();
         await session.fetchProjects(invite.data.account.id);
         const remainingInvites = invites.filter(i => i.id !== invite.id)
