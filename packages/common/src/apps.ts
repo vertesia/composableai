@@ -679,11 +679,20 @@ export interface CompositeAppCardOverrides {
 export interface CompositeAppNavItemPermissions {
     /**
      * When set, only users belonging to at least one of these groups can see this item.
-     * Empty array or undefined means visible to everyone.
      * Admin users bypass this check.
      * Values are group IDs (not names).
      */
     groupsAllowed?: string[];
+    /**
+     * When set, only these specific users can see this item.
+     * Admin users bypass this check.
+     * Values are user IDs.
+     *
+     * If both `groupsAllowed` and `usersAllowed` are set, access is granted
+     * if the user matches EITHER list (OR logic).
+     * Both empty/absent means visible to everyone.
+     */
+    usersAllowed?: string[];
 }
 
 /**
