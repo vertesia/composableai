@@ -1,6 +1,6 @@
 import { VertesiaClient } from "@vertesia/client";
 import { Command } from "commander";
-import { config, Profile } from "./profiles/index.js";
+import { config, getProfileToken, Profile } from "./profiles/index.js";
 
 
 let _client: VertesiaClient | undefined;
@@ -30,7 +30,7 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
     // Priority 2: Profile config or individual env vars
     // Support both new VERTESIA_* and legacy COMPOSABLE_PROMPTS_* env vars
     const env = {
-        apikey: profile?.apikey
+        apikey: getProfileToken(profile)
             || process.env.VERTESIA_APIKEY
             || process.env.COMPOSABLE_PROMPTS_APIKEY,
         serverUrl: profile?.studio_server_url

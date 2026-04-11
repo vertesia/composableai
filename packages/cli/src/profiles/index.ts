@@ -1,8 +1,8 @@
-import { existsSync, mkdirSync, statSync } from "fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "fs";
 import jwt from 'jsonwebtoken';
 import os from "node:os";
 import { join } from "path";
-import { readJsonFile, writeJsonFile } from "../utils/stdio.js";
+import { readJsonFile } from "../utils/stdio.js";
 import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.js";
 import { OnResultCallback } from "./commands.js";
 
@@ -88,7 +88,8 @@ export function getCloudTypeFromConfigUrl(url: string) {
 export interface Profile {
     name: string;
     config_url: string;
-    apikey: string;
+    apikey?: string;
+    token_ref?: string;
     account: string;
     project: string;
     studio_server_url: string;
@@ -103,12 +104,106 @@ interface ProfilesData {
     profiles: Profile[];
 }
 
-export function shouldRefreshProfileToken(profile: Profile, thresholdInSeconds = 1) {
-    if (profile.apikey) {
-        const token = jwt.decode(profile.apikey, { json: true });
-        if (token && token.exp) {
-            return (token.exp - thresholdInSeconds) * 1000 < Date.now();
+interface TokenData {
+    token: string;
+    created_at?: number;
+    expires_at?: number;
+}
+
+const ACTIVE_PROFILE_ENV_VAR = 'VERTESIA_PROFILE';
+const TOKENS_DIR = 'tokens';
+
+function ensurePrivateDir(dir: string) {
+    if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true, mode: 0o700 });
+    }
+    chmodSync(dir, 0o700);
+}
+
+function writePrivateJsonFile(file: string, data: object) {
+    const tmpFile = `${file}.${process.pid}.tmp`;
+    writeFileSync(tmpFile, JSON.stringify(data, null, 4), { encoding: 'utf8', mode: 0o600 });
+    chmodSync(tmpFile, 0o600);
+    renameSync(tmpFile, file);
+}
+
+function safeTokenFileName(profileName: string) {
+    return `${encodeURIComponent(profileName)}.json`;
+}
+
+function defaultTokenRef(profileName: string) {
+    return `${TOKENS_DIR}/${safeTokenFileName(profileName)}`;
+}
+
+function isSafeTokenRef(tokenRef: string | undefined) {
+    return !!tokenRef
+        && tokenRef.startsWith(`${TOKENS_DIR}/`)
+        && !tokenRef.startsWith('/')
+        && !tokenRef.split(/[\\/]/).includes('..');
+}
+
+function getProfileTokenRef(profile: Pick<Profile, 'name' | 'token_ref'>) {
+    return isSafeTokenRef(profile.token_ref) ? profile.token_ref! : defaultTokenRef(profile.name);
+}
+
+function getTokenFile(profile: Pick<Profile, 'name' | 'token_ref'>) {
+    return getConfigFile(getProfileTokenRef(profile));
+}
+
+function readTokenFile(profile: Profile): TokenData | undefined {
+    try {
+        return JSON.parse(readFileSync(getTokenFile(profile), 'utf8')) as TokenData;
+    } catch (err: any) {
+        if (err.code === 'ENOENT') {
+            return undefined;
         }
+        throw err;
+    }
+}
+
+function writeTokenFile(profile: Profile, token: string) {
+    const tokenDir = getConfigFile(TOKENS_DIR);
+    ensurePrivateDir(tokenDir);
+    const decoded = jwt.decode(token, { json: true });
+    writePrivateJsonFile(getTokenFile(profile), {
+        token,
+        created_at: Math.floor(Date.now() / 1000),
+        expires_at: decoded?.exp,
+    });
+}
+
+function removeTokenFile(profile: Profile) {
+    try {
+        unlinkSync(getTokenFile(profile));
+    } catch (err: any) {
+        if (err.code !== 'ENOENT') {
+            throw err;
+        }
+    }
+}
+
+export function getProfileToken(profile: Profile | undefined) {
+    if (!profile) {
+        return undefined;
+    }
+    if (profile.apikey) {
+        return profile.apikey;
+    }
+    return readTokenFile(profile)?.token;
+}
+
+export function getProfileTokenPayload(profile: Profile | undefined) {
+    const token = getProfileToken(profile);
+    if (!token) {
+        return undefined;
+    }
+    return jwt.decode(token, { json: true }) || undefined;
+}
+
+export function shouldRefreshProfileToken(profile: Profile, thresholdInSeconds = 1) {
+    const token = getProfileTokenPayload(profile);
+    if (token?.exp) {
+        return (token.exp - thresholdInSeconds) * 1000 < Date.now();
     }
     // if no token or no expiration set then refresh auth token
     return true;
@@ -143,6 +238,7 @@ export class ConfigureProfile {
         this.data.studio_server_url = result.studio_server_url;
         this.data.zeno_server_url = result.zeno_server_url;
         this.data.apikey = result.token;
+        this.data.token_ref = defaultTokenRef(result.profile);
         this.config.remove(oldName);
         this.config.add(this.data as Profile);
         if (this.isNew) {
@@ -230,6 +326,7 @@ export class Config {
     remove(name: string) {
         const i = this.profiles.findIndex(p => p.name === name);
         if (i > -1) {
+            removeTokenFile(this.profiles[i]);
             this.profiles.splice(i, 1);
             if (this.current?.name === name) {
                 this.current = undefined;
@@ -271,13 +368,20 @@ export class Config {
 
     save() {
         const dir = getConfigFile();
-        if (!existsSync(dir)) {
-            mkdirSync(dir, { recursive: true });
-        }
+        ensurePrivateDir(dir);
         const file = getConfigFile('profiles.json');
-        writeJsonFile(file, {
+        const profiles = this.profiles.map(profile => {
+            const token = profile.apikey;
+            const token_ref = getProfileTokenRef(profile);
+            if (token) {
+                writeTokenFile({ ...profile, token_ref }, token);
+            }
+            const { apikey: _apikey, ...storedProfile } = profile;
+            return { ...storedProfile, token_ref };
+        });
+        writePrivateJsonFile(file, {
             default: this.current?.name,
-            profiles: this.profiles,
+            profiles,
         });
         return this;
     }
@@ -295,9 +399,13 @@ export class Config {
         }
         try {
             const data = readJsonFile(getConfigFile('profiles.json')) as ProfilesData;
-            this.profiles = data.profiles;
-            if (data.default) {
-                this.use(data.default)
+            this.profiles = (data.profiles || []).map(profile => ({
+                ...profile,
+                token_ref: profile.token_ref || defaultTokenRef(profile.name),
+            }));
+            const selectedProfile = process.env[ACTIVE_PROFILE_ENV_VAR] || data.default;
+            if (selectedProfile) {
+                this.use(selectedProfile)
             } else {
                 this.current = undefined;
             }

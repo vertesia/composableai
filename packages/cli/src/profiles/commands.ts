@@ -1,7 +1,6 @@
 import colors from 'ansi-colors';
 import enquirer from "enquirer";
-import jwt from 'jsonwebtoken';
-import { AVAILABLE_REGIONS, DEFAULT_REGION, Region, config, getConfigUrl, getServerUrls, shouldRefreshProfileToken } from "./index.js";
+import { AVAILABLE_REGIONS, DEFAULT_REGION, Profile, Region, config, getConfigUrl, getProfileToken, getProfileTokenPayload, getServerUrls, shouldRefreshProfileToken } from "./index.js";
 import { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
 
@@ -42,13 +41,13 @@ export function showProfile(name?: string) {
         } else {
             console.log(JSON.stringify({
                 default: config.current?.name,
-                profiles: config.profiles,
+                profiles: config.profiles.map(profileForDisplay),
             }, undefined, 4));
         }
     } else {
         const profile = config.getProfile(name);
         if (profile) {
-            console.log(JSON.stringify(profile, undefined, 4));
+            console.log(JSON.stringify(profileForDisplay(profile), undefined, 4));
         } else {
             console.error(`Profile ${name} not found`);
         }
@@ -57,19 +56,29 @@ export function showProfile(name?: string) {
 
 export function showActiveAuthToken() {
     if (config.profiles.length === 0) {
-        console.log('No profiles are defined. Run `vertesia profiles create` to add a new profile.');
-        return;
+        console.error('No profiles are defined. Run `vertesia profiles create` to add a new profile.');
+        process.exit(1);
     } else if (config.current) {
-        const token = jwt.decode(config.current.apikey, { json: true });
-        if (token?.exp && token.exp * 1000 < Date.now()) {
-            console.log("Authentication token expired. Create a new one ");
-            _doRefreshToken(config.current.name);
-        } else {
-            console.log(config.current.apikey);
+        const rawToken = getProfileToken(config.current);
+        const token = getProfileTokenPayload(config.current);
+        if (!rawToken || !token?.exp) {
+            console.error("Authentication token is missing or invalid. Run `vertesia auth refresh` to renew it.");
+            process.exit(1);
         }
+        if (token.exp * 1000 < Date.now()) {
+            console.error("Authentication token expired. Run `vertesia auth refresh` to renew it.");
+            process.exit(1);
+        }
+        console.log(rawToken);
     } else {
-        console.log('No profile is selected. Run `vertesia auth refresh` to refresh the token');
+        console.error('No profile is selected. Run `vertesia profiles use <name>` to select one, or set VERTESIA_PROFILE.');
+        process.exit(1);
     }
+}
+
+function profileForDisplay(profile: Profile) {
+    const { apikey: _apikey, ...safeProfile } = profile;
+    return safeProfile;
 }
 
 
