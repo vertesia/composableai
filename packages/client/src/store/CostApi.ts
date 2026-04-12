@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
-import { CostAnalyticsQuery, CostAnalyticsResponse, ModelPriceComparisonResponse } from '@vertesia/common';
+import { CostAnalyticsQuery, CostAnalyticsResponse, CostRunPriceQuery, CostRunPriceResponse, ModelPriceComparisonResponse } from '@vertesia/common';
 
 export class CostApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -34,6 +34,15 @@ export class CostApi extends ApiTopic {
         query: Pick<CostAnalyticsQuery, 'from' | 'to'> = {}
     ): Promise<ModelPriceComparisonResponse> {
         return this.get('/model-prices', { query });
+    }
+
+    /**
+     * Price a single interaction run or agent run.
+     */
+    getRunPrice(
+        query: CostRunPriceQuery
+    ): Promise<CostRunPriceResponse> {
+        return this.post('/run-price', { payload: query });
     }
 
     /**

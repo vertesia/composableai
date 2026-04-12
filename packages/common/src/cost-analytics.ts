@@ -33,6 +33,12 @@ export interface CostAnalyticsQuery {
     project_id?: string;
     /** Filter by workflow / agent run ID */
     workflow_id?: string;
+    /** Filter by Temporal workflow run ID */
+    workflow_run_id?: string;
+    /** Filter by interaction execution run ID */
+    run_id?: string;
+    /** Filter by agent run ID */
+    agent_run_id?: string;
     /** Filter by account ID (set automatically by server) */
     account_id?: string;
     /** Scope: 'project' (default, current project) or 'org' (all projects in account) */
@@ -120,4 +126,36 @@ export interface CostAnalyticsResponse {
     pricing: ModelPricing[];
     query_range: { from: string; to: string };
     cached: boolean;
+}
+
+export interface CostRunPriceQuery {
+    /** Interaction execution run ID */
+    run_id?: string;
+    /** Agent run ID */
+    agent_run_id?: string;
+    /** Workflow ID, when known */
+    workflow_id?: string;
+    /** Temporal workflow run ID, when known */
+    workflow_run_id?: string;
+    /** Optional lower bound for audit events */
+    from?: string | number;
+    /** Optional upper bound for audit events */
+    to?: string | number;
+    /** Pricing source. Defaults to historical effective prices for run pricing. */
+    pricing_source?: 'list' | 'historical';
+    /** Project filter; server fills current project by default */
+    project_id?: string;
+    /** Account filter; server fills current account */
+    account_id?: string;
+    /** Scope: 'project' (default, current project) or 'org' */
+    scope?: 'project' | 'org';
+}
+
+export interface CostRunPriceResponse {
+    summary: CostSummary;
+    by_model: CostByDimension[];
+    pricing: ModelPricing[];
+    query_range?: { from: string; to: string };
+    pricing_source: 'list' | 'historical';
+    matched_events: number;
 }
