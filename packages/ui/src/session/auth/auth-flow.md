@@ -12,7 +12,7 @@ The authentication system uses:
 
 ### STS Endpoints
 - Production/Preview: `https://sts.vertesia.io`
-- Staging: `https://sts-staging.vertesia.io`
+- Staging: `https://sts.dev1.vertesia.io`
 
 **Important**: STS is the single source of truth for generating Vertesia JWT tokens. Both authentication paths (Central Auth and Direct Firebase) ultimately call STS to get the JWT.
 
