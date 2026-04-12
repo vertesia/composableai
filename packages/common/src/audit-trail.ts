@@ -57,6 +57,8 @@ export interface AuditTrailEvent {
     tenant_id: string | null;
     account_name: string | null;
     project_name: string | null;
+    /** Provider type for billable/provider-backed events, e.g. vertexai, bedrock. */
+    provider?: string | null;
     /** Generic metering data for cost attribution and usage tracking */
     meters?: AuditMeter[];
     /** Event-specific metadata — shape varies by action/resource_type */

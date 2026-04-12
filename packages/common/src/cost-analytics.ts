@@ -37,7 +37,7 @@ export interface CostAnalyticsQuery {
     account_id?: string;
     /** Scope: 'project' (default, current project) or 'org' (all projects in account) */
     scope?: 'project' | 'org';
-    /** Pricing source: 'list' (current list prices) or 'historical' (actual prices from billing period). Default: 'list' */
+    /** Pricing source: 'list' (latest daily prices) or 'historical' (daily effective prices over the query range). Default: 'list' */
     pricing_source?: 'list' | 'historical';
     /** Skip cache and force fresh query */
     no_cache?: boolean;
@@ -80,11 +80,13 @@ export interface CostTimeSeriesPoint {
 
 export interface ModelPricing {
     model: string;
+    provider?: string;
+    provider_account_id?: string;
     input_price_per_m_tokens: number;
     cached_input_price_per_m_tokens?: number;
     cache_write_input_price_per_m_tokens?: number;
     output_price_per_m_tokens: number;
-    source: 'billing_export' | 'unavailable';
+    source: 'billing_export' | 'model_pricing_daily' | 'unavailable';
 }
 
 export interface CostAnalyticsResponse {
