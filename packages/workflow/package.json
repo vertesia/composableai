@@ -13,7 +13,7 @@
     },
     "scripts": {
         "test": "vitest run",
-        "build": "pnpm exec tsmod build && node ./bin/bundle-workflows.mjs lib/esm/workflows.js lib/workflows-bundle.js",
+        "build": "pnpm exec tsc -p tsconfig.json && pnpm exec tsc -p tsconfig.json --composite false --declaration false --declarationMap false --declarationDir null --outDir ./lib/cjs --module commonjs --moduleResolution node10 --ignoreDeprecations 5.0 && node -e \"require('node:fs').writeFileSync('lib/cjs/package.json', JSON.stringify({ type: 'commonjs' }, null, 2))\" && node ./bin/bundle-workflows.mjs lib/esm/workflows.js lib/workflows-bundle.js",
         "clean": "rm -rf ./lib tsconfig.tsbuildinfo"
     },
     "license": "Apache-2.0",

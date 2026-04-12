@@ -25,7 +25,7 @@
     "devDependencies": {
         "@types/node": "^22.19.2",
         "ts-dual-module": "^0.6.3",
-        "typescript": "^5.9.3",
+        "typescript": "^6.0.2",
         "vitest": "^4.0.16"
     },
     "ts_dual_module": {
