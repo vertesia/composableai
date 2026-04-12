@@ -89,6 +89,30 @@ export interface ModelPricing {
     source: 'billing_export' | 'model_pricing_daily' | 'unavailable';
 }
 
+export interface ModelPriceComparison {
+    model: string;
+    provider?: string;
+    provider_account_id?: string;
+    list_price_date?: string;
+    effective_from?: string;
+    effective_to?: string;
+    input_list_price_per_m_tokens?: number;
+    input_effective_price_per_m_tokens?: number;
+    cached_input_list_price_per_m_tokens?: number;
+    cached_input_effective_price_per_m_tokens?: number;
+    cache_write_input_list_price_per_m_tokens?: number;
+    cache_write_input_effective_price_per_m_tokens?: number;
+    output_list_price_per_m_tokens?: number;
+    output_effective_price_per_m_tokens?: number;
+    source: 'model_pricing_daily';
+}
+
+export interface ModelPriceComparisonResponse {
+    prices: ModelPriceComparison[];
+    effective_range: { from: string; to: string };
+    list_price_date?: string;
+}
+
 export interface CostAnalyticsResponse {
     summary: CostSummary;
     by_dimension: CostByDimension[];

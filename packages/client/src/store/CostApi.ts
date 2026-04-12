@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
-import { CostAnalyticsQuery, CostAnalyticsResponse } from '@vertesia/common';
+import { CostAnalyticsQuery, CostAnalyticsResponse, ModelPriceComparisonResponse } from '@vertesia/common';
 
 export class CostApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -25,6 +25,15 @@ export class CostApi extends ApiTopic {
         query: CostAnalyticsQuery = {}
     ): Promise<CostAnalyticsResponse> {
         return this.post('/analytics/global', { payload: query });
+    }
+
+    /**
+     * Get current list prices and effective prices for the selected period.
+     */
+    getModelPrices(
+        query: Pick<CostAnalyticsQuery, 'from' | 'to'> = {}
+    ): Promise<ModelPriceComparisonResponse> {
+        return this.get('/model-prices', { query });
     }
 
     /**
