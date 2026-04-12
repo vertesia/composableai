@@ -8,13 +8,9 @@ const server = new KoaServer();
 
 server.mount('/api/v1', Endpoints)
 
-before(() => {
-    server.start(PORT);
-});
+before(() => server.start(PORT));
 
-after(() => {
-    server.stop();
-});
+after(() => server.stop());
 
 const client = new FetchClient(`http://localhost:${PORT}/api/v1`).withHeaders({
     "authorization": "Bearer 1234"
@@ -43,6 +39,9 @@ describe('Test requests', () => {
         client.get('/html-error').catch((err: any) => {
             assert(err.payload.text === "<html><body>Error!</body></html>");
             assert(err.status === 401);
+            assert(err.original_message.startsWith("Server Error: 401"));
+            assert(err.original_message.includes("non-JSON response"));
+            assert(!err.message.includes("Unexpected token"));
             done();
         }).catch(done);
     });
@@ -54,5 +53,3 @@ describe('Test requests', () => {
         }).catch(done);
     });
 });
-
-
