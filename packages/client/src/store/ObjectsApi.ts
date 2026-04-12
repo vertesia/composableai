@@ -40,6 +40,10 @@ export interface ComputeFacetsResponse {
     type?: { _id: string; count: number }[];
     location?: { _id: string; count: number }[];
     status?: { _id: string; count: number }[];
+    [key: string]:
+        | { _id: string; count: number }[]
+        | number
+        | undefined;
     total?: number;
 }
 
