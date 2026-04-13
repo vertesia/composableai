@@ -654,6 +654,8 @@ export interface CompositeAppSidebarOverrides {
     hideSectionHeaders?: boolean;
     /** Whether menu items auto-collapse when navigating (accordion behavior). When false, all items stay expanded. Defaults to true. */
     autoCollapse?: boolean;
+    /** Whether settings section items auto-collapse when navigating. Independent of autoCollapse which handles all other items. Defaults to true. */
+    autoCollapseSettings?: boolean;
 }
 
 /**
