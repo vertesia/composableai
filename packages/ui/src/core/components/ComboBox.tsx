@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronUpIcon, XIcon } from 'lucide-react';
 import clsx from 'clsx';
 import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import { AlignType, Popup, PopupController } from "./popup/index";
@@ -84,7 +84,7 @@ export interface ComboBoxApi<T> {
     setInputValue: (value: string) => void;
     focus: () => void;
 }
-interface ComboBoxProps<T> {
+export interface ComboBoxProps<T> {
     items: T[];
     adapter: OptionAdapter<T>;
     // if true then the default layout will use an unstyled input
@@ -103,8 +103,14 @@ interface ComboBoxProps<T> {
     focusOnMount?: boolean
     menuGap?: number;
     menuAlign?: AlignType;
+    // show X button to clear the current selection
+    clearable?: boolean;
+    // shown inside the dropdown when filter produces zero results
+    noMatchMessage?: ReactNode;
+    // open the menu when the input is focused
+    openOnFocus?: boolean;
 }
-export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelect, value, zIndex, unstyledInput, fullWidth, api, layout: layoutOpts, adapter, items, placeholder }: ComboBoxProps<T>) {
+export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelect, value, zIndex, unstyledInput, fullWidth, api, layout: layoutOpts, adapter, items, placeholder, clearable, noMatchMessage, openOnFocus }: ComboBoxProps<T>) {
     const [popupId] = useState(genComboboxPopupId());
     const popupCtrl = useRef<PopupController | undefined>(undefined);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -143,11 +149,11 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
         }
     }, [api, ctrl, inputRef.current]);
 
-    const showMenu = ctrl.isMenuOpen && ctrl.filteredItems.length > 0;
+    const showMenu = ctrl.isMenuOpen && (ctrl.filteredItems.length > 0 || !!noMatchMessage);
 
     return (
         <>
-            <layout.Input boxRef={inputBoxRef} inputRef={inputRef} ctrl={ctrl} layout={layout} placeholder={placeholder} />
+            <layout.Input boxRef={inputBoxRef} inputRef={inputRef} ctrl={ctrl} layout={layout} placeholder={placeholder} clearable={clearable} openOnFocus={openOnFocus} />
             <Popup
                 id={popupId}
                 ctrlRef={popupCtrl}
@@ -159,7 +165,7 @@ export function ComboBox<T>({ menuAlign = "fill", menuGap, focusOnMount, onSelec
                     align: menuAlign,
                     gap: menuGap != null ? menuGap : 4
                 }}>
-                <layout.Menu fillWidth={menuAlign === "fill"} items={ctrl.filteredItems} ctrl={ctrl} layout={layout} adapter={adapter} />
+                <layout.Menu fillWidth={menuAlign === "fill"} items={ctrl.filteredItems} ctrl={ctrl} layout={layout} adapter={adapter} noMatchMessage={noMatchMessage} />
             </Popup>
         </>
     );
@@ -171,29 +177,42 @@ export interface ComboInputProps<T> {
     placeholder?: string
     boxRef?: React.RefObject<HTMLDivElement | null>;
     inputRef?: React.RefObject<HTMLInputElement | null>;
+    clearable?: boolean;
+    openOnFocus?: boolean;
 }
-function ComboInput<T>({ inputRef, placeholder, boxRef, ctrl, layout }: ComboInputProps<T>) {
-    const buttonWidth = layout.buttonWidth;
-    const style = buttonWidth > 0 ? { paddingRight: `${buttonWidth}px` } : undefined;
+function ComboInput<T>({ inputRef, placeholder, boxRef, ctrl, layout, clearable, openOnFocus }: ComboInputProps<T>) {
     const Toggle = layout.Toggle;
+    const showClear = clearable && ctrl.selectedItem != null;
+    const buttonCount = (Toggle ? 1 : 0) + (showClear ? 1 : 0);
+    const style = buttonCount > 0 ? { paddingRight: `${layout.buttonWidth * buttonCount + layout.buttonRight}px` } : undefined;
     return (
         <div className="relative" ref={boxRef}>
-            <input ref={inputRef} placeholder={placeholder} {...ctrl.getInputProps()} style={style} className={layout.inputClass} />
-            {Toggle &&
-                <button style={{
-                    top: 0, bottom: 0, right: `${layout.buttonRight}px`, width: `${buttonWidth}px`,
-                    position: "absolute",
-                    border: "none",
-                    padding: 0,
-                    margin: 0,
-                    backgroundColor: "transparent",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                }} {...ctrl.getToggleButtonProps()}>
-                    <Toggle ctrl={ctrl} layout={layout} />
-                </button>
-            }
+            <input
+                ref={inputRef}
+                placeholder={placeholder}
+                {...ctrl.getInputProps()}
+                onFocus={openOnFocus ? () => ctrl.openMenu() : undefined}
+                style={style}
+                className={layout.inputClass}
+            />
+            <div style={{ position: 'absolute', right: `${layout.buttonRight}px`, top: 0, bottom: 0, display: 'flex', alignItems: 'center', gap: '2px' }}>
+                {showClear && (
+                    <button
+                        style={{ border: 'none', padding: 0, margin: 0, backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', width: `${layout.buttonWidth}px` }}
+                        onClick={() => { ctrl.selectedItem = null; }}
+                    >
+                        <XIcon className="w-4 h-4" />
+                    </button>
+                )}
+                {Toggle && (
+                    <button
+                        style={{ width: `${layout.buttonWidth}px`, border: 'none', padding: 0, margin: 0, backgroundColor: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        {...ctrl.getToggleButtonProps()}
+                    >
+                        <Toggle ctrl={ctrl} layout={layout} />
+                    </button>
+                )}
+            </div>
         </div>
     )
 }
@@ -212,9 +231,15 @@ export interface ComboMenuProps<T> {
     ctrl: ComboboxController<T>;
     adapter: OptionAdapter<T>;
     fillWidth: boolean;
+    noMatchMessage?: ReactNode;
 }
-function ComboMenu<T>({ fillWidth, items, layout, ctrl, adapter }: ComboMenuProps<T>) {
+function ComboMenu<T>({ fillWidth, items, layout, ctrl, adapter, noMatchMessage }: ComboMenuProps<T>) {
     const { highlightedIndex, selectedItem } = ctrl;
+    if (items.length === 0) {
+        return noMatchMessage
+            ? <div style={{ width: fillWidth ? '100%' : undefined }} className={layout.menuClass}>{noMatchMessage}</div>
+            : null;
+    }
     return (
         <ul style={{ width: fillWidth ? "100%" : undefined, maxHeight: layout.maxMenuHeight ? `${layout.maxMenuHeight}px` : '240px' }}
             className={layout.menuClass} {...ctrl.getMenuProps()}>
@@ -485,4 +510,16 @@ function incrModulo(value: number, max: number) {
 }
 function decrModulo(value: number, max: number) {
     return (value - 1 + max) % max;
+}
+
+export function SimpleCombobox({
+    options,
+    creatable,
+    ...rest
+}: Omit<ComboBoxProps<string>, 'adapter' | 'items'> & {
+    options: string[];
+    creatable?: boolean;
+}) {
+    const adapter = creatable ? StringOptionAdapterWithCreate.instance : StringOptionAdapter.instance;
+    return <ComboBox adapter={adapter} items={options} {...rest} />;
 }
