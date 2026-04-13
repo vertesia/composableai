@@ -14,7 +14,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "node lib/index.js test-project",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [
     "vertesia",
@@ -45,6 +45,6 @@
     "@types/degit": "^2.8.6",
     "@types/node": "^22.19.2",
     "@types/prompts": "^2.4.9",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   }
 }
