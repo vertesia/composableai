@@ -3,8 +3,8 @@ import clsx from 'clsx';
 import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import { AlignType, Popup, PopupController } from "./popup/index";
 
-const INPUT_UNSTYLED = "block m-0 p-0 border-0 focus:outline-none focus:ring-0 bg-transparent"
-const INPUT_NO_PADDING = "block sm:text-sm sm:leading-6 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-slate-600 dark:text-slate-50 dark:bg-slate-800 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:focus:ring-indigo-800"
+const INPUT_UNSTYLED = "block m-0 p-0 border-0 focus:outline-none focus:ring-0";
+const INPUT_NO_PADDING = "block sm:text-sm sm:leading-6 bg-muted rounded-md border-0 shadow-sm ring-1 ring-inset ring-muted placeholder:text-muted focus:ring-2 focus:ring-inset focus:ring-primary"
 const INPUT = INPUT_NO_PADDING + " py-1.5";
 const COMBOBOX_POPUP = "combobox-popup";
 
@@ -66,7 +66,7 @@ export function getDefaultComboBoxLayout<T>(fullWidth?: boolean, unstyledInput?:
         buttonRight: 4,
         buttonWidth: 24,
         maxMenuHeight: 240,
-        menuClass: "w-72 bg-white mt-1 shadow-md border border-gray-200 overflow-auto p-0 z-10",
+        menuClass: "w-72 mt-1 border-popover bg-popover text-popover-foreground shadow-md overflow-auto p-0 z-10",
         inputClass: clsx(unstyledInput ? INPUT_UNSTYLED : INPUT, fullWidth ? "w-full" : "!w-auto"),
         optionClass: "py-2 px-3 shadow-sm flex flex-col [&.option-selected]:font-semibold [&.option-highlighted]:bg-blue-300",
         Input: ComboInput<T>,
