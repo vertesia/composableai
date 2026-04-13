@@ -13,8 +13,7 @@
     },
     "scripts": {
         "test": "vitest run",
-        "build": "pnpm exec tsc -p tsconfig.json && pnpm run build:cjs && node ./bin/bundle-workflows.mjs lib/esm/workflows.js lib/workflows-bundle.js",
-        "build:cjs": "pnpm exec tsup --config tsup.config.ts && node ./bin/finalize-cjs.mjs",
+        "build": "pnpm exec tsmod build && node ./bin/bundle-workflows.mjs lib/esm/workflows.js lib/workflows-bundle.js",
         "clean": "rm -rf ./lib tsconfig.tsbuildinfo"
     },
     "license": "Apache-2.0",
@@ -27,7 +26,6 @@
         "@types/node": "^22.13.5",
         "@types/papaparse": "^5.5.1",
         "@types/tmp": "^0.2.6",
-        "tsup": "^8.5.1",
         "ts-dual-module": "^0.6.3",
         "vitest": "^4.0.16"
     },
