@@ -14,7 +14,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "node lib/index.js test-project",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [
     "vertesia",
