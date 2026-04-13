@@ -42,6 +42,10 @@ export function fetchPromise(fetchImpl?: FETCH_FN | Promise<FETCH_FN>) {
     }
 }
 
+function isInvalidJsonPayload(payload: any) {
+    return payload?.error === "Not a valid JSON payload" && typeof payload.text === "string";
+}
+
 export abstract class ClientBase {
 
     _fetch: Promise<FETCH_FN>;
@@ -112,7 +116,10 @@ export abstract class ClientBase {
         const status = res.status;
         let message = 'Server Error: ' + status;
         if (payload) {
-            if (payload.message) {
+            if (isInvalidJsonPayload(payload)) {
+                message += res.statusText ? ' ' + res.statusText : '';
+                message += ': non-JSON response';
+            } else if (payload.message) {
                 message = String(payload.message);
             } else if (payload.error) {
                 if (typeof payload.error === 'string') {
