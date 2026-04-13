@@ -7,6 +7,8 @@ import type * as monaco from 'monaco-editor';
 
 export type Monaco = typeof monaco;
 
+const foldingProvidersRegistered = new Set<string>();
+
 export interface IEditorApi {
     getValue(): string;
     setValue(value?: string): void;
@@ -47,6 +49,7 @@ interface MonacoEditorProps {
     beforeMount?: (monaco: typeof import('monaco-editor')) => void;
     onMount?: (editor: monaco.editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) => void;
     defaultValue?: string;
+    foldCodeBlocks?: boolean;
 }
 
 export function MonacoEditor({
@@ -60,9 +63,11 @@ export function MonacoEditor({
     beforeMount,
     onMount,
     defaultValue,
+    foldCodeBlocks = true,
 }: MonacoEditorProps) {
     const [editorValue, setEditorValue] = useState(value || defaultValue || '');
     const editorInstanceRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+    const monacoInstanceRef = useRef<typeof import('monaco-editor') | null>(null);
     const { theme } = useTheme();
 
     const getValueRef = useRef(() => editorValue);
@@ -101,6 +106,22 @@ export function MonacoEditor({
         }
     }, [onChange, debounceTimeout]);
 
+    const foldAllCodeBlocks = useCallback(async (
+        editor: monaco.editor.IStandaloneCodeEditor,
+        monacoInstance: typeof import('monaco-editor'),
+    ) => {
+        const model = editor.getModel();
+        if (!model) return;
+        const codeBlockRegExp = /```[\s\S]*?```/g;
+        let match;
+        while ((match = codeBlockRegExp.exec(model.getValue())) !== null) {
+            const startLine = model.getPositionAt(match.index).lineNumber;
+            const endLine = model.getPositionAt(match.index + match[0].length).lineNumber;
+            editor.setSelection(new monacoInstance.Selection(startLine, 1, endLine, 1));
+            await editor.getAction('editor.createFoldingRangeFromSelection')?.run();
+        }
+    }, []);
+
     const handleEditorChange = useCallback((newValue: string | undefined) => {
         const actualValue = newValue || '';
         setEditorValue(actualValue);
@@ -123,6 +144,122 @@ export function MonacoEditor({
 
     const handleEditorDidMount = useCallback((editor: monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof import('monaco-editor')) => {
         editorInstanceRef.current = editor;
+        monacoInstanceRef.current = monacoInstance;
+
+        if (foldCodeBlocks) {
+            // Markdown: fold by heading hierarchy (## sections)
+            if (!foldingProvidersRegistered.has('markdown')) {
+                foldingProvidersRegistered.add('markdown');
+                monacoInstance.languages.registerFoldingRangeProvider('markdown', {
+                    provideFoldingRanges(model) {
+                        const ranges: monaco.languages.FoldingRange[] = [];
+                        const lines = model.getLinesContent();
+                        const headingPattern = /^(#{1,6})\s/;
+                        const stack: Array<{ level: number; line: number }> = [];
+
+                        for (let i = 0; i < lines.length; i++) {
+                            const lineNumber = i + 1;
+                            const match = headingPattern.exec(lines[i]);
+                            if (match) {
+                                const level = match[1].length;
+                                while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+                                    const top = stack.pop()!;
+                                    if (lineNumber - 1 > top.line) {
+                                        ranges.push({ start: top.line, end: lineNumber - 1 });
+                                    }
+                                }
+                                stack.push({ level, line: lineNumber });
+                            }
+                        }
+                        const lastLine = lines.length;
+                        while (stack.length > 0) {
+                            const top = stack.pop()!;
+                            if (lastLine > top.line) {
+                                ranges.push({ start: top.line, end: lastLine });
+                            }
+                        }
+                        return ranges;
+                    },
+                });
+            }
+
+            // JS/TS: brace folding (if/else, functions) takes priority, followed by
+            // markdown heading folding inside template literals. Brace ranges are
+            // returned first so Monaco resolves conflicts in their favour.
+            // Using registerFoldingRangeProvider (not createFoldingRangeFromSelection)
+            // so both live in the same range set and Monaco's overlap resolution is
+            // consistent — headings are always bounded by their template literal close.
+            for (const lang of ['javascript', 'typescript'] as const) {
+                if (!foldingProvidersRegistered.has(lang)) {
+                    foldingProvidersRegistered.add(lang);
+                    monacoInstance.languages.registerFoldingRangeProvider(lang, {
+                        provideFoldingRanges(model) {
+                            const lines = model.getLinesContent();
+                            const headingPattern = /^(#{1,6})\s/;
+
+                            const braceRanges: monaco.languages.FoldingRange[] = [];
+                            const headingRanges: monaco.languages.FoldingRange[] = [];
+
+                            const braceStack: number[] = [];
+                            const headingStack: Array<{ level: number; line: number }> = [];
+
+                            let inTemplate = false;
+                            let inString = false;
+                            let stringChar = '';
+
+                            for (let i = 0; i < lines.length; i++) {
+                                const lineNumber = i + 1;
+                                const line = lines[i];
+                                const lineStartedInTemplate = inTemplate;
+
+                                for (let j = 0; j < line.length; j++) {
+                                    const ch = line[j];
+                                    if (ch === '\\') { j++; continue; }
+                                    if (inString) { if (ch === stringChar) inString = false; continue; }
+                                    if (inTemplate) { if (ch === '`') inTemplate = false; continue; }
+                                    if (ch === '`') { inTemplate = true; continue; }
+                                    if (ch === '"' || ch === "'") { inString = true; stringChar = ch; continue; }
+                                    // Brace folding — only outside strings/templates
+                                    if (ch === '{') { braceStack.push(lineNumber); }
+                                    if (ch === '}' && braceStack.length > 0) {
+                                        const start = braceStack.pop()!;
+                                        if (lineNumber > start) braceRanges.push({ start, end: lineNumber });
+                                    }
+                                }
+
+                                // Markdown heading folding — only inside template literals
+                                if (lineStartedInTemplate) {
+                                    const match = headingPattern.exec(line);
+                                    if (match) {
+                                        const level = match[1].length;
+                                        while (headingStack.length > 0 && headingStack[headingStack.length - 1].level >= level) {
+                                            const top = headingStack.pop()!;
+                                            if (lineNumber - 1 > top.line) {
+                                                headingRanges.push({ start: top.line, end: lineNumber - 1 });
+                                            }
+                                        }
+                                        headingStack.push({ level, line: lineNumber });
+                                    }
+                                    // Template just closed — seal all open heading sections here
+                                    if (!inTemplate) {
+                                        while (headingStack.length > 0) {
+                                            const top = headingStack.pop()!;
+                                            if (lineNumber > top.line) {
+                                                headingRanges.push({ start: top.line, end: lineNumber });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Brace ranges first → Monaco resolves conflicts in their favour
+                            return [...braceRanges, ...headingRanges];
+                        },
+                    });
+                }
+            }
+        }
+
         // Update the setValue ref to use the actual editor instance
         setValueRef.current = (newValue: string) => {
             setEditorValue(newValue);
@@ -142,9 +279,13 @@ export function MonacoEditor({
 
         monacoInstance.editor.setTheme('errorLineTheme');
 
+        if (foldCodeBlocks) {
+            setTimeout(() => foldAllCodeBlocks(editor, monacoInstance), 300);
+        }
+
         // Call custom onMount if provided
         onMount?.(editor, monacoInstance);
-    }, [onMount, theme]);
+    }, [onMount, theme, foldCodeBlocks, foldAllCodeBlocks]);
 
     // Update editor value when prop changes from outside
     useEffect(() => {
@@ -157,6 +298,15 @@ export function MonacoEditor({
         }
     }, [value]); // Only depend on value prop, not editorValue
 
+    // Re-fold code blocks when value prop changes externally
+    useEffect(() => {
+        if (!foldCodeBlocks || !editorInstanceRef.current || !monacoInstanceRef.current) return;
+        const editor = editorInstanceRef.current;
+        const monacoInstance = monacoInstanceRef.current;
+        const timer = setTimeout(() => foldAllCodeBlocks(editor, monacoInstance), 300);
+        return () => clearTimeout(timer);
+    }, [value, foldCodeBlocks, foldAllCodeBlocks]);
+
     const defaultOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
         fontSize: 14,
         fontFamily: 'monospace',
@@ -164,7 +314,7 @@ export function MonacoEditor({
         scrollBeyondLastLine: false,
         wordWrap: 'on' as const,
         lineNumbers: 'on' as const,
-        folding: false,
+        folding: foldCodeBlocks,
         lineDecorationsWidth: 10,
         lineNumbersMinChars: 3,
         automaticLayout: true,
