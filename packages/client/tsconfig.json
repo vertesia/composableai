@@ -16,6 +16,7 @@
     //"moduleDetection": "force",
     "target": "ES2024",
     "useDefineForClassFields": true,
+    "types": ["node"],
     /* Bundler mode */
     "module": "ESNext",
     "moduleResolution": "Bundler",
