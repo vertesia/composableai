@@ -20,6 +20,13 @@ export interface AppUINavItem {
     children?: AppUINavItem[];
     /** When true, this item appears as an independent entry in the sidebar (outside its parent app group) */
     topLevel?: boolean;
+    /**
+     * Which sidebar section this item should be placed in when first added.
+     * - "default" or unset: normal behavior (child of its app group)
+     * - "footer": placed in the footer section
+     * - "settings": placed in the settings section
+     */
+    preferredSection?: "default" | "footer" | "settings";
 }
 
 export interface AppUIConfig {
