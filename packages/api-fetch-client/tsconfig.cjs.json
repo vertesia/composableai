@@ -6,5 +6,6 @@
         "declaration": false,
         "outDir": "./lib/cjs",
         "module": "CommonJS",
+        "moduleResolution": "bundler"
     }
 }

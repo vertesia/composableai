@@ -118,7 +118,6 @@ export function SectionRenderer({
   const layout = section.layout || 'grid-3';
   const isTable = layout === 'table';
   const isChart = layout === 'chart';
-  const layoutStyle = isTable || isChart ? {} : gridLayouts[layout as keyof typeof gridLayouts];
 
   const isCollapsible = section.collapsed !== undefined;
 
@@ -140,10 +139,10 @@ export function SectionRenderer({
   const contentStyle = useMemo(
     () => ({
       ...styles.content,
-      ...layoutStyle,
+      ...(isTable || isChart ? {} : gridLayouts[layout as keyof typeof gridLayouts]),
       ...(isCollapsed ? styles.contentCollapsed : styles.contentExpanded),
     }),
-    [isCollapsed, layoutStyle]
+    [isCollapsed, isTable, isChart, layout]
   );
 
   const handleHeaderClick = () => {

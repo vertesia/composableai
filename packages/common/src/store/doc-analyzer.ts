@@ -10,6 +10,18 @@ export interface PdfToRichTextWorkflowPayload extends Omit<WorkflowExecutionPayl
     vars: PdfToRichtextOptions;
 }
 
+export interface TransformTablesWorkflowPayload extends Omit<WorkflowExecutionPayload, "vars"> {
+    vars: AdaptTablesParams;
+    environment?: string;
+}
+
+export interface TransformTablesWorkflowResult {
+    result_path: string;
+    status: string;
+    table_count: number;
+    item_count: number;
+}
+
 /**
  * Represents a image in a document that has been analyzed
  */

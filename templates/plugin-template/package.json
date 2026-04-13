@@ -12,16 +12,16 @@
   "license": "Apache-2.0",
   "scripts": {
     "dev": "vite dev",
-    "prebuild": "npm run lint && tsc --build --noEmit",
-    "build": "npm run build:server && npm run build:ui",
+    "prebuild": "pnpm run lint && tsc --build --noEmit",
+    "build": "pnpm run build:server && pnpm run build:ui",
     "build:server": "rollup -c",
-    "build:ui": "npm run build:ui:app && npm run build:ui:lib",
+    "build:ui": "pnpm run build:ui:app && pnpm run build:ui:lib",
     "build:ui:app": "vite build --mode app",
     "build:ui:lib": "vite build --mode lib",
-    "start": "npm run preview",
+    "start": "pnpm run preview",
     "start:vercel": "vercel dev",
     "lint": "eslint .",
-    "preview": "npm run build:server && vite preview",
+    "preview": "pnpm run build:server && vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -68,8 +68,8 @@
     "rollup": "^4.60.1",
     "tailwindcss": "^4.1.18",
     "tslib": "^2.8.1",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.1",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.1",
     "vite": "^7.3.0",
     "vite-plugin-serve-static": "^1.2.0"
   },
