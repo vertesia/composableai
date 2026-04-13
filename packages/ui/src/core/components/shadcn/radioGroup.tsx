@@ -52,7 +52,7 @@ function RadioGroup<T = RadioGroupOption>({ onSelect, selected, options, adapter
   const getId = (o: T) => adapter ? adapter.idOf(o) : (o as unknown as RadioGroupOption).id
   const getLabel = (o: T) => adapter ? adapter.labelOf(o) : (o as unknown as RadioGroupOption).label
   const getDescription = (o: T) => adapter ? adapter.descriptionOf(o) : (o as unknown as RadioGroupOption).description
-  const getSelectedClass = (o: T) => adapter ? adapter.selectedClassName(o) : 'border-accent-foreground'
+  const getSelectedClass = (o: T) => adapter ? adapter.selectedClassName(o) : 'border-primary'
 
   return (
     <RadioGroupPrimitive.Root
