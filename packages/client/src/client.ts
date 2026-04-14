@@ -370,6 +370,25 @@ export function decodeJWT(jwt: string): AuthTokenPayload {
     return JSON.parse(decodedJson);
 }
 
+type RuntimeProcess = {
+    env?: Record<string, string | undefined>;
+};
+
+type RuntimeBuffer = {
+    from(input: string, encoding: string): {
+        toString(encoding: string): string;
+    };
+};
+
+function getRuntimeBuffer() {
+    return (globalThis as typeof globalThis & { Buffer?: RuntimeBuffer }).Buffer;
+}
+
+function getRuntimeStsUrl() {
+    const runtimeProcess = (globalThis as typeof globalThis & { process?: RuntimeProcess }).process;
+    return runtimeProcess?.env?.STS_URL;
+}
+
 function base64UrlDecode(input: string): string {
     // Convert base64url to base64
     const base64 = input
@@ -378,9 +397,10 @@ function base64UrlDecode(input: string): string {
         // Pad with '=' to make length a multiple of 4
         .padEnd(Math.ceil(input.length / 4) * 4, "=");
 
-    if (typeof Buffer !== "undefined") {
+    const runtimeBuffer = getRuntimeBuffer();
+    if (runtimeBuffer) {
         // Node.js
-        return Buffer.from(base64, "base64").toString("utf-8");
+        return runtimeBuffer.from(base64, "base64").toString("utf-8");
     } else if (
         typeof atob !== "undefined" &&
         typeof TextDecoder !== "undefined"
@@ -413,7 +433,7 @@ function getEndpointsFromDomain(domain: string) {
         return {
             studio: `http://localhost:8091`,
             store: `http://localhost:8092`,
-            token: process.env.STS_URL ?? "https://sts.dev1.vertesia.io",
+            token: getRuntimeStsUrl() ?? "https://sts.dev1.vertesia.io",
         };
     } else {
         const url = `https://${domain}`;

@@ -36,15 +36,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
           ssh-key: ${{ secrets.DEPLOY_KEY }} # Use deploy key to bypass branch protection rules
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           registry-url: 'https://registry.npmjs.org'
           cache: "pnpm"
 
@@ -82,11 +82,11 @@ jobs:
     needs: publish
     if: inputs.dry_run == false
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Smoke test - Plugin
         run: ./.github/bin/test-template-smoke.sh --release-type "${{ inputs.release_type }}" --template "Vertesia Plugin" --wait

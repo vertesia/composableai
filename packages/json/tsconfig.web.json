@@ -3,6 +3,7 @@
     "target": "ES2024",
     "module": "ESNext",
     "declaration": false,
+    "rootDir": "src",
     "outDir": "lib",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
