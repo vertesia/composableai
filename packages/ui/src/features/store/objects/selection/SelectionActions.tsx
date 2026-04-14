@@ -5,7 +5,8 @@ import { EllipsisVertical, X } from 'lucide-react';
 
 import { useState } from "react";
 import { useUITranslation } from '../../../../i18n/index.js';
-import { DocumentSelection, DocumentUploadModal, useDocumentSelection } from "../../../store";
+import { DocumentSelection, useDocumentSelection } from "../DocumentSelectionProvider.js";
+import { DocumentUploadModal } from "../upload/DocumentUploadModal.js";
 import { ExportPropertiesAction } from "./actions/ExportPropertiesAction";
 import { StartWorkflowAction } from "./actions/StartWorkflowComponent";
 import { ObjectsActionContextProvider } from "./ObjectsActionContext";
