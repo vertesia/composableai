@@ -33,11 +33,17 @@ export interface CostAnalyticsQuery {
     project_id?: string;
     /** Filter by workflow / agent run ID */
     workflow_id?: string;
+    /** Filter by Temporal workflow run ID */
+    workflow_run_id?: string;
+    /** Filter by interaction execution run ID */
+    run_id?: string;
+    /** Filter by agent run ID */
+    agent_run_id?: string;
     /** Filter by account ID (set automatically by server) */
     account_id?: string;
     /** Scope: 'project' (default, current project) or 'org' (all projects in account) */
     scope?: 'project' | 'org';
-    /** Pricing source: 'list' (current list prices) or 'historical' (actual prices from billing period). Default: 'list' */
+    /** Pricing source: 'list' (latest daily prices) or 'historical' (daily effective prices over the query range). Default: 'list' */
     pricing_source?: 'list' | 'historical';
     /** Skip cache and force fresh query */
     no_cache?: boolean;
@@ -80,11 +86,37 @@ export interface CostTimeSeriesPoint {
 
 export interface ModelPricing {
     model: string;
+    provider?: string;
+    provider_account_id?: string;
     input_price_per_m_tokens: number;
     cached_input_price_per_m_tokens?: number;
     cache_write_input_price_per_m_tokens?: number;
     output_price_per_m_tokens: number;
-    source: 'billing_export' | 'unavailable';
+    source: 'billing_export' | 'model_pricing_daily' | 'unavailable';
+}
+
+export interface ModelPriceComparison {
+    model: string;
+    provider?: string;
+    provider_account_id?: string;
+    list_price_date?: string;
+    effective_from?: string;
+    effective_to?: string;
+    input_list_price_per_m_tokens?: number;
+    input_effective_price_per_m_tokens?: number;
+    cached_input_list_price_per_m_tokens?: number;
+    cached_input_effective_price_per_m_tokens?: number;
+    cache_write_input_list_price_per_m_tokens?: number;
+    cache_write_input_effective_price_per_m_tokens?: number;
+    output_list_price_per_m_tokens?: number;
+    output_effective_price_per_m_tokens?: number;
+    source: 'model_pricing_daily';
+}
+
+export interface ModelPriceComparisonResponse {
+    prices: ModelPriceComparison[];
+    effective_range: { from: string; to: string };
+    list_price_date?: string;
 }
 
 export interface CostAnalyticsResponse {
@@ -94,4 +126,36 @@ export interface CostAnalyticsResponse {
     pricing: ModelPricing[];
     query_range: { from: string; to: string };
     cached: boolean;
+}
+
+export interface CostRunPriceQuery {
+    /** Interaction execution run ID */
+    run_id?: string;
+    /** Agent run ID */
+    agent_run_id?: string;
+    /** Workflow ID, when known */
+    workflow_id?: string;
+    /** Temporal workflow run ID, when known */
+    workflow_run_id?: string;
+    /** Optional lower bound for audit events */
+    from?: string | number;
+    /** Optional upper bound for audit events */
+    to?: string | number;
+    /** Pricing source. Defaults to historical effective prices for run pricing. */
+    pricing_source?: 'list' | 'historical';
+    /** Project filter; server fills current project by default */
+    project_id?: string;
+    /** Account filter; server fills current account */
+    account_id?: string;
+    /** Scope: 'project' (default, current project) or 'org' */
+    scope?: 'project' | 'org';
+}
+
+export interface CostRunPriceResponse {
+    summary: CostSummary;
+    by_model: CostByDimension[];
+    pricing: ModelPricing[];
+    query_range?: { from: string; to: string };
+    pricing_source: 'list' | 'historical';
+    matched_events: number;
 }

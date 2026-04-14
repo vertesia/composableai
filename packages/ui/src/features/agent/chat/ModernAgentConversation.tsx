@@ -169,6 +169,8 @@ interface ModernAgentConversationProps {
     showArtifacts?: boolean;
     /** Hide the document preview panel that auto-opens on create_document */
     hideDocumentPanel?: boolean;
+    /** Message types to exclude from the conversation view */
+    hiddenMessageTypes?: AgentMessageType[];
 
     // Callback to get attached documents when sending messages
     // Returns array of { id, name } to include in message metadata and display
@@ -695,6 +697,7 @@ function ModernAgentConversationInner({
     hideFileUpload,
     showArtifacts = false,
     hideDocumentPanel: _hideDocumentPanel,
+    hiddenMessageTypes,
     // Attachment callback
     getAttachedDocs,
     onAttachmentsSent,
@@ -1450,6 +1453,7 @@ const handleCloseRightPanel = useCallback(() => {
                     StoreLinkComponent={effectiveStoreLinkComponent}
                     CollectionLinkComponent={CollectionLinkComponent}
                     prependFriendlyMessage={prependFriendlyMessage}
+                    hiddenMessageTypes={hiddenMessageTypes}
                 />
             )}
 

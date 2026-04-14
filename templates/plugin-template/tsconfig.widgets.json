@@ -11,6 +11,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowJs": true,
+    "rootDir": "src",
     "outDir": "./dist/widgets",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

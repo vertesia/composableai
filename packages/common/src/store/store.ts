@@ -178,6 +178,17 @@ export interface Transcript {
     etag?: string;
 }
 
+export const TextExtractionStatus = {
+    success: "success",
+} as const;
+
+export interface TranscriptMediaResult {
+    hasText: boolean;
+    status: typeof TextExtractionStatus.success;
+    message?: string;
+    gladiaTranscriptionId?: string;
+}
+
 export interface TranscriptSegment {
     start: number;
     text: string;

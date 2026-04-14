@@ -20,17 +20,17 @@ import {
     GetFileUrlResponse,
     GetRenditionParams,
     GetRenditionResponse,
-    getSupportedRenditionFormats,
+
     GetUploadUrlPayload,
     ListWorkflowRunsResponse,
     ObjectSearchPayload,
     ObjectSearchQuery,
     SupportedEmbeddingTypes,
-    supportsVisualRendition
 } from "@vertesia/common";
 
 // Re-export rendition utilities for consumers
-export { canGenerateRendition, getSupportedRenditionFormats, supportsVisualRendition };
+export { canGenerateRendition };
+export { getSupportedRenditionFormats, supportsVisualRendition } from "@vertesia/common";
 
 import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
@@ -40,6 +40,10 @@ export interface ComputeFacetsResponse {
     type?: { _id: string; count: number }[];
     location?: { _id: string; count: number }[];
     status?: { _id: string; count: number }[];
+    [key: string]:
+        | { _id: string; count: number }[]
+        | number
+        | undefined;
     total?: number;
 }
 

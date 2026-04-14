@@ -674,25 +674,18 @@ export interface CompositeAppCardOverrides {
 
 /**
  * Access control settings for a composite app nav item.
- * Extensible: add new permission fields here as needs evolve.
+ *
+ * If any of `groupsAllowed`, `usersAllowed`, or `rolesAllowed` are set,
+ * access is granted when the user matches ANY list (OR logic).
+ * All empty/absent means visible to everyone. Admin users bypass all checks.
  */
 export interface CompositeAppNavItemPermissions {
-    /**
-     * When set, only users belonging to at least one of these groups can see this item.
-     * Admin users bypass this check.
-     * Values are group IDs (not names).
-     */
+    /** Group IDs whose members can see this item. */
     groupsAllowed?: string[];
-    /**
-     * When set, only these specific users can see this item.
-     * Admin users bypass this check.
-     * Values are user IDs.
-     *
-     * If both `groupsAllowed` and `usersAllowed` are set, access is granted
-     * if the user matches EITHER list (OR logic).
-     * Both empty/absent means visible to everyone.
-     */
+    /** User IDs who can see this item. */
     usersAllowed?: string[];
+    /** ProjectRoles values (e.g. "developer", "manager") whose holders can see this item. */
+    rolesAllowed?: string[];
 }
 
 /**

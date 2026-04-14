@@ -3,9 +3,9 @@ import { AuthTokenPayload, AuthTokenResponse } from "@vertesia/common";
 import AccountApi from "./AccountApi.js";
 import AccountsApi from "./AccountsApi.js";
 import AnalyticsApi from "./AnalyticsApi.js";
-import AuditTrailApi from "./AuditTrailApi.js";
 import { ApiKeysApi } from "./ApiKeysApi.js";
 import AppsApi from "./AppsApi.js";
+import AuditTrailApi from "./AuditTrailApi.js";
 import CommandsApi from "./CommandsApi.js";
 import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
@@ -13,14 +13,14 @@ import InteractionsApi from "./InteractionsApi.js";
 import MCPOAuthApi from "./MCPOAuthApi.js";
 import OAuthAppsApi from "./OAuthAppsApi.js";
 import ProjectsApi from "./ProjectsApi.js";
-import SkillsApi from "./SkillsApi.js";
 import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
 import { RunsApi } from "./RunsApi.js";
+import SkillsApi from "./SkillsApi.js";
 import { ZenoClient } from "./store/client.js";
+import { VERSION, VERSION_HEADER } from "./store/version.js";
 import TrainingApi from "./TrainingApi.js";
 import UsersApi from "./UsersApi.js";
-import { VERSION, VERSION_HEADER } from "./store/version.js";
 
 
 /**
@@ -42,15 +42,15 @@ export type VertesiaClientProps = {
      * @since 0.52.0
      */
     site?:
-        | "api.vertesia.io"
-        | "api-preview.vertesia.io"
-        | "api.us1.vertesia.io"
-        | "api-preview.us1.vertesia.io"
-        | "api.eu1.vertesia.io"
-        | "api-preview.eu1.vertesia.io"
-        | "api.jp1.vertesia.io"
-        | "api-preview.jp1.vertesia.io"
-        | "api.dev1.vertesia.io";
+    | "api.vertesia.io"
+    | "api-preview.vertesia.io"
+    | "api.us1.vertesia.io"
+    | "api-preview.us1.vertesia.io"
+    | "api.eu1.vertesia.io"
+    | "api-preview.eu1.vertesia.io"
+    | "api.jp1.vertesia.io"
+    | "api-preview.jp1.vertesia.io"
+    | "api.dev1.vertesia.io";
     serverUrl?: string;
     storeUrl?: string;
     tokenServerUrl?: string;
@@ -107,7 +107,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         }).withApiKey(token);
     }
 
-    static decodeEndpoints() {}
+    static decodeEndpoints() { }
 
     constructor(
         opts: VertesiaClientProps = {
@@ -213,16 +213,16 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.withAuthCallback(
             apiKey
                 ? async () => {
-                      if (!isApiKey(apiKey)) {
-                          return `Bearer ${apiKey}`;
-                      }
+                    if (!isApiKey(apiKey)) {
+                        return `Bearer ${apiKey}`;
+                    }
 
-                      if (isTokenExpired(this._jwt)) {
-                          const jwt = await this.getAuthToken(apiKey);
-                          this._jwt = jwt.token;
-                      }
-                      return `Bearer ${this._jwt}`;
-                  }
+                    if (isTokenExpired(this._jwt)) {
+                        const jwt = await this.getAuthToken(apiKey);
+                        this._jwt = jwt.token;
+                    }
+                    return `Bearer ${this._jwt}`;
+                }
                 : undefined,
         );
     }
@@ -370,6 +370,25 @@ export function decodeJWT(jwt: string): AuthTokenPayload {
     return JSON.parse(decodedJson);
 }
 
+type RuntimeProcess = {
+    env?: Record<string, string | undefined>;
+};
+
+type RuntimeBuffer = {
+    from(input: string, encoding: string): {
+        toString(encoding: string): string;
+    };
+};
+
+function getRuntimeBuffer() {
+    return (globalThis as typeof globalThis & { Buffer?: RuntimeBuffer }).Buffer;
+}
+
+function getRuntimeStsUrl() {
+    const runtimeProcess = (globalThis as typeof globalThis & { process?: RuntimeProcess }).process;
+    return runtimeProcess?.env?.STS_URL;
+}
+
 function base64UrlDecode(input: string): string {
     // Convert base64url to base64
     const base64 = input
@@ -378,9 +397,10 @@ function base64UrlDecode(input: string): string {
         // Pad with '=' to make length a multiple of 4
         .padEnd(Math.ceil(input.length / 4) * 4, "=");
 
-    if (typeof Buffer !== "undefined") {
+    const runtimeBuffer = getRuntimeBuffer();
+    if (runtimeBuffer) {
         // Node.js
-        return Buffer.from(base64, "base64").toString("utf-8");
+        return runtimeBuffer.from(base64, "base64").toString("utf-8");
     } else if (
         typeof atob !== "undefined" &&
         typeof TextDecoder !== "undefined"
@@ -413,7 +433,7 @@ function getEndpointsFromDomain(domain: string) {
         return {
             studio: `http://localhost:8091`,
             store: `http://localhost:8092`,
-            token: process.env.STS_URL ?? "https://sts-staging.vertesia.io",
+            token: getRuntimeStsUrl() ?? "https://sts.dev1.vertesia.io",
         };
     } else {
         const url = `https://${domain}`;
