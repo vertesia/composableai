@@ -1,66 +1,66 @@
 {
-    "name": "@vertesia/api-fetch-client",
-    "version": "1.1.0-dev.20260327.125707Z",
-    "description": "HTTP client which wraps a fetch implementation and simplify the creation of REST API clients. Works both in browser and in node.",
-    "type": "module",
+  "name": "@vertesia/api-fetch-client",
+  "version": "1.1.0-dev.20260327.125707Z",
+  "description": "HTTP client which wraps a fetch implementation and simplify the creation of REST API clients. Works both in browser and in node.",
+  "type": "module",
+  "types": "./lib/types/index.d.ts",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "ts_dual_module": {
+    "outDir": "lib"
+  },
+  "exports": {
     "types": "./lib/types/index.d.ts",
-    "files": [
-        "lib",
-        "src"
-    ],
-    "ts_dual_module": {
-        "outDir": "lib"
-    },
-    "exports": {
-        "types": "./lib/types/index.d.ts",
-        "import": "./lib/esm/index.js",
-        "require": "./lib/cjs/index.js"
-    },
-    "scripts": {
-        "test": "ESBK_TSCONFIG_PATH=./test/tsconfig.json pnpm exec mocha -r tsx --exit ./test/**/*.ts",
-        "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
-        "build": "pnpm exec tsmod build",
-        "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/vertesia/composableai.git",
-        "directory": "packages/api-fetch-client"
-    },
-    "keywords": [
-        "fetch",
-        "client",
-        "api",
-        "rest",
-        "browser",
-        "node",
-        "sse",
-        "eventsource",
-        "vertesia"
-    ],
-    "author": "stefanescu.bogdan@gmail.com",
-    "license": "Apache-2.0",
-    "bugs": {
-        "url": "https://github.com/vertesia/composableai/issues"
-    },
-    "homepage": "https://github.com/vertesia/composableai/tree/main/packages/api-fetch-client#readme",
-    "devDependencies": {
-        "@eslint/js": "^10.0.1",
-        "@koa-stack/router": "^0.24.0",
-        "@koa-stack/server": "^0.24.0",
-        "@types/koa": "^2.15.0",
-        "@types/mocha": "^10.0.10",
-        "eslint": "^10.0.2",
-        "koa": "^2.16.3",
-        "mocha": "^10.2.0",
-        "ts-dual-module": "^0.6.3",
-        "ts-node": "^10.9.2",
-        "tsx": "^3.14.0",
-        "typescript": "^6.0.2",
-        "typescript-eslint": "^8.58.1",
-        "vitest": "^4.0.16"
-    },
-    "dependencies": {
-        "eventsource-parser": "^1.1.1"
-    }
+    "import": "./lib/esm/index.js",
+    "require": "./lib/cjs/index.js"
+  },
+  "scripts": {
+    "test": "ESBK_TSCONFIG_PATH=./test/tsconfig.json pnpm exec mocha -r tsx --exit ./test/**/*.ts",
+    "lint": "eslint './src/**/*.{jsx,js,tsx,ts}'",
+    "build": "pnpm exec tsmod build",
+    "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vertesia/composableai.git",
+    "directory": "packages/api-fetch-client"
+  },
+  "keywords": [
+    "fetch",
+    "client",
+    "api",
+    "rest",
+    "browser",
+    "node",
+    "sse",
+    "eventsource",
+    "vertesia"
+  ],
+  "author": "stefanescu.bogdan@gmail.com",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/vertesia/composableai/issues"
+  },
+  "homepage": "https://github.com/vertesia/composableai/tree/main/packages/api-fetch-client#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@koa-stack/router": "^0.24.0",
+    "@koa-stack/server": "^0.24.0",
+    "@types/koa": "^2.15.0",
+    "@types/mocha": "^10.0.10",
+    "eslint": "^10.0.2",
+    "koa": "^2.16.3",
+    "mocha": "^10.2.0",
+    "ts-dual-module": "^0.6.3",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.8.1",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.1",
+    "vitest": "^4.0.16"
+  },
+  "dependencies": {
+    "eventsource-parser": "^1.1.1"
+  }
 }

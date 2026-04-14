@@ -3,14 +3,19 @@
     "target": "ES2024",
     "module": "ESNext",
     "declaration": false,
+    "rootDir": "src",
     "outDir": "lib",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["node"]
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "src/nodejs"
   ]
 }
