@@ -6,6 +6,7 @@ import {
     InteractionExecutionPayload, InteractionForkPayload,
     InteractionPublishPayload, InteractionRef, InteractionRefWithSchema, InteractionSearchPayload, InteractionSearchQuery,
     InteractionsExportPayload, InteractionTags, InteractionUpdatePayload,
+    MCPSkillGroup,
     RateLimitRequestPayload, RateLimitRequestResponse, ResolvedInteractionExecutionInfo
 } from "@vertesia/common";
 import { VertesiaClient } from "./client.js";
@@ -53,6 +54,20 @@ export default class InteractionsApi extends ApiTopic {
     listEndpoints(payload: InteractionEndpointQuery): Promise<InteractionEndpoint[]> {
         return this.post("/endpoints", {
             payload
+        });
+    }
+
+    /**
+     * Atomically replace all generated MCP skills for a given app installation.
+     * Deletes existing draft skills tagged mcp-generated for the app install,
+     * then creates new interaction-skills from the provided MCPSkillGroup definitions.
+     */
+    replaceMcpSkills(
+        appInstallId: string,
+        skills: MCPSkillGroup[],
+    ): Promise<{ created: number; deleted: number; skill_ids: string[] }> {
+        return this.post('/mcp-skills/replace', {
+            payload: { app_install_id: appInstallId, skills },
         });
     }
 

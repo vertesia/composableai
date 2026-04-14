@@ -294,6 +294,11 @@ export interface InteractionEndpointQuery {
      * When true, filter results to only interactions with is_skill=true.
      */
     is_skill?: boolean;
+
+    /**
+     * When provided, filter results to only skills generated from this MCP app installation.
+     */
+    mcp_app_install_id?: string;
 }
 
 /**
@@ -315,6 +320,13 @@ export interface InteractionEndpoint {
     output_modality?: Modalities;
     result_schema?: JSONSchema;
     params_schema?: JSONSchema;
+    /**
+     * For skill interactions (is_skill=true): the rendered instruction text from the
+     * first system prompt. Populated by listEndpoints when the interaction is a skill.
+     * Used by ExecuteInteractionSkill to return real instructions to the agent instead
+     * of falling back to the (shorter) description field.
+     */
+    instructions?: string;
 }
 
 export interface InteractionTags {
@@ -654,6 +666,14 @@ export interface AgentRunnerOptions {
      * within this collection'.
      */
     collection_id?: string;
+
+    /**
+     * ID of the MCP app installation this skill was generated from.
+     * Set by the generate_mcp_skills agent to link generated skill interactions
+     * back to their source MCP app, enabling listing and replacement of all skills
+     * tied to a specific MCP app installation.
+     */
+    mcp_app_install_id?: string;
 }
 
 // ================= User Communication Channels ====================
