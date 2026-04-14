@@ -7,8 +7,8 @@
   "types": "lib/main.d.ts",
   "scripts": {
     "clean": "rimraf ./lib tsconfig.tsbuildinfo",
-    "lint": "npx eslint 'src/**/*' --fix",
-    "format": "npx prettier --write \"**/*.{ts,js,json,md}\"",
+    "lint": "pnpm exec eslint 'src/**/*' --fix",
+    "format": "pnpm exec prettier --write \"**/*.{ts,js,json,md}\"",
     "prebuild": "pnpm run lint",
     "build": "pnpm run clean && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
     "typecheck:test": "tsc --project tsconfig.test.json",

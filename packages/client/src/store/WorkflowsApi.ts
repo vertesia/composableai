@@ -158,7 +158,7 @@ export class WorkflowsApi extends ApiTopic {
             let lastMessageTimestamp = since || 0;
             let isClosed = false;
             let currentSse: EventSource | null = null;
-            let interval: ReturnType<typeof setTimeout> | null = null;
+            let interval: ReturnType<typeof setInterval> | null = null;
 
             const maxReconnectAttempts = 10;
             const baseDelay = 1000; // 1 second base delay
