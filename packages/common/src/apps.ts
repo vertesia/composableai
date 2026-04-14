@@ -656,6 +656,8 @@ export interface CompositeAppSidebarOverrides {
     autoCollapse?: boolean;
     /** Whether settings section items auto-collapse when navigating. Independent of autoCollapse which handles all other items. Defaults to true. */
     autoCollapseSettings?: boolean;
+    /** Whether footer section items auto-collapse when navigating. Independent of autoCollapse which handles all other items. Defaults to true. */
+    autoCollapseFooter?: boolean;
 }
 
 /**
