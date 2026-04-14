@@ -7,7 +7,8 @@
   "scripts": {
     "bump": "pnpm exec wst bump minor -x llumiverse",
     "release": "pnpm -r publish --access public",
-    "build": "pnpm -r build",
+    "build": "pnpm exec turbo run build",
+    "ci:test": "pnpm exec turbo run test --filter=@vertesia/api-fetch-client --filter=@vertesia/client --filter=@vertesia/converters --filter=@vertesia/json --filter=@vertesia/workflow",
     "test": "pnpm -r test",
     "clean": "rimraf ./node_modules && pnpm -r clean",
     "prepublishOnly": "pnpm build",
@@ -17,6 +18,7 @@
     "eslint": "^10.0.2",
     "npm-ws-tools": "^0.3.0",
     "rimraf": "^5.0.5",
+    "turbo": "^2.8.10",
     "typescript": "^6.0.2",
     "vite": "^7.3.0"
   },
