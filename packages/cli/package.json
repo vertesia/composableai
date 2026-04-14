@@ -47,7 +47,7 @@
     "commander": "^14.0.2",
     "enquirer": "^2.4.1",
     "figures": "^6.1.0",
-    "glob": "^11.1.0",
+    "glob": "^13.0.6",
     "gradient-string": "^3.0.0",
     "json-schema-to-typescript": "^15.0.4",
     "jsonwebtoken": "^9.0.3",
