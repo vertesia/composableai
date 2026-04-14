@@ -7,7 +7,8 @@
   "scripts": {
     "bump": "pnpm exec wst bump minor -x llumiverse",
     "release": "pnpm -r publish --access public",
-    "build": "pnpm -r build",
+    "build": "pnpm exec turbo run build",
+    "ci:test": "pnpm exec turbo run test --filter=@vertesia/api-fetch-client --filter=@vertesia/client --filter=@vertesia/converters --filter=@vertesia/json --filter=@vertesia/workflow",
     "test": "pnpm -r test",
     "clean": "rimraf ./node_modules && pnpm -r clean",
     "prepublishOnly": "pnpm build",
@@ -17,17 +18,18 @@
     "eslint": "^10.0.2",
     "npm-ws-tools": "^0.3.0",
     "rimraf": "^5.0.5",
+    "turbo": "^2.8.10",
     "typescript": "^6.0.2",
     "vite": "^7.3.0"
   },
   "packageManager": "pnpm@10.30.1",
-    "pnpm": {
-        "patchedDependencies": {
-            "ts-dual-module@0.6.3": "patches/ts-dual-module@0.6.3.patch"
-        },
-        "overrides": {
-            "react": "19.2.3",
-            "react-dom": "19.2.3",
+  "pnpm": {
+    "patchedDependencies": {
+      "ts-dual-module@0.6.3": "patches/ts-dual-module@0.6.3.patch"
+    },
+    "overrides": {
+      "react": "19.2.3",
+      "react-dom": "19.2.3",
       "@types/react": "19.2.3",
       "@types/react-dom": "19.2.3",
       "brace-expansion@>=1.0.0 <2.0.0": "^1.1.12",
@@ -61,7 +63,7 @@
       "diff@>=5.0.0 <5.2.2": "^5.2.2",
       "diff@>=6.0.0 <8.0.3": "^8.0.3",
       "ajv@>=6.0.0 <6.14.0": "^6.14.0",
-      "@types/node": "^22.19.2",
+      "@types/node": "^25.6.0",
       "flatted@<3.4.2": "^3.4.2",
       "yaml@>=2.0.0 <2.8.3": "^2.8.3",
       "picomatch@<2.3.2": "^2.3.2",

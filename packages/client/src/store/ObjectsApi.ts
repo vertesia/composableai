@@ -20,17 +20,17 @@ import {
     GetFileUrlResponse,
     GetRenditionParams,
     GetRenditionResponse,
-    getSupportedRenditionFormats,
+
     GetUploadUrlPayload,
     ListWorkflowRunsResponse,
     ObjectSearchPayload,
     ObjectSearchQuery,
     SupportedEmbeddingTypes,
-    supportsVisualRendition
 } from "@vertesia/common";
 
 // Re-export rendition utilities for consumers
-export { canGenerateRendition, getSupportedRenditionFormats, supportsVisualRendition };
+export { canGenerateRendition };
+export { getSupportedRenditionFormats, supportsVisualRendition } from "@vertesia/common";
 
 import { StreamSource } from "../StreamSource.js";
 import { AnalyzeDocApi } from "./AnalyzeDocApi.js";
