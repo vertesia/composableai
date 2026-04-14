@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preview' || startsWith(github.ref, 'refs/heads/repo-dispatch')
     needs:
-      - composableai-ci
+      - unit-tests
       - template-smoke-test
     steps:
       - name: Notify repository vertesia/studio
