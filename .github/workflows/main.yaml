@@ -30,6 +30,21 @@ jobs:
         run: pnpm build
       - name: Run package tests
         run: pnpm ci:test
+
+  template-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - run: pnpm install
+      - name: Build workspace
+        run: pnpm build
       - name: Template integration test - Plugin
         run: ./.github/bin/test-template-integration.sh --release-type snapshot --template "Vertesia Plugin"
 
@@ -38,6 +53,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preview' || startsWith(github.ref, 'refs/heads/repo-dispatch')
     needs:
       - composableai-ci
+      - template-smoke-test
     steps:
       - name: Notify repository vertesia/studio
         run: |
