@@ -66,6 +66,7 @@ export interface CostSummary {
 export interface CostByDimension {
     dimension: string;
     label?: string;
+    provider?: string;
     cost: number;
     input_tokens: number;
     cached_input_tokens?: number;
@@ -144,6 +145,8 @@ export interface CostRunPriceQuery {
     to?: string | number;
     /** Pricing source. Defaults to historical effective prices for run pricing. */
     pricing_source?: 'list' | 'historical';
+    /** Include the full pricing catalog for cross-model comparison. Defaults to false. */
+    include_comparison_pricing?: boolean;
     /** Project filter; server fills current project by default */
     project_id?: string;
     /** Account filter; server fills current account */
@@ -155,7 +158,7 @@ export interface CostRunPriceQuery {
 export interface CostRunPriceResponse {
     summary: CostSummary;
     by_model: CostByDimension[];
-    pricing: ModelPricing[];
+    pricing?: ModelPricing[];
     query_range?: { from: string; to: string };
     pricing_source: 'list' | 'historical';
     matched_events: number;
