@@ -66,6 +66,12 @@ interface MessageInputProps {
     hideObjectLinking?: boolean;
     // Hide file upload (for apps that don't use it)
     hideFileUpload?: boolean;
+    // Extra actions rendered close to the composer
+    composerActions?: React.ReactNode;
+    // Footer content rendered below the composer row
+    composerFooter?: React.ReactNode;
+    // Render the send action as an icon-only button with tooltip
+    compactSendButton?: boolean;
 
     // Styling props for Tailwind customization
     /** Additional className for the container */
@@ -100,6 +106,9 @@ export default function MessageInput({
     hideObjectLinking = false,
     // File upload
     hideFileUpload = false,
+    composerActions,
+    composerFooter,
+    compactSendButton = false,
     // Styling props
     className,
 }: MessageInputProps) {
@@ -118,7 +127,7 @@ export default function MessageInput({
 
     // File handling
     const handleFiles = useCallback((files: FileList | File[]) => {
-        if (!onFilesSelected) return;
+        if (hideFileUpload || !onFilesSelected) return;
 
         const fileArray = Array.from(files);
         const remainingSlots = maxFiles - uploadedFiles.length;
@@ -127,16 +136,16 @@ export default function MessageInput({
         if (filesToAdd.length > 0) {
             onFilesSelected(filesToAdd);
         }
-    }, [onFilesSelected, maxFiles, uploadedFiles.length]);
+    }, [hideFileUpload, onFilesSelected, maxFiles, uploadedFiles.length]);
 
     // Drag and drop handlers
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (onFilesSelected) {
+        if (!hideFileUpload && onFilesSelected) {
             setIsDragOver(true);
         }
-    }, [onFilesSelected]);
+    }, [hideFileUpload, onFilesSelected]);
 
     const handleDragLeave = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -156,7 +165,7 @@ export default function MessageInput({
 
     // Paste handler for files
     const handlePaste = useCallback((e: React.ClipboardEvent) => {
-        if (!onFilesSelected) return;
+        if (hideFileUpload || !onFilesSelected) return;
 
         const items = e.clipboardData?.items;
         if (!items) return;
@@ -184,7 +193,7 @@ export default function MessageInput({
         if (files.length > 0) {
             handleFiles(files);
         }
-    }, [onFilesSelected, handleFiles]);
+    }, [hideFileUpload, onFilesSelected, handleFiles]);
 
     // File input change handler
     const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -301,7 +310,6 @@ export default function MessageInput({
     return (
         <div
             className={cn("p-3 border-t border-muted flex-shrink-0 transition-all fixed lg:sticky bottom-0 left-0 right-0 lg:left-auto lg:right-auto w-full bg-background z-10", isDragOver && "bg-blue-50 dark:bg-blue-900/20 border-blue-400", className)}
-            style={{ minHeight: "120px" }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -317,7 +325,7 @@ export default function MessageInput({
             )}
 
             {/* Hidden file input */}
-            {onFilesSelected && (
+            {!hideFileUpload && onFilesSelected && (
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -432,9 +440,9 @@ export default function MessageInput({
             )}
 
             {/* Action buttons row */}
-            {(onFilesSelected || renderDocumentSearch) && (
+            {((!hideFileUpload && onFilesSelected) || renderDocumentSearch) && (
                 <div className="flex gap-2 mb-2">
-                    {onFilesSelected && (
+                    {!hideFileUpload && onFilesSelected && (
                         <Button
                             variant="outline"
                             size="sm"
@@ -476,7 +484,11 @@ export default function MessageInput({
                         onChange={(e) => setValue(e.target.value)}
                         onPaste={handlePaste}
                         disabled={disabled}
-                        placeholder={isStreaming ? t('agent.agentWorking') : (onFilesSelected ? t('agent.askAnything') : resolvedPlaceholder)}
+                        placeholder={isStreaming
+                            ? t('agent.agentWorking')
+                            : (!hideFileUpload && onFilesSelected)
+                                ? t('agent.askAnything')
+                                : resolvedPlaceholder}
                         rows={2}
                         style={{ minHeight: '60px', maxHeight: '200px' }}
                     />
@@ -492,6 +504,11 @@ export default function MessageInput({
                         </Button>
                     )}
                 </div>
+                {composerActions && (
+                    <div className="flex items-end">
+                        {composerActions}
+                    </div>
+                )}
                 {/* Show Stop button only when streaming AND no text entered */}
                 {/* When user types something, show Send button to allow sending a message */}
                 {isStreaming && onStop && !value.trim() ? (
@@ -504,17 +521,41 @@ export default function MessageInput({
                         {isStopping ? <Spinner size="sm" className="mr-2" /> : <StopCircleIcon className="size-4 mr-2" />} <span>{t('agent.stop')}</span>
                     </Button>
                 ) : (
-                    <Button
-                        onClick={handleSend}
-                        disabled={disabled || isSending || !value.trim() || hasProcessingFiles}
-                        className="px-4 py-2.5"
-                        title={hasProcessingFiles ? t('agent.waitForFiles') : undefined}
-                    >
-                        {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className="size-4 mr-2" />}
-                        <span>{hasProcessingFiles ? t('agent.processing') : t('agent.send')}</span>
-                    </Button>
+                    compactSendButton ? (
+                        <VTooltip
+                            description={hasProcessingFiles ? t('agent.waitForFiles') : t('agent.send')}
+                            placement="top"
+                            size="md"
+                        >
+                            <Button
+                                onClick={handleSend}
+                                disabled={disabled || isSending || !value.trim() || hasProcessingFiles}
+                                size="icon"
+                                className="size-11"
+                                title={hasProcessingFiles ? t('agent.waitForFiles') : t('agent.send')}
+                            >
+                                {isSending ? <Spinner size="sm" /> : <SendIcon className="size-4" />}
+                            </Button>
+                        </VTooltip>
+                    ) : (
+                        <Button
+                            onClick={handleSend}
+                            disabled={disabled || isSending || !value.trim() || hasProcessingFiles}
+                            className="px-4 py-2.5"
+                            title={hasProcessingFiles ? t('agent.waitForFiles') : undefined}
+                        >
+                            {isSending ? <Spinner size="sm" className="mr-2" /> : <SendIcon className="size-4 mr-2" />}
+                            <span>{hasProcessingFiles ? t('agent.processing') : t('agent.send')}</span>
+                        </Button>
+                    )
                 )}
             </div>
+
+            {composerFooter && (
+                <div className="mt-2">
+                    {composerFooter}
+                </div>
+            )}
 
             <div className="text-xs text-muted mt-2 text-center">
                 {activeTaskCount > 0 ? (

@@ -12,7 +12,7 @@ import {
     UserInputSignal,
 } from "@vertesia/common";
 import { FusionFragmentProvider } from "@vertesia/fusion-ux";
-import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle } from "@vertesia/ui/core";
+import { Button, cn, MessageBox, Spinner, useToast, Modal, ModalBody, ModalFooter, ModalTitle, VTooltip } from "@vertesia/ui/core";
 
 import { AnimatedThinkingDots, PulsatingCircle } from "./AnimatedThinkingDots";
 import { type AgentConversationViewMode } from "./ModernAgentOutput/AllMessagesMixed";
@@ -155,16 +155,30 @@ interface ModernAgentConversationProps {
     hideObjectLinking?: boolean;
     /** Hide the internal header (for apps that render their own) */
     hideHeader?: boolean;
+    /** Hide the internal header view mode toggle */
+    hideHeaderViewModeToggle?: boolean;
+    /** Hide the internal header overflow actions menu */
+    hideHeaderActions?: boolean;
     /** Hide the internal message input (for apps that render their own) */
     hideMessageInput?: boolean;
     /** Hide the internal plan panel (for apps that render their own) */
     hidePlanPanel?: boolean;
     /** Hide workstream tabs */
     hideWorkstreamTabs?: boolean;
+    /** Hide the documents tab in the internal right panel */
+    hideDocumentsTab?: boolean;
+    /** Hide the uploads tab in the internal right panel */
+    hideUploadsTab?: boolean;
     /** Enable or disable the internal right panel (plan/workstreams/documents/uploads) */
     showRightPanel?: boolean;
     /** Hide the default file upload */
     hideFileUpload?: boolean;
+    /** Extra actions rendered near the composer */
+    composerActions?: React.ReactNode;
+    /** Footer content rendered below the composer row */
+    composerFooter?: React.ReactNode;
+    /** Render the send action as an icon-only button with tooltip */
+    compactSendButton?: boolean;
     /** Show the Artifacts tab in the right panel (default false) */
     showArtifacts?: boolean;
     /** Hide the document preview panel that auto-opens on create_document */
@@ -284,6 +298,10 @@ function StartWorkflowView({
     // File upload props
     acceptedFileTypes,
     maxFiles = 5,
+    hideFileUpload = false,
+    composerActions,
+    composerFooter,
+    compactSendButton = false,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
@@ -306,29 +324,33 @@ function StartWorkflowView({
 
     // Drag and drop handlers for file staging
     const handleDragEnter = useCallback((e: React.DragEvent) => {
+        if (hideFileUpload) return;
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current++;
         if (e.dataTransfer?.types?.includes('Files')) {
             setIsDragOver(true);
         }
-    }, []);
+    }, [hideFileUpload]);
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
+        if (hideFileUpload) return;
         e.preventDefault();
         e.stopPropagation();
-    }, []);
+    }, [hideFileUpload]);
 
     const handleDragLeave = useCallback((e: React.DragEvent) => {
+        if (hideFileUpload) return;
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current--;
         if (dragCounterRef.current === 0) {
             setIsDragOver(false);
         }
-    }, []);
+    }, [hideFileUpload]);
 
     const handleDrop = useCallback((e: React.DragEvent) => {
+        if (hideFileUpload) return;
         e.preventDefault();
         e.stopPropagation();
         dragCounterRef.current = 0;
@@ -341,9 +363,10 @@ function StartWorkflowView({
                 return newFiles;
             });
         }
-    }, [maxFiles]);
+    }, [hideFileUpload, maxFiles]);
 
     const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        if (hideFileUpload) return;
         if (e.target.files && e.target.files.length > 0) {
             const filesArray = Array.from(e.target.files);
             setStagedFiles(prev => {
@@ -353,7 +376,7 @@ function StartWorkflowView({
         }
         // Reset input so the same file can be selected again
         e.target.value = '';
-    }, [maxFiles]);
+    }, [hideFileUpload, maxFiles]);
 
     const removeStagedFile = useCallback((index: number) => {
         setStagedFiles(prev => prev.filter((_, i) => i !== index));
@@ -524,7 +547,7 @@ function StartWorkflowView({
                 onDrop={handleDrop}
             >
                 {/* Drag overlay for full-panel file drop */}
-                {isDragOver && (
+                {!hideFileUpload && isDragOver && (
                     <div className="absolute inset-0 flex items-center justify-center bg-info-background z-50 pointer-events-none rounded-lg">
                         <div className="text-info font-medium flex items-center gap-2 text-lg">
                             <UploadIcon className="size-6" />
@@ -534,14 +557,16 @@ function StartWorkflowView({
                 )}
 
                 {/* Hidden file input */}
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept={acceptedFileTypes}
-                    onChange={handleFileInputChange}
-                    className="hidden"
-                />
+                {!hideFileUpload && (
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept={acceptedFileTypes}
+                        onChange={handleFileInputChange}
+                        className="hidden"
+                    />
+                )}
 
                 {/* Header */}
                 <div className="flex items-center justify-between py-2 px-3 border-b border-border bg-background">
@@ -591,7 +616,7 @@ function StartWorkflowView({
                 {/* Input Area */}
                 <div className="py-3 px-3 border-t border-border bg-background">
                 {/* Staged files display */}
-                {stagedFiles.length > 0 && (
+                {!hideFileUpload && stagedFiles.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-3">
                         {stagedFiles.map((file, index) => (
                             <div
@@ -613,18 +638,20 @@ function StartWorkflowView({
                 )}
 
                 {/* Upload button row */}
-                <div className="flex gap-2 mb-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isSending || stagedFiles.length >= maxFiles}
-                        className="text-xs"
-                    >
-                        <UploadIcon className="size-3.5 mr-1.5" />
-                        {t('agent.upload')}
-                    </Button>
-                </div>
+                {!hideFileUpload && (
+                    <div className="flex gap-2 mb-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isSending || stagedFiles.length >= maxFiles}
+                            className="text-xs"
+                        >
+                            <UploadIcon className="size-3.5 mr-1.5" />
+                            {t('agent.upload')}
+                        </Button>
+                    </div>
+                )}
 
                 <div className="flex items-end gap-2">
                     <textarea
@@ -638,21 +665,49 @@ function StartWorkflowView({
                         className="flex-1 py-2.5 px-3 text-sm border border-border bg-background text-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring rounded-md resize-none overflow-hidden"
                         style={{ minHeight: '60px', maxHeight: '200px' }}
                     />
-                    <Button
-                        onClick={startWorkflowWithMessage}
-                        disabled={!inputValue.trim() || isSending}
-                        className="px-3 py-2.5 text-xs rounded-md transition-colors"
-                    >
-                        {isSending ? (
-                            <Spinner size="sm" className="mr-1.5" />
-                        ) : (
-                            <SendIcon className="size-3.5 mr-1.5" />
-                        )}
-                        {resolvedStartButtonText}
-                    </Button>
+                    {composerActions && (
+                        <div className="flex items-end">
+                            {composerActions}
+                        </div>
+                    )}
+                    {compactSendButton ? (
+                        <VTooltip description={resolvedStartButtonText} placement="top" size="md">
+                            <Button
+                                onClick={startWorkflowWithMessage}
+                                disabled={!inputValue.trim() || isSending}
+                                size="icon"
+                                className="size-11"
+                                title={resolvedStartButtonText}
+                            >
+                                {isSending ? (
+                                    <Spinner size="sm" />
+                                ) : (
+                                    <SendIcon className="size-4" />
+                                )}
+                            </Button>
+                        </VTooltip>
+                    ) : (
+                        <Button
+                            onClick={startWorkflowWithMessage}
+                            disabled={!inputValue.trim() || isSending}
+                            className="px-3 py-2.5 text-xs rounded-md transition-colors"
+                        >
+                            {isSending ? (
+                                <Spinner size="sm" className="mr-1.5" />
+                            ) : (
+                                <SendIcon className="size-3.5 mr-1.5" />
+                            )}
+                            {resolvedStartButtonText}
+                        </Button>
+                    )}
                 </div>
+                {composerFooter && (
+                    <div className="mt-2">
+                        {composerFooter}
+                    </div>
+                )}
                 <div className="text-xs text-muted mt-2 text-center">
-                    {stagedFiles.length > 0
+                    {!hideFileUpload && stagedFiles.length > 0
                         ? t('agent.filesStagedCount', { count: stagedFiles.length })
                         : t('agent.enterToSend')}
                 </div>
@@ -687,12 +742,19 @@ function ModernAgentConversationInner({
     // Object linking
     hideObjectLinking,
     // Section visibility
-    hideHeader,
-    hideMessageInput,
+        hideHeader,
+        hideHeaderViewModeToggle,
+        hideHeaderActions,
+        hideMessageInput,
     hidePlanPanel,
     hideWorkstreamTabs,
+    hideDocumentsTab,
+    hideUploadsTab,
     showRightPanel: showRightPanelProp = true,
     hideFileUpload,
+    composerActions,
+    composerFooter,
+    compactSendButton,
     showArtifacts = false,
     hideDocumentPanel: _hideDocumentPanel,
     // Attachment callback
@@ -1402,6 +1464,8 @@ const handleCloseRightPanel = useCallback(() => {
                         onShowDetails={onShowDetails}
                         onExportPdf={exportConversationPdf}
                         isReceivingChunks={debugChunkFlash}
+                        hideViewModeToggle={hideHeaderViewModeToggle}
+                        hideActions={hideHeaderActions}
                     />
                 </div>
             )}
@@ -1486,6 +1550,9 @@ const handleCloseRightPanel = useCallback(() => {
                             onRemoveDocument={onRemoveDocument}
                             hideObjectLinking={hideObjectLinking}
                             hideFileUpload={hideFileUpload}
+                            composerActions={composerActions}
+                            composerFooter={composerFooter}
+                            compactSendButton={compactSendButton}
                             className={inputContainerClassName}
                             inputClassName={inputClassName}
                         />
@@ -1549,6 +1616,7 @@ const handleCloseRightPanel = useCallback(() => {
                         activeWorkstreams={panelWorkstreams}
                         hideWorkstreams={hideWorkstreamTabs}
                         // Documents
+                        hideDocuments={hideDocumentsTab}
                         openDocuments={openDocuments}
                         activeDocumentId={activeDocumentId}
                         onSelectDocument={selectDocument}
@@ -1557,6 +1625,7 @@ const handleCloseRightPanel = useCallback(() => {
                         docRefreshKey={docRefreshKey}
                         runId={agentRunId}
                         // Uploads
+                        hideUploads={hideUploadsTab}
                         processingFiles={processingFilesProp ?? processingFiles}
                         // Artifacts
                         showArtifacts={showArtifacts}

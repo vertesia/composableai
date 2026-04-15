@@ -34,6 +34,10 @@ export interface HeaderProps {
     onFork?: (newRun: AgentRun) => void;
     /** Show green indicator when receiving streaming chunks */
     isReceivingChunks?: boolean;
+    /** Hide the details/summary view mode toggle */
+    hideViewModeToggle?: boolean;
+    /** Hide the overflow actions dropdown */
+    hideActions?: boolean;
     /** Additional className for the outer container */
     className?: string;
 }
@@ -59,6 +63,8 @@ export default function Header({
     onRestart,
     onFork,
     isReceivingChunks = false,
+    hideViewModeToggle = false,
+    hideActions = false,
     className,
 }: HeaderProps) {
     const { t } = useUITranslation();
@@ -82,15 +88,16 @@ export default function Header({
                     </span>
                 </div>
                 <div className="flex justify-end items-center space-x-2 ml-auto">
-                    {/* View Mode Toggle */}
-                    <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
-                        <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("stacked")}>
-                            {t('agent.details')}
-                        </Button>
-                        <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("sliding")}>
-                            {t('agent.summary')}
-                        </Button>
-                    </div>
+                    {!hideViewModeToggle && (
+                        <div className="flex items-center space-x-1 bg-muted rounded p-0.5 mt-2 lg:mt-0">
+                            <Button variant={viewMode === "stacked" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("stacked")}>
+                                {t('agent.details')}
+                            </Button>
+                            <Button variant={viewMode === "sliding" ? "outline" : "ghost"} size="xs" onClick={() => onViewModeChange("sliding")}>
+                                {t('agent.summary')}
+                            </Button>
+                        </div>
+                    )}
 
                     {showPlanButton && (
                         <div className="relative">
@@ -112,19 +119,21 @@ export default function Header({
                     )}
 
                     {/* More actions */}
-                    <MoreDropdown
-                        agentRunId={agentRunId}
-                        workflowRunId={workflowRunId}
-                        isModal={isModal}
-                        isTerminal={isTerminal}
-                        onClose={onClose}
-                        onDownload={onDownload}
-                        resetWorkflow={resetWorkflow}
-                        onExportPdf={onExportPdf}
-                        onShowDetails={onShowDetails}
-                        onRestart={onRestart}
-                        onFork={onFork}
-                    />
+                    {!hideActions && (
+                        <MoreDropdown
+                            agentRunId={agentRunId}
+                            workflowRunId={workflowRunId}
+                            isModal={isModal}
+                            isTerminal={isTerminal}
+                            onClose={onClose}
+                            onDownload={onDownload}
+                            resetWorkflow={resetWorkflow}
+                            onExportPdf={onExportPdf}
+                            onShowDetails={onShowDetails}
+                            onRestart={onRestart}
+                            onFork={onFork}
+                        />
+                    )}
                     {onClose && !isModal && (
                         <Button size="xs" variant="ghost" onClick={onClose}>
                             <XIcon className="size-4" />

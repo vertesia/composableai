@@ -71,6 +71,10 @@ export default class InteractionsApi extends ApiTopic {
         });
     }
 
+    deleteMcpSkills(appInstallId: string): Promise<{ deleted: number }> {
+        return this.delete(`/mcp-skills/${appInstallId}`);
+    }
+
     /**
      * List all interaction versions in the project having the given endpoint name.
      * This is useful to list orphaned versions

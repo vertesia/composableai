@@ -251,6 +251,7 @@ export interface AgentRightPanelProps {
     hideWorkstreams?: boolean;
 
     // Documents
+    hideDocuments?: boolean;
     openDocuments?: OpenDocument[];
     activeDocumentId?: string | null;
     onSelectDocument?: (id: string) => void;
@@ -260,6 +261,7 @@ export interface AgentRightPanelProps {
     runId?: string;
 
     // Uploads
+    hideUploads?: boolean;
     processingFiles?: Map<string, ConversationFile>;
 
     // Artifacts
@@ -292,6 +294,7 @@ function AgentRightPanelComponent({
     hideWorkstreams = false,
 
     // Documents
+    hideDocuments = false,
     openDocuments = [],
     activeDocumentId,
     onSelectDocument,
@@ -301,6 +304,7 @@ function AgentRightPanelComponent({
     runId,
 
     // Uploads
+    hideUploads = false,
     processingFiles,
 
     // Artifacts
@@ -329,8 +333,8 @@ function AgentRightPanelComponent({
 
 // Determine which tabs have content (for badges/indicators)
     const hasWorkstreams = !hideWorkstreams && activeWorkstreams.length > 0;
-    const hasDocuments = openDocuments.length > 0;
-    const hasUploads = processingFiles ? processingFiles.size > 0 : false;
+    const hasDocuments = !hideDocuments && openDocuments.length > 0;
+    const hasUploads = !hideUploads && (processingFiles ? processingFiles.size > 0 : false);
     const hasPlan = showPlan && plan;
 
     const conversationTab: TabDefinition = {
@@ -362,7 +366,7 @@ function AgentRightPanelComponent({
                     <span className="text-sm">{t('agent.noPlanAvailable')}</span>
                 </div>
             ),
-            is_allowed: true,
+            is_allowed: !!showPlan,
         },
         {
             name: 'workstreams',
@@ -394,7 +398,7 @@ function AgentRightPanelComponent({
                     <span className="text-sm">{t('agent.noDocumentsOpen')}</span>
                 </div>
             ),
-            is_allowed: true,
+            is_allowed: !hideDocuments,
         },
         {
             name: 'uploads',
@@ -402,7 +406,7 @@ function AgentRightPanelComponent({
                 ? <span className="flex items-center gap-1">{t('agent.uploads')} <span className="inline-block w-1.5 h-1.5 rounded-full bg-info" /></span>
                 : t('agent.uploads'),
             content: <UploadedDocumentsTab files={processingFiles} />,
-            is_allowed: true,
+            is_allowed: !hideUploads,
         },
         {
             name: 'artifacts',
@@ -418,24 +422,32 @@ function AgentRightPanelComponent({
         },
     ];
 
+    const visibleTabs = tabs.filter((tab) => tab.is_allowed !== false);
+    const resolvedActiveTab = visibleTabs.some((tab) => tab.name === activeTab)
+        ? activeTab
+        : (visibleTabs[0]?.name as RightPanelTab | undefined);
+    const showTabBar = visibleTabs.length > 1;
+
     return (
         <Tabs
             tabs={tabs}
-            current={activeTab}
+            current={resolvedActiveTab}
             onTabChange={handleTabChange}
             fullHeight
             className="px-0"
         >
-            <div className="flex items-center border-b shrink-0 px-1">
-                <div className="flex-1 overflow-x-auto">
-                    <TabsBar className="border-b-0 mb-0 min-w-max" />
+            {showTabBar && (
+                <div className="flex items-center border-b shrink-0 px-1">
+                    <div className="flex-1 overflow-x-auto">
+                        <TabsBar className="border-b-0 mb-0 min-w-max" />
+                    </div>
+                    {!conversationContent && (
+                        <Button variant="ghost" size="sm" className="shrink-0 ml-1" onClick={onClose}>
+                            <XIcon className="size-4" />
+                        </Button>
+                    )}
                 </div>
-                {!conversationContent && (
-                    <Button variant="ghost" size="sm" className="shrink-0 ml-1" onClick={onClose}>
-                        <XIcon className="size-4" />
-                    </Button>
-                )}
-            </div>
+            )}
             <TabsPanel className="pt-0" />
         </Tabs>
     );
