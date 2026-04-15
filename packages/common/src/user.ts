@@ -19,6 +19,8 @@ export interface User {
     last_selected_account?: string;
     source?: 'firebase' | 'scim';
     updated_by?: string;
+    /** Custom properties for dynamic permission matching */
+    properties?: Record<string, any>;
 }
 
 

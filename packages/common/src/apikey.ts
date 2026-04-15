@@ -67,6 +67,10 @@ export interface AuthTokenPayload {
     /** groups */
     groups?: UserGroupRef[]; //group ids
 
+    /** Merged user + group properties for dynamic permission matching.
+     *  User properties take precedence over group properties. */
+    properties?: Record<string, any>;
+
     /**
      * API endpoints information to be used with this token.
      * Either a n API domain like 'api.vertesia.io' | 'api-preview.vertesia.io' | 'api-staging.vertesia.io' | 'local'
