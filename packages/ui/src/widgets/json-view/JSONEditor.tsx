@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@vertesia/ui/core';
 import { MonacoEditor, IEditorApi } from '../monacoEditor/MonacoEditor';
 
@@ -25,7 +25,7 @@ export interface JSONEditorProps {
  */
 export function JSONEditor({
     value,
-    onChange,
+    onChange: _onChange,
     onValidChange,
     readonly = false,
     height = '200px',

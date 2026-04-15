@@ -31,6 +31,7 @@ export interface UpdateUserPayload {
     language?: string;
     phone?: string;
     last_selected_account?: string;
+    properties?: Record<string, any>;
 }
 
 
