@@ -28,8 +28,8 @@ export interface UseAgentStreamResult {
     addOptimisticMessage: (msg: AgentMessage) => void;
     /** Remove optimistic messages matching a predicate */
     removeOptimisticMessages: (predicate: (msg: AgentMessage) => boolean) => void;
-    /** Workflow status fetched from API (RUNNING, COMPLETED, FAILED, etc.) */
-    workflowStatus: string | null;
+    /** AgentRun status fetched from API (RUNNING, COMPLETED, FAILED, etc.) */
+    agentRunStatus: string | null;
     /** Temporal workflow run ID (first_workflow_run_id from AgentRun) */
     workflowRunId: string | null;
     /** Server-side file processing status updates (from SYSTEM messages) */
@@ -57,7 +57,7 @@ export function useAgentStream(
 ): UseAgentStreamResult {
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
-    const [workflowStatus, setWorkflowStatus] = useState<string | null>(null);
+    const [agentRunStatus, setAgentRunStatus] = useState<string | null>(null);
     const [workflowRunId, setWorkflowRunId] = useState<string | null>(null);
 
     // Server-side file processing status updates
@@ -106,7 +106,7 @@ export function useAgentStream(
         // Reset all state when agentRunId changes (new agent)
         console.debug('[useAgentStream] effect:start', { agentRunId });
         setMessages([]);
-        setWorkflowStatus(null);
+        setAgentRunStatus(null);
         setWorkflowRunId(null);
         setStreamingMessages(new Map());
         setServerFileUpdates(new Map());
@@ -116,7 +116,7 @@ export function useAgentStream(
         client.agents.getInternals(agentRunId)
             .then((agentRun) => {
                 if (!abortController.signal.aborted) {
-                    setWorkflowStatus(agentRun.status?.toUpperCase() ?? null);
+                    setAgentRunStatus(agentRun.status?.toUpperCase() ?? null);
                     setWorkflowRunId(agentRun.first_workflow_run_id ?? null);
                 }
             })
@@ -299,7 +299,7 @@ export function useAgentStream(
         debugChunkFlash,
         addOptimisticMessage,
         removeOptimisticMessages,
-        workflowStatus,
+        agentRunStatus,
         workflowRunId,
         serverFileUpdates,
     };
