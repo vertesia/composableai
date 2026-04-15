@@ -46,6 +46,15 @@ export class CostApi extends ApiTopic {
     }
 
     /**
+     * Price a run and include the full model pricing catalog for comparison.
+     */
+    getRunPriceComparison(
+        query: CostRunPriceQuery
+    ): Promise<CostRunPriceResponse> {
+        return this.post('/run-price', { payload: { ...query, include_comparison_pricing: true } });
+    }
+
+    /**
      * Get the CSV export URL for raw inference audit events.
      */
     getExportUrl(params?: { from?: string | number; to?: string | number }): string {
