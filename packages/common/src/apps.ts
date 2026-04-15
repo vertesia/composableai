@@ -2,6 +2,9 @@ import { JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { CatalogInteractionRef } from "./interaction.js";
 import { DSLActivityOptions, InCodeTypeDefinition } from "./store/index.js";
 
+/** Allowed values for AppUINavItem.preferredSection */
+export const PREFERRED_SECTIONS = ["default", "footer", "settings"] as const;
+
 /**
  * Additional navigation item for an app's UI configuration.
  * Used in AppUIConfig.navigation to define sidebar navigation entries in CompositeApp shell contexts.
@@ -26,7 +29,7 @@ export interface AppUINavItem {
      * - "footer": placed in the footer section
      * - "settings": placed in the settings section
      */
-    preferredSection?: "default" | "footer" | "settings";
+    preferredSection?: (typeof PREFERRED_SECTIONS)[number];
 }
 
 export interface AppUIConfig {
