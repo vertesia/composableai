@@ -20,7 +20,7 @@ export interface CostAnalyticsQuery {
     /** End time (ISO string or epoch ms) */
     to?: string | number;
     /** Group results by this dimension */
-    group_by?: 'model' | 'environment' | 'account' | 'project' | 'provider' | 'interaction';
+    group_by?: 'model' | 'environment' | 'account' | 'project' | 'project_tag' | 'provider' | 'interaction' | 'workflow';
     /** Time series resolution */
     resolution?: 'hour' | 'day' | 'week' | 'month';
     /** Filter by model pattern */
@@ -72,6 +72,7 @@ export interface CostByDimension {
     cache_write_input_tokens?: number;
     output_tokens: number;
     calls: number;
+    periods?: CostTimeSeriesPoint[];
 }
 
 export interface CostTimeSeriesPoint {
