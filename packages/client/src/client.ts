@@ -278,6 +278,14 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.files;
     }
 
+    get processes() {
+        return this.store.processes;
+    }
+
+    get tasks() {
+        return this.store.tasks;
+    }
+
     /**
      * Alias for store.types
      */

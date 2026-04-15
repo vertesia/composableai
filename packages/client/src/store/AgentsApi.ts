@@ -11,6 +11,7 @@ import {
     CompactMessage,
     ConversationActivityState,
     CreateAgentRunPayload,
+    CreateProcessRunPayload,
     ErrorAnalyticsResponse,
     FirstResponseBehaviorAnalyticsResponse,
     LatencyAnalyticsResponse,
@@ -18,6 +19,8 @@ import {
     ListWorkflowRunsResponse,
     parseMessage,
     PromptSizeAnalyticsResponse,
+    ProcessRun,
+    ProcessState,
     RunsByAgentAnalyticsResponse,
     SearchAgentRunsQuery,
     SearchAgentRunsResponse,
@@ -52,7 +55,13 @@ export class AgentsApi extends ApiTopic {
      */
     start<TData = Record<string, any>>(
         payload: CreateAgentRunPayload<TData>,
-    ): Promise<AgentRun<TData>> {
+    ): Promise<AgentRun<TData>>;
+    start<TData = Record<string, any>>(
+        payload: CreateProcessRunPayload<TData>,
+    ): Promise<ProcessRun>;
+    start<TData = Record<string, any>>(
+        payload: CreateAgentRunPayload<TData> | CreateProcessRunPayload<TData>,
+    ): Promise<AgentRun<TData> | ProcessRun> {
         return this.post('/', { payload });
     }
 
@@ -79,10 +88,22 @@ export class AgentsApi extends ApiTopic {
         return this.get(`/${id}`);
     }
 
+    retrieveProcess(id: string): Promise<ProcessRun> {
+        return this.get(`/${id}`);
+    }
+
     /**
      * List agent runs with optional filters.
      */
     list(query?: ListAgentRunsQuery): Promise<AgentRun[]> {
+        return this.get('/', { query: this.buildListQueryParams(query) });
+    }
+
+    listProcessRuns(query?: Omit<ListAgentRunsQuery, 'run_kind'>): Promise<ProcessRun[]> {
+        return this.get('/', { query: this.buildListQueryParams({ ...query, run_kind: 'process' }) });
+    }
+
+    private buildListQueryParams(query?: ListAgentRunsQuery): Record<string, string> {
         const params: Record<string, string> = {};
         if (query?.id) params.id = query.id;
         if (query?.status) {
@@ -93,11 +114,13 @@ export class AgentsApi extends ApiTopic {
         if (query?.since) params.since = query.since.toISOString();
         if (query?.schedule_id) params.schedule_id = query.schedule_id;
         if (query?.type) params.type = query.type;
+        if (query?.run_type) params.run_type = Array.isArray(query.run_type) ? query.run_type.join(',') : query.run_type;
+        if (query?.run_kind) params.run_kind = query.run_kind;
         if (query?.limit) params.limit = String(query.limit);
         if (query?.offset) params.offset = String(query.offset);
         if (query?.sort) params.sort = query.sort;
         if (query?.order) params.order = query.order;
-        return this.get('/', { query: params });
+        return params;
     }
 
     /**
@@ -145,6 +168,26 @@ export class AgentsApi extends ApiTopic {
         return this.post(`/${id}/fork`, {});
     }
 
+    getContext(id: string): Promise<{ run_id: string; current_node: string; context: Record<string, any> }> {
+        return this.get(`/${id}/context`);
+    }
+
+    getHistory(id: string): Promise<{ run_id: string; current_node: string; node_history: ProcessState['node_history'] }> {
+        return this.get(`/${id}/history`);
+    }
+
+    advance(id: string, payload?: { target?: string; reason?: string }): Promise<{ message: string }> {
+        return this.post(`/${id}/advance`, { payload: payload ?? {} });
+    }
+
+    retryNode(id: string, payload?: { node?: string; reason?: string }): Promise<{ message: string }> {
+        return this.post(`/${id}/retry-node`, { payload: payload ?? {} });
+    }
+
+    answerTask(id: string, taskId: string, result: Record<string, any>): Promise<{ message: string }> {
+        return this.post(`/${id}/answer-task`, { payload: { task_id: taskId, result } });
+    }
+
     /**
      * Update agent run status/metadata.
      * Called by workflow activities to sync lifecycle state.
@@ -164,6 +207,8 @@ export class AgentsApi extends ApiTopic {
             archived_at?: string;
             archive_version?: number;
             last_archive_error?: string;
+            sequence?: number;
+            process_state?: ProcessState;
         },
     ): Promise<AgentRun> {
         return this.post(`/${id}/status`, { payload: update });
