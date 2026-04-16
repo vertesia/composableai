@@ -2,6 +2,9 @@ import { JSONSchema, ToolDefinition } from "@llumiverse/common";
 import { CatalogInteractionRef } from "./interaction.js";
 import { DSLActivityOptions, InCodeTypeDefinition } from "./store/index.js";
 
+/** Allowed values for AppUINavItem.preferredSection */
+export const PREFERRED_SECTIONS = ["default", "footer", "settings"] as const;
+
 /**
  * Additional navigation item for an app's UI configuration.
  * Used in AppUIConfig.navigation to define sidebar navigation entries in CompositeApp shell contexts.
@@ -20,6 +23,13 @@ export interface AppUINavItem {
     children?: AppUINavItem[];
     /** When true, this item appears as an independent entry in the sidebar (outside its parent app group) */
     topLevel?: boolean;
+    /**
+     * Which sidebar section this item should be placed in when first added.
+     * - "default" or unset: normal behavior (child of its app group)
+     * - "footer": placed in the footer section
+     * - "settings": placed in the settings section
+     */
+    preferredSection?: (typeof PREFERRED_SECTIONS)[number];
 }
 
 export interface AppUIConfig {
@@ -647,6 +657,10 @@ export interface CompositeAppSidebarOverrides {
     hideSectionHeaders?: boolean;
     /** Whether menu items auto-collapse when navigating (accordion behavior). When false, all items stay expanded. Defaults to true. */
     autoCollapse?: boolean;
+    /** Whether settings section items auto-collapse when navigating. Independent of autoCollapse which handles all other items. Defaults to true. */
+    autoCollapseSettings?: boolean;
+    /** Whether footer section items auto-collapse when navigating. Independent of autoCollapse which handles all other items. Defaults to true. */
+    autoCollapseFooter?: boolean;
 }
 
 /**

@@ -1,62 +1,62 @@
 {
-    "name": "@{{WORKER_ORG}}/{{WORKER_NAME}}",
-    "version": "1.1.0",
-    "description": "{{PROJECT_DESCRIPTION}}",
-    "type": "module",
-    "main": "lib/main.js",
-    "types": "lib/main.d.ts",
-    "scripts": {
-        "clean": "rimraf ./lib tsconfig.tsbuildinfo",
-        "lint": "npx eslint 'src/**/*' --fix",
-        "format": "npx prettier --write \"**/*.{ts,js,json,md}\"",
-        "prebuild": "pnpm run lint",
-        "build": "pnpm run clean && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
-        "typecheck:test": "tsc --project tsconfig.test.json",
-        "pretest": "pnpm run typecheck:test",
-        "start": "node lib/main.js",
-        "connect": "vertesia worker connect",
-        "test": "vitest"
-    },
-    "keywords": [
-        "workflow",
-        "temporal",
-        "llm",
-        "vertesia",
-        "worker"
-    ],
-    "author": "Vertesia",
-    "license": "Apache-2.0",
-    "dependencies": {
-        "@dglabs/worker": "^0.11.0",
-        "@temporalio/activity": "^1.13.0",
-        "@temporalio/client": "^1.13.0",
-        "@temporalio/worker": "^1.13.0",
-        "@temporalio/workflow": "^1.13.0",
-        "@vertesia/client": "workspace:*",
-        "@vertesia/common": "workspace:*",
-        "@vertesia/workflow": "workspace:*"
-    },
-    "devDependencies": {
-        "@eslint/compat": "^2.0.2",
-        "@eslint/js": "^10.0.1",
-        "eslint": "^10.0.2",
-        "eslint-config-prettier": "^10.1.8",
-        "eslint-plugin-prettier": "^5.5.5",
-        "@types/node": "^22.19.2",
-        "prettier": "3.5.3",
-        "rimraf": "^6.0.1",
-        "@temporalio/proto": "^1.13.0",
-        "@temporalio/testing": "^1.13.0",
-        "typescript": "^5.9.2",
-        "typescript-eslint": "^8.56.1",
-        "vitest": "^4.0.16",
-        "vitest-fetch-mock": "^0.4.5"
-    },
-    "vertesia": {
-        "image": {
-            "repository": "us-docker.pkg.dev/dengenlabs/us.gcr.io",
-            "organization": "{{WORKER_ORG}}",
-            "name": "{{WORKER_NAME}}"
-        }
+  "name": "@{{WORKER_ORG}}/{{WORKER_NAME}}",
+  "version": "1.1.0",
+  "description": "{{PROJECT_DESCRIPTION}}",
+  "type": "module",
+  "main": "lib/main.js",
+  "types": "lib/main.d.ts",
+  "scripts": {
+    "clean": "rimraf ./lib tsconfig.tsbuildinfo",
+    "lint": "pnpm exec eslint 'src/**/*' --fix",
+    "format": "pnpm exec prettier --write \"**/*.{ts,js,json,md}\"",
+    "prebuild": "pnpm run lint",
+    "build": "pnpm run clean && tsc --build && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
+    "typecheck:test": "tsc --project tsconfig.test.json",
+    "pretest": "pnpm run typecheck:test",
+    "start": "node lib/main.js",
+    "connect": "vertesia worker connect",
+    "test": "vitest"
+  },
+  "keywords": [
+    "workflow",
+    "temporal",
+    "llm",
+    "vertesia",
+    "worker"
+  ],
+  "author": "Vertesia",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@dglabs/worker": "^0.11.0",
+    "@temporalio/activity": "^1.13.0",
+    "@temporalio/client": "^1.13.0",
+    "@temporalio/worker": "^1.13.0",
+    "@temporalio/workflow": "^1.13.0",
+    "@vertesia/client": "workspace:*",
+    "@vertesia/common": "workspace:*",
+    "@vertesia/workflow": "workspace:*"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^2.0.2",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "@types/node": "^25.6.0",
+    "prettier": "3.5.3",
+    "rimraf": "^6.0.1",
+    "@temporalio/proto": "^1.13.0",
+    "@temporalio/testing": "^1.13.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.56.1",
+    "vitest": "^4.0.16",
+    "vitest-fetch-mock": "^0.4.5"
+  },
+  "vertesia": {
+    "image": {
+      "repository": "us-docker.pkg.dev/dengenlabs/us.gcr.io",
+      "organization": "{{WORKER_ORG}}",
+      "name": "{{WORKER_NAME}}"
     }
+  }
 }
