@@ -1,4 +1,4 @@
-import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup } from '@vertesia/ui/core';
+import { Filter as BaseFilter, FilterProvider, FilterBtn, FilterBar, FilterClear, FilterGroup, useIsInModal } from '@vertesia/ui/core';
 import { useState } from 'react';
 import { useTypeRegistry } from '../store/types/TypeRegistryProvider.js';
 import { VStringFacet } from './utils/VStringFacet';
@@ -161,6 +161,7 @@ export function DocumentsFacetsNav({
     const [filters, setFilters] = useState<BaseFilter[]>([]);
     const filterGroups = useDocumentFilterGroups(facets);
     const handleFilterLogic = useDocumentFilterHandler(search);
+    const inModal = useIsInModal();
 
     const handleFilterChange: React.Dispatch<React.SetStateAction<BaseFilter[]>> = (value) => {
         const newFilters = typeof value === 'function' ? value(filters) : value;
@@ -173,6 +174,7 @@ export function DocumentsFacetsNav({
             filterGroups={filterGroups}
             filters={filters}
             setFilters={handleFilterChange}
+            inModal={inModal}
         >
             <div className="flex gap-2 items-center">
                 <FilterBtn />
