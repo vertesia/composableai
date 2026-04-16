@@ -731,8 +731,6 @@ export interface RequestInputDetails {
         options?: Array<{ id: string; label: string }>;
         variant?: string;
         multiSelect?: boolean;
-        allowFreeResponse?: boolean;
-        placeholder?: string;
     };
     [key: string]: unknown;
 }
