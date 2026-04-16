@@ -206,7 +206,7 @@ export function MonacoEditor({
         scrollBeyondLastLine: false,
         wordWrap: 'on' as const,
         lineNumbers: 'on' as const,
-        folding: useCustomFolding,
+        folding: true,
         lineDecorationsWidth: 10,
         lineNumbersMinChars: 3,
         automaticLayout: true,
