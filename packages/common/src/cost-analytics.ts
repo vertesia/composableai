@@ -20,7 +20,7 @@ export interface CostAnalyticsQuery {
     /** End time (ISO string or epoch ms) */
     to?: string | number;
     /** Group results by this dimension */
-    group_by?: 'model' | 'environment' | 'account' | 'project' | 'project_tag' | 'provider' | 'interaction' | 'workflow';
+    group_by?: 'model' | 'environment' | 'account' | 'project' | 'project_tag' | 'provider' | 'interaction' | 'workflow' | 'usage_type';
     /** Time series resolution */
     resolution?: 'hour' | 'day' | 'week' | 'month';
     /** Filter by model pattern */
@@ -33,6 +33,8 @@ export interface CostAnalyticsQuery {
     project_id?: string;
     /** Filter by workflow / agent run ID */
     workflow_id?: string;
+    /** Filter by interaction ID */
+    interaction_id?: string;
     /** Filter by Temporal workflow run ID */
     workflow_run_id?: string;
     /** Filter by interaction execution run ID */
@@ -45,6 +47,8 @@ export interface CostAnalyticsQuery {
     scope?: 'project' | 'org';
     /** Pricing source: 'list' (latest daily prices) or 'historical' (daily effective prices over the query range). Default: 'list' */
     pricing_source?: 'list' | 'historical';
+    /** Include the full pricing catalog in the response. Defaults to false. */
+    include_pricing?: boolean;
     /** Skip cache and force fresh query */
     no_cache?: boolean;
 }
@@ -73,6 +77,10 @@ export interface CostByDimension {
     cache_write_input_tokens?: number;
     output_tokens: number;
     calls: number;
+    input_price_per_m_tokens?: number;
+    cached_input_price_per_m_tokens?: number;
+    cache_write_input_price_per_m_tokens?: number;
+    output_price_per_m_tokens?: number;
     periods?: CostTimeSeriesPoint[];
 }
 
@@ -125,7 +133,7 @@ export interface CostAnalyticsResponse {
     summary: CostSummary;
     by_dimension: CostByDimension[];
     time_series: CostTimeSeriesPoint[];
-    pricing: ModelPricing[];
+    pricing?: ModelPricing[];
     query_range: { from: string; to: string };
     cached: boolean;
 }
