@@ -4,6 +4,7 @@ import debounce from 'debounce';
 import clsx from 'clsx';
 import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type * as monaco from 'monaco-editor';
+import { registerCustomFoldingProviders } from './foldingProviders.js';
 
 export type Monaco = typeof monaco;
 
@@ -47,6 +48,7 @@ interface MonacoEditorProps {
     beforeMount?: (monaco: typeof import('monaco-editor')) => void;
     onMount?: (editor: monaco.editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) => void;
     defaultValue?: string;
+    useCustomFolding?: boolean;
 }
 
 export function MonacoEditor({
@@ -60,10 +62,15 @@ export function MonacoEditor({
     beforeMount,
     onMount,
     defaultValue,
+    useCustomFolding = false,
 }: MonacoEditorProps) {
     const [editorValue, setEditorValue] = useState(value || defaultValue || '');
     const editorInstanceRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+    const monacoInstanceRef = useRef<typeof import('monaco-editor') | null>(null);
     const { theme } = useTheme();
+    const resolvedTheme = theme === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : theme;
 
     const getValueRef = useRef(() => editorValue);
     const setValueRef = useRef((newValue: string) => {
@@ -101,6 +108,22 @@ export function MonacoEditor({
         }
     }, [onChange, debounceTimeout]);
 
+    const foldAllCodeBlocks = useCallback(async (
+        editor: monaco.editor.IStandaloneCodeEditor,
+        monacoInstance: typeof import('monaco-editor'),
+    ) => {
+        const model = editor.getModel();
+        if (!model) return;
+        const codeBlockRegExp = /```[\s\S]*?```/g;
+        let match;
+        while ((match = codeBlockRegExp.exec(model.getValue())) !== null) {
+            const startLine = model.getPositionAt(match.index).lineNumber;
+            const endLine = model.getPositionAt(match.index + match[0].length).lineNumber;
+            editor.setSelection(new monacoInstance.Selection(startLine, 1, endLine, 1));
+            await editor.getAction('editor.createFoldingRangeFromSelection')?.run();
+        }
+    }, []);
+
     const handleEditorChange = useCallback((newValue: string | undefined) => {
         const actualValue = newValue || '';
         setEditorValue(actualValue);
@@ -123,6 +146,12 @@ export function MonacoEditor({
 
     const handleEditorDidMount = useCallback((editor: monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof import('monaco-editor')) => {
         editorInstanceRef.current = editor;
+        monacoInstanceRef.current = monacoInstance;
+
+        if (useCustomFolding) {
+            registerCustomFoldingProviders(monacoInstance);
+        }
+
         // Update the setValue ref to use the actual editor instance
         setValueRef.current = (newValue: string) => {
             setEditorValue(newValue);
@@ -131,7 +160,7 @@ export function MonacoEditor({
 
         // Set up custom theme for better error line highlighting
         monacoInstance.editor.defineTheme('errorLineTheme', {
-            base: theme === 'dark' ? 'vs-dark' : 'vs',
+            base: resolvedTheme === 'dark' ? 'vs-dark' : 'vs',
             inherit: true,
             rules: [],
             colors: {
@@ -142,9 +171,13 @@ export function MonacoEditor({
 
         monacoInstance.editor.setTheme('errorLineTheme');
 
+        if (useCustomFolding) {
+            setTimeout(() => foldAllCodeBlocks(editor, monacoInstance), 300);
+        }
+
         // Call custom onMount if provided
         onMount?.(editor, monacoInstance);
-    }, [onMount, theme]);
+    }, [onMount, resolvedTheme, useCustomFolding, foldAllCodeBlocks]);
 
     // Update editor value when prop changes from outside
     useEffect(() => {
@@ -157,6 +190,15 @@ export function MonacoEditor({
         }
     }, [value]); // Only depend on value prop, not editorValue
 
+    // Re-fold code blocks when value prop changes externally
+    useEffect(() => {
+        if (!useCustomFolding || !editorInstanceRef.current || !monacoInstanceRef.current) return;
+        const editor = editorInstanceRef.current;
+        const monacoInstance = monacoInstanceRef.current;
+        const timer = setTimeout(() => foldAllCodeBlocks(editor, monacoInstance), 300);
+        return () => clearTimeout(timer);
+    }, [value, useCustomFolding, foldAllCodeBlocks]);
+
     const defaultOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
         fontSize: 14,
         fontFamily: 'monospace',
@@ -164,7 +206,7 @@ export function MonacoEditor({
         scrollBeyondLastLine: false,
         wordWrap: 'on' as const,
         lineNumbers: 'on' as const,
-        folding: false,
+        folding: true,
         lineDecorationsWidth: 10,
         lineNumbersMinChars: 3,
         automaticLayout: true,
@@ -172,6 +214,7 @@ export function MonacoEditor({
         formatOnType: true,
         tabSize: 2,
         insertSpaces: true,
+        fixedOverflowWidgets: true, // Hover/diagnostic popovers float outside the editor bounds
         glyphMargin: true, // Enable better error reporting
         renderValidationDecorations: 'on', // Show error squiggles
         renderLineHighlight: 'line', // Highlight entire line for errors
@@ -192,7 +235,7 @@ export function MonacoEditor({
             <Editor
                 className="h-full w-full"
                 height="100%"
-                theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
                 language={language}
                 value={editorValue}
                 onChange={handleEditorChange}
