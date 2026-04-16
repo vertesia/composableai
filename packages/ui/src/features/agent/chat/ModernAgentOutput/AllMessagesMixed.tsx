@@ -166,6 +166,8 @@ interface AllMessagesMixedProps {
     /** Optional message to display as the first user message in the conversation.
      *  Purely visual/UI — not sent to temporal. Renders as a QUESTION MessageItem before real messages. */
     prependFriendlyMessage?: string;
+    /** Message types to exclude from the conversation view */
+    hiddenMessageTypes?: AgentMessageType[];
 }
 
 // PERFORMANCE: Throttle interval for auto-scroll (ms)
@@ -192,6 +194,7 @@ function AllMessagesMixedComponent({
     StoreLinkComponent,
     CollectionLinkComponent,
     prependFriendlyMessage,
+    hiddenMessageTypes,
 }: AllMessagesMixedProps) {
     if (!artifactRunId) {
         console.warn('[AllMessagesMixed] artifactRunId prop is missing!');
@@ -290,7 +293,11 @@ function AllMessagesMixedComponent({
     // Low-signal messages are suppressed at the source (server-side) via shouldSuppressLowSignalMessage
     const sortedMessages = React.useMemo(
         () => {
-            const sorted = [...messages].sort((a, b) => {
+            const filtered = hiddenMessageTypes?.length
+                ? messages.filter(m => !hiddenMessageTypes.includes(m.type))
+                : messages;
+
+            const sorted = [...filtered].sort((a, b) => {
                 const timeA = typeof a.timestamp === "number" ? a.timestamp : new Date(a.timestamp).getTime();
                 const timeB = typeof b.timestamp === "number" ? b.timestamp : new Date(b.timestamp).getTime();
                 return timeA - timeB;
@@ -310,7 +317,7 @@ function AllMessagesMixedComponent({
             }
             return deduped;
         },
-        [messages],
+        [messages, hiddenMessageTypes],
     );
 
     // Get workstreams from messages - only from message.workstream_id
