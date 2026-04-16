@@ -68,6 +68,9 @@ export function MonacoEditor({
     const editorInstanceRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     const monacoInstanceRef = useRef<typeof import('monaco-editor') | null>(null);
     const { theme } = useTheme();
+    const resolvedTheme = theme === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : theme;
 
     const getValueRef = useRef(() => editorValue);
     const setValueRef = useRef((newValue: string) => {
@@ -157,7 +160,7 @@ export function MonacoEditor({
 
         // Set up custom theme for better error line highlighting
         monacoInstance.editor.defineTheme('errorLineTheme', {
-            base: theme === 'dark' ? 'vs-dark' : 'vs',
+            base: resolvedTheme === 'dark' ? 'vs-dark' : 'vs',
             inherit: true,
             rules: [],
             colors: {
@@ -174,7 +177,7 @@ export function MonacoEditor({
 
         // Call custom onMount if provided
         onMount?.(editor, monacoInstance);
-    }, [onMount, theme, useCustomFolding, foldAllCodeBlocks]);
+    }, [onMount, resolvedTheme, useCustomFolding, foldAllCodeBlocks]);
 
     // Update editor value when prop changes from outside
     useEffect(() => {
@@ -231,7 +234,7 @@ export function MonacoEditor({
             <Editor
                 className="h-full w-full"
                 height="100%"
-                theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                theme={resolvedTheme === 'dark' ? 'vs-dark' : 'light'}
                 language={language}
                 value={editorValue}
                 onChange={handleEditorChange}
