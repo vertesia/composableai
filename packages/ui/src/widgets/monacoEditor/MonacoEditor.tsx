@@ -214,6 +214,7 @@ export function MonacoEditor({
         formatOnType: true,
         tabSize: 2,
         insertSpaces: true,
+        fixedOverflowWidgets: true, // Hover/diagnostic popovers float outside the editor bounds
         glyphMargin: true, // Enable better error reporting
         renderValidationDecorations: 'on', // Show error squiggles
         renderLineHighlight: 'line', // Highlight entire line for errors
