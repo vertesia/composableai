@@ -11,6 +11,7 @@ export interface ApiKey {
     type: ApiKeyTypes;
     role: ProjectRoles;
     maskedValue?: string; //masked value
+    can_retrieve_value?: boolean;
     account: string; // the account id
     project: ProjectRef; // the project id if any
     enabled: boolean;
