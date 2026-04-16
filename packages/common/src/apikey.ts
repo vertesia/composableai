@@ -1,6 +1,20 @@
+import { PropertyConditions } from "./access-control.js";
 import { UserGroupRef } from "./group.js";
 import { ProjectRef, ProjectRoles } from "./project.js";
 import { AccountRef } from "./user.js";
+
+/**
+ * A content role granted via a ContentSet ACE.
+ * Included in the JWT so query-time enforcement can apply `conditions`
+ * as additional filters on content objects.
+ */
+export interface DynamicContentRole {
+    role: ProjectRoles;
+    /** Property conditions to match against content objects at query time. */
+    conditions: PropertyConditions;
+    /** If set, this content role applies only to the specified project. */
+    project?: string;
+}
 
 export enum ApiKeyTypes {
     secret = "sk",
@@ -70,6 +84,9 @@ export interface AuthTokenPayload {
     /** Merged user + group properties for dynamic permission matching.
      *  User properties take precedence over group properties. */
     properties?: Record<string, any>;
+
+    /** Content roles granted via ContentSet ACEs — conditions are enforced at query time. */
+    content_roles?: DynamicContentRole[];
 
     /**
      * API endpoints information to be used with this token.
