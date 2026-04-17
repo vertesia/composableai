@@ -62,7 +62,7 @@ export default function Header({
     className,
 }: HeaderProps) {
     const { t } = useUITranslation();
-    const restartWorkflow = useRestartWorkflow(agentRunId, onRestart);
+    const continueWorkflow = useContinueWorkflow(agentRunId, onRestart);
     return (
         <PayloadBuilderProvider>
             <div className={cn("flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0", className)}>
@@ -116,12 +116,12 @@ export default function Header({
                         <Button
                             size="sm"
                             variant="secondary"
-                            onClick={restartWorkflow}
+                            onClick={continueWorkflow}
                             className="transition-all duration-200 rounded-md"
-                            title={t('agent.restartConversation')}
+                            title={t('agent.continueConversation')}
                         >
                             <RefreshCcw className="size-4 mr-1.5" />
-                            <span className="font-medium text-xs">{t('agent.restartConversation')}</span>
+                            <span className="font-medium text-xs">{t('agent.continueConversation')}</span>
                         </Button>
                     )}
 
@@ -150,7 +150,7 @@ export default function Header({
     );
 }
 
-function useRestartWorkflow(agentRunId: string, onRestart?: (newRun: AgentRun) => void) {
+function useContinueWorkflow(agentRunId: string, onRestart?: (newRun: AgentRun) => void) {
     const { t } = useUITranslation();
     const toast = useToast();
     const { client } = useUserSession();
@@ -160,14 +160,14 @@ function useRestartWorkflow(agentRunId: string, onRestart?: (newRun: AgentRun) =
             const newRun = await client.agents.restart(agentRunId);
             toast({
                 status: "success",
-                title: t('agent.conversationRestarted'),
+                title: t('agent.conversationContinued'),
                 duration: 2000,
             });
             onRestart?.(newRun);
         } catch (_error) {
             toast({
                 status: "error",
-                title: t('agent.failedToRestartConversation'),
+                title: t('agent.failedToContinueConversation'),
                 duration: 2000,
             });
         }
@@ -204,7 +204,7 @@ function MoreDropdown({
     const toast = useToast();
     const { client } = useUserSession();
     const builder = usePayloadBuilder();
-    const restartWorkflow = useRestartWorkflow(agentRunId, onRestart);
+    const continueWorkflow = useContinueWorkflow(agentRunId, onRestart);
 
     const cancelWorkflow = async () => {
         try {
@@ -317,8 +317,8 @@ function MoreDropdown({
                     </MenuItem>
                 )}
                 {onRestart && isTerminal && (
-                    <MenuItem onClick={restartWorkflow}>
-                        <RefreshCcw className="size-3.5 text-muted" /> {t('agent.restartConversation')}
+                    <MenuItem onClick={continueWorkflow}>
+                        <RefreshCcw className="size-3.5 text-muted" /> {t('agent.continueConversation')}
                     </MenuItem>
                 )}
                 {onFork && (
