@@ -85,10 +85,50 @@ interface BaseToolCollectionObject {
 }
 
 /**
+ * Install-time OAuth provisioning blueprint for an MCP collection.
+ * Defines how to auto-create an OAuthApplication when the app is installed.
+ * Does NOT affect runtime behaviour — the runtime uses oauth_bindings on AppInstallation.
+ */
+export interface MCPOAuthConfig {
+    /**
+     * Name for the OAuthApplication to create at install time.
+     * Defaults to the collection name if not specified.
+     */
+    name?: string;
+    /** Human-readable display name for the created OAuth application. */
+    display_name?: string;
+    grant_type?: 'authorization_code' | 'client_credentials';
+    authorization_endpoint?: string;
+    token_endpoint?: string;
+    revocation_endpoint?: string;
+    /**
+     * Pre-configured client_id.
+     * Omit if the installer must supply it (include 'client_id' in required_at_install).
+     */
+    client_id?: string;
+    use_pkce?: boolean;
+    default_scopes?: string[];
+    /**
+     * Parameters the installer must provide at install time.
+     * These are shown as form fields in composable-ui before the install completes.
+     * - 'client_id': user supplies the OAuth client ID
+     * - 'client_secret': user supplies the OAuth client secret
+     */
+    required_at_install?: Array<'client_id' | 'client_secret'>;
+}
+
+/**
  * MCP tool collection configuration (requires name, description, and namespace)
  */
 export interface MCPToolCollectionObject extends BaseToolCollectionObject {
     type: "mcp";
+
+    /**
+     * Stable identifier for this collection.
+     * Used to key oauth_bindings on AppInstallation — protects against collection renames.
+     * Recommended for new manifests; falls back to name if not set.
+     */
+    id?: string;
 
     /**
      * Name for the tool collection.
@@ -109,12 +149,20 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
     namespace: string;
 
     /**
-     * Reference to an OAuth Application name for this collection.
+     * Reference to an OAuth Application name for this collection (legacy / manual path).
      * When set, uses the OAuth Application's config (endpoints, client_id, client_secret)
      * instead of MCP dynamic client registration or random fallback.
      * The referenced OAuth Application must exist in the same project.
      */
     oauth_app?: string;
+
+    /**
+     * Install-time OAuth provisioning blueprint.
+     * When present, the platform auto-creates an OAuthApplication at install time
+     * using these values merged with any user-supplied required_at_install params.
+     * The created app is recorded in AppInstallation.oauth_bindings.
+     */
+    oauth_config?: MCPOAuthConfig;
 }
 
 /**
@@ -462,6 +510,28 @@ export interface AppManifest extends AppManifestData {
     updated_at: string;
 }
 
+/**
+ * Binding between an MCP collection and an OAuthApplication created at install time.
+ * Stored on AppInstallation so the runtime can look up the correct OAuth app by ID,
+ * independent of manifest oauth_app name references (which may change).
+ */
+export interface AppInstallationOAuthBinding {
+    /**
+     * Stable collection identifier: MCPToolCollectionObject.id if set, otherwise collection.name.
+     */
+    collection_id: string;
+    /**
+     * MongoDB ObjectId of the OAuthApplication in this project.
+     * Used for ID-based lookups (rename-proof).
+     */
+    oauth_app_id: string;
+    /**
+     * Name of the OAuthApplication at creation time.
+     * Used by the workflow token path (getMCPClient → mcpOAuth.getToken) which looks up by name.
+     */
+    oauth_app_name: string;
+}
+
 export interface AppInstallation {
     id: string;
     project: string; // the project where the app is installed
@@ -473,6 +543,12 @@ export interface AppInstallation {
      * When set, only listed tool names are available for agent configuration and execution.
      */
     tool_allowlist?: string[];
+    /**
+     * OAuth bindings created at install time via oauth_config provisioning.
+     * Maps collection identity (id or name) → OAuthApplication ObjectId.
+     * Used by the runtime to resolve the correct OAuth app without relying on manifest names.
+     */
+    oauth_bindings?: AppInstallationOAuthBinding[];
     created_at: string;
     updated_at: string;
 }
@@ -482,8 +558,13 @@ export interface AppInstallationWithManifest extends Omit<AppInstallation, 'mani
 }
 
 export interface AppInstallationPayload {
-    app_id: string,
-    settings?: Record<string, any>
+    app_id: string;
+    settings?: Record<string, any>;
+    /**
+     * OAuth credentials for each collection, keyed by collection.id ?? collection.name.
+     * Collected from the user at install time for collections with oauth_config.required_at_install.
+     */
+    oauth_params?: Record<string, { client_id?: string; client_secret?: string }>;
 }
 
 export type AppInstallationKind = 'ui' | 'tools' | 'all';
