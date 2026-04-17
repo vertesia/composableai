@@ -183,6 +183,22 @@ export class ActivityContext<ParamsT extends Record<string, any>> {
 export async function setupActivity<ParamsT extends Record<string, any>>(
     payload: DSLActivityExecutionPayload<ParamsT>,
 ) {
+    const client = await getVertesiaClient(payload);
+
+    // Activities dispatched from TypeScript code (via dslProxyActivities) set
+    // only `activity.name`; their params are a plain TS object that must not
+    // be run through Vars template expansion — doing so would interpret any
+    // `${...}` in user-supplied strings as a variable reference and silently
+    // drop the key when it fails to resolve. Only DSL-defined activities
+    // (which carry `activity.params` and/or `activity.fetch`) need Vars.
+    const isDslDispatched =
+        payload.activity.params !== undefined || payload.activity.fetch !== undefined;
+
+    if (!isDslDispatched) {
+        const params = (payload.params ?? {}) as ParamsT;
+        return new ActivityContext<ParamsT>(payload, client, params);
+    }
+
     const isDebugMode = !!payload.debug_mode;
 
     const vars = new Vars({
@@ -190,7 +206,6 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
         ...payload.activity.params, // activity params (may contain expressions)
     });
 
-    //}
     if (isDebugMode) {
         log.info(`Setting up activity ${payload.activity.name}`, {
             config: payload.config,
@@ -200,7 +215,6 @@ export async function setupActivity<ParamsT extends Record<string, any>>(
         });
     }
 
-    const client = await getVertesiaClient(payload);
     const fetchSpecs = payload.activity.fetch;
     if (fetchSpecs) {
         const keys = Object.keys(fetchSpecs);
