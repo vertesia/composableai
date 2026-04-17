@@ -252,6 +252,12 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
 
 export interface ProcessRunConfig {
     model?: string;
+    /**
+     * Free-form message from the user when starting a run. Passed to the
+     * orchestrator LLM in supervised mode; stored on the run regardless
+     * so programmatic runs retain the intent that triggered them.
+     */
+    user_message?: string;
 }
 
 export interface ProcessRun extends RunBase {
