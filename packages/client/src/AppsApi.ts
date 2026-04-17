@@ -42,7 +42,7 @@ export default class AppsApi extends ApiTopic {
      */
     install(
         appId: string,
-        settings?: Record<string, any>,
+        settings?: Record<string, unknown>,
         oauthParams?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>,
     ): Promise<AppInstallation> {
         return this.post(`/install`, {
