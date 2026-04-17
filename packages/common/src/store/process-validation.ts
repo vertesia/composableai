@@ -70,7 +70,13 @@ function validateNodeDefinition(
         }
     }
     if (node.type === "parallel" && node.node) {
+        if (!isParallelChildNodeType(node.node.type)) {
+            errors.push(`parallel node "${nodeId}" has unsupported child node type "${String(node.node.type)}"`);
+        }
         validateNodeDefinition(definition, `${nodeId}.node`, node.node, errors);
+    }
+    if (node.failure_policy && !isParallelFailurePolicy(node.failure_policy)) {
+        errors.push(`node "${nodeId}" has invalid failure_policy "${String(node.failure_policy)}"`);
     }
     for (const transition of node.transitions ?? []) {
         if (!definition.nodes[transition.to]) {
@@ -106,6 +112,17 @@ function isProcessNodeType(value: string): boolean {
 
 function isTransitionTrigger(value: string): boolean {
     return value === "auto" || value === "agent" || value === "user";
+}
+
+function isParallelFailurePolicy(value: string): boolean {
+    return value === "fail_fast" || value === "collect_errors";
+}
+
+function isParallelChildNodeType(value: string): boolean {
+    return value === "tool"
+        || value === "interaction"
+        || value === "agent"
+        || value === "condition";
 }
 
 function validateGuardRule(label: string, rule: unknown, errors: string[]) {

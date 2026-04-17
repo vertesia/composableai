@@ -19,6 +19,7 @@ export interface TaskSource {
     type: 'process' | 'agent';
     run_id: string;
     node?: string;
+    ask_id?: string;
 }
 
 export interface Task {
