@@ -25,10 +25,11 @@ export default class AnalyticsApi extends ApiTopic {
         return this.get('/runs/time-series' + (qs ? '?' + qs : ''));
     }
 
-    runsTokenUsage(query?: DateRangeQuery): Promise<TokenUsageSummary> {
+    runsTokenUsage(query?: DateRangeQuery, environmentId?: string): Promise<TokenUsageSummary> {
         const params = new URLSearchParams();
         if (query?.start) params.set('start', query.start);
         if (query?.end) params.set('end', query.end);
+        if (environmentId) params.set('environment', environmentId);
         const qs = params.toString();
         return this.get('/runs/token-usage' + (qs ? '?' + qs : ''));
     }
