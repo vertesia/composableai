@@ -92,7 +92,7 @@ interface BaseToolCollectionObject {
 export interface MCPOAuthConfig {
     /**
      * Name for the OAuthApplication to create at install time.
-     * Defaults to the collection name if not specified.
+     * Defaults to the collection id converted to kebab-case if not specified.
      */
     name?: string;
     /** Human-readable display name for the created OAuth application. */
@@ -126,13 +126,14 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
     /**
      * Stable identifier for this collection.
      * Used to key oauth_bindings on AppInstallation — protects against collection renames.
-     * Recommended for new manifests; falls back to name if not set.
+     * Required for new manifests.
      */
-    id?: string;
+    id: string;
 
     /**
      * Name for the tool collection.
-     * Used as an identifier for the collection (e.g., for OAuth authentication).
+     * Human-readable label for the collection.
+     * Used in UI.
      */
     name: string;
 
@@ -202,6 +203,30 @@ export type ToolCollectionObject = MCPToolCollectionObject | VertesiaSDKToolColl
  */
 export type ToolCollection = string | ToolCollectionObject;
 
+export const MCP_COLLECTION_ID_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
+export const MCP_COLLECTION_NAMESPACE_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/;
+
+export function isValidMCPCollectionId(id: string): boolean {
+    return MCP_COLLECTION_ID_PATTERN.test(id);
+}
+
+export function isValidMCPCollectionNamespace(namespace: string): boolean {
+    return MCP_COLLECTION_NAMESPACE_PATTERN.test(namespace);
+}
+
+export function deriveMCPCollectionId(input: string): string {
+    return input
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .replace(/_+/g, '_');
+}
+
+export function getDefaultOAuthAppNameForCollectionId(collectionId: string): string {
+    return collectionId.replace(/_/g, '-');
+}
+
 /**
  * Normalizes a tool collection to the object format.
  * Handles backward compatibility with string URLs.
@@ -217,9 +242,11 @@ export function normalizeToolCollection(collection: ToolCollection): ToolCollect
             // For legacy MCP strings, derive name and prefix from URL
             const urlObj = new URL(url);
             const name = urlObj.hostname.replace(/\./g, '-');
+            const id = deriveMCPCollectionId(urlObj.hostname);
             return {
                 url,
                 type: 'mcp',
+                id,
                 name,
                 description: `MCP server at ${url}`,
                 namespace: name
@@ -231,6 +258,13 @@ export function normalizeToolCollection(collection: ToolCollection): ToolCollect
         };
     }
     // Already in object format
+    if (collection.type === 'mcp') {
+        const fallbackId = deriveMCPCollectionId(collection.id || collection.name || collection.url);
+        return {
+            ...collection,
+            id: collection.id || fallbackId,
+        };
+    }
     return collection;
 }
 
@@ -517,7 +551,8 @@ export interface AppManifest extends AppManifestData {
  */
 export interface AppInstallationOAuthBinding {
     /**
-     * Stable collection identifier: MCPToolCollectionObject.id if set, otherwise collection.name.
+     * Stable collection identifier: MCPToolCollectionObject.id for new manifests.
+     * Legacy installations may still contain a name-based fallback value.
      */
     collection_id: string;
     /**
@@ -556,18 +591,19 @@ export interface AppInstallation {
 export interface AppInstallationWithManifest extends Omit<AppInstallation, 'manifest'> {
     manifest: AppManifest; // the app manifest data
     /**
-     * Computed by the server: names of MCP tool collections for this installation that require OAuth.
+     * Computed by the server: ids of MCP tool collections for this installation that require OAuth.
      * Accounts for all three signals: manifest auth:'oauth', manifest oauth_app, and oauth_bindings.
      * Populated by the GET /installations/all endpoint.
      */
-    oauth_collection_names?: string[];
+    oauth_collection_ids?: string[];
 }
 
 export interface AppInstallationPayload {
     app_id: string;
     settings?: Record<string, any>;
     /**
-     * OAuth credentials for each collection, keyed by collection.id ?? collection.name.
+     * OAuth credentials for each collection, keyed by collection.id.
+     * Legacy callers may still use collection.name for older manifests.
      * Collected from the user at install time for collections with oauth_config.required_at_install.
      */
     oauth_params?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>;
@@ -631,6 +667,7 @@ export interface ProjectToolInfo {
  * OAuth authentication status for an MCP tool collection
  */
 export interface OAuthAuthStatus {
+    collection_id: string;
     collection_name: string;
     authenticated: boolean;
     mcp_server_url: string;
@@ -647,10 +684,36 @@ export interface OAuthAuthorizeResponse {
     connected?: boolean;
 }
 
+export interface McpOAuthCollectionRef {
+    app_install_id: string;
+    collection_id: string;
+}
+
+export interface McpOAuthTokenRequest {
+    app_install_id?: string;
+    collection_id?: string;
+    mcp_server_url?: string;
+    oauth_app_name?: string;
+}
+
+export interface McpOAuthTokenResponse {
+    access_token: string;
+}
+
+export interface McpOAuthConnectResponse {
+    success: boolean;
+}
+
+export interface McpOAuthDisconnectResponse {
+    success: boolean;
+    message: string;
+}
+
 /**
  * Response from OAuth metadata endpoint
  */
 export interface OAuthMetadataResponse {
+    collection_id: string;
     collection_name: string;
     mcp_server_url: string;
     metadata: any;
