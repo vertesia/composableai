@@ -114,7 +114,7 @@ export interface MCPOAuthConfig {
      * - 'client_id': user supplies the OAuth client ID
      * - 'client_secret': user supplies the OAuth client secret
      */
-    required_at_install?: Array<'client_id' | 'client_secret'>;
+    required_at_install?: Array<'client_id' | 'client_secret' | 'scopes'>;
 }
 
 /**
@@ -555,6 +555,12 @@ export interface AppInstallation {
 
 export interface AppInstallationWithManifest extends Omit<AppInstallation, 'manifest'> {
     manifest: AppManifest; // the app manifest data
+    /**
+     * Computed by the server: names of MCP tool collections for this installation that require OAuth.
+     * Accounts for all three signals: manifest auth:'oauth', manifest oauth_app, and oauth_bindings.
+     * Populated by the GET /installations/all endpoint.
+     */
+    oauth_collection_names?: string[];
 }
 
 export interface AppInstallationPayload {
@@ -564,7 +570,7 @@ export interface AppInstallationPayload {
      * OAuth credentials for each collection, keyed by collection.id ?? collection.name.
      * Collected from the user at install time for collections with oauth_config.required_at_install.
      */
-    oauth_params?: Record<string, { client_id?: string; client_secret?: string }>;
+    oauth_params?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>;
 }
 
 export type AppInstallationKind = 'ui' | 'tools' | 'all';
