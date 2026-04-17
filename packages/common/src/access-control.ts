@@ -95,7 +95,9 @@ export type PropertyConditions = Record<string, string | number | boolean | Reco
  * - `resource_props`: matched against content properties at query time (ContentSet).
  */
 export interface AceConditions {
+    /** Property conditions matched against user/group properties at token time (PrincipalSet). */
     principal_props?: PropertyConditions;
+    /** Property conditions matched against content properties at query time (ContentSet). */
     resource_props?: PropertyConditions;
 }
 
