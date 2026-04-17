@@ -30,8 +30,8 @@ export interface HeaderProps {
     onShowDetails?: () => void;
     /** Called after a restart succeeds — receives the new AgentRun */
     onRestart?: (newRun: AgentRun) => void;
-    /** Called after a fork succeeds — receives the new AgentRun */
-    onFork?: (newRun: AgentRun) => void;
+    /** Called after a clone succeeds — receives the new AgentRun */
+    onClone?: (newRun: AgentRun) => void;
     /** Show green indicator when receiving streaming chunks */
     isReceivingChunks?: boolean;
     /** Additional className for the outer container */
@@ -57,7 +57,7 @@ export default function Header({
     onExportPdf,
     onShowDetails,
     onRestart,
-    onFork,
+    onClone,
     isReceivingChunks = false,
     className,
 }: HeaderProps) {
@@ -137,7 +137,7 @@ export default function Header({
                         onExportPdf={onExportPdf}
                         onShowDetails={onShowDetails}
                         onRestart={onRestart}
-                        onFork={onFork}
+                        onClone={onClone}
                     />
                     {onClose && !isModal && (
                         <Button size="xs" variant="ghost" onClick={onClose}>
@@ -185,7 +185,7 @@ function MoreDropdown({
     onExportPdf,
     onShowDetails,
     onRestart,
-    onFork,
+    onClone,
 }: {
     agentRunId: string;
     workflowRunId: string;
@@ -198,7 +198,7 @@ function MoreDropdown({
     onExportPdf?: () => void;
     onShowDetails?: () => void;
     onRestart?: (newRun: AgentRun) => void;
-    onFork?: (newRun: AgentRun) => void;
+    onClone?: (newRun: AgentRun) => void;
 }) {
     const { t } = useUITranslation();
     const toast = useToast();
@@ -230,19 +230,19 @@ function MoreDropdown({
         }
     };
 
-    const forkWorkflow = async () => {
+    const cloneWorkflow = async () => {
         try {
             const newRun = await client.agents.fork(agentRunId);
             toast({
                 status: "success",
-                title: t('agent.conversationForked'),
+                title: t('agent.conversationCloned'),
                 duration: 2000,
             });
-            onFork?.(newRun);
+            onClone?.(newRun);
         } catch (_error) {
             toast({
                 status: "error",
-                title: t('agent.failedToForkConversation'),
+                title: t('agent.failedToCloneConversation'),
                 duration: 2000,
             });
         }
@@ -321,9 +321,9 @@ function MoreDropdown({
                         <RefreshCcw className="size-3.5 text-muted" /> {t('agent.continueConversation')}
                     </MenuItem>
                 )}
-                {onFork && (
-                    <MenuItem onClick={forkWorkflow}>
-                        <GitFork className="size-3.5 text-muted" /> {t('agent.forkConversation')}
+                {onClone && (
+                    <MenuItem onClick={cloneWorkflow}>
+                        <GitFork className="size-3.5 text-muted" /> {t('agent.cloneConversation')}
                     </MenuItem>
                 )}
                 {!isTerminal && (
