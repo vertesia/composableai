@@ -735,7 +735,7 @@ importers:
         specifier: workspace:*
         version: link:../common
       hono:
-        specifier: '>=4.12.14'
+        specifier: ^4.12.14
         version: 4.12.14
       jose:
         specifier: ^6.0.11
