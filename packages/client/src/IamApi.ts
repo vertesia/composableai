@@ -51,6 +51,14 @@ export class AcesApi extends ApiTopic {
     }
 
     /**
+     * List all ACEs scoped to the current project.
+     * Returns both regular project ACEs and dynamic (content_set/principal_set) ACEs.
+     */
+    listProjectAces(): Promise<AccessControlEntry[]> {
+        return this.get('/project');
+    }
+
+    /**
      * Get an ACE by its Id
      * @param id
      * @returns InteractionResult
