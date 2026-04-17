@@ -15,6 +15,7 @@ export type ProcessNodeType =
     | 'final';
 
 export type TransitionTrigger = 'auto' | 'agent' | 'user';
+export type ParallelFailurePolicy = 'fail_fast' | 'collect_errors';
 
 export interface TransitionDefinition {
     to: string;
@@ -49,11 +50,13 @@ export interface NodeDefinition {
     skippable?: boolean;
     max_retries?: number;
     transitions?: TransitionDefinition[];
+    tools?: string[];
     task?: HumanTaskDefinition;
     foreach?: string;
     as?: string;
     node?: NodeDefinition;
     collect?: string;
+    failure_policy?: ParallelFailurePolicy;
     branches?: BranchDefinition[];
 }
 
