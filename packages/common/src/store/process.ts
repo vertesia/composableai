@@ -185,7 +185,6 @@ export interface ProcessHistoryCheckpoint {
 }
 
 export interface ProcessState {
-    xstate_snapshot?: any;
     context: Record<string, any>;
     current_node: string;
     node_history: NodeHistoryEntry[];
