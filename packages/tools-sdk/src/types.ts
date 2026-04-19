@@ -1,6 +1,6 @@
 import type { ToolDefinition, ToolUse } from "@llumiverse/common";
 import { VertesiaClient } from "@vertesia/client";
-import { AgentToolDefinition, AuthTokenPayload, ProjectConfiguration, RenderingTemplateDefinition, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
+import { AgentToolDefinition, AuthTokenPayload, MCPToolAnnotations, ProjectConfiguration, RenderingTemplateDefinition, ToolExecutionMetadata, ToolResult, ToolResultContent } from "@vertesia/common";
 
 export type { ToolExecutionMetadata };
 
@@ -106,11 +106,25 @@ export interface Tool<ParamsT extends Record<string, any>> extends ToolDefinitio
     default?: boolean;
 
     /**
+     * MCP-style annotations (destructiveHint, readOnlyHint, etc). Propagated
+     * into the AgentToolDefinition on catalog / package responses.
+     */
+    annotations?: MCPToolAnnotations;
+
+    /**
+     * When true, agents must obtain explicit user confirmation via `ask_user`
+     * (Yes/No) before invoking this tool. If the user answers No, the tool
+     * must not run. Stronger than `annotations.destructiveHint` — this is a
+     * hard contract.
+     */
+    requires_user_confirmation?: boolean;
+
+    /**
      * Optional filter to check if the tool is enabled for the given project configuration.
      * This can be used to dynamically enable/disable tools based on project settings, environment variables, or any other logic.
      * If no filter is provided, the tool will be enabled by default.
-     * @param payload 
-     * @returns 
+     * @param payload
+     * @returns
      */
     isEnabled?: (payload: ToolUseContext) => boolean;
 }

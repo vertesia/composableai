@@ -33,6 +33,12 @@ export interface BranchDefinition {
 export interface HumanTaskDefinition {
     title: string;
     description?: string;
+    /**
+     * Who owns the task. Either a group reference (`group:<name>`) or a
+     * concrete user id. Leave unset to make the task available to anyone
+     * who can see the inbox. `role:<name>` is not supported — use
+     * `group:<name>` instead.
+     */
     assignee?: string;
     fields: TaskField[];
 }
@@ -46,11 +52,26 @@ export interface NodeDefinition {
     config?: Record<string, any>;
     title?: string;
     description?: string;
+    /**
+     * End-user-facing explanation of what this node does. Authored by the
+     * process designer (often an LLM) in plain language — one or two
+     * sentences — and rendered in run observability so a human reading the
+     * run can understand why this node exists without reading the config.
+     * Distinct from `description`, which is developer-facing.
+     */
+    human_description?: string;
     writes?: string[];
     skippable?: boolean;
     max_retries?: number;
     transitions?: TransitionDefinition[];
     tools?: string[];
+    /**
+     * Model id override for this node. If unset, falls back to the process
+     * run's `config.model`, then to the project's default. Useful when a
+     * specific node needs heavier reasoning (e.g. Opus for legal flagging)
+     * while the rest of the process uses a cheaper default.
+     */
+    model?: string;
     task?: HumanTaskDefinition;
     foreach?: string;
     as?: string;
@@ -91,11 +112,28 @@ export interface ProcessDefinition {
 }
 
 export interface NodeHistoryEntry {
+    id?: string;
     node: string;
-    entered_at: Date;
-    exited_at?: Date;
+    attempt?: number;
+    entered_at: Date | string;
+    exited_at?: Date | string;
     status: 'running' | 'completed' | 'skipped' | 'failed';
     context_diff: Record<string, any>;
+    data_ref?: string;
+    sequence?: number;
+}
+
+export interface ProcessHistoryRef {
+    path: string;
+    latest_sequence: number;
+    count: number;
+}
+
+export interface ProcessHistoryCheckpoint {
+    sequence: number;
+    current_node: string;
+    written_at: Date | string;
+    entries: NodeHistoryEntry[];
 }
 
 export interface ProcessState {
@@ -103,6 +141,7 @@ export interface ProcessState {
     context: Record<string, any>;
     current_node: string;
     node_history: NodeHistoryEntry[];
+    node_history_ref?: ProcessHistoryRef;
     sequence: number;
     _current_node?: string;
     _previous_node?: string;

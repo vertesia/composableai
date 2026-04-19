@@ -29,6 +29,8 @@ export class ToolRegistry {
             input_schema: tool.input_schema,
             category: this.category,
             default: tool.default,
+            ...(tool.annotations ? { annotations: tool.annotations } : {}),
+            ...(tool.requires_user_confirmation ? { requires_user_confirmation: true } : {}),
         });
         let tools = Object.values(this.registry);
         if (context) {

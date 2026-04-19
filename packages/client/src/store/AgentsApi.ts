@@ -172,7 +172,12 @@ export class AgentsApi extends ApiTopic {
         return this.get(`/${id}/context`);
     }
 
-    getHistory(id: string): Promise<{ run_id: string; current_node: string; node_history: ProcessState['node_history'] }> {
+    getHistory(id: string): Promise<{
+        run_id: string;
+        current_node: string;
+        node_history: ProcessState['node_history'];
+        node_history_ref?: ProcessState['node_history_ref'];
+    }> {
         return this.get(`/${id}/history`);
     }
 

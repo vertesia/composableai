@@ -1,5 +1,5 @@
 import { ApiTopic, ClientBase, ServerError } from "@vertesia/api-fetch-client";
-import type { AppInstallation, AppInstallationKind, AppInstallationPayload, AppInstallationWithManifest, AppManifest, AppManifestData, AppToolCollection, ProjectRef, RequireAtLeastOne, ValidateUrlRequest, ValidateUrlResponse } from "@vertesia/common";
+import type { AppInstallation, AppInstallationKind, AppInstallationPayload, AppInstallationWithManifest, AppManifest, AppManifestData, AppPackage, AppToolCollection, ProjectRef, RequireAtLeastOne, ValidateUrlRequest, ValidateUrlResponse } from "@vertesia/common";
 
 export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
     manifest: null,
@@ -21,11 +21,20 @@ export default class AppsApi extends ApiTopic {
 
     /**
      * Get the list if tools provided by the given app.
-     * @param appId 
-     * @returns 
+     * @param appId
+     * @returns
      */
     listAppInstallationTools(appInstallId: string): Promise<AppToolCollection[]> {
         return this.get(`/installations/${appInstallId}/tools`)
+    }
+
+    /**
+     * Fetch the always-on system tools package served by studio-server.
+     * Tools and skills (`learn_*`) are returned on separate fields so UIs can
+     * render them distinctly. URLs are already resolved per deployment.
+     */
+    getSystemToolsPackage(scope: string = 'tools'): Promise<AppPackage> {
+        return this.get('/system-tools/package', { query: { scope } });
     }
 
     /**
