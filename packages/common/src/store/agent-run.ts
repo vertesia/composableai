@@ -48,6 +48,7 @@ export type RunKind = 'agent' | 'process';
  * Public-facing runtime mode.
  */
 export type RunType = 'autonomous' | 'supervised' | 'programmatic';
+export type ProcessRunType = 'supervised' | 'programmatic';
 
 /**
  * Shared fields for all records stored in the agent_runs collection.
@@ -262,7 +263,7 @@ export interface ProcessRunConfig {
 
 export interface ProcessRun extends RunBase {
     run_kind: 'process';
-    run_type: 'supervised' | 'programmatic';
+    run_type: ProcessRunType;
     process_id?: string;
     process_definition_snapshot: ProcessDefinitionBody;
     process_version?: number;
@@ -308,17 +309,64 @@ export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties 
     started_by?: string;
 }
 
-export interface CreateProcessRunPayload<TData = Record<string, any>> {
+export interface ProcessRunInputPayload<TData = Record<string, any>, TSource = RunSource> {
     process_id?: string;
     process_definition?: ProcessDefinitionBody;
-    run_type: 'supervised' | 'programmatic';
     data?: TData;
     config?: ProcessRunConfig;
     visibility?: ConversationVisibility;
     tags?: string[];
     categories?: string[];
-    source?: RunSource;
+    source?: TSource;
     started_by?: string;
+}
+
+export interface CreateProcessRunPayload<TData = Record<string, any>, TSource = RunSource> extends ProcessRunInputPayload<TData, TSource> {
+    run_type: ProcessRunType;
+}
+
+export interface RecordRunWorkflowPayload {
+    /** Temporal workflow id. */
+    workflow_id: string;
+    /** First Temporal run id for this workflow. Required when the workflow has already started. */
+    first_workflow_run_id?: string;
+}
+
+/**
+ * @internal Used by workflow activities that need to create a stable run
+ * document for a workflow they already own.
+ */
+export interface RecordAgentRunPayload<TData = Record<string, any>> extends RecordRunWorkflowPayload {
+    run_kind?: 'agent';
+    interaction: string;
+    first_workflow_run_id: string;
+    schedule_id?: string;
+    visibility?: ConversationVisibility;
+    data?: TData;
+    type?: AgentRunType;
+}
+
+/**
+ * @internal Used by process workflows to reserve a child ProcessRun before
+ * starting its Temporal child workflow.
+ */
+export interface RecordProcessRunPayload<TData = Record<string, any>, TSource = RunSource>
+    extends ProcessRunInputPayload<TData, TSource>, RecordRunWorkflowPayload {
+    run_kind: 'process';
+    run_type?: ProcessRunType;
+}
+
+export type RecordRunPayload<TData = Record<string, any>, TSource = RunSource> =
+    | RecordAgentRunPayload<TData>
+    | RecordProcessRunPayload<TData, TSource>;
+
+/**
+ * @internal Attaches the first Temporal run id after a pre-created run record
+ * has successfully started its workflow.
+ */
+export interface BindRunWorkflowPayload extends Required<RecordRunWorkflowPayload> {
+    status?: AgentRunStatus;
+    activity_state?: ConversationActivityState;
 }
 
 /**

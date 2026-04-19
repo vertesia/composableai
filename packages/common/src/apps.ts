@@ -376,6 +376,18 @@ export interface AppManifestData {
      * Only dev environment names are allowed as keys (starting with "desktop-" or "dev-").
      */
     endpoint_overrides?: Record<string, string>;
+
+    /**
+     * Optional app version string (e.g. "1.0.0") — informational.
+     */
+    version?: string;
+
+    /**
+     * Free-form tags used for classification and filtering. Platform apps
+     * carry `"system"` so UIs can skip install/uninstall/manage-permission
+     * controls that don't apply to synthetic installations.
+     */
+    tags?: string[];
 }
 
 /**

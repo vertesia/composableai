@@ -98,6 +98,99 @@ describe("process definition validation", () => {
         );
     });
 
+    it("accepts process nodes as standalone nodes and parallel children", () => {
+        const child = validDefinition();
+        child.process = "child_approval";
+
+        const definition = validDefinition();
+        definition.initial = "fanout";
+        definition.context.schema = {
+            type: "object",
+            properties: {
+                items: { type: "array", items: { type: "object" } },
+                results: { type: "array" },
+            },
+            additionalProperties: true,
+        };
+        definition.context.initial = { items: [] };
+        definition.nodes = {
+            fanout: {
+                type: "parallel",
+                foreach: "items",
+                as: "item",
+                item_id: "{{item.id}}",
+                max_concurrency: 10,
+                collect: {
+                    into: "results",
+                    include: ["status", "index", "item_id", "output", "child_run_id"],
+                },
+                node: {
+                    type: "process",
+                    process_definition: child,
+                    input: { invoice: "{{item}}" },
+                    returns: { from: "context.approved" },
+                },
+                transitions: [{ to: "approved" }],
+            },
+            approved: {
+                type: "final",
+            },
+        };
+
+        expect(() => validateProcessDefinitionBody(definition)).not.toThrow();
+    });
+
+    it("rejects process nodes without a referenced or inline process", () => {
+        const definition = validDefinition();
+        definition.nodes.review = {
+            type: "process",
+            transitions: [{ to: "approved" }],
+        };
+
+        expect(() => validateProcessDefinitionBody(definition)).toThrow(
+            'process node "review" is missing process or process_definition',
+        );
+    });
+
+    it("rejects invalid parallel fanout controls", () => {
+        const definition = validDefinition();
+        definition.initial = "fanout";
+        definition.context.schema = {
+            type: "object",
+            properties: {
+                items: { type: "array" },
+            },
+            additionalProperties: true,
+        };
+        definition.context.initial = { items: [] };
+        definition.nodes = {
+            fanout: {
+                type: "parallel",
+                foreach: "items",
+                max_concurrency: 0,
+                collect: {
+                    into: "",
+                    include: ["bogus" as "status"],
+                },
+                node: {
+                    type: "process",
+                    process: "64f000000000000000000000",
+                },
+                transitions: [{ to: "approved" }],
+            },
+            approved: {
+                type: "final",
+            },
+        };
+
+        const result = getProcessDefinitionValidationResult(definition);
+
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain('parallel node "fanout" max_concurrency must be a positive integer');
+        expect(result.errors).toContain('parallel node "fanout" collect.into is required');
+        expect(result.errors).toContain('parallel node "fanout" collect.include has invalid field "bogus"');
+    });
+
     it("reports all structural errors without importing runtime schema validators", () => {
         const definition = {
             process: "",

@@ -8,6 +8,7 @@ import {
     AgentRunArchiveState,
     AgentRunInternals,
     AgentRunStatus,
+    BindRunWorkflowPayload,
     CompactMessage,
     ConversationActivityState,
     CreateAgentRunPayload,
@@ -21,6 +22,9 @@ import {
     PromptSizeAnalyticsResponse,
     ProcessRun,
     ProcessState,
+    RecordAgentRunPayload,
+    RecordProcessRunPayload,
+    RecordRunPayload,
     RunsByAgentAnalyticsResponse,
     SearchAgentRunsQuery,
     SearchAgentRunsResponse,
@@ -66,18 +70,14 @@ export class AgentsApi extends ApiTopic {
     }
 
     /**
-     * Record an AgentRun for an already-running workflow (e.g. schedule-triggered).
-     * Only creates the MongoDB document — the workflow passes its own Temporal IDs.
+     * Record a run for an already-running workflow. This only creates the
+     * MongoDB document; the caller owns the Temporal workflow ids.
+     *
+     * @internal
      */
-    createRecord(payload: {
-        interaction: string;
-        schedule_id?: string;
-        workflow_id: string;
-        first_workflow_run_id: string;
-        visibility?: string;
-        data?: Record<string, any>;
-        type?: string;
-    }): Promise<AgentRun> {
+    recordRun<TData = Record<string, any>>(payload: RecordAgentRunPayload<TData>): Promise<AgentRun<TData>>;
+    recordRun<TData = Record<string, any>>(payload: RecordProcessRunPayload<TData>): Promise<ProcessRun>;
+    recordRun<TData = Record<string, any>>(payload: RecordRunPayload<TData>): Promise<AgentRun<TData> | ProcessRun> {
         return this.post('/record', { payload });
     }
 
@@ -215,8 +215,17 @@ export class AgentsApi extends ApiTopic {
             sequence?: number;
             process_state?: ProcessState;
         },
-    ): Promise<AgentRun> {
+    ): Promise<AgentRun | ProcessRun> {
         return this.post(`/${id}/status`, { payload: update });
+    }
+
+    /**
+     * Attach Temporal workflow run ids to a pre-created run record.
+     *
+     * @internal
+     */
+    bindWorkflowRun(id: string, payload: BindRunWorkflowPayload): Promise<AgentRun | ProcessRun> {
+        return this.post(`/${id}/workflow`, { payload });
     }
 
     // ========================================================================

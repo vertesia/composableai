@@ -69,11 +69,40 @@ function validateNodeDefinition(
             errors.push(`human_task node "${nodeId}" task fields must be an array`);
         }
     }
-    if (node.type === "parallel" && node.node) {
-        if (!isParallelChildNodeType(node.node.type)) {
-            errors.push(`parallel node "${nodeId}" has unsupported child node type "${String(node.node.type)}"`);
+    if (node.type === "process") {
+        if (!node.process && !node.process_definition) {
+            errors.push(`process node "${nodeId}" is missing process or process_definition`);
         }
-        validateNodeDefinition(definition, `${nodeId}.node`, node.node, errors);
+        if (node.run_type && !isProcessNodeRunType(node.run_type)) {
+            errors.push(`process node "${nodeId}" has invalid run_type "${String(node.run_type)}"`);
+        }
+        if (node.returns?.from !== undefined && typeof node.returns.from !== "string") {
+            errors.push(`process node "${nodeId}" returns.from must be a string`);
+        }
+        if (node.returns?.context !== undefined && !isStringArray(node.returns.context)) {
+            errors.push(`process node "${nodeId}" returns.context must be an array of strings`);
+        }
+        if (node.process_definition) {
+            const childResult = getProcessDefinitionValidationResult(node.process_definition);
+            for (const error of childResult.errors) {
+                errors.push(`process node "${nodeId}" process_definition: ${error}`);
+            }
+        }
+    }
+    if (node.type === "parallel") {
+        if (node.max_concurrency !== undefined && (!Number.isInteger(node.max_concurrency) || node.max_concurrency < 1)) {
+            errors.push(`parallel node "${nodeId}" max_concurrency must be a positive integer`);
+        }
+        if (node.item_id !== undefined && typeof node.item_id !== "string") {
+            errors.push(`parallel node "${nodeId}" item_id must be a string`);
+        }
+        validateParallelCollectDefinition(nodeId, node.collect, errors);
+        if (node.node) {
+            if (!isParallelChildNodeType(node.node.type)) {
+                errors.push(`parallel node "${nodeId}" has unsupported child node type "${String(node.node.type)}"`);
+            }
+            validateNodeDefinition(definition, `${nodeId}.node`, node.node, errors);
+        }
     }
     if (node.failure_policy && !isParallelFailurePolicy(node.failure_policy)) {
         errors.push(`node "${nodeId}" has invalid failure_policy "${String(node.failure_policy)}"`);
@@ -104,10 +133,15 @@ function isProcessNodeType(value: string): boolean {
     return value === "tool"
         || value === "interaction"
         || value === "agent"
+        || value === "process"
         || value === "human_task"
         || value === "parallel"
         || value === "condition"
         || value === "final";
+}
+
+function isProcessNodeRunType(value: string): boolean {
+    return value === "supervised" || value === "programmatic";
 }
 
 function isTransitionTrigger(value: string): boolean {
@@ -122,7 +156,58 @@ function isParallelChildNodeType(value: string): boolean {
     return value === "tool"
         || value === "interaction"
         || value === "agent"
+        || value === "process"
         || value === "condition";
+}
+
+function validateParallelCollectDefinition(nodeId: string, collect: NodeDefinition["collect"], errors: string[]) {
+    if (collect === undefined) {
+        return;
+    }
+    if (typeof collect === "string") {
+        if (!collect) {
+            errors.push(`parallel node "${nodeId}" collect must not be empty`);
+        }
+        return;
+    }
+    if (!isRecord(collect)) {
+        errors.push(`parallel node "${nodeId}" collect must be a string or object`);
+        return;
+    }
+    if (typeof collect.into !== "string" || !collect.into) {
+        errors.push(`parallel node "${nodeId}" collect.into is required`);
+    }
+    if (collect.mode !== undefined && collect.mode !== "array") {
+        errors.push(`parallel node "${nodeId}" collect.mode must be "array"`);
+    }
+    if (collect.include !== undefined) {
+        if (!Array.isArray(collect.include)) {
+            errors.push(`parallel node "${nodeId}" collect.include must be an array`);
+            return;
+        }
+        for (const field of collect.include) {
+            if (typeof field !== "string" || !isParallelCollectField(field)) {
+                errors.push(`parallel node "${nodeId}" collect.include has invalid field "${String(field)}"`);
+            }
+        }
+    }
+}
+
+function isParallelCollectField(value: string): boolean {
+    return value === "status"
+        || value === "index"
+        || value === "item"
+        || value === "item_id"
+        || value === "output"
+        || value === "context_update"
+        || value === "error"
+        || value === "child_run_id"
+        || value === "child_workflow_id"
+        || value === "child_workflow_run_id";
+}
+
+function isStringArray(value: unknown): value is string[] {
+    return Array.isArray(value) && value.every(item => typeof item === "string");
 }
 
 function validateGuardRule(label: string, rule: unknown, errors: string[]) {

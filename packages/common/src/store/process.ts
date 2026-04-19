@@ -9,6 +9,7 @@ export type ProcessNodeType =
     | 'tool'
     | 'interaction'
     | 'agent'
+    | 'process'
     | 'human_task'
     | 'parallel'
     | 'condition'
@@ -16,6 +17,19 @@ export type ProcessNodeType =
 
 export type TransitionTrigger = 'auto' | 'agent' | 'user';
 export type ParallelFailurePolicy = 'fail_fast' | 'collect_errors';
+export type ProcessNodeRunType = 'supervised' | 'programmatic';
+export type ParallelCollectMode = 'array';
+export type ParallelCollectField =
+    | 'status'
+    | 'index'
+    | 'item'
+    | 'item_id'
+    | 'output'
+    | 'context_update'
+    | 'error'
+    | 'child_run_id'
+    | 'child_workflow_id'
+    | 'child_workflow_run_id';
 
 export interface TransitionDefinition {
     to: string;
@@ -43,10 +57,42 @@ export interface HumanTaskDefinition {
     fields: TaskField[];
 }
 
+export interface ProcessNodeReturnsDefinition {
+    /**
+     * Path to read from the completed child process state. Use `context.foo`
+     * for child context values or `state.sequence` for process-state fields.
+     * If omitted, the child context is used as the node output.
+     */
+    from?: string;
+    /**
+     * Select specific fields from the completed child process context.
+     * Ignored when `from` is set.
+     */
+    context?: string[];
+}
+
+export interface ParallelCollectDefinition {
+    /**
+     * Context key that receives the collected results.
+     */
+    into: string;
+    mode?: ParallelCollectMode;
+    /**
+     * Fields to include in each collected item. Defaults to the operational
+     * envelope: status, index, item_id, output, error, and child_run_id.
+     */
+    include?: ParallelCollectField[];
+}
+
 export interface NodeDefinition {
     type: ProcessNodeType;
     tool?: string;
     interaction?: string;
+    process?: string;
+    process_definition?: ProcessDefinitionBody;
+    process_version?: number;
+    run_type?: ProcessNodeRunType;
+    returns?: ProcessNodeReturnsDefinition;
     prompt?: string;
     input?: Record<string, any>;
     config?: Record<string, any>;
@@ -75,8 +121,10 @@ export interface NodeDefinition {
     task?: HumanTaskDefinition;
     foreach?: string;
     as?: string;
+    item_id?: string;
     node?: NodeDefinition;
-    collect?: string;
+    max_concurrency?: number;
+    collect?: string | ParallelCollectDefinition;
     failure_policy?: ParallelFailurePolicy;
     branches?: BranchDefinition[];
 }
