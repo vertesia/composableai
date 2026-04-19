@@ -11,7 +11,7 @@ interface SkillDefinitionResponse {
     instructions: string;
     content_type: 'md' | 'jst';
     input_schema?: Record<string, unknown>;
-    related_tools?: string[];
+    tools?: string[];
     execution?: {
         language: string;
         packages?: string[];
@@ -62,11 +62,11 @@ export function SkillDetail() {
                 </div>
             )}
 
-            {skill.related_tools && skill.related_tools.length > 0 && (
+            {skill.tools && skill.tools.length > 0 && (
                 <div className="mb-8">
                     <h2 className="mb-3 text-lg font-semibold text-foreground">Related Tools</h2>
                     <div className="flex flex-wrap gap-2">
-                        {skill.related_tools.map(t => <Badge key={t} variant="success">{t}</Badge>)}
+                        {skill.tools.map(t => <Badge key={t} variant="success">{t}</Badge>)}
                     </div>
                 </div>
             )}

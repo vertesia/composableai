@@ -1268,10 +1268,8 @@ export interface SystemSkillCatalogEntry {
     title: string;
     /** Description of what the skill unlocks */
     description: string;
-    /** Tools that become available when this skill is called */
+    /** Tool names this skill enables (unlocks) when called */
     tools: string[];
-    /** Related tools that complement this skill */
-    related_tools: string[];
 }
 
 /**

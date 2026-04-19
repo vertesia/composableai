@@ -230,14 +230,15 @@ export interface AgentToolDefinition extends ToolDefinition {
     /**
      * Whether this tool is available by default.
      * - true/undefined: Tool is always available to agents
-     * - false: Tool is only available when activated by a skill's related_tools
+     * - false: Tool is only available when enabled by a skill via `tools`
      */
     default?: boolean;
     /**
-     * For skill tools (learn_*): list of related tool names that become available
-     * when this skill is called. Used for dynamic tool discovery.
+     * For skill tools (`learn_*`): the tool names this skill enables when called.
+     * Matches the `tools:` key used in SKILL.md frontmatter and built-in skill
+     * definitions — one name across the whole stack.
      */
-    related_tools?: string[];
+    tools?: string[];
     /**
      * MCP tool annotations providing hints about tool behavior and safety.
      */

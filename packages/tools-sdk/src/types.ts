@@ -101,7 +101,7 @@ export interface Tool<ParamsT extends Record<string, any>> extends ToolDefinitio
     /**
      * Whether this tool is available by default.
      * - true/undefined: Tool is always available to agents
-     * - false: Tool is only available when activated by a skill's related_tools
+     * - false: Tool is only available when activated by a skill's tools
      */
     default?: boolean;
 
@@ -260,9 +260,10 @@ export interface SkillDefinition {
      */
     execution?: SkillExecution;
     /**
-     * Related tools that work well with this skill
+     * Tool names this skill enables (unlocks) when called. Matches the
+     * `tools:` key used in SKILL.md frontmatter.
      */
-    related_tools?: string[];
+    tools?: string[];
     /**
      * Scripts bundled with this skill (synced to sandbox when skill is used)
      */
