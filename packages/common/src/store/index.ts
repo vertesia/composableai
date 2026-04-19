@@ -8,6 +8,7 @@ export * from "./dsl-workflow.js";
 export * from "./hive-memory.js";
 export * from "./object-types.js";
 export * from "./process.js";
+export * from "./process-schema.js";
 export * from "./process-validation.js";
 export * from "./schedule.js";
 export * from "./signals.js";
