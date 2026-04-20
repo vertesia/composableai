@@ -250,6 +250,8 @@ export interface Project {
     updated_by: string,
     created_at: Date;
     updated_at: Date;
+    archived?: boolean;
+    archived_at?: Date;
 }
 
 export interface ProjectCreatePayload {
