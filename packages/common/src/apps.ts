@@ -744,7 +744,6 @@ export interface McpOAuthTokenRequest {
     app_install_id?: string;
     collection_id?: string;
     mcp_server_url?: string;
-    oauth_app_name?: string;
 }
 
 export interface McpOAuthTokenResponse {

@@ -90,18 +90,14 @@ export default class MCPOAuthApi extends ApiTopic {
 
     /**
      * Get or refresh OAuth token (internal legacy use by workflows).
-     * When oauthAppName is provided, uses the generic OAuth Application flow
-     * (resolves by name in the caller's project).
-     * Otherwise falls back to legacy MCP server URL-based token retrieval.
+     * Get or refresh OAuth token via MCP server URL (legacy fallback).
+     * Prefer getCollectionToken() for new callers.
      * @param mcpServerUrl - The MCP server URL
-     * @param oauthAppName - Optional OAuth Application name (from collection's oauth_app field)
      * @returns Access token
      */
-    getToken(mcpServerUrl: string, oauthAppName?: string): Promise<McpOAuthTokenResponse> {
+    getToken(mcpServerUrl: string): Promise<McpOAuthTokenResponse> {
         return this.post('/token', {
-            payload: oauthAppName
-                ? ({ oauth_app_name: oauthAppName } satisfies McpOAuthTokenRequest)
-                : ({ mcp_server_url: mcpServerUrl } satisfies McpOAuthTokenRequest)
+            payload: { mcp_server_url: mcpServerUrl } satisfies McpOAuthTokenRequest
         });
     }
 }
