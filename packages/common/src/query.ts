@@ -72,6 +72,8 @@ export interface InteractionSearchQuery extends SimpleSearchQuery {
     version?: string;
     model?: string;
     environment?: string;
+    is_agent?: boolean;
+    is_tool?: boolean;
 }
 
 export interface RunSearchQuery extends SimpleSearchQuery {
