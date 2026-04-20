@@ -44,12 +44,14 @@ export default class AppsApi extends ApiTopic {
         appId: string,
         settings?: Record<string, unknown>,
         oauthParams?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>,
+        oauthProviderParams?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>,
     ): Promise<AppInstallation> {
         return this.post(`/install`, {
             payload: {
                 app_id: appId,
                 settings,
                 oauth_params: oauthParams,
+                oauth_provider_params: oauthProviderParams,
             } satisfies AppInstallationPayload
         });
     }

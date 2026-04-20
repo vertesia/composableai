@@ -162,8 +162,24 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
      * When present, the platform auto-creates an OAuthApplication at install time
      * using these values merged with any user-supplied required_at_install params.
      * The created app is recorded in AppInstallation.oauth_bindings.
+     * Mutually exclusive with oauth_provider.
      */
     oauth_config?: MCPOAuthConfig;
+
+    /**
+     * Reference to a key in AppManifestData.oauth_providers.
+     * When set, this collection shares the named provider's OAuth application.
+     * Mutually exclusive with oauth_config and oauth_app.
+     * Requires auth: "oauth" to be set.
+     */
+    oauth_provider?: string;
+
+    /**
+     * Additional OAuth scopes for this collection when using a shared oauth_provider.
+     * These are merged (union) with the provider's default_scopes at install time.
+     * Only valid when oauth_provider is set.
+     */
+    oauth_scopes?: string[];
 }
 
 /**
@@ -390,6 +406,15 @@ export interface AppManifestData {
     tool_collections?: ToolCollection[]
 
     /**
+     * Named OAuth providers shared across multiple MCP tool collections.
+     * Keys must be kebab-case identifiers. Each value is an MCPOAuthConfig blueprint.
+     * Collections reference a provider via MCPToolCollectionObject.oauth_provider.
+     * One OAuthApplication is created per provider at install time; all referencing
+     * collections share that app via AppInstallation.provider_bindings.
+     */
+    oauth_providers?: Record<string, MCPOAuthConfig>;
+
+    /**
      * An URL providing interactions definitions in JSON format.
      * The URL must provide 2 endpoints:
      * 1. GET URL - must return a JSON array with the list of interactions (as AppInteractionRef[])
@@ -567,6 +592,20 @@ export interface AppInstallationOAuthBinding {
     oauth_app_name: string;
 }
 
+/**
+ * Binding between a named OAuth provider and the OAuthApplication created for it at install time.
+ * Stored on AppInstallation so the runtime can resolve the correct OAuth app for collections
+ * that reference a shared provider via MCPToolCollectionObject.oauth_provider.
+ */
+export interface AppInstallationProviderBinding {
+    /** Key from AppManifestData.oauth_providers */
+    provider_key: string;
+    /** MongoDB ObjectId of the created OAuthApplication */
+    oauth_app_id: string;
+    /** Name of the OAuthApplication at creation time (for audit/display only) */
+    oauth_app_name: string;
+}
+
 export interface AppInstallation {
     id: string;
     project: string; // the project where the app is installed
@@ -584,6 +623,12 @@ export interface AppInstallation {
      * Used by the runtime to resolve the correct OAuth app without relying on manifest names.
      */
     oauth_bindings?: AppInstallationOAuthBinding[];
+    /**
+     * OAuth bindings created at install time via oauth_providers provisioning.
+     * Maps provider key → OAuthApplication ObjectId.
+     * Multiple collections sharing the same provider all resolve to the same OAuth app.
+     */
+    provider_bindings?: AppInstallationProviderBinding[];
     created_at: string;
     updated_at: string;
 }
@@ -607,6 +652,12 @@ export interface AppInstallationPayload {
      * Collected from the user at install time for collections with oauth_config.required_at_install.
      */
     oauth_params?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>;
+    /**
+     * OAuth credentials for named providers, keyed by the provider key from oauth_providers.
+     * Collected from the user at install time for providers with required_at_install.
+     * Separate from oauth_params to avoid key collisions between provider keys and collection ids.
+     */
+    oauth_provider_params?: Record<string, { client_id?: string; client_secret?: string; scopes?: string[] }>;
 }
 
 export type AppInstallationKind = 'ui' | 'tools' | 'all';
