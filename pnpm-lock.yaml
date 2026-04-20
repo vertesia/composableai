@@ -7707,8 +7707,8 @@ packages:
   undici-types@7.19.2:
     resolution: {integrity: sha512-qYVnV5OEm2AW8cJMCpdV20CDyaN3g0AjDlOGf1OW4iaDEx8MwdtChUp4zu4H0VP3nDRF/8RKWH+IPp9uW0YGZg==}
 
-  undici@7.24.1:
-    resolution: {integrity: sha512-5xoBibbmnjlcR3jdqtY2Lnx7WbrD/tHlT01TmvqZUFVc9Q1w4+j5hbnapTqbcXITMH1ovjq/W7BkqBilHiVAaA==}
+  undici@7.25.0:
+    resolution: {integrity: sha512-xXnp4kTyor2Zq+J1FfPI6Eq3ew5h6Vl0F/8d9XU5zZQf1tX9s2Su1/3PiMmUANFULpmksxkClamIZcaUqryHsQ==}
     engines: {node: '>=20.18.1'}
 
   unicorn-magic@0.3.0:
@@ -9263,7 +9263,7 @@ snapshots:
       '@firebase/component': 0.6.9
       '@firebase/util': 1.10.0
       tslib: 2.8.1
-      undici: 7.24.1
+      undici: 7.25.0
     transitivePeerDependencies:
       - '@firebase/app'
       - '@firebase/app-types'
@@ -9283,7 +9283,7 @@ snapshots:
       '@firebase/logger': 0.4.2
       '@firebase/util': 1.10.0
       tslib: 2.8.1
-      undici: 7.24.1
+      undici: 7.25.0
 
   '@firebase/component@0.6.9':
     dependencies:
@@ -9350,7 +9350,7 @@ snapshots:
       '@grpc/grpc-js': 1.9.15
       '@grpc/proto-loader': 0.7.15
       tslib: 2.8.1
-      undici: 7.24.1
+      undici: 7.25.0
 
   '@firebase/functions-compat@0.3.14(@firebase/app-compat@0.2.43)(@firebase/app@0.10.13)':
     dependencies:
@@ -9374,7 +9374,7 @@ snapshots:
       '@firebase/messaging-interop-types': 0.2.2
       '@firebase/util': 1.10.0
       tslib: 2.8.1
-      undici: 7.24.1
+      undici: 7.25.0
 
   '@firebase/installations-compat@0.2.9(@firebase/app-compat@0.2.43)(@firebase/app-types@0.9.2)(@firebase/app@0.10.13)':
     dependencies:
@@ -9495,7 +9495,7 @@ snapshots:
       '@firebase/component': 0.6.9
       '@firebase/util': 1.10.0
       tslib: 2.8.1
-      undici: 7.24.1
+      undici: 7.25.0
 
   '@firebase/util@1.10.0':
     dependencies:
@@ -15943,7 +15943,7 @@ snapshots:
 
   undici-types@7.19.2: {}
 
-  undici@7.24.1: {}
+  undici@7.25.0: {}
 
   unicorn-magic@0.3.0: {}
 
