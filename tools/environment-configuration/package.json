@@ -32,6 +32,6 @@
     "@vertesia/client": "0.82.1",
     "commander": "^14.0.2",
     "dotenv": "^16.6.1",
-    "google-auth-library": "^10.5.0"
+    "google-auth-library": "^10.6.2"
   }
 }
