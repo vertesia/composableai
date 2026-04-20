@@ -34,7 +34,7 @@ export default class AppsApi extends ApiTopic {
      * render them distinctly. URLs are already resolved per deployment.
      */
     getSystemToolsPackage(scope: string = 'tools'): Promise<AppPackage> {
-        return this.get('/system-tools/package', { query: { scope } });
+        return this.get('/studio-tools/package', { query: { scope } });
     }
 
     /**
