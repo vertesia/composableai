@@ -74,6 +74,9 @@ export interface InteractionSearchQuery extends SimpleSearchQuery {
     environment?: string;
     is_agent?: boolean;
     is_tool?: boolean;
+    is_skill?: boolean;
+    is_basic?: boolean;
+    is_sub_agent?: boolean;
 }
 
 export interface RunSearchQuery extends SimpleSearchQuery {
@@ -94,6 +97,7 @@ export interface RunSearchQuery extends SimpleSearchQuery {
     workflow_run_ids?: string[];
     workflow_ids?: string[];
     run_ids?: string[];
+    is_agent?: boolean;
 }
 
 export interface WorkflowExecutionSearchQuery extends SimpleSearchQuery {
