@@ -237,73 +237,71 @@ function PropertiesPanel({ object, refetch, handleCopyContent }: { object: Conte
 
     return (
         <>
-            <div className="flex justify-between items-center px-2">
-                <div className="flex items-center gap-1 bg-muted mb-2 p-1 rounded">
-                    <Button
-                        variant={`${viewCode ? "ghost" : "primary"}`}
-                        size="sm"
-                        alt={t('store.previewProperties')}
-                        onClick={() => setViewCode(!viewCode)}
-                    >
-                        Properties
-                    </Button>
-                    <Button
-                        variant={`${viewCode ? "primary" : "ghost"}`}
-                        size="sm"
-                        alt={t('store.viewInJsonFormat')}
-                        onClick={() => setViewCode(!viewCode)}
-                    >
-                        JSON
-                    </Button>
-                </div>
-                <div className="flex items-center gap-2">
-                    {object.properties && (
+            <div className="flex flex-col h-full">
+                <div className="flex justify-between items-center px-2">
+                    <div className="flex items-center gap-1 bg-muted mb-2 p-1 rounded">
+                        <Button
+                            variant={`${viewCode ? "ghost" : "primary"}`}
+                            size="sm"
+                            alt={t('store.previewProperties')}
+                            onClick={() => setViewCode(!viewCode)}
+                        >
+                            Properties
+                        </Button>
+                        <Button
+                            variant={`${viewCode ? "primary" : "ghost"}`}
+                            size="sm"
+                            alt={t('store.viewInJsonFormat')}
+                            onClick={() => setViewCode(!viewCode)}
+                        >
+                            JSON
+                        </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {object.properties && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                title="Copy properties"
+                                onClick={() =>
+                                    handleCopyContent(
+                                        JSON.stringify(
+                                            object.properties,
+                                            null,
+                                            2,
+                                        ),
+                                        "properties",
+                                    )
+                                }
+                            >
+                                <Copy className="size-4" />
+                            </Button>
+                        )}
                         <Button
                             variant="ghost"
                             size="sm"
-                            title="Copy properties"
-                            onClick={() =>
-                                handleCopyContent(
-                                    JSON.stringify(
-                                        object.properties,
-                                        null,
-                                        2,
-                                    ),
-                                    "properties",
-                                )
-                            }
+                            onClick={handleOpenPropertiesModal}
+                            title="Edit properties"
+                            className="flex items-center gap-2"
                         >
-                            <Copy className="size-4" />
+                            <SquarePen className="size-4" />
                         </Button>
-                    )}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleOpenPropertiesModal}
-                        title="Edit properties"
-                        className="flex items-center gap-2"
-                    >
-                        <SquarePen className="size-4" />
-                    </Button>
+                    </div>
                 </div>
-            </div>
 
-            {
-                object.properties ? (
-                    <div className={`h-full px-2`}>
+                {object.properties ? (
+                    <div className="flex-1 min-h-0 px-2">
                         <JSONDisplay
                             value={object.properties}
                             viewCode={viewCode}
-
                         />
                     </div>
                 ) : (
-                    <div className={`h-full px-2`}>
+                    <div className="flex-1 min-h-0 px-2">
                         <div>{t('store.noPropertiesDefined')}</div>
                     </div>
-                )
-            }
-            {/* Properties Editor Modal */}
+                )}
+            </div>
             <PropertiesEditorModal
                 isOpen={isPropertiesModalOpen}
                 onClose={handleClosePropertiesModal}
