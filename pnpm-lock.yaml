@@ -11,15 +11,17 @@ overrides:
   '@types/react-dom': 19.2.3
   brace-expansion@>=1.0.0 <2.0.0: ^1.1.12
   brace-expansion@>=2.0.0 <3.0.0: ^2.0.2
+  '@isaacs/brace-expansion@>=5.0.0 <6.0.0': ^5.0.1
+  brace-expansion@<5.0.5: ^5.0.5
   cross-spawn@<6.0.6: ^6.0.6
   esbuild@<0.25.0: ^0.27.1
   glob@>=10.2.0 <10.5.0: ^10.5.0
   js-yaml@>=4.0.0 <4.1.1: ^4.1.1
   koa@<2.16.4: ^2.16.4
-  hono@<4.12.7: ^4.12.7
   '@hono/node-server@<1.19.10': ^1.19.10
+  hono@<4.12.14: '>=4.12.14'
   serialize-javascript@<7.0.3: ^7.0.5
-  dompurify@<3.3.2: ^3.3.2
+  dompurify@<=3.3.3: '>=3.4.0'
   undici@>=6.0.0 <6.21.3: ^7.24.1
   vite: ^7.3.0
   is-generator-function: 1.0.10
@@ -27,9 +29,8 @@ overrides:
   jws@>=3.0.0 <3.2.3: ^3.2.3
   jws@>=4.0.0 <4.0.1: ^4.0.1
   qs@>=6.0.0 <6.14.0: ^6.14.1
-  lodash@>= 4.0.0 <4.17.23: ^4.17.23
-  lodash-es@>= 4.0.0 <4.17.23: ^4.17.23
-  '@isaacs/brace-expansion@>=5.0.0 <6.0.0': ^5.0.1
+  lodash-es@<=4.17.23: '>=4.18.0'
+  lodash@<=4.17.23: '>=4.18.0'
   fast-xml-parser@<5.3.8: ^5.5.7
   '@eslint/config-array': ^0.23.3
   minimatch@>=3.0.0 <4.0.0: legacy-v3
@@ -45,7 +46,7 @@ overrides:
   yaml@>=2.0.0 <2.8.3: ^2.8.3
   picomatch@<2.3.2: ^2.3.2
   picomatch@>=4.0.0 <4.0.4: ^4.0.4
-  brace-expansion@<5.0.5: ^5.0.5
+  protobufjs@<7.5.5: '>=7.5.5'
 
 patchedDependencies:
   ts-dual-module@0.6.3:
@@ -734,8 +735,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       hono:
-        specifier: ^4.12.12
-        version: 4.12.12
+        specifier: '>=4.12.14'
+        version: 4.12.14
       jose:
         specifier: ^6.0.11
         version: 6.1.3
@@ -852,8 +853,8 @@ importers:
         specifier: ^2.2.0
         version: 2.2.0
       dompurify:
-        specifier: ^3.3.2
-        version: 3.3.2
+        specifier: '>=3.4.0'
+        version: 3.4.0
       fast-xml-parser:
         specifier: ^5.5.7
         version: 5.5.7
@@ -873,7 +874,7 @@ importers:
         specifier: ^0.16.28
         version: 0.16.28
       lodash-es:
-        specifier: ^4.17.23
+        specifier: '>=4.18.0'
         version: 4.18.1
       lucide-react:
         specifier: ^0.562.0
@@ -1146,7 +1147,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.19.10
-        version: 1.19.13(hono@4.12.12)
+        version: 1.19.13(hono@4.12.14)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -1169,8 +1170,8 @@ importers:
         specifier: ^17.2.3
         version: 17.3.1
       hono:
-        specifier: ^4.12.7
-        version: 4.12.12
+        specifier: '>=4.12.14'
+        version: 4.12.14
       lucide-react:
         specifier: ^0.562.0
         version: 0.562.0(react@19.2.3)
@@ -1180,7 +1181,7 @@ importers:
         version: 9.39.4
       '@hono/vite-dev-server':
         specifier: ^0.25.1
-        version: 0.25.1(hono@4.12.12)
+        version: 0.25.1(hono@4.12.14)
       '@rollup/plugin-commonjs':
         specifier: ^28.0.8
         version: 28.0.9(rollup@4.60.1)
@@ -1270,7 +1271,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.19.10
-        version: 1.19.13(hono@4.12.12)
+        version: 1.19.13(hono@4.12.14)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -1287,8 +1288,8 @@ importers:
         specifier: ^17.2.3
         version: 17.3.1
       hono:
-        specifier: ^4.12.7
-        version: 4.12.12
+        specifier: '>=4.12.14'
+        version: 4.12.14
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -2194,13 +2195,13 @@ packages:
     resolution: {integrity: sha512-TsQLe4i2gvoTtrHje625ngThGBySOgSK3Xo2XRYOdqGN1teR8+I7vchQC46uLJi8OF62YTYA3AhSpumtkhsaKQ==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
-      hono: ^4.12.7
+      hono: '>=4.12.14'
 
   '@hono/vite-dev-server@0.25.1':
     resolution: {integrity: sha512-H6EqoPtCV+uH1fu8nKyRy5Wh3LU012QxloEYMlUcyMjjEfVFiRXPjHx/0TQiiRi140Vu8San5A4XQWyElKFKaw==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
-      hono: ^4.12.7
+      hono: '>=4.12.14'
       miniflare: '*'
       wrangler: '*'
     peerDependenciesMeta:
@@ -5175,9 +5176,8 @@ packages:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
     engines: {node: '>=0.10.0'}
 
-  dompurify@3.3.2:
-    resolution: {integrity: sha512-6obghkliLdmKa56xdbLOpUZ43pAR6xFy1uOrxBaIDjT+yaRuuybLjGS9eVBoSR/UPU5fq3OXClEHLJNGvbxKpQ==}
-    engines: {node: '>=20'}
+  dompurify@3.4.0:
+    resolution: {integrity: sha512-nolgK9JcaUXMSmW+j1yaSvaEaoXYHwWyGJlkoCTghc97KgGDDSnpoU/PlEnw63Ah+TGKFOyY+X5LnxaWbCSfXg==}
 
   dotenv@17.3.1:
     resolution: {integrity: sha512-IO8C/dzEb6O3F9/twg6ZLXz164a2fhTnEWb95H23Dm4OuN+92NmEAlTrupP9VW6Jm3sO26tQlqyvyi4CsnY9GA==}
@@ -5811,8 +5811,8 @@ packages:
   hermes-parser@0.25.1:
     resolution: {integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==}
 
-  hono@4.12.12:
-    resolution: {integrity: sha512-p1JfQMKaceuCbpJKAPKVqyqviZdS0eUxH9v82oWo1kb9xjQ5wA6iP3FNVAPDFlz5/p7d45lO+BpSk1tuSZMF4Q==}
+  hono@4.12.14:
+    resolution: {integrity: sha512-am5zfg3yu6sqn5yjKBNqhnTX7Cv+m00ox+7jbaKkrLMRJ4rAdldd1xPd/JzbBWspqaQv6RSTrgFN95EsfhC+7w==}
     engines: {node: '>=16.9.0'}
 
   html-parse-stringify@3.0.1:
@@ -6348,9 +6348,6 @@ packages:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
     engines: {node: '>=10'}
 
-  lodash-es@4.17.23:
-    resolution: {integrity: sha512-kVI48u3PZr38HdYz98UmfPnXl2DXrpdctLrFLCd3kOx1xUkOmpFPx7gCWWM5MPkL/fD8zb+Ph0QzjGFs4+hHWg==}
-
   lodash-es@4.18.1:
     resolution: {integrity: sha512-J8xewKD/Gk22OZbhpOVSwcs60zhd95ESDwezOFuA3/099925PdHJ7OFHNTGtajL3AlZkykD32HykiMo+BIBI8A==}
 
@@ -6381,8 +6378,8 @@ packages:
   lodash.once@4.1.1:
     resolution: {integrity: sha512-Sb487aTOCr9drQVL8pIxOzVhafOjZN9UU54hiN8PU3uAiSV7lx1yYNpbNmex2PK6dSJoNTSJUUswT651yww3Mg==}
 
-  lodash@4.17.23:
-    resolution: {integrity: sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==}
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
 
   log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}
@@ -6965,8 +6962,8 @@ packages:
     resolution: {integrity: sha512-SAzp/O4Yh02jGdRc+uIrGoe87dkN/XtwxfZ4ZyafJHymd79ozp5VG5nyZ7ygqPM5+cpLDjjGnYFUkngonyDPOQ==}
     engines: {node: '>=14.0.0'}
 
-  protobufjs@7.5.4:
-    resolution: {integrity: sha512-CvexbZtbov6jW2eXAvLukXjXUW1TzFaivC46BpWc/3BpcCysb5Vffu+B3XHMm8lVEuy2Mm4XGex8hBSg1yapPg==}
+  protobufjs@8.0.1:
+    resolution: {integrity: sha512-NWWCCscLjs+cOKF/s/XVNFRW7Yih0fdH+9brffR5NZCy8k42yRdl5KlWKMVXuI1vfCoy4o1z80XR/W/QUb3V3w==}
     engines: {node: '>=12.0.0'}
 
   punycode@2.3.1:
@@ -9000,12 +8997,12 @@ snapshots:
     dependencies:
       '@chevrotain/gast': 11.1.1
       '@chevrotain/types': 11.1.1
-      lodash-es: 4.17.23
+      lodash-es: 4.18.1
 
   '@chevrotain/gast@11.1.1':
     dependencies:
       '@chevrotain/types': 11.1.1
-      lodash-es: 4.17.23
+      lodash-es: 4.18.1
 
   '@chevrotain/regexp-to-ast@11.1.1': {}
 
@@ -9555,24 +9552,24 @@ snapshots:
     dependencies:
       lodash.camelcase: 4.3.0
       long: 5.3.2
-      protobufjs: 7.5.4
+      protobufjs: 8.0.1
       yargs: 17.7.2
 
   '@grpc/proto-loader@0.8.0':
     dependencies:
       lodash.camelcase: 4.3.0
       long: 5.3.2
-      protobufjs: 7.5.4
+      protobufjs: 8.0.1
       yargs: 17.7.2
 
-  '@hono/node-server@1.19.13(hono@4.12.12)':
+  '@hono/node-server@1.19.13(hono@4.12.14)':
     dependencies:
-      hono: 4.12.12
+      hono: 4.12.14
 
-  '@hono/vite-dev-server@0.25.1(hono@4.12.12)':
+  '@hono/vite-dev-server@0.25.1(hono@4.12.14)':
     dependencies:
-      '@hono/node-server': 1.19.13(hono@4.12.12)
-      hono: 4.12.12
+      '@hono/node-server': 1.19.13(hono@4.12.14)
+      hono: 4.12.14
       minimatch: 9.0.9
 
   '@humanfs/core@0.19.1': {}
@@ -11186,7 +11183,7 @@ snapshots:
   '@temporalio/proto@1.15.0':
     dependencies:
       long: 5.3.2
-      protobufjs: 7.5.4
+      protobufjs: 8.0.1
 
   '@temporalio/testing@1.15.0(@swc/helpers@0.5.18)(tslib@2.8.1)':
     dependencies:
@@ -11221,7 +11218,7 @@ snapshots:
       memfs: 4.56.10(tslib@2.8.1)
       nexus-rpc: 0.0.1
       proto3-json-serializer: 2.0.2
-      protobufjs: 7.5.4
+      protobufjs: 8.0.1
       rxjs: 7.8.2
       source-map: 0.7.6
       source-map-loader: 4.0.2(webpack@5.105.2(@swc/core@1.15.21(@swc/helpers@0.5.18)))
@@ -12208,7 +12205,7 @@ snapshots:
       '@chevrotain/regexp-to-ast': 11.1.1
       '@chevrotain/types': 11.1.1
       '@chevrotain/utils': 11.1.1
-      lodash-es: 4.17.23
+      lodash-es: 4.18.1
 
   chokidar@3.6.0:
     dependencies:
@@ -12655,7 +12652,7 @@ snapshots:
     dependencies:
       esutils: 2.0.3
 
-  dompurify@3.3.2:
+  dompurify@3.4.0:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -13584,7 +13581,7 @@ snapshots:
     dependencies:
       hermes-estree: 0.25.1
 
-  hono@4.12.12: {}
+  hono@4.12.14: {}
 
   html-parse-stringify@3.0.1:
     dependencies:
@@ -13949,7 +13946,7 @@ snapshots:
       '@types/lodash': 4.17.23
       is-glob: 4.0.3
       js-yaml: 4.1.1
-      lodash: 4.17.23
+      lodash: 4.18.1
       minimist: 1.2.8
       prettier: 3.8.1
       tinyglobby: 0.2.15
@@ -14136,8 +14133,6 @@ snapshots:
     dependencies:
       p-locate: 5.0.0
 
-  lodash-es@4.17.23: {}
-
   lodash-es@4.18.1: {}
 
   lodash.camelcase@4.3.0: {}
@@ -14158,7 +14153,7 @@ snapshots:
 
   lodash.once@4.1.1: {}
 
-  lodash@4.17.23: {}
+  lodash@4.18.1: {}
 
   log-symbols@4.1.0:
     dependencies:
@@ -14452,7 +14447,7 @@ snapshots:
       d3-sankey: 0.12.3
       dagre-d3-es: 7.0.13
       dayjs: 1.11.19
-      dompurify: 3.3.2
+      dompurify: 3.4.0
       katex: 0.16.28
       khroma: 2.1.0
       lodash-es: 4.18.1
@@ -15033,9 +15028,9 @@ snapshots:
 
   proto3-json-serializer@2.0.2:
     dependencies:
-      protobufjs: 7.5.4
+      protobufjs: 8.0.1
 
-  protobufjs@7.5.4:
+  protobufjs@8.0.1:
     dependencies:
       '@protobufjs/aspromise': 1.1.2
       '@protobufjs/base64': 1.1.2

@@ -25,6 +25,7 @@ interface FilterProviderProps {
   setFilters: Dispatch<SetStateAction<Filter[]>>;
   filterGroups: FilterGroup[];
   children: React.ReactNode;
+  inModal?: boolean;
 }
 
 // Syncs filters ↔ URL. On mount, captures the initial URL param and restores matching filters
@@ -33,14 +34,15 @@ interface FilterProviderProps {
 // (prevents cross-page URL contamination, e.g. a modal inheriting a parent page's filters).
 
 // Parse format with array indicators: filterName:value or filterName:[value1,value2]
-const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterProviderProps) => {
+const FilterProvider = ({ filters, setFilters, filterGroups, children, inModal }: FilterProviderProps) => {
   const url = new URL(window.location.href);
   const searchParams = url.searchParams;
   const [initialFiltersParam] = React.useState(() => new URLSearchParams(window.location.search).get('filters'));
   const processedUrlFilters = React.useRef<Set<string>>(new Set());
-  const hasRestoredFromUrl = React.useRef(!initialFiltersParam);
+  const hasRestoredFromUrl = React.useRef(inModal || !initialFiltersParam);
 
   useEffect(() => {
+    if (inModal) return;
     if (!hasRestoredFromUrl.current) return;
     try {
       const params = new URLSearchParams(searchParams.toString());
@@ -82,7 +84,7 @@ const FilterProvider = ({ filters, setFilters, filterGroups, children }: FilterP
   }, [filters]);
 
   useEffect(() => {
-    if (!initialFiltersParam || filterGroups.length === 0) return;
+    if (inModal || !initialFiltersParam || filterGroups.length === 0) return;
     try {
       const filterPairs = initialFiltersParam.split(';');
       const newFilters: Filter[] = [];

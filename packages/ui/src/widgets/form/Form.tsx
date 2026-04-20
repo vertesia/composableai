@@ -154,7 +154,7 @@ function ListField({ object }: ListFieldProps) {
                 })
             }
             <div>
-                <Button variant='secondary' onClick={addItem} disabled={disabled}><Plus className="size-6" /> Add</Button>
+                <Button variant='outline' onClick={addItem} disabled={disabled}><Plus className="size-6" /> Add</Button>
             </div>
         </div>
     )
@@ -174,7 +174,7 @@ function ListItem({ list, object, onDelete, disabled }: ListItemProps) {
                     renderItemProperty(object, list.schema.arraySchema.editor)
                 }
             </div>
-            <Button variant='secondary' onClick={onDelete} disabled={disabled}><Trash2 className='size-4' /></Button>
+            <Button variant='ghost' onClick={onDelete} disabled={disabled} alt="Delete"><Trash2 className='size-4 text-destructive' /></Button>
         </div>
     )
 }

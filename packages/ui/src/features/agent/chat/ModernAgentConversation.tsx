@@ -100,8 +100,8 @@ interface ModernAgentConversationProps {
     resetWorkflow?: () => void;
     /** Called after a restart succeeds — receives the new AgentRun for navigation */
     onRestart?: (newRun: AgentRun) => void;
-    /** Called after a fork succeeds — receives the new AgentRun for navigation */
-    onFork?: (newRun: AgentRun) => void;
+    /** Called after a clone succeeds — receives the new AgentRun for navigation */
+    onClone?: (newRun: AgentRun) => void;
     /** Called to show run details/internals modal */
     onShowDetails?: () => void;
 
@@ -673,7 +673,7 @@ function ModernAgentConversationInner({
     placeholder,
     resetWorkflow,
     onRestart,
-    onFork,
+    onClone,
     onShowDetails,
     // File upload props (onFilesSelected handled internally by handleFileUpload)
     uploadedFiles,
@@ -759,7 +759,7 @@ function ModernAgentConversationInner({
         debugChunkFlash,
         addOptimisticMessage,
         removeOptimisticMessages,
-        workflowStatus,
+        agentRunStatus,
         workflowRunId,
         serverFileUpdates,
     } = useAgentStream(client, agentRunId);
@@ -822,13 +822,32 @@ function ModernAgentConversationInner({
     const hasProcessingFilesRef = useRef(hasProcessingFiles);
     hasProcessingFilesRef.current = hasProcessingFiles;
 
-    // Derive effective workflow status — only main workstream TERMINATED overrides API status.
-    const effectiveWorkflowStatus = useMemo(() => {
+    const lastMainMessage = useMemo(() => {
         const mainMessages = messages.filter(m => (m.workstream_id || 'main') === 'main');
-        const lastMain = mainMessages[mainMessages.length - 1];
-        if (lastMain?.type === AgentMessageType.TERMINATED) return "TERMINATED";
-        return workflowStatus;
-    }, [messages, workflowStatus]);
+        return mainMessages[mainMessages.length - 1];
+    }, [messages]);
+
+    // Derive effective status from AgentRun state; main workstream terminal events cover live-stream races.
+    const effectiveWorkflowStatus = useMemo(() => {
+        if (lastMainMessage?.type === AgentMessageType.TERMINATED) return "TERMINATED";
+        if (
+            lastMainMessage?.type === AgentMessageType.COMPLETE &&
+            (!agentRunStatus || agentRunStatus === "RUNNING")
+        ) {
+            return "COMPLETED";
+        }
+        return agentRunStatus;
+    }, [lastMainMessage, agentRunStatus]);
+
+    const isWorkflowTerminal = useMemo(() => {
+        const normalizedStatus = effectiveWorkflowStatus?.toUpperCase();
+        return normalizedStatus === "COMPLETED"
+            || normalizedStatus === "FAILED"
+            || normalizedStatus === "CANCELED"
+            || normalizedStatus === "CANCELLED"
+            || normalizedStatus === "TERMINATED"
+            || normalizedStatus === "TIMED_OUT";
+    }, [effectiveWorkflowStatus]);
 
     console.debug("[ModernAgentConversation] render", {
         agentRunId,
@@ -1385,6 +1404,7 @@ const handleCloseRightPanel = useCallback(() => {
                     <Header
                         title={actualTitle}
                         isCompleted={isCompleted}
+                        isTerminal={isWorkflowTerminal}
                         onClose={onClose}
                         isModal={isModal}
                         agentRunId={agentRunId}
@@ -1398,7 +1418,7 @@ const handleCloseRightPanel = useCallback(() => {
                         onDownload={downloadConversation}
                         resetWorkflow={resetWorkflow}
                         onRestart={onRestart}
-                        onFork={onFork}
+                        onClone={onClone}
                         onShowDetails={onShowDetails}
                         onExportPdf={exportConversationPdf}
                         isReceivingChunks={debugChunkFlash}

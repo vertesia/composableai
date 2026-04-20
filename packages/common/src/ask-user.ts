@@ -22,10 +22,6 @@ export interface AskUserUxConfig {
     variant?: 'default' | 'warning' | 'info' | 'success';
     /** Allow selecting multiple options (renders checkboxes instead of buttons) */
     multiSelect?: boolean;
-    /** Show text input for free-form response */
-    allowFreeResponse?: boolean;
-    /** Placeholder text for free-form input */
-    placeholder?: string;
 }
 
 /** Message details structure for REQUEST_INPUT messages with UX config */

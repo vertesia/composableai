@@ -30,8 +30,8 @@ export interface HeaderProps {
     onShowDetails?: () => void;
     /** Called after a restart succeeds — receives the new AgentRun */
     onRestart?: (newRun: AgentRun) => void;
-    /** Called after a fork succeeds — receives the new AgentRun */
-    onFork?: (newRun: AgentRun) => void;
+    /** Called after a clone succeeds — receives the new AgentRun */
+    onClone?: (newRun: AgentRun) => void;
     /** Show green indicator when receiving streaming chunks */
     isReceivingChunks?: boolean;
     /** Additional className for the outer container */
@@ -57,11 +57,12 @@ export default function Header({
     onExportPdf,
     onShowDetails,
     onRestart,
-    onFork,
+    onClone,
     isReceivingChunks = false,
     className,
 }: HeaderProps) {
     const { t } = useUITranslation();
+    const continueWorkflow = useContinueWorkflow(agentRunId, onRestart);
     return (
         <PayloadBuilderProvider>
             <div className={cn("flex flex-wrap items-end justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0", className)}>
@@ -111,6 +112,19 @@ export default function Header({
                         </div>
                     )}
 
+                    {onRestart && isTerminal && (
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={continueWorkflow}
+                            className="transition-all duration-200 rounded-md"
+                            title={t('agent.continueConversation')}
+                        >
+                            <RefreshCcw className="size-4 mr-1.5" />
+                            <span className="font-medium text-xs">{t('agent.continueConversation')}</span>
+                        </Button>
+                    )}
+
                     {/* More actions */}
                     <MoreDropdown
                         agentRunId={agentRunId}
@@ -123,7 +137,7 @@ export default function Header({
                         onExportPdf={onExportPdf}
                         onShowDetails={onShowDetails}
                         onRestart={onRestart}
-                        onFork={onFork}
+                        onClone={onClone}
                     />
                     {onClose && !isModal && (
                         <Button size="xs" variant="ghost" onClick={onClose}>
@@ -134,6 +148,30 @@ export default function Header({
             </div>
         </PayloadBuilderProvider>
     );
+}
+
+function useContinueWorkflow(agentRunId: string, onRestart?: (newRun: AgentRun) => void) {
+    const { t } = useUITranslation();
+    const toast = useToast();
+    const { client } = useUserSession();
+
+    return async () => {
+        try {
+            const newRun = await client.agents.restart(agentRunId);
+            toast({
+                status: "success",
+                title: t('agent.conversationContinued'),
+                duration: 2000,
+            });
+            onRestart?.(newRun);
+        } catch (_error) {
+            toast({
+                status: "error",
+                title: t('agent.failedToContinueConversation'),
+                duration: 2000,
+            });
+        }
+    };
 }
 
 function MoreDropdown({
@@ -147,7 +185,7 @@ function MoreDropdown({
     onExportPdf,
     onShowDetails,
     onRestart,
-    onFork,
+    onClone,
 }: {
     agentRunId: string;
     workflowRunId: string;
@@ -160,12 +198,13 @@ function MoreDropdown({
     onExportPdf?: () => void;
     onShowDetails?: () => void;
     onRestart?: (newRun: AgentRun) => void;
-    onFork?: (newRun: AgentRun) => void;
+    onClone?: (newRun: AgentRun) => void;
 }) {
     const { t } = useUITranslation();
     const toast = useToast();
     const { client } = useUserSession();
     const builder = usePayloadBuilder();
+    const continueWorkflow = useContinueWorkflow(agentRunId, onRestart);
 
     const cancelWorkflow = async () => {
         try {
@@ -191,37 +230,19 @@ function MoreDropdown({
         }
     };
 
-    const restartWorkflow = async () => {
-        try {
-            const newRun = await client.agents.restart(agentRunId);
-            toast({
-                status: "success",
-                title: t('agent.conversationRestarted'),
-                duration: 2000,
-            });
-            onRestart?.(newRun);
-        } catch (_error) {
-            toast({
-                status: "error",
-                title: t('agent.failedToRestartConversation'),
-                duration: 2000,
-            });
-        }
-    };
-
-    const forkWorkflow = async () => {
+    const cloneWorkflow = async () => {
         try {
             const newRun = await client.agents.fork(agentRunId);
             toast({
                 status: "success",
-                title: t('agent.conversationForked'),
+                title: t('agent.conversationCloned'),
                 duration: 2000,
             });
-            onFork?.(newRun);
+            onClone?.(newRun);
         } catch (_error) {
             toast({
                 status: "error",
-                title: t('agent.failedToForkConversation'),
+                title: t('agent.failedToCloneConversation'),
                 duration: 2000,
             });
         }
@@ -296,18 +317,20 @@ function MoreDropdown({
                     </MenuItem>
                 )}
                 {onRestart && isTerminal && (
-                    <MenuItem onClick={restartWorkflow}>
-                        <RefreshCcw className="size-3.5 text-muted" /> {t('agent.restartConversation')}
+                    <MenuItem onClick={continueWorkflow}>
+                        <RefreshCcw className="size-3.5 text-muted" /> {t('agent.continueConversation')}
                     </MenuItem>
                 )}
-                {onFork && (
-                    <MenuItem onClick={forkWorkflow}>
-                        <GitFork className="size-3.5 text-muted" /> {t('agent.forkConversation')}
+                {onClone && (
+                    <MenuItem onClick={cloneWorkflow}>
+                        <GitFork className="size-3.5 text-muted" /> {t('agent.cloneConversation')}
                     </MenuItem>
                 )}
-                <MenuItem onClick={cancelWorkflow} variant="destructive">
-                    <XIcon className="size-3.5" /> {t('agent.cancelWorkflow')}
-                </MenuItem>
+                {!isTerminal && (
+                    <MenuItem onClick={cancelWorkflow} variant="destructive">
+                        <XIcon className="size-3.5" /> {t('agent.cancelWorkflow')}
+                    </MenuItem>
+                )}
             </MenuGroup>
         </Dropdown>
     );
