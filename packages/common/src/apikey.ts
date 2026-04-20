@@ -4,16 +4,14 @@ import { ProjectRef, ProjectRoles } from "./project.js";
 import { AccountRef } from "./user.js";
 
 /**
- * A content role granted via a ContentSet ACE.
- * Included in the JWT so query-time enforcement can apply `conditions`
- * as additional filters on content objects.
+ * Content security conditions in the JWT, keyed by permission type.
+ * Each key maps to an array of condition sets — at query time, any matching set grants access ($or).
+ * Presence of this object in the JWT switches content access from allow-all to restrict mode.
  */
-export interface DynamicContentRole {
-    role: ProjectRoles;
-    /** Property conditions to match against content objects at query time. */
-    conditions: PropertyConditions;
-    /** If set, this content role applies only to the specified project. */
-    project?: string;
+export interface ContentSecurity {
+    read?: PropertyConditions[];
+    write?: PropertyConditions[];
+    delete?: PropertyConditions[];
 }
 
 export enum ApiKeyTypes {
@@ -85,8 +83,9 @@ export interface AuthTokenPayload {
      *  User properties take precedence over group properties. */
     properties?: Record<string, any>;
 
-    /** Content roles granted via ContentSet ACEs — conditions are enforced at query time. */
-    content_roles?: DynamicContentRole[];
+    /** Content security conditions keyed by permission (read/write/delete).
+     *  Presence triggers restrict mode: project:* is dropped from security filters. */
+    content_security?: ContentSecurity;
 
     /**
      * API endpoints information to be used with this token.
