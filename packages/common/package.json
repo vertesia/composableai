@@ -27,7 +27,7 @@
     "rollup": "^4.59.0",
     "ts-dual-module": "^0.6.3",
     "typescript": "^6.0.2",
-    "vitest": "^4.0.16"
+    "vitest": "^4.1.5"
   },
   "dependencies": {
     "@llumiverse/common": "workspace:*",
