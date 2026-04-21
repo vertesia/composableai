@@ -6,6 +6,7 @@ import {
     AgentMessageType,
     AgentRun,
     AgentRunArchiveState,
+    AgentRunResponse,
     AgentRunInternals,
     AgentRunStatus,
     BindRunWorkflowPayload,
@@ -85,6 +86,15 @@ export class AgentsApi extends ApiTopic {
      * Get agent run by id.
      */
     retrieve<TData = Record<string, any>>(id: string): Promise<AgentRun<TData>> {
+        return this.get(`/${id}`);
+    }
+
+    /**
+     * Get any agent run by id, preserving the agent/process discriminator.
+     */
+    retrieveRun<TData = Record<string, unknown>, TProperties = Record<string, unknown>>(
+        id: string,
+    ): Promise<AgentRunResponse<TData, TProperties>> {
         return this.get(`/${id}`);
     }
 

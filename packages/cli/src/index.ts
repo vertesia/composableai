@@ -1,6 +1,7 @@
 import { setupMemoCommand } from '@vertesia/memory-cli';
 import { Command } from 'commander';
 import { registerAppsCommand } from './apps/index.js';
+import { registerAgentsCommand } from './agents/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
 import runExport from './codegen/index.js';
 import { genTestData } from './datagen/index.js';
@@ -9,7 +10,7 @@ import { listInteractions } from './interactions/index.js';
 import { getPublishMemoryAction } from './memory/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
-import { createProfile, deleteProfile, listProfiles, showActiveAuthToken, showProfile, tryRefreshToken, updateCurrentProfile, updateProfile, useProfile } from './profiles/commands.js';
+import { createProfile, deleteProfile, listProfiles, showActiveAuthToken, showProfile, tryRefreshToken, updateCurrentProfile, updateProfile, useProfile, type CreateProfileOptions } from './profiles/commands.js';
 import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/index.js';
 import { listProjects } from './projects/index.js';
 import runInteraction from './run/index.js';
@@ -38,15 +39,11 @@ const authRoot = program.command("auth")
 
 authRoot.command("token")
     .description("Show the auth token used by the current selected profile.")
-    .action(() => {
-        showActiveAuthToken();
-    })
+    .action(() => showActiveAuthToken())
 
 authRoot.command("refresh")
     .description("Refresh the auth token used by the current profile. An alias to 'vertesia profiles refresh'.")
-    .action(() => {
-        updateCurrentProfile();
-    })
+    .action(() => updateCurrentProfile())
 
 program.command("envs [envId]")
     .description("List the environments you have access to")
@@ -129,6 +126,7 @@ setupMemoCommand(memoCmd, getPublishMemoryAction(program));
 
 registerWorkerCommand(program);
 registerAppsCommand(program);
+registerAgentsCommand(program);
 registerArtifactsCommand(program);
 
 const profilesRoot = program.command("profiles")
@@ -151,12 +149,12 @@ profilesRoot.command('add [name]')
     .alias('create')
     .option("-t, --target <env>", "The target environment for the profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.")
     .option("-r, --region <region>", `Deployment region: ${AVAILABLE_REGIONS.join(', ')}. Defaults to ${DEFAULT_REGION}. Only applies to preview and prod targets.`)
-    .option("-k, --apikey <key>", "The API key to use for the profile")
+    .option("-k, --apikey <key>", "The API key or auth token to use for the profile")
     .option("-p, --project <project>", "The project ID to use for the profile")
     .option("-a, --account <account>", "The account ID to use for the profile")
     .description("Create a new configuration profile")
-    .action((name?: string, options?: Record<string, any>) => {
-        createProfile(name, options || {});
+    .action(async (name: string | undefined, options: CreateProfileOptions) => {
+        await createProfile(name, options);
     });
 profilesRoot.command('edit [name]')
     .alias('update')
