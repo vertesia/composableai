@@ -183,9 +183,9 @@ async function executeSteps(definition: DSLWorkflowSpec, payload: DSLWorkflowExe
             if (stepType === 'workflow') {
                 const childWorkflowStep = step as DSLChildWorkflowStep;
                 if (childWorkflowStep.async) {
-                    await startChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode);
+                    await startChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode, defaultProxy, basePayload);
                 } else {
-                    await executeChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode);
+                    await executeChildWorkflow(childWorkflowStep, payload, vars, basePayload.debug_mode, defaultProxy, basePayload);
                 }
             } else { // activity
                 await runActivity(step as DSLActivitySpec, basePayload, vars, defaultProxy, defaultOptions, remoteActivities);
@@ -236,10 +236,16 @@ async function handleError(originalError: any, basePayload: BaseActivityPayload,
     throw originalError;
 }
 
-async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean) {
+async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean, proxy?: ActivityInterfaceFor<UntypedActivities>, basePayload?: BaseActivityPayload) {
     if (step.condition && !vars.match(step.condition)) {
         log.info("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
         return;
+    }
+    if (step.name.startsWith('dsl:') && !step.spec && proxy && basePayload) {
+        const workflowName = step.name.slice(4);
+        const specPayload = dslActivityPayload(basePayload, { name: 'loadChildWorkflowSpec' } as DSLActivitySpec, { workflowName });
+        const spec = await proxy.loadChildWorkflowSpec(specPayload) as DSLWorkflowSpec;
+        step = { ...step, name: 'dslWorkflow', spec };
     }
     const resolvedVars = vars.resolve();
     if (step.vars) {
@@ -274,10 +280,16 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
     }
 }
 
-async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean) {
+async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkflowExecutionPayload, vars: Vars, debug_mode?: boolean, proxy?: ActivityInterfaceFor<UntypedActivities>, basePayload?: BaseActivityPayload) {
     if (step.condition && !vars.match(step.condition)) {
         log.info("Child workflow skipped: condition not satisfied", { workflow: step.name, condition: step.condition });
         return;
+    }
+    if (step.name.startsWith('dsl:') && !step.spec && proxy && basePayload) {
+        const workflowName = step.name.slice(4);
+        const specPayload = dslActivityPayload(basePayload, { name: 'loadChildWorkflowSpec' } as DSLActivitySpec, { workflowName });
+        const spec = await proxy.loadChildWorkflowSpec(specPayload) as DSLWorkflowSpec;
+        step = { ...step, name: 'dslWorkflow', spec };
     }
     const resolvedVars = vars.resolve();
     if (step.vars) {
