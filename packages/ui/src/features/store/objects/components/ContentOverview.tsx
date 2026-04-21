@@ -382,16 +382,13 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         triggerConversion: triggerOfficePdfConversion,
     } = useOfficePdfConversion(object.id, isPreviewableAsPdfDoc);
 
-    // Reload the parent object once processing completes so object.status and text_etag are fresh.
-    // Use a ref to avoid including the unstable refetch function in the effect dependency array,
-    // which would cause the effect to re-run (and call refetch) on every render.
-    const refetchRef = useRef(refetch);
-    useEffect(() => { refetchRef.current = refetch; });
+    // Load text once processing completes without triggering a full object refetch
+    // (which would flash the page-level loading spinner).
     useEffect(() => {
         if (processingComplete && pdfStatus === WorkflowExecutionStatus.COMPLETED) {
-            refetchRef.current?.();
+            reloadText();
         }
-    }, [processingComplete, pdfStatus]);
+    }, [processingComplete, pdfStatus, reloadText]);
 
     // Show processing panel when workflow is running (for both PDFs and Office documents)
     const showProcessingPanel = (isPdf || isPreviewableAsPdfDoc) && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
