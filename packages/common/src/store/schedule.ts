@@ -67,10 +67,10 @@ export interface AgentSchedule {
     /** Timestamp when the schedule was last updated */
     updated_at: Date;
 
-    /** Timestamp of the last successful execution */
+    /** Timestamp of the last action taken by the Temporal schedule. Sourced from Temporal, not persisted in Mongo. */
     last_run_at?: Date;
 
-    /** Timestamp of the next scheduled execution */
+    /** Timestamp of the next scheduled execution. Sourced from Temporal, not persisted in Mongo. */
     next_run_at?: Date;
 }
 
