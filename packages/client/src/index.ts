@@ -3,6 +3,7 @@ export * from './client.js';
 export type { GroupsQueryOptions } from './GroupsApi.js';
 export * from './InteractionBase.js';
 export * from './InteractionOutput.js';
+export { default as OAuthProvidersApi } from './OAuthProvidersApi.js';
 export { default as OAuthServerApi } from './OAuthServerApi.js';
 export type { AsyncExecutionResult, ComputeInteractionFacetsResponse } from './InteractionsApi.js';
 export type { ComputePromptFacetsResponse, ListInteractionsResponse } from './PromptsApi.js';

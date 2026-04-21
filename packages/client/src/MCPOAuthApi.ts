@@ -55,9 +55,9 @@ export default class MCPOAuthApi extends ApiTopic {
     }
 
     /**
-     * Connect a client_credentials OAuth Application to an MCP collection.
+     * Connect a client_credentials OAuth provider to an MCP collection.
      * Discovers and backfills the token endpoint if not configured, then verifies credentials.
-     * Only applicable when the OAuth Application uses grant_type=client_credentials.
+     * Only applicable when the OAuth provider uses grant_type=client_credentials.
      * @param appInstallId - The app installation ID
      * @param collectionId - The stable collection id
      */
@@ -77,7 +77,7 @@ export default class MCPOAuthApi extends ApiTopic {
     /**
      * Get or refresh OAuth token (internal use by workflows).
      * Preferred path: resolve through a specific app installation collection binding.
-     * This preserves least privilege and does not rely on mutable OAuth app names.
+     * This preserves least privilege and does not rely on mutable OAuth provider names.
      * @param appInstallId - The app installation ID
      * @param collectionId - The stable MCP collection id
      * @returns Access token
