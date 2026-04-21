@@ -21,7 +21,7 @@ export function useAgentRunnerFilterGroups(facets: AgentRunnerFacetsNavProps['fa
 
     customFilterGroups.push({
         name: 'id',
-        placeholder: 'Run ID',
+        placeholder: 'Agent Run ID',
         type: 'text',
         multiple: false
     });
