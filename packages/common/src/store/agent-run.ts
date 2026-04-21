@@ -222,6 +222,9 @@ export interface ListAgentRunsQuery {
     /** Only return runs started after this date */
     since?: Date;
 
+    /** Only return runs started at or before this date */
+    until?: Date;
+
     /** Maximum number of results (default: 50) */
     limit?: number;
 
@@ -268,6 +271,9 @@ export interface SearchAgentRunsQuery {
 
     /** Only return runs started after this date */
     since?: Date;
+
+    /** Only return runs started at or before this date */
+    until?: Date;
 
     /** Maximum number of results (default: 50) */
     limit?: number;
