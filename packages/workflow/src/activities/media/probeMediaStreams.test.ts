@@ -63,7 +63,7 @@ async function setupMockContext(objectId: string, signedUrl: string): Promise<vo
         client: mockClient,
         objectId,
         inputType: 'objectIds',
-        params: {},
+        params: {} satisfies ProbeMediaStreamsParams,
     } as unknown as ActivityContext<ProbeMediaStreamsParams>);
 }
 
@@ -81,7 +81,7 @@ describe('probeMediaStreams', () => {
         await setupMockContext('test-object-id', 'https://storage.example.com/file.mp4');
         mockExec(JSON.stringify({ streams: [{ codec_type: 'video' }] }));
 
-        const result = await testEnv.run(probeMediaStreams, createPayload());
+        const result: ProbeMediaStreamsResult = await testEnv.run(probeMediaStreams, createPayload());
 
         expect(result).toEqual({ hasVideo: true, hasAudio: false });
     });
@@ -90,7 +90,7 @@ describe('probeMediaStreams', () => {
         await setupMockContext('test-object-id', 'https://storage.example.com/audio-only.mp4');
         mockExec(JSON.stringify({ streams: [{ codec_type: 'audio' }] }));
 
-        const result = await testEnv.run(probeMediaStreams, createPayload());
+        const result: ProbeMediaStreamsResult = await testEnv.run(probeMediaStreams, createPayload());
 
         expect(result).toEqual({ hasVideo: false, hasAudio: true });
     });
