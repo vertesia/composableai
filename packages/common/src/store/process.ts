@@ -169,6 +169,9 @@ export interface NodeHistoryEntry {
     context_diff: Record<string, any>;
     data_ref?: string;
     sequence?: number;
+    child_run_id?: string;
+    child_workflow_id?: string;
+    child_workflow_run_id?: string;
 }
 
 export interface ProcessHistoryRef {

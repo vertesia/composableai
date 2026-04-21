@@ -592,7 +592,7 @@ export class AgentsApi extends ApiTopic {
     }
 
     /**
-     * List child workflows (sub-agents) for an agent run.
+     * List child workflows for an agent or process run.
      */
     listChildren(id: string): Promise<ListWorkflowRunsResponse> {
         return this.get(`/${id}/children`);
@@ -600,7 +600,7 @@ export class AgentsApi extends ApiTopic {
 
     /**
      * Get details for a specific child workflow.
-     * Serves from GCS archive when available, falls back to Temporal.
+     * Serves from the child run record when available, falls back to archive or Temporal.
      */
     getChildDetails(
         id: string,
