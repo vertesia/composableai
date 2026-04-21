@@ -19,21 +19,21 @@ export const DateCombobox = ({
     const [localDateRange, setLocalDateRange] = useState<[Date | null, Date | null]>([null, null]);
     const { t } = useUITranslation();
 
-    // For single date
-    const selectedDate = filterValues[0] ? new Date(filterValues[0]) : undefined;
+    // Parse with dayjs to interpret bare YYYY-MM-DD as local time (to match UI).
+    const selectedDate = filterValues[0] ? dayjs(filterValues[0]).toDate() : undefined;
 
     // For date range - use local state for immediate feedback, fall back to filter values
     const dateRange: [Date | null, Date | null] = isRange ? [
-        localDateRange[0] || (filterValues[0] ? new Date(filterValues[0]) : null),
-        localDateRange[1] || (filterValues[1] ? new Date(filterValues[1]) : null)
+        localDateRange[0] || (filterValues[0] ? dayjs(filterValues[0]).toDate() : null),
+        localDateRange[1] || (filterValues[1] ? dayjs(filterValues[1]).toDate() : null)
     ] : [null, null];
 
     // Update local state when filter values change
     useEffect(() => {
         if (isRange) {
             setLocalDateRange([
-                filterValues[0] ? new Date(filterValues[0]) : null,
-                filterValues[1] ? new Date(filterValues[1]) : null
+                filterValues[0] ? dayjs(filterValues[0]).toDate() : null,
+                filterValues[1] ? dayjs(filterValues[1]).toDate() : null
             ]);
         }
     }, [filterValues, isRange]);
