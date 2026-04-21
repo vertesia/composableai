@@ -335,6 +335,13 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
     };
 
     const [currentPanel, setCurrentPanel] = useState<PanelView>(getInitialView());
+    const [hasVisitedPdfPanel, setHasVisitedPdfPanel] = useState(currentPanel === PanelView.Pdf);
+
+    useEffect(() => {
+        if (currentPanel === PanelView.Pdf) {
+            setHasVisitedPdfPanel(true);
+        }
+    }, [currentPanel]);
 
     // Text editing state
     const [isEditing, setIsEditing] = useState(false);
@@ -356,8 +363,10 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         loadText: reloadText,
     } = useObjectText(object.id, object.text, loadText);
 
-    // Poll for PDF/document processing status when object is created or processing
-    const shouldPollProgress = (isPdf || isPreviewableAsPdfDoc) && isCreatedOrProcessing;
+    // Only poll while the active panel can actually surface processing progress.
+    const shouldPollProgress = (isPdf || isPreviewableAsPdfDoc)
+        && isCreatedOrProcessing
+        && (currentPanel === PanelView.Text || currentPanel === PanelView.Pdf);
     const {
         progress: pdfProgress,
         status: pdfStatus,
@@ -373,15 +382,19 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
         triggerConversion: triggerOfficePdfConversion,
     } = useOfficePdfConversion(object.id, isPreviewableAsPdfDoc);
 
-    // Reload object when PDF processing completes
+    // Load text once processing completes without triggering a full object refetch
+    // (which would flash the page-level loading spinner).
     useEffect(() => {
         if (processingComplete && pdfStatus === WorkflowExecutionStatus.COMPLETED) {
-            refetch?.();
+            reloadText();
         }
-    }, [processingComplete, pdfStatus, refetch]);
+    }, [processingComplete, pdfStatus, reloadText]);
 
     // Show processing panel when workflow is running (for both PDFs and Office documents)
     const showProcessingPanel = (isPdf || isPreviewableAsPdfDoc) && isCreatedOrProcessing && !processingComplete && pdfStatus === WorkflowExecutionStatus.RUNNING;
+    const showPdfPreviewPanel = currentPanel === PanelView.Pdf && !showProcessingPanel;
+    const showPdfProcessingPanel = showProcessingPanel && (currentPanel === PanelView.Text || currentPanel === PanelView.Pdf);
+    const keepPdfPreviewMounted = hasVisitedPdfPanel && !showProcessingPanel;
 
     const textContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -487,27 +500,33 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     />
                 )}
             </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Image)}>
-                <ImagePanel object={object} />
-            </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Video)}>
-                <VideoPanel object={object} />
-            </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Audio)}>
-                <AudioPanel object={object} />
-            </div>
-            {hasTranscript && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Transcript)}>
+            {currentPanel === PanelView.Image && (
+                <div className={getPanelVisibility(true)}>
+                    <ImagePanel object={object} />
+                </div>
+            )}
+            {currentPanel === PanelView.Video && (
+                <div className={getPanelVisibility(true)}>
+                    <VideoPanel object={object} />
+                </div>
+            )}
+            {currentPanel === PanelView.Audio && (
+                <div className={getPanelVisibility(true)}>
+                    <AudioPanel object={object} />
+                </div>
+            )}
+            {hasTranscript && currentPanel === PanelView.Transcript && (
+                <div className={getPanelVisibility(true)}>
                     <TranscriptPanel object={object} handleCopyContent={handleCopyContent} />
                 </div>
             )}
-            {isPdf && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
+            {isPdf && keepPdfPreviewMounted && (
+                <div className={getPanelVisibility(showPdfPreviewPanel)}>
                     <PdfPreviewPanel object={object} />
                 </div>
             )}
-            {isPreviewableAsPdfDoc && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Pdf)}>
+            {isPreviewableAsPdfDoc && keepPdfPreviewMounted && (
+                <div className={getPanelVisibility(showPdfPreviewPanel)}>
                     <OfficePdfPreviewPanel
                         pdfRendition={pdfRendition}
                         officePdfUrl={officePdfUrl}
@@ -517,24 +536,28 @@ function DataPanel({ object, loadText, handleCopyContent, refetch }: { object: C
                     />
                 </div>
             )}
-            {showProcessingPanel && (
-                <div className={getPanelVisibility(currentPanel === PanelView.Text)}>
+            {showPdfProcessingPanel && (
+                <div className={getPanelVisibility(true)}>
                     <PdfProcessingPanel progress={pdfProgress} status={pdfStatus} outputFormat={pdfOutputFormat} />
                 </div>
             )}
-            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText)}>
-                <div className="flex justify-center items-center flex-1">
-                    <Spinner size="lg" />
+            {currentPanel === PanelView.Text && !showProcessingPanel && isLoadingText && (
+                <div className={getPanelVisibility(true)}>
+                    <div className="flex justify-center items-center flex-1">
+                        <Spinner size="lg" />
+                    </div>
                 </div>
-            </div>
-            <div className={getPanelVisibility(currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText)}>
-                <TextPanel
-                    object={object}
-                    text={displayText}
-                    isTextCropped={isTextCropped}
-                    textContainerRef={textContainerRef}
-                />
-            </div>
+            )}
+            {currentPanel === PanelView.Text && !showProcessingPanel && !isLoadingText && (
+                <div className={getPanelVisibility(true)}>
+                    <TextPanel
+                        object={object}
+                        text={displayText}
+                        isTextCropped={isTextCropped}
+                        textContainerRef={textContainerRef}
+                    />
+                </div>
+            )}
             {isEditing && currentPanel === PanelView.Text && fullText != null && (
                 <TextEditorPanel
                     object={object}
