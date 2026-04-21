@@ -245,7 +245,10 @@ async function startChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWorkfl
         const workflowName = step.name.slice(4);
         const specPayload = dslActivityPayload(basePayload, { name: 'loadChildWorkflowSpec' } as DSLActivitySpec, { workflowName });
         const spec = await proxy.loadChildWorkflowSpec(specPayload) as DSLWorkflowSpec;
-        step = { ...step, name: 'dslWorkflow', spec };
+        const humanName = spec.name.replace(/([A-Z])/g, ' $1').trim();
+        const objectIds = getDocumentIds(payload);
+        const workflowId = objectIds.length > 0 ? `${humanName}:${objectIds[0]}` : humanName;
+        step = { ...step, name: 'dslWorkflow', spec, options: { ...step.options, workflowId } };
     }
     const resolvedVars = vars.resolve();
     if (step.vars) {
@@ -289,7 +292,10 @@ async function executeChildWorkflow(step: DSLChildWorkflowStep, payload: DSLWork
         const workflowName = step.name.slice(4);
         const specPayload = dslActivityPayload(basePayload, { name: 'loadChildWorkflowSpec' } as DSLActivitySpec, { workflowName });
         const spec = await proxy.loadChildWorkflowSpec(specPayload) as DSLWorkflowSpec;
-        step = { ...step, name: 'dslWorkflow', spec };
+        const humanName = spec.name.replace(/([A-Z])/g, ' $1').trim();
+        const objectIds = getDocumentIds(payload);
+        const workflowId = objectIds.length > 0 ? `${humanName}:${objectIds[0]}` : humanName;
+        step = { ...step, name: 'dslWorkflow', spec, options: { ...step.options, workflowId } };
     }
     const resolvedVars = vars.resolve();
     if (step.vars) {
