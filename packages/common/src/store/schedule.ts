@@ -72,9 +72,6 @@ export interface AgentSchedule {
 
     /** Timestamp of the next scheduled execution */
     next_run_at?: Date;
-
-    /** Total number of times this schedule has executed */
-    run_count?: number;
 }
 
 /**
@@ -152,7 +149,6 @@ export interface ScheduleListItem {
     enabled: boolean;
     last_run_at?: Date;
     next_run_at?: Date;
-    run_count?: number;
     created_by: string;
     updated_at: Date;
 }
