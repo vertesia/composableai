@@ -587,7 +587,7 @@ export interface AppInstallationOAuthBinding {
     oauth_provider_id: string;
     /**
      * Name of the OAuth provider at creation time.
-     * Used by the workflow token path (getMCPClient → mcpOAuth.getToken) which looks up by name.
+     * Used by the workflow token path (getMCPClient → remoteMcpConnections.getToken) which looks up by name.
      */
     oauth_provider_name: string;
 }

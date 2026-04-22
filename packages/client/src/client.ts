@@ -10,13 +10,13 @@ import CommandsApi from "./CommandsApi.js";
 import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
-import MCPOAuthApi from "./MCPOAuthApi.js";
 import OAuthClientsApi from "./OAuthClientsApi.js";
 import OAuthProvidersApi from "./OAuthProvidersApi.js";
 import OAuthServerApi from "./OAuthServerApi.js";
 import ProjectsApi from "./ProjectsApi.js";
 import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
+import RemoteMcpConnectionsApi from "./RemoteMcpConnectionsApi.js";
 import { RunsApi } from "./RunsApi.js";
 import SkillsApi from "./SkillsApi.js";
 import { ZenoClient } from "./store/client.js";
@@ -87,6 +87,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     oauthClients: OAuthClientsApi;
     oauthServer: OAuthServerApi;
     oauthProviders: OAuthProvidersApi;
+    remoteMcpConnections: RemoteMcpConnectionsApi;
 
     /**
      * Create a client from the given token.
@@ -197,6 +198,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.oauthClients = new OAuthClientsApi(this);
         this.oauthServer = new OAuthServerApi(this);
         this.oauthProviders = new OAuthProvidersApi(this);
+        this.remoteMcpConnections = new RemoteMcpConnectionsApi(this);
     }
 
     withApiVersion(version: string | number | null) {
@@ -354,7 +356,6 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     refs = new RefsApi(this);
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
-    mcpOAuth = new MCPOAuthApi(this);
 }
 
 function isApiKey(apiKey: string) {
