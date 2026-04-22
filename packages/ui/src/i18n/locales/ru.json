@@ -620,6 +620,8 @@
   "user.account": "Аккаунт:",
   "user.agentOnBehalfOf": "Агент от имени",
   "user.agentOnBehalfOfApiKey": "Агент от имени API-ключа",
+  "user.allProjectMembers": "Все участники проекта",
+  "user.allProjectMembersDescription": "Каждый участник этого проекта имеет это разрешение.",
   "user.appVersion": "Версия приложения",
   "user.environment": "Окружение",
   "user.failedToFetchApiKey": "Не удалось получить API-ключ",

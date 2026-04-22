@@ -598,6 +598,8 @@
   "user.account": "帳戶：",
   "user.agentOnBehalfOf": "代理代表",
   "user.agentOnBehalfOfApiKey": "代理代表API金鑰",
+  "user.allProjectMembers": "所有專案成員",
+  "user.allProjectMembersDescription": "此專案的每個成員都擁有此權限。",
   "user.appVersion": "應用版本",
   "user.environment": "環境",
   "user.failedToFetchApiKey": "取得API金鑰失敗",
