@@ -1,6 +1,7 @@
 import { VertesiaClient } from "@vertesia/client";
 import { Command } from "commander";
 import { config, Profile } from "./profiles/index.js";
+import { isKeyringAvailable, readProfileAccessToken } from "./profiles/keyring.js";
 
 
 let _client: VertesiaClient | undefined;
@@ -21,6 +22,8 @@ export async function getClient(_program?: Command): Promise<VertesiaClient> {
 }
 
 async function createClient(profile: Profile | undefined): Promise<VertesiaClient> {
+    const token = process.env.VERTESIA_TOKEN;
+
     // Explicit environment overrides should win over profile settings so the same
     // credential can be reused against a local deployment without changing profiles.
     const env = {
@@ -37,9 +40,6 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
         sessionTags: profile?.session_tags ? profile.session_tags.split(/\s*,\s*/) : 'cli',
     };
 
-    if (!env.apikey && profile?.apikey) {
-        env.apikey = profile.apikey;
-    }
     if (!env.serverUrl && profile?.studio_server_url) {
         env.serverUrl = profile.studio_server_url;
     }
@@ -49,7 +49,6 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
 
     // VERTESIA_TOKEN contains endpoint URLs, but explicit endpoint env vars
     // should win so the same token can be used against a local server.
-    const token = process.env.VERTESIA_TOKEN;
     if (token) {
         const endpoints = env.serverUrl && env.storeUrl
             ? {
@@ -59,6 +58,13 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
             }
             : undefined;
         return VertesiaClient.fromAuthToken(token, undefined, endpoints);
+    }
+
+    if (!env.apikey && profile) {
+        env.apikey = readProfileAccessToken(profile);
+        if (!env.apikey && !profile.apikey && !isKeyringAvailable()) {
+            throw new Error('No keyring-backed auth token is available for the selected profile on this system. Use VERTESIA_APIKEY or VERTESIA_TOKEN instead.');
+        }
     }
 
     return new VertesiaClient(env);

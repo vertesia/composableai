@@ -3,7 +3,6 @@ import {
     ActiveWorkstreamsQueryResult,
     AgentEvent,
     AgentMessage,
-    AgentMessageType,
     AgentRun,
     AgentRunArchiveState,
     AgentRunResponse,
@@ -44,6 +43,7 @@ import {
 } from '@vertesia/common';
 import { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
+import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
 
 export class AgentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -360,11 +360,7 @@ export class AgentsApi extends ApiTopic {
                     if (onMessage) onMessage(msg, exit);
                     if (isClosed) break;
 
-                    const workstreamId = msg.workstream_id || 'main';
-                    const streamIsOver =
-                        msg.type === AgentMessageType.TERMINATED ||
-                        (msg.type === AgentMessageType.COMPLETE && workstreamId === 'main');
-                    if (streamIsOver) {
+                    if (shouldCloseAgentRunStream(msg, id)) {
                         exit(null);
                         return promise;
                     }
@@ -435,11 +431,7 @@ export class AgentsApi extends ApiTopic {
                             onMessage(agentMessage, exit);
                         }
 
-                        const workstreamId = compactMessage.w || 'main';
-                        const streamIsOver =
-                            compactMessage.t === AgentMessageType.TERMINATED ||
-                            (compactMessage.t === AgentMessageType.COMPLETE && workstreamId === 'main');
-                        if (streamIsOver) {
+                        if (shouldCloseCompactRunStream(compactMessage, id)) {
                             exit(null);
                         }
                     } catch (err) {

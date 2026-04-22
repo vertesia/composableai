@@ -5,6 +5,7 @@ import { join } from "path";
 import { readJsonFile, writeJsonFile } from "../utils/stdio.js";
 import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.js";
 import { OnResultCallback } from "./commands.js";
+import { deleteAuthBundle, getAccessTokenExpiry, hasStoredAccessToken, isKeyringAvailable, readAuthBundle, readProfileAccessToken, writeAuthBundle } from "./keyring.js";
 
 export function getConfigFile(path?: string) {
     const dir = join(os.homedir(), '.vertesia');
@@ -88,7 +89,7 @@ export function getCloudTypeFromConfigUrl(url: string) {
 export interface Profile {
     name: string;
     config_url: string;
-    apikey: string;
+    apikey?: string;
     account: string;
     project: string;
     studio_server_url: string;
@@ -104,10 +105,13 @@ interface ProfilesData {
 }
 
 export function shouldRefreshProfileToken(profile: Profile, thresholdInSeconds = 1) {
-    if (profile.apikey) {
-        const token = jwt.decode(profile.apikey, { json: true });
-        if (token && token.exp) {
-            return (token.exp - thresholdInSeconds) * 1000 < Date.now();
+    const token = readProfileAccessToken(profile);
+    if (token) {
+        const bundle = readAuthBundle(profile.name);
+        const expiresAt = bundle?.accessTokenExpiresAt
+            ?? getAccessTokenExpiry(token);
+        if (expiresAt) {
+            return expiresAt - thresholdInSeconds * 1000 < Date.now();
         }
     }
     // if no token or no expiration set then refresh auth token
@@ -137,12 +141,22 @@ export class ConfigureProfile {
             return;
         }
         const oldName = this.data.name!;
+        const previousBundle = oldName ? readAuthBundle(oldName) : undefined;
         this.data.name = result.profile;
         this.data.account = result.account;
         this.data.project = result.project;
         this.data.studio_server_url = result.studio_server_url;
         this.data.zeno_server_url = result.zeno_server_url;
-        this.data.apikey = result.token;
+        delete this.data.apikey;
+        writeAuthBundle(result.profile, {
+            accessToken: result.token,
+            accessTokenExpiresAt: readResultAccessTokenExpiry(result),
+            refreshToken: result.refresh_token || previousBundle?.refreshToken,
+            refreshTokenExpiresAt: result.refresh_token_expires_at || previousBundle?.refreshTokenExpiresAt,
+        });
+        if (oldName && oldName !== result.profile) {
+            deleteAuthBundle(oldName);
+        }
         this.config.remove(oldName);
         this.config.add(this.data as Profile);
         if (this.isNew) {
@@ -277,7 +291,14 @@ export class Config {
         const file = getConfigFile('profiles.json');
         writeJsonFile(file, {
             default: this.current?.name,
-            profiles: this.profiles,
+            profiles: this.profiles.map(profile => {
+                if (profile.apikey && !hasStoredAccessToken(profile.name)) {
+                    return profile;
+                }
+                const { apikey, ...safeProfile } = profile;
+                void apikey;
+                return safeProfile;
+            }),
         });
         return this;
     }
@@ -296,10 +317,32 @@ export class Config {
         try {
             const data = readJsonFile(getConfigFile('profiles.json')) as ProfilesData;
             this.profiles = data.profiles;
+            let needsSave = false;
+            if (isKeyringAvailable()) {
+                for (const profile of this.profiles) {
+                    if (!profile.apikey) {
+                        continue;
+                    }
+                    const existingBundle = readAuthBundle(profile.name);
+                    if (!existingBundle?.accessToken) {
+                        writeAuthBundle(profile.name, {
+                            accessToken: profile.apikey,
+                            accessTokenExpiresAt: readInlineTokenExpiry(profile.apikey),
+                            refreshToken: existingBundle?.refreshToken,
+                            refreshTokenExpiresAt: existingBundle?.refreshTokenExpiresAt,
+                        });
+                    }
+                    delete profile.apikey;
+                    needsSave = true;
+                }
+            }
             if (data.default) {
                 this.use(data.default)
             } else {
                 this.current = undefined;
+            }
+            if (needsSave) {
+                this.save();
             }
         } catch (err: any) {
             if (err.code !== 'ENOENT') {
@@ -334,3 +377,21 @@ export class InvalidConfigUrlError extends Error {
 const config = new Config().load();
 
 export { config };
+
+function readInlineTokenExpiry(token: string): number | undefined {
+    const decoded = jwt.decode(token, { json: true });
+    if (!decoded?.exp) {
+        return undefined;
+    }
+    return decoded.exp * 1000;
+}
+
+function readResultAccessTokenExpiry(result: ConfigResult): number | undefined {
+    if (typeof result.access_token_expires_at === 'number') {
+        return result.access_token_expires_at;
+    }
+    if (typeof result.expires_in === 'number') {
+        return Date.now() + result.expires_in * 1000;
+    }
+    return readInlineTokenExpiry(result.token);
+}

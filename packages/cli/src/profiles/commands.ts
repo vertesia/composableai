@@ -3,6 +3,7 @@ import colors from 'ansi-colors';
 import enquirer from "enquirer";
 import jwt from 'jsonwebtoken';
 import { AVAILABLE_REGIONS, DEFAULT_REGION, Region, config, getConfigUrl, getServerUrls, shouldRefreshProfileToken } from "./index.js";
+import { deleteAuthBundle, getAccessTokenExpiry, readProfileAccessToken, writeAuthBundle } from "./keyring.js";
 import { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
 
@@ -67,16 +68,28 @@ export function showProfile(name?: string) {
 }
 
 export async function showActiveAuthToken() {
+    const envToken = process.env.VERTESIA_TOKEN
+        || process.env.VERTESIA_APIKEY
+        || process.env.COMPOSABLE_PROMPTS_APIKEY;
+    if (envToken) {
+        console.log(envToken);
+        return;
+    }
     if (config.profiles.length === 0) {
         console.log('No profiles are defined. Run `vertesia profiles create` to add a new profile.');
         return;
     } else if (config.current) {
-        const token = jwt.decode(config.current.apikey, { json: true });
-        if (token?.exp && token.exp * 1000 < Date.now()) {
+        const token = readProfileAccessToken(config.current);
+        if (!token) {
+            console.log('No auth token is stored for the current profile. Run `vertesia auth refresh` to authenticate again.');
+            return;
+        }
+        const expiresAt = getAccessTokenExpiry(token);
+        if (expiresAt && expiresAt < Date.now()) {
             console.log("Authentication token expired. Create a new one ");
             await _doRefreshToken(config.current.name);
         } else {
-            console.log(config.current.apikey);
+            console.log(token);
         }
     } else {
         console.log('No profile is selected. Run `vertesia auth refresh` to refresh the token');
@@ -85,6 +98,7 @@ export async function showActiveAuthToken() {
 
 
 export function deleteProfile(name: string) {
+    deleteAuthBundle(name);
     config.remove(name).save();
 }
 
@@ -196,12 +210,15 @@ export async function createProfile(name?: string, options: CreateProfileOptions
             console.error("Unable to resolve project and account from the supplied credential. Check the target endpoint or provide --project and --account.");
             process.exit(1);
         }
+        writeAuthBundle(name, {
+            accessToken: options.apikey,
+            accessTokenExpiresAt: getAccessTokenExpiry(options.apikey),
+        });
         config.add({
             account,
             project,
             name,
             config_url: getConfigUrl(target!, region),
-            apikey: options.apikey,
             region,
             ...serverUrls,
         });
