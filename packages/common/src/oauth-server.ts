@@ -94,6 +94,7 @@ export interface OAuthAuthorizeQuery {
     response_type: 'code';
     client_id: string;
     redirect_uri: string;
+    resource?: string;
     scope?: string;
     state?: string;
     code_challenge: string;
@@ -108,6 +109,7 @@ export interface OAuthAuthorizationRequest {
     client_registration_mode?: OAuthClientRegistrationMode;
     redirect_uri: string;
     redirect_origin: string;
+    resource?: string;
     requested_scopes: string[];
     requested_project_id?: string;
     project_binding_mode: OAuthProjectBindingMode;
@@ -130,6 +132,7 @@ export interface OAuthTokenRequestAuthorizationCode {
     code: string;
     redirect_uri: string;
     client_id: string;
+    resource?: string;
     code_verifier: string;
     client_secret?: string;
 }
@@ -138,6 +141,7 @@ export interface OAuthTokenRequestRefreshToken {
     grant_type: 'refresh_token';
     refresh_token: string;
     client_id: string;
+    resource?: string;
     client_secret?: string;
 }
 
@@ -158,6 +162,7 @@ export interface OAuthAuthorizationCodeRecord {
     user_id: string;
     account_id: string;
     project_id: string;
+    resource: string;
     scope: string[];
     redirect_uri: string;
     code_challenge: string;
@@ -205,4 +210,5 @@ export interface OAuthAccessTokenPayload {
     permissions?: string[];
     allowed_collections?: string[];
     tags?: string[];
+    resource?: string;
 }
