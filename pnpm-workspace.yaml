@@ -3,7 +3,7 @@ packages:
   - packages/*
   - templates/*
   - "!templates/worker-template"
-minimumReleaseAge: 1440 # 1 day in minutes, minimumReleaseAge protects against supply chain attacks.
+minimumReleaseAge: 4320 # 3 days in minutes, minimumReleaseAge protects against supply chain attacks.
 minimumReleaseAgeExclude:
   - '@vertesia/*'
   - '@llumiverse/*'
@@ -13,5 +13,7 @@ minimumReleaseAgeExclude:
   - vite@7.3.2
   # Renovate security update: @hono/node-server@1.19.13
   - "@hono/node-server@1.19.13"
-  # Renovate security update: hono@4.12.12
-  - hono@4.12.12
+  # Renovate security update: hono@4.12.12 || 4.12.14
+  - hono@4.12.12 || 4.12.14
+  # Renovate security update: dompurify@3.4.0
+  - dompurify@3.4.0

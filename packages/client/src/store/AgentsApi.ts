@@ -122,6 +122,7 @@ export class AgentsApi extends ApiTopic {
         if (query?.interaction) params.interaction = query.interaction;
         if (query?.started_by) params.started_by = query.started_by;
         if (query?.since) params.since = query.since.toISOString();
+        if (query?.until) params.until = query.until.toISOString();
         if (query?.schedule_id) params.schedule_id = query.schedule_id;
         if (query?.type) params.type = query.type;
         if (query?.run_type) params.run_type = Array.isArray(query.run_type) ? query.run_type.join(',') : query.run_type;
@@ -148,6 +149,7 @@ export class AgentsApi extends ApiTopic {
         if (query?.tags?.length) params.tags = query.tags.join(',');
         if (query?.content_type_name) params.content_type_name = query.content_type_name;
         if (query?.since) params.since = query.since.toISOString();
+        if (query?.until) params.until = query.until.toISOString();
         if (query?.limit) params.limit = String(query.limit);
         if (query?.offset) params.offset = String(query.offset);
         return this.get('/search', { query: params });

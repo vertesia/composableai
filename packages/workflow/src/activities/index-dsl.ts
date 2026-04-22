@@ -16,6 +16,8 @@ export { getObjectFromStore } from "./getObjectFromStore.js";
 export { handleDslError } from "./handleError.js";
 export { prepareAudio } from "./media/prepareAudio.js";
 export { prepareVideo } from "./media/prepareVideo.js";
+export { probeMediaStreams } from "./media/probeMediaStreams.js";
+export type { ProbeMediaStreamsResult } from "./media/probeMediaStreams.js";
 export { convertPdfToStructuredText } from "./media/processPdfWithTextract.js";
 export { saveGladiaTranscription } from "./media/saveGladiaTranscription.js";
 export { transcribeMedia } from "./media/transcribeMediaWithGladia.js";
@@ -26,4 +28,5 @@ export { checkRateLimit } from "./rateLimiter.js";
 export { generateImageRendition } from "./renditions/generateImageRendition.js";
 export { generateVideoRendition } from "./renditions/generateVideoRendition.js";
 export { setDocumentStatus } from "./setDocumentStatus.js";
+export { loadChildWorkflowSpec } from "./loadChildWorkflowSpec.js";
 

@@ -12,6 +12,7 @@ export async function handleDslError(payload: DSLActivityExecutionPayload<Handle
     const isIntake = [
         "StandardDocumentIntake",
         "StandardImageIntake",
+        "StandardMediaContainerIntake",
         "StandardVideoIntake",
         "StandardAudioIntake",
         "StandardDocPartIntake",

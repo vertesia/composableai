@@ -17,12 +17,7 @@ console.log(`Starting Tool Server on port ${port}...`);
 console.log(`API endpoint: http://localhost:${port}/api`);
 console.log(`Web UI: http://localhost:${port}/`);
 
-// Add static file serving for widgets, scripts, and other assets
-const staticFile = serveStatic({ root: './dist' });
-server.all("*", async (c, next) => {
-    // Serve static resources from dist/
-    return staticFile(c, next);
-});
+server.get('*', serveStatic({ root: './dist' }));
 
 serve({
     fetch: server.fetch,
