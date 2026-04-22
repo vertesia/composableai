@@ -7,6 +7,9 @@ export type OAuthGrantType = 'authorization_code' | 'refresh_token';
 export type OAuthResponseType = 'code';
 export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
 export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
+export type OAuthGrantStatus = 'active' | 'revoked' | 'expired';
+export type OAuthGrantSortField = 'granted_at' | 'client_name' | 'user_name' | 'resource' | 'last_used_at' | 'expires_at' | 'status';
+export type OAuthGrantSortOrder = 'asc' | 'desc';
 
 export interface OAuthClientData {
     client_name: string;
@@ -33,6 +36,55 @@ export interface OAuthClient extends OAuthClientData {
 
 export interface OAuthClientCreateResponse extends OAuthClient {
     client_secret?: string;
+}
+
+export interface OAuthGrant {
+    grant_id: string;
+    client_id: string;
+    client_name: string;
+    user_id: string;
+    user_name?: string;
+    user_email?: string;
+    account_id: string;
+    project_id: string;
+    resource: string;
+    scope: string[];
+    status: OAuthGrantStatus;
+    token_count: number;
+    granted_at: string;
+    created_at: string;
+    last_used_at?: string;
+    expires_at?: string;
+}
+
+export interface ListOAuthGrantsQuery {
+    account_id?: string;
+    project_id?: string;
+    user_id?: string;
+    client_id?: string;
+    resource?: string;
+    status?: OAuthGrantStatus | 'all';
+    limit?: number;
+    offset?: number;
+    sort_by?: OAuthGrantSortField;
+    sort_order?: OAuthGrantSortOrder;
+}
+
+export interface OAuthGrantListResponse {
+    grants: OAuthGrant[];
+    total_count: number;
+    limit: number;
+    offset: number;
+}
+
+export interface BulkRevokeOAuthGrantsPayload extends ListOAuthGrantsQuery {
+    grant_ids?: string[];
+    include_consent?: boolean;
+}
+
+export interface OAuthGrantRevokeResponse {
+    revoked_tokens: number;
+    revoked_consents: number;
 }
 
 export interface CreateOAuthClientPayload {

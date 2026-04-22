@@ -11,6 +11,7 @@ import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
 import OAuthClientsApi from "./OAuthClientsApi.js";
+import OAuthGrantsApi from "./OAuthGrantsApi.js";
 import OAuthProvidersApi from "./OAuthProvidersApi.js";
 import OAuthServerApi from "./OAuthServerApi.js";
 import ProjectsApi from "./ProjectsApi.js";
@@ -85,6 +86,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     tokenServerUrl: string;
 
     oauthClients: OAuthClientsApi;
+    oauthGrants: OAuthGrantsApi;
     oauthServer: OAuthServerApi;
     oauthProviders: OAuthProvidersApi;
     remoteMcpConnections: RemoteMcpConnectionsApi;
@@ -196,6 +198,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.onResponse = opts.onResponse;
         this.sessionTags = opts.sessionTags;
         this.oauthClients = new OAuthClientsApi(this);
+        this.oauthGrants = new OAuthGrantsApi(this);
         this.oauthServer = new OAuthServerApi(this);
         this.oauthProviders = new OAuthProvidersApi(this);
         this.remoteMcpConnections = new RemoteMcpConnectionsApi(this);
