@@ -100,8 +100,8 @@ interface ModernAgentConversationProps {
     resetWorkflow?: () => void;
     /** Called after a restart succeeds — receives the new AgentRun for navigation */
     onRestart?: (newRun: AgentRun) => void;
-    /** Called after a fork succeeds — receives the new AgentRun for navigation */
-    onFork?: (newRun: AgentRun) => void;
+    /** Called after a clone succeeds — receives the new AgentRun for navigation */
+    onClone?: (newRun: AgentRun) => void;
     /** Called to show run details/internals modal */
     onShowDetails?: () => void;
 
@@ -675,7 +675,7 @@ function ModernAgentConversationInner({
     placeholder,
     resetWorkflow,
     onRestart,
-    onFork,
+    onClone,
     onShowDetails,
     // File upload props (onFilesSelected handled internally by handleFileUpload)
     uploadedFiles,
@@ -1421,7 +1421,7 @@ const handleCloseRightPanel = useCallback(() => {
                         onDownload={downloadConversation}
                         resetWorkflow={resetWorkflow}
                         onRestart={onRestart}
-                        onFork={onFork}
+                        onClone={onClone}
                         onShowDetails={onShowDetails}
                         onExportPdf={exportConversationPdf}
                         isReceivingChunks={debugChunkFlash}
