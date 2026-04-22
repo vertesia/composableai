@@ -598,6 +598,8 @@
   "user.account": "Account:",
   "user.agentOnBehalfOf": "Agent on behalf of",
   "user.agentOnBehalfOfApiKey": "Agent on behalf of API key",
+  "user.allProjectMembers": "All Project Members",
+  "user.allProjectMembersDescription": "Every member of this project has this permission.",
   "user.appVersion": "App Version",
   "user.environment": "Environment",
   "user.failedToFetchApiKey": "Failed to fetch the apikey",

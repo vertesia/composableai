@@ -598,6 +598,8 @@
   "user.account": "Konto:",
   "user.agentOnBehalfOf": "Agent im Auftrag von",
   "user.agentOnBehalfOfApiKey": "Agent im Auftrag von API-Schlüssel",
+  "user.allProjectMembers": "Alle Projektmitglieder",
+  "user.allProjectMembersDescription": "Jedes Mitglied dieses Projekts hat diese Berechtigung.",
   "user.appVersion": "App-Version",
   "user.environment": "Umgebung",
   "user.failedToFetchApiKey": "API-Schlüssel konnte nicht abgerufen werden",
