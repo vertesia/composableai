@@ -100,38 +100,17 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                 payload.table_layout = null;
             }
         }
-        // eslint-disable-next-line no-console
-        console.log('[QUERY_SAVE] User submitted collection update', {
-            old_value: collection.query,
-            new_value: query,
-        });
         setUpdating(true);
         client.store.collections
             .update(collection.id, payload)
             .then(() => {
-                // eslint-disable-next-line no-console
-                console.log('[QUERY_SAVE_ACK] Server accepted update; calling refetch()', {
-                    old_value: collection.query,
-                    new_value: query,
-                });
                 refetch();
                 // For dynamic collections, the member list is derived from the query
                 // we just updated — invalidate the browse cache so it reloads from
                 // the server on the next render instead of showing stale results.
                 if (collection.dynamic && search) {
-                    // eslint-disable-next-line no-console
-                    console.log('[SEARCH_REFETCH] Invalidating DocumentSearch cache for dynamic collection', {
-                        old_value: { cached_object_count: search.objects.length, query: collection.query },
-                        new_value: { cached_object_count: 0, query: query },
-                    });
                     search.reset();
                     void search.search();
-                } else if (collection.dynamic && !search) {
-                    // eslint-disable-next-line no-console
-                    console.log('[SEARCH_REFETCH_SKIPPED] Dynamic collection saved but no DocumentSearch context in scope', {
-                        old_value: null,
-                        new_value: query,
-                    });
                 }
                 toast({
                     title: t('store.collectionUpdated'),
