@@ -105,9 +105,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             .update(collection.id, payload)
             .then(() => {
                 refetch();
-                // For dynamic collections, the member list is derived from the query
-                // we just updated — invalidate the browse cache so it reloads from
-                // the server on the next render instead of showing stale results.
+                // Update search query on provider if it's a dynamic collection to reflect in UI immediately
                 if (collection.dynamic && search) {
                     search.reset();
                     void search.search();
