@@ -102,6 +102,8 @@ export interface OAuthAuthorizeQuery {
     project_id?: string;
 }
 
+export interface CreateOAuthAuthorizationRequestPayload extends OAuthAuthorizeQuery {}
+
 export interface OAuthAuthorizationRequest {
     request_id: string;
     client_id: string;

@@ -1,35 +1,19 @@
-import { ApiTopic, ClientBase, type IRequestParamsWithPayload } from '@vertesia/api-fetch-client';
+import { ApiTopic } from '@vertesia/api-fetch-client';
 import type {
     ApproveOAuthAuthorizationRequestPayload,
+    CreateOAuthAuthorizationRequestPayload,
     OAuthAuthorizationDecisionResponse,
     OAuthAuthorizationRequest,
 } from '@vertesia/common';
-import type { VertesiaClient } from './client.js';
-
-class TokenServerClient extends ClientBase {
-    constructor(private readonly parent: VertesiaClient) {
-        super(parent.tokenServerUrl, parent._fetch);
-        this.createServerError = parent.createServerError;
-        this.errorFactory = parent.errorFactory;
-        this.verboseErrors = parent.verboseErrors;
-    }
-
-    createRequest(url: string, init: RequestInit): Promise<Request> {
-        return this.parent.createRequest(url, init);
-    }
-
-    handleResponse(req: Request, res: Response, params: IRequestParamsWithPayload | undefined) {
-        return this.parent.handleResponse(req, res, params);
-    }
-
-    get headers() {
-        return this.parent.headers;
-    }
-}
+import type { ClientBase } from '@vertesia/api-fetch-client';
 
 export default class OAuthServerApi extends ApiTopic {
-    constructor(parent: VertesiaClient) {
-        super(new TokenServerClient(parent), '/oauth');
+    constructor(parent: ClientBase) {
+        super(parent, '/oauth');
+    }
+
+    createAuthorizationRequest(payload: CreateOAuthAuthorizationRequestPayload): Promise<OAuthAuthorizationRequest> {
+        return this.post('/requests', { payload });
     }
 
     retrieveRequest(requestId: string): Promise<OAuthAuthorizationRequest> {
