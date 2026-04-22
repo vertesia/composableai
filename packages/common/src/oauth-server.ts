@@ -1,3 +1,6 @@
+import type { AuthTokenPayload } from './apikey.js';
+import type { ProjectRef } from './project.js';
+
 export type OAuthClientType = 'public' | 'confidential';
 export type OAuthClientStatus = 'active' | 'disabled';
 export type OAuthRegistrationSource = 'admin' | 'dynamic';
@@ -234,35 +237,12 @@ export interface OAuthConsentRecord {
     revoked_at?: string;
 }
 
-export interface OAuthAccessTokenPayload {
-    sub: string;
-    name: string;
-    email?: string;
+export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' | 'project'> {
     type: 'oauth_access';
-    iss: string;
-    aud: string;
-    exp: number;
     client_id: string;
     scope: string;
-    scopes: string[];
     user_id: string;
-    account: {
-        id: string;
-        name: string;
-    };
-    account_roles: string[];
-    accounts: Array<{
-        id: string;
-        name: string;
-    }>;
-    project: {
-        id: string;
-        name: string;
-    };
-    project_roles: string[];
-    apps: string[];
-    permissions?: string[];
+    project: ProjectRef;
     allowed_collections?: string[];
-    tags?: string[];
     resource?: string;
 }
