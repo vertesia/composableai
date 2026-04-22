@@ -98,10 +98,20 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                 payload.table_layout = null;
             }
         }
+        // eslint-disable-next-line no-console
+        console.log('[QUERY_SAVE] User saved collection query', {
+            old_value: collection.query,
+            new_value: query,
+        });
         setUpdating(true);
         client.store.collections
             .update(collection.id, payload)
             .then(() => {
+                // eslint-disable-next-line no-console
+                console.log('[QUERY_SAVE_ACK] Server accepted query update; calling refetch', {
+                    old_value: collection.query,
+                    new_value: query,
+                });
                 refetch();
                 toast({
                     title: t('store.collectionUpdated'),

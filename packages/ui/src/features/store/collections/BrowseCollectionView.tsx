@@ -28,13 +28,40 @@ export function BrowseCollectionView({ collection }: BrowseCollectionViewProps) 
 
     // Update dynamic collection results when the query changes.
     const querySignature = collection?.dynamic ? JSON.stringify(collection.query ?? {}) : null;
+    const prevCollectionRef = useRef<Collection | undefined>(undefined);
+    useEffect(() => {
+        const prev = prevCollectionRef.current;
+        if (prev !== collection) {
+            // eslint-disable-next-line no-console
+            console.log('[COLLECTION_PROP] BrowseCollectionView received new collection prop', {
+                old_value: prev ? { id: prev.id, query: prev.query, dynamic: prev.dynamic } : null,
+                new_value: collection ? { id: collection.id, query: collection.query, dynamic: collection.dynamic } : null,
+            });
+            prevCollectionRef.current = collection;
+        }
+    });
+
     const isFirstRun = useRef(true);
+    const prevSignatureRef = useRef<string | null>(null);
     useEffect(() => {
         if (querySignature === null) return;
+        const prev = prevSignatureRef.current;
         if (isFirstRun.current) {
             isFirstRun.current = false;
+            prevSignatureRef.current = querySignature;
+            // eslint-disable-next-line no-console
+            console.log('[SEARCH_QUERY_INIT] BrowseCollectionView first mount; deferring to DocumentSearchResults initial fetch', {
+                old_value: null,
+                new_value: JSON.parse(querySignature),
+            });
             return;
         }
+        // eslint-disable-next-line no-console
+        console.log('[SEARCH_QUERY_CHANGE] Dynamic collection query changed; calling search.reset() + search.search()', {
+            old_value: prev ? JSON.parse(prev) : null,
+            new_value: JSON.parse(querySignature),
+        });
+        prevSignatureRef.current = querySignature;
         search.reset();
         void search.search();
     }, [querySignature, search]);
