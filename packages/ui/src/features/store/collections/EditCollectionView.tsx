@@ -193,6 +193,8 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                         <FormItem label={t('store.query')} description={t('store.queryDescription')}>
                             <Textarea
                                 className={Styles.INPUT}
+                                minLines={1}
+                                maxLines={12}
                                 value={metadata.query}
                                 onChange={(e) => setField("query", e.target.value)}
                             />
