@@ -208,9 +208,9 @@ export class IndexingApi extends ApiTopic {
      * @param since Only index docs with updated_at >= this ISO timestamp (for catch-up after reindex)
      * @param endCursor End cursor (inclusive) for partitioned reindexing
      */
-    indexBatch(cursor?: string | null, limit?: number, targetIndex?: string, since?: string, endCursor?: string | null): Promise<IndexBatchResult> {
+    indexBatch(cursor?: string | null, limit?: number, targetIndex?: string, since?: string, endCursor?: string | null, esStreamConcurrency?: number): Promise<IndexBatchResult> {
         return this.post("/internal/index-batch", {
-            payload: { cursor, limit, target_index: targetIndex, since, end_cursor: endCursor },
+            payload: { cursor, limit, target_index: targetIndex, since, end_cursor: endCursor, es_stream_concurrency: esStreamConcurrency },
         });
     }
 
