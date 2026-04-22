@@ -6,6 +6,7 @@ export type OAuthTokenEndpointAuthMethod = 'none' | 'client_secret_post' | 'clie
 export type OAuthGrantType = 'authorization_code' | 'refresh_token';
 export type OAuthResponseType = 'code';
 export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
+export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
 
 export interface OAuthClientData {
     client_name: string;
@@ -74,6 +75,19 @@ export interface OAuthAuthorizationServerMetadata {
     code_challenge_methods_supported: string[];
     token_endpoint_auth_methods_supported: string[];
     scopes_supported: string[];
+    client_id_metadata_document_supported?: boolean;
+}
+
+export interface OAuthClientMetadataDocument {
+    client_id: string;
+    client_name?: string;
+    redirect_uris: string[];
+    grant_types?: OAuthGrantType[];
+    response_types?: OAuthResponseType[];
+    token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod;
+    scope?: string;
+    client_uri?: string;
+    logo_uri?: string;
 }
 
 export interface OAuthAuthorizeQuery {
@@ -91,6 +105,7 @@ export interface OAuthAuthorizationRequest {
     request_id: string;
     client_id: string;
     client_name: string;
+    client_registration_mode?: OAuthClientRegistrationMode;
     redirect_uri: string;
     redirect_origin: string;
     requested_scopes: string[];
@@ -135,27 +150,6 @@ export interface OAuthTokenResponse {
     scope: string;
     refresh_token?: string;
     id_token?: string;
-}
-
-export interface OAuthDynamicClientRegistrationRequest {
-    client_name: string;
-    redirect_uris: string[];
-    grant_types?: OAuthGrantType[];
-    response_types?: OAuthResponseType[];
-    token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod;
-    scope?: string;
-}
-
-export interface OAuthDynamicClientRegistrationResponse {
-    client_id: string;
-    client_name: string;
-    redirect_uris: string[];
-    grant_types: string[];
-    response_types: string[];
-    token_endpoint_auth_method: OAuthTokenEndpointAuthMethod;
-    client_secret?: string;
-    client_secret_expires_at?: number;
-    client_id_issued_at: number;
 }
 
 export interface OAuthAuthorizationCodeRecord {
