@@ -4,8 +4,9 @@ import { SharedPropsEditor, SyncMemberHeadsToggle, UserInfo } from "@vertesia/ui
 import { useUserSession } from "@vertesia/ui/session";
 import { MonacoEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
-import { useMemo, useRef, useState } from "react";
+import { useContext, useMemo, useRef, useState } from "react";
 import { useUITranslation } from '../../../i18n/index.js';
+import { SearchContext } from "../objects/search/DocumentSearchContext";
 import { SelectContentType, stringifyTableLayout } from "../types";
 
 interface UpdateData {
@@ -28,6 +29,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
     const toast = useToast();
     const { theme } = useTheme();
     const { client } = useUserSession();
+    const search = useContext(SearchContext);
     const [isUpdating, setUpdating] = useState(false);
     const [metadata, setMetadata] = useState<UpdateData>({
         name: collection.name,
@@ -99,7 +101,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             }
         }
         // eslint-disable-next-line no-console
-        console.log('[QUERY_SAVE] User saved collection query', {
+        console.log('[QUERY_SAVE] User submitted collection update', {
             old_value: collection.query,
             new_value: query,
         });
@@ -108,11 +110,29 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             .update(collection.id, payload)
             .then(() => {
                 // eslint-disable-next-line no-console
-                console.log('[QUERY_SAVE_ACK] Server accepted query update; calling refetch', {
+                console.log('[QUERY_SAVE_ACK] Server accepted update; calling refetch()', {
                     old_value: collection.query,
                     new_value: query,
                 });
                 refetch();
+                // For dynamic collections, the member list is derived from the query
+                // we just updated — invalidate the browse cache so it reloads from
+                // the server on the next render instead of showing stale results.
+                if (collection.dynamic && search) {
+                    // eslint-disable-next-line no-console
+                    console.log('[SEARCH_REFETCH] Invalidating DocumentSearch cache for dynamic collection', {
+                        old_value: { cached_object_count: search.objects.length, query: collection.query },
+                        new_value: { cached_object_count: 0, query: query },
+                    });
+                    search.reset();
+                    void search.search();
+                } else if (collection.dynamic && !search) {
+                    // eslint-disable-next-line no-console
+                    console.log('[SEARCH_REFETCH_SKIPPED] Dynamic collection saved but no DocumentSearch context in scope', {
+                        old_value: null,
+                        new_value: query,
+                    });
+                }
                 toast({
                     title: t('store.collectionUpdated'),
                     description: t('store.collectionUpdatedSuccess'),
