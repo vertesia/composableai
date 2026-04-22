@@ -30,6 +30,10 @@ export interface OAuthClient extends OAuthClientData {
     client_id: string;
 }
 
+export interface OAuthClientCreateResponse extends OAuthClient {
+    client_secret?: string;
+}
+
 export interface CreateOAuthClientPayload {
     client_name: string;
     client_type?: OAuthClientType;
