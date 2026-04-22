@@ -17,11 +17,7 @@ console.log(`Starting Tool Server on port ${port}...`);
 console.log(`API endpoint: http://localhost:${port}/api`);
 console.log(`Web UI: http://localhost:${port}/`);
 
-// Add static file serving for widgets, scripts, and other assets.
-// Cast: Hono 4.12's use() types middleware path as literal "*", which triggers
-// structural mismatch with @hono/node-server's generic serveStatic middleware.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-server.use(serveStatic({ root: './dist' }) as any);
+server.get('*', serveStatic({ root: './dist' }));
 
 serve({
     fetch: server.fetch,
