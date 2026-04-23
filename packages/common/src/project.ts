@@ -415,27 +415,6 @@ export interface FetchBatchResult {
 }
 
 /**
- * Result from indexing a batch
- */
-export interface IndexBatchResult {
-    successful: number;
-    failed: number;
-    processed: number;
-    next_cursor: string | null;
-    done: boolean;
-    /** Number of ES bulk flushes performed */
-    bulk_flushes?: number;
-    /** Total bytes sent to ES */
-    total_bytes?: number;
-    /** Average bytes per ES bulk flush */
-    avg_flush_bytes?: number;
-    /** Duration of the batch in milliseconds */
-    duration_ms?: number;
-    /** Docs per second for this batch */
-    docs_per_second?: number;
-}
-
-/**
  * Result from discovering the next cursor boundary for batch partitioning
  */
 export interface NextIndexCursorResult {
@@ -507,12 +486,12 @@ export interface IndexShardResult {
     failed_projects?: Array<{ tenant: string; error: string }>;
 }
 
-export interface SwapAliasViaBulkRequest {
+export interface SwapAliasRequest {
     tenant_id: string;
     target_index: string;
 }
 
-export interface SwapAliasViaBulkResult {
+export interface SwapAliasResult {
     status: string;
     alias: string;
     old_index: string;
@@ -700,16 +679,6 @@ export interface DriftAnalysisStatusResponse extends WorkflowRunStatus {
     progress?: DriftAnalysisProgress;
     result?: DriftAnalysisResult;
     error?: string;
-}
-
-/**
- * Result from swap alias operation
- */
-export interface SwapAliasResult {
-    swapped: boolean;
-    alias_name?: string;
-    new_index_name?: string;
-    reason?: string;
 }
 
 export interface ProjectIntegrationListEntry {

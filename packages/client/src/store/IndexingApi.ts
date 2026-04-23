@@ -7,7 +7,6 @@ import {
     CreateReindexTargetResult,
     ReindexRangeResult,
     FetchBatchResult,
-    IndexBatchResult,
     NextIndexCursorResult,
     TriggerReindexResult,
     ElasticsearchIndexStats,
@@ -15,7 +14,6 @@ import {
     FetchDocumentsByIdsResult,
     BulkDeleteResult,
     EnsureIndexResult,
-    SwapAliasResult,
     AnalyzeDriftBatchResult,
     DriftAnalysisStatusResponse,
     ComputeShardsRequest,
@@ -23,8 +21,8 @@ import {
     IndexShardParams,
     IndexShardRequest,
     IndexShardResult,
-    SwapAliasViaBulkRequest,
-    SwapAliasViaBulkResult,
+    SwapAliasRequest,
+    SwapAliasResult,
     ReindexViaBulkRequest,
     ReindexViaBulkResult,
 } from "@vertesia/common";
@@ -54,10 +52,19 @@ export class IndexingApi extends ApiTopic {
     }
 
     /**
-     * Trigger a full reindex of all documents
+     * Trigger a full reindex of all documents.
+     * Starts a Temporal workflow that uses zeno-bulk for high-throughput indexing.
+     *
+     * @param options Optional workflow tuning parameters
      */
-    async reindex(): Promise<GenericCommandResponse> {
-        return this.post("/reindex");
+    async reindex(options?: {
+        shard_size?: number;
+        parallel_shard_count?: number;
+        concurrency?: number;
+        bulk_size_bytes?: number;
+        bulk_concurrency?: number;
+    }): Promise<GenericCommandResponse> {
+        return this.post("/reindex", { payload: options });
     }
 
     /**
@@ -163,19 +170,6 @@ export class IndexingApi extends ApiTopic {
     }
 
     /**
-     * Atomically swap the alias from old index to new index
-     *
-     * @param newIndexName The new index to point the alias to
-     * @param deleteOld If true, deletes the old index after swapping
-     * @deprecated TODO: replace with swapAliasViaBulk
-     */
-    swapAlias(newIndexName: string, deleteOld?: boolean): Promise<SwapAliasResult> {
-        return this.post("/internal/swap-alias", {
-            payload: { new_index_name: newIndexName, delete_old: deleteOld },
-        });
-    }
-
-    /**
      * Get Elasticsearch index statistics for the project
      */
     getStats(): Promise<ElasticsearchIndexStats> {
@@ -204,23 +198,6 @@ export class IndexingApi extends ApiTopic {
     fetchBatch(cursor?: string | null, limit?: number): Promise<FetchBatchResult> {
         return this.post("/internal/fetch-batch", {
             payload: { cursor, limit },
-        });
-    }
-
-    /**
-     * Fetch and index a batch of documents (server-side)
-     * Uses cursor-based pagination for reliability
-     *
-     * @param cursor Cursor from previous batch (null for first batch)
-     * @param limit Maximum documents to process (default: 500)
-     * @param targetIndex Optional explicit index name for zero-downtime reindexing
-     * @param since Only index docs with updated_at >= this ISO timestamp (for catch-up after reindex)
-     * @param endCursor End cursor (inclusive) for partitioned reindexing
-     * @deprecated TODO: replace with indexShard
-     */
-    indexBatch(cursor?: string | null, limit?: number, targetIndex?: string, since?: string, endCursor?: string | null, esStreamConcurrency?: number): Promise<IndexBatchResult> {
-        return this.post("/internal/index-batch", {
-            payload: { cursor, limit, target_index: targetIndex, since, end_cursor: endCursor, es_stream_concurrency: esStreamConcurrency },
         });
     }
 
@@ -349,11 +326,11 @@ export class IndexingApi extends ApiTopic {
     /**
      * Atomically swap ES alias via zeno-bulk.
      */
-    swapAliasViaBulk(tenantId: string, targetIndex: string): Promise<SwapAliasViaBulkResult> {
+    swapAlias(tenantId: string, targetIndex: string): Promise<SwapAliasResult> {
         return this.zenoBulkPost('/reindex/swap-alias', {
             tenant_id: tenantId,
             target_index: targetIndex,
-        } satisfies SwapAliasViaBulkRequest);
+        } satisfies SwapAliasRequest);
     }
 
     /**
