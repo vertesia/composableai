@@ -153,7 +153,13 @@ const Tabs = ({
   );
 };
 
-const TabsBar = ({ className, sticky }: { className?: string; sticky?: boolean }) => {
+interface TabsBarProps {
+  className?: string;
+  sticky?: boolean;
+  direction?: "vertical" | "horizontal";
+}
+
+const TabsBar = ({ className, sticky, direction }: TabsBarProps) => {
   const { tabs, size, current, setTab, responsive, variant, updateHash } = React.useContext(TabsContext);
 
   const fullWidth = size !== 0;
@@ -194,10 +200,17 @@ const TabsBar = ({ className, sticky }: { className?: string; sticky?: boolean }
           />
         </div>
       )}
-      <TabsList size={size} variant={variant} className={cn((fullWidth ? "w-full" : ""), sticky && "sticky top-0 bg-background z-10", className, (responsive ? "hidden lg:flex" : ""))}>
+      <TabsList size={size} variant={variant}
+        className={cn((
+          fullWidth ? "w-full" : ""),
+          sticky && "sticky top-0 bg-background z-10",
+          direction === "vertical" ? "flex-col items-start" : "flex-row",
+          responsive ? "hidden lg:flex" : "",
+          className)}>
         {tabs.map((tab) => (
 
           <TabsTrigger
+            className={cn(direction === "vertical" ? "w-full" : "")}
             key={tab.name}
             value={tab.name}
             disabled={tab.disabled}
