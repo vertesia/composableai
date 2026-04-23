@@ -95,7 +95,7 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                             vertesia: {
                                 account_id: selectedAccount,
                                 project_id: selectedProject,
-                                sts: err.sts,
+                                sts_url: err.stsURL,
                                 error: err,
                             },
                         });

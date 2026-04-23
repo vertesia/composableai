@@ -305,10 +305,10 @@ export class UserNotFoundError extends Error {
 }
 
 export class STSError extends Error {
-    sts: string;
-    constructor(message: string, sts: string) {
+    stsURL: string;
+    constructor(message: string, stsURL: string) {
         super(message);
         this.name = 'STSError';
-        this.sts = sts;
+        this.stsURL = stsURL;
     }
 }
