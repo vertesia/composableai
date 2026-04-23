@@ -609,6 +609,8 @@
   "user.account": "Cuenta:",
   "user.agentOnBehalfOf": "Agente en nombre de",
   "user.agentOnBehalfOfApiKey": "Agente en nombre de la clave API",
+  "user.allProjectMembers": "Todos los miembros del proyecto",
+  "user.allProjectMembersDescription": "Todos los miembros de este proyecto tienen este permiso.",
   "user.appVersion": "Versión de la aplicación",
   "user.environment": "Entorno",
   "user.failedToFetchApiKey": "Error al obtener la clave API",

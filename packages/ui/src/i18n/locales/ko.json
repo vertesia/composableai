@@ -598,6 +598,8 @@
   "user.account": "계정:",
   "user.agentOnBehalfOf": "에이전트 대리",
   "user.agentOnBehalfOfApiKey": "API 키 에이전트 대리",
+  "user.allProjectMembers": "모든 프로젝트 멤버",
+  "user.allProjectMembersDescription": "이 프로젝트의 모든 멤버가 이 권한을 가지고 있습니다.",
   "user.appVersion": "앱 버전",
   "user.environment": "환경",
   "user.failedToFetchApiKey": "API 키 가져오기 실패",

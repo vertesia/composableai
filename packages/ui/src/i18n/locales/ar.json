@@ -642,6 +642,8 @@
   "user.account": "الحساب:",
   "user.agentOnBehalfOf": "وكيل بالنيابة عن",
   "user.agentOnBehalfOfApiKey": "وكيل بالنيابة عن مفتاح API",
+  "user.allProjectMembers": "جميع أعضاء المشروع",
+  "user.allProjectMembersDescription": "كل عضو في هذا المشروع لديه هذا الإذن.",
   "user.appVersion": "إصدار التطبيق",
   "user.environment": "البيئة",
   "user.failedToFetchApiKey": "فشل جلب مفتاح API",
