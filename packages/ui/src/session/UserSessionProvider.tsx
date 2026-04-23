@@ -1,7 +1,7 @@
 import { Env } from "@vertesia/ui/env";
 import { onAuthStateChanged } from "firebase/auth";
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { UserNotFoundError, getComposableToken } from "./auth/composable";
+import { STSError, UserNotFoundError, getComposableToken } from "./auth/composable";
 import { shouldRedirectToCentralAuth } from "./auth/domainRouting";
 import { getFirebaseAuth } from "./auth/firebase";
 import { useAuthState } from "./auth/useAuthState";
@@ -86,6 +86,23 @@ export function UserSessionProvider({ children }: UserSessionProviderProps) {
                         session.isLoading = false;
                         session.authError = err;
                         setSession(session.clone());
+                        return;
+                    }
+
+                    if (err instanceof STSError) {
+                        console.error("STS error during token exchange", err);
+                        Env.logger.error("STS error during token exchange", {
+                            vertesia: {
+                                account_id: selectedAccount,
+                                project_id: selectedProject,
+                                sts: err.sts,
+                                error: err,
+                            },
+                        });
+                        window.alert("Authentication failed due to an issue with the authentication service. Please try again later.");
+                        session.logout();
+                        setSession(session.clone());
+                        window.location.hash = "";
                         return;
                     }
 
