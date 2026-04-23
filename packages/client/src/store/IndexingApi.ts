@@ -21,6 +21,7 @@ import {
     ComputeShardsRequest,
     ComputeShardsResult,
     IndexShardParams,
+    IndexShardRequest,
     IndexShardResult,
     SwapAliasViaBulkRequest,
     SwapAliasViaBulkResult,
@@ -54,11 +55,9 @@ export class IndexingApi extends ApiTopic {
 
     /**
      * Trigger a full reindex of all documents
-     * @param recreateIndex If true, drops and recreates the index before reindexing
-     * @deprecated TODO: replace with reindexViaBulk
      */
-    async reindex(recreateIndex?: boolean): Promise<GenericCommandResponse> {
-        return this.post("/reindex", { payload: { recreate_index: recreateIndex } });
+    async reindex(): Promise<GenericCommandResponse> {
+        return this.post("/reindex");
     }
 
     /**
@@ -344,7 +343,7 @@ export class IndexingApi extends ApiTopic {
      * The Go service reads from MongoDB and writes to ES directly.
      */
     indexShard(params: IndexShardParams): Promise<IndexShardResult> {
-        return this.zenoBulkPost('/reindex/shard', params);
+        return this.zenoBulkPost('/reindex/shard', { params } satisfies IndexShardRequest);
     }
 
     /**

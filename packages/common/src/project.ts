@@ -484,6 +484,11 @@ export interface IndexShardParams {
     updated_since?: string;
 }
 
+export interface IndexShardRequest {
+    force?: boolean;
+    params: IndexShardParams;
+}
+
 export interface IndexShardResult {
     status: string;
     projects_done: number;
