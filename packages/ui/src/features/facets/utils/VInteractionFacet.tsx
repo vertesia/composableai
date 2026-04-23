@@ -27,25 +27,28 @@ export function VInteractionFacet({ buckets, name, placeholder }: InteractionFac
         labelRenderer: (interactionId: string) => {
             const bucket = buckets.find(b => b._id === interactionId);
             const displayName = bucket?.name || interactionId;
-            
+
             // Determine badge variant based on status
-            let badgeVariant: "success" | "attention" | "destructive" = "success";
+            let badgeVariant: "success" | "info" | "destructive" | "default" = "success";
             if (bucket?.status) {
                 switch (bucket.status) {
-                    case InteractionStatus.published: 
-                        badgeVariant = "success"; 
+                    case InteractionStatus.published:
+                        badgeVariant = "success";
                         break;
-                    case InteractionStatus.archived: 
-                        badgeVariant = "destructive"; 
+                    case InteractionStatus.archived:
+                        badgeVariant = "destructive";
                         break;
-                    default: 
-                        badgeVariant = "attention"; 
+                    case InteractionStatus.code:
+                        badgeVariant = "info";
+                        break;
+                    default:
+                        badgeVariant = "default";
                         break;
                 }
             }
-            
-            const badgeText = bucket?.version && bucket?.status ? 
-                `v${bucket.version} ${bucket.status}` : 
+
+            const badgeText = (bucket?.version && bucket?.status) ?
+                `v${bucket.version} ${bucket.status != InteractionStatus.unknown ? bucket.status : ''}` :
                 bucket?.status || (bucket?.version ? `v${bucket.version}` : '');
 
             return (
