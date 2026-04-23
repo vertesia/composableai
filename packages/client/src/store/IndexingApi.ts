@@ -325,11 +325,13 @@ export class IndexingApi extends ApiTopic {
 
     /**
      * Atomically swap ES alias via zeno-bulk.
+     * @param alias Optional alias name. If not provided, the Go service derives it from the tenant ID.
      */
-    swapAlias(tenantId: string, targetIndex: string): Promise<SwapAliasResult> {
+    swapAlias(tenantId: string, targetIndex: string, alias?: string): Promise<SwapAliasResult> {
         return this.zenoBulkPost('/reindex/swap-alias', {
             tenant_id: tenantId,
             target_index: targetIndex,
+            alias,
         } satisfies SwapAliasRequest);
     }
 

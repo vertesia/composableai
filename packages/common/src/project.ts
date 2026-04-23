@@ -489,6 +489,8 @@ export interface IndexShardResult {
 export interface SwapAliasRequest {
     tenant_id: string;
     target_index: string;
+    /** ES alias name. If not provided, the Go service derives it from the tenant ID. */
+    alias?: string;
 }
 
 export interface SwapAliasResult {
