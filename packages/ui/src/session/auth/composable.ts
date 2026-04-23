@@ -61,6 +61,16 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
                 'Authorization': `Bearer ${idToken}` // Firebase token for authentication
             },
             body: JSON.stringify(requestBody)
+        }).catch((error) => {
+            console.error('Failed to call STS endpoint', error);
+            Env.logger.error('Failed to call STS endpoint', {
+                vertesia: {
+                    account_id: accountId,
+                    project_id: projectId,
+                    error: error,
+                },
+            });
+            throw new STSError('Failed to call STS endpoint', stsEndpoint);
         });
 
         if (idToken && stsRes?.status === 404) {
@@ -207,8 +217,8 @@ export async function fetchComposableToken(getIdToken: () => Promise<string | nu
         return token;
 
     } catch (error) {
-        if (error instanceof UserNotFoundError) {
-            throw error; // Re-throw UserNotFoundError
+        if (error instanceof UserNotFoundError || error instanceof STSError) {
+            throw error; // Re-throw UserNotFoundError and STSError to be handled separately in the caller
         }
 
         // Clear any stale account/project from localStorage on error
@@ -291,5 +301,14 @@ export class UserNotFoundError extends Error {
         super(message);
         this.name = 'UserNotFoundError';
         this.email = email;
+    }
+}
+
+export class STSError extends Error {
+    stsURL: string;
+    constructor(message: string, stsURL: string) {
+        super(message);
+        this.name = 'STSError';
+        this.stsURL = stsURL;
     }
 }
