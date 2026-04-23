@@ -210,7 +210,7 @@ const TabsBar = ({ className, sticky, direction }: TabsBarProps) => {
         {tabs.map((tab) => (
 
           <TabsTrigger
-            className={cn(direction === "vertical" ? "w-full" : "")}
+            className={cn(direction === "vertical" ? "w-full text-left" : "")}
             key={tab.name}
             value={tab.name}
             disabled={tab.disabled}
