@@ -467,8 +467,6 @@ export interface ComputeShardsRequest {
 }
 
 export interface ComputeShardsResult {
-    alias: string;
-    target_index: string;
     shards: Array<{ min?: string; max?: string }>;
     count: number;
 }
