@@ -58,7 +58,7 @@
     "tsx": "^4.8.1",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.1",
-    "vitest": "^4.0.16"
+    "vitest": "^4.1.5"
   },
   "dependencies": {
     "eventsource-parser": "^1.1.1"
