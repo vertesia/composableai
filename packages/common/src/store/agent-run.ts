@@ -86,6 +86,9 @@ export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<
 
     /** How the run was created */
     type?: AgentRunType;
+
+    /** External conversation grouping key used by A2A and similar multi-task protocols */
+    a2a_context_id?: string;
 }
 
 /**
@@ -201,6 +204,9 @@ export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties 
 
     /** Principal ref of the user who initiated the run (for server-to-server forwarding) */
     started_by?: string;
+
+    /** Source AgentRun ID to preload conversation history into a new run */
+    forked_from?: string;
 }
 
 /**
@@ -218,6 +224,9 @@ export interface ListAgentRunsQuery {
 
     /** Filter by user who started the run */
     started_by?: string;
+
+    /** Filter by external A2A conversation context */
+    a2a_context_id?: string;
 
     /** Only return runs started after this date */
     since?: Date;

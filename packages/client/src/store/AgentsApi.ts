@@ -90,6 +90,7 @@ export class AgentsApi extends ApiTopic {
         }
         if (query?.interaction) params.interaction = query.interaction;
         if (query?.started_by) params.started_by = query.started_by;
+        if (query?.a2a_context_id) params.a2a_context_id = query.a2a_context_id;
         if (query?.since) params.since = query.since.toISOString();
         if (query?.until) params.until = query.until.toISOString();
         if (query?.schedule_id) params.schedule_id = query.schedule_id;

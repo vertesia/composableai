@@ -18,6 +18,7 @@ export * from './json-schema.js';
 export * from './json.js';
 export * from './meters.js';
 export * from './oauth-server.js';
+export * from './oauth-scopes.js';
 export * from './model_utility.js';
 export * from './oauth.js';
 export * from './payload.js';

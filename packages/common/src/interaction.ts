@@ -607,6 +607,14 @@ export interface SkillContextTriggers {
  */
 export interface AgentRunnerOptions {
     /**
+     * A2A exposure configuration.
+     * When enabled is explicitly false, the interaction must not be exposed via the A2A gateway.
+     */
+    a2a?: {
+        enabled?: boolean;
+    };
+
+    /**
      * Whether this interaction is an agent (executable in Agent Runner).
      */
     is_agent?: boolean;
