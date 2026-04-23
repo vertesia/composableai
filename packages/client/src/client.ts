@@ -10,11 +10,14 @@ import CommandsApi from "./CommandsApi.js";
 import EnvironmentsApi from "./EnvironmentsApi.js";
 import { IamApi } from "./IamApi.js";
 import InteractionsApi from "./InteractionsApi.js";
-import MCPOAuthApi from "./MCPOAuthApi.js";
-import OAuthAppsApi from "./OAuthAppsApi.js";
+import OAuthClientsApi from "./OAuthClientsApi.js";
+import OAuthGrantsApi from "./OAuthGrantsApi.js";
+import OAuthProvidersApi from "./OAuthProvidersApi.js";
+import OAuthServerApi from "./OAuthServerApi.js";
 import ProjectsApi from "./ProjectsApi.js";
 import PromptsApi from "./PromptsApi.js";
 import { RefsApi } from "./RefsApi.js";
+import RemoteMcpConnectionsApi from "./RemoteMcpConnectionsApi.js";
 import { RunsApi } from "./RunsApi.js";
 import SkillsApi from "./SkillsApi.js";
 import { ZenoClient } from "./store/client.js";
@@ -81,6 +84,12 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      * tokenServerUrl
      */
     tokenServerUrl: string;
+
+    oauthClients: OAuthClientsApi;
+    oauthGrants: OAuthGrantsApi;
+    oauthServer: OAuthServerApi;
+    oauthProviders: OAuthProvidersApi;
+    remoteMcpConnections: RemoteMcpConnectionsApi;
 
     /**
      * Create a client from the given token.
@@ -188,6 +197,11 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.onRequest = opts.onRequest;
         this.onResponse = opts.onResponse;
         this.sessionTags = opts.sessionTags;
+        this.oauthClients = new OAuthClientsApi(this);
+        this.oauthGrants = new OAuthGrantsApi(this);
+        this.oauthServer = new OAuthServerApi(this);
+        this.oauthProviders = new OAuthProvidersApi(this);
+        this.remoteMcpConnections = new RemoteMcpConnectionsApi(this);
     }
 
     withApiVersion(version: string | number | null) {
@@ -353,8 +367,6 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     refs = new RefsApi(this);
     commands = new CommandsApi(this);
     apps = new AppsApi(this);
-    mcpOAuth = new MCPOAuthApi(this);
-    oauthApps = new OAuthAppsApi(this);
 }
 
 function isApiKey(apiKey: string) {

@@ -1,7 +1,7 @@
 import { ApiKey, PrincipalType, User, UserGroup } from "@vertesia/common";
 import { Avatar, Popover, PopoverContent, PopoverTrigger, Table, useFetch } from "@vertesia/ui/core";
 import { useUserSession } from "@vertesia/ui/session";
-import { Users } from "lucide-react";
+import { Users, Users2 } from "lucide-react";
 import { ReactNode } from "react";
 import { useUITranslation } from '../../i18n/index.js';
 
@@ -68,6 +68,18 @@ function SystemAvatar({ showTitle = false, size = "md" }: InfoProps) {
             <div className="flex gap-2 items-center">
                 <Avatar src="/icon.svg" size={size} />
                 {showTitle && <div className="text-sm font-semibold pl-2">{t('user.systemUser')}</div>}
+            </div>
+        </UserPopoverPanel>
+    )
+}
+
+function ProjectMembersAvatar({ showTitle = false, size = "md" }: InfoProps) {
+    const { t } = useUITranslation();
+    return (
+        <UserPopoverPanel title={t('user.allProjectMembers')} description={t('user.allProjectMembersDescription')}>
+            <div className="flex gap-2 items-center">
+                <Users2 className="size-4" size={size} />
+                {showTitle && <div className="text-sm font-semibold pl-2">{t('user.allProjectMembers')}</div>}
             </div>
         </UserPopoverPanel>
     )
@@ -249,6 +261,7 @@ interface UserInfoProps extends InfoProps {
      * @example user:123
      * @example service_account:123
      * @example apikey:123
+     * @example project:* (all project members — synthetic principal used in ACLs)
      */
     userRef: string | undefined;
 }
@@ -334,6 +347,14 @@ export function UserInfo({ userRef, showTitle = false, size = "md" }: UserInfoPr
 
         case PrincipalType.ApiKey:
             return <ApiKeyAvatar keyId={parts[1]} size={size} showTitle={showTitle} />
+
+        case "project":
+            // Only the wildcard "project:*" is a valid synthetic principal (all project members).
+            // Any other project:<...> shape falls through to the error default.
+            if (parts[1] === "*") {
+                return <ProjectMembersAvatar showTitle={showTitle} size={size} />
+            }
+            break;
 
         default:
             return <ErrorAvatar title={t('user.unknownUser')} error={`Invalid user ref type: ${type}`} showTitle={showTitle} size={size} />

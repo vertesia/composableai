@@ -5,7 +5,7 @@ import { CheckCircle2, ExternalLink, ShieldAlertIcon } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useOAuthPopup } from './useOAuthPopup.js';
 
-interface McpOAuthConnectButtonProps {
+interface RemoteMcpConnectionButtonProps {
     appId: string;
     collectionId: string;
     collectionName?: string;
@@ -31,12 +31,12 @@ interface OAuthStatus {
 }
 
 /**
- * Flexible OAuth connect button for MCP tool collections.
+ * Flexible connect button for remote MCP tool collections.
  * - 'compact': minimal size for lists (no disconnect)
  * - 'default': standard button size (no disconnect)
  * - 'full': with label, status, and disconnect button
  */
-export function McpOAuthConnectButton({
+export function RemoteMcpConnectionButton({
     appId,
     collectionId,
     collectionName,
@@ -47,7 +47,7 @@ export function McpOAuthConnectButton({
     showLabel = false,
     showDisconnect = false,
     readOnly = false
-}: McpOAuthConnectButtonProps) {
+}: RemoteMcpConnectionButtonProps) {
     const { client } = useUserSession();
     const { t } = useUITranslation();
     const [status, setStatus] = useState<OAuthStatus | null>(null);
@@ -55,23 +55,21 @@ export function McpOAuthConnectButton({
     const [authenticating, setAuthenticating] = useState(false);
     const [disconnecting, setDisconnecting] = useState(false);
 
-    // Use provided authenticated status or fetch it
     const authenticated = providedAuthenticated ?? status?.authenticated ?? false;
-
     const displayName = collectionName ?? collectionId;
 
     const loadStatus = useCallback(async () => {
         if (providedAuthenticated !== undefined) {
             setLoading(false);
-            return; // Skip loading if authenticated status is provided
+            return;
         }
 
         try {
             setLoading(true);
-            const data = await client.mcpOAuth.getCollectionStatus(appId, collectionId);
+            const data = await client.remoteMcpConnections.getCollectionStatus(appId, collectionId);
             setStatus(data);
         } catch (error) {
-            console.error('[McpOAuthConnectButton] Failed to load OAuth status:', error);
+            console.error('[RemoteMcpConnectionButton] Failed to load OAuth status:', error);
         } finally {
             setLoading(false);
         }
@@ -97,9 +95,8 @@ export function McpOAuthConnectButton({
         try {
             setAuthenticating(true);
             onError?.(null);
-            const response = await client.mcpOAuth.authorize(appId, collectionId);
+            const response = await client.remoteMcpConnections.authorize(appId, collectionId);
             if (response.connected) {
-                // Client credentials: token was fetched server-side, no popup needed
                 setAuthenticating(false);
                 await loadStatus();
                 onAuthChange?.();
@@ -114,7 +111,6 @@ export function McpOAuthConnectButton({
             const raw = error instanceof Error
                 ? ((error as { original_message?: string }).original_message ?? error.message)
                 : 'Failed to connect';
-            // Strip leading HTTP status text (e.g. "Bad Request: ", "Not Found: ")
             const detail = raw.replace(/^[A-Za-z\s]+:\s/, '');
             onError?.(`${displayName}: ${detail}`);
             setAuthenticating(false);
@@ -124,7 +120,7 @@ export function McpOAuthConnectButton({
     const handleDisconnect = async () => {
         try {
             setDisconnecting(true);
-            await client.mcpOAuth.disconnect(appId, collectionId);
+            await client.remoteMcpConnections.disconnect(appId, collectionId);
             await loadStatus();
             onAuthChange?.();
         } catch (error) {
@@ -142,7 +138,6 @@ export function McpOAuthConnectButton({
         );
     }
 
-    // Full variant with label and disconnect
     if (variant === 'full') {
         if (!authenticated) {
             return (
@@ -186,7 +181,6 @@ export function McpOAuthConnectButton({
         );
     }
 
-    // Compact and default variants
     if (authenticated) {
         if (variant === 'compact') {
             return (
@@ -220,7 +214,6 @@ export function McpOAuthConnectButton({
     }
 
     if (variant === 'compact') {
-        // Read-only mode for not authenticated
         if (readOnly) {
             return (
                 <div className="flex items-center gap-2">

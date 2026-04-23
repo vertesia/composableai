@@ -86,16 +86,16 @@ interface BaseToolCollectionObject {
 
 /**
  * Install-time OAuth provisioning blueprint for an MCP collection.
- * Defines how to auto-create an OAuthApplication when the app is installed.
+ * Defines how to auto-create an OAuth provider when the app is installed.
  * Does NOT affect runtime behaviour — the runtime uses oauth_bindings on AppInstallation.
  */
 export interface MCPOAuthConfig {
     /**
-     * Name for the OAuthApplication to create at install time.
+     * Name for the OAuth provider to create at install time.
      * Defaults to the collection id converted to kebab-case if not specified.
      */
     name?: string;
-    /** Human-readable display name for the created OAuth application. */
+    /** Human-readable display name for the created OAuth provider. */
     display_name?: string;
     grant_type?: 'authorization_code' | 'client_credentials';
     authorization_endpoint?: string;
@@ -150,16 +150,16 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
     namespace: string;
 
     /**
-     * Reference to an OAuth Application name for this collection (legacy / manual path).
-     * When set, uses the OAuth Application's config (endpoints, client_id, client_secret)
+     * Reference to an OAuth provider name for this collection (legacy / manual path).
+     * When set, uses the OAuth provider's config (endpoints, client_id, client_secret)
      * instead of MCP dynamic client registration or random fallback.
-     * The referenced OAuth Application must exist in the same project.
+     * The referenced OAuth provider must exist in the same project.
      */
     oauth_app?: string;
 
     /**
      * Install-time OAuth provisioning blueprint.
-     * When present, the platform auto-creates an OAuthApplication at install time
+     * When present, the platform auto-creates an OAuth provider at install time
      * using these values merged with any user-supplied required_at_install params.
      * The created app is recorded in AppInstallation.oauth_bindings.
      * Mutually exclusive with oauth_provider.
@@ -168,7 +168,7 @@ export interface MCPToolCollectionObject extends BaseToolCollectionObject {
 
     /**
      * Reference to a key in AppManifestData.oauth_providers.
-     * When set, this collection shares the named provider's OAuth application.
+     * When set, this collection shares the named provider's OAuth provider configuration.
      * Mutually exclusive with oauth_config and oauth_app.
      * Requires auth: "oauth" to be set.
      */
@@ -431,7 +431,7 @@ export interface AppManifestData {
      * Named OAuth providers shared across multiple MCP tool collections.
      * Keys must be kebab-case identifiers. Each value is an MCPOAuthConfig blueprint.
      * Collections reference a provider via MCPToolCollectionObject.oauth_provider.
-     * One OAuthApplication is created per provider at install time; all referencing
+     * One OAuth provider is created per provider at install time; all referencing
      * collections share that app via AppInstallation.provider_bindings.
      */
     oauth_providers?: Record<string, MCPOAuthConfig>;
@@ -687,9 +687,9 @@ export interface AppManifest extends AppManifestData {
 }
 
 /**
- * Binding between an MCP collection and an OAuthApplication created at install time.
- * Stored on AppInstallation so the runtime can look up the correct OAuth app by ID,
- * independent of manifest oauth_app name references (which may change).
+ * Binding between an MCP collection and an OAuth provider created at install time.
+ * Stored on AppInstallation so the runtime can look up the correct OAuth provider by ID,
+ * independent of manifest oauth_provider references (which may change).
  */
 export interface AppInstallationOAuthBinding {
     /**
@@ -698,29 +698,29 @@ export interface AppInstallationOAuthBinding {
      */
     collection_id: string;
     /**
-     * MongoDB ObjectId of the OAuthApplication in this project.
+     * MongoDB ObjectId of the OAuth provider in this project.
      * Used for ID-based lookups (rename-proof).
      */
-    oauth_app_id: string;
+    oauth_provider_id: string;
     /**
-     * Name of the OAuthApplication at creation time.
-     * Used by the workflow token path (getMCPClient → mcpOAuth.getToken) which looks up by name.
+     * Name of the OAuth provider at creation time.
+     * Used by the workflow token path (getMCPClient → remoteMcpConnections.getToken) which looks up by name.
      */
-    oauth_app_name: string;
+    oauth_provider_name: string;
 }
 
 /**
- * Binding between a named OAuth provider and the OAuthApplication created for it at install time.
- * Stored on AppInstallation so the runtime can resolve the correct OAuth app for collections
+ * Binding between a named OAuth provider and the OAuth provider created for it at install time.
+ * Stored on AppInstallation so the runtime can resolve the correct OAuth provider for collections
  * that reference a shared provider via MCPToolCollectionObject.oauth_provider.
  */
 export interface AppInstallationProviderBinding {
     /** Key from AppManifestData.oauth_providers */
     provider_key: string;
-    /** MongoDB ObjectId of the created OAuthApplication */
-    oauth_app_id: string;
-    /** Name of the OAuthApplication at creation time (for audit/display only) */
-    oauth_app_name: string;
+    /** MongoDB ObjectId of the created OAuth provider */
+    oauth_provider_id: string;
+    /** Name of the OAuth provider at creation time (for audit/display only) */
+    oauth_provider_name: string;
 }
 
 export interface AppInstallation {
@@ -736,14 +736,14 @@ export interface AppInstallation {
     tool_allowlist?: string[];
     /**
      * OAuth bindings created at install time via oauth_config provisioning.
-     * Maps collection identity (id or name) → OAuthApplication ObjectId.
-     * Used by the runtime to resolve the correct OAuth app without relying on manifest names.
+     * Maps collection identity (id or name) → OAuth provider ObjectId.
+     * Used by the runtime to resolve the correct OAuth provider without relying on manifest names.
      */
     oauth_bindings?: AppInstallationOAuthBinding[];
     /**
      * OAuth bindings created at install time via oauth_providers provisioning.
-     * Maps provider key → OAuthApplication ObjectId.
-     * Multiple collections sharing the same provider all resolve to the same OAuth app.
+     * Maps provider key → OAuth provider ObjectId.
+     * Multiple collections sharing the same provider all resolve to the same OAuth provider.
      */
     provider_bindings?: AppInstallationProviderBinding[];
     created_at: string;
