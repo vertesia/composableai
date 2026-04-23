@@ -1,13 +1,13 @@
 /**
- * OAuth Application types for generic, project-level OAuth 2.0 integration.
+ * OAuth Provider types for generic, project-level OAuth 2.0 integration.
  * Decoupled from MCP — can be used by MCP collections, tool activities, or any OAuth-protected API.
  */
 
 /**
- * OAuth Application data stored in MongoDB.
+ * OAuth Provider data stored in MongoDB.
  * Represents the configuration for an OAuth 2.0 provider at the project level.
  */
-export interface OAuthApplicationData {
+export interface OAuthProviderData {
     /**
      * Unique name within the project (kebab-case identifier).
      */
@@ -19,7 +19,7 @@ export interface OAuthApplicationData {
     display_name: string;
 
     /**
-     * The project this OAuth application belongs to.
+     * The project this OAuth provider belongs to.
      */
     project: string;
 
@@ -74,17 +74,17 @@ export interface OAuthApplicationData {
 }
 
 /**
- * OAuth Application as returned by the API (with id).
+ * OAuth Provider as returned by the API (with id).
  */
-export interface OAuthApplication extends OAuthApplicationData {
+export interface OAuthProvider extends OAuthProviderData {
     id: string;
 }
 
 /**
- * Payload for creating an OAuth Application.
+ * Payload for creating an OAuth Provider.
  * The client_secret is accepted as plaintext on create and stored encrypted.
  */
-export interface CreateOAuthApplicationPayload {
+export interface CreateOAuthProviderPayload {
     name: string;
     display_name: string;
     grant_type?: 'authorization_code' | 'client_credentials';
@@ -102,18 +102,18 @@ export interface CreateOAuthApplicationPayload {
 }
 
 /**
- * Payload for updating an OAuth Application.
+ * Payload for updating an OAuth Provider.
  * All fields are optional — only provided fields are updated.
  * To clear the client_secret, set it to an empty string.
  */
-export type UpdateOAuthApplicationPayload = Partial<CreateOAuthApplicationPayload>;
+export type UpdateOAuthProviderPayload = Partial<CreateOAuthProviderPayload>;
 
 /**
- * OAuth authentication status for a user against an OAuth Application.
+ * OAuth authentication status for a user against an OAuth Provider.
  */
-export interface OAuthAppAuthStatus {
-    oauth_app_id: string;
-    oauth_app_name: string;
+export interface OAuthProviderAuthStatus {
+    oauth_provider_id: string;
+    oauth_provider_name: string;
     authenticated: boolean;
     expires_at?: string;
     scope?: string;
@@ -124,7 +124,7 @@ export interface OAuthAppAuthStatus {
  * For authorization_code flow: contains authorization_url and state for browser redirect.
  * For client_credentials flow: contains connected=true (token was fetched server-side, no redirect needed).
  */
-export interface OAuthAppAuthorizeResponse {
+export interface OAuthProviderAuthorizeResponse {
     authorization_url?: string;
     state?: string;
     connected?: boolean;
