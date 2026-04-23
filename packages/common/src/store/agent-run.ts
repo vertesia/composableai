@@ -120,7 +120,7 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
     /** Human-readable interaction name */
     interaction_name?: string;
 
-    interaction_info: InteractionRef;
+    interactionRef: InteractionRef;
 
     // --- Lifecycle ---
 
