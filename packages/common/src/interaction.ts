@@ -368,6 +368,8 @@ export enum InteractionStatus {
     draft = "draft",
     published = "published",
     archived = "archived",
+    code = "code", // for in-code interactions that are not stored in the database
+    unknown = "unknown", // for interactions with unknown status
 }
 
 export enum ExecutionRunStatus {
