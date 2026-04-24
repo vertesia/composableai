@@ -23,6 +23,9 @@ export const AVAILABLE_REGIONS: Region[] = ['us1', 'eu1', 'jp1'];
 
 export type ConfigUrlRef = "local" | "dev-main" | "dev-preview" | "preview" | "prod" | string;
 export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGION): string {
+    if (isDevDeploymentTarget(value)) {
+        return `https://${value}.ui.dev1.vertesia.io/cli`;
+    }
     switch (value) {
         case "local":
             return "https://localhost:5173/cli";
@@ -43,6 +46,12 @@ export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGIO
     }
 }
 export function getServerUrls(value: ConfigUrlRef, region: Region = DEFAULT_REGION): { studio_server_url: string; zeno_server_url: string } {
+    if (isDevDeploymentTarget(value)) {
+        return {
+            studio_server_url: `https://studio-server-${value}.api.dev1.vertesia.io`,
+            zeno_server_url: `https://zeno-server-${value}.api.dev1.vertesia.io`,
+        };
+    }
     switch (value) {
         case "local":
             return {
@@ -73,6 +82,11 @@ export function getServerUrls(value: ConfigUrlRef, region: Region = DEFAULT_REGI
             throw new Error("Unable to detect server urls from custom target.");
     }
 }
+
+function isDevDeploymentTarget(value: string): boolean {
+    return value.startsWith('dev-');
+}
+
 export function getCloudTypeFromConfigUrl(url: string) {
     if (url.startsWith("https://localhost")) {
         return "staging";
