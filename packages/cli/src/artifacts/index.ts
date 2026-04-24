@@ -3,7 +3,7 @@ import { downloadArtifact, getArtifactUrl, listArtifacts, uploadArtifact } from 
 
 export function registerArtifactsCommand(program: Command) {
     const artifacts = program.command("artifacts")
-        .description("Manage agent artifacts. Run ID can be inferred from VERTESIA_RUN_ID env var.");
+        .description("Manage artifacts for agent runs. Run ID can be inferred from VERTESIA_RUN_ID env var.");
 
     artifacts.command("upload [file]")
         .description("Upload an artifact to the current agent run. Use '-' or omit file to read from stdin.")

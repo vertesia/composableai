@@ -2,7 +2,10 @@ import { Interaction, InteractionRef, InteractionStatus } from "@vertesia/common
 import colors from "ansi-colors";
 import { Command } from "commander";
 import { getClient } from "../client.js";
-import { textToPascalCase } from "../codegen/utils.js";
+
+function textToPascalCase(text: string) {
+    return text.trim().split(/\W/).map(w => w ? w[0].toUpperCase() + w.substring(1) : '').join('')
+}
 
 export async function listInteractions(program: Command, interactionId: string | undefined, options: Record<string, any>) {
     const client = await getClient(program);

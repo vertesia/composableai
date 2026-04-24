@@ -1,13 +1,8 @@
-import { setupMemoCommand } from '@vertesia/memory-cli';
 import { Command } from 'commander';
 import { registerAppsCommand } from './apps/index.js';
 import { registerAgentsCommand } from './agents/index.js';
-import { registerArtifactsCommand } from './artifacts/index.js';
-import runExport from './codegen/index.js';
-import { genTestData } from './datagen/index.js';
 import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
-import { getPublishMemoryAction } from './memory/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
 import { createProfile, deleteProfile, listProfiles, showActiveAuthToken, showProfile, tryRefreshToken, updateCurrentProfile, updateProfile, useProfile, type CreateProfileOptions } from './profiles/commands.js';
@@ -15,7 +10,6 @@ import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/ind
 import { listProjects } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
-import { registerWorkerCommand } from './worker/index.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
 //warnIfNotLatest();
 
@@ -55,31 +49,6 @@ program.command("interactions [interaction]")
     .action((interactionId: string | undefined, options: Record<string, any>) => {
         listInteractions(program, interactionId, options);
     })
-program.command("datagen <interaction>")
-    .description("Generate test input data, given an interaction ID")
-    .option('-e, --env [envId]', 'The environment ID to use to generating the test data')
-    .option('-m, --model [model]', 'The model to use to generating the test data. If the selected environment has a default model then this option is optional.')
-    .option('-t, --temperature [value]', 'The temperature used to generating the test data.')
-    .option('--max-tokens [max-tokens]', 'The maximum number of tokens to generate')
-    .option('--top-p [top-p]', 'The top P value to use')
-    .option('--top-k [top-k]', 'The top K value to use')
-    .option('--presence-penalty [presence-penalty]', 'The presence penalty value to use')
-    .option('--frequency-penalty [frequency-penalty]', 'The frequency penalty value to use')
-    .option('--stop-sequence [stop-sequence]', 'A comma separated list of sequences to stop the generation')
-    .option('--config-mode [config-mode]', 'The configuration mode to use.Possible values are: "run_and_interaction_config", "run_config_only", "interaction_config_only". Optional. If not specified, "run_and_interaction_config" is used.')
-    .option('-o, --output [file]', 'A file to save the generated test data. If not specified the data will be printed to stdout.')
-    .option('-c, --count [value]', 'The number of data objects to generate', '1')
-    .option('--message [value]', 'An optional message')
-    .action((interactionId: string, options: Record<string, any>) => {
-        genTestData(program, interactionId, options);
-    })
-program.command("codegen [interactionName]")
-    .description("Generate code given an interaction name of for all the interactions in the project if no interaction is specified.")
-    .option('--versions [versions]', 'A comma separated list of version selectors to include. A version selector is either a version number or "draft". The default is "draft"', "draft")
-    .option('-a, --all', 'When used, all the interaction versions will be exported')
-    .option('-d, --dir [file]', 'The output directory if any. Default to "./interactions" if not specified.', './interactions')
-    .option('-x, --export <version>', 'The version to export from index.ts. If not specified, the latest version will be exported or if no version is available, the draft version will be exported')
-    .action((interactionName: string | undefined, options) => runExport(program, interactionName, options));
 program.command("run <interaction>")
     .description("Run an interaction by full name. The full name is composed by an optional namespace, a required endpoint name and an optional tag or version. Examples: name, namespace:name, namespace:name@version")
     .option('-i, --input [file]', 'The input data if any. If no file path is specified it will read from stdin')
@@ -121,13 +90,8 @@ program.command("runs [interactionId]")
         runHistory(program, interactionId, options);
     });
 
-const memoCmd = program.command("memo");
-setupMemoCommand(memoCmd, getPublishMemoryAction(program));
-
-registerWorkerCommand(program);
 registerAppsCommand(program);
 registerAgentsCommand(program);
-registerArtifactsCommand(program);
 
 const profilesRoot = program.command("profiles")
     .description("Manage configuration profiles")

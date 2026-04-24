@@ -17,6 +17,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 import { setTimeout as delay } from "node:timers/promises";
 import * as readline from "readline";
+import { registerArtifactsCommand } from "../artifacts/index.js";
 import { getClient } from "../client.js";
 import { readFile, readStdin, writeFile } from "../utils/stdio.js";
 
@@ -88,6 +89,8 @@ type InspectOptions = {
 export function registerAgentsCommand(program: Command) {
     const agents = program.command("agents")
         .description("Start, stream, and inspect durable agent runs");
+
+    registerArtifactsCommand(agents);
 
     agents.command("start [interaction]")
         .description("Start a conversation agent or process run through the Agent Runs API")
