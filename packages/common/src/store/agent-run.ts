@@ -233,6 +233,9 @@ export interface ListAgentRunsQuery {
     /** Offset for pagination */
     offset?: number;
 
+    /** Cursor for stable pagination */
+    cursor?: string;
+
     /** Filter by schedule ID */
     schedule_id?: string;
 
@@ -244,6 +247,12 @@ export interface ListAgentRunsQuery {
 
     /** Sort order */
     order?: 'asc' | 'desc';
+}
+
+export interface ListAgentRunsResponse {
+    items: AgentRun[];
+    total_count: number;
+    next_cursor: string | null;
 }
 
 /**
