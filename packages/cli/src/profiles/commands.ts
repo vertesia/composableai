@@ -3,7 +3,8 @@ import colors from 'ansi-colors';
 import enquirer from "enquirer";
 import jwt from 'jsonwebtoken';
 import { AVAILABLE_REGIONS, DEFAULT_REGION, Region, config, getConfigUrl, getServerUrls, shouldRefreshProfileToken } from "./index.js";
-import { deleteAuthBundle, getAccessTokenExpiry, readProfileAccessToken, writeAuthBundle } from "./keyring.js";
+import { deleteAuthBundle, getAccessTokenExpiry, writeAuthBundle } from "./keyring.js";
+import { ensureProfileAccessToken, refreshCurrentProfileAuthentication, refreshProfileAuthentication } from './auth.js';
 import { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
 
@@ -79,18 +80,19 @@ export async function showActiveAuthToken() {
         console.log('No profiles are defined. Run `vertesia profiles create` to add a new profile.');
         return;
     } else if (config.current) {
-        const token = readProfileAccessToken(config.current);
+        let token: string | undefined;
+        try {
+            token = await ensureProfileAccessToken(config.current);
+        } catch (error) {
+            console.error(error instanceof Error ? error.message : String(error));
+            console.error('Run `vertesia auth refresh` to authenticate again.');
+            process.exit(1);
+        }
         if (!token) {
             console.log('No auth token is stored for the current profile. Run `vertesia auth refresh` to authenticate again.');
             return;
         }
-        const expiresAt = getAccessTokenExpiry(token);
-        if (expiresAt && expiresAt < Date.now()) {
-            console.log("Authentication token expired. Create a new one ");
-            await _doRefreshToken(config.current.name);
-        } else {
-            console.log(token);
-        }
+        console.log(token);
     } else {
         console.log('No profile is selected. Run `vertesia auth refresh` to refresh the token');
     }
@@ -242,12 +244,15 @@ export async function updateProfile(name?: string, onResult?: OnResultCallback, 
     await config.updateProfile(name).start(onResult, signal);
 }
 
-export function updateCurrentProfile(onResult?: OnResultCallback, signal?: AbortSignal): Promise<void> {
-    if (!config.current) {
-        console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
-        process.exit(1);
+export async function refreshProfile(name?: string, onResult?: OnResultCallback, signal?: AbortSignal): Promise<ConfigResult | undefined> {
+    if (!name) {
+        name = await selectProfile("Select the profile to refresh");
     }
-    return config.updateProfile(config.current.name).start(onResult, signal);
+    return refreshProfileAuthentication(name, onResult, signal);
+}
+
+export function updateCurrentProfile(onResult?: OnResultCallback, signal?: AbortSignal): Promise<void> {
+    return refreshCurrentProfileAuthentication(onResult, signal).then(() => undefined);
 }
 
 
@@ -359,7 +364,7 @@ async function _doRefreshToken(profileName: string, onResult?: OnResultCallback)
             initial: true,
         });
         if (r.refresh) {
-            await config.updateProfile(profileName).start(onResult, abortController.signal);
+            await refreshProfileAuthentication(profileName, onResult, abortController.signal);
         }
     } finally {
         process.off('SIGINT', handleSignal);

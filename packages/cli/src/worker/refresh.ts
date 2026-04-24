@@ -1,4 +1,4 @@
-import { updateProfile } from "../profiles/commands.js";
+import { refreshProfile } from "../profiles/commands.js";
 import { config, Profile, shouldRefreshProfileToken } from "../profiles/index.js";
 import { ConfigResult } from "../profiles/server/index.js";
 import { WorkerProject } from "./project.js";
@@ -51,6 +51,6 @@ export function tryRefreshToken(profile: Profile): Promise<ConfigResult | undefi
         };
 
         // Start the update with our wrapped resolver
-        updateProfile(profile.name, wrappedResolve, abortController.signal);
+        refreshProfile(profile.name, wrappedResolve, abortController.signal);
     });
 }

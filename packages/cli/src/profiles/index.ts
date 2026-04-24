@@ -4,7 +4,8 @@ import os from "node:os";
 import { join } from "path";
 import { readJsonFile, writeJsonFile } from "../utils/stdio.js";
 import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.js";
-import { OnResultCallback } from "./commands.js";
+import type { OnResultCallback } from "./commands.js";
+import { canUseOAuthProfile, startOAuthSession } from "./oauth.js";
 import { deleteAuthBundle, getAccessTokenExpiry, hasStoredAccessToken, isKeyringAvailable, readAuthBundle, readProfileAccessToken, writeAuthBundle } from "./keyring.js";
 
 export function getConfigFile(path?: string) {
@@ -133,11 +134,8 @@ export class ConfigureProfile {
         }
     }
 
-    async applyConfigResult(result: ConfigResult | undefined) {
+    async persistConfigResult(result: ConfigResult | undefined) {
         if (!result) {
-            // Handle cancellation or no result
-            console.log('\nAuthentication canceled or failed.');
-            process.exit(1);
             return;
         }
         const oldName = this.data.name!;
@@ -153,6 +151,8 @@ export class ConfigureProfile {
             accessTokenExpiresAt: readResultAccessTokenExpiry(result),
             refreshToken: result.refresh_token || previousBundle?.refreshToken,
             refreshTokenExpiresAt: result.refresh_token_expires_at || previousBundle?.refreshTokenExpiresAt,
+            oauthClientId: result.oauth_client_id || previousBundle?.oauthClientId,
+            oauthResource: result.oauth_resource || previousBundle?.oauthResource,
         });
         if (oldName && oldName !== result.profile) {
             deleteAuthBundle(oldName);
@@ -167,20 +167,44 @@ export class ConfigureProfile {
             await this.onResultCallback(result);
             this.onResultCallback = undefined;
         }
-        // force exit to close last prompt
-        console.log('\n');
-        console.log('Authentication completed.');
-        process.exit(0);
+    }
+
+    async applyConfigResult(
+        result: ConfigResult | undefined,
+        options: { logCompletion?: boolean; exitOnComplete?: boolean } = {},
+    ) {
+        if (!result) {
+            console.log('\nAuthentication canceled or failed.');
+            process.exit(1);
+            return;
+        }
+        await this.persistConfigResult(result);
+        if (options.logCompletion) {
+            console.log('\n');
+            console.log('Authentication completed.');
+        }
+        if (options.exitOnComplete) {
+            process.exit(0);
+        }
+    }
+
+    private async startLegacySession(signal?: AbortSignal) {
+        await startConfigSession(
+            this.data.config_url!,
+            this.getConfigPayload(),
+            (result) => this.applyConfigResult(result, { logCompletion: true, exitOnComplete: true }),
+            signal
+        );
     }
 
     async start(onResult?: OnResultCallback, signal?: AbortSignal) {
         this.onResultCallback = onResult;
-        await startConfigSession(
-            this.data.config_url!, 
-            this.getConfigPayload(), 
-            this.applyConfigResult.bind(this),
-            signal
-        );
+        if (canUseOAuthProfile(this.data)) {
+            const result = await startOAuthSession(this.data as Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'project'>>, signal);
+            await this.applyConfigResult(result, { logCompletion: true });
+            return;
+        }
+        await this.startLegacySession(signal);
     }
 }
 
@@ -254,7 +278,7 @@ export class Config {
 
     createProfile(name: string, target: ConfigUrlRef, region: Region = DEFAULT_REGION) {
         const config_url = getConfigUrl(target, region);
-        return new ConfigureProfile(this, { name, config_url, region }, true);
+        return new ConfigureProfile(this, { name, config_url, region, ...readKnownServerUrls(target, region) }, true);
     }
 
     updateProfile(name: string) {
@@ -267,12 +291,13 @@ export class Config {
 
     createOrUpdateProfile(name: string, target?: ConfigUrlRef): ConfigureProfile {
         const config_url = target && getConfigUrl(target);
+        const knownServerUrls = target ? readKnownServerUrls(target) : {};
         const data = this.getProfile(name);
         if (config_url) { // create a new profile on config_url
             if (data) {
                 throw new ProfileAlreadyExistsError(`Profile ${name} already exists.`);
             } else {
-                return new ConfigureProfile(this, { name, config_url }, true);
+                return new ConfigureProfile(this, { name, config_url, ...knownServerUrls }, true);
             }
         } else { // update an existing profile
             if (data) {
@@ -394,4 +419,12 @@ function readResultAccessTokenExpiry(result: ConfigResult): number | undefined {
         return Date.now() + result.expires_in * 1000;
     }
     return readInlineTokenExpiry(result.token);
+}
+
+function readKnownServerUrls(target: ConfigUrlRef, region: Region = DEFAULT_REGION): Partial<Pick<Profile, 'studio_server_url' | 'zeno_server_url'>> {
+    try {
+        return getServerUrls(target, region);
+    } catch {
+        return {};
+    }
 }

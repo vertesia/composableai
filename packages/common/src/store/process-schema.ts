@@ -1,12 +1,17 @@
 import type { JSONSchemaType } from "../json-schema.js";
 
-export const PROCESS_DEFINITION_JSON_SCHEMA_ID = "https://schemas.vertesia.com/process-definition.schema.json";
+export const PROCESS_DEFINITION_JSON_SCHEMA_ID = "https://schemas.vertesia.com/process-definition.v1.schema.json";
 
 export const ProcessDefinitionBodyJsonSchema = {
     $id: PROCESS_DEFINITION_JSON_SCHEMA_ID,
     type: "object",
     description: "A process definition describes a state-machine workflow executed by the Process Engine.",
     properties: {
+        format_version: {
+            type: "integer",
+            const: 1,
+            description: "Native process definition format version.",
+        },
         process: {
             type: "string",
             minLength: 1,
@@ -39,10 +44,20 @@ export const ProcessDefinitionBodyJsonSchema = {
                 $ref: "#/$defs/nodeDefinition",
             },
         },
+        metadata: {
+            $ref: "#/$defs/metadataDefinition",
+        },
     },
-    required: ["process", "initial", "context", "nodes"],
+    required: ["format_version", "process", "initial", "context", "nodes"],
     additionalProperties: false,
     $defs: {
+        metadataDefinition: {
+            type: "object",
+            nullable: true,
+            description: "Execution-irrelevant metadata such as editor layout, provenance, and audit hints.",
+            required: [],
+            additionalProperties: true,
+        },
         processContextDefinition: {
             type: "object",
             properties: {
@@ -72,7 +87,7 @@ export const ProcessDefinitionBodyJsonSchema = {
             properties: {
                 type: {
                     type: "string",
-                    enum: ["tool", "interaction", "agent", "process", "human_task", "parallel", "condition", "final"],
+                    enum: ["tool", "interaction", "agent", "process", "human_task", "foreach", "branch", "condition", "final"],
                     description: "Node executor type.",
                 },
                 tool: {
@@ -181,30 +196,30 @@ export const ProcessDefinitionBodyJsonSchema = {
                 foreach: {
                     type: "string",
                     nullable: true,
-                    description: "Context path to an array for parallel nodes.",
+                    description: "Context path to an array for foreach nodes.",
                 },
                 as: {
                     type: "string",
                     nullable: true,
-                    description: "Variable name for the current parallel item. Defaults to item.",
+                    description: "Variable name for the current foreach item. Defaults to item.",
                 },
                 item_id: {
                     type: "string",
                     nullable: true,
-                    description: "Template for a stable item id in parallel collection output.",
+                    description: "Template for a stable item id in foreach collection output.",
                 },
                 node: {
                     $ref: "#/$defs/nodeDefinition",
-                    description: "Child node executed for each parallel item.",
+                    description: "Child node executed for each foreach item or branch child definition.",
                 },
                 max_concurrency: {
                     type: "integer",
                     minimum: 1,
                     nullable: true,
-                    description: "Maximum parallel child executions.",
+                    description: "Maximum concurrent child executions for foreach nodes.",
                 },
                 collect: {
-                    description: "Where and how to collect parallel results.",
+                    description: "Where and how to collect foreach or branch results.",
                     oneOf: [
                         { type: "string", minLength: 1 },
                         { $ref: "#/$defs/parallelCollectDefinition" },
@@ -214,13 +229,27 @@ export const ProcessDefinitionBodyJsonSchema = {
                     type: "string",
                     enum: ["fail_fast", "collect_errors"],
                     nullable: true,
-                    description: "Parallel failure policy.",
+                    description: "Foreach or branch failure policy.",
+                },
+                join: {
+                    type: "string",
+                    enum: ["all"],
+                    nullable: true,
+                    description: "Branch join policy.",
                 },
                 branches: {
                     type: "array",
                     nullable: true,
-                    description: "Condition-node branches. Semantic validation verifies targets exist.",
-                    items: { $ref: "#/$defs/branchDefinition" },
+                    description: "Condition or branch-node branches. Semantic validation verifies the type-specific shape.",
+                    items: {
+                        oneOf: [
+                            { $ref: "#/$defs/branchDefinition" },
+                            { $ref: "#/$defs/branchNodeBranchDefinition" },
+                        ],
+                    },
+                },
+                metadata: {
+                    $ref: "#/$defs/metadataDefinition",
                 },
             },
             required: ["type"],
@@ -249,6 +278,9 @@ export const ProcessDefinitionBodyJsonSchema = {
                     nullable: true,
                     description: "Display label.",
                 },
+                metadata: {
+                    $ref: "#/$defs/metadataDefinition",
+                },
             },
             required: ["to"],
             additionalProperties: false,
@@ -270,8 +302,40 @@ export const ProcessDefinitionBodyJsonSchema = {
                     nullable: true,
                     description: "Fallback branch used when no condition matches.",
                 },
+                metadata: {
+                    $ref: "#/$defs/metadataDefinition",
+                },
             },
             required: ["to"],
+            additionalProperties: false,
+        },
+        branchNodeBranchDefinition: {
+            type: "object",
+            properties: {
+                id: {
+                    type: "string",
+                    minLength: 1,
+                    description: "Stable branch id.",
+                },
+                title: {
+                    type: "string",
+                    nullable: true,
+                    description: "Optional branch title.",
+                },
+                description: {
+                    type: "string",
+                    nullable: true,
+                    description: "Optional branch description.",
+                },
+                node: {
+                    $ref: "#/$defs/nodeDefinition",
+                    description: "Child node executed for this branch.",
+                },
+                metadata: {
+                    $ref: "#/$defs/metadataDefinition",
+                },
+            },
+            required: ["id", "node"],
             additionalProperties: false,
         },
         humanTaskDefinition: {
@@ -380,6 +444,8 @@ export const ProcessDefinitionBodyJsonSchema = {
                             "index",
                             "item",
                             "item_id",
+                            "branch_id",
+                            "branch_title",
                             "output",
                             "context_update",
                             "error",

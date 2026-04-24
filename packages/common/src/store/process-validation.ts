@@ -1,4 +1,10 @@
-import type { NodeDefinition, ProcessDefinitionBody } from "./process.js";
+import {
+    PROCESS_DEFINITION_FORMAT_VERSION,
+    type BranchDefinition,
+    type BranchNodeBranchDefinition,
+    type NodeDefinition,
+    type ProcessDefinitionBody,
+} from "./process.js";
 
 export interface ProcessDefinitionValidationResult {
     valid: boolean;
@@ -25,6 +31,9 @@ export function getProcessDefinitionValidationResult(definition: ProcessDefiniti
 
     if (!definition.process) {
         errors.push("process is missing");
+    }
+    if (definition.format_version !== PROCESS_DEFINITION_FORMAT_VERSION) {
+        errors.push(`format_version must be ${PROCESS_DEFINITION_FORMAT_VERSION}`);
     }
     if (!definition.initial) {
         errors.push("initial node is missing");
@@ -89,19 +98,57 @@ function validateNodeDefinition(
             }
         }
     }
-    if (node.type === "parallel") {
+    if (node.type === "foreach") {
+        if (!node.foreach) {
+            errors.push(`foreach node "${nodeId}" is missing foreach`);
+        }
+        if (!node.node) {
+            errors.push(`foreach node "${nodeId}" is missing node`);
+        }
         if (node.max_concurrency !== undefined && (!Number.isInteger(node.max_concurrency) || node.max_concurrency < 1)) {
-            errors.push(`parallel node "${nodeId}" max_concurrency must be a positive integer`);
+            errors.push(`foreach node "${nodeId}" max_concurrency must be a positive integer`);
         }
         if (node.item_id !== undefined && typeof node.item_id !== "string") {
-            errors.push(`parallel node "${nodeId}" item_id must be a string`);
+            errors.push(`foreach node "${nodeId}" item_id must be a string`);
         }
-        validateParallelCollectDefinition(nodeId, node.collect, errors);
+        validateCollectDefinition("foreach", nodeId, node.collect, errors);
         if (node.node) {
-            if (!isParallelChildNodeType(node.node.type)) {
-                errors.push(`parallel node "${nodeId}" has unsupported child node type "${String(node.node.type)}"`);
+            validateFanoutChildNodeDefinition(definition, {
+                ownerLabel: `foreach node "${nodeId}"`,
+                childPath: `${nodeId}.node`,
+                childLabel: `foreach node "${nodeId}" child node`,
+                child: node.node,
+            }, errors);
+        }
+    }
+    if (node.type === "branch") {
+        if (!Array.isArray(node.branches) || node.branches.length === 0) {
+            errors.push(`branch node "${nodeId}" must define at least one branch`);
+        }
+        if (node.join !== undefined && node.join !== "all") {
+            errors.push(`branch node "${nodeId}" join must be "all"`);
+        }
+        validateCollectDefinition("branch", nodeId, node.collect, errors);
+        const branches = getBranchNodeBranches(node);
+        const seenIds = new Set<string>();
+        for (const [index, branch] of branches.entries()) {
+            if (!branch.id) {
+                errors.push(`branch node "${nodeId}" branch at index ${index} is missing id`);
+            } else if (seenIds.has(branch.id)) {
+                errors.push(`branch node "${nodeId}" has duplicate branch id "${branch.id}"`);
+            } else {
+                seenIds.add(branch.id);
             }
-            validateNodeDefinition(definition, `${nodeId}.node`, node.node, errors);
+            if (!branch.node) {
+                errors.push(`branch node "${nodeId}" branch "${branch.id || index}" is missing node`);
+                continue;
+            }
+            validateFanoutChildNodeDefinition(definition, {
+                ownerLabel: `branch node "${nodeId}" branch "${branch.id || index}"`,
+                childPath: `${nodeId}.branches.${index}.node`,
+                childLabel: `branch node "${nodeId}" branch "${branch.id || index}" child node`,
+                child: branch.node,
+            }, errors);
         }
     }
     if (node.failure_policy && !isParallelFailurePolicy(node.failure_policy)) {
@@ -119,7 +166,7 @@ function validateNodeDefinition(
         }
     }
 
-    for (const branch of node.branches ?? []) {
+    for (const branch of getConditionBranches(node)) {
         if (!definition.nodes[branch.to]) {
             errors.push(`node "${nodeId}" has branch to "${branch.to}" which does not exist`);
         }
@@ -135,7 +182,8 @@ function isProcessNodeType(value: string): boolean {
         || value === "agent"
         || value === "process"
         || value === "human_task"
-        || value === "parallel"
+        || value === "foreach"
+        || value === "branch"
         || value === "condition"
         || value === "final";
 }
@@ -152,42 +200,81 @@ function isParallelFailurePolicy(value: string): boolean {
     return value === "fail_fast" || value === "collect_errors";
 }
 
-function isParallelChildNodeType(value: string): boolean {
+function isFanoutChildNodeType(value: string): boolean {
     return value === "tool"
         || value === "interaction"
         || value === "agent"
-        || value === "process"
-        || value === "condition";
+        || value === "process";
 }
 
-function validateParallelCollectDefinition(nodeId: string, collect: NodeDefinition["collect"], errors: string[]) {
+function validateFanoutChildNodeDefinition(
+    definition: ProcessDefinitionBody,
+    input: {
+        ownerLabel: string;
+        childPath: string;
+        childLabel: string;
+        child: NodeDefinition;
+    },
+    errors: string[],
+) {
+    const { ownerLabel, childPath, childLabel, child } = input;
+    if (!isFanoutChildNodeType(child.type)) {
+        errors.push(`${ownerLabel} has unsupported child node type "${String(child.type)}"`);
+        return;
+    }
+
+    if ((child.transitions ?? []).length > 0) {
+        errors.push(`${childLabel} must not define transitions`);
+    }
+    if ((child.branches ?? []).length > 0) {
+        errors.push(`${childLabel} must not define branches`);
+    }
+
+    validateNodeDefinition(
+        definition,
+        childPath,
+        {
+            ...child,
+            transitions: undefined,
+            branches: undefined,
+        },
+        errors,
+    );
+}
+
+function validateCollectDefinition(
+    nodeKind: "foreach" | "branch",
+    nodeId: string,
+    collect: NodeDefinition["collect"],
+    errors: string[],
+) {
     if (collect === undefined) {
         return;
     }
     if (typeof collect === "string") {
         if (!collect) {
-            errors.push(`parallel node "${nodeId}" collect must not be empty`);
+            errors.push(`${nodeKind} node "${nodeId}" collect must not be empty`);
         }
         return;
     }
     if (!isRecord(collect)) {
-        errors.push(`parallel node "${nodeId}" collect must be a string or object`);
+        errors.push(`${nodeKind} node "${nodeId}" collect must be a string or object`);
         return;
     }
     if (typeof collect.into !== "string" || !collect.into) {
-        errors.push(`parallel node "${nodeId}" collect.into is required`);
+        errors.push(`${nodeKind} node "${nodeId}" collect.into is required`);
     }
     if (collect.mode !== undefined && collect.mode !== "array") {
-        errors.push(`parallel node "${nodeId}" collect.mode must be "array"`);
+        errors.push(`${nodeKind} node "${nodeId}" collect.mode must be "array"`);
     }
     if (collect.include !== undefined) {
         if (!Array.isArray(collect.include)) {
-            errors.push(`parallel node "${nodeId}" collect.include must be an array`);
+            errors.push(`${nodeKind} node "${nodeId}" collect.include must be an array`);
             return;
         }
         for (const field of collect.include) {
             if (typeof field !== "string" || !isParallelCollectField(field)) {
-                errors.push(`parallel node "${nodeId}" collect.include has invalid field "${String(field)}"`);
+                errors.push(`${nodeKind} node "${nodeId}" collect.include has invalid field "${String(field)}"`);
             }
         }
     }
@@ -198,6 +285,8 @@ function isParallelCollectField(value: string): boolean {
         || value === "index"
         || value === "item"
         || value === "item_id"
+        || value === "branch_id"
+        || value === "branch_title"
         || value === "output"
         || value === "context_update"
         || value === "error"
@@ -249,4 +338,16 @@ function inspectGuardRule(rule: unknown): { depth: number; nodes: number } {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function getConditionBranches(node: NodeDefinition): BranchDefinition[] {
+    return node.type === "condition" && Array.isArray(node.branches)
+        ? node.branches as BranchDefinition[]
+        : [];
+}
+
+function getBranchNodeBranches(node: NodeDefinition): BranchNodeBranchDefinition[] {
+    return node.type === "branch" && Array.isArray(node.branches)
+        ? node.branches as BranchNodeBranchDefinition[]
+        : [];
 }

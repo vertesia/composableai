@@ -21,6 +21,8 @@ export interface ConfigResult extends Required<ConfigPayload> {
     expires_in?: number;
     access_token_expires_at?: number;
     refresh_token_expires_at?: number;
+    oauth_client_id?: string;
+    oauth_resource?: string;
 }
 
 

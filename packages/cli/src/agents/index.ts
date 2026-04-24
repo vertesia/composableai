@@ -5,6 +5,7 @@ import {
     CreateAgentRunPayload,
     CreateProcessRunPayload,
     InteractionExecutionConfiguration,
+    PROCESS_DEFINITION_FORMAT_VERSION,
     ProcessDefinitionBody,
     ProcessRun,
     ProcessRunConfig,
@@ -627,6 +628,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isProcessDefinitionBody(value: unknown): value is ProcessDefinitionBody {
     return isRecord(value)
+        && value.format_version === PROCESS_DEFINITION_FORMAT_VERSION
         && typeof value.process === "string"
         && typeof value.initial === "string"
         && isRecord(value.context)

@@ -1,5 +1,5 @@
 import enquirer from "enquirer";
-import { createProfile, updateProfile } from "../profiles/commands.js";
+import { createProfile, refreshProfile } from "../profiles/commands.js";
 import { config, shouldRefreshProfileToken } from "../profiles/index.js";
 import { ConfigResult } from "../profiles/server/index.js";
 import { WorkerProject } from "./project.js";
@@ -40,7 +40,7 @@ export async function connectToProject(options: ConnectOptions) {
         }
         if (allowInteraction && shouldRefreshProfileToken(profile, 10)) {
             console.log("Refreshing auth token for profile:", profileName);
-            await updateProfile(profileName, onAuthenticationDone);
+            await refreshProfile(profileName, onAuthenticationDone);
         } else {
             await updateNpmrc(project, profileName);
         }

@@ -4,6 +4,8 @@ import { TaskField } from "./task.js";
 export type JsonLogicRule = Record<string, unknown>;
 
 export type ProcessDefinitionStatus = 'draft' | 'published' | 'archived';
+export const PROCESS_DEFINITION_FORMAT_VERSION = 1 as const;
+export type ProcessDefinitionFormatVersion = typeof PROCESS_DEFINITION_FORMAT_VERSION;
 
 export type ProcessNodeType =
     | 'tool'
@@ -11,7 +13,8 @@ export type ProcessNodeType =
     | 'agent'
     | 'process'
     | 'human_task'
-    | 'parallel'
+    | 'foreach'
+    | 'branch'
     | 'condition'
     | 'final';
 
@@ -19,11 +22,15 @@ export type TransitionTrigger = 'auto' | 'agent' | 'user';
 export type ParallelFailurePolicy = 'fail_fast' | 'collect_errors';
 export type ProcessNodeRunType = 'supervised' | 'programmatic';
 export type ParallelCollectMode = 'array';
+export type BranchJoinPolicy = 'all';
+export type ProcessDefinitionMetadata = Record<string, unknown>;
 export type ParallelCollectField =
     | 'status'
     | 'index'
     | 'item'
     | 'item_id'
+    | 'branch_id'
+    | 'branch_title'
     | 'output'
     | 'context_update'
     | 'error'
@@ -36,12 +43,22 @@ export interface TransitionDefinition {
     guard?: JsonLogicRule;
     trigger?: TransitionTrigger;
     label?: string;
+    metadata?: ProcessDefinitionMetadata;
 }
 
 export interface BranchDefinition {
     to: string;
     when?: JsonLogicRule;
     default?: boolean;
+    metadata?: ProcessDefinitionMetadata;
+}
+
+export interface BranchNodeBranchDefinition {
+    id: string;
+    title?: string;
+    description?: string;
+    node: NodeDefinition;
+    metadata?: ProcessDefinitionMetadata;
 }
 
 export interface HumanTaskDefinition {
@@ -126,7 +143,9 @@ export interface NodeDefinition {
     max_concurrency?: number;
     collect?: string | ParallelCollectDefinition;
     failure_policy?: ParallelFailurePolicy;
-    branches?: BranchDefinition[];
+    join?: BranchJoinPolicy;
+    branches?: BranchDefinition[] | BranchNodeBranchDefinition[];
+    metadata?: ProcessDefinitionMetadata;
 }
 
 export interface ProcessContextDefinition {
@@ -135,12 +154,14 @@ export interface ProcessContextDefinition {
 }
 
 export interface ProcessDefinitionBody {
+    format_version: ProcessDefinitionFormatVersion;
     process: string;
     description?: string;
     initial: string;
     model?: string;
     context: ProcessContextDefinition;
     nodes: Record<string, NodeDefinition>;
+    metadata?: ProcessDefinitionMetadata;
 }
 
 export interface ProcessDefinition {
@@ -165,7 +186,7 @@ export interface NodeHistoryEntry {
     attempt?: number;
     entered_at: Date | string;
     exited_at?: Date | string;
-    status: 'running' | 'completed' | 'skipped' | 'failed';
+    status: 'running' | 'completed' | 'skipped' | 'failed' | 'cancelled';
     context_diff: Record<string, any>;
     data_ref?: string;
     sequence?: number;

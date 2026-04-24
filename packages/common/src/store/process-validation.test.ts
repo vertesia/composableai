@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ProcessDefinitionBody } from "./process.js";
+import { PROCESS_DEFINITION_FORMAT_VERSION, type ProcessDefinitionBody } from "./process.js";
 import {
     MAX_PROCESS_GUARD_DEPTH,
     MAX_PROCESS_GUARD_NODES,
@@ -9,8 +9,16 @@ import {
 
 function validDefinition(): ProcessDefinitionBody {
     return {
+        format_version: PROCESS_DEFINITION_FORMAT_VERSION,
         process: "approval",
         initial: "review",
+        metadata: {
+            provenance: {
+                bpmn: {
+                    process_id: "ApprovalProcess",
+                },
+            },
+        },
         context: {
             schema: {
                 type: "object",
@@ -29,7 +37,7 @@ function validDefinition(): ProcessDefinitionBody {
                     title: "Review",
                     fields: [{ name: "approved", type: "boolean", required: true }],
                 },
-                transitions: [{ to: "approved", trigger: "user" }],
+                transitions: [{ to: "approved", trigger: "user", metadata: { edge_kind: "default" } }],
             },
             approved: {
                 type: "final",
@@ -64,7 +72,7 @@ describe("process definition validation", () => {
         );
     });
 
-    it("rejects unsupported parallel child node types", () => {
+    it("rejects unsupported foreach child node types", () => {
         const definition = validDefinition();
         definition.initial = "fanout";
         definition.context.schema = {
@@ -77,7 +85,7 @@ describe("process definition validation", () => {
         definition.context.initial = { items: [] };
         definition.nodes = {
             fanout: {
-                type: "parallel",
+                type: "foreach",
                 foreach: "items",
                 node: {
                     type: "human_task",
@@ -94,11 +102,11 @@ describe("process definition validation", () => {
         };
 
         expect(() => validateProcessDefinitionBody(definition)).toThrow(
-            'parallel node "fanout" has unsupported child node type "human_task"',
+            'foreach node "fanout" has unsupported child node type "human_task"',
         );
     });
 
-    it("accepts process nodes as standalone nodes and parallel children", () => {
+    it("accepts process nodes as standalone nodes and foreach children", () => {
         const child = validDefinition();
         child.process = "child_approval";
 
@@ -115,7 +123,7 @@ describe("process definition validation", () => {
         definition.context.initial = { items: [] };
         definition.nodes = {
             fanout: {
-                type: "parallel",
+                type: "foreach",
                 foreach: "items",
                 as: "item",
                 item_id: "{{item.id}}",
@@ -140,6 +148,41 @@ describe("process definition validation", () => {
         expect(() => validateProcessDefinitionBody(definition)).not.toThrow();
     });
 
+    it("rejects fanout child nodes that define their own transitions", () => {
+        const child = validDefinition();
+        child.process = "child_approval";
+
+        const definition = validDefinition();
+        definition.initial = "fanout";
+        definition.context.schema = {
+            type: "object",
+            properties: {
+                items: { type: "array", items: { type: "object" } },
+            },
+            additionalProperties: true,
+        };
+        definition.context.initial = { items: [] };
+        definition.nodes = {
+            fanout: {
+                type: "foreach",
+                foreach: "items",
+                node: {
+                    type: "process",
+                    process_definition: child,
+                    transitions: [{ to: "approved" }],
+                },
+                transitions: [{ to: "approved" }],
+            },
+            approved: {
+                type: "final",
+            },
+        };
+
+        expect(() => validateProcessDefinitionBody(definition)).toThrow(
+            'foreach node "fanout" child node must not define transitions',
+        );
+    });
+
     it("rejects process nodes without a referenced or inline process", () => {
         const definition = validDefinition();
         definition.nodes.review = {
@@ -152,7 +195,7 @@ describe("process definition validation", () => {
         );
     });
 
-    it("rejects invalid parallel fanout controls", () => {
+    it("rejects invalid foreach fanout controls", () => {
         const definition = validDefinition();
         definition.initial = "fanout";
         definition.context.schema = {
@@ -165,7 +208,7 @@ describe("process definition validation", () => {
         definition.context.initial = { items: [] };
         definition.nodes = {
             fanout: {
-                type: "parallel",
+                type: "foreach",
                 foreach: "items",
                 max_concurrency: 0,
                 collect: {
@@ -186,13 +229,14 @@ describe("process definition validation", () => {
         const result = getProcessDefinitionValidationResult(definition);
 
         expect(result.valid).toBe(false);
-        expect(result.errors).toContain('parallel node "fanout" max_concurrency must be a positive integer');
-        expect(result.errors).toContain('parallel node "fanout" collect.into is required');
-        expect(result.errors).toContain('parallel node "fanout" collect.include has invalid field "bogus"');
+        expect(result.errors).toContain('foreach node "fanout" max_concurrency must be a positive integer');
+        expect(result.errors).toContain('foreach node "fanout" collect.into is required');
+        expect(result.errors).toContain('foreach node "fanout" collect.include has invalid field "bogus"');
     });
 
     it("reports all structural errors without importing runtime schema validators", () => {
         const definition = {
+            format_version: PROCESS_DEFINITION_FORMAT_VERSION,
             process: "",
             initial: "missing",
             context: {

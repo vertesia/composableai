@@ -1,12 +1,20 @@
 import Ajv from "ajv";
 import { describe, expect, it } from "vitest";
-import type { ProcessDefinitionBody } from "./process.js";
+import { PROCESS_DEFINITION_FORMAT_VERSION, type ProcessDefinitionBody } from "./process.js";
 import { ProcessDefinitionBodyJsonSchema } from "./process-schema.js";
 
 function validDefinition(): ProcessDefinitionBody {
     return {
+        format_version: PROCESS_DEFINITION_FORMAT_VERSION,
         process: "invoice_review",
         initial: "fanout",
+        metadata: {
+            provenance: {
+                bpmn: {
+                    process_id: "InvoiceReview",
+                },
+            },
+        },
         context: {
             schema: {
                 type: "object",
@@ -22,7 +30,7 @@ function validDefinition(): ProcessDefinitionBody {
         },
         nodes: {
             fanout: {
-                type: "parallel",
+                type: "foreach",
                 foreach: "invoices",
                 as: "invoice",
                 item_id: "{{invoice.id}}",
@@ -32,6 +40,11 @@ function validDefinition(): ProcessDefinitionBody {
                     into: "results",
                     include: ["status", "index", "item_id", "output", "child_run_id"],
                 },
+                metadata: {
+                    editor: {
+                        render: "foreach",
+                    },
+                },
                 node: {
                     type: "process",
                     process: "invoice_child_review",
@@ -40,7 +53,7 @@ function validDefinition(): ProcessDefinitionBody {
                         from: "context.review",
                     },
                 },
-                transitions: [{ to: "done" }],
+                transitions: [{ to: "done", metadata: { edge_kind: "default" } }],
             },
             done: {
                 type: "final",
@@ -59,6 +72,7 @@ describe("process definition JSON schema", () => {
     it("rejects malformed process definition shape for editor diagnostics", () => {
         const validate = new Ajv({ allErrors: true, strict: false }).compile(ProcessDefinitionBodyJsonSchema);
         const invalidDefinition = {
+            format_version: PROCESS_DEFINITION_FORMAT_VERSION,
             process: "invoice_review",
             initial: "fanout",
             context: {
@@ -69,7 +83,7 @@ describe("process definition JSON schema", () => {
             },
             nodes: {
                 fanout: {
-                    type: "parallel",
+                    type: "foreach",
                     collect: {
                         into: "results",
                         include: ["bogus"],

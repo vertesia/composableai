@@ -22,6 +22,8 @@ export interface StoredAuthBundle {
     accessTokenExpiresAt?: number;
     refreshToken?: string;
     refreshTokenExpiresAt?: number;
+    oauthClientId?: string;
+    oauthResource?: string;
 }
 
 type WritableAuthBundle = Omit<StoredAuthBundle, 'version'>;
@@ -91,6 +93,8 @@ export function writeAuthBundle(profileName: string, bundle: WritableAuthBundle)
         accessTokenExpiresAt: bundle.accessTokenExpiresAt,
         refreshToken: bundle.refreshToken,
         refreshTokenExpiresAt: bundle.refreshTokenExpiresAt,
+        oauthClientId: bundle.oauthClientId,
+        oauthResource: bundle.oauthResource,
     };
     getEntry(profileName).setPassword(JSON.stringify(payload));
 }

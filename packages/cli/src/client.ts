@@ -1,7 +1,8 @@
 import { VertesiaClient } from "@vertesia/client";
 import { Command } from "commander";
 import { config, Profile } from "./profiles/index.js";
-import { isKeyringAvailable, readProfileAccessToken } from "./profiles/keyring.js";
+import { ensureProfileAccessToken } from "./profiles/auth.js";
+import { isKeyringAvailable } from "./profiles/keyring.js";
 
 
 let _client: VertesiaClient | undefined;
@@ -61,9 +62,12 @@ async function createClient(profile: Profile | undefined): Promise<VertesiaClien
     }
 
     if (!env.apikey && profile) {
-        env.apikey = readProfileAccessToken(profile);
-        if (!env.apikey && !profile.apikey && !isKeyringAvailable()) {
-            throw new Error('No keyring-backed auth token is available for the selected profile on this system. Use VERTESIA_APIKEY or VERTESIA_TOKEN instead.');
+        env.apikey = await ensureProfileAccessToken(profile);
+        if (!env.apikey && !profile.apikey) {
+            if (!isKeyringAvailable()) {
+                throw new Error('No keyring-backed auth token is available for the selected profile on this system. Use VERTESIA_APIKEY or VERTESIA_TOKEN instead.');
+            }
+            throw new Error('No auth token is stored for the selected profile. Run `vertesia auth refresh` to authenticate again.');
         }
     }
 
