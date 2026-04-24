@@ -15,6 +15,7 @@ import {
     FirstResponseBehaviorAnalyticsResponse,
     LatencyAnalyticsResponse,
     ListAgentRunsQuery,
+    ListAgentRunsResponse,
     ListWorkflowRunsResponse,
     parseMessage,
     PromptSizeAnalyticsResponse,
@@ -82,7 +83,7 @@ export class AgentsApi extends ApiTopic {
     /**
      * List agent runs with optional filters.
      */
-    list(query?: ListAgentRunsQuery): Promise<AgentRun[]> {
+    list(query?: ListAgentRunsQuery): Promise<ListAgentRunsResponse> {
         const params: Record<string, string> = {};
         if (query?.id) params.id = query.id;
         if (query?.status) {
@@ -97,6 +98,7 @@ export class AgentsApi extends ApiTopic {
         if (query?.type) params.type = query.type;
         if (query?.limit) params.limit = String(query.limit);
         if (query?.offset) params.offset = String(query.offset);
+        if (query?.cursor) params.cursor = query.cursor;
         if (query?.sort) params.sort = query.sort;
         if (query?.order) params.order = query.order;
         return this.get('/', { query: params });
