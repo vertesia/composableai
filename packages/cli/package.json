@@ -4,7 +4,8 @@
   "description": "The Vertesia command-line interface (CLI) provides a set of commands to manage and interact with the Vertesia Platform.",
   "type": "module",
   "bin": {
-    "vertesia": "./bin/app.js"
+    "vertesia": "./bin/app.js",
+    "docker-credential-vertesia": "./bin/docker-credential-vertesia.js"
   },
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -34,6 +35,8 @@
     "@llumiverse/common": "workspace:*",
     "@vertesia/client": "workspace:*",
     "@vertesia/common": "workspace:*",
+    "@vertesia/memory-cli": "workspace:*",
+    "@vertesia/memory-commands": "workspace:*",
     "@vertesia/workflow": "workspace:*",
     "ansi-colors": "^4.1.3",
     "ansi-escapes": "^6.2.0",

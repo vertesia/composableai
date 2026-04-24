@@ -1,8 +1,6 @@
 packages:
   - llumiverse/common
   - packages/*
-  - "!packages/memory-cli"
-  - "!packages/memory-commands"
   - templates/*
   - "!templates/worker-template"
 minimumReleaseAge: 4320 # 3 days in minutes, minimumReleaseAge protects against supply chain attacks.

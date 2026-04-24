@@ -1,8 +1,10 @@
+import { setupMemoCommand } from '@vertesia/memory-cli';
 import { Command } from 'commander';
 import { registerAppsCommand } from './apps/index.js';
 import { registerAgentsCommand } from './agents/index.js';
 import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
+import { getPublishMemoryAction } from './memory/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
 import { createProfile, deleteProfile, listProfiles, showActiveAuthToken, showProfile, tryRefreshToken, updateCurrentProfile, updateProfile, useProfile, type CreateProfileOptions } from './profiles/commands.js';
@@ -10,6 +12,7 @@ import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/ind
 import { listProjects } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
+import { registerWorkerCommand } from './worker/index.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
 //warnIfNotLatest();
 
@@ -90,6 +93,16 @@ program.command("runs [interactionId]")
         runHistory(program, interactionId, options);
     });
 
+const memoCmd = program.command("memo")
+    .description("Build and export memory packs (deprecated)");
+setupMemoCommand(memoCmd, getPublishMemoryAction(program));
+for (const command of memoCmd.commands) {
+    command.hook('preAction', () => {
+        console.warn('Warning: `vertesia memo` is deprecated and will be removed in a future release.');
+    });
+}
+
+registerWorkerCommand(program);
 registerAppsCommand(program);
 registerAgentsCommand(program);
 

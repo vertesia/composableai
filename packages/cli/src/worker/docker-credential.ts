@@ -1,0 +1,50 @@
+import fs from "node:fs";
+import { getDockerCredentials } from "./docker.js";
+
+function handleNoOp() {
+    process.exit(0);
+}
+
+async function handleGet(serverUrl: string) {
+    if (!serverUrl.endsWith("-docker.pkg.dev")) {
+        process.exit(0);
+    }
+    try {
+        const credentials = await getDockerCredentials(serverUrl);
+        if (process.env.DEBUG_DOCKER_CREDS) {
+            fs.writeFileSync("./docker-creds-helper.log", `Get token for registry ${serverUrl} => ${JSON.stringify(credentials, null, 2)}`, "utf8");
+        }
+        process.stdout.write(JSON.stringify(credentials));
+    } catch (error: any) {
+        fs.writeFileSync("./docker-creds-helper-error.log", `Get token for registry ${serverUrl} => ${JSON.stringify(error, null, 2)}`, "utf8");
+        console.error("Error fetching credentials:", error.message);
+        process.exit(1);
+    }
+}
+
+function main() {
+    const command = process.argv[2];
+
+    if (!command) {
+        console.error("No command provided");
+        process.exit(1);
+    }
+
+    switch (command) {
+        case "get": {
+            const stdin = fs.readFileSync(0, "utf-8");
+            void handleGet(stdin.trim());
+            break;
+        }
+        case "store":
+        case "erase":
+        case "list":
+            handleNoOp();
+            break;
+        default:
+            console.error(`Unknown command: ${command}`);
+            process.exit(1);
+    }
+}
+
+main();
