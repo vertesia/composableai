@@ -12,6 +12,18 @@ import type { WorkflowAnalyticsFilter } from './workflow-analytics.js';
 export { BILLABLE_AUDIT_ACTIONS };
 
 // ============================================================================
+// Filter
+// ============================================================================
+
+/**
+ * Subset of WorkflowAnalyticsFilter applicable to cost analytics.
+ */
+export type CostAnalyticsFilter = Pick<
+    WorkflowAnalyticsFilter,
+    'agents' | 'models' | 'environments' | 'principals' | 'agentRunIds'
+>;
+
+// ============================================================================
 // Query
 // ============================================================================
 
@@ -35,7 +47,7 @@ export interface CostAnalyticsQuery {
     /** Skip cache and force fresh query */
     no_cache?: boolean;
     /** Multi-select filter (agents, environments, models, principals, agent run IDs). */
-    filter?: WorkflowAnalyticsFilter;
+    filter?: CostAnalyticsFilter;
 }
 
 // ============================================================================
