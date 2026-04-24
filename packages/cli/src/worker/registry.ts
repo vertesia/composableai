@@ -41,14 +41,13 @@ export async function createOrUpdateNpmRegistry(npmrcFile: string) {
     const gtok = await client.account.getGoogleToken();
 
     const resolvedFile = resolve(npmrcFile);
-
-    let content = "";
-
-    try {
-        content = readFileSync(resolvedFile, "utf-8");
-    } catch {
-        content = "";
-    }
+    const content = (() => {
+        try {
+            return readFileSync(resolvedFile, "utf-8");
+        } catch {
+            return "";
+        }
+    })();
     const lines = content.trim().split("\n").filter((line) => !line.includes(REGISTRY_URI_ABS_PATH));
 
     lines.push(getRegistryLine());
