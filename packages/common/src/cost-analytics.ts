@@ -7,6 +7,7 @@
  */
 
 import { BILLABLE_AUDIT_ACTIONS } from './audit-trail.js';
+import type { WorkflowAnalyticsFilter } from './workflow-analytics.js';
 
 export { BILLABLE_AUDIT_ACTIONS };
 
@@ -23,22 +24,8 @@ export interface CostAnalyticsQuery {
     group_by?: 'model' | 'environment' | 'account' | 'project' | 'project_tag' | 'provider' | 'interaction' | 'workflow';
     /** Time series resolution */
     resolution?: 'hour' | 'day' | 'week' | 'month';
-    /** Filter by model pattern */
-    model?: string;
-    /** Filter by environment ID */
-    environment_id?: string;
-    /** Filter by provider */
-    provider?: string;
     /** Filter by project ID (optional, for org scope) */
     project_id?: string;
-    /** Filter by workflow / agent run ID */
-    workflow_id?: string;
-    /** Filter by Temporal workflow run ID */
-    workflow_run_id?: string;
-    /** Filter by interaction execution run ID */
-    run_id?: string;
-    /** Filter by agent run ID */
-    agent_run_id?: string;
     /** Filter by account ID (set automatically by server) */
     account_id?: string;
     /** Scope: 'project' (default, current project) or 'org' (all projects in account) */
@@ -47,6 +34,8 @@ export interface CostAnalyticsQuery {
     pricing_source?: 'list' | 'historical';
     /** Skip cache and force fresh query */
     no_cache?: boolean;
+    /** Multi-select filter (agents, environments, models, principals, agent run IDs). */
+    filter?: WorkflowAnalyticsFilter;
 }
 
 // ============================================================================
