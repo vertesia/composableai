@@ -3,7 +3,7 @@ import colors from 'ansi-colors';
 import enquirer from "enquirer";
 import jwt from 'jsonwebtoken';
 import { AVAILABLE_REGIONS, DEFAULT_REGION, Region, config, getConfigUrl, getServerUrls, shouldRefreshProfileToken } from "./index.js";
-import { deleteAuthBundle, getAccessTokenExpiry, writeAuthBundle } from "./keyring.js";
+import { deleteAuthBundle, getAccessTokenExpiry, readAuthBundle, writeAuthBundle } from "./keyring.js";
 import { ensureProfileAccessToken, refreshCurrentProfileAuthentication, refreshProfileAuthentication } from './auth.js';
 import { ConfigResult } from './server/index.js';
 const { prompt } = enquirer;
@@ -98,10 +98,47 @@ export async function showActiveAuthToken() {
     }
 }
 
+export async function showActiveIdToken() {
+    if (config.profiles.length === 0) {
+        console.log('No profiles are defined. Run `vertesia profiles create` to add a new profile.');
+        return;
+    }
+    if (!config.current) {
+        console.log('No profile is selected. Run `vertesia auth refresh` to refresh the token');
+        return;
+    }
+
+    const bundle = readAuthBundle(config.current.name);
+    if (!bundle?.idToken) {
+        console.log('No ID token is stored for the current profile. Run `vertesia auth refresh` to authenticate again.');
+        return;
+    }
+    console.log(bundle.idToken);
+}
+
 
 export function deleteProfile(name: string) {
     deleteAuthBundle(name);
     config.remove(name).save();
+}
+
+export function logoutProfile(name?: string) {
+    const profileName = name || config.current?.name;
+    if (!profileName) {
+        console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
+        return;
+    }
+    if (!config.getProfile(profileName)) {
+        console.error(`Profile ${profileName} not found`);
+        process.exit(1);
+    }
+    const profile = config.getProfile(profileName);
+    if (profile?.apikey) {
+        delete profile.apikey;
+        config.save();
+    }
+    deleteAuthBundle(profileName);
+    console.log(`Logged out of profile ${profileName}.`);
 }
 
 export interface CreateProfileOptions {
@@ -232,6 +269,20 @@ export async function createProfile(name?: string, options: CreateProfileOptions
     return name!;
 }
 
+export async function loginProfile(name?: string, options: CreateProfileOptions & RefreshProfileOptions = {}) {
+    const profile = name
+        ? config.getProfile(name)
+        : config.current;
+    if (profile) {
+        await refreshProfileAuthentication(profile.name, options.onResult, undefined, {
+            projectId: options.project,
+        });
+        return profile.name;
+    }
+
+    return createProfile(name, options);
+}
+
 export async function updateProfile(name?: string, onResult?: OnResultCallback, signal?: AbortSignal) {
     if (!name) {
         name = await selectProfile("Select the profile to update");
@@ -244,15 +295,32 @@ export async function updateProfile(name?: string, onResult?: OnResultCallback, 
     await config.updateProfile(name).start(onResult, signal);
 }
 
-export async function refreshProfile(name?: string, onResult?: OnResultCallback, signal?: AbortSignal): Promise<ConfigResult | undefined> {
+export interface RefreshProfileOptions {
+    project?: string;
+}
+
+export async function refreshProfile(
+    name?: string,
+    onResult?: OnResultCallback,
+    signal?: AbortSignal,
+    options: RefreshProfileOptions = {},
+): Promise<ConfigResult | undefined> {
     if (!name) {
         name = await selectProfile("Select the profile to refresh");
     }
-    return refreshProfileAuthentication(name, onResult, signal);
+    return refreshProfileAuthentication(name, onResult, signal, {
+        projectId: options.project,
+    });
 }
 
-export function updateCurrentProfile(onResult?: OnResultCallback, signal?: AbortSignal): Promise<void> {
-    return refreshCurrentProfileAuthentication(onResult, signal).then(() => undefined);
+export function updateCurrentProfile(
+    onResult?: OnResultCallback,
+    signal?: AbortSignal,
+    options: RefreshProfileOptions = {},
+): Promise<void> {
+    return refreshCurrentProfileAuthentication(onResult, signal, {
+        projectId: options.project,
+    }).then(() => undefined);
 }
 
 

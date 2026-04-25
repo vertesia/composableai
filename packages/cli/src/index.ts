@@ -7,9 +7,9 @@ import { listInteractions } from './interactions/index.js';
 import { getPublishMemoryAction } from './memory/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
-import { createProfile, deleteProfile, listProfiles, showActiveAuthToken, showProfile, tryRefreshToken, updateCurrentProfile, updateProfile, useProfile, type CreateProfileOptions } from './profiles/commands.js';
+import { createProfile, deleteProfile, listProfiles, loginProfile, logoutProfile, showActiveAuthToken, showActiveIdToken, showProfile, tryRefreshToken, updateCurrentProfile, updateProfile, useProfile, type CreateProfileOptions } from './profiles/commands.js';
 import { AVAILABLE_REGIONS, DEFAULT_REGION, getConfigFile } from './profiles/index.js';
-import { listProjects } from './projects/index.js';
+import { listProjects, useProject } from './projects/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
 import { registerWorkerCommand } from './worker/index.js';
@@ -25,22 +25,48 @@ program.command("upgrade")
     .option("-y, --yes", "Skip the confirmation prompt")
     .action((options: Record<string, any> = {}) => upgrade(options.yes))
 
-program.command("projects")
+const projectsRoot = program.command("projects")
     .description("List the projects you have access to")
     .action(() => {
         listProjects(program);
-    })
+    });
+
+projectsRoot.command("use [project]")
+    .description("Switch the current profile to a project without running a browser OAuth flow")
+    .option("-p, --project <project>", "The project ID to use")
+    .action((project: string | undefined, options: { project?: string }) => {
+        useProject(program, options.project || project);
+    });
 
 const authRoot = program.command("auth")
     .description("Manage authentication")
+
+authRoot.command("login [profile]")
+    .description("Authenticate a profile, creating it when it does not exist")
+    .option("-t, --target <env>", "The target environment for a new profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.")
+    .option("-r, --region <region>", `Deployment region for a new profile: ${AVAILABLE_REGIONS.join(', ')}. Defaults to ${DEFAULT_REGION}. Only applies to preview and prod targets.`)
+    .option("-p, --project <project>", "Authenticate for the given project ID")
+    .option("-a, --account <account>", "The account ID to use when creating a profile")
+    .action(async (profile: string | undefined, options: CreateProfileOptions) => {
+        await loginProfile(profile, options);
+    })
+
+authRoot.command("logout [profile]")
+    .description("Remove stored credentials for a profile without deleting the profile")
+    .action((profile: string | undefined) => logoutProfile(profile))
 
 authRoot.command("token")
     .description("Show the auth token used by the current selected profile.")
     .action(() => showActiveAuthToken())
 
+authRoot.command("id-token")
+    .description("Show the ID token stored for the current selected profile.")
+    .action(() => showActiveIdToken())
+
 authRoot.command("refresh")
     .description("Refresh the auth token used by the current profile. An alias to 'vertesia profiles refresh'.")
-    .action(() => updateCurrentProfile())
+    .option("-p, --project <project>", "Refresh the current profile token for the given project ID")
+    .action((options: { project?: string }) => updateCurrentProfile(undefined, undefined, options))
 
 program.command("envs [envId]")
     .description("List the environments you have access to")
@@ -112,6 +138,11 @@ const profilesRoot = program.command("profiles")
         listProfiles();
     });
 
+profilesRoot.command('list')
+    .description("List configuration profiles")
+    .action(() => {
+        listProfiles();
+    });
 profilesRoot.command('show [name]')
     .description("Show the configured profiles or the profile with the given name")
     .action((name?: string) => {
@@ -141,8 +172,9 @@ profilesRoot.command('edit [name]')
     });
 profilesRoot.command('refresh')
     .description("Refresh token for the current configuration profile")
-    .action(() => {
-        updateCurrentProfile();
+    .option("-p, --project <project>", "Refresh the current profile token for the given project ID")
+    .action((options: { project?: string }) => {
+        updateCurrentProfile(undefined, undefined, options);
     });
 profilesRoot.command('delete <name>')
     .description("delete an existing configuration profile")

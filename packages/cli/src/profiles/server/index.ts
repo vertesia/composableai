@@ -54,6 +54,7 @@ export async function startConfigSession(
         } else {
             process.off('SIGINT', onInterrupt);
             process.off('SIGTERM', onInterrupt);
+            process.stdin.off('data', onInput);
         }
     }
 
@@ -83,6 +84,12 @@ export async function startConfigSession(
         process.exit(130);
     }
 
+    function onInput(chunk: Buffer | string) {
+        if (String(chunk).includes('\x03')) {
+            onInterrupt();
+        }
+    }
+
     if (signal?.aborted) {
         return;
     }
@@ -92,6 +99,7 @@ export async function startConfigSession(
     } else {
         process.once('SIGINT', onInterrupt);
         process.once('SIGTERM', onInterrupt);
+        process.stdin.on('data', onInput);
     }
 
     const code = randomInt(1000, 9999);

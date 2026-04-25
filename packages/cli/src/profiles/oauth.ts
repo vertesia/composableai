@@ -26,6 +26,13 @@ interface PkcePair {
     challenge: string;
 }
 
+export class OAuthUnavailableError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'OAuthUnavailableError';
+    }
+}
+
 export function canUseOAuthProfile(profile: Partial<Pick<Profile, 'studio_server_url'>>): boolean {
     if (!profile.studio_server_url) {
         return false;
@@ -91,13 +98,16 @@ export async function refreshOAuthSession(
     profile: OAuthProfile,
     refreshToken: string,
     bundle?: StoredAuthBundle,
+    options: {
+        projectId?: string;
+    } = {},
 ): Promise<ConfigResult> {
     assertOAuthProfile(profile);
 
     const metadata = await fetchAuthorizationServerMetadata(profile.studio_server_url);
     const clientId = bundle?.oauthClientId || getOAuthClientId(profile);
     const resource = bundle?.oauthResource || readTokenRefs(bundle?.accessToken).audience || getOAuthResource(metadata);
-    const response = await exchangeRefreshToken(metadata, clientId, refreshToken, resource);
+    const response = await exchangeRefreshToken(metadata, clientId, refreshToken, resource, options.projectId);
     return buildConfigResult(profile, response, clientId, resource);
 }
 
@@ -125,6 +135,9 @@ async function fetchAuthorizationServerMetadata(studioServerUrl: string): Promis
     });
 
     if (!response.ok) {
+        if (response.status === 404 || response.status === 501) {
+            throw new OAuthUnavailableError(`OAuth discovery is not available at ${studioServerUrl}.`);
+        }
         throw new Error(`Failed to load OAuth authorization metadata from ${studioServerUrl} (${response.status} ${response.statusText}).`);
     }
 
@@ -307,6 +320,7 @@ async function exchangeRefreshToken(
     clientId: string,
     refreshToken: string,
     resource: string,
+    projectId?: string,
 ): Promise<OAuthTokenResponse> {
     const body = new URLSearchParams({
         grant_type: 'refresh_token',
@@ -314,6 +328,9 @@ async function exchangeRefreshToken(
         client_id: clientId,
         resource,
     });
+    if (projectId) {
+        body.set('project_id', projectId);
+    }
     return exchangeToken(metadata.token_endpoint, body);
 }
 

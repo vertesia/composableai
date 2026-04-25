@@ -15,13 +15,19 @@ export async function ensureProfileAccessToken(profile: Profile, onResult?: OnRe
     return result?.token;
 }
 
-export async function refreshProfileAccessToken(profile: Profile, onResult?: OnResultCallback): Promise<ConfigResult | undefined> {
+export async function refreshProfileAccessToken(
+    profile: Profile,
+    onResult?: OnResultCallback,
+    options: {
+        projectId?: string;
+    } = {},
+): Promise<ConfigResult | undefined> {
     const bundle = readAuthBundle(profile.name);
     if (!bundle?.refreshToken || !canUseOAuthProfile(profile)) {
         return undefined;
     }
 
-    const result = await refreshOAuthSession(profile, bundle.refreshToken, bundle);
+    const result = await refreshOAuthSession(profile, bundle.refreshToken, bundle, options);
     const updater = config.updateProfile(profile.name);
     updater.onResultCallback = onResult;
     await updater.persistConfigResult(result);
@@ -32,6 +38,9 @@ export async function refreshProfileAuthentication(
     profileName: string,
     onResult?: OnResultCallback,
     signal?: AbortSignal,
+    options: {
+        projectId?: string;
+    } = {},
 ): Promise<ConfigResult | undefined> {
     const profile = config.getProfile(profileName);
     if (!profile) {
@@ -39,13 +48,20 @@ export async function refreshProfileAuthentication(
     }
 
     try {
-        const refreshed = await refreshProfileAccessToken(profile, onResult);
+        const refreshed = await refreshProfileAccessToken(profile, onResult, options);
         if (refreshed) {
             return refreshed;
         }
     } catch (error) {
+        if (options.projectId) {
+            throw error;
+        }
         console.error(error instanceof Error ? error.message : String(error));
         console.error('Falling back to interactive authentication.');
+    }
+
+    if (options.projectId) {
+        throw new Error('Project switching requires a stored OAuth refresh token. Run `vertesia auth refresh` without --project to authenticate again.');
     }
 
     const updater = config.updateProfile(profileName);
@@ -56,10 +72,13 @@ export async function refreshProfileAuthentication(
 export async function refreshCurrentProfileAuthentication(
     onResult?: OnResultCallback,
     signal?: AbortSignal,
+    options: {
+        projectId?: string;
+    } = {},
 ): Promise<ConfigResult | undefined> {
     if (!config.current) {
         console.log("No profile is selected. Run `vertesia profiles use <name>` to select a profile");
         process.exit(1);
     }
-    return refreshProfileAuthentication(config.current.name, onResult, signal);
+    return refreshProfileAuthentication(config.current.name, onResult, signal, options);
 }

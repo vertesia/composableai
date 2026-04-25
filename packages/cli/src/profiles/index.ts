@@ -5,7 +5,7 @@ import { join } from "path";
 import { readJsonFile, writeJsonFile } from "../utils/stdio.js";
 import { ConfigPayload, ConfigResult, startConfigSession } from "./server/index.js";
 import type { OnResultCallback } from "./commands.js";
-import { canUseOAuthProfile, startOAuthSession } from "./oauth.js";
+import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from "./oauth.js";
 import { deleteAuthBundle, getAccessTokenExpiry, hasStoredAccessToken, isKeyringAvailable, readAuthBundle, readProfileAccessToken, writeAuthBundle } from "./keyring.js";
 
 export function getConfigFile(path?: string) {
@@ -215,9 +215,16 @@ export class ConfigureProfile {
     async start(onResult?: OnResultCallback, signal?: AbortSignal) {
         this.onResultCallback = onResult;
         if (canUseOAuthProfile(this.data)) {
-            const result = await startOAuthSession(this.data as Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'project'>>, signal);
-            await this.applyConfigResult(result, { logCompletion: true });
-            return;
+            try {
+                const result = await startOAuthSession(this.data as Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'project'>>, signal);
+                await this.applyConfigResult(result, { logCompletion: true });
+                return;
+            } catch (error: unknown) {
+                if (!(error instanceof OAuthUnavailableError)) {
+                    throw error;
+                }
+                console.log('OAuth login is not available for this endpoint. Falling back to legacy CLI login.');
+            }
         }
         await this.startLegacySession(signal);
     }
@@ -231,7 +238,7 @@ export class Config {
     constructor(data?: ProfilesData) {
         this.profiles = data?.profiles || [];
         if (data?.default) {
-            this.use(data.default);
+            this.current = this.profiles.find(p => p.name === data.default);
         }
     }
 
@@ -377,7 +384,10 @@ export class Config {
                 }
             }
             if (data.default) {
-                this.use(data.default)
+                this.current = this.profiles.find(p => p.name === data.default);
+                if (!this.current) {
+                    needsSave = true;
+                }
             } else {
                 this.current = undefined;
             }
