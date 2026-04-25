@@ -39,6 +39,33 @@ export type AgentRunArchiveState = 'none' | 'pending' | 'archiving' | 'complete'
 export type AgentRunType = 'api' | 'schedule';
 
 /**
+ * Kind of execution backing this run.
+ *
+ * - `agent`:   conversational agent backed by an interaction.
+ * - `process`: process-engine run backed by a process definition (no interaction).
+ *
+ * Determines which fields on `AgentRun` are populated. `interaction` /
+ * `interactionRef` are only present when `run_kind === 'agent'`;
+ * `process_id` / `process_definition_snapshot` are only present when
+ * `run_kind === 'process'`.
+ */
+export type AgentRunKind = 'agent' | 'process';
+
+/**
+ * Minimal snapshot of the process definition used by a process-engine run.
+ * Captured at start so the UI/history can render the run without a fresh
+ * lookup, and remains accurate even if the source definition changes later.
+ */
+export interface ProcessDefinitionSnapshot {
+    /** Process definition name/code (e.g. "live_supervised_only_..."). */
+    process: string;
+    /** Optional human-readable description. */
+    description?: string;
+    /** Remaining fields are intentionally untyped here. */
+    [extra: string]: unknown;
+}
+
+/**
  * Shared fields between CreateAgentRunPayload and AgentRun.
  *
  * @typeParam TData - The interaction's expected input data type.
@@ -97,7 +124,8 @@ export interface AgentRunBase<TData = Record<string, any>, TProperties = Record<
  * @typeParam TData - The interaction's expected input data type.
  * @typeParam TProperties - The content type's property schema.
  */
-export interface AgentRun<TData = Record<string, any>, TProperties = Record<string, any>> extends AgentRunBase<TData, TProperties> {
+export interface AgentRun<TData = Record<string, any>, TProperties = Record<string, any>>
+    extends Omit<AgentRunBase<TData, TProperties>, 'interaction'> {
     /** The stable identifier used by all client code */
     id: string;
 
@@ -107,6 +135,13 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
     /** Project ID */
     project: string;
 
+    /**
+     * Kind of execution backing this run. Optional for backward compatibility
+     * with older records persisted before the field existed; treat missing
+     * values as `'agent'`.
+     */
+    run_kind?: AgentRunKind;
+
     // --- Temporal workflow references ---
 
     /** Temporal workflow ID (stable across continueAsNew) */
@@ -115,12 +150,27 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
     /** First Temporal workflow run ID (used for Redis channel and artifact resolution) */
     first_workflow_run_id?: string;
 
-    // --- Interaction info ---
+    // --- Interaction info (only set when run_kind === 'agent') ---
+
+    /** Interaction ID or code. Absent for process runs. */
+    interaction?: string;
 
     /** Human-readable interaction name */
     interaction_name?: string;
 
-    interactionRef: InteractionRef;
+    /** Resolved interaction reference. Absent for process runs. */
+    interactionRef?: InteractionRef;
+
+    // --- Process info (only set when run_kind === 'process') ---
+
+    /** Process instance ID. Absent for agent runs. */
+    process_id?: string;
+
+    /** Snapshot of the process definition. Absent for agent runs. */
+    process_definition_snapshot?: ProcessDefinitionSnapshot;
+
+    /** Process definition version. Absent for agent runs. */
+    process_version?: number;
 
     // --- Lifecycle ---
 
