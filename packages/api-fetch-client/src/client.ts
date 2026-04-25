@@ -6,6 +6,14 @@ function isAuthorizationHeaderSet(headers: HeadersInit | undefined): boolean {
     return "authorization" in headers;
 }
 
+function isNodeRuntime(): boolean {
+    const runtime = globalThis as typeof globalThis & {
+        process?: { versions?: { node?: string } };
+        window?: unknown;
+    };
+    return typeof runtime.process?.versions?.node === "string" && typeof runtime.window === "undefined";
+}
+
 export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends ClientBase {
 
     headers: Record<string, string>;
@@ -23,7 +31,11 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
     }
 
     get initialHeaders() {
-        return { accept: 'application/json' };
+        const headers: Record<string, string> = { accept: 'application/json' };
+        if (isNodeRuntime()) {
+            headers['accept-encoding'] = 'br, gzip, deflate';
+        }
+        return headers;
     }
 
     /**
