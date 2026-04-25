@@ -570,9 +570,11 @@ export class AgentsApi extends ApiTopic {
         id: string,
         path: string,
         disposition?: 'inline' | 'attachment',
+        fileName?: string,
     ): Promise<{ url: string; path: string }> {
         const query: Record<string, string> = { url: '1' };
         if (disposition) query.disposition = disposition;
+        if (fileName) query.filename = fileName;
         return this.get(`/${id}/artifacts/${path}`, { query });
     }
 
