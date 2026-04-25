@@ -13,7 +13,7 @@ const OAUTH_CALLBACK_PATH = '/oauth/callback';
 const OAUTH_LOOPBACK_HOST = '127.0.0.1';
 const DEFAULT_OAUTH_SCOPE = 'openid profile';
 
-type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'project'>>;
+type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'config_url' | 'project'>>;
 
 interface TokenRefs {
     account?: string;
@@ -132,13 +132,14 @@ function withTrailingSlash(url: string): string {
     return url.endsWith('/') ? url : `${url}/`;
 }
 
-async function discoverAuthorizationServer(profile: Pick<Profile, 'studio_server_url'>): Promise<OAuthDiscovery> {
+async function discoverAuthorizationServer(profile: Pick<Profile, 'studio_server_url'> & Partial<Pick<Profile, 'config_url'>>): Promise<OAuthDiscovery> {
     const candidates = getOAuthServerUrlCandidates(profile);
     let unavailableError: OAuthUnavailableError | undefined;
     for (const candidate of candidates) {
         try {
+            const metadata = await fetchAuthorizationServerMetadata(candidate);
             return {
-                metadata: await fetchAuthorizationServerMetadata(candidate),
+                metadata: applyProfileAuthorizationEndpoint(metadata, profile),
                 serverUrl: candidate,
             };
         } catch (error) {
@@ -152,6 +153,20 @@ async function discoverAuthorizationServer(profile: Pick<Profile, 'studio_server
     throw unavailableError || new OAuthUnavailableError(`OAuth discovery is not available for ${profile.studio_server_url}.`);
 }
 
+function applyProfileAuthorizationEndpoint(
+    metadata: OAuthAuthorizationServerMetadata,
+    profile: Partial<Pick<Profile, 'config_url'>>,
+): OAuthAuthorizationServerMetadata {
+    if (!profile.config_url) {
+        return metadata;
+    }
+    const configUrl = new URL(profile.config_url);
+    return {
+        ...metadata,
+        authorization_endpoint: new URL('/oauth/authorize', configUrl.origin).toString(),
+    };
+}
+
 function getOAuthServerUrlCandidates(profile: Pick<Profile, 'studio_server_url'>): string[] {
     if (process.env.VERTESIA_TOKEN_SERVER_URL) {
         return [process.env.VERTESIA_TOKEN_SERVER_URL];
@@ -160,7 +175,7 @@ function getOAuthServerUrlCandidates(profile: Pick<Profile, 'studio_server_url'>
     const studioUrl = new URL(profile.studio_server_url);
     const isLoopbackHost = studioUrl.hostname === 'localhost' || studioUrl.hostname === '127.0.0.1';
     if (isLoopbackHost) {
-        return [`${studioUrl.protocol}//${studioUrl.hostname}:8093`];
+        return ['https://sts.dev1.vertesia.io'];
     }
 
     const candidates = [new URL('/', studioUrl).toString()];
@@ -178,11 +193,16 @@ function getOAuthServerUrlCandidates(profile: Pick<Profile, 'studio_server_url'>
 }
 
 async function fetchAuthorizationServerMetadata(oauthServerUrl: string): Promise<OAuthAuthorizationServerMetadata> {
-    const response = await fetch(new URL(OAUTH_AUTHORIZATION_SERVER_PATH, withTrailingSlash(oauthServerUrl)).toString(), {
-        headers: {
-            Accept: 'application/json',
-        },
-    });
+    let response: Response;
+    try {
+        response = await fetch(new URL(OAUTH_AUTHORIZATION_SERVER_PATH, withTrailingSlash(oauthServerUrl)).toString(), {
+            headers: {
+                Accept: 'application/json',
+            },
+        });
+    } catch (error) {
+        throw new OAuthUnavailableError(`OAuth discovery is not reachable at ${oauthServerUrl}: ${error instanceof Error ? error.message : String(error)}`);
+    }
 
     if (!response.ok) {
         if (response.status === 404 || response.status === 501) {
@@ -219,11 +239,13 @@ async function createAuthorizationCallback(expectedState: string, signal?: Abort
 
             if (req.method !== 'GET' || requestUrl.pathname !== OAUTH_CALLBACK_PATH) {
                 res.statusCode = 404;
+                res.setHeader('Connection', 'close');
                 res.end();
                 return;
             }
             if (settled) {
                 res.statusCode = 409;
+                res.setHeader('Connection', 'close');
                 res.end('Authentication already completed.');
                 return;
             }
@@ -236,6 +258,7 @@ async function createAuthorizationCallback(expectedState: string, signal?: Abort
             if (error) {
                 settled = true;
                 res.statusCode = 400;
+                res.setHeader('Connection', 'close');
                 res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                 res.end(errorDescription || error);
                 rejectAuthorization(new Error(errorDescription || error));
@@ -246,6 +269,7 @@ async function createAuthorizationCallback(expectedState: string, signal?: Abort
             if (!state || state !== expectedState) {
                 settled = true;
                 res.statusCode = 400;
+                res.setHeader('Connection', 'close');
                 res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                 res.end('State mismatch.');
                 rejectAuthorization(new Error('OAuth state mismatch.'));
@@ -256,6 +280,7 @@ async function createAuthorizationCallback(expectedState: string, signal?: Abort
             if (!code) {
                 settled = true;
                 res.statusCode = 400;
+                res.setHeader('Connection', 'close');
                 res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                 res.end('No authorization code was returned.');
                 rejectAuthorization(new Error('OAuth authorization code missing from callback.'));
@@ -265,10 +290,12 @@ async function createAuthorizationCallback(expectedState: string, signal?: Abort
 
             settled = true;
             res.statusCode = 200;
+            res.setHeader('Connection', 'close');
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            res.end('Authentication complete. You can close this window.');
-            resolveAuthorization(code);
-            closeServer();
+            res.end('Authentication complete. You can close this window.', () => {
+                resolveAuthorization(code);
+                closeServer();
+            });
     });
     const onAbort = () => {
         if (settled) {
@@ -282,6 +309,11 @@ async function createAuthorizationCallback(expectedState: string, signal?: Abort
     const closeServer = () => {
         if (server.listening) {
             server.close();
+            server.closeIdleConnections?.();
+            const closeConnectionsTimer = setTimeout(() => {
+                server.closeAllConnections?.();
+            }, 100);
+            closeConnectionsTimer.unref?.();
         }
         if (signal) {
             signal.removeEventListener('abort', onAbort);

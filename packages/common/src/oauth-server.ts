@@ -131,6 +131,7 @@ export interface OAuthAuthorizationServerMetadata {
     token_endpoint_auth_methods_supported: string[];
     scopes_supported: string[];
     client_id_metadata_document_supported?: boolean;
+    device_authorization_endpoint?: string;
 }
 
 export interface OAuthClientMetadataDocument {
@@ -184,6 +185,22 @@ export interface OAuthAuthorizationDecisionResponse {
     redirect_url: string;
 }
 
+export interface OAuthDeviceAuthorizationRequest {
+    client_id: string;
+    resource?: string;
+    scope?: string;
+    project_id?: string;
+}
+
+export interface OAuthDeviceAuthorizationResponse {
+    device_code: string;
+    user_code: string;
+    verification_uri: string;
+    verification_uri_complete: string;
+    expires_in: number;
+    interval: number;
+}
+
 export interface OAuthTokenRequestAuthorizationCode {
     grant_type: 'authorization_code';
     code: string;
@@ -203,7 +220,14 @@ export interface OAuthTokenRequestRefreshToken {
     client_secret?: string;
 }
 
-export type OAuthTokenRequest = OAuthTokenRequestAuthorizationCode | OAuthTokenRequestRefreshToken;
+export interface OAuthTokenRequestDeviceCode {
+    grant_type: 'urn:ietf:params:oauth:grant-type:device_code';
+    device_code: string;
+    client_id: string;
+    client_secret?: string;
+}
+
+export type OAuthTokenRequest = OAuthTokenRequestAuthorizationCode | OAuthTokenRequestRefreshToken | OAuthTokenRequestDeviceCode;
 
 export interface OAuthTokenResponse {
     access_token: string;

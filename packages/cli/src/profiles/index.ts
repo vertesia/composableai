@@ -216,7 +216,7 @@ export class ConfigureProfile {
         this.onResultCallback = onResult;
         if (canUseOAuthProfile(this.data)) {
             try {
-                const result = await startOAuthSession(this.data as Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'project'>>, signal);
+                const result = await startOAuthSession(this.data as Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'config_url' | 'project'>>, signal);
                 await this.applyConfigResult(result, { logCompletion: true });
                 return;
             } catch (error: unknown) {
