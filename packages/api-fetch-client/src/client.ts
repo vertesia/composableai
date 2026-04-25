@@ -6,12 +6,17 @@ function isAuthorizationHeaderSet(headers: HeadersInit | undefined): boolean {
     return "authorization" in headers;
 }
 
-function isNodeRuntime(): boolean {
+function isServerFetchRuntime(): boolean {
     const runtime = globalThis as typeof globalThis & {
-        process?: { versions?: { node?: string } };
+        Bun?: unknown;
+        process?: { versions?: { bun?: string; node?: string } };
         window?: unknown;
     };
-    return typeof runtime.process?.versions?.node === "string" && typeof runtime.window === "undefined";
+    return typeof runtime.window === "undefined" && (
+        typeof runtime.process?.versions?.node === "string"
+        || typeof runtime.process?.versions?.bun === "string"
+        || typeof runtime.Bun !== "undefined"
+    );
 }
 
 export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends ClientBase {
@@ -32,7 +37,7 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
 
     get initialHeaders() {
         const headers: Record<string, string> = { accept: 'application/json' };
-        if (isNodeRuntime()) {
+        if (isServerFetchRuntime()) {
             headers['accept-encoding'] = 'br, gzip, deflate';
         }
         return headers;
