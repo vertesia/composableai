@@ -1,16 +1,12 @@
-import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import open from 'open';
-import { startServer } from './server/server.js';
-import type { OAuthAuthorizationServerMetadata, OAuthTokenResponse } from '@vertesia/common';
+import type { OAuthAuthorizationServerMetadata, OAuthDeviceAuthorizationResponse, OAuthTokenResponse } from '@vertesia/common';
 import type { Profile } from './index.js';
 import type { StoredAuthBundle } from './keyring.js';
 import type { ConfigResult } from './server/index.js';
 
 const OAUTH_AUTHORIZATION_SERVER_PATH = '/.well-known/oauth-authorization-server';
 const OAUTH_CLIENT_METADATA_PATH = '/.well-known/oauth-client/vertesia-cli';
-const OAUTH_CALLBACK_PATH = '/oauth/callback';
-const OAUTH_LOOPBACK_HOST = '127.0.0.1';
 const DEFAULT_OAUTH_SCOPE = 'openid profile';
 
 type OAuthProfile = Pick<Profile, 'name' | 'studio_server_url' | 'zeno_server_url'> & Partial<Pick<Profile, 'account' | 'config_url' | 'project'>>;
@@ -19,11 +15,6 @@ interface TokenRefs {
     account?: string;
     project?: string;
     audience?: string;
-}
-
-interface PkcePair {
-    verifier: string;
-    challenge: string;
 }
 
 interface OAuthDiscovery {
@@ -70,33 +61,23 @@ export async function startOAuthSession(profile: OAuthProfile, signal?: AbortSig
     const clientId = getOAuthClientId(serverUrl);
     const resource = getOAuthResource(metadata);
     const scope = DEFAULT_OAUTH_SCOPE;
-    const pkce = createPkcePair();
-    const state = crypto.randomUUID();
-
-    const callback = await createAuthorizationCallback(state, signal);
-    const redirectUri = callback.redirectUri;
-    const authorizeUrl = buildAuthorizeUrl(metadata, {
+    const deviceAuthorization = await createDeviceAuthorization(metadata, {
         clientId,
-        redirectUri,
         resource,
         scope,
-        state,
-        challenge: pkce.challenge,
         projectId: profile.project,
     });
+    const verificationUrl = buildDeviceVerificationUrl(profile, deviceAuthorization);
 
-    console.log('Opening browser to', authorizeUrl);
-    open(authorizeUrl).catch((error) => {
+    console.log('Opening browser to', verificationUrl);
+    console.log('The session code is', deviceAuthorization.user_code);
+    console.log('Waiting for browser authorization...');
+    open(verificationUrl).catch((error) => {
         console.error('Unable to open browser:', error instanceof Error ? error.message : String(error));
     });
 
-    try {
-        const code = await callback.waitForCode();
-        const response = await exchangeAuthorizationCode(metadata, clientId, code, pkce.verifier, redirectUri, resource);
-        return buildConfigResult(profile, response, clientId, resource);
-    } finally {
-        callback.close();
-    }
+    const response = await pollDeviceToken(metadata, clientId, deviceAuthorization, signal);
+    return buildConfigResult(profile, response, clientId, resource);
 }
 
 export async function refreshOAuthSession(
@@ -218,183 +199,117 @@ async function fetchAuthorizationServerMetadata(oauthServerUrl: string): Promise
     return metadata as OAuthAuthorizationServerMetadata;
 }
 
-function createPkcePair(): PkcePair {
-    const verifier = crypto.randomBytes(32).toString('base64url');
-    const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
-    return { verifier, challenge };
-}
-
-async function createAuthorizationCallback(expectedState: string, signal?: AbortSignal) {
-    let settled = false;
-    let rejectAuthorization: (error: Error) => void = () => {};
-    let resolveAuthorization: (code: string) => void = () => {};
-
-    const waitForCode = new Promise<string>((resolve, reject) => {
-        resolveAuthorization = resolve;
-        rejectAuthorization = reject;
-    });
-
-    const server = await startServer((req, res) => {
-            const requestUrl = new URL(req.url || '/', `http://${req.headers.host || OAUTH_LOOPBACK_HOST}`);
-
-            if (req.method !== 'GET' || requestUrl.pathname !== OAUTH_CALLBACK_PATH) {
-                res.statusCode = 404;
-                res.setHeader('Connection', 'close');
-                res.end();
-                return;
-            }
-            if (settled) {
-                res.statusCode = 409;
-                res.setHeader('Connection', 'close');
-                res.end('Authentication already completed.');
-                return;
-            }
-
-            const state = requestUrl.searchParams.get('state');
-            const code = requestUrl.searchParams.get('code');
-            const error = requestUrl.searchParams.get('error');
-            const errorDescription = requestUrl.searchParams.get('error_description');
-
-            if (error) {
-                settled = true;
-                res.statusCode = 400;
-                res.setHeader('Connection', 'close');
-                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                res.end(errorDescription || error);
-                rejectAuthorization(new Error(errorDescription || error));
-                closeServer();
-                return;
-            }
-
-            if (!state || state !== expectedState) {
-                settled = true;
-                res.statusCode = 400;
-                res.setHeader('Connection', 'close');
-                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                res.end('State mismatch.');
-                rejectAuthorization(new Error('OAuth state mismatch.'));
-                closeServer();
-                return;
-            }
-
-            if (!code) {
-                settled = true;
-                res.statusCode = 400;
-                res.setHeader('Connection', 'close');
-                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                res.end('No authorization code was returned.');
-                rejectAuthorization(new Error('OAuth authorization code missing from callback.'));
-                closeServer();
-                return;
-            }
-
-            settled = true;
-            res.statusCode = 200;
-            res.setHeader('Connection', 'close');
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            res.end('Authentication complete. You can close this window.', () => {
-                resolveAuthorization(code);
-                closeServer();
-            });
-    });
-    const onAbort = () => {
-        if (settled) {
-            return;
-        }
-        settled = true;
-        closeServer();
-        rejectAuthorization(new Error('Authentication aborted.'));
-    };
-
-    const closeServer = () => {
-        if (server.listening) {
-            server.close();
-            server.closeIdleConnections?.();
-            const closeConnectionsTimer = setTimeout(() => {
-                server.closeAllConnections?.();
-            }, 100);
-            closeConnectionsTimer.unref?.();
-        }
-        if (signal) {
-            signal.removeEventListener('abort', onAbort);
-        }
-    };
-
-    if (signal?.aborted) {
-        onAbort();
-    }
-
-    if (signal) {
-        signal.addEventListener('abort', onAbort, { once: true });
-    }
-
-    const address = server.address();
-    if (!address || typeof address === 'string') {
-        settled = true;
-        closeServer();
-        throw new Error('Unable to determine local OAuth callback port.');
-    }
-    const redirectUri = `http://${OAUTH_LOOPBACK_HOST}:${address.port}${OAUTH_CALLBACK_PATH}`;
-
-    return {
-        redirectUri,
-        waitForCode() {
-            return waitForCode;
-        },
-        close() {
-            if (!settled) {
-                settled = true;
-                rejectAuthorization(new Error('Authentication interrupted.'));
-            }
-            closeServer();
-        },
-    };
-}
-
-function buildAuthorizeUrl(
+async function createDeviceAuthorization(
     metadata: OAuthAuthorizationServerMetadata,
     input: {
         clientId: string;
-        redirectUri: string;
         resource: string;
         scope: string;
-        state: string;
-        challenge: string;
         projectId?: string;
     },
-): string {
-    const url = new URL(metadata.authorization_endpoint);
-    url.searchParams.set('response_type', 'code');
-    url.searchParams.set('client_id', input.clientId);
-    url.searchParams.set('redirect_uri', input.redirectUri);
-    url.searchParams.set('resource', input.resource);
-    url.searchParams.set('scope', input.scope);
-    url.searchParams.set('state', input.state);
-    url.searchParams.set('code_challenge', input.challenge);
-    url.searchParams.set('code_challenge_method', 'S256');
-    if (input.projectId) {
-        url.searchParams.set('project_id', input.projectId);
+): Promise<OAuthDeviceAuthorizationResponse> {
+    if (!metadata.device_authorization_endpoint) {
+        throw new OAuthUnavailableError('OAuth device authorization is not available for this endpoint.');
     }
-    return url.toString();
+
+    const body = new URLSearchParams({
+        client_id: input.clientId,
+        resource: input.resource,
+        scope: input.scope,
+    });
+    if (input.projectId) {
+        body.set('project_id', input.projectId);
+    }
+
+    const response = await fetch(metadata.device_authorization_endpoint, {
+        method: 'POST',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body.toString(),
+    });
+
+    if (!response.ok) {
+        const error = await readOAuthError(response);
+        if (response.status === 404 || response.status === 501) {
+            throw new OAuthUnavailableError(`OAuth device authorization is not available for this endpoint: ${error.message}`);
+        }
+        throw new Error(`OAuth device authorization failed (${response.status}): ${error.message}`);
+    }
+
+    const payload = await response.json() as Partial<OAuthDeviceAuthorizationResponse>;
+    if (!payload.device_code || !payload.user_code || !payload.verification_uri || !payload.verification_uri_complete
+        || typeof payload.expires_in !== 'number' || typeof payload.interval !== 'number') {
+        throw new Error('OAuth device authorization endpoint returned an invalid response.');
+    }
+    return payload as OAuthDeviceAuthorizationResponse;
 }
 
-async function exchangeAuthorizationCode(
+function buildDeviceVerificationUrl(profile: OAuthProfile, device: OAuthDeviceAuthorizationResponse): string {
+    if (!profile.config_url) {
+        return device.verification_uri_complete;
+    }
+
+    const configUrl = new URL(profile.config_url);
+    const verificationUrl = new URL('/oauth/device', configUrl.origin);
+    verificationUrl.searchParams.set('user_code', device.user_code);
+    return verificationUrl.toString();
+}
+
+async function pollDeviceToken(
     metadata: OAuthAuthorizationServerMetadata,
     clientId: string,
-    code: string,
-    verifier: string,
-    redirectUri: string,
-    resource: string,
+    device: OAuthDeviceAuthorizationResponse,
+    signal?: AbortSignal,
 ): Promise<OAuthTokenResponse> {
-    const body = new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: redirectUri,
-        client_id: clientId,
-        resource,
-        code_verifier: verifier,
-    });
-    return exchangeToken(metadata.token_endpoint, body);
+    const expiresAt = Date.now() + device.expires_in * 1000;
+    let intervalMs = Math.max(device.interval, 1) * 1000;
+
+    while (Date.now() < expiresAt) {
+        throwIfAborted(signal);
+        const body = new URLSearchParams({
+            grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+            device_code: device.device_code,
+            client_id: clientId,
+        });
+        const response = await fetch(metadata.token_endpoint, {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: body.toString(),
+        });
+
+        if (response.ok) {
+            const payload = await response.json() as Partial<OAuthTokenResponse>;
+            if (!payload.access_token || !payload.token_type || typeof payload.expires_in !== 'number') {
+                throw new Error('OAuth token endpoint returned an invalid response.');
+            }
+            return payload as OAuthTokenResponse;
+        }
+
+        const error = await readOAuthError(response);
+        if (response.status === 400 && error.error === 'authorization_pending') {
+            await delay(intervalMs, signal);
+            continue;
+        }
+        if (response.status === 400 && error.error === 'slow_down') {
+            intervalMs += 5000;
+            await delay(intervalMs, signal);
+            continue;
+        }
+        if (response.status === 400 && error.error === 'access_denied') {
+            throw new Error('OAuth device authorization was denied.');
+        }
+        if (response.status === 400 && error.error === 'expired_token') {
+            throw new Error('OAuth device authorization expired.');
+        }
+        throw new Error(`OAuth token exchange failed (${response.status}): ${error.message}`);
+    }
+
+    throw new Error('OAuth device authorization expired.');
 }
 
 async function exchangeRefreshToken(
@@ -438,22 +353,53 @@ async function exchangeToken(endpoint: string, body: URLSearchParams): Promise<O
 }
 
 async function readErrorMessage(response: Response): Promise<string> {
+    return (await readOAuthError(response)).message;
+}
+
+async function readOAuthError(response: Response): Promise<{ error?: string; message: string }> {
     const text = await response.text();
     if (!text) {
-        return response.statusText || 'Unknown error';
+        return { message: response.statusText || 'Unknown error' };
     }
     try {
         const parsed = JSON.parse(text) as Record<string, unknown>;
+        const error = typeof parsed.error === 'string' ? parsed.error : undefined;
         if (typeof parsed.error_description === 'string') {
-            return parsed.error_description;
+            return { error, message: parsed.error_description };
         }
-        if (typeof parsed.error === 'string') {
-            return parsed.error;
+        if (error) {
+            return { error, message: error };
         }
     } catch {
         // Ignore non-JSON error responses.
     }
-    return text;
+    return { message: text };
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+    if (signal?.aborted) {
+        throw new Error('Authentication aborted.');
+    }
+}
+
+async function delay(milliseconds: number, signal?: AbortSignal): Promise<void> {
+    throwIfAborted(signal);
+    await new Promise<void>((resolve, reject) => {
+        let timeout: ReturnType<typeof setTimeout>;
+        const onAbort = () => {
+            clearTimeout(timeout);
+            signal?.removeEventListener('abort', onAbort);
+            reject(new Error('Authentication aborted.'));
+        };
+        const cleanup = () => {
+            signal?.removeEventListener('abort', onAbort);
+        };
+        timeout = setTimeout(() => {
+            cleanup();
+            resolve();
+        }, milliseconds);
+        signal?.addEventListener('abort', onAbort, { once: true });
+    });
 }
 
 function buildConfigResult(

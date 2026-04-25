@@ -4,6 +4,8 @@ import type {
     CreateOAuthAuthorizationRequestPayload,
     OAuthAuthorizationDecisionResponse,
     OAuthAuthorizationRequest,
+    OAuthDeviceAuthorizationRequest,
+    OAuthDeviceAuthorizationResponse,
 } from '@vertesia/common';
 
 export default class OAuthServerApi extends ClientBase {
@@ -28,6 +30,14 @@ export default class OAuthServerApi extends ClientBase {
 
     createAuthorizationRequest(payload: CreateOAuthAuthorizationRequestPayload): Promise<OAuthAuthorizationRequest> {
         return this.post('/requests', { payload });
+    }
+
+    createDeviceAuthorization(payload: OAuthDeviceAuthorizationRequest): Promise<OAuthDeviceAuthorizationResponse> {
+        return this.post('/device_authorization', { payload });
+    }
+
+    retrieveDeviceRequest(userCode: string): Promise<OAuthAuthorizationRequest> {
+        return this.get(`/device/${encodeURIComponent(userCode)}`);
     }
 
     retrieveRequest(requestId: string): Promise<OAuthAuthorizationRequest> {
