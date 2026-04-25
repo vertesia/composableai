@@ -553,9 +553,14 @@ export class AgentsApi extends ApiTopic {
 
     /**
      * List artifacts for an agent run.
+     * visibility:
+     * - 'user' (default): only user-facing artifacts
+     * - 'internal': only system-managed state files such as conversation snapshots
+     * - 'all': both user-facing and internal files
      */
-    listArtifacts(id: string): Promise<string[]> {
-        return this.get(`/${id}/artifacts`);
+    listArtifacts(id: string, options?: { visibility?: 'user' | 'internal' | 'all' }): Promise<string[]> {
+        const query = options?.visibility ? { visibility: options.visibility } : undefined;
+        return this.get(`/${id}/artifacts`, { query });
     }
 
     /**
