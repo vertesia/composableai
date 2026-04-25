@@ -37,7 +37,7 @@
     "dependencies": {
         "@vertesia/common": "workspace:*",
         "@vertesia/ui": "workspace:*",
-        "lucide-react": "^0.562.0"
+        "lucide-react": "^1.11.0"
     },
     "repository": {
         "type": "git",
