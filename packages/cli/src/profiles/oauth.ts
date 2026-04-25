@@ -26,6 +26,11 @@ interface PkcePair {
     challenge: string;
 }
 
+interface OAuthDiscovery {
+    metadata: OAuthAuthorizationServerMetadata;
+    serverUrl: string;
+}
+
 export class OAuthUnavailableError extends Error {
     constructor(message: string) {
         super(message);
@@ -50,8 +55,8 @@ export function canUseOAuthProfile(profile: Partial<Pick<Profile, 'studio_server
     }
 }
 
-export function getOAuthClientId(profile: Pick<Profile, 'studio_server_url'>): string {
-    return new URL(OAUTH_CLIENT_METADATA_PATH, withTrailingSlash(profile.studio_server_url)).toString();
+export function getOAuthClientId(oauthServerUrl: string): string {
+    return new URL(OAUTH_CLIENT_METADATA_PATH, withTrailingSlash(oauthServerUrl)).toString();
 }
 
 export function getOAuthResource(metadata: Pick<OAuthAuthorizationServerMetadata, 'issuer'>): string {
@@ -61,8 +66,8 @@ export function getOAuthResource(metadata: Pick<OAuthAuthorizationServerMetadata
 export async function startOAuthSession(profile: OAuthProfile, signal?: AbortSignal): Promise<ConfigResult> {
     assertOAuthProfile(profile);
 
-    const metadata = await fetchAuthorizationServerMetadata(profile.studio_server_url);
-    const clientId = getOAuthClientId(profile);
+    const { metadata, serverUrl } = await discoverAuthorizationServer(profile);
+    const clientId = getOAuthClientId(serverUrl);
     const resource = getOAuthResource(metadata);
     const scope = DEFAULT_OAUTH_SCOPE;
     const pkce = createPkcePair();
@@ -104,8 +109,8 @@ export async function refreshOAuthSession(
 ): Promise<ConfigResult> {
     assertOAuthProfile(profile);
 
-    const metadata = await fetchAuthorizationServerMetadata(profile.studio_server_url);
-    const clientId = bundle?.oauthClientId || getOAuthClientId(profile);
+    const { metadata, serverUrl } = await discoverAuthorizationServer(profile);
+    const clientId = getOAuthClientId(serverUrl);
     const resource = bundle?.oauthResource || readTokenRefs(bundle?.accessToken).audience || getOAuthResource(metadata);
     const response = await exchangeRefreshToken(metadata, clientId, refreshToken, resource, options.projectId);
     return buildConfigResult(profile, response, clientId, resource);
@@ -127,8 +132,53 @@ function withTrailingSlash(url: string): string {
     return url.endsWith('/') ? url : `${url}/`;
 }
 
-async function fetchAuthorizationServerMetadata(studioServerUrl: string): Promise<OAuthAuthorizationServerMetadata> {
-    const response = await fetch(new URL(OAUTH_AUTHORIZATION_SERVER_PATH, withTrailingSlash(studioServerUrl)).toString(), {
+async function discoverAuthorizationServer(profile: Pick<Profile, 'studio_server_url'>): Promise<OAuthDiscovery> {
+    const candidates = getOAuthServerUrlCandidates(profile);
+    let unavailableError: OAuthUnavailableError | undefined;
+    for (const candidate of candidates) {
+        try {
+            return {
+                metadata: await fetchAuthorizationServerMetadata(candidate),
+                serverUrl: candidate,
+            };
+        } catch (error) {
+            if (error instanceof OAuthUnavailableError) {
+                unavailableError = error;
+                continue;
+            }
+            throw error;
+        }
+    }
+    throw unavailableError || new OAuthUnavailableError(`OAuth discovery is not available for ${profile.studio_server_url}.`);
+}
+
+function getOAuthServerUrlCandidates(profile: Pick<Profile, 'studio_server_url'>): string[] {
+    if (process.env.VERTESIA_TOKEN_SERVER_URL) {
+        return [process.env.VERTESIA_TOKEN_SERVER_URL];
+    }
+
+    const studioUrl = new URL(profile.studio_server_url);
+    const isLoopbackHost = studioUrl.hostname === 'localhost' || studioUrl.hostname === '127.0.0.1';
+    if (isLoopbackHost) {
+        return [`${studioUrl.protocol}//${studioUrl.hostname}:8093`];
+    }
+
+    const candidates = [new URL('/', studioUrl).toString()];
+    if (studioUrl.hostname.startsWith('api')) {
+        const stsHost = studioUrl.hostname.replace('api-preview.', 'api.').replace(/^api/, 'sts');
+        candidates.push(`${studioUrl.protocol}//${stsHost}`);
+    }
+
+    if (studioUrl.hostname.endsWith('.api.dev1.vertesia.io') || studioUrl.hostname.endsWith('.ui.dev1.vertesia.io')) {
+        candidates.push('https://sts.dev1.vertesia.io');
+    }
+
+    candidates.push('https://sts.dev1.vertesia.io');
+    return Array.from(new Set(candidates.map((candidate) => candidate.replace(/\/+$/, ''))));
+}
+
+async function fetchAuthorizationServerMetadata(oauthServerUrl: string): Promise<OAuthAuthorizationServerMetadata> {
+    const response = await fetch(new URL(OAUTH_AUTHORIZATION_SERVER_PATH, withTrailingSlash(oauthServerUrl)).toString(), {
         headers: {
             Accept: 'application/json',
         },
@@ -136,14 +186,14 @@ async function fetchAuthorizationServerMetadata(studioServerUrl: string): Promis
 
     if (!response.ok) {
         if (response.status === 404 || response.status === 501) {
-            throw new OAuthUnavailableError(`OAuth discovery is not available at ${studioServerUrl}.`);
+            throw new OAuthUnavailableError(`OAuth discovery is not available at ${oauthServerUrl}.`);
         }
-        throw new Error(`Failed to load OAuth authorization metadata from ${studioServerUrl} (${response.status} ${response.statusText}).`);
+        throw new Error(`Failed to load OAuth authorization metadata from ${oauthServerUrl} (${response.status} ${response.statusText}).`);
     }
 
     const metadata = await response.json() as Partial<OAuthAuthorizationServerMetadata>;
     if (!metadata.authorization_endpoint || !metadata.token_endpoint || !metadata.issuer) {
-        throw new Error(`Invalid OAuth authorization metadata returned by ${studioServerUrl}.`);
+        throw new Error(`Invalid OAuth authorization metadata returned by ${oauthServerUrl}.`);
     }
     return metadata as OAuthAuthorizationServerMetadata;
 }
