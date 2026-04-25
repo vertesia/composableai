@@ -1,4 +1,4 @@
-import type { AuthTokenPayload } from './apikey.js';
+import { PrincipalType, type AuthTokenPayload } from './apikey.js';
 import type { ProjectRef } from './project.js';
 
 export type OAuthClientType = 'public' | 'confidential';
@@ -263,7 +263,7 @@ export interface OAuthConsentRecord {
 }
 
 export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' | 'project'> {
-    type: 'oauth_access';
+    type: PrincipalType.OAuthAccess;
     client_id: string;
     scope: string;
     user_id: string;
