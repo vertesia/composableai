@@ -20,6 +20,7 @@ export interface StoredAuthBundle {
     version: number;
     accessToken?: string;
     accessTokenExpiresAt?: number;
+    idToken?: string;
     refreshToken?: string;
     refreshTokenExpiresAt?: number;
     oauthClientId?: string;
@@ -91,6 +92,7 @@ export function writeAuthBundle(profileName: string, bundle: WritableAuthBundle)
         version: AUTH_BUNDLE_VERSION,
         accessToken: bundle.accessToken,
         accessTokenExpiresAt: bundle.accessTokenExpiresAt,
+        idToken: bundle.idToken,
         refreshToken: bundle.refreshToken,
         refreshTokenExpiresAt: bundle.refreshTokenExpiresAt,
         oauthClientId: bundle.oauthClientId,

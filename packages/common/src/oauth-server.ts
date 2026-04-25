@@ -246,3 +246,19 @@ export interface OAuthAccessTokenPayload extends Omit<AuthTokenPayload, 'type' |
     allowed_collections?: string[];
     resource?: string;
 }
+
+export interface OAuthIdTokenPayload {
+    sub: string;
+    user_id: string;
+    name: string;
+    email?: string;
+    picture?: string;
+    type: 'oauth_id';
+    client_id: string;
+    account: AuthTokenPayload['account'];
+    accounts: AuthTokenPayload['accounts'];
+    project?: ProjectRef;
+    iss: string;
+    aud: string;
+    exp: number;
+}

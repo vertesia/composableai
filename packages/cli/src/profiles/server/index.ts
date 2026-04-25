@@ -17,6 +17,7 @@ export interface ConfigResult extends Required<ConfigPayload> {
     studio_server_url: string;
     zeno_server_url: string;
     token: string;
+    id_token?: string;
     refresh_token?: string;
     expires_in?: number;
     access_token_expires_at?: number;

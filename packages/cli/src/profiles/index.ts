@@ -163,6 +163,7 @@ export class ConfigureProfile {
         writeAuthBundle(result.profile, {
             accessToken: result.token,
             accessTokenExpiresAt: readResultAccessTokenExpiry(result),
+            idToken: result.id_token || previousBundle?.idToken,
             refreshToken: result.refresh_token || previousBundle?.refreshToken,
             refreshTokenExpiresAt: result.refresh_token_expires_at || previousBundle?.refreshTokenExpiresAt,
             oauthClientId: result.oauth_client_id || previousBundle?.oauthClientId,

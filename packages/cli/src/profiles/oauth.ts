@@ -381,6 +381,7 @@ function buildConfigResult(
         studio_server_url: profile.studio_server_url,
         zeno_server_url: profile.zeno_server_url,
         token: response.access_token,
+        id_token: response.id_token,
         refresh_token: response.refresh_token,
         expires_in: response.expires_in,
         oauth_client_id: oauthClientId,
