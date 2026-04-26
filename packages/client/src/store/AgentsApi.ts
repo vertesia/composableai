@@ -111,10 +111,10 @@ export class AgentsApi extends ApiTopic {
     }
 
     async listProcessRuns(query?: Omit<ListAgentRunsQuery, 'run_kind'>): Promise<ProcessRun[]> {
-        const response = await this.get<ListAgentRunsResponse>('/', {
+        const response: ListAgentRunsResponse = await this.get('/', {
             query: this.buildListQueryParams({ ...query, run_kind: 'process' }),
         });
-        return response.items as unknown as ProcessRun[];
+        return response.items.filter(isProcessRunResponse);
     }
 
     private buildListQueryParams(query?: ListAgentRunsQuery): Record<string, string> {
@@ -851,4 +851,8 @@ export class AgentsApi extends ApiTopic {
         return this.post('/analytics/first-response-behavior', { payload: query });
     }
 
+}
+
+function isProcessRunResponse(run: AgentRunResponse): run is ProcessRun {
+    return run.run_kind === 'process';
 }

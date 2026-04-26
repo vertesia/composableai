@@ -422,7 +422,7 @@ export interface ListAgentRunsQuery {
 }
 
 export interface ListAgentRunsResponse {
-    items: AgentRun[];
+    items: AgentRunResponse[];
     total_count: number;
     next_cursor: string | null;
 }
