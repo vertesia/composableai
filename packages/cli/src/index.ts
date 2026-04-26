@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { registerAppsCommand } from './apps/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
 import runExport from './codegen/index.js';
+import { registerDataCommand } from './data/index.js';
 import { genTestData } from './datagen/index.js';
 import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
@@ -130,6 +131,7 @@ setupMemoCommand(memoCmd, getPublishMemoryAction(program));
 registerWorkerCommand(program);
 registerAppsCommand(program);
 registerArtifactsCommand(program);
+registerDataCommand(program);
 
 const profilesRoot = program.command("profiles")
     .description("Manage configuration profiles")
