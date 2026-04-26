@@ -8,7 +8,7 @@ export class CostApi extends ApiTopic {
 
     /**
      * Get cost analytics for the current project.
-     * Returns cost breakdown by model/environment with pricing from billing export.
+     * Returns cost breakdown by model/environment using billing-export pricing.
      * Covers all inference types: direct, agent, embedding.
      */
     getAnalytics(
@@ -57,10 +57,13 @@ export class CostApi extends ApiTopic {
     /**
      * Get the CSV export URL for raw inference audit events.
      */
-    getExportUrl(params?: { from?: string | number; to?: string | number }): string {
+    getExportUrl(params?: Pick<CostAnalyticsQuery, 'from' | 'to' | 'scope' | 'project_id' | 'workflow_id'>): string {
         const searchParams = new URLSearchParams();
         if (params?.from) searchParams.set('from', typeof params.from === 'number' ? new Date(params.from).toISOString() : params.from);
         if (params?.to) searchParams.set('to', typeof params.to === 'number' ? new Date(params.to).toISOString() : params.to);
+        if (params?.scope) searchParams.set('scope', params.scope);
+        if (params?.project_id) searchParams.set('project_id', params.project_id);
+        if (params?.workflow_id) searchParams.set('workflow_id', params.workflow_id);
         const qs = searchParams.toString();
         return `${this.baseUrl}/export${qs ? `?${qs}` : ''}`;
     }
