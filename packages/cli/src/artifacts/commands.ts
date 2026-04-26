@@ -4,6 +4,7 @@ import { basename } from "path";
 import { pipeline } from "stream/promises";
 import { Readable } from "stream";
 import { NodeStreamSource } from "@vertesia/client/node";
+import { getArtifactStorageId } from "../agent-context.js";
 import { getClient } from "../client.js";
 
 // Artifact storage prefix - matches the client's ARTIFACTS_PREFIX
@@ -13,12 +14,7 @@ const ARTIFACTS_PREFIX = "agents";
  * Get run ID from options or environment variable
  */
 function getRunId(options: Record<string, any>): string {
-    const runId = options.runId || process.env.VERTESIA_RUN_ID;
-    if (!runId) {
-        console.error("Error: Run ID not specified. Use --run-id or set VERTESIA_RUN_ID env var");
-        process.exit(1);
-    }
-    return runId;
+    return getArtifactStorageId(options);
 }
 
 export async function uploadArtifact(program: Command, file: string | undefined, options: Record<string, any>) {
