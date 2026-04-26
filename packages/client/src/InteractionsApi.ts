@@ -302,7 +302,12 @@ export default class InteractionsApi extends ApiTopic {
      * @param options Optional environment and/or model to resolve with
      * @returns ResolvedInteractionExecutionInfo with the resolved environment and model
      */
-    resolve(nameOrId: string, options?: { environment?: string; model?: string }): Promise<ResolvedInteractionExecutionInfo> {
+    resolve(nameOrId: string, options?: {
+        environment?: string;
+        model?: string;
+        hasImage?: boolean;
+        hasVideo?: boolean;
+    }): Promise<ResolvedInteractionExecutionInfo> {
         return this.get(`/resolve/${encodeURIComponent(nameOrId)}`, {
             query: options
         });

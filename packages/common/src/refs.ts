@@ -28,4 +28,7 @@ export interface ResourceRef {
     type: string
     description?: string
     version?: number
+    status?: string
+    tags?: string[]
+    endpoint?: string
 }

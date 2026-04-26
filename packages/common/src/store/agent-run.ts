@@ -12,7 +12,7 @@
  * (workflowId, runId) are internal server concerns.
  */
 
-import { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, RunSource } from "../interaction.js";
+import { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, InteractionRef, RunSource } from "../interaction.js";
 import { UserChannel } from "../email.js";
 import { ContentObjectTypeRef } from "./store.js";
 import { ConversationActivityState } from "./workflow.js";
@@ -204,6 +204,8 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
 
     /** Human-readable interaction name */
     interaction_name?: string;
+
+    interactionRef: InteractionRef;
 
     // --- Lifecycle ---
 
@@ -397,6 +399,9 @@ export interface ListAgentRunsQuery {
     /** Offset for pagination */
     offset?: number;
 
+    /** Cursor for stable pagination */
+    cursor?: string;
+
     /** Filter by schedule ID */
     schedule_id?: string;
 
@@ -414,6 +419,12 @@ export interface ListAgentRunsQuery {
 
     /** Sort order */
     order?: 'asc' | 'desc';
+}
+
+export interface ListAgentRunsResponse {
+    items: AgentRun[];
+    total_count: number;
+    next_cursor: string | null;
 }
 
 /**

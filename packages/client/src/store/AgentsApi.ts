@@ -17,6 +17,7 @@ import {
     FirstResponseBehaviorAnalyticsResponse,
     LatencyAnalyticsResponse,
     ListAgentRunsQuery,
+    ListAgentRunsResponse,
     ListWorkflowRunsResponse,
     parseMessage,
     PromptSizeAnalyticsResponse,
@@ -105,12 +106,15 @@ export class AgentsApi extends ApiTopic {
     /**
      * List agent runs with optional filters.
      */
-    list(query?: ListAgentRunsQuery): Promise<AgentRun[]> {
+    list(query?: ListAgentRunsQuery): Promise<ListAgentRunsResponse> {
         return this.get('/', { query: this.buildListQueryParams(query) });
     }
 
-    listProcessRuns(query?: Omit<ListAgentRunsQuery, 'run_kind'>): Promise<ProcessRun[]> {
-        return this.get('/', { query: this.buildListQueryParams({ ...query, run_kind: 'process' }) });
+    async listProcessRuns(query?: Omit<ListAgentRunsQuery, 'run_kind'>): Promise<ProcessRun[]> {
+        const response = await this.get<ListAgentRunsResponse>('/', {
+            query: this.buildListQueryParams({ ...query, run_kind: 'process' }),
+        });
+        return response.items as unknown as ProcessRun[];
     }
 
     private buildListQueryParams(query?: ListAgentRunsQuery): Record<string, string> {
@@ -129,6 +133,7 @@ export class AgentsApi extends ApiTopic {
         if (query?.run_kind) params.run_kind = query.run_kind;
         if (query?.limit) params.limit = String(query.limit);
         if (query?.offset) params.offset = String(query.offset);
+        if (query?.cursor) params.cursor = query.cursor;
         if (query?.sort) params.sort = query.sort;
         if (query?.order) params.order = query.order;
         return params;

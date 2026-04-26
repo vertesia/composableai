@@ -1,5 +1,5 @@
 import { ConnectionError, RequestError, ServerError } from "./errors.js";
-import { sse } from "./sse/index.js";
+import { sse, ServerSentEvent } from "./sse/index.js";
 import { buildQueryString, join, removeTrailingSlash } from "./utils.js";
 
 export type FETCH_FN = (input: RequestInfo, init?: RequestInit) => Promise<Response>;
@@ -68,7 +68,14 @@ export abstract class ClientBase {
         throw this.errorFactory(err);
     }
 
+    /**
+     * Resolve a path to a full URL. If the path is already an absolute URL
+     * (starts with http:// or https://), it is returned as-is.
+     */
     getUrl(path: string) {
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+            return removeTrailingSlash(path);
+        }
         return removeTrailingSlash(join(this.baseUrl, path));
     }
 
@@ -204,6 +211,11 @@ export abstract class ClientBase {
                 }
             }
         }
+        // When using SSE reader, ensure the Accept header requests event-stream
+        if (params?.reader === 'sse' && !('accept' in headers)) {
+            headers['accept'] = 'text/event-stream';
+        }
+
         const init: RequestInit = {
             method: method,
             headers: headers,
@@ -216,6 +228,44 @@ export abstract class ClientBase {
         }).then(res => {
             return this.handleResponse(req, res, params);
         }));
+    }
+
+    /**
+     * Perform a request and consume the response as an SSE stream.
+     * Calls `onEvent` for each parsed SSE event, then returns the last event.
+     *
+     * @param method HTTP method
+     * @param path URL path (relative to baseUrl) or absolute URL (http:// or https://)
+     * @param params Request parameters (payload, headers, query)
+     * @param onEvent Callback for each SSE event
+     * @returns The last SSE event received, or undefined if the stream was empty
+     */
+    async sseRequest(
+        method: string,
+        path: string,
+        params: IRequestParamsWithPayload | undefined,
+        onEvent: (event: ServerSentEvent) => void,
+    ): Promise<ServerSentEvent | undefined> {
+        const stream = await this.request(method, path, {
+            ...params,
+            reader: 'sse',
+        }) as ReadableStream<ServerSentEvent>;
+
+        const reader = stream.getReader();
+        let lastEvent: ServerSentEvent | undefined;
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                lastEvent = value;
+                onEvent(value);
+            }
+        } finally {
+            reader.releaseLock();
+        }
+
+        return lastEvent;
     }
 
     /**
