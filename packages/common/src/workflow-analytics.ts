@@ -690,6 +690,10 @@ export interface AgentFilterOption {
     id: string;
     /** The display name (resolved from interaction) */
     name: string;
+    /** Interaction status (published, archived, code, etc.) */
+    status?: string;
+    /** Interaction version number */
+    version?: number;
 }
 
 /**

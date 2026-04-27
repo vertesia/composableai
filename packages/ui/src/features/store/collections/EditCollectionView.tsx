@@ -4,8 +4,9 @@ import { SharedPropsEditor, SyncMemberHeadsToggle, UserInfo } from "@vertesia/ui
 import { useUserSession } from "@vertesia/ui/session";
 import { MonacoEditor, EditorApi, GeneratedForm, ManagedObject, Node } from "@vertesia/ui/widgets";
 import dayjs from "dayjs";
-import { useMemo, useRef, useState } from "react";
+import { useContext, useMemo, useRef, useState } from "react";
 import { useUITranslation } from '../../../i18n/index.js';
+import { SearchContext } from "../objects/search/DocumentSearchContext";
 import { SelectContentType, stringifyTableLayout } from "../types";
 
 interface UpdateData {
@@ -28,6 +29,7 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
     const toast = useToast();
     const { theme } = useTheme();
     const { client } = useUserSession();
+    const search = useContext(SearchContext);
     const [isUpdating, setUpdating] = useState(false);
     const [metadata, setMetadata] = useState<UpdateData>({
         name: collection.name,
@@ -103,6 +105,11 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
             .update(collection.id, payload)
             .then(() => {
                 refetch();
+                // Update search query on provider if it's a dynamic collection to reflect in UI immediately
+                if (collection.dynamic && search) {
+                    search.reset();
+                    void search.search();
+                }
                 toast({
                     title: t('store.collectionUpdated'),
                     description: t('store.collectionUpdatedSuccess'),
@@ -184,6 +191,8 @@ export function EditCollectionView({ refetch, collection }: EditCollectionViewPr
                         <FormItem label={t('store.query')} description={t('store.queryDescription')}>
                             <Textarea
                                 className={Styles.INPUT}
+                                minLines={1}
+                                maxLines={12}
                                 value={metadata.query}
                                 onChange={(e) => setField("query", e.target.value)}
                             />

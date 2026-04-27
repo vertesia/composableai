@@ -1,4 +1,4 @@
-import { ApiTopic, ClientBase } from "@vertesia/api-fetch-client";
+import { ApiTopic, ClientBase, ServerSentEvent } from "@vertesia/api-fetch-client";
 import {
     IndexingStatusResponse,
     GenericCommandResponse,
@@ -7,7 +7,6 @@ import {
     CreateReindexTargetResult,
     ReindexRangeResult,
     FetchBatchResult,
-    IndexBatchResult,
     NextIndexCursorResult,
     TriggerReindexResult,
     ElasticsearchIndexStats,
@@ -15,9 +14,17 @@ import {
     FetchDocumentsByIdsResult,
     BulkDeleteResult,
     EnsureIndexResult,
-    SwapAliasResult,
     AnalyzeDriftBatchResult,
     DriftAnalysisStatusResponse,
+    ComputeShardsRequest,
+    ComputeShardsResult,
+    IndexShardParams,
+    IndexShardRequest,
+    IndexShardResult,
+    SwapAliasRequest,
+    SwapAliasResult,
+    ReindexViaBulkRequest,
+    ReindexViaBulkResult,
 } from "@vertesia/common";
 
 /**
@@ -45,11 +52,19 @@ export class IndexingApi extends ApiTopic {
     }
 
     /**
-     * Trigger a full reindex of all documents
-     * @param recreateIndex If true, drops and recreates the index before reindexing
+     * Trigger a full reindex of all documents.
+     * Starts a Temporal workflow that uses zeno-bulk for high-throughput indexing.
+     *
+     * @param options Optional workflow tuning parameters
      */
-    async reindex(recreateIndex?: boolean): Promise<GenericCommandResponse> {
-        return this.post("/reindex", { payload: { recreate_index: recreateIndex } });
+    async reindex(options?: {
+        shard_size?: number;
+        parallel_shard_count?: number;
+        concurrency?: number;
+        bulk_size_bytes?: number;
+        bulk_concurrency?: number;
+    }): Promise<GenericCommandResponse> {
+        return this.post("/reindex", { payload: options });
     }
 
     /**
@@ -155,18 +170,6 @@ export class IndexingApi extends ApiTopic {
     }
 
     /**
-     * Atomically swap the alias from old index to new index
-     *
-     * @param newIndexName The new index to point the alias to
-     * @param deleteOld If true, deletes the old index after swapping
-     */
-    swapAlias(newIndexName: string, deleteOld?: boolean): Promise<SwapAliasResult> {
-        return this.post("/internal/swap-alias", {
-            payload: { new_index_name: newIndexName, delete_old: deleteOld },
-        });
-    }
-
-    /**
      * Get Elasticsearch index statistics for the project
      */
     getStats(): Promise<ElasticsearchIndexStats> {
@@ -195,22 +198,6 @@ export class IndexingApi extends ApiTopic {
     fetchBatch(cursor?: string | null, limit?: number): Promise<FetchBatchResult> {
         return this.post("/internal/fetch-batch", {
             payload: { cursor, limit },
-        });
-    }
-
-    /**
-     * Fetch and index a batch of documents (server-side)
-     * Uses cursor-based pagination for reliability
-     *
-     * @param cursor Cursor from previous batch (null for first batch)
-     * @param limit Maximum documents to process (default: 500)
-     * @param targetIndex Optional explicit index name for zero-downtime reindexing
-     * @param since Only index docs with updated_at >= this ISO timestamp (for catch-up after reindex)
-     * @param endCursor End cursor (inclusive) for partitioned reindexing
-     */
-    indexBatch(cursor?: string | null, limit?: number, targetIndex?: string, since?: string, endCursor?: string | null): Promise<IndexBatchResult> {
-        return this.post("/internal/index-batch", {
-            payload: { cursor, limit, target_index: targetIndex, since, end_cursor: endCursor },
         });
     }
 
@@ -290,5 +277,107 @@ export class IndexingApi extends ApiTopic {
         return this.post("/internal/configuration", {
             payload: {},
         });
+    }
+
+    // ========================================================================
+    // Zeno Bulk endpoints (Go migration service)
+    // Routes via LB path rules in prod, or derived URL in dev.
+    // ========================================================================
+
+    /**
+     * Get the zeno-bulk base URL.
+     * Dev branches: store URL contains "zeno-server" -> replace with "zeno-bulk".
+     * Production/preview: same domain, LB routes /reindex/* to zeno-bulk.
+     */
+    private get zenoBulkBaseUrl(): string {
+        const storeBaseUrl = this.client.baseUrl;
+        if (storeBaseUrl.includes('zeno-server')) {
+            return storeBaseUrl.replace(/zeno-server/, 'zeno-bulk');
+        }
+        return storeBaseUrl;
+    }
+
+    /**
+     * POST to a zeno-bulk endpoint. Resolves the path against the zeno-bulk base URL.
+     */
+    private zenoBulkPost<T>(path: string, body: object): Promise<T> {
+        return this.client.post(this.zenoBulkBaseUrl + path, { payload: body });
+    }
+
+    /**
+     * Compute shard boundaries for a tenant via zeno-bulk.
+     * Creates the target index and returns shard ranges for parallel indexing.
+     */
+    computeShards(tenantId: string, shardSize?: number): Promise<ComputeShardsResult> {
+        return this.zenoBulkPost('/reindex/compute-shards', {
+            tenant_id: tenantId,
+            shard_size: shardSize ?? 50000,
+        } satisfies ComputeShardsRequest);
+    }
+
+    /**
+     * Index a single shard via zeno-bulk (retryable by Temporal).
+     * The Go service reads from MongoDB and writes to ES directly.
+     */
+    indexShard(params: IndexShardParams): Promise<IndexShardResult> {
+        return this.zenoBulkPost('/reindex/shard', { params } satisfies IndexShardRequest);
+    }
+
+    /**
+     * Atomically swap ES alias via zeno-bulk.
+     * @param alias Optional alias name. If not provided, the Go service derives it from the tenant ID.
+     */
+    swapAlias(tenantId: string, targetIndex: string, alias?: string): Promise<SwapAliasResult> {
+        return this.zenoBulkPost('/reindex/swap-alias', {
+            tenant_id: tenantId,
+            target_index: targetIndex,
+            alias,
+        } satisfies SwapAliasRequest);
+    }
+
+    /**
+     * Full reindex of a tenant via zeno-bulk (all-in-one).
+     * The Go service handles sharding, indexing, catch-up, and alias swap internally.
+     *
+     * In JSON mode (default): waits for completion and returns the final result.
+     * In SSE mode (when onEvent is provided): streams progress events from zeno-bulk
+     * and returns the final result. The onEvent callback receives parsed SSE events
+     * with { event: "progress" | "done", data: string (JSON) }.
+     */
+    async reindexViaBulk(
+        tenantId: string,
+        onEvent?: ((event: ServerSentEvent) => void) | null,
+        dryRun?: boolean,
+    ): Promise<ReindexViaBulkResult> {
+        const bulkUrl = this.zenoBulkBaseUrl + '/reindex';
+        const payload = {
+            tenant_id: tenantId,
+            dry_run: dryRun ?? false,
+        } satisfies ReindexViaBulkRequest;
+
+        if (!onEvent) {
+            return this.client.post(bulkUrl, { payload });
+        }
+
+        // SSE mode: stream progress events from zeno-bulk
+        let lastResult: ReindexViaBulkResult | undefined;
+
+        await this.client.sseRequest('POST', bulkUrl, {
+            payload,
+        }, (event) => {
+            onEvent(event);
+            if (event.type === 'event' && event.event === 'done') {
+                try {
+                    lastResult = JSON.parse(event.data) as ReindexViaBulkResult;
+                } catch {
+                    // data might not be valid JSON
+                }
+            }
+        });
+
+        if (!lastResult) {
+            throw new Error('zeno-bulk SSE stream ended without a done event');
+        }
+        return lastResult;
     }
 }

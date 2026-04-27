@@ -12,10 +12,12 @@
  * (workflowId, runId) are internal server concerns.
  */
 
-import { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, RunSource } from "../interaction.js";
+import { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, InteractionRef, RunSource } from "../interaction.js";
 import { UserChannel } from "../email.js";
+import { AgentEvent } from "../workflow-analytics.js";
+import { UserInputSignal } from "./signals.js";
 import { ContentObjectTypeRef } from "./store.js";
-import { ConversationActivityState } from "./workflow.js";
+import { AgentMessage, CompactMessage, ConversationActivityState, ConversationFileRef, WorkflowRunEvent } from "./workflow.js";
 
 /**
  * Status of an agent run through its lifecycle.
@@ -120,6 +122,8 @@ export interface AgentRun<TData = Record<string, any>, TProperties = Record<stri
     /** Human-readable interaction name */
     interaction_name?: string;
 
+    interactionRef: InteractionRef;
+
     // --- Lifecycle ---
 
     /** Current status of the agent run */
@@ -204,6 +208,138 @@ export interface CreateAgentRunPayload<TData = Record<string, any>, TProperties 
 }
 
 /**
+ * Payload to record an AgentRun for an already-running workflow.
+ *
+ * Used by server-side callers that have already started a Temporal workflow
+ * and need to create the stable AgentRun MongoDB document against it.
+ *
+ * @typeParam TData - The interaction's expected input data type.
+ */
+export interface RecordAgentRunPayload<TData = CreateAgentRunPayload["data"]> extends Pick<AgentRunBase<TData>, "interaction" | "data" | "schedule_id" | "visibility" | "type"> {
+    /** Temporal workflow ID (stable across continueAsNew) */
+    workflow_id: string;
+
+    /** First Temporal workflow run ID (stable stream/artifact identity) */
+    first_workflow_run_id: string;
+}
+
+/**
+ * Response from terminating an agent run.
+ */
+export interface TerminateAgentRunResponse {
+    message: string;
+    reason?: string;
+}
+
+/**
+ * Payload for updating an AgentRun's lifecycle and derived metadata.
+ */
+export interface UpdateAgentRunStatusPayload {
+    status?: AgentRunStatus;
+    activity_state?: ConversationActivityState;
+    title?: string;
+    topic?: string;
+    lessons_learned?: string[];
+    /** ES-only: conversation content text (not stored in MongoDB) */
+    content?: string;
+    /** Archive state fields (set by the archive workflow) */
+    archive_state?: AgentRunArchiveState;
+    archived_at?: string;
+    archive_version?: number;
+    last_archive_error?: string;
+}
+
+/**
+ * Generic signal payload sent to a running agent workflow.
+ */
+export type SignalAgentPayload =
+    | UserInputSignal
+    | ConversationFileRef
+    | Record<string, unknown>;
+
+/**
+ * Response from signaling an agent workflow.
+ */
+export interface SignalAgentResponse {
+    status: string;
+    message: string;
+}
+
+/**
+ * Response payload for retrieving compact agent updates.
+ */
+export interface AgentRunUpdatesResponse {
+    messages: CompactMessage[];
+}
+
+/**
+ * Payload for posting an update into an agent's workflow stream.
+ */
+export type PostAgentRunUpdatePayload = Partial<AgentMessage>;
+
+/**
+ * Response from posting an agent update.
+ */
+export interface PostAgentRunUpdateResponse {
+    success: boolean;
+}
+
+/**
+ * Signed artifact URL response for agent artifacts.
+ */
+export interface AgentArtifactUrlResponse {
+    url: string;
+    path: string;
+}
+
+/**
+ * Telemetry ingestion payload for an agent run.
+ */
+export interface IngestAgentEventsPayload {
+    events: AgentEvent[];
+}
+
+/**
+ * Telemetry ingestion response for an agent run.
+ */
+export interface IngestAgentEventsResponse {
+    ingested: number;
+    status?: string;
+    error?: string;
+}
+
+/**
+ * History event payload emitted by the agent details SSE stream.
+ */
+export interface AgentRunDetailsHistoryStreamEvent {
+    runId?: string;
+    event: WorkflowRunEvent;
+}
+
+/**
+ * Control payload emitted by the agent details SSE stream.
+ */
+export type AgentRunDetailsControlStreamEvent =
+    | { type: 'continueAsNew'; newRunId: string }
+    | { type: 'done' };
+
+/**
+ * Error payload emitted by the agent details SSE stream.
+ */
+export interface AgentRunDetailsErrorStreamEvent {
+    type: 'error';
+    message: string;
+}
+
+/**
+ * Typed SSE event envelope for the agent details stream.
+ */
+export type AgentRunDetailsStreamEvent =
+    | { type: 'history'; data: AgentRunDetailsHistoryStreamEvent }
+    | { type: 'control'; data: AgentRunDetailsControlStreamEvent }
+    | { type: 'error'; data: AgentRunDetailsErrorStreamEvent };
+
+/**
  * Filters for listing agent runs.
  */
 export interface ListAgentRunsQuery {
@@ -222,11 +358,17 @@ export interface ListAgentRunsQuery {
     /** Only return runs started after this date */
     since?: Date;
 
+    /** Only return runs started at or before this date */
+    until?: Date;
+
     /** Maximum number of results (default: 50) */
     limit?: number;
 
     /** Offset for pagination */
     offset?: number;
+
+    /** Cursor for stable pagination */
+    cursor?: string;
 
     /** Filter by schedule ID */
     schedule_id?: string;
@@ -239,6 +381,12 @@ export interface ListAgentRunsQuery {
 
     /** Sort order */
     order?: 'asc' | 'desc';
+}
+
+export interface ListAgentRunsResponse {
+    items: AgentRun[];
+    total_count: number;
+    next_cursor: string | null;
 }
 
 /**
@@ -268,6 +416,9 @@ export interface SearchAgentRunsQuery {
 
     /** Only return runs started after this date */
     since?: Date;
+
+    /** Only return runs started at or before this date */
+    until?: Date;
 
     /** Maximum number of results (default: 50) */
     limit?: number;

@@ -83,52 +83,87 @@ export function useObjectText(objectId: string, initialText?: string, loadOnMoun
 export function usePdfProcessingStatus(objectId: string, shouldPoll: boolean) {
     const { client } = useUserSession();
 
-    const [progress, setProgress] = useState<DocAnalyzerProgress | undefined>();
-    const [status, setStatus] = useState<WorkflowExecutionStatus | undefined>();
-    const [outputFormat, setOutputFormat] = useState<DocProcessorOutputFormat | undefined>();
-    const [isComplete, setIsComplete] = useState(false);
+    const [state, setState] = useState<{
+        progress?: DocAnalyzerProgress;
+        status?: WorkflowExecutionStatus;
+        outputFormat?: DocProcessorOutputFormat;
+        isComplete: boolean;
+    }>({ isComplete: false });
 
     useEffect(() => {
         if (!shouldPoll) return;
 
         let interrupted = false;
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+        const updateStateIfChanged = (
+            nextProgress: DocAnalyzerProgress | undefined,
+            nextStatus: WorkflowExecutionStatus | undefined,
+            nextOutputFormat: DocProcessorOutputFormat | undefined,
+            nextIsComplete: boolean,
+        ) => {
+            setState((prev) => {
+                const prevProgress = JSON.stringify(prev.progress ?? null);
+                const nextProgressSignature = JSON.stringify(nextProgress ?? null);
+
+                if (
+                    prev.status === nextStatus
+                    && prev.outputFormat === nextOutputFormat
+                    && prev.isComplete === nextIsComplete
+                    && prevProgress === nextProgressSignature
+                ) {
+                    return prev;
+                }
+
+                return {
+                    progress: nextProgress,
+                    status: nextStatus,
+                    outputFormat: nextOutputFormat,
+                    isComplete: nextIsComplete,
+                };
+            });
+        };
 
         function poll() {
             if (interrupted) return;
 
             client.objects.analyze(objectId).getStatus()
                 .then((r) => {
-                    setProgress(r.progress);
-                    setStatus(r.status);
-                    setOutputFormat(r.output_format ?? r.progress?.output_format);
+                    const nextOutputFormat = r.output_format ?? r.progress?.output_format;
 
                     if (r.status === WorkflowExecutionStatus.RUNNING) {
+                        updateStateIfChanged(r.progress, r.status, nextOutputFormat, false);
                         // Workflow is running, poll every 2 seconds for progress
                         if (!interrupted) {
-                            setTimeout(poll, 2000);
+                            timeoutId = setTimeout(poll, 2000);
                         }
                     } else {
                         // Workflow completed or terminal state
-                        setIsComplete(true);
+                        updateStateIfChanged(r.progress, r.status, nextOutputFormat, true);
                     }
                 })
                 .catch(() => {
                     // No workflow found yet, poll every 10 seconds to check if one starts
                     if (!interrupted) {
-                        setTimeout(poll, 10000);
+                        timeoutId = setTimeout(poll, 10000);
                     }
                 });
         }
 
         poll();
-        return () => { interrupted = true; };
+        return () => {
+            interrupted = true;
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+        };
     }, [shouldPoll, objectId, client]);
 
     return {
-        progress,
-        status,
-        outputFormat,
-        isComplete,
+        progress: state.progress,
+        status: state.status,
+        outputFormat: state.outputFormat,
+        isComplete: state.isComplete,
     };
 }
 

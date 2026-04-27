@@ -1,2 +1,2 @@
-ui: npx vite dev
+ui: npx vite dev --mode app
 server: npm run build:server && node ./lib/server-node.js

@@ -415,27 +415,6 @@ export interface FetchBatchResult {
 }
 
 /**
- * Result from indexing a batch
- */
-export interface IndexBatchResult {
-    successful: number;
-    failed: number;
-    processed: number;
-    next_cursor: string | null;
-    done: boolean;
-    /** Number of ES bulk flushes performed */
-    bulk_flushes?: number;
-    /** Total bytes sent to ES */
-    total_bytes?: number;
-    /** Average bytes per ES bulk flush */
-    avg_flush_bytes?: number;
-    /** Duration of the batch in milliseconds */
-    duration_ms?: number;
-    /** Docs per second for this batch */
-    docs_per_second?: number;
-}
-
-/**
  * Result from discovering the next cursor boundary for batch partitioning
  */
 export interface NextIndexCursorResult {
@@ -455,6 +434,90 @@ export interface TriggerReindexResult {
     object_count?: number;
     reason?: string;
     enabled?: boolean;
+}
+
+// ========================================================================
+// Zeno Bulk (Go service) types
+// ========================================================================
+
+export interface ComputeShardsRequest {
+    tenant_id: string;
+    shard_size?: number;
+}
+
+export interface ComputeShardsResult {
+    shards: Array<{ min?: string; max?: string }>;
+    count: number;
+}
+
+export interface IndexShardParams {
+    tenant_id: string;
+    target_index: string;
+    shard_min: string;
+    shard_max?: string;
+    dry_run?: boolean;
+    concurrency?: number;
+    batch_size?: number;
+    bulk_size_bytes?: number;
+    bulk_concurrency?: number;
+    updated_since?: string;
+}
+
+export interface IndexShardRequest {
+    force?: boolean;
+    params: IndexShardParams;
+}
+
+export interface IndexShardResult {
+    status: string;
+    projects_done: number;
+    projects_total: number;
+    scanned: number;
+    written: number;
+    skipped: number;
+    errors: number;
+    read_docs_s: string;
+    write_docs_s: string;
+    read_mb: string;
+    write_mb: string;
+    read_mb_s: string;
+    write_mb_s: string;
+    duration_sec: number;
+    failed_projects?: Array<{ tenant: string; error: string }>;
+}
+
+export interface SwapAliasRequest {
+    tenant_id: string;
+    target_index: string;
+    /** ES alias name. If not provided, the Go service derives it from the tenant ID. */
+    alias?: string;
+}
+
+export interface SwapAliasResult {
+    status: string;
+    alias: string;
+    old_index: string;
+    new_index: string;
+}
+
+export interface ReindexViaBulkRequest {
+    tenant_id: string;
+    dry_run?: boolean;
+}
+
+export interface ReindexViaBulkResult {
+    status: string;
+    error?: string;
+    projects_done: number;
+    projects_total: number;
+    scanned: number;
+    written: number;
+    errors: number;
+    read_docs_s: string;
+    write_docs_s: string;
+    read_mb: string;
+    write_mb: string;
+    duration_sec: number;
 }
 
 /**
@@ -618,16 +681,6 @@ export interface DriftAnalysisStatusResponse extends WorkflowRunStatus {
     progress?: DriftAnalysisProgress;
     result?: DriftAnalysisResult;
     error?: string;
-}
-
-/**
- * Result from swap alias operation
- */
-export interface SwapAliasResult {
-    swapped: boolean;
-    alias_name?: string;
-    new_index_name?: string;
-    reason?: string;
 }
 
 export interface ProjectIntegrationListEntry {

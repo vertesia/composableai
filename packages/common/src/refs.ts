@@ -27,4 +27,8 @@ export interface ResourceRef {
     name: string
     type: string
     description?: string
+    version?: number
+    status?: string
+    tags?: string[]
+    endpoint?: string
 }
