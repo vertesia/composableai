@@ -135,7 +135,7 @@ export interface OAuthAuthorizationServerMetadata {
 
 export interface OAuthClientMetadataDocument {
     client_id: string;
-    client_name?: string;
+    client_name: string;
     redirect_uris: string[];
     grant_types?: OAuthGrantType[];
     response_types?: OAuthResponseType[];
