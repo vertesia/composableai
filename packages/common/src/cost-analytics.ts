@@ -29,6 +29,10 @@ export interface CostAnalyticsQuery {
     environment_id?: string;
     /** Filter by provider */
     provider?: string;
+    /** Filter by interaction (agent) ID — matches details.interaction_id in audit */
+    interaction_id?: string;
+    /** Filter by principal ID (user or API key) */
+    principal_id?: string;
     /** Filter by project ID (optional, for org scope) */
     project_id?: string;
     /** Filter by workflow / agent run ID */
