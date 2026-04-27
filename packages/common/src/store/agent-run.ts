@@ -14,9 +14,11 @@
 
 import { AgentSearchScope, ConversationVisibility, InteractionExecutionConfiguration, InteractionRef, RunSource } from "../interaction.js";
 import { UserChannel } from "../email.js";
+import { AgentEvent } from "../workflow-analytics.js";
+import { UserInputSignal } from "./signals.js";
 import { ContentObjectTypeRef } from "./store.js";
-import { ConversationActivityState } from "./workflow.js";
 import { ProcessDefinitionBody, ProcessState } from "./process.js";
+import { AgentMessage, CompactMessage, ConversationActivityState, ConversationFileRef, WorkflowRunEvent } from "./workflow.js";
 
 /**
  * Status of an agent run through its lifecycle.
@@ -370,6 +372,124 @@ export interface BindRunWorkflowPayload extends Required<RecordRunWorkflowPayloa
     status?: AgentRunStatus;
     activity_state?: ConversationActivityState;
 }
+
+/**
+ * Response from terminating an agent run.
+ */
+export interface TerminateAgentRunResponse {
+    message: string;
+    reason?: string;
+}
+
+/**
+ * Payload for updating an AgentRun's lifecycle and derived metadata.
+ */
+export interface UpdateAgentRunStatusPayload {
+    status?: AgentRunStatus;
+    activity_state?: ConversationActivityState;
+    title?: string;
+    topic?: string;
+    lessons_learned?: string[];
+    /** ES-only: conversation content text (not stored in MongoDB) */
+    content?: string;
+    /** Archive state fields (set by the archive workflow) */
+    archive_state?: AgentRunArchiveState;
+    archived_at?: string;
+    archive_version?: number;
+    last_archive_error?: string;
+    sequence?: number;
+    process_state?: ProcessState;
+}
+
+/**
+ * Generic signal payload sent to a running agent workflow.
+ */
+export type SignalAgentPayload =
+    | UserInputSignal
+    | ConversationFileRef
+    | Record<string, unknown>;
+
+/**
+ * Response from signaling an agent workflow.
+ */
+export interface SignalAgentResponse {
+    status: string;
+    message: string;
+}
+
+/**
+ * Response payload for retrieving compact agent updates.
+ */
+export interface AgentRunUpdatesResponse {
+    messages: CompactMessage[];
+}
+
+/**
+ * Payload for posting an update into an agent's workflow stream.
+ */
+export type PostAgentRunUpdatePayload = Partial<AgentMessage>;
+
+/**
+ * Response from posting an agent update.
+ */
+export interface PostAgentRunUpdateResponse {
+    success: boolean;
+}
+
+/**
+ * Signed artifact URL response for agent artifacts.
+ */
+export interface AgentArtifactUrlResponse {
+    url: string;
+    path: string;
+}
+
+/**
+ * Telemetry ingestion payload for an agent run.
+ */
+export interface IngestAgentEventsPayload {
+    events: AgentEvent[];
+}
+
+/**
+ * Telemetry ingestion response for an agent run.
+ */
+export interface IngestAgentEventsResponse {
+    ingested: number;
+    status?: string;
+    error?: string;
+}
+
+/**
+ * History event payload emitted by the agent details SSE stream.
+ */
+export interface AgentRunDetailsHistoryStreamEvent {
+    runId?: string;
+    event: WorkflowRunEvent;
+}
+
+/**
+ * Control payload emitted by the agent details SSE stream.
+ */
+export type AgentRunDetailsControlStreamEvent =
+    | { type: 'continueAsNew'; newRunId: string }
+    | { type: 'done' };
+
+/**
+ * Error payload emitted by the agent details SSE stream.
+ */
+export interface AgentRunDetailsErrorStreamEvent {
+    type: 'error';
+    message: string;
+}
+
+/**
+ * Typed SSE event envelope for the agent details stream.
+ */
+export type AgentRunDetailsStreamEvent =
+    | { type: 'history'; data: AgentRunDetailsHistoryStreamEvent }
+    | { type: 'control'; data: AgentRunDetailsControlStreamEvent }
+    | { type: 'error'; data: AgentRunDetailsErrorStreamEvent };
 
 /**
  * Filters for listing agent runs.

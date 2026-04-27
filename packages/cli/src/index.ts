@@ -2,6 +2,8 @@ import { setupMemoCommand } from '@vertesia/memory-cli';
 import { Command } from 'commander';
 import { registerAppsCommand } from './apps/index.js';
 import { registerAgentsCommand } from './agents/index.js';
+import { registerArtifactsCommand } from './artifacts/index.js';
+import { registerDataCommand } from './data/index.js';
 import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
 import { getPublishMemoryAction } from './memory/index.js';
@@ -131,6 +133,8 @@ for (const command of memoCmd.commands) {
 registerWorkerCommand(program);
 registerAppsCommand(program);
 registerAgentsCommand(program);
+registerArtifactsCommand(program);
+registerDataCommand(program);
 
 const profilesRoot = program.command("profiles")
     .description("Manage configuration profiles")

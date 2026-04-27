@@ -2,15 +2,15 @@ import { ApiTopic, ClientBase } from '@vertesia/api-fetch-client';
 import {
     ActiveWorkstreamsQueryResult,
     AgentEvent,
+    AgentArtifactUrlResponse,
     AgentMessage,
     AgentRun,
-    AgentRunArchiveState,
-    AgentRunResponse,
+    AgentRunDetailsStreamEvent,
     AgentRunInternals,
-    AgentRunStatus,
+    AgentRunResponse,
+    AgentRunUpdatesResponse,
     BindRunWorkflowPayload,
     CompactMessage,
-    ConversationActivityState,
     CreateAgentRunPayload,
     CreateProcessRunPayload,
     ErrorAnalyticsResponse,
@@ -21,6 +21,8 @@ import {
     ListWorkflowRunsResponse,
     parseMessage,
     PromptSizeAnalyticsResponse,
+    PostAgentRunUpdatePayload,
+    PostAgentRunUpdateResponse,
     ProcessRun,
     ProcessState,
     RecordAgentRunPayload,
@@ -29,18 +31,24 @@ import {
     RunsByAgentAnalyticsResponse,
     SearchAgentRunsQuery,
     SearchAgentRunsResponse,
+    SignalAgentPayload,
+    SignalAgentResponse,
     TimeToFirstResponseAnalyticsResponse,
+    TerminateAgentRunResponse,
     toAgentMessage,
     TokenUsageAnalyticsResponse,
     ToolAnalyticsResponse,
     ToolParameterAnalyticsResponse,
     TopPrincipalsAnalyticsResponse,
+    UpdateAgentRunStatusPayload,
     WorkflowAnalyticsFilterOptionsResponse,
     WorkflowAnalyticsSummaryQuery,
     WorkflowAnalyticsSummaryResponse,
     WorkflowAnalyticsTimeSeriesQuery,
     WorkflowRunWithDetails,
     WorkflowToolParametersQuery,
+    IngestAgentEventsPayload,
+    IngestAgentEventsResponse,
 } from '@vertesia/common';
 import { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
@@ -59,7 +67,7 @@ export class AgentsApi extends ApiTopic {
      * Create and start a new agent run.
      * Returns the created AgentRun with its stable id.
      */
-    start<TData = Record<string, any>>(
+    start<TData = Record<string, unknown>>(
         payload: CreateAgentRunPayload<TData>,
     ): Promise<AgentRun<TData>>;
     start<TData = Record<string, any>>(
@@ -83,10 +91,14 @@ export class AgentsApi extends ApiTopic {
         return this.post('/record', { payload });
     }
 
+    createRecord(payload: RecordAgentRunPayload): Promise<AgentRun> {
+        return this.recordRun(payload);
+    }
+
     /**
      * Get agent run by id.
      */
-    retrieve<TData = Record<string, any>>(id: string): Promise<AgentRun<TData>> {
+    retrieve<TData = Record<string, unknown>>(id: string): Promise<AgentRun<TData>> {
         return this.get(`/${id}`);
     }
 
@@ -163,7 +175,7 @@ export class AgentsApi extends ApiTopic {
     /**
      * Cancel/terminate an agent run.
      */
-    terminate(id: string, reason?: string): Promise<{ message: string }> {
+    terminate(id: string, reason?: string): Promise<TerminateAgentRunResponse> {
         const query = reason ? { reason } : undefined;
         return this.del(`/${id}`, { query });
     }
@@ -216,22 +228,7 @@ export class AgentsApi extends ApiTopic {
      */
     updateStatus(
         id: string,
-        update: {
-            status?: AgentRunStatus;
-            activity_state?: ConversationActivityState;
-            title?: string;
-            topic?: string;
-            lessons_learned?: string[];
-            /** ES-only: conversation content text (not stored in MongoDB) */
-            content?: string;
-            // Archive state fields (set by the archive workflow)
-            archive_state?: AgentRunArchiveState;
-            archived_at?: string;
-            archive_version?: number;
-            last_archive_error?: string;
-            sequence?: number;
-            process_state?: ProcessState;
-        },
+        update: UpdateAgentRunStatusPayload,
     ): Promise<AgentRun | ProcessRun> {
         return this.post(`/${id}/status`, { payload: update });
     }
@@ -253,7 +250,7 @@ export class AgentsApi extends ApiTopic {
      * Send a signal to a running agent.
      * Signals: "UserInput", "Stop", "FileUploaded"
      */
-    sendSignal(id: string, signalName: string, payload?: any): Promise<{ message: string }> {
+    sendSignal(id: string, signalName: string, payload?: SignalAgentPayload): Promise<SignalAgentResponse> {
         return this.post(`/${id}/signal/${signalName}`, { payload });
     }
 
@@ -282,16 +279,14 @@ export class AgentsApi extends ApiTopic {
      */
     async retrieveMessages(id: string, since?: number): Promise<AgentMessage[]> {
         const query = since ? { since } : undefined;
-        const response = (await this.get(`/${id}/updates`, { query })) as {
-            messages: CompactMessage[];
-        };
+        const response = await this.get(`/${id}/updates`, { query }) as AgentRunUpdatesResponse;
         return response.messages.map((m: CompactMessage) => toAgentMessage(m, id));
     }
 
     /**
      * Post a message/update to an agent run.
      */
-    postMessage(id: string, msg: Partial<AgentMessage>): Promise<void> {
+    postMessage(id: string, msg: PostAgentRunUpdatePayload): Promise<PostAgentRunUpdateResponse> {
         return this.post(`/${id}/updates`, { payload: msg });
     }
 
@@ -446,7 +441,7 @@ export class AgentsApi extends ApiTopic {
                     }
                 };
 
-                sse.onerror = (_err: any) => {
+                sse.onerror = (_err: unknown) => {
                     if (isClosed) return;
                     cleanup();
 
@@ -526,7 +521,7 @@ export class AgentsApi extends ApiTopic {
      */
     async streamRunDetails(
         id: string,
-        onEvent?: (event: { type: string; data: unknown }) => void,
+        onEvent?: (event: AgentRunDetailsStreamEvent) => void,
         signal?: AbortSignal,
     ): Promise<void> {
         const EventSourceImpl = await EventSourceProvider();
@@ -560,16 +555,16 @@ export class AgentsApi extends ApiTopic {
 
             sse.addEventListener('history', (ev: MessageEvent) => {
                 try {
-                    const data = JSON.parse(ev.data);
+                    const data = JSON.parse(ev.data) as Extract<AgentRunDetailsStreamEvent, { type: 'history' }>['data'];
                     if (onEvent) onEvent({ type: 'history', data });
                 } catch (_err) { /* ignore parse errors */ }
             });
 
             sse.addEventListener('control', (ev: MessageEvent) => {
                 try {
-                    const data = JSON.parse(ev.data);
+                    const data = JSON.parse(ev.data) as Extract<AgentRunDetailsStreamEvent, { type: 'control' }>['data'];
                     if (onEvent) onEvent({ type: 'control', data });
-                    if (data.type === 'done') {
+                    if ('type' in data && data.type === 'done') {
                         cleanup();
                         resolve();
                     }
@@ -578,7 +573,7 @@ export class AgentsApi extends ApiTopic {
 
             sse.addEventListener('error', (ev: MessageEvent) => {
                 try {
-                    const data = JSON.parse(ev.data);
+                    const data = JSON.parse(ev.data) as Extract<AgentRunDetailsStreamEvent, { type: 'error' }>['data'];
                     if (onEvent) onEvent({ type: 'error', data });
                 } catch (_err) { /* ignore parse errors */ }
             });
@@ -606,8 +601,8 @@ export class AgentsApi extends ApiTopic {
         childWorkflowId: string,
         options?: { includeHistory?: boolean },
     ): Promise<WorkflowRunWithDetails> {
-        const query: Record<string, any> = {};
-        if (options?.includeHistory) query.include_history = true;
+        const query: Record<string, string> = {};
+        if (options?.includeHistory) query.include_history = 'true';
         return this.get(`/${id}/children/${childWorkflowId}/details`, { query });
     }
 
@@ -617,9 +612,14 @@ export class AgentsApi extends ApiTopic {
 
     /**
      * List artifacts for an agent run.
+     * visibility:
+     * - 'user' (default): only user-facing artifacts
+     * - 'internal': only system-managed state files such as conversation snapshots
+     * - 'all': both user-facing and internal files
      */
-    listArtifacts(id: string): Promise<string[]> {
-        return this.get(`/${id}/artifacts`);
+    listArtifacts(id: string, options?: { visibility?: 'user' | 'internal' | 'all' }): Promise<string[]> {
+        const query = options?.visibility ? { visibility: options.visibility } : undefined;
+        return this.get(`/${id}/artifacts`, { query });
     }
 
     /**
@@ -629,9 +629,11 @@ export class AgentsApi extends ApiTopic {
         id: string,
         path: string,
         disposition?: 'inline' | 'attachment',
-    ): Promise<{ url: string; path: string }> {
+        fileName?: string,
+    ): Promise<AgentArtifactUrlResponse> {
         const query: Record<string, string> = { url: '1' };
         if (disposition) query.disposition = disposition;
+        if (fileName) query.filename = fileName;
         return this.get(`/${id}/artifacts/${path}`, { query });
     }
 
@@ -649,13 +651,13 @@ export class AgentsApi extends ApiTopic {
         path: string,
         content: Blob | ReadableStream | ArrayBuffer | string,
         contentType?: string,
-    ): Promise<{ url: string; path: string }> {
+    ): Promise<AgentArtifactUrlResponse> {
         const mimeType = contentType || 'application/octet-stream';
 
         // 1. Get signed upload URL from the agents API
         const result = await this.put(`/${id}/artifacts/${path}`, {
             headers: { 'Content-Type': mimeType },
-        }) as { url: string; path: string };
+        }) as AgentArtifactUrlResponse;
 
         // 2. Upload directly to cloud storage
         const res = await fetch(result.url, {
@@ -700,8 +702,9 @@ export class AgentsApi extends ApiTopic {
     ingestEvents(
         agentRunId: string,
         events: AgentEvent[],
-    ): Promise<{ ingested: number; status?: string; error?: string }> {
-        return this.post(`/${agentRunId}/events`, { payload: { events } });
+    ): Promise<IngestAgentEventsResponse> {
+        const payload: IngestAgentEventsPayload = { events };
+        return this.post(`/${agentRunId}/events`, { payload });
     }
 
     // ========================================================================
