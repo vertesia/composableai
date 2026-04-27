@@ -39,6 +39,10 @@ export interface CostAnalyticsQuery {
     run_id?: string;
     /** Filter by agent run ID */
     agent_run_id?: string;
+    /** Filter by saved-interaction ObjectId */
+    interaction_id?: string;
+    /** Filter by in-code interaction code (e.g. "@sys:chat") */
+    interaction_code?: string;
     /** Filter by account ID (set automatically by server) */
     account_id?: string;
     /** Scope: 'project' (default, current project) or 'org' (all projects in account) */
