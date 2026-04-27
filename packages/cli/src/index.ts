@@ -1,4 +1,3 @@
-import { setupMemoCommand } from '@vertesia/memory-cli';
 import { Command } from 'commander';
 import { registerAppsCommand } from './apps/index.js';
 import { registerAgentsCommand } from './agents/index.js';
@@ -6,7 +5,6 @@ import { registerArtifactsCommand } from './artifacts/index.js';
 import { registerDataCommand } from './data/index.js';
 import { listEnvironments } from './envs/index.js';
 import { listInteractions } from './interactions/index.js';
-import { getPublishMemoryAction } from './memory/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
 import { createProfile, deleteProfile, listProfiles, loginProfile, logoutProfile, showActiveAuthToken, showActiveIdToken, showProfile, tryRefreshToken, updateCurrentProfile, updateProfile, useProfile, type CreateProfileOptions } from './profiles/commands.js';
@@ -120,15 +118,6 @@ program.command("runs [interactionId]")
     .action((interactionId: string | undefined, options: Record<string, any>) => {
         runHistory(program, interactionId, options);
     });
-
-const memoCmd = program.command("memo")
-    .description("Build and export memory packs (deprecated)");
-setupMemoCommand(memoCmd, getPublishMemoryAction(program));
-for (const command of memoCmd.commands) {
-    command.hook('preAction', () => {
-        console.warn('Warning: `vertesia memo` is deprecated and will be removed in a future release.');
-    });
-}
 
 registerWorkerCommand(program);
 registerAppsCommand(program);
