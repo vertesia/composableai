@@ -41,7 +41,7 @@ const CONFIG__inlineCss = false;
  * Vite configuration to build the plugin as a library or as a standalone application or to run the application in dev mode.
  * Use `vite build --mode lib` to build a library (plugin)
  * Use `vite build` or `vite build --mode app`to build a standalone application
- * Use `vite dev` to run the application in dev mode.
+ * Use `vite dev --mode app` to run the application in dev mode.
  */
 export default defineConfig((env) => {
     if (env.mode === 'lib') {
