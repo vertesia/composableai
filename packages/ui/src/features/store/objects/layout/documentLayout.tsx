@@ -1,5 +1,5 @@
 import { ColumnLayout, ContentObjectItem } from "@vertesia/common";
-import { Table, TBody } from "@vertesia/ui/core";
+import { Table, TBody, THead } from "@vertesia/ui/core";
 import { useUITranslation } from '../../../../i18n/index.js';
 import { CheckIcon } from "lucide-react";
 import { ChangeEvent } from "react";
@@ -24,15 +24,15 @@ interface ViewProps {
 export function DocumentTableView({ objects, selection, isLoading, columns, onRowClick, highlightRow, selectedObject, toggleAll, onSelectionChange }: ViewProps) {
     const { t } = useUITranslation();
     return (
-        <Table className="w-full border-t">
-            <thead>
+        <Table className="w-full">
+            <THead>
                 <tr>
                     {selection && <th><input type="checkbox" onChange={toggleAll} /></th>}
                     {columns.map((col) => (
                         <th key={col.name}>{col.name}</th>
                     ))}
                 </tr>
-            </thead>
+            </THead>
             <TBody isLoading={isLoading} columns={columns.length + 1}>
                 {
                     objects?.map((obj: ContentObjectItem) => {
