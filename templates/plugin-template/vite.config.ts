@@ -47,7 +47,7 @@ export default defineConfig((env) => {
     if (env.mode === 'lib') {
         return defineLibConfig(env);
     } else {
-        return defineAppConfig();
+        return defineAppConfig(env);
     }
 })
 
@@ -88,12 +88,13 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
  * or to build a standalone application.
  * @returns
  */
-function defineAppConfig(): UserConfig {
+function defineAppConfig({ command }: ConfigEnv): UserConfig {
     // Vercel dev proxies to the framework dev server over HTTP — HTTPS would break that.
     const useHttps = !process.env.VERCEL;
+    const base = command === 'build' ? '/app/' : '/';
 
     return {
-        base: '/app/', // App assets are served from dist/app/ on Vercel.
+        base, // Dev serves the admin UI at /; Vercel serves built app assets from /app/.
         plugins: [
             tailwindcss(),
             react(),
